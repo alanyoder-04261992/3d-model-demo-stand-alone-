@@ -48,7 +48,11 @@ import { mulberry32, textureSeed } from "./seeded.js";
 
 export function createTextures(gl, opts){
 opts=opts||{};
-var randFor=opts.randFor||opts.rand||(opts.seeded?function(i){return mulberry32(textureSeed(i));}:null);
+var randFor0=opts.randFor||opts.rand||(opts.seeded?function(i){return mulberry32(textureSeed(i));}:null);
+/* randFor (or rand) is a MAKER of generators, called once per texture with its
+   number -- not a generator itself. Handing over a generator by mistake would
+   otherwise surface as "rand is not a function" deep inside a painter. */
+var randFor=randFor0&&function(i){var g=randFor0(i);if(typeof g!=="function")throw new Error("createTextures: randFor (or rand) must be a function of the texture number that RETURNS a generator, e.g. (i) => mulberry32(textureSeed(i)) -- not a generator itself");return g;};
 var rand=Math.random, texIndex=0;
 var extAniso=gl.getExtension("EXT_texture_filter_anisotropic")||gl.getExtension("WEBKIT_EXT_texture_filter_anisotropic")||gl.getExtension("MOZ_EXT_texture_filter_anisotropic");
 /* ==== BEGIN mkTex (Barnwright 3ddesign.html 1714-1747; one line added) ==== */

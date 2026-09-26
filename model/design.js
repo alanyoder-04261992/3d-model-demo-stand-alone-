@@ -44,6 +44,11 @@ import { resetItems, clampPos, keepOnWall, pkFixtures } from "./layout.js";
 import { pPrice, pSizes, priceParts } from "./pricing.js";
 import { colorName, hexOfName, pickByName, sidingPalette } from "./company.js";
 
+/* own keys only: a link naming "constructor" or "__proto__" is not a style,
+   an item, a wall or a size */
+function has(o, k) { return o != null && typeof o === "object" && Object.prototype.hasOwnProperty.call(o, k); }
+function isNum(v) { return typeof v === "number" && isFinite(v); }
+
 function round(v, places) {
   if (typeof v !== "number" || !isFinite(v)) return v;
   const f = Math.pow(10, places);
@@ -67,7 +72,7 @@ export function defaults(cat) {
 
 /* Barnwright's setType, with the fixtures laid after the standard items. */
 export function setType(state, t, cat) {
-  if (!cat.TYPES[t]) throw new Error(`"${t}" is not a building style this company offers.`);
+  if (!has(cat.TYPES, t)) throw new Error(`"${t}" is not a building style this company offers.`);
   state.type = t;
   if (!pPrice(t, state.size, cat)) { const zz = pSizes(t, cat); state.size = zz[Math.min(4, zz.length - 1)]; }
   const T = cat.TYPES[t];
@@ -190,7 +195,7 @@ export function fromState(state, cat, opts) {
 function colourBack(name, list, cat, what, warnings, fallback) {
   if (name == null) return fallback;
   if (name === "") return "";
-  const renamed = (cat.renames && cat.renames.colors && cat.renames.colors[name]) || name;
+  const renamed = (cat.renames && has(cat.renames.colors, name) && cat.renames.colors[name]) || name;
   const hex = hexOfName(list, renamed);
   if (hex) return hex;
   if (/^#[0-9a-fA-F]{6}$/.test(renamed)) {
@@ -215,9 +220,9 @@ export function toState(design, cat) {
      laying a style out uses the size in hand. */
   const ren = cat.renames || {};
   let type = d.type;
-  if (type != null && !cat.TYPES[type]) { warnings.push(`The style "${type}" is no longer offered; showing the ${cat.TYPES[s.type].name} instead.`); type = s.type; }
+  if (type != null && !has(cat.TYPES, type)) { warnings.push(`The style "${type}" is no longer offered; showing the ${cat.TYPES[s.type].name} instead.`); type = s.type; }
   if (type == null) type = s.type;
-  let size = d.size != null ? ((ren.sizes && ren.sizes[d.size]) || d.size) : null;
+  let size = d.size != null ? String((has(ren.sizes, d.size) && ren.sizes[d.size]) || d.size) : null;
   if (size) s.size = size;
   setType(s, type, cat);
   let asSaved = type === d.type && size === d.size && d.company === cat.id && d.cfg === cat.cfg;
@@ -256,20 +261,24 @@ export function toState(design, cat) {
     const kept = [];
     d.items.forEach((x) => {
       if (!x || typeof x !== "object") { warnings.push("One item in the design could not be read and was left off."); asSaved = false; return; }
-      const catId = (ren.items && ren.items[x.cat]) || x.cat;
+      const catId = (has(ren.items, x.cat) && ren.items[x.cat]) || x.cat;
       if (catId !== x.cat) asSaved = false;
-      if (!cat.CAT[catId]) { warnings.push(`The design had a "${x.cat}" item, which this company no longer offers; it was left off.`); asSaved = false; return; }
+      if (!has(cat.CAT, catId)) { warnings.push(`The design had a "${x.cat}" item, which this company no longer offers; it was left off.`); asSaved = false; return; }
       const wall = x.wall || "F";
       const c = cat.CAT[catId];
-      const wallOk = (c.free || c.stretch) ? true : !!fr.ws[wall];
+      const wallOk = (c.free || c.stretch) ? true : has(fr.ws, wall);
       if (!wallOk) { warnings.push(`The ${c.n} was on a wall ("${wall}") this building does not have; it was left off.`); asSaved = false; return; }
       const it = { id: "e" + kept.length, cat: catId, inc: !!x.inc, shut: !!x.shut, lite: !!x.lite, dbl: !!x.dbl, pk: !!x.pk, wall, rot: !!x.rot };
-      if (x.pos != null) it.pos = x.pos; if (x.vy) it.vy = x.vy;
-      if (x.px != null) it.px = x.px; if (x.pz != null) it.pz = x.pz;
-      if (x.ln) it.ln = x.ln;
-      const orig = x.origCat != null ? ((ren.items && ren.items[x.origCat]) || x.origCat) : (x.inc ? catId : null);
+      /* a position that is not a number (a damaged or hand-edited link) is
+         said out loud and left for the clamp to place, never drawn as NaN */
+      const bad = ["pos", "vy", "px", "pz", "ln"].filter((f) => x[f] != null && !isNum(x[f]));
+      if (bad.length) { warnings.push(`The ${c.n}'s saved ${bad.join(" and ")} could not be read, so it was put in a standard place.`); asSaved = false; }
+      if (isNum(x.pos)) it.pos = x.pos; if (isNum(x.vy) && x.vy) it.vy = x.vy;
+      if (isNum(x.px)) it.px = x.px; if (isNum(x.pz)) it.pz = x.pz;
+      if (isNum(x.ln) && x.ln) it.ln = x.ln;
+      const orig = x.origCat != null ? ((has(ren.items, x.origCat) && ren.items[x.origCat]) || x.origCat) : (x.inc ? catId : null);
       if (orig != null) {
-        if (cat.CAT[orig]) it.origCat = orig;
+        if (has(cat.CAT, orig)) it.origCat = orig;
         else warnings.push(`The ${c.n} started as a "${x.origCat}", which this company no longer offers; it is priced as it stands.`);
       }
       if (it.pos == null && !(c.free || c.stretch)) it.pos = 0;
@@ -336,7 +345,11 @@ function expand(o) {
     type: o.t,
     size: o.s,
     colors: { body: k[0] || "", trim: k[1] || "", roof: k[2] || "", door: k[3] || "", shutters: k[4] || "" },
-    items: (Array.isArray(o.i) ? o.i : []).map((tup) => {
+    /* a tuple that is not a list becomes null, which toState reports as an
+       item it could not read (never a crash, never a silent drop); a link
+       with no item list at all gets the style's standard doors and windows */
+    items: !Array.isArray(o.i) ? undefined : o.i.map((tup) => {
+      if (!Array.isArray(tup)) return null;
       /* the same field order fromState writes */
       const it = { cat: tup[0], wall: tup[1] };
       const f = tup[3] || 0;
@@ -358,6 +371,7 @@ function expand(o) {
     xopt: o.x && typeof o.x === "object" ? o.x : {},
   };
   if (!d.colors.body && !d.colors.trim && !d.colors.roof) delete d.colors;
+  if (d.items === undefined) delete d.items;
   if (Array.isArray(o.$)) d.priced = { total: o.$[0], at: o.$[1] };
   return d;
 }

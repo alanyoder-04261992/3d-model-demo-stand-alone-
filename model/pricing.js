@@ -42,14 +42,18 @@ export function policyOf(cat) {
   };
 }
 
+/* own keys only: "constructor" is not a size (a plain object would hand back
+   a function, which then counts as "sold") */
+function ownKey(o, k) { return o != null && Object.prototype.hasOwnProperty.call(o, k); }
+
 export function pPrice(t, z, cat) {
   const P = cat.P;
-  return (P[t] && P[t][z]) || 0;
+  return (ownKey(P, t) && ownKey(P[t], z) && P[t][z]) || 0;
 }
 
 /* Every size of a style, in the company's own order (the size-chip order). */
 export function pSizes(t, cat) {
-  return Object.keys(cat.P[t] || {});
+  return ownKey(cat.P, t) ? Object.keys(cat.P[t]) : [];
 }
 
 export function minPrice(t, cat) {
@@ -164,8 +168,10 @@ export function priceParts(state, cat, frame) {
     if (it.lite && c.k === "door" && c.draw === "shop-door") liteN++;
     total += chg;
   });
-  if (shutN > 0) { const shC = MISC.shutter * shutN; lines.push(["Shutters × " + shutN + " set" + (shutN > 1 ? "s" : ""), shC, "misc.shutter"]); total += shC; }
-  if (liteN > 0) { const ltC = MISC.lite * liteN; lines.push(["Door window × " + liteN, ltC, "misc.lite"]); total += ltC; }
+  /* (a price missing from MISC means the company does not offer it: no line,
+     never a NaN total) */
+  if (shutN > 0 && MISC.shutter != null) { const shC = MISC.shutter * shutN; lines.push(["Shutters × " + shutN + " set" + (shutN > 1 ? "s" : ""), shC, "misc.shutter"]); total += shC; }
+  if (liteN > 0 && MISC.lite != null) { const ltC = MISC.lite * liteN; lines.push(["Door window × " + liteN, ltC, "misc.lite"]); total += ltC; }
   if (fr.t.dormer && state.dormer !== "none") {
     const d = (cat.DORMERS || []).filter((x) => x[0] === state.dormer)[0];
     if (d && !hidden(cat, "dormer." + d[0])) { lines.push([d[1], d[2], "dormer." + d[0]]); total += d[2]; }
@@ -174,7 +180,7 @@ export function priceParts(state, cat, frame) {
     const epk = (cat.ELECPK || []).filter((x) => +x[0] === +state.elec.pkg)[0];
     const ep = epk ? epk[2] : 0;
     lines.push(["Electric package " + state.elec.pkg, ep, "elec." + state.elec.pkg]); total += ep;
-    if (state.elec.ext) { lines.push(["Exterior light + dual switch", MISC.ext, "misc.ext"]); total += MISC.ext; }
+    if (state.elec.ext && MISC.ext != null) { lines.push(["Exterior light + dual switch", MISC.ext, "misc.ext"]); total += MISC.ext; }
   }
   if (state.ramp && state.ramp !== "none") {
     const rmp = (cat.RAMPS || []).filter((x) => x[0] === state.ramp)[0];

@@ -12,14 +12,16 @@ on this list with a reason.
 ## Drawing
 
 1. **The first picture after a change has its shadows.** Barnwright draws the
-   first frame after every rebuild with no shadows at all. Its shadow pass left
-   the normal and texture attribute slots switched on after the rebuild had
-   deleted their buffers, so WebGL refused every shadow draw on that one frame.
-   You see it after every colour tap until the camera moves, and on the FRONT
+   first frame after every rebuild with NO cast shadow at all: its shadow pass
+   left the normal and texture attribute slots switched on after the rebuild
+   had deleted their buffers, so WebGL refused every shadow draw on that frame
+   (the shadow map had already been cleared). Barnwright only redraws when
+   something asks, so its customers see the building without its shadow after
+   every colour tap or option change until the camera moves -- and on the FRONT
    picture of a quote's thumbnails. The fix switches those two slots off in the
-   shadow pass; no number changed. Measured: 153,910 pixels differ between
-   Barnwright's first and second frame. *(The look check draws Barnwright twice
-   before comparing, so it compares Barnwright's corrected second frame.)*
+   shadow pass; no number changed. Measured: about 150,000-190,000 pixels differ
+   between Barnwright's first and second frame. *(The golden look pictures are
+   Barnwright's settled second frame, which is what this engine draws first.)*
 2. **The camera fits the building the Yoder-site way in the product**
    (`fit: "fitref"`): no sudden 16 % jump when the picture is a little taller
    than wide, so a 14x40 no longer runs off an iPad or phone screen. The golden

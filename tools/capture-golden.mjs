@@ -185,11 +185,13 @@ async function runCase(browser, server, c, lookIds) {
 }
 
 async function recordOn(p, c, lookIds) {
-  const tex = await textureReport(p.page);
   const ran = await p.page.evaluate(inPageRunSteps, { steps: c.steps });
   const cap = await p.page.evaluate(inPageCapture, taggingTable());
   let look = null;
   if (lookIds.has(c.id)) look = await p.page.evaluate(inPageLook, { ...LOOK_CAMERA });
+  /* read last, so "Math.random called outside a texture" covers the whole
+     recording (the steps, both builds and the picture), not only the page load */
+  const tex = await textureReport(p.page);
   if (p.errors.length) fail(c.id, "Barnwright's page reported errors: " + p.errors.join(" | "));
   return { tex, ran, cap, look };
 }
@@ -272,9 +274,11 @@ function processCase(c, r, full) {
       DPRCAP: r.look.DPRCAP,
       scene: "studio",
       pixelsSha256: sha(img.rgba),
-      how: "draw() then canvas.toDataURL('image/png') in the same task; pixels re-encoded losslessly as RGBA PNG",
+      how: "draw() twice (the first draw after a rebuild refuses its shadow pass in Barnwright, see tools/lib/golden-page.mjs inPageLook), " +
+        "then canvas.toDataURL('image/png') in the same task; no WebGL error in the second draw; pixels re-encoded losslessly as RGBA PNG",
     };
     if (!r.look.hasShadow || r.look.DPRCAP !== 2) fail(c.id, "the picture was not drawn with shadows on and DPRCAP 2");
+    if (r.look.glErrors.secondDraw.length) fail(c.id, "WebGL reported errors while drawing the picture: " + r.look.glErrors.secondDraw.join(","));
   }
   const fullOut = full ? { case: c.id, format: formatNote(), order: cap.order, buckets: fullBuckets } : null;
   return { json: out, png, full: fullOut };
@@ -470,7 +474,12 @@ async function main() {
   console.log(`  Written to test/golden/ (geometry/, geometry-full/, look/${ONLY ? "" : ", cases.json, textures.json"}).`);
 }
 
-main().catch((e) => {
-  console.error("CAPTURE FAILED: " + (e && e.message ? e.message : e));
-  process.exitCode = 1;
-});
+/* Only when run as a command. decodePng / encodePng are exported for the
+   picture checks; importing this file for them must never start a recording
+   (which would write over test/golden/). */
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((e) => {
+    console.error("CAPTURE FAILED: " + (e && e.message ? e.message : e));
+    process.exitCode = 1;
+  });
+}

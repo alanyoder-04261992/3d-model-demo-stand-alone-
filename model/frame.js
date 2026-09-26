@@ -88,7 +88,7 @@ export function wallDefs(t, d, span, construction) {
 /* Everything about the building as it stands. Throws, in plain words, if the
    style is not in this catalogue. */
 export function frameOf(state, cat) {
-  var t = cat.TYPES[state.type];
+  var t = Object.prototype.hasOwnProperty.call(cat.TYPES, state.type) ? cat.TYPES[state.type] : null;
   if (!t) throw new Error(`"${state.type}" is not a building style this company offers.`);
   var d = dims(state.size, t);
   if (!(d.W > 0) || !(d.L > 0)) throw new Error(`"${state.size}" is not a size (it should look like 10x20).`);

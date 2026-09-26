@@ -565,11 +565,15 @@ porch posts and selection variations):
   noCast, age, glassM, turf); per `(bucket key, part)` the count and a hash of
   its vertex floats rounded to 1e-4 in emission order; each whole bucket's hash;
   the canvas client size, `cam.fitDist` and `window.__GR`;
-* records the model results for the same cases: `includedItems`, clamped
-  positions, `roofProfile`, `pSizes`, `priceParts`;
-* records one hash per procedural texture with seeded painters;
-* writes `test/golden/barnwright-catalogue.json` (its exact `P TYPES CATS CAT
-  COLORS DORMERS RAMPS ELECPK MISC RATES`).
+* records one hash per procedural texture with seeded painters, and the
+  Finished-view look pictures (Barnwright's settled SECOND frame after a
+  rebuild — see DIFFERENCES #1).
+
+The model results (`includedItems`, clamped positions, `roofProfile`,
+`pSizes`, `priceParts`, `openingRect`) are not recorded: `tools/check-model-live.mjs`
+compares them against Barnwright's live page for every style and size.
+`test/golden/barnwright-catalogue.json` (Barnwright's exact tables) is written by
+`tools/extract-barnwright-catalogue.mjs`.
 
 `tools/check-golden.mjs` (Node, no browser) resolves the Barnwright catalogue
 into a company, feeds each case's recorded `state` and viewport to `makePlan` /

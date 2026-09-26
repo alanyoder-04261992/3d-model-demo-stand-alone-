@@ -58,13 +58,18 @@ paintBackdrop(document.getElementById("stage"), r.scene);
 /* ---- the pretend shed, 10 x 12 ---- */
 const W = 10, L = 12, wallH = 7.4, rise = 2.7;
 const H = y0 + wallH + rise;
-function makeShed(sel) {
+/* makeShed(sel, omit): `omit` lists pieces to leave out altogether (e.g.
+   ["roof"]) -- the check compares "a step hidden by the step table" with "the
+   same building drawn without that piece at all", which must be the same
+   picture, shadow included. */
+function makeShed(sel, omit) {
   const build = createBuild({ sel: sel || null });
   let GR = 0;
   const fitDist = fitDistFor(W, L, { w: canvas.clientWidth, h: canvas.clientHeight }, "barnwright");
   const kit = makeKit(build, { view: { fitDist, scene: r.scene } });
+  const part = (name, fn) => { if (!(omit && omit.includes(name))) kit.part(name, fn); };
   const g = r.scene.ground;
-  kit.part("ground", () => {
+  part("ground", () => {
     kit.setStage("site");
     const mGr = kit.MAT("ground", g.tex === "grass" ? TN.texGrass : TN.texFlat, g.tint, g.spec, g.gloss, 0, g.bump);
     mGr.noCast = true; mGr.turf = g.turf;
@@ -75,39 +80,39 @@ function makeShed(sel) {
         [0, 0], [Math.cos(a1) * GR / 3.0, Math.sin(a1) * GR / 3.0], [Math.cos(a0) * GR / 3.0, Math.sin(a0) * GR / 3.0]);
     }
   });
-  kit.part("skids", () => {
+  part("skids", () => {
     kit.setStage("skids");
     const mSk = kit.mat("skid", TN.texFlat, "#6d5f49", 0.04, 10);
     kit.box(mSk, -3, 0, 0, 0.5, 0.5, L); kit.box(mSk, 3, 0, 0, 0.5, 0.5, L);
   });
-  kit.part("siding", () => {
+  part("siding", () => {
     kit.setStage("siding");
     const mB = kit.mat("body", TN.texSiding, "#c8c8c8", 0.06, 14, 0.6); mB.age = 4;
     kit.box(mB, 0, 0.5, 0, W, y0 + wallH - 0.5, L);
   });
-  kit.part("gable", () => {
+  part("gable", () => {
     kit.setStage("gable-end");
     const mG = kit.mat("body", TN.texSiding, "#c8c8c8", 0.06, 14, 0.6);
     kit.gq2(mG, [[-W / 2, y0 + wallH], [W / 2, y0 + wallH], [0, H]], L / 2, 1, 0, "sid");
   });
-  kit.part("door", () => {
+  part("door", () => {
     kit.setStage("doors");
     kit.setItem("d1");
     const mD = kit.mat("door", TN.texFlat, "#d02020", 0.05, 12);
     kit.box(mD, 0, y0, L / 2 + 0.08, 3, 6.3, 0.16);
     kit.setItem(null);
   });
-  kit.part("roof", () => {
+  part("roof", () => {
     kit.setStage("roofing");
     const mR = kit.mat("roof", TN.texRoofMetal, "#2040d0", 0.34, 80, 0.6);
     kit.box(mR, 0, y0 + wallH, 0, W + 1, 0.35, L + 1);
   });
-  kit.part("frame", () => {
+  part("frame", () => {
     kit.setStage("roof-frame");
     const mL = kit.mat("lumber", TN.texFlat, "#caa472", 0.04, 10);
     kit.beam(mL, [-W / 2 - 1.5, y0 + wallH + 1.2, L / 2 + 1], [W / 2 + 1.5, y0 + wallH + 1.2, L / 2 + 1], 0.3, 0.5, [0, 1, 0]);
   });
-  kit.part("shadow", () => {
+  part("shadow", () => {
     kit.setStage("shading");
     const mCS = kit.DECAL("ctshadow", TN.texAO), exd = 0.85;
     kit.pushQuad(mCS, [-W / 2 - exd, 0.012, L / 2 + exd], [W / 2 + exd, 0.012, L / 2 + exd], [W / 2 + exd, 0.012, -L / 2 - exd], [-W / 2 - exd, 0.012, -L / 2 - exd], [0, 0], [1, 0], [1, 1], [0, 1]);
@@ -155,6 +160,30 @@ window.SMOKE = {
   },
   hasShadow: () => r.hasShadow, extDeriv: () => r.extDeriv,
   views() { return { finished: render(stageTableFor("finished")), framing: render(stageTableFor("framing")), noBoard: render({ "roof-frame": { hidden: true } }), all: render(null) }; },
+  /* A HIDDEN STEP MUST BE GONE FROM THE SHADOW MAP TOO. Hiding a step with the
+     table has to give exactly the picture of the building drawn without that
+     piece at all -- otherwise the Finished view of a building that also carries
+     its framing would show the studs' and trusses' shadows, and Watch-it-build
+     would show the shadow of a roof that has not landed yet. (The shadow pass
+     has its own copy of the step table, in VSD, and its own step attribute.) */
+  absentTest() {
+    const pic = (build, table) => { r.setStages(table || null); r.show(build); r.draw(); const px = r.test.readPixels(); return { c: classify(px), d: px.data }; };
+    const finished = pic(makeShed(), stageTableFor("finished"));
+    const noFrame = pic(makeShed(null, ["frame"]));
+    const hideRoof = pic(makeShed(), { roofing: { hidden: true } });
+    const noRoof = pic(makeShed(null, ["roof"]));
+    const full = pic(makeShed());
+    /* the roof's shadow is really in the picture: pixels that change when the
+       roof goes although they are not roof pixels themselves */
+    let roofShadow = 0;
+    for (let i = 0; i < full.d.length; i += 4) {
+      const R = full.d[i], G = full.d[i + 1], B = full.d[i + 2];
+      const isRoof = B > 60 && B > R * 1.3 && B > G * 1.1;
+      if (!isRoof && (R !== noRoof.d[i] || G !== noRoof.d[i + 1] || B !== noRoof.d[i + 2])) roofShadow++;
+    }
+    r.setStages(null); r.show(makeShed());
+    return { finished: finished.c.hash, noFrame: noFrame.c.hash, hideRoof: hideRoof.c.hash, noRoof: noRoof.c.hash, full: full.c.hash, roofShadow };
+  },
   /* a rebuild (new buffers, the old ones deleted) must not lose the shadows
      for a frame: before, just after and one frame later must be identical */
   rebuildTest() {

@@ -448,7 +448,7 @@
   "hasShadow": true,
   "DPRCAP": 2,
   "scene": "studio",
-  "pixelsSha256": "73bcc02565f4d2d06bc1466cad15b7f031931eeeef21b4f7a9f36e8ffb23ae04",
-  "how": "draw() then canvas.toDataURL('image/png') in the same task; pixels re-encoded losslessly as RGBA PNG"
+  "pixelsSha256": "3a4f66e16c5c07a6bd4330cc7d8925f1d87d4ffb0ddde7152de396d276da16c4",
+  "how": "draw() twice (the first draw after a rebuild refuses its shadow pass in Barnwright, see tools/lib/golden-page.mjs inPageLook), then canvas.toDataURL('image/png') in the same task; no WebGL error in the second draw; pixels re-encoded losslessly as RGBA PNG"
  }
 }

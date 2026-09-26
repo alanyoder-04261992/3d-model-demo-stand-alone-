@@ -58,7 +58,7 @@
     }
   },
   "roof": {
-    "_help": "Trusses at spacingIn on centre with plywood gussets. shapes: the roof cross-section numbers by roof shape; {\"w\": 0.27} means 0.27 times the building width, {\"ft\": 2.43} a fixed number of feet. rise is the ridge height above the wall top (for the gambrel it is only used to frame the camera and the shadow box -- 0.45W, a kept Barnwright quirk); lowerRise/upperRise/knee are the gambrel's shoulders; ridge is where a saltbox ridge sits across the width; dormerRise is the main roof's rise on a style with a dormer; eaveOverhang is feet along the slope at the -x and +x eaves; cottageEave is the cottage-style eave instead (a level soffit backIn at the back, frontIn at the door side, the roof raised one fascia of fasciaIn); rakeOverhang is the gable-end overhang (a style can override it; a gambrel's is drawn at 0.10 whatever this says, a kept Barnwright quirk).",
+    "_help": "Trusses at spacingIn on centre with plywood gussets. shapes: the roof cross-section numbers by roof shape; {\"w\": 0.27} means 0.27 times the building width, {\"ft\": 2.43} a fixed number of feet. rise is the ridge height above the wall top (for the gambrel it is only used to frame the camera and the shadow box -- 0.45W, a kept Barnwright quirk); lowerRise/upperRise/knee are the gambrel's shoulders; ridge is where a saltbox ridge sits across the width; dormerRise is the main roof's rise on a style with a dormer; eaveOverhang is feet along the slope at the -x and +x eaves (a saltbox with the cottage trait uses cottageEave instead; one without it uses these, 0.42 each side, as Barnwright's profileRoof does for every roof but the lean-to and single slope); cottageEave is the cottage-style eave instead (a level soffit backIn at the back, frontIn at the door side, the roof raised one fascia of fasciaIn); rakeOverhang is the gable-end overhang (a style can override it; a gambrel's is drawn at 0.10 whatever this says, a kept Barnwright quirk).",
     "framing": "truss",
     "spacingIn": 24,
     "chord": "2x4",
@@ -68,7 +68,7 @@
     "shapes": {
       "gable": { "rise": { "w": 0.27 }, "eaveOverhang": { "left": 0.42, "right": 0.42 }, "rakeOverhang": 0.45 },
       "gambrel": { "rise": { "w": 0.45 }, "lowerRise": { "w": 0.32 }, "upperRise": { "w": 0.13 }, "knee": { "w": 0.38 }, "eaveOverhang": { "left": 0.42, "right": 0.42 }, "rakeOverhang": 0.12 },
-      "salt": { "rise": { "w": 0.26 }, "ridge": { "w": 0.18 }, "rakeOverhang": 0.45 },
+      "salt": { "rise": { "w": 0.26 }, "ridge": { "w": 0.18 }, "eaveOverhang": { "left": 0.42, "right": 0.42 }, "rakeOverhang": 0.45 },
       "lean": { "rise": { "w": 0.17 }, "eaveOverhang": { "left": 0, "right": 0.333 }, "rakeOverhang": 0.12 },
       "slope": { "rise": { "w": 0.28 }, "eaveOverhang": { "left": 0.35, "right": 1.15 }, "rakeOverhang": 0.45 }
     }

@@ -151,6 +151,16 @@ ok("VS feeds the lifted corner to gl_Position, vW and vSh (and nothing reads aP 
   ours.VS.includes("vW=p;") && ours.VS.includes("vSh=uLVP*vec4(p,1.0);") && ours.VS.includes("gl_Position=uVP*vec4(p,1.0);") &&
   ours.VS.split("aP").length - 1 === 2 /* the declaration and the lift */);
 ok("VSD feeds the lifted corner to the shadow map", ours.VSD.includes("gl_Position=uLVP*vec4(p,1.0);"));
+/* "minus the step table" above cannot see a piece of the table that is MISSING
+   (removing nothing leaves Barnwright's text too), so count them: each shader
+   carries the declaration, the lift and the hide exactly once, and the hide is
+   the last thing main() does -- a hidden step must leave the shadow map as
+   well as the picture. */
+const count = (s, sub) => s.split(sub).length - 1;
+for (const [nm, src] of [["VS", ours.VS], ["VSD", ours.VSD]])
+  ok(nm + " carries the step table exactly once (declaration, lift, and the hide as the last statement of main)",
+    count(src, ours.STAGE_DECL) === 1 && count(src, ours.STAGE_HEAD) === 1 && count(src, ours.STAGE_TAIL) === 1 && src.trimEnd().endsWith(ours.STAGE_TAIL + "}"),
+    JSON.stringify({ decl: count(src, ours.STAGE_DECL), head: count(src, ours.STAGE_HEAD), tail: count(src, ours.STAGE_TAIL) }));
 ok("FSD is Barnwright's byte for byte", ours.FSD === barn.FSD);
 ok("attribute slots are aP 0, aN 1, aUV 2, aStage 3; a corner is 36 bytes",
   JSON.stringify(ours.ATTRIBS) === JSON.stringify({ aP: 0, aN: 1, aUV: 2, aStage: 3 }) && ours.STRIDE === 36);

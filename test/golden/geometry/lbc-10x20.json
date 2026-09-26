@@ -596,6 +596,6 @@
   "DPRCAP": 2,
   "scene": "studio",
   "pixelsSha256": "4f69264db9d4e9587fe2eb6c37e82314a9570c557e1b3122a78d7596529a963d",
-  "how": "draw() then canvas.toDataURL('image/png') in the same task; pixels re-encoded losslessly as RGBA PNG"
+  "how": "draw() twice (the first draw after a rebuild refuses its shadow pass in Barnwright, see tools/lib/golden-page.mjs inPageLook), then canvas.toDataURL('image/png') in the same task; no WebGL error in the second draw; pixels re-encoded losslessly as RGBA PNG"
  }
 }

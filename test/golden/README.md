@@ -89,9 +89,32 @@ Drawn with Barnwright's opening camera angle (yaw 0.62, pitch 0.215) at exactly
 the fitted distance, shadows forced on, supersampling capped at 2, the
 frame-cost watchdogs frozen (their warm-up pushed out of reach, so they never
 switch shadows or sharpness off), no auto-spin, the studio scene. `draw()` is
-called and the canvas read in the same step (Barnwright's canvas forgets its
-picture once the browser shows it). The background is see-through: on
-Barnwright's page the grey backdrop is the page behind the canvas. The browser's
+called TWICE and the canvas read in the same step (Barnwright's canvas forgets
+its picture once the browser shows it).
+
+Why twice: Barnwright's first draw after every rebuild has its whole shadow
+pass refused by WebGL. `buildShed` deletes the old vertex buffers while the
+normal and texture arrays are still switched on and pointing at them, so every
+shadow-pass draw fails (`INVALID_OPERATION`). The shadow map has already been
+cleared by then, so that frame has **no cast shadow at all** (checked: pixel for
+pixel the same as a draw with shadows switched off). Whether the recording's
+first draw was that frame depended on whether the page's own animation loop
+happened to draw in between, which made one recording show a cast shadow and
+the next one not. The second draw is the real picture: a shadow made for this
+building from this camera, and the capture fails if WebGL reports any error in
+it.
+
+This is **visible in Barnwright itself**: its loop only draws while something
+has asked for a draw, and one draw satisfies that, so after a rebuild with the
+camera still (a colour tap, a size change, an item added) the customer sees the
+building without its cast shadow until the camera next moves. The recorded
+picture is Barnwright's look once the camera has moved. Our engine's renderer
+must switch those arrays off before its shadow pass (`engine/renderer.js`
+does), so that ITS first draw is already this picture -- `docs/DIFFERENCES.md`
+is the place to say so.
+
+The background is see-through: on Barnwright's page the grey backdrop is the
+page behind the canvas. The browser's
 PNG is decoded to its exact pixels and saved again losslessly in one fixed way,
 so the file only changes when the picture does.
 

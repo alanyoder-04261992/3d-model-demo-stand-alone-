@@ -41,7 +41,7 @@ export const DEFAULT_ROOF = Object.freeze({
   shapes: {
     gable: { rise: { w: 0.27 }, eaveOverhang: { left: 0.42, right: 0.42 }, rakeOverhang: 0.45 },
     gambrel: { rise: { w: 0.45 }, lowerRise: { w: 0.32 }, upperRise: { w: 0.13 }, knee: { w: 0.38 }, eaveOverhang: { left: 0.42, right: 0.42 }, rakeOverhang: 0.12 },
-    salt: { rise: { w: 0.26 }, ridge: { w: 0.18 }, rakeOverhang: 0.45 },
+    salt: { rise: { w: 0.26 }, ridge: { w: 0.18 }, eaveOverhang: { left: 0.42, right: 0.42 }, rakeOverhang: 0.45 },
     lean: { rise: { w: 0.17 }, eaveOverhang: { left: 0, right: 0.333 }, rakeOverhang: 0.12 },
     slope: { rise: { w: 0.28 }, eaveOverhang: { left: 0.35, right: 1.15 }, rakeOverhang: 0.45 },
   },

@@ -27,7 +27,7 @@
    renderGableWin (3575-3705), so the framing, the drawing and the picking all
    agree on where an opening is. See its own note below. */
 
-import { y0, CASING } from "../engine/constants.js";
+import { y0, CASING, OCT_WIN } from "../engine/constants.js";
 import { profileYat, gableClip, gableBandY } from "./roof-shapes.js";
 import { standardItems, evalFormula } from "./loadouts.js";
 import { doorHeightFt, windowTopFt } from "./construction.js";
@@ -282,7 +282,11 @@ export function pkFixtures(state, frame, cat) {
                                side casings, the head board with its 22.5-degree
                                ears, the window sill, and on porch buildings the
                                header band over every non-roll-up opening
-       head: {y0, y1}, sill: {y0, y1} | null, porchBand: {y0, y1} | null }
+       casing: {u0, u1, y0, y1}  the side casings (inner edges 0.02 into the
+                               opening), up to the reveal under the head
+       head: {u0, u1, y0, y1}  the head board, u0 u1 at its ears (its top)
+       sill: {u0, u1, y0, y1} | null   (u0 u1 at its ears, its bottom)
+       porchBand: {u0, u1, y0, y1} | null }
    in wall coordinates (u along the wall, y absolute height).
 
    The height rules are Barnwright's shop rules, now read from the construction
@@ -295,8 +299,12 @@ export function pkFixtures(state, frame, cat) {
    For a gable window it returns the same shape with plane "gable" (on the F or
    B gable end, drawn at z = +-L/2 even on a front-porch building) and x0, x1
    in WORLD x, the trim pieces clipped at the roof line exactly as they are
-   drawn (clipped: true when the roof cut any of it). On an R or L wall it is a
-   plain wall rectangle. Lights, porch posts and interior items are not
+   drawn (clipped: true when the roof cut any of it). u, clear, u0 and u1 are in
+   the END WALL's own coordinates like everything else here -- which on the
+   back (B) run the other way from world x: Barnwright draws a gable window on
+   B at world x = its pos, NOT mirrored as a wall item on B is, so there u is
+   -pos. The world-x twins are x (the centre), x0, x1 and clearX. On an R or L
+   wall it is a plain wall rectangle. Lights, porch posts and interior items are not
    openings: null. */
 export function openingRect(it, plan) {
   var CAT = plan.CAT, t = plan.t, d = plan.d, ws = plan.ws, prof = plan.prof, con = plan.construction;
@@ -345,13 +353,13 @@ export function openingRect(it, plan) {
   var sill = null, band = null;
   if (t.porch && c.k !== "ru") {
     var hby = yb + ch + fr - 0.04, hbh = 0.29, hbe = 0.12;
-    band = { y0: hby, y1: hby + hbh };
+    band = { u0: u - HW2 - fr - hbe, u1: u + HW2 + fr + hbe, y0: hby, y1: hby + hbh };
     u0 = Math.min(u0, u - HW2 - fr - hbe); u1 = Math.max(u1, u + HW2 + fr + hbe);
     yHi = Math.max(yHi, hby + hbh);
   }
   if (isWn) {
     var syt = yb - 0.02, syb = yb - 0.27, sE = 0.10;
-    sill = { y0: syb, y1: syt };
+    sill = { u0: hxl - sE, u1: hxr + sE, y0: syb, y1: syt };
     u0 = Math.min(u0, hxl - sE); u1 = Math.max(u1, hxr + sE);
     yLo = Math.min(yLo, syb);
   }
@@ -360,7 +368,7 @@ export function openingRect(it, plan) {
     u: u, hw: HW2, yb: yb, ch: ch,
     clear: { u0: u - HW2, u1: u + HW2, y0: yb, y1: yb + ch },
     casing: { u0: hxl, u1: hxr, y0: yb, y1: revealY },
-    head: { y0: hyb, y1: hyt },
+    head: { u0: hxl - hE, u1: hxr + hE, y0: hyb, y1: hyt },
     sill: sill, porchBand: band,
     u0: u0, u1: u1, y0: yLo, y1: yHi,
   };
@@ -434,10 +442,15 @@ function gableRect(it, c, plan) {
     clipped = !drawn || Math.abs(drawn.x0 - full.x0) > 1e-12 || Math.abs(drawn.x1 - full.x1) > 1e-12 ||
       Math.abs(drawn.y0 - full.y0) > 1e-12 || Math.abs(drawn.y1 - full.y1) > 1e-12;
   }
+  /* the opening itself: the catalogue box, except the octagon, whose 2.3 ft
+     catalogue size INCLUDES its trim ring -- the window inside it is OCT_WIN
+     (18 in) across, as renderGableWin draws it (Rw = OCT_WIN/2, not scaled
+     when a small gable shrinks the ring) */
+  var ow = c.draw === "octagon" ? OCT_WIN : c.w, oh = c.draw === "octagon" ? OCT_WIN : c.h;
   var out = {
     wall: it.wall, plane: onSide ? "wall" : "gable", kind: c.k, draw: c.draw,
     u: u, yc: yc, w: c.w, h: c.h,
-    clear: { u0: u - c.w / 2, u1: u + c.w / 2, y0: yc - c.h / 2, y1: yc + c.h / 2 },
+    clear: { u0: u - ow / 2, u1: u + ow / 2, y0: yc - oh / 2, y1: yc + oh / 2 },
     unclipped: { x0: full.x0, x1: full.x1, y0: full.y0, y1: full.y1 },
     clipped: clipped,
   };
@@ -448,8 +461,12 @@ function gableRect(it, c, plan) {
     /* on the gable plane the drawing uses world x; in the end wall's own
        coordinates the back (B) runs the other way */
     out.end = it.wall === "B" ? "B" : "F"; out.z = gz; out.sgn = sgn;
+    out.x = u; out.clearX = { x0: out.clear.u0, x1: out.clear.u1 };
     out.x0 = drawn.x0; out.x1 = drawn.x1;
-    if (it.wall === "B") { out.u0 = -drawn.x1; out.u1 = -drawn.x0; } else { out.u0 = drawn.x0; out.u1 = drawn.x1; }
+    if (it.wall === "B") {
+      out.u = -u; out.clear = { u0: -out.clearX.x1, u1: -out.clearX.x0, y0: out.clear.y0, y1: out.clear.y1 };
+      out.u0 = -drawn.x1; out.u1 = -drawn.x0;
+    } else { out.u0 = drawn.x0; out.u1 = drawn.x1; }
   }
   return out;
 }

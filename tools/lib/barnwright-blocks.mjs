@@ -46,7 +46,7 @@ export const BUILDSHED = Object.freeze({ from: 3854, to: 4078 });
 
 /* mkTex creates its FIRST canvas on this line: that is the entry of one
    texture, where the capture restarts the seeded random numbers. (Its second
-   canvas, for the height map, is created further down, on line 1730.) */
+   canvas, for the height map, is created further down, on line 1729.) */
 export const MKTEX_ENTRY_LINE = 1717;
 
 /* Functions replaced by a labelling wrapper while one build is recorded.

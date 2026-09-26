@@ -31,12 +31,14 @@
    (hooks pushTri / uploadBuffers and the wrapped functions listed in
    barnwright-blocks.mjs, then puts every original back), and the picture
    taker for the look fixtures (fixed camera, shadows forced on, the
-   frame-cost watchdogs frozen, draw() and read the canvas in one task). */
+   frame-cost watchdogs frozen, draw() twice -- see inPageLook for why --
+   and read the canvas in the same task). */
 
 import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
+import { createHash } from "node:crypto";
 import { MULBERRY32_SOURCE, textureSeed } from "../../engine/seeded.js";
-import { BARNWRIGHT_PUBLIC, MKTEX_ENTRY_LINE } from "./barnwright-blocks.mjs";
+import { BARNWRIGHT_PUBLIC, BARNWRIGHT_SHA256, MKTEX_ENTRY_LINE } from "./barnwright-blocks.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -55,9 +57,20 @@ function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 async function probe(url) {
   try {
     const r = await fetch(url, { cache: "no-store" });
-    return r.ok ? await r.text() : null;
+    return r.ok ? Buffer.from(await r.arrayBuffer()) : null;
   } catch (e) {
     return null;
+  }
+}
+
+/* The page the browser will actually be given must be the pinned copy, byte
+   for byte -- checking the file on disk is not enough when a server that was
+   already running is reused (it could be serving some other folder). */
+function assertServedPinned(buf, url) {
+  const sha = createHash("sha256").update(buf).digest("hex");
+  if (sha !== BARNWRIGHT_SHA256) {
+    throw new Error(`${url}3ddesign.html is not the pinned Barnwright copy (SHA-256 ${sha}). ` +
+      "Something else is answering on that port: stop it, or let the capture start its own server.");
   }
 }
 
@@ -65,7 +78,11 @@ async function probe(url) {
    there with the same file, reuse it (a previous run left it up). */
 export async function startServer(port = PORT) {
   const url = `http://127.0.0.1:${port}/`;
-  if ((await probe(url + "3ddesign.html")) != null) return { url, reused: true, stop: async () => {} };
+  const already = await probe(url + "3ddesign.html");
+  if (already != null) {
+    assertServedPinned(already, url);
+    return { url, reused: true, stop: async () => {} };
+  }
   const child = spawn("npx", ["http-server", BARNWRIGHT_PUBLIC, "-p", String(port), "-a", "127.0.0.1", "-s", "-c-1"], {
     stdio: "ignore", detached: true,
   });
@@ -73,7 +90,11 @@ export async function startServer(port = PORT) {
   child.on("exit", () => { dead = true; });
   for (let i = 0; ; i++) {
     if (dead) throw new Error(`The web server on port ${port} did not start (is the port taken?).`);
-    if ((await probe(url + "3ddesign.html")) != null) break;
+    const got = await probe(url + "3ddesign.html");
+    if (got != null) {
+      try { assertServedPinned(got, url); } catch (e) { try { process.kill(-child.pid, "SIGTERM"); } catch (e2) { /* gone */ } throw e; }
+      break;
+    }
     if (i > 300) throw new Error(`The web server on port ${port} never answered.`);
     await sleep(100);
   }
@@ -425,7 +446,28 @@ export function inPageCapture(table) {
    it). The watchdogs are frozen by pushing their warm-up out of reach
    (WARMUP = 1e15: neither the frame-cost check in draw() nor the one in the
    loop ever runs), shadows are forced on and supersampling is capped at 2,
-   and any running camera glide is dropped. */
+   and any running camera glide is dropped.
+
+   IT DRAWS TWICE, AND READS THE SECOND. Found while proving the pictures
+   repeatable (Sep 26 2026): buildShed deletes the old vertex buffers, but the
+   normal and texture-coordinate arrays are still switched on and pointing at
+   them from the last frame. So in Barnwright the FIRST draw after every
+   rebuild has every draw of its shadow pass refused by WebGL
+   (INVALID_OPERATION) -- AFTER the shadow map has been cleared (line 4137) --
+   so that frame has NO cast shadow at all (checked: pixel for pixel the same
+   as a draw with shadows switched off, whatever building was drawn before).
+   Whether the capture's first draw was that frame depended on whether the
+   page's own animation loop happened to draw in between, which is what made
+   one recording show a cast shadow and the next not. The first draw re-points
+   the arrays; the second draws the real shadow for this building and this
+   camera, with no error (the capture fails otherwise).
+   IT IS VISIBLE IN BARNWRIGHT: its loop only draws while needsDraw is set and
+   one draw clears it, so after a rebuild with the camera still (a colour tap,
+   a size change, an item added) the customer sees the building with no cast
+   shadow until the camera next moves (checked: the loop draws exactly one
+   frame after a colour tap and the screen changes when it draws once more).
+   The recorded picture is Barnwright's look once the camera has moved, which
+   is what our engine draws on its first frame. */
 export function inPageLook(cfg) {
   yawAnim = null;
   autoSpin = false;
@@ -435,11 +477,21 @@ export function inPageLook(cfg) {
   DPRCAP = 2;
   cam.yaw = cfg.yaw; cam.pitch = cfg.pitch;
   cam.dist = cam.fitDist * cfg.distOverFit;
-  draw();
+  function glErrors() {
+    const out = [];
+    for (let e = gl.getError(), n = 0; e && n < 16; e = gl.getError(), n++) out.push(e);
+    return out;
+  }
+  const before = glErrors();
+  draw();                      /* re-points the vertex arrays at the new buffers; its shadow pass fails (see above) */
+  const first = glErrors();
+  draw();                      /* the picture: a shadow map made for THIS building and camera */
+  const second = glErrors();
   const png = canvas.toDataURL("image/png");
   needsDraw = false;
   return {
     png,
+    glErrors: { beforeDrawing: before, firstDraw: first, secondDraw: second },
     camera: { yaw: cam.yaw, pitch: cam.pitch, dist: cam.dist, fitDist: cam.fitDist, distOverFit: cfg.distOverFit },
     canvas: { width: canvas.width, height: canvas.height, clientWidth: canvas.clientWidth, clientHeight: canvas.clientHeight },
     dpr: Math.min(DPRCAP, Math.max(window.devicePixelRatio || 1, 1.5)),

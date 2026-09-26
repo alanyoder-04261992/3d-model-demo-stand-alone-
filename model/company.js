@@ -70,6 +70,9 @@ function itemPrice(v) { return isObj(v) ? v.price : v; }
 export function originProblem(o) {
   if (o === "*") return "is \"*\", which would let ANY website embed the designer; list the company's own sites instead";
   if (typeof o !== "string") return "must be text like \"https://acme-sheds.com\"";
+  /* "https://*" and "https://*.com" are wildcards too: in a frame-ancestors
+     header the first lets ANY https site embed the designer. */
+  if (o.indexOf("*") >= 0) return `has a "*" in it, which would let other websites embed the designer; list each of the company's own sites in full, like "https://acme-sheds.com"`;
   let u;
   try { u = new URL(o); } catch (e) { return "is not a web address (write it like \"https://acme-sheds.com\")"; }
   const local = u.hostname === "localhost" || u.hostname === "127.0.0.1";
@@ -323,7 +326,12 @@ export function validate(company, manufacturer) {
       err.push(`${dormerStyles.map((k) => styles[k].name).join(", ")} ${dormerStyles.length > 1 ? "are" : "is"} offered, so options.dormers needs at least one dormer size with a price.`);
     }
     if (keysOf(O.elec).length) {
-      for (const ic of ["gfci", "outlet", "ilight"]) {
+      /* every fixture the OFFERED packages place, read from the manufacturer's
+         own fixture lists (a fixture nobody priced would be silently left out
+         of a package the customer pays for) */
+      const fx = [];
+      for (const id of keysOf(O.elec)) for (const f of ((isObj(mO.elec) && isObj(mO.elec[id]) && mO.elec[id].fixtures) || [])) if (f && fx.indexOf(f.cat) < 0) fx.push(f.cat);
+      for (const ic of fx) {
         if (own(mItems, ic) && !own(items, ic)) err.push(`An electrical package places a ${mItems[ic].name}, so items.${ic} needs a price (0 is fine: package pieces are never charged on their own).`);
       }
     }
@@ -665,5 +673,8 @@ export function resolve(company, manufacturer, library) {
     renames: Object.assign({ items: {}, sizes: {}, colors: {} }, stripHelp(copy(c.renames || {}))),
   };
   if (!cat.brand.short) cat.brand.short = cat.brand.name;
+  /* an origin is compared letter for letter with the embedding page's
+     (event.origin has no trailing slash), so store exactly that form */
+  cat.embed.origins = (cat.embed.origins || []).map((o) => new URL(o).origin);
   return deepFreeze(cat);
 }

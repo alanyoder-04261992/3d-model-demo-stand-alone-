@@ -18,7 +18,12 @@
    4. Anything that no longer exists -- a style, a size, an item, a wall, a
       colour, an upgrade, an extra -- comes back as a plain-English warning,
       never a silent drop; a company's renames map old names to new ones.
-   5. A damaged link is refused in plain words.
+   5. A damaged link is refused in plain words; a hand-edited one (a position
+      that is not a number, an item, style, size, wall or colour called
+      "constructor" or "__proto__", an item that is not a list) is read with a
+      warning -- never a crash, a NaN position or a NaN price; a link with no
+      item list gets the standard doors and windows; and a quote never adds a
+      price the company does not have (no NaN total).
    6. normalize switches off what a company does not offer (and makes a short
       side porch 4x8), and changes nothing on a Barnwright design.
    7. toState lays a saved building out at ITS size (size, then style, then
@@ -235,6 +240,56 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   check("a damaged link is refused in plain words", J(await decode("https://acme.example/design#d=" + t)) === J(await decode(t)), "a whole link (…#d=…) did not decode like the bare text");
   let err = null; try { decodeSync("zAAAA"); } catch (e) { err = e; }
   check("a damaged link is refused in plain words", !!err && /compressed/.test(err.message), "decodeSync did not say it cannot unpack a compressed link");
+}
+
+{
+  const G5 = "a hand-edited link is read safely";
+  const base5 = fromState(defaults(DEMO), DEMO);
+  const b64 = (o) => Buffer.from(J(o)).toString("base64url");
+  const EDITS = [
+    ["a position written as text", (d) => { d.items.push({ cat: "w23", wall: "L", pos: "abc" }); }],
+    ["a position written as an object", (d) => { d.items.push({ cat: "w23", wall: "L", pos: { x: 1 } }); }],
+    ["a shelf's px and length as text", (d) => { d.items.push({ cat: "shelf", wall: "IN", px: "abc", pz: 0, ln: "long" }); }],
+    ["a light's height as text", (d) => { d.items.push({ cat: "light", wall: "R", pos: 0, vy: "high" }); }],
+    ["an item called __proto__", (d) => { d.items.push({ cat: "__proto__", wall: "L", pos: 1 }); }],
+    ["an item called constructor", (d) => { d.items.push({ cat: "constructor", wall: "L", pos: 1 }); }],
+    ["a style called constructor", (d) => { d.type = "constructor"; }],
+    ["a style called toString", (d) => { d.type = "toString"; }],
+    ["a size called constructor", (d) => { d.size = "constructor"; }],
+    ["a wall called constructor", (d) => { d.items.push({ cat: "w23", wall: "constructor", pos: 1 }); }],
+    ["a swap from constructor", (d) => { d.items.push({ cat: "w23", wall: "L", pos: 1, inc: true, origCat: "constructor" }); }],
+    ["a colour called constructor", (d) => { d.colors.body = "constructor"; }],
+  ];
+  for (const cfg of [DEMO.cfg, 99]) for (const [what, edit] of EDITS) {
+    const d = copy(base5); d.cfg = cfg; edit(d);
+    let r = null, err = null;
+    try { r = toState(await decode(encodeSync(d)), DEMO); } catch (e) { err = e; }
+    const label = what + (cfg === 99 ? " (older price list: the full clamp)" : "");
+    if (!check(G5, !err, `${label}: toState threw ${err && err.message}`)) continue;
+    const nums = r.state.items.flatMap((i) => ["pos", "vy", "px", "pz", "ln"].filter((f) => i[f] !== undefined).map((f) => i[f]));
+    check(G5, nums.every((v) => typeof v === "number" && isFinite(v)), `${label}: an item came back with a position that is not a number: ${J(r.state.items)}`);
+    check(G5, isFinite(priceParts(r.state, DEMO).total), `${label}: the quote total is not a number`);
+    check(G5, r.warnings.length >= (cfg === 99 ? 2 : 1), `${label}: nothing was said about it (${J(r.warnings)})`);
+  }
+  for (const o of [{ v: 1, t: "UT", s: "10x20", i: [null] }, { v: 1, t: "UT", s: "10x20", i: ["w23"] }, { v: 1, t: "UT", s: "10x20", i: [[]] }]) {
+    let r = null, err = null;
+    try { r = toState(await decode(b64(o)), DEMO); } catch (e) { err = e; }
+    check(G5, !err && r.warnings.length >= 1, `${J(o)}: ${err ? "threw " + err.message : "no warning"}`);
+  }
+  {
+    const r = toState(await decode(b64({ v: 1, t: "UT", s: "10x16" })), DEMO);
+    const want = defaults(DEMO); setType(want, "UT", DEMO); want.size = "10x16"; resetItems(want, frameOf(want, DEMO), DEMO);
+    check(G5, J(r.state.items) === J(want.items) && r.state.items.length > 0, `a link with no item list did not get the standard doors and windows: ${J(r.state.items)}`);
+  }
+  {
+    const nd = copy(readJSON("companies/demo/company.json")); delete nd.options.misc.shutter; delete nd.options.misc.lite; delete nd.options.misc.ext;
+    const catM = resolve(nd, M, LIB);
+    const s = defaults(catM); setType(s, "UT", catM);
+    s.items.push({ id: "w", cat: "w48", wall: "B", pos: 0, inc: false, shut: true, lite: true });
+    s.elec = { pkg: 1, ext: true }; pkFixtures(s, frameOf(s, catM), catM);
+    const pp = priceParts(s, catM);
+    check(G5, isFinite(pp.total) && !pp.lines.some((l) => /Shutters|Door window|Exterior light/.test(l[0])), `shutters, a door window and the outside light were priced by a company that sells none of them: ${J(pp)}`);
+  }
 }
 
 /* ---------------------------------------------------------------- 6 normalize */

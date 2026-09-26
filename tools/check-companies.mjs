@@ -168,6 +168,9 @@ const BROKEN = [
   ["postMessage with no embedding site", (c) => { c.leads = { mode: "postMessage" }; c.embed = { origins: [] }; }, "embed.origins must list that site"],
   ["a lead field with a bad setting", (c) => { c.leads = { mode: "none", fields: { phone: "maybe" } }; }, "must be \"required\", \"optional\" or \"off\""],
   ["an embed origin of *", (c) => { c.embed = { origins: ["*"] }; }, "which would let ANY website embed"],
+  ["an embed origin of https://*", (c) => { c.embed = { origins: ["https://*"] }; }, "has a \"*\" in it"],
+  ["an embed origin of https://*.com", (c) => { c.embed = { origins: ["https://*.com"] }; }, "has a \"*\" in it"],
+  ["an embed origin of every subdomain", (c) => { c.embed = { origins: ["https://*.acme.com"] }; }, "has a \"*\" in it"],
   ["an embed origin on http", (c) => { c.embed = { origins: ["http://acme.com"] }; }, "must start with https://"],
   ["an embed origin with a path", (c) => { c.embed = { origins: ["https://acme.com/sheds"] }; }, "with no path"],
   ["a bad share address", (c) => { c.embed = { origins: [], shareUrl: "ftp://acme.com/x" }; }, "must start with https://"],
@@ -188,6 +191,20 @@ for (const [what, mutate, want] of BROKEN) {
 {
   const c = copy(demoFile); c.embed = { origins: ["http://localhost:8080", "http://127.0.0.1:8312", "https://acme.com"] };
   check("broken copies give the right plain-English error", validate(c, M).length === 0, "localhost / 127.0.0.1 on http should be allowed as embed origins: " + validate(c, M).join(" | "));
+  /* the embedding page's origin never ends in "/", and it is compared letter
+     for letter, so a trailing slash in the file must not survive into the catalogue */
+  const c2 = copy(demoFile); c2.embed = { origins: ["https://acme.com/", "http://localhost:8080/"] };
+  check("broken copies give the right plain-English error", J(resolve(c2, M, LIB).embed.origins) === J(["https://acme.com", "http://localhost:8080"]), "an origin written with a trailing slash was not stored as the bare origin");
+}
+{
+  /* a package fixture nobody priced would be left out of a package the
+     customer pays for: validation reads the fixtures from the manufacturer */
+  const m2 = copy(M); m2.items.dimmer = { name: "Dimmer Switch", kind: "out", draw: "outlet", w: 0.7, h: 1, int: true };
+  m2.options.elec["2"].fixtures.push({ cat: "dimmer", wall: "R", pos: "1" });
+  const errs = validate(copy(demoFile), m2);
+  check("broken copies give the right plain-English error", errs.some((e) => e.indexOf("items.dimmer needs a price") >= 0), `a package fixture with no price was not named: ${J(errs)}`);
+  const only1 = copy(demoFile); delete only1.options.elec["2"]; delete only1.options.elec["3"]; delete only1.items.outlet;
+  check("broken copies give the right plain-English error", !validate(only1, m2).some((e) => /items\.(outlet|dimmer) needs a price/.test(e)), "a fixture of a package the company does not sell was demanded a price");
 }
 
 /* ---------------------------------------------------------------- 7 no inherited price */

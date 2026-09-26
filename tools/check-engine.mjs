@@ -182,7 +182,10 @@ console.log("The kit on its own (no browser)");
     "var canvas={clientWidth:cw,clientHeight:ch}, interacted=false, cam={yaw:0,pitch:0,dist:46,fitDist:46};\n" + refLine + "\n" + Y.slice(i, j) + "\nfitCamera(W,L); return cam.fitDist;");
   let n = 0, bad = [];
   for (const [W, L] of [[6, 8], [8, 12], [10, 16], [10, 20], [12, 24], [12, 32], [14, 40], [16, 12]])
-    for (const [cw, ch] of [[742, 803], [1440, 900], [820, 1180], [1180, 820], [390, 700], [1024, 1366], [1000, 1000], [700, 735], [700, 736], [594, 1270], [0, 0]]) {
+    /* the last three sit either side of the 0.1% tolerance ("a picture already
+       at the yardstick keeps its old number"): 1000x1088 and 1000x940 are
+       backed off by 0.5% and 0.75%, 1000x1083 is 0.07% over and must NOT be */
+    for (const [cw, ch] of [[742, 803], [1440, 900], [820, 1180], [1180, 820], [390, 700], [1024, 1366], [1000, 1000], [700, 735], [700, 736], [594, 1270], [0, 0], [1000, 1088], [1000, 940], [1000, 1083]]) {
       n++;
       const a = CAM.fitDistFor(W, L, { w: cw, h: ch }, "fitref"), b = yoderFit(W, L, cw, ch);
       if (!Object.is(a, b)) bad.push(W + "x" + L + " on " + cw + "x" + ch + ": " + a + " vs " + b);

@@ -11,6 +11,10 @@
      * hiding the "doors" step removes every red pixel and nothing else moves;
      * lifting the "roofing" step 3 ft raises the blue roof on the screen while
        the door stays exactly where it was; hiding "roofing" removes it;
+     * a hidden step is gone from the SHADOW too: hiding "roofing" gives
+       exactly the picture of the building drawn with no roof at all, and the
+       Finished view of a building that carries framing is exactly the
+       building without it (the shadow pass has its own copy of the table);
      * a rebuild (new buffers, old ones deleted) draws the same picture on its
        very first frame -- Barnwright loses the shadows on that frame;
      * a snapshot of another view comes back as a picture of the right size,
@@ -89,6 +93,7 @@ try {
       hideRoof: SMOKE.render({ roofing: { hidden: true } }),
       finished: SMOKE.render(null),
       views: SMOKE.views(),
+      absent: SMOKE.absentTest(),
       rebuild: SMOKE.rebuildTest(),
       snap: await SMOKE.snapshotTest(),
       loop: await SMOKE.loopTest(),
@@ -107,6 +112,10 @@ try {
     const V = R.views;
     ok("the Finished view hides the framing board and nothing else (the same picture as hiding just that board)", V.finished.hash !== V.all.hash && V.finished.hash === V.noBoard.hash && V.finished.red === A.red);
     ok("the Framing view hides the finish steps (no door, no roof) but keeps the ground, skids and lumber", V.framing.red === 0 && V.framing.blue === 0 && V.framing.nonBlank > 50000);
+    const AB = R.absent;
+    ok("a hidden step leaves no shadow behind: 'roofing' hidden is exactly the picture of the building drawn with no roof at all", AB.hideRoof === AB.noRoof && AB.hideRoof !== AB.full, JSON.stringify(AB));
+    ok("...and the roof's shadow really is in the picture (" + AB.roofShadow + " px outside the roof change when it goes), so that comparison can fail", AB.roofShadow > 500);
+    ok("the Finished view of a building that also carries its framing is exactly the building without the framing (no stud or truss shadow on it)", AB.finished === AB.noFrame, JSON.stringify(AB));
     ok("a rebuild draws the same picture on its very first frame (shadows kept)", R.rebuild.before === R.rebuild.first && R.rebuild.first === R.rebuild.second, JSON.stringify(R.rebuild));
     ok("a snapshot comes back as a " + R.snap.stats.w + "x" + R.snap.stats.h + " PNG with a building in it (" + R.snap.stats.nonBlank + " px)", R.snap.png === "data:image/png;base64," && R.snap.stats.w === 200 && R.snap.stats.h === 150 && R.snap.stats.nonBlank > 5000);
     ok("...and the live canvas (" + R.snap.live.w + "x" + R.snap.live.h + ") and camera are left as they were", R.snap.live.w === 480 && R.snap.live.h === 360 && R.snap.camYaw === 0.62);

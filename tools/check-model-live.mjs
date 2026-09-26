@@ -10,7 +10,8 @@
    1. the tables: prices, styles, categories, items, options and colours read
       live from the page equal the resolved catalogue; the design a new
       visitor starts on is the same;
-   2. for EVERY style at EVERY size: the size (dims), the side-porch span, every
+   2. for EVERY style at EVERY size (and 2b, the rake overhang buildShed hands
+      profileRoof, per style): the size (dims), the side-porch span, every
       wall (wallDefs), the roof line (roofProfile), the ridge height (roofRise),
       the standard doors and windows after clamping (resetItems), and the
       gable band with and without gable windows;
@@ -18,6 +19,9 @@
    4. clampPos with items thrown to random places (and added doors, windows,
       lights, benches, shelves, outlets, gable windows, turned transoms),
       clamped in order -- plus neighborGaps, snapCenter and freeSpot;
+   4b. clampPos on CROWDED walls: three to seven openings thrown onto one wall
+      of every building, which is what makes the settling loop take a third
+      pass (the random round above never needs more than two);
    5. the electrical package fixtures (packages 1-3, with and without the
       exterior light);
    6. priceParts for the standard design of every size and a sample of option
@@ -33,7 +37,14 @@
       buildShed in Barnwright's page, pushTri is wrapped and every triangle
       that goes into the "trim" material while CURIT names an item is kept; the
       edges of those triangles, turned back into that item's wall coordinates,
-      must equal openingRect's u0 u1 y0 y1 (to a billionth of a foot).
+      must equal openingRect's u0 u1 y0 y1 (to a billionth of a foot). And the
+      PIECES, not just the outer box: every edge openingRect reports for the
+      side casings, the head board, the sill and the porch band must be a
+      coordinate the trim was drawn at (the head's ears always reach past the
+      sill's, so the outer box alone never sees the sill); a gable window's
+      centre, its opening and its trim must all be in one set of coordinates
+      (one is placed off-centre on the back gable, where world x and the wall's
+      own u run opposite ways).
 
    Exact means exact: numbers are compared with ===, not a tolerance, except
    step 7, where the drawn triangles are turned back from world coordinates. */
@@ -43,7 +54,7 @@ import { barnwrightCatalogue, barnwrightCompany, golden } from "./lib/barnwright
 import { readJSON, readManufacturer } from "./lib/load.mjs";
 import { resolve } from "../model/company.js";
 import { frameOf } from "../model/frame.js";
-import { roofRise, gableBandY, profileYat, cottageEave, gableClip, ROOF_TH } from "../model/roof-shapes.js";
+import { roofRise, roofShape, gableBandY, profileYat, cottageEave, gableClip, ROOF_TH } from "../model/roof-shapes.js";
 import { resetItems, clampPos, neighborGaps, snapCenter, freeSpot, pkFixtures, openingRect } from "../model/layout.js";
 import { priceParts, pSizes, minPrice, pPrice, money, rateCharges } from "../model/pricing.js";
 import { defaults } from "../model/design.js";
@@ -162,6 +173,24 @@ try {
     same("gableBandY", label + " + gable window on R", band(noG.concat([{ id: "g3", cat: "fake", wall: "R", pos: 0 }])), b.gR);
   });
 
+  /* ---------------------------------------------------------------- 2b rake overhang */
+  /* The gable-end overhang is a style trait here (GU, CS and MCS are 0.03) and
+     a roof-shape setting otherwise. Barnwright decides it inline in buildShed
+     and hands it to profileRoof, its only call: wrap profileRoof and read it. */
+  const RAKE = Object.keys(cat.P).map((t) => [t, Object.keys(cat.P[t])[0]]);
+  const pageRake = await bw.evaluate((cases) => cases.map(([t, z]) => {
+    Object.assign(state, { type: t, size: z, pLen: 12, pFlip: false, pMid: false, items: [], sel: null, seq: 0, elec: { pkg: 0, ext: false } });
+    resetItems();
+    const got = [], orig = window.profileRoof;
+    window.profileRoof = function (prof, L, ov, W) { got.push(ov); return orig.apply(this, arguments); };
+    try { buildShed(); } finally { window.profileRoof = orig; }
+    return got;
+  }), RAKE);
+  RAKE.forEach(([t, z], i) => {
+    const fr = frameOf(freshState(t, z), cat);
+    same("rake overhang (what buildShed hands profileRoof)", t, [roofShape(fr.t, fr.construction).rakeOverhang], pageRake[i]);
+  });
+
   /* ---------------------------------------------------------------- 3 porch variants */
   const VARIANTS = [{ pLen: 8 }, { pLen: 12, pFlip: true }, { pLen: 8, pFlip: true }, { pMid: true }, { pLen: 8, pMid: true }];
   const PORCH = [];
@@ -228,6 +257,30 @@ try {
     same("neighborGaps", label, s.items.map((it) => neighborGaps(it, s, fr)), b.gaps);
     same("snapCenter", label, s.items.map((it) => { const g = snapCenter(it, s, fr); return [g, it.pos]; }), b.snaps);
     same("freeSpot", label, ["F", "B", "R", "L"].map((w) => [freeSpot(w, 2.1, s, fr), freeSpot(w, 4.021, s, fr), freeSpot(w, 8, s, fr)]), b.spots);
+  });
+
+  /* ---------------------------------------------------------------- 4b crowded walls */
+  const rnd2 = mulberry32(99);
+  const CROWD_CATS = ["w23", "w33", "w36", "w48", "d36in", "ru6", "tr", "dfr"];
+  const CROWD = [];
+  for (const [t, z] of ALL) for (let r = 0; r < 6; r++) {
+    const s = freshState(t, z);
+    const fr = frameOf(s, cat);
+    resetItems(s, fr, cat);
+    const wall = ["F", "B", "R", "L"][Math.floor(rnd2() * 4)];
+    const k = 3 + Math.floor(rnd2() * 5);
+    for (let i = 0; i < k; i++) s.items.push({ id: "c" + i, cat: CROWD_CATS[Math.floor(rnd2() * CROWD_CATS.length)], wall, pos: (rnd2() * 2 - 1) * fr.ws[wall].len / 2, inc: false, shut: false, dbl: rnd2() < 0.3 });
+    CROWD.push(s);
+  }
+  const pageCrowd = await bw.evaluate((states) => states.map((s) => {
+    Object.assign(state, JSON.parse(JSON.stringify(s)));
+    state.items.forEach(clampPos);
+    return JSON.parse(JSON.stringify(state.items));
+  }), CROWD);
+  CROWD.forEach((s0, i) => {
+    const s = copy(s0), fr = frameOf(s, cat);
+    s.items.forEach((it) => clampPos(it, s, fr));
+    same("clampPos on crowded walls (up to seven openings on one wall)", `${s0.type} ${s0.size} wall ${s0.items[s0.items.length - 1].wall} #${i % 6 + 1}`, s.items, pageCrowd[i]);
   });
 
   /* ---------------------------------------------------------------- 5 package fixtures */
@@ -375,7 +428,7 @@ try {
 
   /* ---------------------------------------------------------------- 7 openingRect */
   const ADD = [["w33", "L", { shut: true }], ["w36", "B", { lite: true }], ["dfr", "L", {}], ["ru6", "B", {}], ["g1824", "F", {}], ["oct", "B", {}],
-    ["tr", "L", { rot: true }], ["w23", "B", { dbl: true, shut: true }], ["d36in", "L", {}], ["light", "R", {}], ["g1824", "R", {}], ["fake", "B", { vy: 2 }], ["w48", "R", {}]];
+    ["tr", "L", { rot: true }], ["w23", "B", { dbl: true, shut: true }], ["d36in", "L", {}], ["light", "R", {}], ["g1824", "R", {}], ["fake", "B", { vy: 2 }], ["w48", "R", {}], ["g1824", "B", { pos: 1.1 }]];
   const TRIM = ALL.map(([t, z]) => [t, z, {}]);
   for (const [t, z] of ALL) if (cat.TYPES[t].porch === "S") for (const v of [{ pFlip: true }, { pMid: true }, { pLen: 8 }]) TRIM.push([t, z, v]);
   const pageTrim = await bw.evaluate(([cases, add]) => cases.map(([t, z, v]) => {
@@ -408,11 +461,18 @@ try {
       });
       b.n = pts.length / 3;
       b.plane = gablePlane ? "gable" : "wall";
+      /* every distinct coordinate the trim was drawn at, for the piece test */
+      if (!gablePlane) {
+        const o = w.ox !== undefined ? [w.ox, w.oz] : (w.n[2] !== 0 ? [w.cx || 0, w.at] : [w.at, w.cx || 0]);
+        const us = new Set(), ys = new Set();
+        pts.forEach((p) => { us.add((p[0] - o[0]) * w.ax[0] + (p[2] - o[1]) * w.ax[2]); ys.add(p[1]); });
+        b.us = Array.from(us); b.ys = Array.from(ys);
+      }
       boxes[it.id] = b;
     });
     return { items: JSON.parse(JSON.stringify(state.items)), boxes };
   }), [TRIM, ADD]);
-  let tris = 0, clippedN = 0;
+  let tris = 0, clippedN = 0, pieces = 0;
   TRIM.forEach(([t, z, v], i) => {
     const b = pageTrim[i];
     const s = freshState(t, z, v); s.items = b.items;
@@ -428,9 +488,30 @@ try {
       const want = [box.u0, box.u1, box.y0, box.y1];
       const ok = got.every((v, k) => Math.abs(v - want[k]) < 1e-9) && (box.plane === "gable") === (r.plane === "gable");
       tally("openingRect vs drawn trim", ok, `${label}: openingRect ${JSON.stringify(got)} vs drawn ${JSON.stringify(want)} (${box.plane})`);
+      if (box.plane === "wall" && r.casing) {
+        const near = (list, v) => list.some((x) => Math.abs(x - v) < 1e-9);
+        const us = [["casing.u0", r.casing.u0], ["casing.u1", r.casing.u1], ["casing inner edge (clear.u0 + 0.02)", r.clear.u0 + 0.02], ["casing inner edge (clear.u1 - 0.02)", r.clear.u1 - 0.02],
+          ["head.u0", r.head.u0], ["head.u1", r.head.u1]];
+        const ys = [["casing.y0", r.casing.y0], ["casing.y1", r.casing.y1], ["head.y0", r.head.y0], ["head.y1", r.head.y1]];
+        if (r.sill) { us.push(["sill.u0", r.sill.u0], ["sill.u1", r.sill.u1]); ys.push(["sill.y0", r.sill.y0], ["sill.y1", r.sill.y1]); }
+        if (r.porchBand) { us.push(["porchBand.u0", r.porchBand.u0], ["porchBand.u1", r.porchBand.u1]); ys.push(["porchBand.y0", r.porchBand.y0], ["porchBand.y1", r.porchBand.y1]); }
+        const missing = us.filter((e) => !near(box.us, e[1])).concat(ys.filter((e) => !near(box.ys, e[1])));
+        tally("openingRect pieces (casing, head, sill, porch band) vs drawn trim", missing.length === 0 && us.length + ys.length >= 10,
+          `${label}: nothing is drawn at ${missing.map((e) => e[0] + " " + e[1]).join(", ")}`);
+        pieces += us.length + ys.length;
+      }
+      if (r.plane === "gable") {
+        /* the trim is symmetric about the window, so its centre (turned into the
+           end wall's own u) must be u, and so must the opening's */
+        const uc = it.wall === "B" ? -(r.unclipped.x0 + r.unclipped.x1) / 2 : (r.unclipped.x0 + r.unclipped.x1) / 2;
+        const ok2 = Math.abs(uc - r.u) < 1e-9 && Math.abs((r.clear.u0 + r.clear.u1) / 2 - r.u) < 1e-9 && Math.abs(r.x - it.pos) < 1e-9 &&
+          (r.u0 === null || (r.u0 <= r.u && r.u <= r.u1) || r.clipped);
+        tally("openingRect pieces (casing, head, sill, porch band) vs drawn trim", ok2, `${label}: a gable window's centre, opening and trim are not in one set of coordinates: ${JSON.stringify({ u: r.u, x: r.x, clear: r.clear, u0: r.u0, u1: r.u1, uc })}`);
+      }
     }
   });
   counts["openingRect vs drawn trim"].note = `${tris} trim triangles measured; ${clippedN} gable windows cut by the roof line`;
+  counts["openingRect pieces (casing, head, sill, porch band) vs drawn trim"].note = `${pieces} piece edges found among the drawn coordinates`;
 } finally {
   await bw.close();
 }
@@ -448,4 +529,4 @@ if (bad) {
   console.log("The model does NOT match Barnwright yet.");
   process.exit(1);
 }
-console.log("Proved: for every style at every size, the model's frame, walls, roof line, standard doors and windows, clamping, gable band, package fixtures, prices and opening rectangles are Barnwright's, number for number.");
+console.log("Proved: for every style at every size, the model's frame, walls, roof line, standard doors and windows, clamping (crowded walls included), gable band, package fixtures, prices and opening rectangles (outer box and every piece) are Barnwright's, number for number.");
