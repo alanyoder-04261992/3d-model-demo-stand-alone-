@@ -46,7 +46,9 @@ async function answers(url) {
 }
 
 /* Serve this repo on our port. Something already answering there is only
-   reused when it serves THIS repo's harness page, byte for byte. */
+   reused when it serves THIS repo's harness page, byte for byte -- and even
+   then openLook() compares every file the page loads with this copy's own
+   file, because another copy of the repo has the same harness page. */
 export async function startServer(port = PORT) {
   const url = `http://127.0.0.1:${port}/`;
   const mine = readFileSync(resolve(ROOT, "tools/look.html"), "utf8");
@@ -112,16 +114,34 @@ export async function openLook() {
   page.on("console", (m) => { if (m.type() === "error") errors.push("console: " + m.text()); });
   const origin = server.url.replace(/\/$/, "");
   const served = barnwrightJSON();
-  await page.route("**/*", (route) => {
+  /* EVERY FILE THE PAGE LOADS MUST BE THIS COPY'S OWN FILE, byte for byte.
+     A web server already answering on our port is reused when it serves the
+     same harness page -- but a different copy of this repo (another checkout,
+     a scratch copy being tested) has the same harness page and a different
+     engine, and the check would then be judging THAT engine while saying it
+     judged this one. So each answer is compared with the file on disk here;
+     anything different is a page error, which fails the check. */
+  const notOurs = [], checkedFiles = new Set();
+  await page.route("**/*", async (route) => {
     const u = route.request().url();
     if (!u.startsWith(origin + "/")) return route.abort();            /* nothing leaves this machine */
-    if (new URL(u).pathname === BARNWRIGHT_JSON_PATH) return route.fulfill({ status: 200, contentType: "application/json", body: served });
-    return route.continue();
+    const path = decodeURIComponent(new URL(u).pathname);
+    if (path === BARNWRIGHT_JSON_PATH) return route.fulfill({ status: 200, contentType: "application/json", body: served });
+    const res = await route.fetch();
+    const body = await res.body();
+    let local = null;
+    try { local = readFileSync(resolve(ROOT, "." + path)); } catch { /* not a file here */ }
+    checkedFiles.add(path);
+    if (res.ok() ? !(local && local.equals(body)) : local != null) {
+      notOurs.push(path);
+      errors.push(`the web server on port ${PORT} answered ${path} with something other than this copy's file (${res.status()}) -- stop whatever is serving that port and run the check again`);
+    }
+    return route.fulfill({ response: res, body });
   });
   await page.goto(origin + "/tools/look.html", { waitUntil: "load" });
   await page.waitForFunction(() => window.look && window.look.ready, null, { timeout: 60000 });
   return {
-    page, errors, server,
+    page, errors, server, notOurs, checkedFiles,
     async useBarnwright() {
       return page.evaluate((url) => window.look.loadServed("barnwright", url), BARNWRIGHT_JSON_PATH);
     },

@@ -77,13 +77,18 @@ function say(text) { statusEl.innerHTML = esc(text); }
 /* Every surface picture any of our renderers uploads (the 6-argument
    texImage2D with an ImageData is the one mkTex uses), kept so the check can
    prove they are the exact bytes Barnwright painted (test/golden/textures.json).
-   Hooked before any renderer exists. */
+   Hooked before any renderer exists. Each upload remembers WHICH graphics
+   context it went to, and textures() names it afterwards by matching that
+   context to a renderer. (This page must never ask for the context itself
+   before the renderer does: the browser keeps the settings of the FIRST
+   request, so asking first would hide any change to engine/gl.js's settings
+   -- antialiasing, see-through -- from this check.) */
 const uploads = [];
 const origTexImage2D = WebGLRenderingContext.prototype.texImage2D;
 WebGLRenderingContext.prototype.texImage2D = function texImage2D() {
   const src = arguments[arguments.length - 1];
   if (arguments.length === 6 && src instanceof ImageData) {
-    uploads.push({ context: this.__lookName || "?", w: src.width, h: src.height, data: new Uint8Array(src.data) });
+    uploads.push({ gl: this, w: src.width, h: src.height, data: new Uint8Array(src.data) });
   }
   return origTexImage2D.apply(this, arguments);
 };
@@ -99,9 +104,7 @@ function rendererFor(trueColour) {
   const cv = document.createElement("canvas");
   cv.setAttribute("data-shader", key);
   box.appendChild(cv);
-  /* name the context before the textures are painted, so the uploads say whose they are */
-  const probe = cv.getContext("webgl", { antialias: true, alpha: true, preserveDrawingBuffer: false });
-  if (probe) probe.__lookName = key;
+  /* the renderer asks for its own graphics context, with the product's own settings (engine/gl.js) */
   const r = createRenderer(cv, { trueColour, scene: "studio", seededTextures: true });
   r.test.freezeWatchdog = true;
   r.test.forceShadow = true;
@@ -185,6 +188,7 @@ function draw(o) {
     canvas: { width: canvas.width, height: canvas.height, clientWidth: canvas.clientWidth, clientHeight: canvas.clientHeight },
     fitDist: result.fitDist, gr: result.gr, camera: { yaw: r.cam.yaw, pitch: r.cam.pitch, dist: r.cam.dist, fitDist: r.cam.fitDist },
     hasShadow: r.hasShadow, materials: result.build.ORDER.length, triangles: tris,
+    contextAttributes: r.gl.getContextAttributes ? r.gl.getContextAttributes() : null,
     ms: { build: Math.round(tBuilt - t0), draw: Math.round(tDrawn - tBuilt) },
   };
 }
@@ -211,7 +215,8 @@ function rebuildTime(o) {
 async function textures() {
   const hex = (buf) => Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
   const out = [];
-  for (const u of uploads) out.push({ context: u.context, w: u.w, h: u.h, sha256: hex(await crypto.subtle.digest("SHA-256", u.data)) });
+  const whose = (gl) => Object.keys(renderers).find((k) => renderers[k].r.gl === gl) || "?";
+  for (const u of uploads) out.push({ context: whose(u.gl), w: u.w, h: u.h, sha256: hex(await crypto.subtle.digest("SHA-256", u.data)) });
   return out;
 }
 

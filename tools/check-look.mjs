@@ -35,7 +35,12 @@
       (test/out/look-truecolour.png: warm | true colour);
    5. a Finished-view rebuild of the biggest Utility Shed (14x40) stays inside
       a loose time bound on this software-graphics machine (the phone budget
-      in docs/ARCHITECTURE.md is 45 ms on real hardware; the time is printed).
+      in docs/ARCHITECTURE.md is 45 ms on real hardware; the time is printed);
+   6. the picture was drawn on a graphics context our own engine/gl.js asked
+      for, with Barnwright's settings (the harness never asks first: the
+      browser keeps the settings of the first request), and every file the
+      page loaded is this copy's own file, byte for byte (a web server left
+      running from another copy of the repo cannot stand in for this one).
    Also writes test/out/look-contact.png: our 24 pictures, a quarter size, on
    the studio backdrop -- one glance at every style.
 
@@ -50,6 +55,7 @@ import { readGoldenCases, readGoldenCase } from "./lib/golden-cases.mjs";
 import { loadCatalogue } from "./lib/load.mjs";
 import { makePlan } from "../model/plan.js";
 import { assemble } from "../engine/assemble.js";
+import { sceneFor } from "../engine/scene-data.js";
 
 const args = process.argv.slice(2);
 const caseArg = (() => {
@@ -90,10 +96,11 @@ function comparePixels(a, b) {
   return { sameSize: true, differing, maxDiff, map };
 }
 
-/* A pixel of a see-through picture laid on the studio backdrop, as the page shows it. */
-function onBackdrop(img, p) {
-  const i = p * 4, a = img.rgba[i + 3] / 255;
-  return [0, 1, 2].map((k) => Math.round(img.rgba[i + k] * a + BACKDROP[k] * (1 - a)));
+/* A pixel of a see-through picture laid on the studio backdrop, as the page shows it
+   (`back` is another backdrop colour: the true-colour studio's is neutral grey). */
+function onBackdrop(img, p, back) {
+  const i = p * 4, a = img.rgba[i + 3] / 255, bg = back || BACKDROP;
+  return [0, 1, 2].map((k) => Math.round(img.rgba[i + k] * a + bg[k] * (1 - a)));
 }
 
 /* Panels side by side, each shrunk by `scale` (1, 2, 4 ...: a box average). */
@@ -115,7 +122,40 @@ function sideBySide(panels, scale) {
   });
   return encodePng(W, H, out);
 }
-const asPanel = (img) => ({ width: img.width, height: img.height, pixel: (p) => onBackdrop(img, p) });
+const asPanel = (img, back) => ({ width: img.width, height: img.height, pixel: (p) => onBackdrop(img, p, back) });
+/* where each panel of sideBySide(panels, scale) starts, for its label */
+function panelLefts(panels, scale) {
+  const pw = Math.floor(panels[0].width / scale), gap = Math.max(4, 12 / scale | 0);
+  return panels.map((_, n) => n * (pw + gap));
+}
+
+/* WORDS ON THE PICTURES, so Alan can tell what he is looking at without this
+   file: each picture is handed to the harness page, which writes the labels
+   with a canvas (it can draw text; this file cannot) and hands it back. The
+   words come from our own golden files, never from a visitor, and are drawn,
+   not put into HTML. Only the pictures in test/out/ get words -- the
+   comparison never reads them. Any trouble: the picture without words. */
+async function labelled(png, labels) {
+  try {
+    if (!h || !h.page || h.page.isClosed()) return png;
+    const url = "data:image/png;base64," + png.toString("base64");
+    const out = await h.page.evaluate(async ({ url, labels }) => {
+      const img = new Image(); img.src = url; await img.decode();
+      const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+      const x = c.getContext("2d"); x.drawImage(img, 0, 0);
+      x.font = "600 13px system-ui, sans-serif"; x.textBaseline = "top";
+      for (const l of labels) {
+        const w = Math.ceil(x.measureText(l.text).width) + 12;
+        x.fillStyle = "rgba(255,255,255,0.9)"; x.fillRect(l.x + 6, l.y + 6, w, 21);
+        x.fillStyle = "#1d2a33"; x.fillText(l.text, l.x + 12, l.y + 10);
+      }
+      return c.toDataURL("image/png");
+    }, { url, labels });
+    const img = decodePng(Buffer.from(out.replace(/^data:image\/png;base64,/, ""), "base64"));
+    return encodePng(img.width, img.height, img.rgba);
+  } catch { return png; }
+}
+const shortName = (fx) => String(fx.description || fx.case || "").split(" (")[0];
 /* where two pictures differ: red, brighter the bigger the difference, over a pale copy of the first */
 function diffPanel(a, cmp) {
   return {
@@ -147,6 +187,7 @@ const t0 = Date.now();
 let h;
 const results = [];
 const ours = new Map();
+let firstAttrs = null;
 try {
   h = await openLook();
   const styles = await h.useBarnwright();
@@ -169,6 +210,7 @@ try {
     });
     const secs = (Date.now() - s) / 1000;
     const I = pic.info;
+    if (!firstAttrs) firstAttrs = I.contextAttributes;
     const cmp = comparePixels(golden, pic);
     ours.set(id, pic);
     const errs = [].concat(I.glErrors.before, I.glErrors.first, I.glErrors.second);
@@ -193,12 +235,20 @@ try {
     let note = "";
     if (!same && cmp.sameSize) {
       const file = resolve(DIFF_DIR, id + ".png");
-      writeFileSync(file, sideBySide([asPanel(golden), asPanel(pic), diffPanel(golden, cmp)], 1));
+      const panels = [asPanel(golden), asPanel(pic), diffPanel(golden, cmp)], at = panelLefts(panels, 1);
+      writeFileSync(file, await labelled(sideBySide(panels, 1), [
+        { x: at[0], y: 0, text: "Barnwright's picture: " + shortName(fx) }, { x: at[1], y: 0, text: "ours" },
+        { x: at[2], y: 0, text: "where they differ (red: brighter = bigger)" }]));
       note = `${cmp.differing} of ${total} pixels differ, by up to ${cmp.maxDiff} (of 255) in one channel; picture: test/out/look-diff/${id}.png`;
     }
     ok(`${id}: every one of the ${total} pixels identical to Barnwright's (${drawn} of them drawn on, ${I.triangles} triangles, ${secs.toFixed(1)} s)`, same, note || (cmp.sameSize ? "" : "the pictures are different sizes"));
     results.push({ id, same, differing: cmp.differing, maxDiff: cmp.maxDiff, secs, size: pic.width + "x" + pic.height });
   }
+
+  /* the graphics context was asked for by OUR renderer (engine/gl.js), with Barnwright's settings */
+  const A = firstAttrs || {};
+  ok(`the 3D picture was drawn on a graphics context with Barnwright's settings, asked for by our own engine/gl.js (antialiasing on, see-through, premultiplied, not kept between frames)`,
+    A.antialias === true && A.alpha === true && A.premultipliedAlpha === true && A.preserveDrawingBuffer === false, JSON.stringify(A));
 
   /* ---------- the textures ---------- */
   console.log("\nThe surface pictures (textures)");
@@ -219,11 +269,17 @@ try {
     const nudged = trim.slice(0, 5) + ((parseInt(trim.slice(5), 16) + 1) & 255).toString(16).padStart(2, "0");
     const c1 = await h.draw(Object.assign({}, base, { state: Object.assign({}, fx.state, { trim: nudged }), camera: { yaw: L.camera.yaw, pitch: L.camera.pitch, distOverFit: 1 } }));
     const d1 = comparePixels(golden, c1);
-    ok(`the Utility Shed 10x20 with its trim ${trim} -> ${nudged} (one step of blue) is caught: ${d1.differing} pixels differ`, d1.sameSize && d1.differing > 1000);
+    const said = (d) => d.sameSize ? `${d.differing} pixels differ` : "the picture is a different size";
+    ok(`the Utility Shed 10x20 with its trim ${trim} -> ${nudged} (one step of blue) is caught: ${said(d1)}`, d1.sameSize && d1.differing > 1000);
     const c2 = await h.draw(Object.assign({}, base, { state: fx.state, camera: { yaw: L.camera.yaw + 0.001, pitch: L.camera.pitch, distOverFit: 1 } }));
     const d2 = comparePixels(golden, c2);
-    ok(`the same shed with the camera turned 0.001 radian (under a tenth of a degree) is caught: ${d2.differing} pixels differ`, d2.sameSize && d2.differing > 1000);
-    if (d2.sameSize) writeFileSync(resolve(OUT, "look-control-diff.png"), sideBySide([asPanel(golden), asPanel(c2), diffPanel(golden, d2)], 2));
+    ok(`the same shed with the camera turned 0.001 radian (under a tenth of a degree) is caught: ${said(d2)}`, d2.sameSize && d2.differing > 1000);
+    if (d2.sameSize) {
+      const panels = [asPanel(golden), asPanel(c2), diffPanel(golden, d2)], at = panelLefts(panels, 2);
+      writeFileSync(resolve(OUT, "look-control-diff.png"), await labelled(sideBySide(panels, 2), [
+        { x: at[0], y: 0, text: "Barnwright's picture" }, { x: at[1], y: 0, text: "ours, camera turned 0.001 radian ON PURPOSE" },
+        { x: at[2], y: 0, text: "where they differ (red) -- the check catches it" }]));
+    }
   }
 
   /* ---------- true colour changes colour only ---------- */
@@ -270,7 +326,11 @@ try {
   ok(`the colours differ: ${rgbDiff} of the ${cover} solid pixels changed colour`, cover > 100000 && rgbDiff > cover * 0.5);
   const mw = cover ? warmRB / cover : 0, mt = cover ? trueRB / cover : 0;
   ok(`the warm cast is gone: red minus blue averages ${mw.toFixed(1)} warm, ${mt.toFixed(1)} true colour`, mw > mt + 3);
-  writeFileSync(resolve(OUT, "look-truecolour.png"), sideBySide([asPanel(warmPic), asPanel(truePic)], 2));
+  /* each on its own scene's backdrop, as the designer page shows it (the true-colour studio's is neutral grey) */
+  const backOf = (tcOn) => sceneFor(tc.scene, tcOn).fogC.map((v) => Math.round(v * 255));
+  const tcPanels = [asPanel(warmPic, backOf(false)), asPanel(truePic, backOf(true))], tcAt = panelLefts(tcPanels, 2);
+  writeFileSync(resolve(OUT, "look-truecolour.png"), await labelled(sideBySide(tcPanels, 2), [
+    { x: tcAt[0], y: 0, text: "true colour OFF (Barnwright's warm light)" }, { x: tcAt[1], y: 0, text: "true colour ON (look.trueColour: true)" }]));
 
   /* ---------- the cost of a rebuild ---------- */
   console.log("\nThe cost of a Finished-view rebuild");
@@ -280,15 +340,22 @@ try {
   ok(`a 14x40 Utility Shed rebuild (plan + every part + upload) takes ${median.toFixed(1)} ms (median of ${times.length}) -- under the ${REBUILD_BOUND_MS} ms bound for this software-graphics machine` +
     `${median <= REBUILD_BUDGET_MS ? ` and inside the ${REBUILD_BUDGET_MS} ms phone budget` : ` (the ${REBUILD_BUDGET_MS} ms budget is for real hardware)`}`, median < REBUILD_BOUND_MS, times.map((t) => t.toFixed(1)).join(", "));
 
+  console.log("\nWhat the page was made of");
+  ok(`every one of the ${h.checkedFiles.size} files the page loaded is this copy's own file, byte for byte (so a web server left running from another copy cannot stand in for this one)`,
+    h.checkedFiles.size > 20 && h.notOurs.length === 0, h.notOurs.join(", "));
   ok("the harness page raised no errors", h.errors.length === 0, h.errors.join(" | "));
 } catch (e) {
   ok("the look check ran to the end", false, e && e.stack ? e.stack : e);
 } finally {
-  if (h) await h.close();
+  if (h) {
+    try { await writeContact(); } catch (e) { console.log("  (the contact sheet could not be written: " + (e && e.message) + ")"); }
+    await h.close();
+  }
 }
 
-/* ---------- a contact sheet of our pictures ---------- */
-if (ours.size) {
+/* ---------- a contact sheet of our pictures, each with its name ---------- */
+async function writeContact() {
+  if (!ours.size) return;
   const list = ids.filter((id) => ours.has(id)).map((id) => ours.get(id));
   const cols = Math.min(6, list.length), rows = Math.ceil(list.length / cols), sc = 4;
   const tw = Math.floor(list[0].width / sc), th = Math.floor(list[0].height / sc);
@@ -303,7 +370,9 @@ if (ours.size) {
       out[o] = Math.round(acc[0] / 16); out[o + 1] = Math.round(acc[1] / 16); out[o + 2] = Math.round(acc[2] / 16);
     }
   });
-  writeFileSync(resolve(OUT, "look-contact.png"), encodePng(W, H, out));
+  const shown = ids.filter((id) => ours.has(id));
+  const labels = shown.map((id, n) => ({ x: (n % cols) * tw, y: Math.floor(n / cols) * th, text: shortName(readGoldenCase(id)) }));
+  writeFileSync(resolve(OUT, "look-contact.png"), await labelled(encodePng(W, H, out), labels));
 }
 
 const exact = results.filter((r) => r.same).length;

@@ -474,22 +474,42 @@ try {
     ok(`a door selected on Outside (${door}) is put down when Framing hides it: nothing selected, its card closed`, ds.sel === null && ds.sheet === false, J(ds));
     await ca.close();
 
+    /* A roof lumber size with a typo ("2y4") is refused when the settings
+       load (model/construction.js), in plain words, instead of reaching the
+       Framing view at all. */
     const bad = JSON.parse(JSON.stringify(DEMO));
     bad.construction = Object.assign({}, bad.construction, { roof: Object.assign({}, (bad.construction || {}).roof, { chord: "2y4" }) });
-    const cw = await newContext(browser, { company: bad });
+    const cbad = await newContext(browser, { company: bad });
+    const bp = await cbad.newPage();
+    await bp.goto(BASE + "/?company=demo", { waitUntil: "load" });
+    await bp.waitForSelector("#bootmsg", { timeout: 60000 }).catch(() => null);
+    const bm = await bp.evaluate(() => { const b = document.getElementById("bootmsg"); return b ? b.textContent : ""; });
+    ok(`a company whose roof lumber size is a typo ("2y4") is refused when it loads, in plain words ("${bm.replace(/\s+/g, " ").slice(0, 70)}...")`, /settings need fixing/i.test(bm) && /2y4/.test(bm) && /not a lumber size/.test(bm), J(bm.slice(0, 300)));
+    await cbad.close();
+
+    /* And if the framing still cannot be drawn for some other reason (a
+       framing part that fails), Framing and Watch it build go back to
+       Outside and say so, rather than show an empty yard. The test makes
+       one framing part fail on purpose inside the page. */
+    const cw = await newContext(browser, {});
     const w = await openPage(cw, "?company=demo");
     const WF = await picture(w.page, "W-F");
+    await w.page.evaluate(async () => {
+      const m = await import("/parts/index.js");
+      const e = m.PIPELINE.find((x) => x.entry === "wall-frame");
+      e.module.build = function () { throw new Error("test: this framing part fails on purpose"); };
+    });
     await tabClick(w.page, "framing");
     await sleep(120);
     const wr = await w.page.evaluate(() => ({ view: window.shedUI.views.view, frames: window.shedUI.getBuildOptions().frames, msg: window.shedUI.views.message(), on: document.querySelector(".vw-tab.on").getAttribute("data-view") }));
     const WR = await picture(w.page, "W-R", "W-F");
-    ok(`a company whose roof lumber size is a typo ("2y4"): Framing cannot be drawn, so the page goes back to Outside and says so ("${wr.msg.slice(0, 60)}...")`, wr.view === "finished" && wr.on === "finished" && wr.frames === false && /could not be drawn/.test(wr.msg), J(wr));
+    ok(`a framing part that fails: Framing cannot be drawn, so the page goes back to Outside and says so ("${wr.msg.slice(0, 60)}...")`, wr.view === "finished" && wr.on === "finished" && wr.frames === false && /could not be drawn/.test(wr.msg), J(wr));
     ok("and shows the finished building, not an empty yard (identical to Outside)", WR.hash === WF.hash && WR.diff === 0, J({ WR: WR.hash, WF: WF.hash }));
     await tabClick(w.page, "build");
     await sleep(120);
     const wb = await w.page.evaluate(() => ({ view: window.shedUI.views.view, player: document.getElementById("vw-player").hidden }));
     ok("Watch it build does the same (back to Outside, no player)", wb.view === "finished" && wb.player === true, J(wb));
-    const other = realNoise(w.noise).filter((m) => !/could not be drawn|not a lumber size/.test(m.text));
+    const other = realNoise(w.noise).filter((m) => !/could not be drawn|fails on purpose/.test(m.text));
     ok("nothing else goes wrong (only the page's own note about the drawing)", other.length === 0, J(other));
     await cw.close();
 
@@ -557,8 +577,49 @@ try {
     ok("at 390x844 the buttons fit inside the picture on one row, clear of the View button", inside(g.tabs, g.st) && g.tabs.r <= g.vb.l && g.tabs.b - g.tabs.t < 40, J(g));
     ok("and the player sits inside the picture, with no sideways scroll", inside(g.pl, g.st) && g.sw <= g.iw, J(g));
     await (await ph.page.$("#stage")).screenshot({ path: resolve(OUT, "views-phone-build.png") });
+    /* the caption folds to one line so the step being put together shows */
+    const fold = await ph.page.evaluate(() => {
+      const pl = document.getElementById("vw-player"), st = document.getElementById("stage");
+      const h = pl.getBoundingClientRect().height, sh = st.getBoundingClientRect().height;
+      return { compact: pl.classList.contains("vw-compact"), share: h / sh, text: getComputedStyle(document.getElementById("vw-text")).display, more: document.getElementById("vw-more").textContent };
+    });
+    ok("on a phone the Watch it build caption folds to one line (the player covers at most a third of the picture)", fold.compact && fold.text === "none" && fold.share <= 0.34 && fold.more === "More", J(fold));
+    await ph.page.click("#vw-more");
+    const open = await ph.page.evaluate(() => ({ compact: document.getElementById("vw-player").classList.contains("vw-compact"), text: getComputedStyle(document.getElementById("vw-text")).display, more: document.getElementById("vw-more").textContent, words: document.getElementById("vw-text").textContent.length }));
+    ok("and More opens the whole caption (Less folds it again)", !open.compact && open.text !== "none" && open.more === "Less" && open.words > 20, J(open));
+    for (const vp of [{ width: 844, height: 390 }, { width: 320, height: 640 }]) {
+      const cq = await newContext(browser, { viewport: vp });
+      const pq = await openPage(cq, "?company=demo");
+      await tabClick(pq.page, "build");
+      const sh = await pq.page.evaluate(() => document.getElementById("vw-player").getBoundingClientRect().height / document.getElementById("stage").getBoundingClientRect().height);
+      ok(`at ${vp.width}x${vp.height} the player covers at most a third of the picture (${Math.round(sh * 100)}%)`, sh <= 0.34, J({ share: sh }));
+      await cq.close();
+    }
     ok("no console errors on a phone", realNoise(ph.noise).length === 0, J(realNoise(ph.noise)));
     await cp.close();
+  }
+
+  /* ================================================================ 10 */
+  section("Nothing picked mid-build; adding goes back to Outside");
+  {
+    const cx = await newContext(browser, {});
+    const x = await openPage(cx, "?company=demo");
+    await tabClick(x.page, "build");
+    await x.page.click("#vw-play");      /* pause */
+    const door = await x.page.evaluate(() => (window.shedUI.getState().items.find((it) => /^w(36|48|72)$/.test(it.cat)) || {}).id);
+    await x.page.evaluate((id) => window.shedUI.select(id), door);
+    await sleep(80);
+    const sb = await x.page.evaluate(() => ({ sel: window.shedUI.getState().sel, sheet: document.getElementById("sheet").classList.contains("open"), view: window.shedUI.views.view }));
+    ok(`during Watch it build a door cannot be picked (its card would cover the player): ${door}`, sb.sel === null && sb.sheet === false && sb.view === "build", J(sb));
+    await tabClick(x.page, "framing");
+    await sleep(80);
+    const n0 = await x.page.evaluate(() => window.shedUI.getState().items.length);
+    await x.page.click("#add-win");
+    await sleep(150);
+    const af = await x.page.evaluate(() => ({ view: window.shedUI.views.view, frames: window.shedUI.getBuildOptions().frames, n: window.shedUI.getState().items.length, sel: window.shedUI.getState().sel }));
+    ok("adding a window while Framing is showing goes back to Outside, where the new window is picked and can be dragged", af.view === "finished" && af.frames === false && af.n === n0 + 1 && !!af.sel, J(af));
+    ok("no console errors", realNoise(x.noise).length === 0, J(realNoise(x.noise)));
+    await cx.close();
   }
 } catch (e) {
   ok("the check ran to the end", false, e && e.stack || e);
