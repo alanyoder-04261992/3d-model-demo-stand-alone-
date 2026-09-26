@@ -16,8 +16,13 @@
          through its gambrel trait --, the cottage saltbox with its level-cut
          tails, the lean-to, the single slope, the Dormer Shed's steeper
          gable), one board per slope, mitred where two slopes meet;
-       - a BOTTOM CHORD ({roof.chord}) lying on the wall top plates at topY,
-         wall to wall, its ends cut to the top chords at the heels;
+       - a BOTTOM CHORD ({roof.chord}) at the wall top (topY) between the
+         walls, its ends cut to the top chords at the heels. The drawn roof
+         comes down to the wall top at the siding, so on every roof but the
+         cottage's the bottom chord's cut ends stop short of the wall plates
+         (a few inches on a barn, 4 to 8 in on a gable, up to two feet on a
+         lean-to's shallow slope) and the top chord's seat bears on the plates
+         instead; the heel plate ties the two together;
        - WEBS: a king post and, from 10 ft wide, two struts on a gable or
          saltbox; a collar tie across the knees and a king post above it on a
          gambrel (the space under the collar is left open for the loft and for
@@ -25,7 +30,9 @@
          diagonals between them on a lean-to or single slope (a mono truss --
          the tall wall itself stands in for the post at its high end);
        - {roof.gussets} GUSSET PLATES (half an inch) on both faces at the apex,
-         the knees, the heels and the king-post foot.
+         the knees, the heels and the king-post foot; a heel plate runs in
+         from the wall until the bottom chord is half its depth (at least a
+         foot), so it always covers the joint between the two chords.
      The two END trusses (at the gable ends) have no webs and no gussets: the
      gable studs (parts/gable-frame.js) fill them, flush with the outside, the
      way a gable-end truss is built, and the siding covers their outer face.
@@ -644,7 +651,9 @@ function trussMembers(plan, lay, tr) {
   });
   delete tag.seg;
 
-  /* ---- bottom chord: on the wall plates, wall to wall, cut to the top chords ---- */
+  /* ---- bottom chord: at the wall top, wall to wall, cut to the top chords
+     (so on all but the cottage it stops short of the plates -- see the note
+     at the top of this file) ---- */
   if (!rafter) {
     var bc = clipAll(rectPoly(sec.innerL, topY, sec.innerR, topY + cd), lower);
     var bcs = [bc];
@@ -667,6 +676,21 @@ function trussMembers(plan, lay, tr) {
   function web(poly, extra) { var p = cleanPoly(clipAll(poly, inside.concat(extra || []))); if (p) webs.push(p); }
   function gusset(poly) { var p = cleanPoly(clipAll(poly, under.concat([[-1, 0, -sec.innerL], [1, 0, sec.innerR], [0, -1, -topY]]))); if (p) guss.push(p); }
   var lowPt = offsetPolyline(sec, dT + cd);    /* the chords' lower mitre points */
+  /* THE HEEL PLATE has to reach the bottom chord. The drawn roof meets the
+     wall top at the siding, so the bottom chord's end is cut to the top
+     chord's slope and stops short of the wall -- a few inches on a barn, over
+     half a foot on a gable, nearly two feet on a lean-to's shallow slope. A
+     plate a fixed foot long from the wall covered only the top chord's seat
+     on every lean-to and single-slope heel, leaving the tie unconnected. So
+     each heel plate runs in from the wall until the bottom chord is half its
+     depth, and a quarter foot past that (never less than a foot). */
+  function heelPlate(xWall, dir) {
+    var x = xWall, stepX = 0.02;
+    for (var hs = 0; hs < 800 && envY(sec, dT + cd, x) < topY + cd / 2; hs++) x += dir * stepX;
+    var reach = Math.max(1.0, Math.abs(x - xWall) + 0.25);
+    var xa = xWall, xb = xWall + dir * reach;
+    gusset(rectPoly(Math.min(xa, xb), topY, Math.max(xa, xb), topY + cd + 0.12));
+  }
 
   if (sec.mono) {
     if (!rafter) {
@@ -689,8 +713,7 @@ function trussMembers(plan, lay, tr) {
         web(strip(d0, d1, ww, 3), [[-1, 0, -lo], [1, 0, hi]]);
       }
       /* gussets: the low heel, and the end post's foot and head */
-      var hA = xh, hB = xh - dir * 1.0;
-      gusset(rectPoly(Math.min(hA, hB), topY, Math.max(hA, hB), topY + cd + 0.12));
+      heelPlate(xh, -dir);
       var e0 = Math.min(xt, xt + dir * 0.6), e1 = Math.max(xt, xt + dir * 0.6);
       var yTopPost = envY(sec, dT + cd, xt + dir * 0.6);
       /* on a short post the foot plate and the head plate would meet: one
@@ -711,8 +734,8 @@ function trussMembers(plan, lay, tr) {
     });
     if (!rafter) {
       gusset(rectPoly(peakX - 0.55, apL[1] - 0.30, peakX + 0.55, P[2][1] + 1));
-      gusset(rectPoly(sec.innerL, topY, sec.innerL + 1.0, topY + cd + 0.12));
-      gusset(rectPoly(sec.innerR - 1.0, topY, sec.innerR, topY + cd + 0.12));
+      heelPlate(sec.innerL, 1);
+      heelPlate(sec.innerR, -1);
     }
   } else {
     /* gable or saltbox */
@@ -729,8 +752,8 @@ function trussMembers(plan, lay, tr) {
         gusset(rectPoly(apex[0] - 0.45, topY, apex[0] + 0.45, topY + cd + 0.25));
       }
       gusset(rectPoly(apex[0] - 0.55, apLow[1] - 0.30, apex[0] + 0.55, apex[1] + 1));
-      gusset(rectPoly(sec.innerL, topY, sec.innerL + 1.0, topY + cd + 0.12));
-      gusset(rectPoly(sec.innerR - 1.0, topY, sec.innerR, topY + cd + 0.12));
+      heelPlate(sec.innerL, 1);
+      heelPlate(sec.innerR, -1);
     } else {
       /* rafters: a collar tie on every pair, a little over halfway up */
       var yc2 = topY + 0.62 * (apex[1] - topY);
@@ -742,13 +765,18 @@ function trussMembers(plan, lay, tr) {
 
   /* the dormer: a cut truss loses its +x top chord between the headers, and
      with it the web and gusset parts in that stretch (the +x strut goes
-     altogether); the trimmers either side lose their plates there too, so the
-     headers butt their chords */
-  if (dg && (tr.cut || tr.trim)) {
-    if (tr.cut) webs = webs.filter(function (p) { return centroid(p)[0] <= (peakX != null ? peakX : 0) + ww; });
+     altogether). A TRIMMER either side stays whole -- it is the truss that
+     carries the upper header -- and only the plate on its inner face gives
+     way where the header butts its chord (hx0..hx1, by the ridge). It used to
+     lose everything between the header and the dormer's front wall, its +x
+     strut and its heel plate included: the one truss that has to be whole. */
+  if (dg && tr.cut) {
+    webs = webs.filter(function (p) { return centroid(p)[0] <= (peakX != null ? peakX : 0) + ww; });
     webs = [].concat.apply([], webs.map(function (p) { return splitX(p, dg.hx0, dg.xFw); }));
     guss = [].concat.apply([], guss.map(function (p) { return splitX(p, dg.hx0, dg.xFw); }));
-    if (tr.cut && rafter) webs = [];
+    if (rafter) webs = [];
+  } else if (dg && tr.trim) {
+    guss = [].concat.apply([], guss.map(function (p) { return splitX(p, dg.hx0, dg.hx1); }));
   }
   /* a loft floor runs through this truss: nothing of its webs or plates may
      stand in the floor's thickness (they stand on it instead) */

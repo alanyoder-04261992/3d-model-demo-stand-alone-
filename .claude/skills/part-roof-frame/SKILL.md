@@ -15,8 +15,14 @@ length, one at each gable end. A truss has
   the slopes meet; where a chord crosses a wall it sits on the wall's top
   plates with a seat cut (the "bird's-mouth"), and past the wall its TAIL
   runs out under the eave;
-* a BOTTOM CHORD lying on the long walls' top plates, wall to wall, tying them
-  together (it is also the ceiling tie);
+* a BOTTOM CHORD at the wall top between the long walls, tying them together
+  (it is also the ceiling tie). Its ends are cut to the top chords, and
+  because the drawn roof comes down to the wall top at the siding, on every
+  roof but the cottage's those cut ends stop SHORT of the wall plates -- a few
+  inches on a barn, 4 to 8 in on a gable, up to about two feet on a lean-to's
+  shallow slope -- and it is the top chord's seat that bears on the plates.
+  (On the cottage the raised eave leaves room for a true heel: the bottom
+  chord runs onto the plates and the top chord sits on it.);
 * WEBS between them: on a gable or the cottage's saltbox a king post under
   the ridge and, from 10 ft wide, two struts from its foot up to the middle of
   each top chord; on a gambrel (barn) roof a collar tie across the two knees
@@ -25,7 +31,10 @@ length, one at each gable end. A truss has
   post against the tall wall (the tall wall stands in for the truss's high
   post), posts with diagonals between them toward the low heel;
 * plywood GUSSET plates, half an inch, on both faces at the apex, the knees,
-  the heels and the king-post foot.
+  the heels and the king-post foot. A HEEL plate runs in from the wall until
+  the bottom chord is half its depth, and a quarter foot past (never less than
+  a foot), so it always covers the joint between the two chords -- on a
+  lean-to that is two to three feet of plywood.
 
 The two END trusses stand at the gable ends, flush inside the gable siding:
 they carry no webs and no gussets, because the gable studs
@@ -40,8 +49,9 @@ knees, with knee gussets); a lean-to or single slope is plain rafters.
 The Dormer Shed's dormer CUTS the trusses it stands over: their +x (door side)
 top chord is taken out between the dormer's two headers, with that side's
 strut, and their bottom chord's heel stops at the dormer's front wall; the
-full trusses either side (the trimmers) carry the headers. See
-`part-dormer-frame`.
+full trusses either side (the trimmers) carry the upper header and stay WHOLE
+-- webs, heel plates and all; only the plate on a trimmer's inner face gives
+way where the header butts its chord, by the ridge. See `part-dormer-frame`.
 
 Everything is fitted INSIDE the roof Barnwright draws:
 * every member is under the underside of the drawn roof slab (the profile
@@ -143,6 +153,11 @@ triangles for a four-sided board, 4n-4 for n sides).
 
 ## Kept quirks
 
+* The truss heel: the bottom chord stops short of the wall (above) and the
+  top chord sits on the plate; the heel plate joins them. A real truss's
+  bottom chord bears on the plate and runs to the outside of the wall; the
+  drawn roof, which meets the wall top at the siding, leaves no room for that.
+
 * The drawn roof meets the wall top in a sharp corner, so a chord cannot
   pass over a wall with its full depth: it ends in a point at the wall line
   and its tail (outside) is a separate wedge that tapers to nothing at the
@@ -170,17 +185,42 @@ triangles for a four-sided board, 4n-4 for n sides).
 5. The golden fixtures are never re-recorded for framing: a finished triangle
    that changes means the framing leaked into the Finished view.
 
+## Known limits (not fixed here -- other parts, or Alan's call)
+
+* THE TRUSSES OVER A PORCH REST ON NOTHING BUT THE PORCH POSTS AT THE
+  CORNERS. On a cabin with a front, side or wrap porch the trusses run on over
+  the porch at the spacing, but no framing part draws a porch BEAM for their
+  heels: the porch's header is Barnwright's painted band (a flat face, stage
+  `porch-frame`), and the side walls stop at the porch. Measured: on the front
+  porch cabins (Cabin, Lofted Barn Cabin) and the wrap porch cabins, every
+  truss between the enclosed end wall and the porch's end truss has nothing
+  under either heel; on the side porch cabins every truss over the notch
+  reaches four feet past the porch wall with nothing under its door-side heel.
+  The framing checks' "rests on or is nailed to" test passes them because the
+  roof deck and the truss's own boards touch each other -- it cannot see a
+  whole roof section floating. A porch beam on the posts, under the heels, is
+  the missing piece (wall framing or porch framing, not this part).
+* With `roof.framing: "rafter"` the only tie is a collar tie a little over
+  halfway up (0.62 of the rise) -- a real rafter roof on a ridge BOARD also
+  needs rafter ties in the lower third (or ceiling joists at the plates) to
+  stop the walls spreading. Only the loft joists do that job, and only at the
+  loft ends.
+
 ## Checks that guard it
 
-* `node tools/check-framing-roof.mjs` -- on 515 buildings (the 148 recorded,
+* `node tools/check-framing-roof.mjs` -- on 1073 buildings (the 148 recorded,
   every style at every size, every dormer, and rafters / 16 in / 2x6 chords /
   2x6 studs / purlins / OSB / 2x4 loft joists on every style): every corner
   under the drawn roof slab (read off the finished `roofU` triangles), above
   the wall top inside the walls, not past or below the eave; no two boards
   overlapping by more than 0.01 ft; trusses at `roof.spacingIn` with the last
   gap no larger, one at each gable end, a top chord on every slope and a
-  bottom chord; the part draws exactly its members in its own stage; the
-  finished building untouched.
+  bottom chord (an end truss loses it only where gable openings take its whole
+  width); a gusset plate over the bottom chord's end at every truss heel; a
+  dormer's trimmers whole; the part draws exactly its members in its own
+  stage; the finished building untouched. Also every style with each gable
+  window dragged to both eaves, up and down, and the Standard Barn with two
+  openings on one end (for `gableOpenings`, which this file owns).
 * `node tools/check-framing.mjs` -- the same buildings and more, every
   framing part together: region, overlap with the walls and floor, bearing.
 * `node tools/check-parts.mjs` -- the part is valid, its caption fills in from

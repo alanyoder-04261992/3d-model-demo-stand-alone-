@@ -27,7 +27,8 @@
    3. TRUSSES (or rafter pairs) stand at construction roof.spacingIn on
       centre along the length, with the last gap no larger, and there is one
       at EACH GABLE END, flush inside the gable siding; every truss has a top
-      chord on every slope and (truss framing) a bottom chord.
+      chord on every slope and (truss framing) a bottom chord, and at every
+      heel a gusset plate covering the bottom chord's end.
    4. LOFT framing only on the styles with the loft trait, at each loft end,
       with the floor carried by members that really touch its underside (loft
       joists, and truss bottom chords only when they are as deep) no further
@@ -36,7 +37,9 @@
       buildings, and only they), OSB only where it is "osb"; purlins no
       further apart up the slope than roofDeck.purlins.spacingIn.
    6. DORMER framing only when a dormer is drawn; nothing of the main roof's
-      trusses or deck is left inside the dormer (item 2 proves it).
+      trusses or deck is left inside the dormer (item 2 proves it); the
+      trimmer trusses either side of the dormer, which carry its header, are
+      whole (as much web lumber as a plain truss).
    7. GABLE OPENINGS: every gable window, vent and tall end door the gable
       framing frames has a king stud each side (or, for a window run up into
       the top chord near an eave, the chord closing that side) and a header
@@ -72,7 +75,7 @@ import { ROOF_TH } from "../model/roof-shapes.js";
 import { assemble } from "../engine/assemble.js";
 import { STAGES, STAGE_ID } from "../parts/stages.js";
 import { PIPELINE } from "../parts/index.js";
-import roofFramePart, { roofFrameMembers, lumberFt, gableOpenings, roofSection } from "../parts/roof-frame.js";
+import roofFramePart, { roofFrameMembers, lumberFt, gableOpenings, roofSection, trussLayout } from "../parts/roof-frame.js";
 import { wallRuns } from "../parts/wall-frame.js";
 import gableFramePart, { gableFrameMembers } from "../parts/gable-frame.js";
 import roofDeckPart, { roofDeckMembers } from "../parts/roof-deck.js";
@@ -397,7 +400,7 @@ function describe(m) {
 
 /* ======================= run ======================= */
 
-const counts = { buildings: 0, members: 0, corners: 0, pairs: 0, drawnChecked: 0, finishedChecked: 0, openings: 0, lofts: 0, purlinBuildings: 0, osbBuildings: 0, dormers: 0, rafterBuildings: 0, chordless: 0, chordClosed: 0, gableHeaders: 0, gableStuds: 0 };
+const counts = { buildings: 0, members: 0, corners: 0, pairs: 0, drawnChecked: 0, finishedChecked: 0, openings: 0, lofts: 0, purlinBuildings: 0, osbBuildings: 0, dormers: 0, rafterBuildings: 0, chordless: 0, chordClosed: 0, gableHeaders: 0, gableStuds: 0, heels: 0, trimmers: 0 };
 const otherFrameParts = PIPELINE.filter((en) => en.frame && !MY_PARTS.some((p) => p.id === en.entry) && en.module && en.module.pending !== true);
 
 for (const B of buildings) {
@@ -482,6 +485,40 @@ for (const B of buildings) {
         if (exempt) counts.chordless++;
       }
       ok(`${B.id}: every truss has a bottom chord (an end truss only loses it where gable openings take its whole width)`, exempt || here.some((m) => m.kind === "bottom-chord"), `truss at z ${z.toFixed(2)}`);
+    }
+  }
+
+  /* 3b. every truss HEEL is a joint: a gusset plate covers the bottom
+     chord's end where it meets the top chord (the bottom chord is cut back
+     from the wall by the drawn roof -- nearly two feet on a lean-to -- and a
+     plate that only covers the top chord's seat leaves the tie loose). Not on
+     the end trusses (the gable framing fills them), not at a lean-to's or
+     single slope's tall wall, and not on the trusses a dormer cuts (their
+     heel is the dormer's front wall: see part-dormer-frame). */
+  if (!rafter) {
+    const layT = trussLayout(plan), secT = layT.sec;
+    /* the trusses either side of a dormer (the trimmers) carry its upper
+       header: they must stay whole -- as much web lumber as a plain truss */
+    const plain = layT.trusses.find((tr) => !tr.end && !tr.cut && !tr.trim && !tr.loft);
+    if (plain) {
+      const area = (p) => { let a = 0; for (let i = 0; i < p.length; i++) { const u = p[i], v = p[(i + 1) % p.length]; a += u[0] * v[1] - v[0] * u[1]; } return Math.abs(a) / 2; };
+      const webArea = (z) => rf.filter((m) => m.truss === z && m.kind === "web").reduce((a, m) => a + area(m.poly), 0);
+      for (const tr of layT.trusses.filter((q) => q.trim && !q.end)) {
+        counts.trimmers++;
+        ok(`${B.id}: a dormer's trimmer trusses stay whole (as much web as a plain truss)`, Math.abs(webArea(tr.z) - webArea(plain.z)) < 1e-6, `trimmer at z ${tr.z.toFixed(2)}: ${webArea(tr.z).toFixed(3)} sq ft of web, a plain truss ${webArea(plain.z).toFixed(3)}`);
+      }
+    }
+    for (const tr of layT.trusses) {
+      if (tr.end || tr.cut) continue;
+      const here = rf.filter((m) => m.truss === tr.z);
+      const bcx = here.filter((m) => m.kind === "bottom-chord").flatMap((m) => m.poly.map((q) => q[0]));
+      if (!bcx.length) continue;
+      const gus = here.filter((m) => m.kind === "gusset").map((m) => { const xs = m.poly.map((q) => q[0]); return [Math.min(...xs), Math.max(...xs)]; });
+      for (const [side, xe] of [["-x", Math.min(...bcx)], ["+x", Math.max(...bcx)]]) {
+        if ((side === "-x" && secT.tallL) || (side === "+x" && secT.tallR)) continue;
+        counts.heels++;
+        ok(`${B.id}: every truss heel has a gusset plate over the bottom chord's end`, gus.some((g) => g[0] <= xe + 1e-6 && g[1] >= xe - 1e-6), `truss at z ${tr.z.toFixed(2)}, ${side} heel: bottom chord ends at x ${xe.toFixed(2)}, plates ${gus.map((g) => g.map((v) => v.toFixed(2)).join("..")).join(", ")}`);
+      }
     }
   }
 
@@ -591,7 +628,7 @@ for (const B of buildings) {
     for (const o of gableOpenings(plan, end)) {
       counts.openings++;
       const on = end + ":" + o.what;
-      const ms = gf.filter((m) => m.opening && m.end + ":" + m.opening === on);
+      const ms = gf.filter((m) => m.opening && m.end === end && m.opening === o.what && Math.abs(m.openingAt - o.x0) < 1e-9);
       const kings = ms.filter((m) => m.kind === "king"), jacks = ms.filter((m) => m.kind === "jack").length, headers = ms.filter((m) => m.kind === "header").length;
       /* a king each side -- or, on a window run up into the top chord near an
          eave, the chord itself closing that side (no room for a king there) */
@@ -740,10 +777,10 @@ if (fail) {
   console.log(`PROVED (${pass} checks) on ${counts.buildings} buildings (the 148 recorded ones, every style at every size it is sold in, the Dormer Shed with each dormer, ${VARIANTS.length} construction changes on every style, gable windows dragged to both eaves and the top and bottom of every gable, and two openings on a barn end), ${counts.members} boards and sheets:`);
   console.log(`  1. all ${counts.corners} board corners are inside the roof as drawn: under the roof slab's underside (read off the finished drawing), above the wall top inside the walls, not past the eave's tip or below its drawn bottom edge, only deck out over the gable-end overhangs, and the dormer's framing inside the dormer as drawn.`);
   console.log(`  2. no two boards of the five roof framing parts overlap by more than ${OVERLAP} ft (exact penetration depth).`);
-  console.log(`  3. trusses (or rafter pairs; ${counts.rafterBuildings} rafter-framed buildings) stand at roof.spacingIn on centre with the last gap no larger, one at each gable end, each with a top chord on every slope and (trusses) a bottom chord (${counts.chordless} end truss(es) whose chord gable openings take entirely).`);
+  console.log(`  3. trusses (or rafter pairs; ${counts.rafterBuildings} rafter-framed buildings) stand at roof.spacingIn on centre with the last gap no larger, one at each gable end, each with a top chord on every slope and (trusses) a bottom chord (${counts.chordless} end truss(es) whose chord gable openings take entirely), and a gusset plate over the bottom chord's end at all ${counts.heels} truss heels.`);
   console.log(`  4. loft framing on the ${counts.lofts} lofted buildings only, at each loft end, the floor carried by joists (or truss chords) that really touch its underside, no further apart than loft.spacingIn.`);
   console.log(`  5. purlins exactly where roofDeck.type says (${counts.purlinBuildings} buildings; by default only the metal ones), OSB elsewhere (${counts.osbBuildings}), purlins within their spacing up every slope.`);
-  console.log(`  6. dormer framing exactly when a dormer is drawn (${counts.dormers} buildings), clear of the main roof's trusses and deck.`);
+  console.log(`  6. dormer framing exactly when a dormer is drawn (${counts.dormers} buildings), clear of the main roof's trusses and deck, and the ${counts.trimmers} trimmer trusses either side of a dormer whole.`);
   console.log(`  7. ${counts.openings} framed gable openings each with a king each side (${counts.chordClosed} sides closed by the top chord near an eave) and a header on jacks wherever even a flat 2x fits under the chord (${counts.gableHeaders} headers), else the chord over it; nothing framed across a gable window; ${counts.gableStuds} gable studs all on their end wall's stud layout.`);
   console.log(`  8. in assemble(frames:true) each part draws exactly its boards, every corner, in its own step (${counts.drawnChecked} part drawings checked).`);
   console.log(`  9. frames:true leaves every finished triangle, material and draw order untouched (${counts.finishedChecked} buildings).`);

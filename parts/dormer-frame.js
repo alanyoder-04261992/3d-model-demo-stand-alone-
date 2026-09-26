@@ -9,11 +9,17 @@
    dormer is built:
    * the MAIN TRUSSES ARE CUT where the dormer opens (parts/roof-frame.js
      takes their +x top chords out between the two headers; the trusses
-     either side, the trimmers, stay whole and carry the headers);
+     either side, the trimmers, stay whole -- webs, heel plates and all -- and
+     carry the upper header);
    * an UPPER HEADER -- a doubled {roof.chord} -- across the opening near the
      ridge, where the cut chords end and the dormer rafters bear;
-   * the FRONT WALL: a doubled sill header across the opening on the main
-     wall's line, a bottom plate, {walls.stud} studs every {walls.spacingIn}
+   * the FRONT WALL: a doubled sill header across the opening at the wall
+     top -- NOT on the main wall: the drawn face stands half a foot in from
+     the siding, so the sill header sits 2 1/2 in inside the main wall's
+     framing, over the room, held by the cut trusses' bottom-chord ends and
+     the top-chord stubs outside it (a real dormer would carry its front wall
+     on the main wall or on a header between the trimmers; the drawn face
+     leaves no room for either) -- a bottom plate, {walls.stud} studs every {walls.spacingIn}
      in on centre, a doubled top plate, and each window framed with king
      studs, a sill and -- where there is room under the plates -- a header
      (otherwise the doubled top plate spans it);

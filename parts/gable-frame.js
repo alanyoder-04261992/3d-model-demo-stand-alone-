@@ -123,7 +123,7 @@ export function gableFrameMembers(plan) {
     });
     /* the framing round each opening */
     ops.forEach(function (o) {
-      var info = { opening: o.what, kindOf: o.kind };
+      var info = { opening: o.what, openingAt: o.x0, kindOf: o.kind };
       /* kings, outside everything */
       add(tall(upTo(rectPoly(o.fx0, o.base, o.fx0 + st, o.base + 60))), "king", info);
       add(tall(upTo(rectPoly(o.fx1 - st, o.base, o.fx1, o.base + 60))), "king", info);

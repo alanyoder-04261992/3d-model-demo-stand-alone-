@@ -17,16 +17,19 @@ this part draws:
   the wall top, every `loft.spacingIn` on centre from the inside of the end
   framing in to the loft's edge (a joist on the edge). Their ends are cut to
   the roof slope where the roof comes down to the wall, so they stay under the
-  roof deck. A roof truss's bottom chord lies on the same plates: where the
-  next joist would land at or past a truss, the truss's own bottom chord is
-  that support and no second board is drawn, and a joist that would land on a
-  truss is set just before it. On a rafter-framed roof (no bottom chords) a
-  joist that would land on a rafter is set just before it -- or just past it
-  where there is no room before. No two supports are ever further apart than
-  the spacing.
-* the LOFT FLOOR: a plywood deck on the joists (or on the truss bottom chords,
-  whichever is deeper), the whole loft, as wide as the trusses' top chords
-  allow at that height.
+  roof deck. A joist that would land on a roof truss (or a rafter) is set
+  just before it -- or just past it where there is no room before -- nailed
+  alongside it. Only a truss whose bottom chord is AS DEEP as the joists
+  reaches the loft floor, and only such a truss stands in for a joist; with
+  the standard 2x4 chords under 2x6 loft joists none does (the chord is 2 in
+  short of the floor). No two members that carry the floor are ever further
+  apart than the spacing. (Until Sep 2026 every truss was counted as a
+  support whatever its depth, which left the floor spanning 19 in between the
+  joists that really carry it on every loft.)
+* the LOFT FLOOR: a plywood deck on the joists, the whole loft, as wide as
+  the trusses' top chords allow at that height. If a company asks for loft
+  joists SHALLOWER than its truss chords, the floor lies on the chords and the
+  joists are drawn as deep as the chords, so they carry it too.
 
 On a porch cabin the loft at the porch end is measured from the enclosed end
 wall, not from the gable over the porch. The trusses crossing a loft keep
@@ -76,8 +79,10 @@ come from `loftZones` in `parts/roof-frame.js`, shared with the trusses.
 
 ## Kept quirks
 
-* Where a truss stands in for a joist, the loft floor rests on the (deeper)
-  loft joists; the truss's 2x4 bottom chord is a little lower than them.
+* A truss's 2x4 bottom chord inside a loft sits 2 in under the floor laid on
+  the 2x6 joists; it carries nothing of the floor (a joist is nailed beside
+  it). And the bottom chord stops a few inches short of the wall plates (see
+  `part-roof-frame`), which is one more reason not to count on it.
 
 ## How to change it safely
 
@@ -93,9 +98,10 @@ come from `loftZones` in `parts/roof-frame.js`, shared with the trusses.
 ## Checks that guard it
 
 * `node tools/check-framing-roof.mjs` -- a loft floor at each loft end of
-  every lofted style and no loft framing on any other style; its supports
-  (loft joists, and truss bottom chords standing in) no further apart than
-  `loft.spacingIn`; every joist and the floor inside the roof as drawn and
+  every lofted style and no loft framing on any other style; the members
+  whose tops really touch the floor's underside (loft joists, and truss
+  bottom chords only when as deep) no further apart than `loft.spacingIn`,
+  from each end of the floor too; every joist and the floor inside the roof as drawn and
   overlapping no truss, web, gusset or gable stud; exactly its members drawn,
   in stage `loft`.
 * `node tools/check-framing.mjs` -- region, overlap, and every joist bearing on
