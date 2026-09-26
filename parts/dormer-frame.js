@@ -208,6 +208,7 @@ export default {
   stage: ["dormer-frame", "roof-deck"],
   realLife: "The dormer's framing: the main roof trusses cut where the dormer opens and headed off with a doubled {roof.chord} header near the ridge; a {walls.stud} front wall on a sill header with its windows framed, {walls.stud} cheek walls down to the main roof, and {roof.chord} dormer rafters every {roof.spacingIn} in on centre with their tails cut level for the soffit, under the dormer's own roof deck.",
   appliesTo(plan) { return !!plan.t.dormer && plan.state.dormer !== "none"; },
+  members(plan) { return dormerFrameMembers(plan); },
   build(plan, kit) {
     var list = dormerFrameMembers(plan);
     kit.setStage("dormer-frame");

@@ -101,6 +101,7 @@ export default {
   stage: "loft",
   realLife: "{loft.joist} loft joists every {loft.spacingIn} in on centre across the building at the wall top, at the loft end or ends, with a plywood loft floor {loft.deck.thicknessIn} in thick on top, under the roof trusses.",
   appliesTo(plan) { return !!plan.t.loft; },
+  members(plan) { return loftMembers(plan); },
   build(plan, kit) {
     kit.setStage("loft");
     drawMembers(kit, loftMembers(plan));

@@ -20,6 +20,16 @@
      a two-gang box.
    * an OVERHEAD LIGHT (draw "overhead-light"): a box and a globe hung under
      the roof framing at the wall top, where the customer put it.
+   EVERYTHING IS BUILT INSIDE THE STUDS (clearOutline: the room moved in to
+   the inside face of the wall framing). Barnwright's floor plan clamps these
+   only to the whole footprint, so a bench can run the full nominal width
+   into the studs, across a side porch's wall or the kennel's partition, and
+   the package's lights (a quarter of the length in) land out on a
+   front-porch cabin's porch. So a bench or shelf is cut shorter where a wall
+   is in the way (fitStand: its length gives; its depth is moved across only
+   when it does not fit where it was put; with no room near, it is not
+   drawn), and a light goes to the nearest spot inside the room.
+
    The heights are construction settings with Alan's answers as the defaults:
    construction.interior.benchHeightIn (36) and shelfHeightIn (60) -- the
    library does not carry an "interior" block yet, so a company adds one to

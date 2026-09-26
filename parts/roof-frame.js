@@ -48,8 +48,8 @@
    is cut level with the soffit ("the rafters bear on the plate and the tails
    are cut off level for the soffit" -- Alan's section of the cottage eave),
    and the single slope's boxed eave, whose sloped soffit IS the drawn roof
-   underside, leaves no room for tails at all (only the deck runs out to its
-   fascia). A lean-to's or single slope's tall wall rises to the roof line, so
+   underside, leaves no room for tails at all -- so nothing is framed out
+   there, not even the deck, which would have nothing to be nailed to. A lean-to's or single slope's tall wall rises to the roof line, so
    the chords stop against the inside of its studs.
 
    WHAT ELSE LIVES HERE: this file is the roof-geometry hub the other roof
@@ -322,7 +322,6 @@ export function band(sec, i, d1, d2) {
    against. */
 export function offsetPolyline(sec, d) {
   var out = [], segs = sec.segs, n = segs.length;
-  var s0 = segs[0], sN = segs[n - 1];
   var far = sec.W + 5;
   out.push([-far, offY(sec, 0, d, -far)]);
   for (var j = 1; j < n; j++) {
@@ -334,7 +333,6 @@ export function offsetPolyline(sec, d) {
     out.push([pa[0] + a.t[0] * u, pa[1] + a.t[1] * u]);
   }
   out.push([far, offY(sec, n - 1, d, far)]);
-  void s0; void sN;
   return out;
 }
 
@@ -352,10 +350,12 @@ export function fitRoof(sec, poly) {
     if (p) out.push(p);
   });
   [sec.left, sec.right].forEach(function (sd) {
-    if (!sd.eave) return;
+    /* an eave with no room for tails (the single slope's boxed eave, whose
+       sloped soffit IS the drawn roof's underside) gets no framing and no
+       deck: there would be nothing under the deck to nail it to */
+    if (!sd.eave || !sd.tails) return;
     var hs = sd.left ? [[1, 0, -W / 2], [-1, 0, -sd.x]] : [[-1, 0, -W / 2], [1, 0, sd.x]];
-    if (sd.tails) hs.push([0, -1, -sd.floorY]);
-    else hs.push(above(sec, sd.seg.i, sec.deckT + 1e-9));
+    hs.push([0, -1, -sd.floorY]);
     var p = cleanPoly(clipAll(poly, hs));
     if (p) out.push(p);
   });
@@ -819,6 +819,7 @@ export default {
   stage: "roof-frame",
   realLife: "Roof trusses of {roof.chord} lumber ({roof.framing} framing) every {roof.spacingIn} in on centre along the building and one at each gable end, with {roof.gussets} gusset plates at the joints: the top chords follow the roof line of every roof shape with a seat cut where they cross a wall, the tails run out under the eave, and the bottom chord ties the walls together at the wall top.",
   appliesTo() { return true; },
+  members(plan) { return roofFrameMembers(plan); },
   build(plan, kit) {
     kit.setStage("roof-frame");
     drawMembers(kit, roofFrameMembers(plan));

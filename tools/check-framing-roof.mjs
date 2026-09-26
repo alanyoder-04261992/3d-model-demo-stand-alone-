@@ -475,19 +475,26 @@ for (const B of buildings) {
     const tall = [];
     if (plan.ws.L.top > plan.topY + 1e-9) tall.push([-W / 2, -W / 2 + zd]);
     if (plan.ws.R.top > plan.topY + 1e-9) tall.push([W / 2 - zd, W / 2]);
+    /* the single slope's boxed eaves: their sloped soffit is the roof's own
+       underside, so no tail fits under the deck there and the deck stops at
+       the wall line (a design decision of parts/roof-frame.js) */
+    if (plan.t.roof === "slope") { tall.push([line[0][0], -W / 2]); tall.push([W / 2, line[line.length - 1][0]]); }
     let bad = "";
     for (let i = 0; i < segs && !bad; i++) {
       const a = line[i], b = line[i + 1], len = Math.hypot(b[0] - a[0], b[1] - a[1]);
       const rising = b[1] >= a[1], lo = rising ? a : b, hi = rising ? b : a, cosx = Math.abs(b[0] - a[0]) / len;
       const sAt = (x) => Math.abs(x - lo[0]) / cosx;
       const dead = tall.map((z) => [sAt(z[0]), sAt(z[1])].sort((p, q) => p - q)).filter((iv) => iv[1] > 1e-9 && iv[0] < len - 1e-9);
-      /* the top of the slope: the roof's end, or the tall wall that closes it */
-      let sHi = len;
-      dead.forEach((iv) => { if (iv[1] >= len - 1e-6) sHi = Math.min(sHi, iv[0]); });
+      /* the ends of the slope: the roof's ends, or a tall wall or a
+         deck-less eave that closes them (touching stretches taken as one) */
+      dead.sort((p, q) => p[0] - q[0]);
+      for (let k = 1; k < dead.length; k++) if (dead[k][0] <= dead[k - 1][1] + 1e-6) { dead[k - 1][1] = Math.max(dead[k - 1][1], dead[k][1]); dead.splice(k, 1); k--; }
+      let sLo = 0, sHi = len;
+      dead.forEach((iv) => { if (iv[1] >= len - 1e-6) sHi = Math.min(sHi, iv[0]); if (iv[0] <= 1e-6) sLo = Math.max(sLo, iv[1]); });
       const ps = rd.filter((m) => m.kind === "purlin" && m.seg === i);
       if (!ps.length) { bad = `slope ${i} has no purlins`; break; }
       const u = [...new Set(ps.map((m) => Math.round(m.at * 1e6) / 1e6))].sort((x, y) => x - y);
-      if (Math.abs(u[0]) > 1e-6) bad = `slope ${i}: the lowest purlin is not flush at the low end (${u[0].toFixed(3)})`;
+      if (Math.abs(u[0] - sLo) > 1e-6) bad = `slope ${i}: the lowest purlin is not flush at the low end (${u[0].toFixed(3)}, the low end is ${sLo.toFixed(3)})`;
       else if (Math.abs(u[u.length - 1] + pw - sHi) > 1e-6) bad = `slope ${i}: the top purlin ends at ${(u[u.length - 1] + pw).toFixed(3)}, the top of the slope is ${sHi.toFixed(3)}`;
       for (let k = 1; k < u.length && !bad; k++) {
         const gap = u[k] - u[k - 1];

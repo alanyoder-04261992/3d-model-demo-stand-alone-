@@ -145,26 +145,34 @@ export function deckOnSection(sec, opts) {
       var sAt = function (x) { return rising ? (x - s.A[0]) / s.t[0] : (s.B[0] - x) / s.t[0]; };
       var dead = (opts.dead || []).map(function (z) { var a = sAt(z.x0), b = sAt(z.x1); return [Math.max(0, Math.min(a, b)), Math.min(s.len, Math.max(a, b))]; })
         .filter(function (iv) { return iv[1] - iv[0] > 1e-9; }).sort(function (a, b) { return a[0] - b[0]; });
-      var sHi = s.len;
-      if (dead.length && dead[dead.length - 1][1] >= s.len - 1e-6) sHi = dead.pop()[0];
-      var pos = layPurlins(0, sHi, dead, sp, pw);
-      pos.forEach(function (a0, qi) {
+      /* merge touching stretches, then any at either end of the slope trims it */
+      var md = [];
+      dead.forEach(function (iv) { var l = md[md.length - 1]; if (l && iv[0] <= l[1] + 1e-9) l[1] = Math.max(l[1], iv[1]); else md.push(iv.slice()); });
+      var sLo = 0, sHi = s.len;
+      if (md.length && md[0][0] <= 1e-6) sLo = md.shift()[1];
+      if (md.length && md[md.length - 1][1] >= s.len - 1e-6) sHi = md.pop()[0];
+      var pos = layPurlins(sLo, sHi, md, sp, pw);
+      pos.forEach(function (a0) {
         var p = full;
         if (a0 > 1e-9) p = clipHalf(p, hp(a0, true));
         if (a0 + pw < s.len - 1e-9) p = clipHalf(p, hp(a0 + pw, false));
-        p.at = a0; p.top = sHi;
+        p.at = a0; p.top = sHi; p.bottom = sLo;
         rows.push(p);
-        void qi;
       });
     }
     rows.forEach(function (p) {
       fit(p).forEach(function (piece) {
         if (type === "osb") {
-          for (var z = zr[0]; z < zr[1] - 1e-6; z += SHEET_ALONG + SHEET_GAP) {
-            out.push({ poly: piece, z0: z, z1: Math.min(zr[1], z + SHEET_ALONG), kind: "osb-sheet", mat: "osb", seg: i });
+          /* as many sheets as the length needs, cut to equal lengths (so no
+             sliver is left hanging out over a gable-end overhang) */
+          var run = zr[1] - zr[0], nSh = Math.max(1, Math.ceil((run + SHEET_GAP) / (SHEET_ALONG + SHEET_GAP) - 1e-9));
+          var shL = (run - (nSh - 1) * SHEET_GAP) / nSh;
+          for (var k2 = 0; k2 < nSh; k2++) {
+            var za = zr[0] + k2 * (shL + SHEET_GAP);
+            out.push({ poly: piece, z0: za, z1: k2 === nSh - 1 ? zr[1] : za + shL, kind: "osb-sheet", mat: "osb", seg: i });
           }
         } else {
-          out.push({ poly: piece, z0: zr[0], z1: zr[1], kind: "purlin", mat: "lumber", seg: i, at: p.at, top: p.top, len: s.len });
+          out.push({ poly: piece, z0: zr[0], z1: zr[1], kind: "purlin", mat: "lumber", seg: i, at: p.at, top: p.top, bottom: p.bottom, len: s.len });
         }
       });
     });
@@ -176,7 +184,9 @@ export function roofDeckMembers(plan) {
   var sec = roofSection(plan);
   var list = deckOnSection(sec, {
     type: sec.deckType, d: sec.deckT, pw: sec.purlin.d,
-    dead: sec.inner.filter(function (r) { return r.floor > sec.topY + 1e-9; }),
+    dead: sec.inner.filter(function (r) { return r.floor > sec.topY + 1e-9; })
+      .concat([sec.left, sec.right].filter(function (sd) { return sd.eave && !sd.tails; })
+        .map(function (sd) { return sd.left ? { x0: sd.x, x1: -sec.W / 2 } : { x0: sec.W / 2, x1: sd.x }; })),
     spacing: (((plan.construction || {}).roofDeck || {}).purlins || {}).spacingIn / 12 || 2,
     fit: function (p) { return fitRoof(sec, p); },
   });
@@ -191,6 +201,7 @@ export default {
   stage: "roof-deck",
   realLife: "The deck the steel roof is screwed to ({roofDeck.type} on this building): on a metal building {roofDeck.purlins.size} purlins laid flat every {roofDeck.purlins.spacingIn} in up each slope, otherwise OSB sheathing {roofDeck.sheathingIn} in thick, run out over the eaves and the gable-end overhangs.",
   appliesTo() { return true; },
+  members(plan) { return roofDeckMembers(plan); },
   build(plan, kit) {
     kit.setStage("roof-deck");
     drawMembers(kit, roofDeckMembers(plan));

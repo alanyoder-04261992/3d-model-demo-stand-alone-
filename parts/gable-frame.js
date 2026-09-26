@@ -134,6 +134,7 @@ export default {
   stage: "roof-frame",
   realLife: "{walls.stud} gable studs every {walls.spacingIn} in on centre filling each gable end between the end truss's chords, with king studs, jack studs, a header and a sill framed round every gable window, vent and tall end door.",
   appliesTo() { return true; },
+  members(plan) { return gableFrameMembers(plan); },
   build(plan, kit) {
     kit.setStage("roof-frame");
     drawMembers(kit, gableFrameMembers(plan));
