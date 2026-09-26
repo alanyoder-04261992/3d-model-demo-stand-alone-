@@ -1,0 +1,12 @@
+{
+  "name": "shed-designer-3d",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A standalone 3D shed designer: every real shed part is its own module, a new company is one settings file.",
+  "scripts": {
+    "serve": "npx http-server -p 8282 -c-1 .",
+    "check": "node tools/check-all.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
