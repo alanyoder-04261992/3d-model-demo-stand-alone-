@@ -348,7 +348,7 @@ try {
   const times = await h.rebuildTime({ company: "barnwright", state: big.state, size: { w: 742, h: 803 }, fit: "barnwright", scene: "studio", trueColour: false, runs: 7 });
   const sorted = times.slice().sort((a, b) => a - b), median = sorted[sorted.length >> 1];
   ok(`a 14x40 Utility Shed rebuild (plan + every part + upload) takes ${median.toFixed(1)} ms (median of ${times.length}) -- under the ${REBUILD_BOUND_MS} ms bound for this software-graphics machine` +
-    `${median <= REBUILD_BUDGET_MS ? ` and inside the ${REBUILD_BUDGET_MS} ms phone budget` : ` (the ${REBUILD_BUDGET_MS} ms budget is for real hardware)`}`, median < REBUILD_BOUND_MS, times.map((t) => t.toFixed(1)).join(", "));
+    `${median <= REBUILD_BUDGET_MS ? ` (and under ${REBUILD_BUDGET_MS} ms here too -- the budget docs/ARCHITECTURE.md sets for a mid-range phone; this machine is not a phone, so that part is a hint, not proof)` : ` (the ${REBUILD_BUDGET_MS} ms budget in docs/ARCHITECTURE.md is for a mid-range phone, not this machine)`}`, median < REBUILD_BOUND_MS, times.map((t) => t.toFixed(1)).join(", "));
 
   console.log("\nWhat the page was made of");
   ok(`every one of the ${h.checkedFiles.size} files the page loaded is this copy's own file, byte for byte (so a web server left running from another copy cannot stand in for this one)`,

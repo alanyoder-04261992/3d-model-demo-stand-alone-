@@ -125,10 +125,16 @@ export async function openLook() {
   await page.route("**/*", async (route) => {
     const u = route.request().url();
     if (!u.startsWith(origin + "/")) return route.abort();            /* nothing leaves this machine */
-    const path = decodeURIComponent(new URL(u).pathname);
-    if (path === BARNWRIGHT_JSON_PATH) return route.fulfill({ status: 200, contentType: "application/json", body: served });
-    const res = await route.fetch();
-    const body = await res.body();
+    let path, res, body;
+    try {
+      path = decodeURIComponent(new URL(u).pathname);
+      if (path === BARNWRIGHT_JSON_PATH) return route.fulfill({ status: 200, contentType: "application/json", body: served });
+      res = await route.fetch();
+      body = await res.body();
+    } catch (e) {
+      errors.push(`the page could not load ${u} (${(e && e.message) || e})`);
+      return route.abort();
+    }
     let local = null;
     try { local = readFileSync(resolve(ROOT, "." + path)); } catch { /* not a file here */ }
     checkedFiles.add(path);
