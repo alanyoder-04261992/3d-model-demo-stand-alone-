@@ -7,16 +7,22 @@
    those studs, and the framing round every opening in the gable:
    * gable studs ({walls.stud}, the same way round as the wall studs: the thin
      side across the building, the deep side into it) every {walls.spacingIn}
-     in on centre, counted from the -x corner so they line up over the wall
-     studs, standing on the end truss's bottom chord (on the end wall's top
+     in on centre, on the same marks as the end wall's own studs (from the
+     corner that wall's layout starts at: -x on the F end, +x on the B end)
+     so every one stands over a wall stud, standing on the end truss's bottom
+     chord (on the end wall's top
      plate when the roof is framed with rafters) and cut off under the end
      truss's top chord -- cut with model/roof-shapes.js gableClip against the
      chords' underside, so a stud can never poke into the chord or the roof;
    * round a gable window (the octagon, the 18x24), the gable vent, and a door
      on the end wall that rises past the wall top into the gable (the
      Standard Barn's): king studs each side; a header ({walls.header}, picked
-     for the opening's width like a wall header) on jack studs when one fits
-     under the top chord -- otherwise the top chord itself spans the opening;
+     for the opening's width like a wall header -- and, like a wall header,
+     the next size down, then a flat 2x, when the rule's size does not fit
+     under the top chord) on jack studs -- only when not even a flat 2x fits
+     does the top chord itself span the opening. A gable window dragged
+     toward an eave runs up into the top chord on its low side: the chord
+     closes that side, and a king there is only as tall as the room under it;
      cripple studs above the header; a flat sill under a window or vent when
      there is room above the chord, with cripples under it. Where a window or
      a door dips into the end truss's bottom chord the chord is cut (parts/
@@ -35,6 +41,7 @@
    among the framing entries, before "roof-frame". */
 
 import { gableClip } from "../model/roof-shapes.js";
+import { wallRuns } from "./wall-frame.js";
 import {
   trussLayout, gableOpenings, offsetPolyline, ridgeBoard, cleanPoly, clipHalf, rectPoly, drawMembers,
 } from "./roof-frame.js";
@@ -51,6 +58,7 @@ export function gableFrameMembers(plan) {
   /* the underside of the end truss's (or end rafters') top chords */
   var lowerLine = offsetPolyline(sec, dT + cd);
   /* with rafters, the ridge board runs through the gable framing too */
+  var runs = wallRuns(plan);
   var rb = ridgeBoard(plan, lay), rbx0 = null, rbx1 = null, rby0 = null;
   if (rb) {
     rbx0 = Math.min.apply(null, rb.poly.map(function (q) { return q[0]; }));
@@ -82,9 +90,23 @@ export function gableFrameMembers(plan) {
       if (extra) Object.keys(extra).forEach(function (k) { m[k] = extra[k]; });
       out.push(m);
     }
-    /* the stud grid, from the -x corner */
-    var grid = [];
-    for (var k = 1; -W / 2 + k * sg < W / 2; k++) grid.push(-W / 2 + k * sg);
+    /* the stud grid: the SAME marks as the end wall's own studs under it
+       (parts/wall-frame.js lays them from its run's start, which on the F end
+       is the -x corner and on the B end the +x corner, since u runs to the
+       right seen from outside), so every gable stud stands over a wall stud
+       and the siding sheets land on both. It was always from the -x corner,
+       which put not one gable stud over a B-wall stud on a 10 or 14 ft wide
+       building. Over a porch (the F wall set back) the enclosed end wall's
+       marks are used; with no wall under that end (the kennel's open run),
+       that end's own corner. */
+    var grid = [], w = plan.ws[end];
+    var run = runs.filter(function (r) { return r.key === end; })[0];
+    var uo = run ? run.a : -w.len / 2, ax = w.ax[0], cx = w.cx || 0;
+    for (var k = -200; k <= 200; k++) {
+      var gx = cx + ax * (uo + k * sg);
+      if (gx > -W / 2 + 1e-9 && gx < W / 2 - 1e-9) grid.push(gx);
+    }
+    grid.sort(function (a, b) { return a - b; });
     var xs = grid.slice();
     /* a stud tight in each corner where the gable has any height there (the
        cottage's roof runs above the wall top at the eaves) */

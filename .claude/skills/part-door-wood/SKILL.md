@@ -145,8 +145,11 @@ And the trim round it (shared, `common.js`; full text in `part-openings`):
 * `node tools/check-golden.mjs --part door-wood` -- every shop-door triangle
   of the 148 recorded Barnwright buildings, number for number (94 buildings,
   17,074 triangles, Sep 26 2026): painted and metal buildings, single and
-  double doors, door windows (`lite-*`), the kennel back door, doors on end
-  walls rising into gambrel, gable and cottage gables, and the selected door
+  double doors, door windows (`lite-*`), the kennel back door, doors on the
+  end walls of gambrel and gable buildings (where the rule lets them rise
+  toward the gable) and on a cottage's end wall (where it never does: the cap
+  there is a full foot under the wall top, which a 76 1/2 in door does not
+  reach -- `doors-cs-10x20-w36-back`), and the selected door
   (`sel-door-ut-10x20`, the blue glow).
 * `node tools/check-golden.mjs` -- also the draw order and paint of its
   materials.

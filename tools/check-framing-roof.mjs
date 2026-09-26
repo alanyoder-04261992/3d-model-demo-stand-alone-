@@ -29,17 +29,21 @@
       at EACH GABLE END, flush inside the gable siding; every truss has a top
       chord on every slope and (truss framing) a bottom chord.
    4. LOFT framing only on the styles with the loft trait, at each loft end,
-      with its supports (loft joists, and truss bottom chords standing in)
-      no further apart than loft.spacingIn.
+      with the floor carried by members that really touch its underside (loft
+      joists, and truss bottom chords only when they are as deep) no further
+      apart than loft.spacingIn.
    5. PURLINS only where roofDeck.type is "purlins" (by default: the metal
       buildings, and only they), OSB only where it is "osb"; purlins no
       further apart up the slope than roofDeck.purlins.spacingIn.
    6. DORMER framing only when a dormer is drawn; nothing of the main roof's
       trusses or deck is left inside the dormer (item 2 proves it).
-   7. GABLE OPENINGS: every gable window and vent the gable framing frames
-      has a king stud each side and either a header on jacks or the end
-      truss's chord over it; no gable stud or chord crosses a gable window's
-      clear opening.
+   7. GABLE OPENINGS: every gable window, vent and tall end door the gable
+      framing frames has a king stud each side (or, for a window run up into
+      the top chord near an eave, the chord closing that side) and a header
+      on jacks wherever even a flat 2x fits under the top chord (worked out
+      from the drawn roof), else the end truss's chord over it; no gable stud
+      or chord crosses a gable window's clear opening, wherever the window is
+      dragged; the gable studs stand on the end wall's own stud layout.
    8. THE DRAWING IS THE DATA: in assemble(plan, {frames: true}) each part
       draws exactly its members (the number of triangles, and every corner),
       in its own building step(s).
@@ -48,10 +52,12 @@
       order, with the framing drawn or not.
    Buildings: all 148 recorded Barnwright buildings; every style at EVERY size
    it is sold in with its standard doors and windows (and the Dormer Shed with
-   each dormer size); and every style's typical building again with the
+   each dormer size); every style's typical building again with the
    construction changed -- rafters instead of trusses, 16 in spacing, 2x6
    chords, 2x6 studs, purlins forced on a painted building and OSB on a metal
-   one, and a 2x4 loft joist.
+   one, and a 2x4 loft joist; every style's typical building with each gable
+   window dragged as far as the designer lets it go toward both eaves, up and
+   down; and the Standard Barn with two openings on one end.
    If another framing part (walls, floor) is finished, any of its corners
    buried more than 0.01 ft inside a roof board is reported as a warning. */
 
@@ -60,13 +66,14 @@ import { readFixture, catalogue } from "./lib/headless.mjs";
 import { makePlan } from "../model/plan.js";
 import { frameOf } from "../model/frame.js";
 import { setType, setSize, defaults } from "../model/design.js";
-import { resetItems, openingRect } from "../model/layout.js";
+import { resetItems, openingRect, clampPos } from "../model/layout.js";
 import { mergeConstruction } from "../model/construction.js";
 import { ROOF_TH } from "../model/roof-shapes.js";
 import { assemble } from "../engine/assemble.js";
 import { STAGES, STAGE_ID } from "../parts/stages.js";
 import { PIPELINE } from "../parts/index.js";
-import roofFramePart, { roofFrameMembers, lumberFt } from "../parts/roof-frame.js";
+import roofFramePart, { roofFrameMembers, lumberFt, gableOpenings, roofSection } from "../parts/roof-frame.js";
+import { wallRuns } from "../parts/wall-frame.js";
 import gableFramePart, { gableFrameMembers } from "../parts/gable-frame.js";
 import roofDeckPart, { roofDeckMembers } from "../parts/roof-deck.js";
 import loftPart, { loftMembers } from "../parts/loft.js";
@@ -143,6 +150,33 @@ for (const [vn, over] of VARIANTS) {
     if (cat.TYPES[k].dormer) s.dormer = "12";
     buildings.push({ id: `${k}-${s.size}-${vn}`, state: s, cat: vcat, full: true, variant: vn });
   }
+}
+
+/* gable windows DRAGGED: to both eaves and to the top and bottom of the
+   gable, on every style's typical building (clampPos keeps them where the
+   designer lets a customer put them) -- a window near an eave runs up into
+   the end truss's top chord and must still be framed. And the Standard Barn,
+   whose end doors rise into the gable, with two openings on one end. */
+for (const k of styleKeys) {
+  for (const c of ["oct", "g1824", "fake"]) {
+    if (!cat.CAT[c]) continue;
+    for (const wall of ["F", "B"]) for (const pos of [-99, 99]) for (const vy of [-9, 9]) {
+      const s = structuredClone(typical[k]);
+      const it = { id: "drag", cat: c, wall, pos, vy, inc: false };
+      s.items.push(it);
+      clampPos(it, s, frameOf(s, cat));
+      buildings.push({ id: `${k}-${s.size}-${c}-${wall}-${pos < 0 ? "left" : "right"}-${vy < 0 ? "low" : "high"}`, state: s, cat, full: false, dragged: true });
+    }
+  }
+}
+for (const size of Object.keys(cat.P.SB || {})) for (const [a, b] of [["w36", "ru6"], ["d36in", "ru6"], ["w48", "w36"]]) {
+  const s = structuredClone(typical.SB);
+  setSize(s, size, cat); resetItems(s, frameOf(s, cat), cat);
+  const W = +size.split("x")[0];
+  const i1 = { id: "e1", cat: a, wall: "B", pos: -W / 2 + 1.2, inc: false }, i2 = { id: "e2", cat: b, wall: "B", pos: W / 2 - 3, inc: false };
+  s.items.push(i1, i2);
+  clampPos(i1, s, frameOf(s, cat)); clampPos(i2, s, frameOf(s, cat));
+  buildings.push({ id: `SB-${size}-${a}+${b}-on-B`, state: s, cat, full: false });
 }
 
 /* ======================= the region test ======================= */
@@ -294,7 +328,7 @@ function makeRegion(plan, build) {
     return null;
   }
   return {
-    roof,
+    roof, deckT,
     why(p, partId, kind) {
       const isDeck = kind === "osb-sheet" || kind === "purlin";
       const a = mainWhy(p, isDeck);
@@ -363,7 +397,7 @@ function describe(m) {
 
 /* ======================= run ======================= */
 
-const counts = { buildings: 0, members: 0, corners: 0, pairs: 0, drawnChecked: 0, finishedChecked: 0, openings: 0, lofts: 0, purlinBuildings: 0, osbBuildings: 0, dormers: 0, rafterBuildings: 0 };
+const counts = { buildings: 0, members: 0, corners: 0, pairs: 0, drawnChecked: 0, finishedChecked: 0, openings: 0, lofts: 0, purlinBuildings: 0, osbBuildings: 0, dormers: 0, rafterBuildings: 0, chordless: 0, chordClosed: 0, gableHeaders: 0, gableStuds: 0 };
 const otherFrameParts = PIPELINE.filter((en) => en.frame && !MY_PARTS.some((p) => p.id === en.entry) && en.module && en.module.pending !== true);
 
 for (const B of buildings) {
@@ -431,7 +465,24 @@ for (const B of buildings) {
       if (a && b && c >= Math.min(a[0], b[0]) - 1.5 && c <= Math.max(a[0], b[0]) + 1.5) segHit.add(i);
     });
     ok(`${B.id}: every truss has a top chord on every slope`, segHit.size === nSeg, `truss at z ${z.toFixed(2)} has chords on ${segHit.size} of ${nSeg} slopes`);
-    if (!rafter) ok(`${B.id}: every truss has a bottom chord`, here.some((m) => m.kind === "bottom-chord"), `truss at z ${z.toFixed(2)}`);
+    if (!rafter) {
+      /* an END truss over openings that take its whole width (two doors on a
+         barn end that rise into the gable) has its chord cut away entirely --
+         allowed only when the cuts really cover everything a bottom chord
+         would span there (read off a full truss's bottom chord) */
+      let exempt = false;
+      const endKey = here.length && here[0].end;
+      if (endKey && !here.some((m) => m.kind === "bottom-chord")) {
+        const full = rf.filter((m) => m.kind === "bottom-chord" && !m.end);
+        const xa = Math.min(...full.flatMap((m) => m.poly.map((q) => q[0]))), xb = Math.max(...full.flatMap((m) => m.poly.map((q) => q[0])));
+        const cuts = gableOpenings(plan, endKey).filter((o) => o.cutsChord).map((o) => [o.fx0, o.fx1]).sort((p, q) => p[0] - q[0]);
+        let reach = xa;
+        for (const [a, b] of cuts) { if (a > reach + 0.25) break; reach = Math.max(reach, b); }
+        exempt = full.length > 0 && reach >= xb - 0.25;
+        if (exempt) counts.chordless++;
+      }
+      ok(`${B.id}: every truss has a bottom chord (an end truss only loses it where gable openings take its whole width)`, exempt || here.some((m) => m.kind === "bottom-chord"), `truss at z ${z.toFixed(2)}`);
+    }
   }
 
   /* 4. loft */
@@ -444,14 +495,21 @@ for (const B of buildings) {
       ok(`${B.id}: a loft floor at the ${e} end of a lofted style`, deck.length === 1 && joists.length > 0, `${joists.length} joists, ${deck.length} decks`);
       if (!deck.length) continue;
       const d0 = deck[0].z0, d1 = deck[0].z1;
-      const sup = joists.map((m) => [m.z0, m.z1]).concat(rf.filter((m) => m.kind === "bottom-chord").map((m) => [m.z0, m.z1]));
-      /* between the loft's own ends, no stretch without a joist or a chord longer than the spacing */
-      const cs = sup.map((s) => (s[0] + s[1]) / 2).filter((c) => c > d0 - 0.2 && c < d1 + 0.2).sort((a, b) => a - b);
-      let maxGap = 0;
+      /* a SUPPORT is a loft joist or a truss bottom chord whose top really
+         touches the floor's underside (a 2x4 chord under a floor laid on 2x6
+         joists does not, and used to be counted anyway) */
+      const deckBot = Math.min(...deck[0].poly.map((q) => q[1]));
+      const touches = (m) => Math.abs(Math.max(...m.poly.map((q) => q[1])) - deckBot) < 0.01 && m.z1 > d0 - 0.2 && m.z0 < d1 + 0.2;
+      const sup = joists.concat(rf.filter((m) => m.kind === "bottom-chord")).filter(touches).map((m) => [m.z0, m.z1]);
+      const cs = sup.map((s) => (s[0] + s[1]) / 2).sort((a, b) => a - b);
+      /* between the loft's own ends, no stretch without a support longer than
+         the spacing -- measured centre to centre, and from each end of the
+         floor to the support nearest it */
+      let maxGap = cs.length ? Math.max(cs[0] - d0, d1 - cs[cs.length - 1]) : Infinity;
       for (let i = 1; i < cs.length; i++) maxGap = Math.max(maxGap, cs[i] - cs[i - 1]);
       const slack = 1e-6;
-      ok(`${B.id}: loft supports no further apart than loft.spacingIn (${con.loft.spacingIn} in)`, cs.length >= 2 && maxGap <= con.loft.spacingIn / 12 + slack,
-        `supports at ${cs.map((c) => c.toFixed(2)).join(" ")}`);
+      ok(`${B.id}: loft floor carried by joists (or chords) touching it, no further apart than loft.spacingIn (${con.loft.spacingIn} in)`, cs.length >= 2 && maxGap <= con.loft.spacingIn / 12 + slack,
+        `${e}: floor ${d0.toFixed(2)}..${d1.toFixed(2)}, supports touching it at ${cs.map((c) => c.toFixed(2)).join(" ")}`);
     }
   } else ok(`${B.id}: no loft framing on a style without a loft`, lf.length === 0, `${lf.length} loft boards`);
 
@@ -515,13 +573,60 @@ for (const B of buildings) {
 
   /* 7. gable openings */
   const gf = byPart["gable-frame"];
-  const opNames = [...new Set(gf.filter((m) => m.opening).map((m) => m.end + ":" + m.opening))];
-  for (const on of opNames) {
-    counts.openings++;
-    const ms = gf.filter((m) => m.opening && m.end + ":" + m.opening === on);
-    const kings = ms.filter((m) => m.kind === "king").length, jacks = ms.filter((m) => m.kind === "jack").length, headers = ms.filter((m) => m.kind === "header").length;
-    ok(`${B.id}: every framed gable opening has a king stud each side`, kings === 2, `${on}: ${kings} kings`);
-    ok(`${B.id}: every framed gable opening has a header on two jacks, or the chord over it`, (headers === 1 && jacks === 2) || (headers === 0 && jacks === 0), `${on}: ${headers} headers, ${jacks} jacks`);
+  /* the underside of the end truss's top chords, worked out from the roof
+     as DRAWN (every roof here is concave: the lowest of the offset lines) */
+  const lineD = region.roof.line, chordD = region.deckT + lumberFt(con.roof.chord).d;
+  const chordUnder = (x) => {
+    let m = Infinity;
+    for (let i = 0; i + 1 < lineD.length; i++) {
+      const a = lineD[i], c = lineD[i + 1];
+      if (Math.abs(c[0] - a[0]) < 1e-9) continue;
+      const sl = (c[1] - a[1]) / (c[0] - a[0]);
+      m = Math.min(m, a[1] + sl * (x - a[0]) - chordD * Math.sqrt(1 + sl * sl));
+    }
+    return m;
+  };
+  const stT = lumberFt(con.walls.stud).t;
+  for (const end of ["F", "B"]) {
+    for (const o of gableOpenings(plan, end)) {
+      counts.openings++;
+      const on = end + ":" + o.what;
+      const ms = gf.filter((m) => m.opening && m.end + ":" + m.opening === on);
+      const kings = ms.filter((m) => m.kind === "king"), jacks = ms.filter((m) => m.kind === "jack").length, headers = ms.filter((m) => m.kind === "header").length;
+      /* a king each side -- or, on a window run up into the top chord near an
+         eave, the chord itself closing that side (no room for a king there) */
+      for (const [side, x] of [["left", o.fx0 + stT / 2], ["right", o.fx1 - stT / 2]]) {
+        const has = kings.some((m) => { const xs = m.poly.map((q) => q[0]); return Math.abs((Math.min(...xs) + Math.max(...xs)) / 2 - x) < 0.01; });
+        const closed = chordUnder(x) <= o.base + 0.06;
+        if (closed && !has) counts.chordClosed++;
+        ok(`${B.id}: every framed gable opening has a king stud each side (or the top chord closing that side)`, has || closed, `${on} ${side}: no king at x ${x.toFixed(2)} and ${(chordUnder(x) - o.base).toFixed(2)} ft of room under the chord`);
+      }
+      ok(`${B.id}: every framed gable opening has a header on two jacks, or the chord over it`, (headers === 1 && jacks === 2) || (headers === 0 && jacks === 0), `${on}: ${headers} headers, ${jacks} jacks`);
+      /* a header wherever even a flat 2x fits between the opening's top and
+         the chord (the wall framing's rule, parts/wall-frame.js fitHeader) */
+      const room = Math.min(chordUnder(o.x0 - stT), chordUnder(o.x1 + stT)) - o.y1;
+      ok(`${B.id}: a gable opening with room for a header under the top chord has one`, room < stT + 0.002 || headers === 1, `${on}: ${room.toFixed(3)} ft of room over it, ${headers} headers`);
+      if (headers) counts.gableHeaders++;
+    }
+  }
+  /* the gable studs stand over the end wall's own studs: on its layout
+     marks (parts/wall-frame.js, from its run's start), or tight in a corner */
+  const runs = wallRuns(plan), gsp = con.walls.spacingIn / 12, secG = roofSection(plan);
+  for (const end of ["F", "B"]) {
+    const w = plan.ws[end], run = runs.find((r) => r.key === end);
+    const uo = run ? run.a : -w.len / 2;
+    const studs = gf.filter((m) => m.end === end && m.kind === "gable-stud");
+    const off = studs.filter((m) => {
+      /* the stud's centre line: a stud cut off under a steep chord can be a
+         triangle narrower than the stud, so take it from its uncut side */
+      const xs = m.poly.map((q) => q[0]), x0 = Math.min(...xs), x1 = Math.max(...xs);
+      const x = x1 - x0 > stT - 1e-6 ? (x0 + x1) / 2 : xs.filter((v) => Math.abs(v - x0) < 1e-7).length >= 2 ? x0 + stT / 2 : x1 - stT / 2;
+      if (Math.abs(x0 - secG.innerL) < 1e-3 || Math.abs(x1 - secG.innerR) < 1e-3) return false;   /* tight in a corner */
+      const u = (x - (w.cx || 0)) / w.ax[0], k = (u - uo) / gsp;
+      return Math.abs(k - Math.round(k)) * gsp > 0.005;
+    });
+    counts.gableStuds += studs.length;
+    ok(`${B.id}: gable studs stand on the ${end} wall's stud layout (over its studs)`, off.length === 0, `${off.length} of ${studs.length} off the marks`);
   }
   /* no gable stud or end chord crosses a gable window's clear opening */
   for (const it of plan.state.items || []) {
@@ -632,14 +737,14 @@ if (fail) {
   for (const f of failures.slice(0, 60)) console.log("  - " + f);
   process.exitCode = 1;
 } else {
-  console.log(`PROVED (${pass} checks) on ${counts.buildings} buildings (the 148 recorded ones, every style at every size it is sold in, the Dormer Shed with each dormer, and ${VARIANTS.length} construction changes on every style), ${counts.members} boards and sheets:`);
+  console.log(`PROVED (${pass} checks) on ${counts.buildings} buildings (the 148 recorded ones, every style at every size it is sold in, the Dormer Shed with each dormer, ${VARIANTS.length} construction changes on every style, gable windows dragged to both eaves and the top and bottom of every gable, and two openings on a barn end), ${counts.members} boards and sheets:`);
   console.log(`  1. all ${counts.corners} board corners are inside the roof as drawn: under the roof slab's underside (read off the finished drawing), above the wall top inside the walls, not past the eave's tip or below its drawn bottom edge, only deck out over the gable-end overhangs, and the dormer's framing inside the dormer as drawn.`);
   console.log(`  2. no two boards of the five roof framing parts overlap by more than ${OVERLAP} ft (exact penetration depth).`);
-  console.log(`  3. trusses (or rafter pairs; ${counts.rafterBuildings} rafter-framed buildings) stand at roof.spacingIn on centre with the last gap no larger, one at each gable end, each with a top chord on every slope and (trusses) a bottom chord.`);
-  console.log(`  4. loft framing on the ${counts.lofts} lofted buildings only, at each loft end, supports no further apart than loft.spacingIn.`);
+  console.log(`  3. trusses (or rafter pairs; ${counts.rafterBuildings} rafter-framed buildings) stand at roof.spacingIn on centre with the last gap no larger, one at each gable end, each with a top chord on every slope and (trusses) a bottom chord (${counts.chordless} end truss(es) whose chord gable openings take entirely).`);
+  console.log(`  4. loft framing on the ${counts.lofts} lofted buildings only, at each loft end, the floor carried by joists (or truss chords) that really touch its underside, no further apart than loft.spacingIn.`);
   console.log(`  5. purlins exactly where roofDeck.type says (${counts.purlinBuildings} buildings; by default only the metal ones), OSB elsewhere (${counts.osbBuildings}), purlins within their spacing up every slope.`);
   console.log(`  6. dormer framing exactly when a dormer is drawn (${counts.dormers} buildings), clear of the main roof's trusses and deck.`);
-  console.log(`  7. ${counts.openings} framed gable openings each with two kings and a header on jacks (or the chord over it); nothing framed across a gable window.`);
+  console.log(`  7. ${counts.openings} framed gable openings each with a king each side (${counts.chordClosed} sides closed by the top chord near an eave) and a header on jacks wherever even a flat 2x fits under the chord (${counts.gableHeaders} headers), else the chord over it; nothing framed across a gable window; ${counts.gableStuds} gable studs all on their end wall's stud layout.`);
   console.log(`  8. in assemble(frames:true) each part draws exactly its boards, every corner, in its own step (${counts.drawnChecked} part drawings checked).`);
   console.log(`  9. frames:true leaves every finished triangle, material and draw order untouched (${counts.finishedChecked} buildings).`);
 }

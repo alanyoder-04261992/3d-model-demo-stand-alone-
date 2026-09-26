@@ -175,9 +175,16 @@ The primitives (`common.js`):
 * **The porch header band goes on every wall of a porch building**, not just
   the porch wall.
 * **The roll-up gets the casings and head but not the porch band.**
-* `wdisc` computes a `first` it never uses; `wret`/`wrev` differ only in
-  winding, and the winding is load-bearing (back faces are culled; the shadow
-  pass draws back faces, so the returns are what cast the trim's shadow lines).
+* `wdisc` computes a `first` it never uses.
+* **`wret` and `wrev` are the SAME code under two names** -- the same four
+  quads, the same corners, the same winding, with the depths called
+  `o0 o1` in one and `oIn oOut` in the other. Only the callers differ: `wret`
+  is used for the returns round a slab standing proud (casings, sashes, the
+  latch plate), `wrev` for the jamb walls of a recess (door and window
+  reveals). Keep both names and both copies; do not "fix" one to wind the
+  other way. The winding is load-bearing: the main pass culls back faces and
+  the shadow pass draws ONLY back faces, so flipping it changes both what is
+  seen and which shadow lines the trim casts.
 * The draw ORDER is the order the items were added: the first door or window
   to make a material (`galv`, `doorSh6`, `aoWall` ...) decides its paint.
 

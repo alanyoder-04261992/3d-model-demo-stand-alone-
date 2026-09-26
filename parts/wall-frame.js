@@ -29,7 +29,10 @@
    doubled mullion under its shared middle board. Where the header the rule
    asks for does not fit under the top plates (a door on a short loft wall),
    the next size that fits is used, down to a flat 2x, and where not even that
-   fits the top plates themselves span the opening. A door that reaches up
+   fits the top plates themselves span the opening; a header that would leave
+   less than a cripple's worth under the plates goes up tight under them
+   (CRIPPLE_MIN). An opening wider than its wall's frame is framed only as
+   wide as the wall allows. A door that reaches up
    THROUGH the top plates -- on a gable end, as Barnwright draws it: "doors on
    the end walls rise into the gable up to the roofline" (the Standard Barn's
    4.2 ft walls) -- has the top plates cut across it and its jacks and kings
@@ -68,10 +71,17 @@ import { openingRect } from "../model/layout.js";
 import { profileYat } from "../model/roof-shapes.js";
 import { pickRule } from "../model/construction.js";
 import { sidingWalls } from "./siding.js";
+import { gableOpenings } from "./roof-frame.js";
 import { lumberSize, WALL_INSET, PARTITION_INSET, wallMember, drawMembers, framePt } from "./floor-frame.js";
 
 /* The header sizes tried, deepest first, when the rule's size does not fit. */
 export const HEADER_FALLBACK = Object.freeze(["2x12", "2x10", "2x8", "2x6", "2x4"]);
+/* The shortest cripple worth cutting (0.6 in). A header that would leave a
+   gap smaller than this under the top plates (or under a window framed above
+   it) is set tight up against them instead, the way a framer nails a header
+   up under the plate and shims the opening -- never left hanging a fraction
+   of an inch below what it carries. */
+export const CRIPPLE_MIN = 0.05;
 
 /* The wall construction settings, in feet. */
 export function wallSpec(plan) {
@@ -213,65 +223,131 @@ function fitHeader(spec, span, openTop, limit) {
      ends, the bottom plate cut across it if either is a door, and a single
      rough sill at the lower window bottom if both are windows.
    Openings one above the other (the single slope's transom row over a door)
-   are framed separately; the studs between are cut round both. */
-function frameOpenings(plan, run, spec, yPT, yTB) {
+   are framed separately; the studs between are cut round both, and the lower
+   one's header is sized to fit under the upper one's sill (framed as one when
+   not even a flat 2x fits between them).
+
+   An opening wider than the wall's frame (an 8 ft roll-up on an 8 ft end
+   wall, double doors picked for a 4 ft porch wall -- Barnwright draws the
+   door past the corners) is framed only as wide as the wall allows: a jack
+   against each end of the wall's frame, the corner doing the king's job.
+
+   Two neighbours share a stud only when their headers sit at the same
+   height (one stud can carry one header line); otherwise they are framed as
+   one opening. */
+function frameOpenings(plan, run, spec, yPT, yTB, topPlate) {
   var sw = spec.sw, sillT = spec.plateT;
   function low(f) { return f.win ? Math.max(yPT, f.ro.y0 - sillT) : yPT; }
   function yOver(A, B) { return Math.min(A.ro.y1, B.ro.y1) > Math.max(low(A), low(B)) + 1e-9; }
   function gapOf(A, B) { return Math.max(B.ro.u0 - A.ro.u1, A.ro.u0 - B.ro.u1); }
-  var groups = runOpenings(plan, run).map(function (o) {
+  function uOver(A, B) { return Math.min(A.ro.u1, B.ro.u1) + sw > Math.max(A.ro.u0, B.ro.u0) - sw + 1e-9; }
+  /* the only walls whose openings the gable framing carries past the plates
+     (parts/roof-frame.js gableOpenings frames an end-wall door whose top is
+     more than 0.01 ft over the wall top) */
+  var gableEnd = (run.key === "F" || run.key === "B") && Math.abs(Math.abs(run.w.at) - plan.L / 2) < 1e-9;
+  /* ...and only those the gable framing actually takes: it refuses one whose
+     framing would run past the gable's own (a door near the corner, where
+     the roof comes down), so the one list both parts read decides */
+  var carriedOps = gableEnd ? gableOpenings(plan, run.key).filter(function (o) { return o.kind === "door"; }) : [];
+  function carried(p) {
+    if (!(p.ro.y1 > topPlate + 0.01)) return false;
+    var xa = run.w.cx + run.w.ax[0] * p.ro.u0, xb = run.w.cx + run.w.ax[0] * p.ro.u1, x0 = Math.min(xa, xb), x1 = Math.max(xa, xb);
+    return carriedOps.some(function (o) { return o.x0 <= x0 + 0.01 && o.x1 >= x1 - 0.01; });
+  }
+  var groups = [];
+  runOpenings(plan, run).forEach(function (o) {
     var r = o.rect, ro = r.clear, it = o.it, c = plan.CAT[it.cat];
     var win = r.kind === "win";
-    return { ids: [it.id], parts: [{ id: it.id, ro: ro, win: win }], rect: r, ro: { u0: ro.u0, u1: ro.u1, y0: ro.y0, y1: ro.y1 }, win: win,
-      dbl: !!(c && it.dbl && c.k === "win" && !c.gable), doggie: !!o.doggie };
+    var u0 = Math.max(ro.u0, run.fu0 + sw), u1 = Math.min(ro.u1, run.fu1 - sw);
+    if (u1 - u0 < 0.05) return;                      /* nothing of it on this wall's frame */
+    groups.push({ ids: [it.id], parts: [{ id: it.id, ro: ro, win: win }], rect: r, ro: { u0: u0, u1: u1, y0: ro.y0, y1: ro.y1 }, win: win,
+      clipped: u0 > ro.u0 + 1e-9 || u1 < ro.u1 - 1e-9,
+      dbl: !!(c && it.dbl && c.k === "win" && !c.gable), doggie: !!o.doggie });
   });
-  for (var merged = true; merged;) {
-    merged = false;
-    for (var i = 0; i < groups.length && !merged; i++) for (var j = i + 1; j < groups.length && !merged; j++) {
-      var A = groups[i], B = groups[j];
-      if (!yOver(A, B) || gapOf(A, B) >= sw - 1e-9) continue;
-      A.ids = A.ids.concat(B.ids); A.parts = A.parts.concat(B.parts);
-      A.win = A.win && B.win; A.dbl = false;
-      A.ro = { u0: Math.min(A.ro.u0, B.ro.u0), u1: Math.max(A.ro.u1, B.ro.u1), y0: Math.min(A.ro.y0, B.ro.y0), y1: Math.max(A.ro.y1, B.ro.y1) };
-      if (!A.win) A.ro.y0 = y0;
-      groups.splice(j, 1); merged = true;
+  function merge(A, B) {
+    A.ids = A.ids.concat(B.ids); A.parts = A.parts.concat(B.parts);
+    A.win = A.win && B.win; A.dbl = false; A.clipped = A.clipped || B.clipped;
+    A.ro = { u0: Math.min(A.ro.u0, B.ro.u0), u1: Math.max(A.ro.u1, B.ro.u1), y0: Math.min(A.ro.y0, B.ro.y0), y1: Math.max(A.ro.y1, B.ro.y1) };
+    if (!A.win) A.ro.y0 = y0;
+    groups.splice(groups.indexOf(B), 1);
+  }
+  function mergeClose() {
+    for (var merged = true; merged;) {
+      merged = false;
+      for (var i = 0; i < groups.length && !merged; i++) for (var j = i + 1; j < groups.length && !merged; j++) {
+        var A = groups[i], B = groups[j];
+        if (!yOver(A, B) || gapOf(A, B) >= sw - 1e-9) continue;
+        merge(A, B); merged = true;
+      }
     }
   }
-  groups.sort(function (a, b) { return a.ro.u0 - b.ro.u0; });
-  var frames = groups.map(function (g) {
-    var ro = g.ro, span = ro.u1 - ro.u0;
-    var fh = fitHeader(spec, span, ro.y1, yTB);
-    /* an opening that reaches up through the top plates (a door rising into
-       the gable of a Standard Barn): the plates are cut across it, the jacks
-       and kings stop under them, and the gable framing (parts/gable-frame.js,
-       with roof-frame's gableOpenings) carries its header above the wall */
-    var through = ro.y1 > yTB - 1e-9;
-    if (through) fh = { size: null, asked: fh.asked, flat: false, fits: false, byGable: true };
-    var hTop = fh.size ? ro.y1 + fh.size.d : ro.y1;
-    /* no header fits at all under the plates: the plates span the opening
-       and the jacks run straight up to them */
-    var plateHead = !fh.size && !through;
-    if (plateHead) hTop = yTB;
-    var sillBot = g.win ? Math.max(yPT, ro.y0 - sillT) : null;
-    return {
-      id: g.ids.join("+"), ids: g.ids, parts: g.parts, combined: g.ids.length > 1, rect: g.rect, ro: ro, win: g.win, dbl: g.dbl && g.ids.length === 1,
-      span: span, header: fh, through: through, plateHead: plateHead, hTop: hTop, sillBot: sillBot, zoneLow: g.win ? sillBot : yPT,
-      kingTop: yTB, doggie: g.doggie, shareL: null, shareR: null, kingByEnd: { L: false, R: false },
-    };
-  });
-  /* one stud's room between two neighbours: they share it */
-  for (var k = 0; k + 1 < frames.length; k++) {
-    var P = frames[k], Q = frames[k + 1];
-    var g2 = Q.ro.u0 - P.ro.u1;
-    if (g2 >= sw - 1e-9 && g2 < 2 * sw - 1e-9 && yOver(P, Q)) {
-      var sh = { mid: (P.ro.u1 + Q.ro.u0) / 2, top: Math.min(P.ro.y1, Q.ro.y1), left: P.id, right: Q.id };
-      P.shareR = sh; Q.shareL = sh;
+  function build() {
+    groups.sort(function (a, b) { return a.ro.u0 - b.ro.u0; });
+    var frames = groups.map(function (g) {
+      var ro = g.ro, span = ro.u1 - ro.u0;
+      /* what the header must fit under: the top plates, or the sill of an
+         opening framed right above this one */
+      var limit = yTB, above = null;
+      groups.forEach(function (o) {
+        if (o === g || yOver(g, o) || !uOver(g, o) || low(o) < ro.y1 - 1e-9) return;
+        if (low(o) < limit) { limit = low(o); above = o; }
+      });
+      var fh = fitHeader(spec, span, ro.y1, limit);
+      /* an opening that reaches up past the wall top into the gable (a door
+         rising into the gable of a Standard Barn): the plates are cut across
+         it, the jacks and kings stop under them, and the gable framing
+         (parts/gable-frame.js, with roof-frame's gableOpenings) carries its
+         header above the wall */
+      g.parts.forEach(function (p) { p.carried = carried(p); });
+      var through = g.parts.some(function (p) { return p.carried; });
+      if (through) fh = { size: null, asked: fh.asked, flat: false, fits: false, byGable: true };
+      var hBot = ro.y1, hTop = fh.size ? ro.y1 + fh.size.d : ro.y1;
+      /* a header that would leave less than a cripple's worth under what it
+         carries goes up tight against it (CRIPPLE_MIN) */
+      if (fh.size && limit - hTop > 1e-9 && limit - hTop < CRIPPLE_MIN) { hBot = limit - fh.size.d; hTop = limit; }
+      /* no header fits at all under the plates: the plates span the opening
+         and the jacks run straight up to them (a door whose top is up in the
+         plates themselves is held to them the same way) */
+      var plateHead = !fh.size && !through && !above;
+      if (plateHead) { hBot = yTB; hTop = yTB; }
+      var sillBot = g.win ? Math.max(yPT, ro.y0 - sillT) : null;
+      return {
+        id: g.ids.join("+"), ids: g.ids, parts: g.parts, combined: g.ids.length > 1, rect: g.rect, ro: ro, win: g.win, dbl: g.dbl && g.ids.length === 1,
+        span: span, header: fh, through: through, plateHead: plateHead, hBot: hBot, hTop: hTop, limit: limit, sillBot: sillBot, zoneLow: g.win ? sillBot : yPT,
+        kingTop: yTB, doggie: g.doggie, shareL: null, shareR: null, kingByEnd: { L: false, R: false }, clipped: !!g.clipped,
+        group: g, under: above, stuck: !fh.size && !through && !!above,
+      };
+    });
+    return frames;
+  }
+  mergeClose();
+  var frames;
+  for (var guard = 0; guard < 50; guard++) {
+    frames = build();
+    var redo = false;
+    /* stacked openings with not even a flat 2x between them: one opening */
+    for (var s = 0; s < frames.length && !redo; s++) if (frames[s].stuck) { merge(frames[s].group, frames[s].under); redo = true; }
+    /* one stud's room between two neighbours: they share it -- when their
+       headers sit at the same height; else they are framed as one */
+    /* (every pair, not just neighbours in the list: a transom row framed
+       above can sit between a door and a window in it) */
+    for (var k = 0; k < frames.length && !redo; k++) for (var k2 = 0; k2 < frames.length && !redo; k2++) {
+      var P = frames[k], Q = frames[k2];
+      if (P === Q) continue;
+      var g2 = Q.ro.u0 - P.ro.u1;
+      if (g2 >= sw - 1e-9 && g2 < 2 * sw - 1e-9 && yOver(P, Q)) {
+        if (Math.abs(P.hBot - Q.hBot) > 1e-6 || P.through !== Q.through || P.shareR || Q.shareL) { merge(P.group, Q.group); mergeClose(); redo = true; break; }
+        var sh = { mid: (P.ro.u1 + Q.ro.u0) / 2, top: Math.min(P.hBot, Q.hBot), left: P.id, right: Q.id };
+        P.shareR = sh; Q.shareL = sh;
+      }
     }
+    if (!redo) break;
   }
   frames.forEach(function (f) {
     f.edgeL = f.shareL ? f.shareL.mid : f.ro.u0 - sw;
     f.edgeR = f.shareR ? f.shareR.mid : f.ro.u1 + sw;
     f.zone = { u0: f.edgeL, u1: f.edgeR, y0: f.zoneLow, y1: Math.max(f.hTop, f.ro.y1) };
+    delete f.group; delete f.under;
   });
   return frames;
 }
@@ -302,7 +378,7 @@ export function frameRun(plan, run, spec) {
   var topPlate = runTop(plan, run);
   var yPT = y0 + spec.nb * spec.plateT, yTB = topPlate - spec.nt * spec.plateT;
   var fu0 = run.fu0, fu1 = run.fu1;
-  var frames = frameOpenings(plan, run, spec, yPT, yTB);
+  var frames = frameOpenings(plan, run, spec, yPT, yTB, topPlate);
   var zones = frames.map(function (f) { return f.zone; });
   var out = [];
   var base = { wall: run.key, run: run.index };
@@ -311,7 +387,18 @@ export function frameRun(plan, run, spec) {
   /* ---- plates: the bottom plate is cut out across a door, the top plates
      round an opening that rises into the gable ---- */
   var doorCuts = frames.filter(function (f) { return !f.win; }).map(function (f) { return [f.ro.u0, f.ro.u1]; });
-  var riseCuts = frames.filter(function (f) { return f.through; }).map(function (f) { return [f.ro.u0, f.ro.u1]; });
+  /* the plates are cut only where a door really rises past the wall top
+     into the gable -- the part the gable framing carries (a crowded opening
+     framed as one keeps its plates over a door that stops under them) */
+  var riseCuts = [];
+  frames.forEach(function (f) {
+    if (!f.through) return;
+    f.parts.forEach(function (p) {
+      if (!p.carried) return;
+      var a = Math.max(p.ro.u0, f.ro.u0), b = Math.min(p.ro.u1, f.ro.u1);
+      if (b > a) riseCuts.push([a, b]);
+    });
+  });
   function pieces(cuts) {
     var ps = [[fu0, fu1]];
     cuts.forEach(function (c) {
@@ -346,13 +433,13 @@ export function frameRun(plan, run, spec) {
         var oa, ob;
         if (n === 1) { oa = -run.inset - (D + t) / 2; ob = oa + t; }
         else { ob = -run.inset - p * (t + gap); oa = ob - t; }
-        out.push(wallMember("header", "lumber", w, hu0, hu1, ro.y1, f.hTop, oa, ob,
+        out.push(wallMember("header", "lumber", w, hu0, hu1, f.hBot, f.hTop, oa, ob,
           meta(Object.assign({ ply: p + 1, plies: n, size: h.size.nominal || h.size.name, asked: h.asked.name, flat: h.flat, fitted: !h.fits, support: "bear" }, fm))));
       }
     }
     if (f.win) {
       if (ro.y0 - f.sillBot > 0.01) out.push(wallMember("sill", "lumber", w, ro.u0, ro.u1, f.sillBot, ro.y0, o0, o1, meta(Object.assign({ support: "bearOrFasten" }, fm))));
-      if (f.dbl) {
+      if (f.dbl && f.rect.u - sw >= ro.u0 + sw - 1e-9 && f.rect.u + sw <= ro.u1 - sw + 1e-9) {
         var uc = f.rect.u;
         out.push(wallMember("mullion", "lumber", w, uc - sw, uc, ro.y0, ro.y1, o0, o1, meta(Object.assign({ support: "bear" }, fm))));
         out.push(wallMember("mullion", "lumber", w, uc, uc + sw, ro.y0, ro.y1, o0, o1, meta(Object.assign({ support: "bear" }, fm))));
@@ -367,11 +454,11 @@ export function frameRun(plan, run, spec) {
       if (!f.shareR) cand.push({ kind: "cripple", prio: 4, u0: ro.u1, u1: hu1, ya: f.hTop, yb: yTB, own: own, extra: Object.assign({ place: "header" }, fm) });
     }
     if (!f.shareL) {
-      cand.push({ kind: "jack", prio: 10, u0: hu0, u1: ro.u0, ya: yPT, yb: f.plateHead ? yTB : Math.min(ro.y1, yTB), own: own, extra: Object.assign({ side: "L" }, fm) });
+      cand.push({ kind: "jack", prio: 10, u0: hu0, u1: ro.u0, ya: yPT, yb: Math.min(f.hBot, yTB), own: own, extra: Object.assign({ side: "L" }, fm) });
       cand.push({ kind: "king", prio: 6, u0: hu0 - sw, u1: hu0, ya: yPT, yb: f.kingTop, own: null, extra: Object.assign({ side: "L" }, fm), frame: f });
     }
     if (!f.shareR) {
-      cand.push({ kind: "jack", prio: 10, u0: ro.u1, u1: hu1, ya: yPT, yb: f.plateHead ? yTB : Math.min(ro.y1, yTB), own: own, extra: Object.assign({ side: "R" }, fm) });
+      cand.push({ kind: "jack", prio: 10, u0: ro.u1, u1: hu1, ya: yPT, yb: Math.min(f.hBot, yTB), own: own, extra: Object.assign({ side: "R" }, fm) });
       cand.push({ kind: "king", prio: 6, u0: hu1, u1: hu1 + sw, ya: yPT, yb: f.kingTop, own: null, extra: Object.assign({ side: "R" }, fm), frame: f });
     } else {
       /* the stud two neighbours share, under both their headers */

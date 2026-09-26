@@ -27,8 +27,11 @@
    the open gap Barnwright leaves in the railing (the widest gap across the
    front of a front or corner porch; on a side porch, in front of the door,
    where Barnwright draws its wooden step -- the step is still drawn under
-   the ramp there, as Barnwright draws it, which is the one place the two
-   meet).
+   the ramp there, as Barnwright draws it, and the ramp's stringers are
+   notched to sit on it (SIDE_STEP); a 4 ft ramp is steep enough that its
+   boards touch the step's top corner, about 0.05 ft). Over the ends of the
+   skids, which run a little past an end wall, the stringers are notched the
+   same way.
 
    STAGE "ramp" (a finish step): drawn in the finished building only when a
    ramp is chosen, and never by Barnwright, so the golden check leaves it
@@ -42,12 +45,23 @@
 import { y0 } from "../engine/constants.js";
 import { texFlat } from "../engine/tex-names.js";
 import { railAnchors } from "./porch.js";
-import { lumberSize, prismMember, beamMember, framePt, solidEnough, drawPrism } from "./floor-frame.js";
+import { skidRuns } from "./foundation.js";
+import { lumberSize, prismMember, beamMember, framePt, solidEnough, drawPrism, clipRect } from "./floor-frame.js";
 
 /* how far out the ramp starts: past a roll-up's threshold, else a hair off */
 export const RAMP_START = Object.freeze({ rollUp: 0.34, other: 0.02 });
 /* the boards across the ramp (drawn sizes) */
 export const RAMP_BOARD = Object.freeze({ widthIn: 5.5, gapIn: 0.25 });
+/* BARNWRIGHT'S SIDE-PORCH STEP, where a side porch's ramp lands (the two
+   boxes parts/porch.js porchSideCorner draws at the entry, Barnwright's
+   numbers): out from the porch edge x = W/2, up from the ground, 2.6 ft
+   along the edge, centred on the entry. The ramp's stringers are notched
+   to sit on it, as a shop would set a ramp over a step that is already
+   there -- the finished step is Barnwright's and stays. */
+export const SIDE_STEP = Object.freeze([
+  Object.freeze({ o0: 0.07, o1: 1.49, y0: 0, y1: 0.30, along: 2.6 }),
+  Object.freeze({ o0: 0.06, o1: 0.78, y0: 0.30, y1: 0.64, along: 2.6 }),
+]);
 
 export function rampLength(plan) {
   var r = plan.state.ramp;
@@ -89,7 +103,7 @@ export function rampSite(plan) {
     plan.state.items.forEach(function (o) { if (entryZ === null && o.wall === "S1" && plan.CAT[o.cat].k === "door") entryZ = (sp.z0 + sp.z1) / 2 - o.pos; });
     if (entryZ === null) { var gi = 0, gw = -1; for (var g = 0; g < a.length - 1; g++) if (a[g + 1] - a[g] > gw) { gw = a[g + 1] - a[g]; gi = g; } entryZ = (a[gi] + a[gi + 1]) / 2; }
     var wS = { ax: [0, 0, -1], n: [1, 0, 0], at: W / 2, cx: 0 };
-    return { w: wS, u: -entryZ, width: width, start: RAMP_START.other, len: len, door: door.id, porch: true };
+    return { w: wS, u: -entryZ, width: width, start: RAMP_START.other, len: len, door: door.id, porch: true, step: true };
   }
   /* front or corner porch: the widest gap across the front edge */
   var C = W / 2 - 0.28, posts = [];
@@ -122,10 +136,40 @@ export function rampMembers(plan) {
   var poly = [[0, topU], [toeO, 0], [cutO, 0], [0, Math.max(0, topU - sdv)]];
   if (topU - sdv <= 0) poly = [[0, topU], [toeO, 0], [0, 0]];
   var nS = Math.max(2, Math.ceil((S.width - st) / s) + 1);
+  /* what the stringers sit over, notched to it: on a side porch
+     Barnwright's step; at an end wall the ends of the skids, which run a
+     little past the wall (parts/skids.js). A stringer is kept only above
+     them. (u0 u1 along the ramp's wall line, a0 a1 out from its start.) */
+  var step = S.step ? SIDE_STEP.map(function (b) { return { a0: b.o0 - o0, a1: b.o1 - o0, y1: b.y1, u0: S.u - b.along / 2, u1: S.u + b.along / 2 }; }) : [];
+  if (Math.abs(w.n[2]) > 0.5 && Math.abs(Math.abs(w.at) - plan.L / 2) < 1e-9) {
+    skidRuns(plan).forEach(function (sk) {
+      var out2 = w.n[2] > 0 ? sk.z1 - plan.L / 2 : -plan.L / 2 - sk.z0;     /* how far the skid runs past the wall */
+      if (!(out2 - o0 > 1e-9)) return;
+      var ua = (sk.x0 - (w.cx || 0)) / w.ax[0], ub = (sk.x1 - (w.cx || 0)) / w.ax[0];
+      step.push({ a0: -1, a1: out2 - o0, y1: sk.y1, u0: Math.min(ua, ub), u1: Math.max(ua, ub) });
+    });
+  }
   for (var i = 0; i < nS; i++) {
     var uc = S.u - S.width / 2 + st / 2 + (S.width - st) * i / (nS - 1);
     var org = framePt(w, uc - st / 2, 0, o0);
-    out.push(prismMember("stringer", "pwood", poly.map(function (p) { return p.slice(); }), org, n, [0, 1, 0], ax, st, { n: i, size: str.nominal }));
+    var over = step.filter(function (b) { return uc + st / 2 > b.u0 + 1e-9 && uc - st / 2 < b.u1 - 1e-9; });
+    var pieces = [poly];
+    if (over.length) {
+      /* cut along the step's edges, keep each strip above the step there */
+      var cuts = [0, toeO + 1];
+      over.forEach(function (b) { cuts.push(b.a0, b.a1); });
+      cuts = cuts.filter(function (c, k) { return cuts.indexOf(c) === k; }).sort(function (x, y) { return x - y; });
+      pieces = [];
+      for (var c = 0; c + 1 < cuts.length; c++) {
+        var ma = (cuts[c] + cuts[c + 1]) / 2, floorY = 0;
+        over.forEach(function (b) { if (ma > b.a0 && ma < b.a1) floorY = Math.max(floorY, b.y1); });
+        var P = clipRect(poly, cuts[c], cuts[c + 1], floorY, y0 + 1);
+        if (P.length) pieces.push(P);
+      }
+    }
+    pieces.forEach(function (P, k) {
+      out.push(prismMember("stringer", "pwood", P.map(function (p) { return p.slice(); }), org, n, [0, 1, 0], ax, st, { n: i, piece: k, notched: over.length > 0, size: str.nominal }));
+    });
   }
   /* boards across the stringers, from the top down */
   var bw = RAMP_BOARD.widthIn / 12, gap = RAMP_BOARD.gapIn / 12;

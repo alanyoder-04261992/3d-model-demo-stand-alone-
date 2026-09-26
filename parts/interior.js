@@ -28,7 +28,13 @@
    front-porch cabin's porch. So a bench or shelf is cut shorter where a wall
    is in the way (fitStand: its length gives; its depth is moved across only
    when it does not fit where it was put; with no room near, it is not
-   drawn), and a light goes to the nearest spot inside the room.
+   drawn), and a light goes to the nearest spot inside the room. The floor
+   plan also lets benches overlap (two meeting in an L), so the one built
+   second is fitted round the first the same way; an outlet skips a stud a
+   bench leg stands in front of (and goes up over the bench top if every
+   stud is taken); a light keeps clear of a shelf reaching up under it; and
+   nothing is built higher than STAND_CLEAR under the wall top (a 5 ft shelf
+   on the Standard Barn's 4.2 ft walls would stand up through its roof).
 
    The heights are construction settings with Alan's answers as the defaults:
    construction.interior.benchHeightIn (36) and shelfHeightIn (60) -- the
@@ -51,6 +57,11 @@ import { wallFrame, wallSpec } from "./wall-frame.js";
 
 /* Alan's answers (Aug 2026), used when the settings say nothing. */
 export const INTERIOR_DEFAULTS = Object.freeze({ benchHeightIn: 36, shelfHeightIn: 60, topIn: 0.75, legMaxSpacingFt: 4 });
+/* A bench or shelf stays this far under the wall top, so it never reaches
+   the roof framing that sits on the plates: on the Standard Barn's 4.2 ft
+   walls a shelf at the usual 5 ft would stand up through its roof, so there
+   it is built as high as the wall allows instead. */
+export const STAND_CLEAR = 0.1;
 /* Drawn sizes of the electrical pieces, in feet. */
 export const ELEC = Object.freeze({ gangW: 0.19, boxH: 0.33, boxD: 0.125, plateT: 0.02, plateGrow: 0.03, lightBox: 0.33, lightBoxH: 0.125, globe: 0.36, globeH: 0.3 });
 
@@ -100,7 +111,8 @@ function inside(C, x, z) {
 }
 /* a box [x0,x1] x [z0,z1] wholly inside C: its corners inside and no corner of
    C poking into it */
-function boxInside(C, x0, x1, z0, z1) {
+function boxInside(C, x0, x1, z0, z1) { return boxInsideC(C, x0, x1, z0, z1); }
+function boxInsideC(C, x0, x1, z0, z1) {
   if (!inside(C, x0, z0) || !inside(C, x1, z0) || !inside(C, x1, z1) || !inside(C, x0, z1)) return false;
   for (var i = 0; i < C.length; i++) { var p = C[i]; if (p[0] > x0 + 1e-7 && p[0] < x1 - 1e-7 && p[1] > z0 + 1e-7 && p[1] < z1 - 1e-7) return false; }
   var c = [(x0 + x1) / 2, (z0 + z1) / 2];
@@ -109,15 +121,19 @@ function boxInside(C, x0, x1, z0, z1) {
 /* Fit a bench or shelf inside the studs, the way the shop builds it: cut
    shorter where a wall is in the way (its length is what gives), and only if
    its depth does not fit where it was put, moved across the least it can be.
+   `obst` (optional) are boxes {x0,x1,z0,z1} already taken at the same height
+   -- a bench or shelf built earlier -- which it is cut short against the
+   same way (two benches meeting in an L: the second butts into the first).
    Returns the box, or null when there is no room anywhere near. */
-export function fitStand(C, f) {
+export function fitStand(C, f, obst) {
   var bx = { x0: Infinity, x1: -Infinity, z0: Infinity, z1: -Infinity };
   C.forEach(function (p) { bx.x0 = Math.min(bx.x0, p[0]); bx.x1 = Math.max(bx.x1, p[0]); bx.z0 = Math.min(bx.z0, p[1]); bx.z1 = Math.max(bx.z1, p[1]); });
   var L = f.alongZ ? [Math.max(f.z0, bx.z0), Math.min(f.z1, bx.z1)] : [Math.max(f.x0, bx.x0), Math.min(f.x1, bx.x1)];
   var Dp = f.alongZ ? [f.x0, f.x1] : [f.z0, f.z1];
   var dLo = f.alongZ ? bx.x0 : bx.z0, dHi = f.alongZ ? bx.x1 : bx.z1;
   function box(a0, a1, b0, b1) { return f.alongZ ? { x0: b0, x1: b1, z0: a0, z1: a1 } : { x0: a0, x1: a1, z0: b0, z1: b1 }; }
-  function ok(b) { return boxInside(C, b.x0, b.x1, b.z0, b.z1); }
+  function free(b) { return !(obst || []).some(function (o) { return Math.min(b.x1, o.x1) - Math.max(b.x0, o.x0) > 1e-6 && Math.min(b.z1, o.z1) - Math.max(b.z0, o.z0) > 1e-6; }); }
+  function ok(b) { return boxInside(C, b.x0, b.x1, b.z0, b.z1) && free(b); }
   if (!(L[1] - L[0] > 0.5)) return null;
   var cen = (f.alongZ ? (f.z0 + f.z1) : (f.x0 + f.x1)) / 2;
   cen = Math.max(L[0], Math.min(L[1], cen));
@@ -137,9 +153,14 @@ export function fitStand(C, f) {
   }
   return null;
 }
-/* the nearest spot to (x, z) where a square s across fits inside C */
-function fitSquare(C, x, z, s) {
+/* the nearest spot to (x, z) where a square s across fits inside C, clear
+   of the boxes {x0,x1,z0,z1} in `away` */
+function fitSquare(C, x, z, s, away) {
   var h = s / 2;
+  function boxInside(C2, x0, x1, z0, z1) {
+    if (!boxInsideC(C2, x0, x1, z0, z1)) return false;
+    return !(away || []).some(function (q) { return Math.min(x1, q.x1) - Math.max(x0, q.x0) > 1e-6 && Math.min(z1, q.z1) - Math.max(z0, q.z0) > 1e-6; });
+  }
   if (boxInside(C, x - h, x + h, z - h, z + h)) return [x, z];
   for (var r = 0.05; r <= 12; r += 0.05) {
     var best = null;
@@ -164,7 +185,7 @@ export function standFootprint(plan, it) {
    a top on front and back aprons and end rails, on legs at the ends and at
    most legMaxSpacingFt apart. `floorAt(x0,x1,z0,z1)` says where a leg's foot
    lands (the floor, or a bench top under a shelf). */
-function stand(out, plan, it, f, H, floorAt) {
+function stand(out, plan, it, f, H, floorAt, boxes) {
   var hs = heights(plan);
   var s2 = lumberSize("2x4"), t = s2.t, d = s2.d;
   var topB = y0 + H - hs.top, aprB = topB - d;
@@ -174,8 +195,9 @@ function stand(out, plan, it, f, H, floorAt) {
   function M(extra) { return Object.assign({}, m0, extra); }
   /* in the stand's own terms: a along its length, b across its depth */
   function box(k, a0, a1, b0, b1, ya, yb, extra) {
-    if (f.alongZ) out.push(boxMember(k, "lumber", f.x0 + b0, f.x0 + b1, ya, yb, f.z0 + a0, f.z0 + a1, M(extra)));
-    else out.push(boxMember(k, "lumber", f.x0 + a0, f.x0 + a1, ya, yb, f.z0 + b0, f.z0 + b1, M(extra)));
+    var bx = f.alongZ ? { x0: f.x0 + b0, x1: f.x0 + b1, z0: f.z0 + a0, z1: f.z0 + a1 } : { x0: f.x0 + a0, x1: f.x0 + a1, z0: f.z0 + b0, z1: f.z0 + b1 };
+    out.push(boxMember(k, "lumber", bx.x0, bx.x1, ya, yb, bx.z0, bx.z1, M(extra)));
+    if (boxes) boxes.push({ x0: bx.x0, x1: bx.x1, y0: ya, y1: yb, z0: bx.z0, z1: bx.z1 });
   }
   box(kind + "-top", 0, len, 0, dep, topB, y0 + H, { support: "bear" });
   box(kind + "-apron", 0, len, 0, t, aprB, topB, { support: "bear" });
@@ -186,7 +208,7 @@ function stand(out, plan, it, f, H, floorAt) {
   for (var i = 0; i < n; i++) {
     var a0 = (len - d) * i / (n - 1);
     [[0, t], [dep - t, dep]].forEach(function (bb) {
-      var foot = f.alongZ ? floorAt(f.x0 + bb[0], f.x0 + bb[1], f.z0 + a0, f.z0 + a0 + d) : floorAt(f.x0 + a0, f.x0 + a0 + d, f.z0 + bb[0], f.z0 + bb[1]);
+      var foot = f.alongZ ? floorAt(f.x0 + bb[0], f.x0 + bb[1], f.z0 + a0, f.z0 + a0 + d, aprB) : floorAt(f.x0 + a0, f.x0 + a0 + d, f.z0 + bb[0], f.z0 + bb[1], aprB);
       if (aprB - foot > 0.02) box(kind + "-leg", a0, a0 + d, bb[0], bb[1], foot, aprB, { support: "bear" });
     });
   }
@@ -195,12 +217,15 @@ function stand(out, plan, it, f, H, floorAt) {
 /* The box on a wall: centred on the face of the stud (or king, jack, end
    stud) nearest where the customer put it, at its height, on the inside face
    of the framing -- skipping a stud where the box would stand out past the
-   room's inside corner or on top of a box already there. */
-function outletAt(out, plan, it, WF, C, placed) {
+   room's inside corner, on top of a box already there, or into a bench or
+   shelf built against the wall (`boxes`, their pieces). With no stud free at
+   the usual height (a bench's legs in the way all along), it goes up over
+   the bench top, where an electrician puts the outlet for a work bench. */
+function outletAt(out, plan, it, WF, C, placed, boxes, overY) {
   var c = plan.CAT[it.cat], run = null, fr = null;
   WF.framed.forEach(function (x) { if (!run && x.run.key === it.wall && it.pos >= x.run.a - 1e-9 && it.pos <= x.run.b + 1e-9) { run = x.run; fr = x; } });
   if (!run) return;
-  var yc = y0 + (c.sill != null ? c.sill : 1.2), gangs = c.switch ? 2 : 1;
+  var yc = y0 + (c.sill != null ? c.sill : 1.2), gangs = c.switch ? 2 : 1, raised = false;
   var bw = ELEC.gangW * gangs, bh = ELEC.boxH, g = ELEC.plateGrow;
   var oIn = -run.inset - run.D;                                   /* the framing's inside face */
   var oOut = oIn - ELEC.boxD - ELEC.plateT;
@@ -210,20 +235,27 @@ function outletAt(out, plan, it, WF, C, placed) {
     var e = wpt2(run.w, u, oIn);
     x0 = Math.min(x0, e[0]); x1 = Math.max(x1, e[0]); z0 = Math.min(z0, e[1]); z1 = Math.max(z1, e[1]);
     if (!boxInside(C, x0, x1, z0, z1)) return false;
+    var ya = yc - bh / 2 - g, yb = yc + bh / 2 + g;
+    if ((boxes || []).some(function (q) { return Math.min(x1, q.x1) - Math.max(x0, q.x0) > 1e-6 && Math.min(yb, q.y1) - Math.max(ya, q.y0) > 1e-6 && Math.min(z1, q.z1) - Math.max(z0, q.z0) > 1e-6; })) return false;
     return !placed.some(function (q) { return q.run === run && Math.abs(q.u - u) < (q.w + bw) / 2 + 2 * g && Math.abs(q.y - yc) < bh + 2 * g; });
   }
-  var best = null;
-  fr.members.forEach(function (m) {
-    if (["stud", "king", "jack", "end-stud", "corner-stud", "cripple"].indexOf(m.kind) < 0) return;
-    var at = m.meta.at, u = (at.u0 + at.u1) / 2;
-    if (at.y0 > yc - bh / 2 || at.y1 < yc + bh / 2) return;
-    if (!fits(u)) return;
-    if (best === null || Math.abs(u - it.pos) < Math.abs(best - it.pos)) best = u;
-  });
+  function nearest() {
+    var best = null;
+    fr.members.forEach(function (m) {
+      if (["stud", "king", "jack", "end-stud", "corner-stud", "cripple"].indexOf(m.kind) < 0) return;
+      var at = m.meta.at, u = (at.u0 + at.u1) / 2;
+      if (at.y0 > yc - bh / 2 || at.y1 < yc + bh / 2) return;
+      if (!fits(u)) return;
+      if (best === null || Math.abs(u - it.pos) < Math.abs(best - it.pos)) best = u;
+    });
+    return best;
+  }
+  var best = nearest();
+  if (best === null && overY != null && overY + bh / 2 + g + 0.3 < fr.yTB) { yc = overY + 0.3 + bh / 2 + g; raised = true; best = nearest(); }
   if (best === null) return;
   var u = best;
   placed.push({ run: run, u: u, w: bw, y: yc });
-  var meta = { item: it.id, glowItem: it.id, what: c.k, onStud: true, movedBy: +(u - it.pos).toFixed(3), support: "fasten" };
+  var meta = { item: it.id, glowItem: it.id, what: c.k, onStud: true, movedBy: +(u - it.pos).toFixed(3), raised: raised, support: "fasten" };
   out.push(wallMember("elec-box", "steel", run.w, u - bw / 2, u + bw / 2, yc - bh / 2, yc + bh / 2, oIn - ELEC.boxD, oIn, meta));
   out.push(wallMember("elec-plate", "fixture", run.w, u - bw / 2 - g, u + bw / 2 + g, yc - bh / 2 - g, yc + bh / 2 + g,
     oOut, oIn - ELEC.boxD, Object.assign({}, meta)));
@@ -241,9 +273,11 @@ function wpt2(w, u, o) {
    over a wall's framing (the package puts its lights at a quarter of the
    length, which on a front-porch cabin is out on the porch), at the nearest
    spot inside the room. */
-function lightAt(out, plan, it, C) {
+function lightAt(out, plan, it, C, boxes) {
   var E = ELEC, top = plan.topY;
-  var at = fitSquare(C, it.px || 0, it.pz || 0, Math.max(E.globe, E.lightBox) + 0.02);
+  var low = top - E.lightBoxH - E.globeH;
+  var high = (boxes || []).filter(function (q) { return q.y1 > low - 1e-9; });       /* a shelf reaching up under it */
+  var at = fitSquare(C, it.px || 0, it.pz || 0, Math.max(E.globe, E.lightBox) + 0.02, high);
   if (!at) return;
   var x = at[0], z = at[1];
   var meta = { item: it.id, glowItem: it.id, what: "ilt", movedBy: +Math.hypot(x - (it.px || 0), z - (it.pz || 0)).toFixed(3), support: "none" };
@@ -256,37 +290,45 @@ export function interiorMembers(plan) {
   var items = plan.state.items.filter(function (it) { return CAT[it.cat] && CAT[it.cat].int; });
   var benches = items.filter(function (it) { return CAT[it.cat].draw === "bench"; });
   var shelves = items.filter(function (it) { return CAT[it.cat].draw === "shelf"; });
-  function fitted(it) {
-    var f0 = standFootprint(plan, it), f = fitStand(C, f0);
+  var boxes = [], stands = [], s2 = lumberSize("2x4");
+  /* a stand's height: the settings', but never up into the roof framing */
+  function heightOf(want) { return Math.min(want, plan.topY - STAND_CLEAR - y0); }
+  function fitted(it, H) {
+    var yLo = y0 + H - hs.top - s2.d, yHi = y0 + H;
+    var obst = stands.filter(function (q) { return q.yLo < yHi - 1e-9 && q.yHi > yLo + 1e-9; });
+    var f0 = standFootprint(plan, it), f = fitStand(C, f0, obst);
     if (!f) return null;
+    f.yLo = yLo; f.yHi = yHi;
     f.alongZ = f0.alongZ;
     f.cut = +(((f0.alongZ ? f0.z1 - f0.z0 : f0.x1 - f0.x0) - (f.alongZ ? f.z1 - f.z0 : f.x1 - f.x0))).toFixed(3);
     f.moved = +(f0.alongZ ? (f.x0 - f0.x0) : (f.z0 - f0.z0)).toFixed(3);
     return f;
   }
-  function onFloor() { return y0; }
-  /* benches first, then the shelves (a shelf over a bench stands on it) */
-  var benchTops = [];
-  benches.forEach(function (it) {
-    var f = fitted(it);
-    if (!f) return;
-    stand(out, plan, it, f, hs.bench, onFloor);
-    benchTops.push({ x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1, y: y0 + hs.bench });
-  });
-  shelves.forEach(function (it) {
-    var f = fitted(it);
-    if (!f) return;
-    stand(out, plan, it, f, hs.shelf, function (x0, x1, z0, z1) {
-      var y = y0;
-      benchTops.forEach(function (b) { if (x1 > b.x0 + 1e-9 && x0 < b.x1 - 1e-9 && z1 > b.z0 + 1e-9 && z0 < b.z1 - 1e-9 && b.y < y0 + hs.shelf) y = Math.max(y, b.y); });
-      return y;
+  /* where a leg's foot lands: the floor, or the top of a bench (or shelf)
+     built earlier under it */
+  function floorAt(x0, x1, z0, z1, below) {
+    var y = y0;
+    stands.forEach(function (q) { if (x1 > q.x0 + 1e-9 && x0 < q.x1 - 1e-9 && z1 > q.z0 + 1e-9 && z0 < q.z1 - 1e-9 && q.yHi < below - 1e-9) y = Math.max(y, q.yHi); });
+    return y;
+  }
+  /* benches first, then the shelves (a shelf over a bench stands on it);
+     each is fitted round the walls and round those already built at its
+     height */
+  var benchTop = null;
+  [[benches, heightOf(hs.bench)], [shelves, heightOf(hs.shelf)]].forEach(function (grp) {
+    grp[0].forEach(function (it) {
+      var f = fitted(it, grp[1]);
+      if (!f) return;
+      stand(out, plan, it, f, grp[1], floorAt, boxes);
+      stands.push({ x0: f.x0, x1: f.x1, z0: f.z0, z1: f.z1, yLo: f.yLo, yHi: f.yHi });
+      if (grp[0] === benches) benchTop = Math.max(benchTop == null ? -Infinity : benchTop, f.yHi);
     });
   });
   var WF = null, placed = [];
   items.forEach(function (it) {
     var d = CAT[it.cat].draw;
-    if (d === "outlet") { WF = WF || wallFrame(plan); outletAt(out, plan, it, WF, C, placed); }
-    else if (d === "overhead-light") lightAt(out, plan, it, C);
+    if (d === "outlet") { WF = WF || wallFrame(plan); outletAt(out, plan, it, WF, C, placed, boxes, benchTop); }
+    else if (d === "overhead-light") lightAt(out, plan, it, C, boxes);
   });
   out.forEach(function (m) { m.stage = "interior"; });
   return out;

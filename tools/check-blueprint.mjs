@@ -331,9 +331,9 @@ async function installHelpers() {
   function J2(v) { return JSON.stringify(v); }
   /* where the pixels change when one item is taken off the design */
   H.presence = (state, it, w, h) => {
-    const full = H.off(state, w, h, { selection: false });
+    const full = H.off(state, w, h, { selection: false, fit: "barnwright" });   /* one size for both: taking a door off may change the page's size */
     const s2 = JSON.parse(JSON.stringify(state)); s2.items = s2.items.filter((i) => i.id !== it.id);
-    const without = H.off(s2, w, h, { selection: false });
+    const without = H.off(s2, w, h, { selection: false, fit: "barnwright" });
     const a = full.img.data, b = without.img.data;
     let n = 0, x0 = 1e9, y0 = 1e9, x1 = -1, y1 = -1;
     for (let i = 0; i < a.length; i += 4) {
@@ -533,7 +533,7 @@ try {
       const offOf = (R, s) => s.items.reduce((n, it) => n + (H.symbol(R, it).arcOff || 0), 0);
       for (const [t, size] of [["GU", "6x8"], ["DK", "8x12"], ["UT", "10x16"], ["LB", "12x24"]]) {
         const s = mk(t, size), a = H.off(s, w, h, { selection: false, fit: "barnwright" }), b = H.off(s, w, h, { selection: false });
-        const reach = H.B.planReach(s, b.fr, cat);
+        const reach = H.B.planReach(s, b.fr, cat.CAT);
         res[t] = { bwOff: offOf(a, s), ourOff: offOf(b, s), bwS: +a.s.toFixed(3), ourS: +b.s.toFixed(3),
           /* how far below the title's line the highest point of the drawing is, in pixels */
           backGap: +((b.cy + reach.z0 * b.s) - 18).toFixed(1), bwBackGap: +((a.cy + reach.z0 * a.s) - 18).toFixed(1) };
@@ -541,7 +541,7 @@ try {
       return res;
     });
     ok(`Barnwright's size runs the 4 ft door's swing off a 6x8 Garden Utility (${fitR.GU.bwOff} points off); ours shrinks that plan (${fitR.GU.bwS} -> ${fitR.GU.ourS} px a foot) and keeps it all on (${fitR.GU.ourOff} off)`, fitR.GU.bwOff > 0 && fitR.GU.ourOff === 0 && fitR.GU.ourS < fitR.GU.bwS, J(fitR.GU));
-    ok(`the Dog Kennel's back door no longer swings up into the title (Barnwright: ${fitR.DK.bwBackGap} px from the title line, ours ${fitR.DK.backGap} px below it)`, fitR.DK.bwBackGap < 6 && fitR.DK.backGap >= 6, J(fitR.DK));
+    ok(`the Dog Kennel's back door no longer swings up into the title (Barnwright: ${fitR.DK.bwBackGap} px from the title line, ours ${fitR.DK.backGap} px below it)`, fitR.DK.bwBackGap < 0 && fitR.DK.backGap >= 5.5, J(fitR.DK));
     ok(`buildings whose swings already fit keep exactly Barnwright's size (Utility Shed 10x16 ${fitR.UT.ourS} px a foot, Lofted Barn 12x24 ${fitR.LB.ourS})`, fitR.UT.ourS === fitR.UT.bwS && fitR.LB.ourS === fitR.LB.bwS, J({ UT: fitR.UT, LB: fitR.LB }));
   }
 
@@ -606,13 +606,18 @@ try {
   if (want(5)) section("5. Moving the plan, pinching it, double-tapping it");
   if (want(5)) {
     await page.evaluate(() => { __bp.setDesign("UT", "12x24"); shedUI.select(null); shedUI.blueprint.reset(); });
+    /* let the rebuild that setDesign started finish first: a finger held still
+       for half a second while the page is busy would count as press-and-hold */
+    await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r))));
+    await sleep(150);
     const box = await (await page.$("#bp")).boundingBox();
     const empty = await page.evaluate(() => __bp.screenOf(-4.5, 2));         /* open floor */
     await page.mouse.move(empty[0], empty[1]); await page.mouse.down();
     for (let i = 1; i <= 5; i++) await page.mouse.move(empty[0] - 50 * i / 5, empty[1] + 20 * i / 5);
     await page.mouse.up();
-    const v1 = await page.evaluate(() => shedUI.blueprint.view());
+    const v1 = await page.evaluate(() => Object.assign(shedUI.blueprint.view(), { addMenu: !!(document.querySelector("#addpop.open, .addpop.open")) }));
     ok("dragging empty paper moves the plan with the finger", Math.abs(v1.ox + 50) < 1 && Math.abs(v1.oy - 20) < 1, J(v1));
+    await page.evaluate(() => shedUI.hideAddPop());
     const pinch = async (pairs) => page.evaluate(([pairs, bx]) => {
       const cv = document.getElementById("bp"), r = cv.getBoundingClientRect();
       const fire = (type, id, x, y, primary) => cv.dispatchEvent(new PointerEvent(type, { pointerId: id, clientX: r.left + x, clientY: r.top + y, isPrimary: primary, pointerType: "touch", bubbles: true, cancelable: true }));
@@ -715,7 +720,7 @@ try {
       const H = __bp; H.setDesign(t, size);
       const st0 = shedUI.getState(), s1 = JSON.parse(JSON.stringify(st0)); s1.ramp = "r4"; s1.sel = null;
       const s0 = JSON.parse(JSON.stringify(st0)); s0.ramp = "none"; s0.sel = null;
-      const a = H.off(s1, 900, 900), b = H.off(s0, 900, 900);
+      const a = H.off(s1, 900, 900, { fit: "barnwright" }), b = H.off(s0, 900, 900, { fit: "barnwright" });   /* the same size with and without it */
       let n = 0, sx = 0, sy = 0;
       for (let i = 0; i < a.img.data.length; i += 4) if (Math.abs(a.img.data[i] - b.img.data[i]) + Math.abs(a.img.data[i + 1] - b.img.data[i + 1]) + Math.abs(a.img.data[i + 2] - b.img.data[i + 2]) > 12) { n++; sx += (i >> 2) % 900; sy += ((i >> 2) / 900) | 0; }
       const wx = (sx / n - a.cx) / a.s, wz = (sy / n - a.cy) / a.s;

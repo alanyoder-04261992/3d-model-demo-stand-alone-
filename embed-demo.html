@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cedar Ridge Sheds — Design your shed (sample company page)</title>
+<!-- A SAMPLE COMPANY WEB PAGE WITH THE 3D DESIGNER IN IT, for demos.
+     It shows what a shed company's own website looks like once it has pasted
+     the two lines from docs/ARCHITECTURE.md ("Embedding"):
+         <div id="shed-designer"></div>
+         <script src=".../embed.js" data-company="starter" data-height="640"></script>
+     Cedar Ridge Sheds is the made-up "starter" company. Add ?company=<id> to
+     the address to show another company's designer (?company=demo), and
+     #d=... (a shared design link) to open a particular building.
+     The panel beside the designer lists what the designer tells this page
+     (shed:ready, shed:design-changed, shed:quote-requested), which is what a
+     company's own website can listen for. Nothing here is a real business. -->
+<style>
+  :root{--green:#2F4A3B;--gold:#C98B3E;--ink:#1d2621;--sub:#5b675f;--paper:#f6f3ec}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Georgia,'Times New Roman',serif;color:var(--ink);background:var(--paper);line-height:1.5}
+  header{background:var(--green);color:#fff}
+  .top{max-width:1180px;margin:0 auto;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .logo{width:40px;height:40px;border-radius:8px;background:var(--gold);color:#fff;display:flex;align-items:center;justify-content:center;font:700 17px/1 system-ui,sans-serif}
+  .name{font-size:21px;letter-spacing:.02em}
+  nav{margin-left:auto;display:flex;gap:18px;font:15px system-ui,sans-serif}
+  nav a{color:#e9efe9;text-decoration:none}
+  .hero{max-width:1180px;margin:0 auto;padding:28px 16px 10px}
+  .hero h1{font-size:34px;line-height:1.15;color:var(--green)}
+  .hero p{font-size:17px;color:var(--sub);margin-top:8px;max-width:720px}
+  .demo-note{max-width:1180px;margin:10px auto 0;padding:0 16px;font:13px/1.45 system-ui,sans-serif;color:#7a5a1c}
+  main{max-width:1180px;margin:0 auto;padding:18px 16px 40px;display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:20px;align-items:start}
+  @media(max-width:900px){main{grid-template-columns:1fr}}
+  aside{background:#fff;border:1px solid #ddd6c8;border-radius:10px;padding:14px;font:13px/1.45 system-ui,sans-serif}
+  aside h2{font:600 14px/1.2 system-ui,sans-serif;color:var(--green);margin-bottom:8px}
+  #log{list-style:none;max-height:520px;overflow:auto}
+  #log li{border-top:1px dashed #e2dccf;padding:7px 0}
+  #log b{color:var(--green)}
+  #log .t{color:#8a8f88;font-size:11px}
+  .empty{color:#8a8f88}
+  pre{background:#1d2621;color:#e8efe9;border-radius:8px;padding:10px;font:12px/1.5 ui-monospace,Menlo,monospace;white-space:pre-wrap;word-break:break-all;margin-top:10px}
+  .more{max-width:1180px;margin:0 auto;padding:0 16px 40px;display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+  .more div{background:#fff;border:1px solid #ddd6c8;border-radius:10px;padding:16px}
+  .more h3{color:var(--green);font-size:18px;margin-bottom:6px}
+  footer{background:#22362b;color:#cbd6cd;font:13px system-ui,sans-serif;padding:22px 16px;text-align:center}
+</style>
+</head>
+<body>
+<header>
+  <div class="top">
+    <div class="logo">CR</div>
+    <div class="name">Cedar Ridge Sheds</div>
+    <nav><a href="#">Buildings</a><a href="#">Gallery</a><a href="#">Financing</a><a href="#">Contact</a></nav>
+  </div>
+</header>
+<section class="hero">
+  <h1>Design your shed in 3D</h1>
+  <p>Pick a style and size, choose your colours, put the doors and windows where you want them, and see the price as you go. When it looks right, send it to us for a quote.</p>
+</section>
+<p class="demo-note">This is a pretend company page, to show the designer inside somebody else's website. Nothing here is a real business.</p>
+<main>
+  <div>
+    <!-- THE TWO LINES A COMPANY PASTES (the script is added below, so this
+         sample page can switch companies with ?company=) -->
+    <div id="shed-designer"></div>
+  </div>
+  <aside>
+    <h2>What the designer told this page</h2>
+    <ul id="log"><li class="empty">Nothing yet — scroll to the designer.</li></ul>
+    <h2 style="margin-top:14px">The code on this page</h2>
+    <pre id="code"></pre>
+  </aside>
+</main>
+<section class="more">
+  <div><h3>Built to order</h3><p>Every building is built for you, in the size and colours you pick.</p></div>
+  <div><h3>Delivered and set up</h3><p>We deliver, level and anchor it. Free within 40 miles.</p></div>
+  <div><h3>Rent to own</h3><p>No credit check. Ask us about monthly payments.</p></div>
+</section>
+<footer>Cedar Ridge Sheds · (555) 010-0142 · a made-up company for demonstrations</footer>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var id = q.get("company") || "starter";
+  if (!/^[a-z0-9-]{2,40}$/.test(id)) id = "starter";
+  var s = document.createElement("script");
+  s.src = "embed.js";
+  s.setAttribute("data-company", id);
+  s.setAttribute("data-height", "640");
+  document.body.appendChild(s);
+  document.getElementById("code").textContent =
+    '<div id="shed-designer"></div>\n<script src="' + new URL("embed.js", location.href).href + '"\n        data-company="' + id + '" data-height="640"><\/script>';
+
+  var log = document.getElementById("log"), first = true;
+  function line(ev) {
+    if (first) { log.textContent = ""; first = false; }
+    var d = ev.detail || {}, s = d.summary || d, li = document.createElement("li");
+    var b = document.createElement("b"); b.textContent = ev.type;
+    var t = document.createElement("div"); t.className = "t"; t.textContent = new Date().toLocaleTimeString();
+    var p = document.createElement("div");
+    var bits = [];
+    if (s.styleName || s.style) bits.push(s.styleName || s.style);
+    if (s.size) bits.push(String(s.size).replace("x", " x "));
+    if (typeof s.total === "number") bits.push("$" + s.total.toLocaleString("en-US"));
+    if (d.reason) bits.push("(" + d.reason + ")");
+    if (d.contact && d.contact.name) bits.push("from " + d.contact.name);
+    p.textContent = bits.join(" · ");
+    li.appendChild(b); li.appendChild(t); li.appendChild(p);
+    log.insertBefore(li, log.firstChild);
+  }
+  ["shed:ready", "shed:design-changed", "shed:quote-requested"].forEach(function (n) { document.addEventListener(n, line); });
+})();
+</script>
+</body>
+</html>

@@ -17,8 +17,11 @@ with each end. A 4x8x16 block is laid along the skid with its widest face
 down: 4 in tall, 8 in across (the skid is drawn 6 in wide, so an inch of
 block shows each side), 16 in along. The anchors, `site.anchors` of them,
 half down each OUTSIDE skid, on its inside face, each set in a gap between
-blocks: an auger shaft into the ground with its helix, a head on the grass
-and a strap up the side of the skid.
+blocks (half way between them) -- or, when there are more anchors than gaps
+(a company laying a block every 12 ft, or asking for 12 anchors), at the
+nearest spot to its even share of the skid that is clear of every block and
+of the other anchors: an auger shaft into the ground with its helix, a head
+on the grass and a strap up the side of the skid.
 
 ## Stage
 
@@ -65,15 +68,18 @@ SHA-256 `0bdcf663...`; `parts/skids.js`), which stand on the ground at y 0.
 ## How to change it safely
 
 * Counts and sizes are settings (`site.*`); change them there.
-* If a company's anchors must run out of gaps between blocks (very few
-  blocks, many anchors), the part draws fewer anchors -- the check counts
-  them and will say so.
+* If a company has more anchors than gaps between blocks, they share the
+  gaps, spaced clear of the blocks and each other; only when a skid has no
+  room left at all would one be missing -- the check counts them and will
+  say so.
 * Run `node tools/check-framing.mjs` after any change.
 
 ## Checks that guard it
 
-* `node tools/check-framing.mjs` -- on 956 buildings: at least one block per
-  `site.perimeterFtPerBlock` ft of wall, blocks flush with both ends of every
-  skid, exactly `site.anchors` anchors, everything below the floor inside the
-  footprint, standing in the ground, overlapping nothing (skids included).
+* `node tools/check-framing.mjs` -- on every building (and a company laying a
+  block every 12 ft with 12 anchors): at least one block per
+  `site.perimeterFtPerBlock` ft of wall, on every skid a block at each end of
+  the building, exactly `site.anchors` anchors, everything below the floor
+  inside the footprint, standing in the ground, overlapping nothing (skids
+  included).
 * `node tools/check-parts.mjs`, `node tools/check-imports.mjs`.

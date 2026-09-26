@@ -12,10 +12,11 @@
      on centre, standing on the long walls' top plates at topY, from the
      inside of the end framing in to the loft's edge (a joist on the edge).
      Their ends are cut to the roof slope where the roof comes down to the
-     wall, so they stay under the roof deck. Where a joist would land on a
-     roof truss, the truss's own bottom chord (which lies on the same plates)
-     is that joist and no second board is drawn; on a rafter-framed roof
-     (no bottom chords) the joist is nailed alongside the rafter instead.
+     wall, so they stay under the roof deck. A joist that would land on a
+     roof truss (or a rafter) is nailed alongside it instead; only a truss
+     whose bottom chord is as deep as the joists (so it reaches the floor
+     too) stands in for a joist. With the standard 2x4 chords and 2x6 loft
+     joists it never does: the chord is 2 in short of the floor.
    * the LOFT FLOOR: a plywood deck {loft.deck.thicknessIn} in thick on the
      joists (and over any truss bottom chord in the loft, whichever is
      deeper), as wide as the trusses' top chords allow at that height.
@@ -43,14 +44,20 @@ export function loftMembers(plan) {
   lay.lofts.forEach(function (zn) {
     var lt = zn.joist.t, ld = zn.joist.d, s = zn.spacing;
     /* WHERE THE JOISTS GO, from the wall end inward: one against the end
-       framing, then every spacing, and one on the loft's edge. A truss's
-       bottom chord lies on the same plates, so where the next support would
-       come at or past a truss, the truss IS that support and no joist is
-       added; a joist that would land on a truss (or, with rafters, on a
-       rafter) is set just before it instead. So no two supports are ever
-       further apart than the spacing. */
+       framing, then every spacing, and one on the loft's edge. A truss whose
+       bottom chord is as deep as the loft joists reaches the floor's
+       underside too, so where the next support would come at or past such a
+       truss, the truss IS that support and no joist is added. A shallower
+       chord does NOT reach the floor -- the standard 2x4 chord stops 2 in
+       under a floor laid on 2x6 joists -- so, as with rafters, a joist that
+       would land on the truss is set just before it (or just past it where
+       there is no room before) and the truss is never counted. (It used to be
+       counted whatever its depth, which left the floor spanning 19 in between
+       the joists that really carry it, against 16 in on centre, on every loft.)
+       So no two members that carry the floor are ever further apart than the
+       spacing. */
     var dir = zn.end === "F" ? -1 : 1, zw = zn.wallZ, zEdge = zn.end === "F" ? zn.z0 : zn.z1;
-    var rafter = sec.framing === "rafter";
+    var rafter = sec.framing === "rafter" || ld > cd + 1e-9;      /* true: trusses do not carry the floor */
     var trs = lay.trusses.map(function (tr) { return { z: tr.z, reach: ct / 2 + (tr.end ? 0 : GUSSET_T) + lt / 2 + 0.002 }; });
     function along(z) { return (z - zw) * dir; }                  /* distance in from the wall end */
     function clash(z) { return trs.filter(function (tr) { return Math.abs(tr.z - z) < tr.reach; })[0]; }
@@ -84,8 +91,13 @@ export function loftMembers(plan) {
       if (!hit && target === last) break;
     }
     var underDeck = belowAll(sec, dT);
+    /* a joist reaches the floor's underside: when the truss chords are the
+       deeper boards (a company asking for loft joists shallower than its
+       chords) the floor lies on the chords, and a joist is drawn as deep as
+       they are so it carries the floor too */
+    var ldraw = zn.yd0 - topY;
     zs.forEach(function (z) {
-      var p = cleanPoly(clipAll(rectPoly(sec.innerL, topY, sec.innerR, topY + ld), underDeck));
+      var p = cleanPoly(clipAll(rectPoly(sec.innerL, topY, sec.innerR, topY + ldraw), underDeck));
       if (p) out.push({ poly: p, z0: z - lt / 2, z1: z + lt / 2, kind: "loft-joist", mat: "lumber", end: zn.end });
     });
     /* the floor: under every top chord, the whole loft */

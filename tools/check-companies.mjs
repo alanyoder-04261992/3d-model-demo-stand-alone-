@@ -93,18 +93,29 @@ for (const k of ["DORMERS", "RAMPS", "ELECPK", "MISC", "RATES", "OPTX", "COLORS"
 const demoFile = readJSON("companies/demo/company.json");
 const DEMO = loadCatalogue("demo");
 check("the demo company", J(Object.keys(DEMO.P)) === J(Object.keys(G.P)), "the demo does not offer every standard style in order");
-const RATE = { "Utility & Storage": 26, "Barns": 29, "Cabins": 36, "Garages": 34, "Metal Buildings": 31, "Dog Kennels": 52 };
+/* each style has its own example rate, so no two styles start at the same
+   price (they used to share one rate per category, and every barn read "from
+   $3,685"); the demo file's own note lists the same numbers */
+const RATE = { UT: 26, SU: 27, DS: 30, BU: 24, GU: 25, SB: 28, LB: 29, SLB: 30.5, CS: 31, SS: 27.5,
+  C: 36, LBC: 37, SC: 38, LSC: 39, DSC: 41, SLC: 40, G: 34, LBG: 35, MU: 29.5, MLB: 32, MG: 33, MCS: 31.5, DK: 52 };
+check("the demo company", J(Object.keys(RATE).sort()) === J(Object.keys(G.P).sort()), "the example-rate table does not name every standard style");
+check("the demo company", Object.keys(RATE).every((k) => (demoFile._help || []).join(" ").indexOf(`${k} $${RATE[k]},`) >= 0 || (demoFile._help || []).join(" ").indexOf(`${k} $${RATE[k]}.`) >= 0),
+  "the demo file's note does not list the same example rates as this check");
 let realPriceHits = 0;
 for (const k of Object.keys(G.P)) {
   check("the demo company", J(Object.keys(DEMO.P[k] || {})) === J(Object.keys(G.P[k])), `${k}: the demo's sizes are not Barnwright's sizes in order`);
   for (const z of Object.keys(G.P[k])) {
     const [W, L] = z.split("x").map(Number);
-    const want = Math.round((900 + RATE[M.styles[k].category] * W * L) / 5) * 5;
+    const want = Math.round((900 + RATE[k] * W * L) / 5) * 5;
     check("the demo company", DEMO.P[k][z] === want, `${k} ${z}: ${DEMO.P[k][z]} is not the documented example formula (${want})`);
     if (DEMO.P[k][z] === G.P[k][z]) realPriceHits++;
   }
 }
 for (const k of Object.keys(G.CAT)) if (G.CAT[k].p && DEMO.CAT[k] && DEMO.CAT[k].p === G.CAT[k].p) realPriceHits++;
+{
+  const starts = Object.keys(DEMO.P).map((k) => Math.min(...Object.values(DEMO.P[k])));
+  check("the demo company", new Set(starts).size === starts.length, `two demo styles start at the same price (${J(starts)}): every style should read its own "from $..."`);
+}
 check("the demo company", realPriceHits === 0, `${realPriceHits} demo prices are Barnwright's real prices`);
 check("the demo company", DEMO.brand.name === "Portable Buildings" && DEMO.brand.initials === "PB", "the demo's brand is not Barnwright's default 'Portable Buildings'");
 check("the demo company", DEMO.look.trueColour === false && DEMO.leads.mode === "none", "the demo must have look.trueColour false and leads mode none");

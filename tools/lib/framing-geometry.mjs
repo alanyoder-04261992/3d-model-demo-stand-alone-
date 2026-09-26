@@ -198,10 +198,13 @@ function project(verts, a) {
   for (var i = 0; i < verts.length; i++) { var d = verts[i][0] * a[0] + verts[i][1] * a[1] + verts[i][2] * a[2]; if (d < lo) lo = d; if (d > hi) hi = d; }
   return [lo, hi];
 }
-/* The separating-axis test for two convex solids: the smallest overlap over
-   every face normal and every pair of edges. Positive: they overlap by at
-   least that much in every direction (the penetration depth); negative: they
-   are that far apart along some axis. Stops early once it is below `floor`. */
+/* The separating-axis test for two convex solids: over every face normal and
+   every pair of edges, how far one would have to move to come clear (the
+   smaller push of the two ways -- NOT the length the two overlap, which is
+   only the board's own thickness when a thin board is buried inside a thick
+   one); the smallest over all axes. Positive: they overlap by at least that
+   much in every direction (the penetration depth); negative: they are that
+   far apart along some axis. Stops early once it is below `floor`. */
 export function satDepth(A, B, floor) {
   var axes = A.normals.concat(B.normals);
   for (var i = 0; i < A.edges.length; i++) for (var j = 0; j < B.edges.length; j++) {
@@ -211,7 +214,7 @@ export function satDepth(A, B, floor) {
   var min = Infinity;
   for (var k = 0; k < axes.length; k++) {
     var pa = project(A.verts, axes[k]), pb = project(B.verts, axes[k]);
-    var ov = Math.min(pa[1], pb[1]) - Math.max(pa[0], pb[0]);
+    var ov = Math.min(pa[1] - pb[0], pb[1] - pa[0]);
     if (ov < min) { min = ov; if (floor != null && min < floor) return min; }
   }
   return min;
@@ -428,15 +431,52 @@ export function bearingProblems(solids, supports, tol) {
     }
     return null;
   }
-  var out = [];
+  /* A member drawn as several convex pieces (a sheet cut round a porch
+     notch is triangulated) is one piece of material: it is carried when ANY
+     of its pieces is, so the pieces are judged together, member by member. */
+  var groups = new Map();
   solids.forEach(function (S) {
-    var how = (S.meta && S.meta.support) || "bearOrFasten";
+    var k = String(S.part) + "#" + S.member;
+    if (!groups.has(k)) groups.set(k, []);
+    groups.get(k).push(S);
+  });
+  var out = [];
+  groups.forEach(function (pieces) {
+    var S0 = pieces[0];
+    var how = (S0.meta && S0.meta.support) || "bearOrFasten";
     if (how === "none") return;
-    if (how === "ground") { if (S.bottom > 0.004 + tol) out.push({ solid: S, why: "is meant to stand in the ground but its foot is " + S.bottom.toFixed(3) + " ft up" }); return; }
-    if (how === "bear" || how === "bearOrFasten") { if (bears(S)) return; if (how === "bear") { out.push({ solid: S, why: "rests on nothing: no solid's top is within " + tol + " ft under its foot at y " + S.bottom.toFixed(3) }); return; } }
-    if (!fastened(S)) out.push({ solid: S, why: "touches nothing it could be nailed to" });
+    if (how === "ground") {
+      var foot = Math.min.apply(null, pieces.map(function (S) { return S.bottom; }));
+      if (foot > 0.004 + tol) out.push({ solid: S0, why: "is meant to stand in the ground but its foot is " + foot.toFixed(3) + " ft up" });
+      return;
+    }
+    if (how === "bear" || how === "bearOrFasten") {
+      if (pieces.some(bears)) return;
+      if (how === "bear") { out.push({ solid: S0, why: "rests on nothing: no solid's top is within " + tol + " ft under its foot at y " + S0.bottom.toFixed(3) }); return; }
+    }
+    if (!pieces.some(fastened)) out.push({ solid: S0, why: "touches nothing it could be nailed to" });
   });
   return out;
+}
+
+/* How far a triangle (three [x,y,z] points) cuts into a convex solid: the
+   separating-axis test, as satDepth (the smaller push to come clear, per
+   axis -- for a flat triangle an overlap LENGTH is never more than nothing,
+   so it would see no cut at all). Positive: the surface passes through the
+   solid, at least that deep. Used to hold the ramp (a finished part that is
+   new) clear of the finished building it is drawn against. */
+export function triangleSolidDepth(tri, S) {
+  var n = norm3(cross3(sub3(tri[1], tri[0]), sub3(tri[2], tri[0])));
+  var edges = [sub3(tri[1], tri[0]), sub3(tri[2], tri[1]), sub3(tri[0], tri[2])].map(norm3);
+  var axes = [n].concat(S.normals);
+  edges.forEach(function (e) { S.edges.forEach(function (f) { var c = cross3(e, f), l = len3(c); if (l > 1e-6) axes.push(mul3(c, 1 / l)); }); });
+  var min = Infinity;
+  for (var k = 0; k < axes.length; k++) {
+    var pa = project(tri, axes[k]), pb = project(S.verts, axes[k]);
+    var ov = Math.min(pa[1] - pb[0], pb[1] - pa[0]);
+    if (ov < min) min = ov;
+  }
+  return min;
 }
 
 /* ----------------------------------------------------- finished drawing */

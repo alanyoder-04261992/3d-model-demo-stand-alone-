@@ -28,11 +28,24 @@ front-porch cabin is out on the porch or right on the front wall. So:
 * a bench or shelf is cut shorter where a wall is in the way (its LENGTH is
   what gives), and only if its depth does not fit where it was put, moved
   across the least it can be; with no room anywhere near, it is not drawn;
-* a light that would be on the porch or over a wall's framing goes to the
-  nearest spot inside the room;
+* the floor plan also lets two benches (or two shelves) overlap -- two
+  benches meeting in an L overlap by a bench's depth. The one built second is
+  fitted round the first the same way it is fitted round a wall: it butts
+  into it. Benches are built first, then shelves; a shelf's legs over a bench
+  stand on the bench top;
+* a bench or shelf stays `STAND_CLEAR` (0.1 ft) under the wall top, clear of
+  the roof framing on the plates: on the Standard Barn's 4.2 ft walls a shelf
+  at the usual 5 ft would stand up through its roof, so there it is built as
+  high as the wall allows;
+* a light that would be on the porch, over a wall's framing or right over a
+  shelf reaching up under it goes to the nearest spot inside the room clear
+  of them;
 * a box goes on the stud nearest where the customer put it, skipping a stud
-  where it would stand past the room's inside corner or on a box already
-  there.
+  where it would stand past the room's inside corner, on a box already
+  there, or into a bench or shelf built against the wall (a bench leg right
+  in front of the stud); with no stud free at its height it goes up over the
+  bench top (0.3 ft clear of it), where an electrician puts a work bench's
+  outlet.
 The room inside the studs is `clearOutline(plan)`: the room's outline moved in
 to the inside face of the wall framing.
 
@@ -79,8 +92,9 @@ electrical packages (`pkFixtures`, 4651-4674).
 ## Kept quirks
 
 * A box moves to the nearest stud (up to half a bay from where the floor
-  plan shows it); `meta.movedBy` records how far. A light moved off the porch
-  records it the same way; a cut bench records `meta.cut`.
+  plan shows it); `meta.movedBy` records how far, `meta.raised` whether it
+  went up over a bench. A light moved off the porch records it the same way;
+  a cut bench records `meta.cut`.
 * The light hangs at the wall top whether or not a truss is right over it.
 
 ## How to change it safely
@@ -94,6 +108,10 @@ electrical packages (`pkFixtures`, 4651-4674).
 ## Checks that guard it
 
 * `node tools/check-framing.mjs` -- on every building with an electrical
-  package, a bench and a shelf: everything inside the room inside the studs,
-  no overlaps, legs on the floor or a bench top, boxes on their studs.
+  package, a bench and a shelf, and on the hard cases (benches and shelves
+  along the walls where the package's outlets are, two benches in an L,
+  benches and shelves piled on each other, a shelf on the Standard Barn, a
+  side porch and a corner porch): everything inside the room inside the
+  studs, no overlaps (outlets and bench legs included), nothing up into the
+  roof, legs on the floor or a bench top, boxes on their studs.
 * `node tools/check-parts.mjs`, `node tools/check-imports.mjs`.

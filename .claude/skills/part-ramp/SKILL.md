@@ -64,11 +64,20 @@ pressure-treated wood ("pwood", #96682F -- first call wins, the same paint
 ## Kept quirks
 
 * The blueprint draws the ramp as a trapezoid narrowing to 80 % at the
-  ground; the 3D ramp is rectangular, as wide as the door (a plan symbol,
-  not a shape).
-* On a SIDE porch the ramp lands where Barnwright draws its wooden step, and
-  the step is still drawn under it (the finished drawing is Barnwright's) --
-  the one place the two meet.
+  ground, starting 0.25 ft out from the wall; the 3D ramp is rectangular, as
+  wide as the door, and starts where it meets the building (a hair off the
+  siding, or past a roll-up's threshold) -- the blueprint's is a plan symbol,
+  not a shape.
+* On a SIDE porch the ramp lands where Barnwright draws its two-step wooden
+  stair, which stays (the finished drawing is Barnwright's): the stringers
+  over it are notched to sit on it (`SIDE_STEP` -- Barnwright's step boxes
+  from `parts/porch.js` porchSideCorner, copied: change both together), as a
+  shop would set a ramp over a step already there. A 6 ft ramp clears the
+  step; a 4 ft one is steep enough that its boards touch the step's top
+  corner by about 0.05 ft (5/8 in) -- the one contact the check allows, held
+  to 0.06 ft and counted apart.
+* At an end wall the skids run a little past the wall (0.07 ft); the
+  stringers over a skid are notched to sit on its end.
 * The last board's lower corner lies past the toe by its own thickness and
   dips into the grass (the lawn covers it).
 
@@ -85,7 +94,12 @@ pressure-treated wood ("pwood", #96682F -- first call wins, the same paint
 * `node tools/check-framing.mjs` -- every chosen ramp (99 buildings, three
   companies) is drawn in the finished view in the ramp step only, exactly its
   pieces, from the floor line at the building down to the ground, as long as
-  chosen, with at least two stringers; none for "no ramp" or the DIY kit.
+  chosen, with at least two stringers, cutting into nothing of the finished
+  building (door trim, thresholds, porch posts and railing, the skids, the
+  siding) by more than 0.01 ft -- the side porch's step by no more than
+  0.06 ft; none for "no ramp" or the DIY kit. The cut test measures how far
+  the ramp would have to move to come clear (a flat surface buried in a
+  board counts), which is what catches a ramp pushed back into the wall.
 * `node tools/check-golden.mjs` -- the ramp never changes a Barnwright
   triangle or material.
 * `node tools/check-parts.mjs`, `node tools/check-imports.mjs`.

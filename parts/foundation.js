@@ -7,7 +7,9 @@
    to the skid. The settings say how many (library/construction.json "site"):
    one block per site.perimeterFtPerBlock ft of outside wall, spread evenly
    along every skid (at least two a skid, one flush with each end), and
-   site.anchors anchors, half down each outside skid, set between blocks.
+   site.anchors anchors, half down each outside skid, set between blocks
+   (when there are more anchors than gaps, several share a gap, clear of the
+   blocks and of each other).
 
    WHERE IT SITS: Barnwright's skids stand on the ground at y 0 (their boxes
    run y 0 .. 0.5; parts/skids.js), so a block under a skid is set into the
@@ -84,7 +86,15 @@ export function foundationMembers(plan) {
     for (var a = 0; a < count; a++) {
       var target = count === 1 ? 0 : (-L / 2 + 1.5) + (L - 3) * a / (count - 1);
       var best = null;
-      mids.forEach(function (m) { if (used.indexOf(m) < 0 && (best === null || Math.abs(m - target) < Math.abs(best - target))) best = m; });
+      if (count <= mids.length) {
+        /* one anchor to a gap between blocks, half way between them */
+        mids.forEach(function (m) { if (used.indexOf(m) < 0 && (best === null || Math.abs(m - target) < Math.abs(best - target))) best = m; });
+      } else {
+        /* more anchors than gaps (a company laying fewer blocks, or asking
+           for more anchors): the nearest spot to its even share of the skid
+           that is clear of every block and of the anchors already in */
+        best = freeAnchorZ(target, blockZ, B.along, used, L);
+      }
       if (best === null) break;
       used.push(best);
       anchorAt(out, face, inward, best, { side: side, n: a });
@@ -92,6 +102,24 @@ export function foundationMembers(plan) {
   });
   out.forEach(function (m) { m.stage = "foundation"; });
   return out;
+}
+
+/* The z nearest `target` where an anchor's helix clears every block along
+   the skid and every anchor already placed, inside the building's length;
+   null when there is nowhere. */
+function freeAnchorZ(target, blockZ, along, used, L) {
+  var r = ANCHOR.helix / 2, lo = -L / 2 + r, hi = L / 2 - r;
+  function clear(z) {
+    if (z < lo - 1e-9 || z > hi + 1e-9) return false;
+    for (var i = 0; i < blockZ.length; i++) if (Math.abs(z - blockZ[i]) < along / 2 + r + 0.02) return false;
+    for (var j = 0; j < used.length; j++) if (Math.abs(z - used[j]) < 2 * r + 0.1) return false;
+    return true;
+  }
+  for (var d = 0; d <= L; d += 0.05) {
+    if (clear(target - d)) return target - d;
+    if (clear(target + d)) return target + d;
+  }
+  return null;
 }
 
 function anchorAt(out, face, inward, z, meta) {

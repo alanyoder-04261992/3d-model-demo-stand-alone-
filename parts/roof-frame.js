@@ -543,17 +543,42 @@ export function gableOpenings(plan, end, lay) {
     raw.push({ x0: vs.rx - vw, x1: vs.rx + vw, y0: vy - vh, y1: vy + vh, kind: "vent", what: "vent" });
   }
   /* an opening whose rough opening does not fit inside the gable's framing
-     (out past the walls, or wholly above the top chord) is not framed */
+     (out past the walls, or wholly above the top chord) is not framed. "Wholly
+     above" is tested at its HIGHEST point under the chord: a gable window
+     dragged toward an eave runs up into the top chord on its low side, but
+     the part of it under the chord is still a window, and leaving it unframed
+     ran gable studs and the end truss's bottom chord straight through its
+     glass (found by fuzzing the window positions the designer allows). */
+  var chordLine = offsetPolyline(sec, lowerD);
+  function highestUnder(x0, x1) {
+    var m = Math.max(envY(sec, lowerD, x0), envY(sec, lowerD, x1));
+    chordLine.forEach(function (q) { if (q[0] > x0 && q[0] < x1) m = Math.max(m, q[1]); });
+    return m;
+  }
   raw = raw.filter(function (o) {
     return o.x0 - 2 * st > sec.innerL + 1e-6 && o.x1 + 2 * st < sec.innerR - 1e-6 &&
-      o.y0 < Math.min(envY(sec, lowerD, o.x0), envY(sec, lowerD, o.x1)) - 0.05;
+      o.y0 < highestUnder(o.x0, o.x1) - 0.05;
   });
+  /* THE HEADER, the way the wall framing picks one (parts/wall-frame.js
+     fitHeader): the walls.header rule's size for the opening's width, else the
+     deepest smaller one (same number of plies) that fits under the top chord,
+     else a flat 2x, else none -- the top chord itself spans the opening. It
+     used to be the rule's size or nothing, which left the Standard Barn 8x12's
+     door (it rises into the gable) with half a foot of open space over its
+     head and no header, where a doubled 2x6 fits. */
+  var HEADER_STEPS = ["2x12", "2x10", "2x8", "2x6", "2x4"];
   function frame(o) {
-    var hdName = pickRule(((plan.construction || {}).walls || {}).header || "2x6 doubled", { spanFt: o.x1 - o.x0 });
-    var hd = lumberFt(hdName).d;
+    var want = pickRule(((plan.construction || {}).walls || {}).header || "2x6 doubled", { spanFt: o.x1 - o.x0 });
+    var wantL = lumberFt(want), plies = /tripled/i.test(want) ? " tripled" : /doubled/i.test(want) ? " doubled" : "";
     var hx0 = o.x0 - st, hx1 = o.x1 + st;
-    var fits = o.y1 + hd <= Math.min(envY(sec, lowerD, hx0), envY(sec, lowerD, hx1)) - 1e-6;
-    o.header = fits ? { y0: o.y1, y1: o.y1 + hd, depth: hd, name: hdName } : null;
+    var room = Math.min(envY(sec, lowerD, hx0), envY(sec, lowerD, hx1)) - 1e-6 - o.y1;
+    var tries = [{ name: want, d: wantL.d }];
+    HEADER_STEPS.forEach(function (n) { var z = lumberFt(n + plies); if (z.d < wantL.d - 1e-9) tries.push({ name: n + plies, d: z.d }); });
+    tries.push({ name: (((plan.construction || {}).walls || {}).stud || "2x4") + " flat", d: st });
+    var pick = null;
+    for (var ti = 0; ti < tries.length && !pick; ti++) if (tries[ti].d <= room) pick = tries[ti];
+    var fits = !!pick;
+    o.header = fits ? { y0: o.y1, y1: o.y1 + pick.d, depth: pick.d, name: pick.name, asked: want } : null;
     o.jacks = fits;
     o.fx0 = o.x0 - (fits ? 2 : 1) * st;
     o.fx1 = o.x1 + (fits ? 2 : 1) * st;

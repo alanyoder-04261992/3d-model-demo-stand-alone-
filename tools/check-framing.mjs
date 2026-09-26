@@ -17,6 +17,15 @@
    each style also with each electrical package (outside light included), a
    work bench and a shelf, and every per-square-foot option on (12 in floor
    joists, double floor ...); and each style's typical size with each ramp.
+   And the buildings a customer can make that framing finds hardest:
+   crowded walls laid by hand; openings wider than their wall (an 8 ft
+   roll-up on an 8 ft end wall, double doors swapped onto a 4 ft porch wall),
+   a window framed under the single slope's transom row, a gable window
+   dragged down onto another window; benches and shelves along the walls
+   where the package's outlets are, two benches meeting in an L, shelves
+   overlapping, a shelf on the Standard Barn's 4.2 ft walls; and companies
+   that build differently (fewer blocks and more anchors, 19.2 in joists,
+   2x6 studs at 24 in with one top plate, tripled headers, a triple floor).
 
    WHAT IT PROVES, on every building (docs/ARCHITECTURE.md "Framing datums"):
    1. drawing the framing (assemble frames:true) changes NOTHING in the
@@ -40,18 +49,25 @@
       corner or a neighbour's jack doing that job) and a header (or, where not
       even a flat 2x fits, the top plate right over it), and a window its
       rough sill with cripples under it; openings too close to frame apart
-      share a stud or are framed as one;
+      share a stud or are framed as one; every header is the size the
+      walls.header rule gives for its span, or -- only where that one does
+      not fit -- the deepest that does; every header is tight under what it
+      carries or has cripples between (no gap under the plates); a stud two
+      openings share carries both their headers;
    7. SPACING matches plan.construction: floor joists at floor.spacingIn on
       centre from the back end, studs at walls.spacingIn from the corner, no
       bay wider than that except across an opening; and choosing 12 in floor
       joists really puts them 12 in apart (and adds joists); a double floor
       really lays two layers of decking;
    8. the foundation has one block per site.perimeterFtPerBlock ft of outside
-      wall at least, spread on every skid, and site.anchors anchors;
+      wall at least, spread on every skid (one at each end of the building),
+      and site.anchors anchors;
    9. the decking covers the room and the deck boards cover every porch;
   10. the ramp is drawn only when a 4 or 6 ft ramp is chosen (not for the DIY
       kit), in the finished view, as long as chosen, from the floor line at
-      the biggest door (or the porch entry) down to the ground.
+      the biggest door (or the porch entry) down to the ground, and cuts into
+      nothing of the finished building (door trim, thresholds, porch posts,
+      railing, the side porch's step, the siding) by more than 0.01 ft.
 
    The roof framing parts (gable-frame, roof-frame, loft, roof-deck,
    dormer-frame) are held to 1-5 too; a part that lists no members is read
@@ -73,9 +89,12 @@ import { assemble } from "../engine/assemble.js";
 import { y0 } from "../engine/constants.js";
 import * as G from "./lib/framing-geometry.mjs";
 import { triangulate, polyArea, solidEnough, floorPlanOf } from "../parts/floor-frame.js";
-import { wallFrame, wallSpec } from "../parts/wall-frame.js";
+import { wallFrame, wallSpec, CRIPPLE_MIN, HEADER_FALLBACK } from "../parts/wall-frame.js";
+import { lumberSize } from "../parts/floor-frame.js";
+import { pickRule } from "../model/construction.js";
+import { clampPos } from "../model/layout.js";
 import { skidRuns } from "../parts/foundation.js";
-import { rampMembers, rampSite, rampLength } from "../parts/ramp.js";
+import { rampMembers, rampSite, rampLength, SIDE_STEP } from "../parts/ramp.js";
 import { clearOutline } from "../parts/interior.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -97,7 +116,7 @@ function ok(what, cond, where) {
   failures.set(what, f);
   return false;
 }
-const tally = { buildings: 0, members: 0, openings: 0, combined: 0, shared: 0, through: 0, fitted: 0, joists: 0, studs: 0, blocks: 0, anchors: 0, sheets: 0, boards: 0, ramps: 0, interior: 0, pairs: 0, roofParts: new Set(), pending: new Set() };
+const tally = { buildings: 0, members: 0, openings: 0, combined: 0, shared: 0, through: 0, fitted: 0, lifted: 0, clipped: 0, headers: 0, hard: 0, ways: 0, stepRamps: 0, stepCut: 0, joists: 0, studs: 0, blocks: 0, anchors: 0, sheets: 0, boards: 0, ramps: 0, interior: 0, pairs: 0, roofParts: new Set(), pending: new Set() };
 
 /* ---------------------------------------------------------------- buildings */
 
@@ -126,6 +145,53 @@ function* buildings() {
     const st = standardState(cat0, t, z);
     st.items = items; st.seq = items.length;
     yield { tag: `crowded ${t} ${z}: ${what}`, cat: cat0, state: st, variant: "crowded" };
+  }
+  /* what a customer can make that is hardest to frame; each added item goes
+     through clampPos, as the designer puts it */
+  function added(t, z, add, mut) {
+    const st = standardState(cat0, t, z);
+    if (mut) mut(st);
+    for (const it of add) { st.items.push(Object.assign({ inc: false, shut: false }, it)); clampPos(st.items[st.items.length - 1], st, frameOf(st, cat0)); }
+    st.seq = st.items.length + 50;
+    return st;
+  }
+  let nx = 0;
+  function bench(px, pz, ln, rot, c = "bench") { return { id: "fx" + (nx++), cat: c, wall: "IN", ln, rot, px, pz }; }
+  function pkg(st) { st.elec = { pkg: 3, ext: true }; pkFixtures(st, frameOf(st, cat0), cat0); }
+  const hard = [
+    ["UT", "8x12", [{ id: "h1", cat: "ru8", wall: "F", pos: 0 }], null, "an 8 ft roll-up on an 8 ft end wall"],
+    ["SB", "8x12", [{ id: "h1", cat: "ru8", wall: "F", pos: 0 }], null, "an 8 ft roll-up reaching up into a Standard Barn's plates"],
+    ["BU", "6x8", [{ id: "h1", cat: "w72", wall: "F", pos: 0 }], null, "double doors on a 6 ft end wall"],
+    ["SC", "10x20", [{ id: "h1", cat: "dfr", wall: "S2", pos: 0 }], null, "French doors swapped onto a 4 ft porch wall"],
+    ["DSC", "12x20", [{ id: "h1", cat: "w72", wall: "P1", pos: 0 }], null, "double doors on the corner porch's angled wall"],
+    ["SS", "12x32", [{ id: "h1", cat: "w33", wall: "R", pos: -1.3, dbl: true }], null, "a double window under the transom row"],
+    ["SU", "8x12", [{ id: "h1", cat: "g1824", wall: "R", pos: 100, vy: -5 }], null, "a gable window dragged down onto a window"],
+    ["SLB", "8x12", [{ id: "h1", cat: "w36", wall: "R", pos: 0 }], null, "a fourth opening on a full 12 ft side wall"],
+    ["UT", "10x16", [bench(-3.65, -4, 6, true), bench(3.65, 4, 6, true), bench(0, -7.65, 8, false), bench(-2.6, -7.2, 4, false, "shelf"), bench(-4.15, 3, 6, true, "shelf")], pkg, "benches and shelves along the walls where the outlets are"],
+    ["UT", "10x16", [bench(-3.65, -4.65, 6, true), bench(-1, -7.65, 6, false)], null, "two benches meeting in an L"],
+    ["UT", "10x16", [bench(0, 0, 6, false, "shelf"), bench(1, 0.5, 6, true, "shelf"), bench(0, 0, 6, false), bench(0.5, 0.5, 6, true)], null, "shelves and benches piled on each other"],
+    ["SB", "8x12", [bench(0, -5.15, 8, false, "shelf")], pkg, "a shelf against a Standard Barn's 4.2 ft wall"],
+    ["SC", "12x24", [bench(4.65, -9, 3, true), bench(4.65, -3, 3, true), bench(4.65, 3, 3, true), bench(0, 0, 12, false)], pkg, "benches along the porch side and one right across"],
+    ["DSC", "12x24", [bench(3, 6, 6, true), bench(0, 9, 12, false)], pkg, "benches against the corner porch's walls"],
+  ];
+  for (const [t, z, add, mut, what] of hard) yield { tag: `hard ${t} ${z}: ${what}`, cat: cat0, state: added(t, z, add, mut), variant: "hard" };
+  /* companies that build differently: the same framing rules must hold */
+  const merge = (a, b) => { for (const k of Object.keys(b)) { if (b[k] && typeof b[k] === "object" && !Array.isArray(b[k]) && a[k] && typeof a[k] === "object") merge(a[k], b[k]); else a[k] = b[k]; } return a; };
+  const ways = [
+    ["a block every 12 ft and 12 anchors", { site: { perimeterFtPerBlock: 12, anchors: 12 } }],
+    ["19.2 in floor joists", { floor: { spacingIn: 19.2 } }],
+    ["2x6 studs at 24 in, one top plate, two-stud corners", { walls: { stud: "2x6", spacingIn: 24, topPlates: 1, corner: "2-stud" } }],
+    ["tripled 2x12 headers and two bottom plates", { walls: { header: [{ value: "2x12 tripled" }], bottomPlates: 2 } }],
+    ["2x8 joists under a triple 3/4 in floor", { floor: { joist: "2x8", rim: "2x8", deck: { layers: 3, thicknessIn: 0.75 } } }],
+  ];
+  for (const [how, extra] of ways) {
+    const cw = structuredClone(cat0); merge(cw.construction, extra);
+    for (const [t, z] of [["UT", "10x16"], ["LB", "12x24"], ["SC", "12x24"], ["DSC", "12x24"], ["DK", "10x16"], ["SS", "12x24"], ["G", "12x24"], ["SB", "8x12"], ["BU", "6x12"]]) {
+      if (!cw.P[t] || !cw.P[t][z]) continue;
+      const st = standardState(cw, t, z);
+      st.elec = { pkg: 3, ext: true }; pkFixtures(st, frameOf(st, cw), cw);
+      yield { tag: `built with ${how}: ${t} ${z}`, cat: cw, state: st, variant: "construction" };
+    }
   }
   const cats = [["barnwright", cat0]];
   for (const id of ["demo", "starter"]) cats.push([id, loadCatalogue(id)]);
@@ -204,6 +270,8 @@ for (const B of buildings()) {
   let plan;
   try { plan = makePlan(B.state, B.cat); } catch (e) { ok("the building can be planned", false, `${where}: ${e.message}`); continue; }
   tally.buildings++;
+  if (B.variant === "hard") tally.hard++;
+  if (B.variant === "construction") tally.ways++;
   const vp = { w: 742, h: 803 };
   let rF, rT;
   try {
@@ -288,6 +356,7 @@ for (const B of buildings()) {
       const ms = fr.members;
       for (const f of fr.frames) {
         tally.openings++; if (f.combined) tally.combined++; if (f.shareL || f.shareR) tally.shared++; if (f.through) tally.through++; if (f.header.size && !f.header.fits) tally.fitted++;
+        if (f.clipped) tally.clipped++; if (f.header.size && f.hBot > f.ro.y1 + 1e-9) tally.lifted++;
         f.ids.forEach((id) => framedItems.set(id, f));
         const mine = ms.filter((m) => m.meta.item === f.id);
         const shared = ms.filter((m) => m.kind === "jack" && m.meta.sharedWith === f.id);
@@ -302,7 +371,34 @@ for (const B of buildings()) {
         }
         ok("every opening has a king stud on each side (or a corner or a neighbour's jack doing its job)", kingOk("L") && kingOk("R"), `${where} ${fr.run.key} ${f.id}`);
         const hdr = mine.some((m) => m.kind === "header");
-        const plateOver = !f.header.size && fr.yTB - f.ro.y1 < spec.plateT + 1e-9 && fr.yTB - f.ro.y1 > -1e-9;
+        const plateOver = !f.header.size && f.plateHead;
+        if (f.header.size) {
+          tally.headers++;
+          /* the size: the walls.header rule's for this span, or -- only when
+             that does not fit under what the header carries -- the deepest
+             one that does (a flat 2x last) */
+          const asked = lumberSize(pickRule(plan.construction.walls.header, { spanFt: f.ro.u1 - f.ro.u0 }));
+          const got = f.header.size, room = f.limit - f.ro.y1;
+          let sizeOk;
+          if (got.nominal === asked.nominal && got.plies === asked.plies && !f.header.flat) sizeOk = true;
+          else {
+            const tries = [asked.d].concat(HEADER_FALLBACK.map((n) => lumberSize(n).d).filter((d) => d < asked.d - 1e-9));
+            const deepestFit = tries.find((d) => d <= room + 1e-9);
+            sizeOk = asked.d > room + 1e-9 && (f.header.flat ? deepestFit === undefined && spec.plateT <= room + 1e-9 : deepestFit !== undefined && Math.abs(got.d - deepestFit) < 1e-9);
+          }
+          ok("every header is the size the walls.header rule gives for its opening, or the deepest that fits where that one does not", sizeOk, `${where} ${fr.run.key} ${f.id}: ${got.nominal} for ${asked.name} with ${room.toFixed(3)} ft of room`);
+          /* no gap between the header and what it carries: tight under it,
+             or cripples standing on the header up to it */
+          const gap = f.limit - f.hTop;
+          const cripOn = ms.some((m) => (m.kind === "cripple" || m.kind === "stud" || m.kind === "jack") && Math.abs(m.meta.at.y0 - f.hTop) < 1e-6 && m.meta.at.u1 > f.edgeL - 1e-9 && m.meta.at.u0 < f.edgeR + 1e-9);
+          ok("every header is tight under what it carries, or has cripples up to it (no gap)", Math.abs(gap) < 1e-6 || (gap >= CRIPPLE_MIN - 1e-9 && cripOn), `${where} ${fr.run.key} ${f.id}: ${gap.toFixed(3)} ft`);
+        }
+        /* a stud two openings share carries both their headers */
+        if (f.shareR) {
+          const js = ms.find((m) => m.kind === "jack" && m.meta.shared && m.meta.sharedWith === f.shareR.right);
+          const nb = fr.frames.find((q) => q.id === f.shareR.right);
+          ok("a stud two openings share carries both their headers", !!(js && nb && Math.abs(js.meta.at.y1 - Math.min(f.hBot, fr.yTB)) < 1e-6 && Math.abs(js.meta.at.y1 - Math.min(nb.hBot, fr.yTB)) < 1e-6), `${where} ${fr.run.key} ${f.id}`);
+        }
         if (f.through) {
           /* its header is the gable framing's: something of the gable framing
              spans the opening above it (when that part is built) */
@@ -312,11 +408,20 @@ for (const B of buildings()) {
             const x = [f.ro.u0, f.ro.u1].map((u) => fr.run.w.cx + fr.run.w.ax[0] * u), x0 = Math.min(...x), x1 = Math.max(...x);
             const zEnd = fr.run.w.at;
             const iv = G.solidsOf(gf, "gable").filter((so) => so.min[1] >= f.ro.y1 - 0.01 && so.max[0] > x0 && so.min[0] < x1 && Math.abs((so.min[2] + so.max[2]) / 2 - zEnd) < 0.5)
-              .map((so) => [so.min[0], so.max[0]]).sort((a, b) => a[0] - b[0]);
+              .map((so) => [so.min[0], so.max[0]])
+              /* (a crowded opening framed as one keeps its top plates over a
+                 door in it that stops under them: those span it too) */
+              .concat(ms.filter((m) => m.kind === "top-plate").map((m) => [m.meta.at.u0, m.meta.at.u1].map((u) => fr.run.w.cx + fr.run.w.ax[0] * u)).map(([a, b]) => [Math.min(a, b), Math.max(a, b)]))
+              .sort((a, b) => a[0] - b[0]);
             let reach = x0;
             for (const [a, b] of iv) if (a <= reach + 0.01) reach = Math.max(reach, b);
             ok("a door reaching through the top plates has its header, or the roof framing, spanning it in the gable", reach >= x1 - 0.01, `${where} ${fr.run.key} ${f.id}`);
-          } else ok("a door reaching through the top plates has the top plates cut round it", !ms.some((m) => m.kind === "top-plate" && m.meta.at.u0 < f.ro.u1 - 1e-6 && m.meta.at.u1 > f.ro.u0 + 1e-6), `${where} ${fr.run.key} ${f.id}`);
+          } else {
+            /* (the roof framing is not built here: the plates must at least be
+               cut round the doors in it that rise into the gable) */
+            const rising = f.parts.filter((p) => p.carried).map((p) => [Math.max(p.ro.u0, f.ro.u0), Math.min(p.ro.u1, f.ro.u1)]);
+            ok("a door reaching through the top plates has the top plates cut round it", rising.length > 0 && !ms.some((m) => m.kind === "top-plate" && rising.some(([a, b]) => m.meta.at.u0 < b - 1e-6 && m.meta.at.u1 > a + 1e-6)), `${where} ${fr.run.key} ${f.id}`);
+          }
         } else ok("every opening has a header (or the top plate right over it where not even a flat 2x fits)", hdr || plateOver, `${where} ${fr.run.key} ${f.id}`);
         if (f.win) {
           const sillOk = mine.some((m) => m.kind === "sill") || f.ro.y0 - f.sillBot <= 0.01;
@@ -397,7 +502,7 @@ for (const B of buildings()) {
     tally.blocks += blocks.length; tally.anchors += anchors.length;
     ok("at least one block per site.perimeterFtPerBlock ft of outside wall", blocks.length >= Math.ceil(2 * (plan.W + plan.L) / site.perimeterFtPerBlock - 1e-9), `${where}: ${blocks.length}`);
     const runs = skidRuns(plan);
-    ok("every skid has blocks, one flush with each end", runs.every((sk, i) => {
+    ok("every skid has blocks, one flush with each end of the building", runs.every((sk, i) => {
       const bs = blocks.filter((b) => b.meta.skid === i).map((b) => G.solidsOf([b], "x")[0]);
       return bs.length >= 2 && bs.some((b) => Math.abs(b.min[2] + plan.L / 2) < 1e-6) && bs.some((b) => Math.abs(b.max[2] - plan.L / 2) < 1e-6);
     }), where);
@@ -452,6 +557,35 @@ for (const B of buildings()) {
          board's lower corner lies past that by at most its own thickness */
       ok("the ramp is as long as the one chosen", reach >= site.start + len - 0.01 && reach <= site.start + len + 0.06, `${where}: reaches ${reach.toFixed(3)}, wants ${(site.start + len).toFixed(3)}`);
       ok("the ramp has at least two stringers", ms.filter((m) => m.kind === "stringer").length >= 2, where);
+      /* it cuts into nothing of the finished building -- except that a 4 ft
+         ramp on a side porch is steep enough to touch the top corner of
+         Barnwright's two-step stair it is laid over (the stringers are
+         notched to sit on it; the step is Barnwright's and stays): that one
+         contact is held to at most 0.06 ft (3/4 in) and counted apart */
+      let worstCut = 0, cutWhat = "", stepCut = 0;
+      const W2 = plan.W / 2, stepZ = site.step ? -site.u : null, stepTop = site.step ? Math.max(...SIDE_STEP.map((b) => b.y1)) : 0;
+      function onStep(tri) {
+        return site.step && tri.every((p) => p[0] >= W2 - 1e-6 && p[0] <= W2 + Math.max(...SIDE_STEP.map((b) => b.o1)) + 1e-6 && p[1] <= stepTop + 1e-6 && Math.abs(p[2] - stepZ) <= SIDE_STEP[0].along / 2 + 1e-6);
+      }
+      const lo = [0, 1, 2].map((i) => Math.min(...sol.map((x) => x.min[i]))), hi = [0, 1, 2].map((i) => Math.max(...sol.map((x) => x.max[i])));
+      for (const key of rF.build.ORDER) {
+        const bk = rF.build.buckets[key];
+        for (const seg of rF.build.tags[key] || []) {
+          if (seg.part === "ramp" || seg.part === "ground") continue;
+          for (let ti = seg.from; ti < seg.from + seg.count; ti++) {
+            const o = ti * 27, tri = [0, 1, 2].map((v) => [bk.v[o + v * 9], bk.v[o + v * 9 + 1], bk.v[o + v * 9 + 2]]);
+            if ([0, 1, 2].some((i) => Math.max(tri[0][i], tri[1][i], tri[2][i]) < lo[i] || Math.min(tri[0][i], tri[1][i], tri[2][i]) > hi[i])) continue;
+            for (const S of sol) {
+              if ([0, 1, 2].some((i) => Math.max(tri[0][i], tri[1][i], tri[2][i]) < S.min[i] || Math.min(tri[0][i], tri[1][i], tri[2][i]) > S.max[i])) continue;
+              const d = G.triangleSolidDepth(tri, S);
+              if (seg.part === "porch" && onStep(tri)) { if (d > stepCut) stepCut = d; continue; }
+              if (d > worstCut) { worstCut = d; cutWhat = `${seg.part} (${key})`; }
+            }
+          }
+        }
+      }
+      ok("the ramp cuts into nothing of the finished building", worstCut <= G.TOL, `${where}: ${cutWhat} by ${worstCut.toFixed(3)} ft`);
+      if (site.step) { tally.stepRamps++; tally.stepCut = Math.max(tally.stepCut, stepCut); ok("a side porch's ramp sits on Barnwright's step, touching its top corner by no more than 0.06 ft", stepCut <= 0.06, `${where}: ${stepCut.toFixed(3)} ft`); }
     } else {
       ok("the DIY ramp kit (no wood) draws no ramp", rampTris.n === 0, where);
     }
@@ -475,13 +609,14 @@ if (failures.size) {
   for (const [what, f] of failures) console.log(`  - ${what} -- ${f.n} time(s), e.g. ${f.where.join(" | ")}`);
   process.exitCode = 1;
 } else {
-  console.log(`PROVED (${pass} checks) on ${tally.buildings} buildings (the 148 golden ones, and every style at every size of the Barnwright, demo and starter catalogues, with porch, electrical, bench, shelf, option and ramp variants):`);
+  console.log(`PROVED (${pass} checks) on ${tally.buildings} buildings (the 148 golden ones, and every style at every size of the Barnwright, demo and starter catalogues, with porch, electrical, bench, shelf, option and ramp variants; ${tally.hard} of the hardest a customer can make; ${tally.ways} built the way other companies build):`);
   console.log(`  drawing the framing changes no finished triangle or material, and every framing triangle is a framing part's, in its own stages;`);
   console.log(`  every one of ${tally.members} framing pieces is drawn exactly as listed, stands where framing can stand (under the floor inside the footprint, inside the walls, under the roof), overlaps no other piece or skid by more than ${G.TOL} ft, and rests on or is nailed to what carries it;`);
-  console.log(`  ${tally.openings} door/window framings each have jacks, kings (or a corner or neighbour doing that job) and a header, windows a sill and cripples (${tally.shared} share a stud with a neighbour, ${tally.combined} crowded pairs framed as one opening, ${tally.fitted} headers fitted a size down under the plates, ${tally.through} doors reaching through the top plates into the gable);`);
+  console.log(`  ${tally.openings} door/window framings each have jacks, kings (or a corner or neighbour doing that job) and a header, windows a sill and cripples (${tally.shared} share a stud with a neighbour, ${tally.combined} crowded openings framed as one, ${tally.clipped} wider than their wall framed as wide as it allows, ${tally.through} doors reaching through the top plates into the gable);`);
+  console.log(`  ${tally.headers} headers each the walls.header rule's size for its span, or the deepest that fits under what it carries (${tally.fitted} fitted a size down), none with a gap under what it carries (${tally.lifted} set tight up under it), and every shared stud carrying both headers;`);
   console.log(`  ${tally.studs} layout studs on their walls.spacingIn marks and ${tally.joists} floor joists on their floor.spacingIn marks with no wider bay; 12 in joists tried on ${pairsSeen} buildings (closer and more of them, and the double floor's second layer);`);
-  console.log(`  ${tally.blocks} blocks (at least one per site.perimeterFtPerBlock ft of wall, flush with both skid ends) and ${tally.anchors} anchors (site.anchors); the decking covers every room (${tally.sheets} sheets) and deck boards every porch (${tally.boards}); ${tally.interior} inside pieces all inside the studs;`);
-  console.log(`  ${tally.ramps} chosen ramps drawn in the finished view from the floor line to the ground, as long as chosen; none for "no ramp" or the DIY kit.`);
+  console.log(`  ${tally.blocks} blocks (at least one per site.perimeterFtPerBlock ft of wall, one at each end of the building on every skid) and ${tally.anchors} anchors (site.anchors); the decking covers every room (${tally.sheets} sheets) and deck boards every porch (${tally.boards}); ${tally.interior} inside pieces all inside the studs;`);
+  console.log(`  ${tally.ramps} chosen ramps drawn in the finished view from the floor line to the ground, as long as chosen, cutting into nothing of the finished building (${tally.stepRamps} on side porches sit on Barnwright's step, touching its top corner by at most ${tally.stepCut.toFixed(3)} ft); none for "no ramp" or the DIY kit.`);
   if (tally.roofParts.size) console.log(`  Roof framing parts held to the same rules: ${[...tally.roofParts].join(", ")}.`);
   if (tally.pending.size) console.log(`  Still stubs (nothing drawn yet, so nothing to check): ${[...tally.pending].join(", ")}.`);
   if (onlyMine) console.log(`  (--mine: only ${MINE_PARTS.join(", ")} were checked.)`);

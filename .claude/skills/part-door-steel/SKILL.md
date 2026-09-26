@@ -112,8 +112,16 @@ And the shared trim (`common.js`, full text in `part-openings`):
 
 * `node tools/check-golden.mjs --part door-steel` -- every steel-door
   triangle of the 148 recorded Barnwright buildings, number for number (14
-  buildings, 3,584 triangles, Sep 26 2026), including the steel door swapped
-  to the 11-lite door and back.
+  buildings, 3,584 triangles, Sep 26 2026): the garages' standard side door
+  (Garage, Lofted Barn Garage, Metal Garage) and one added to a Utility Shed
+  (`doors-ut-12x24-a`) -- every one on the R wall, none of them selected, and
+  none on a building that also carries an 11-lite door. (The
+  `lite-su-10x20-steel-swap` case swaps a steel door FOR an 11-lite one, so
+  what it records is the 11-lite door -- `part-door-lite`.) An ad hoc
+  differential run against Barnwright's live page (Sep 26 2026, verification
+  of the port) also drew the steel door with an 11-lite door on the same
+  building in both orders, and selected: identical, `galv`/`doorSh6` paint
+  included.
 * `node tools/check-golden.mjs` -- also the draw order and paint of `dJamb`,
   `dRev`, `doorSh6`, `panFace`, `panBev`, `panGroove`, `galv`, `galvD`,
   `thresh`.

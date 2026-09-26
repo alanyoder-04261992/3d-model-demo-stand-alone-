@@ -41,9 +41,11 @@
    common.js.
 
    A draw trait this folder does not know falls back the way Barnwright's
-   renderItem branched: a gable item to the gable window, a light to the
-   light, a porch post to the post, anything else to the wall window (its
-   final else). A company's catalogue should never need that.
+   renderItem branched on the item's KIND: a gable item to the gable window,
+   a light to the light, a porch post to the post, a roll-up (kind "ru") to
+   the roll-up, anything else to the wall window (its final else). A
+   company's catalogue never reaches that: model/company.js refuses a draw
+   trait that is not on its list.
 
    Barnwright source: renderItem (3ddesign.html 3122-3574) and renderGableWin
    (3575-3705). Porting edits: see common.js and each draw module. */
@@ -72,6 +74,7 @@ export function moduleFor(c) {
   if (c.gable) return gableWindow;
   if (c.k === "light") return light;
   if (c.k === "post") return porchPost;
+  if (c.k === "ru") return rollUp;          /* renderItem 3237: if(c.k==="ru") */
   return windowPart;
 }
 
