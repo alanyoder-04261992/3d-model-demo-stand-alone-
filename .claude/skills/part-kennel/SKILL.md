@@ -27,12 +27,23 @@ BACK half is an enclosed room: sided outside, and you can see its inside face
 
 The kennel's triangles carry four building steps (`stage` lists them, the
 first is the main one): `siding` (the enclosed half of each side wall, its
-inside face, the partition and its inside face), `trim` (the front header
-board, the junction board and the band over the run), `doors` (the doggie
-doors) and `extras` (chain-link, gates, wood posts, line posts, divider
-rails, the run ceiling, the diamond-plate rims). All four are kind `finish`,
-so they show only in the Finished view and land in Watch-it-build in that
-order of the build.
+inside face, the partition and its inside face, AND everything that carries
+the roof over the open run: the cream header board across the front, the
+three wood front posts, the cream band along the top of each run wall and the
+galvanized line posts under it), `trim` (the white junction board where the
+room meets the run), `doors` (the doggie doors) and `extras` (chain-link,
+gates, divider rails, the run ceiling, the diamond-plate rims). All four are
+kind `finish`, so they show only in the Finished view and land in
+Watch-it-build in that order of the build.
+
+WHY THE ROOF-CARRYING PIECES ARE `siding`: in Watch-it-build the siding step
+hides the wall framing (`parts/stages.js` COVERS: siding covers wall-frame),
+and the run has no siding of its own. With the posts, header and bands as
+`trim`/`extras` (the first port), the front of the kennel's roof and its front
+gable stood on nothing from the siding step until the extras step near the
+end (rendered and seen, Sep 2026). Keep any piece that holds the roof up over
+the run at `siding` or earlier. The stage never changes the Finished picture
+(the golden check drops it), so this is free to get right.
 
 It is drawn from TWO places, both at Barnwright's positions:
 * `front` and `side` (Barnwright `kennelFront` / `kennelSide`) are called
@@ -67,7 +78,8 @@ the length (RD = L/2).
 Porting edits, all from the contract's Porting rules:
 * every function takes the plan and the kit first; the kit's `mat wq box
   wallPt quadUV pushQuad wbrace` are bound to local names of the same name, so
-  the bodies read as Barnwright's (rule 1);
+  the bodies read as Barnwright's (rule 1); `meshWall` takes the kit first too
+  (`meshWall(kit, b, w, ...)`);
 * `dims()` -> `plan.d`, `state` -> `plan.state`, `STEP` -> `kit.STEP`, `y0`
   from `engine/constants.js`, texture names from `engine/tex-names.js` (rule 1);
 * `state.type === "DK"` (in the siding loop and `appliesTo`) -> the `kennel`
@@ -115,6 +127,14 @@ its numbers are Barnwright's drawing.
   wall; then the rest), and the first call decides a material's paint.
 * If the kennel's look must really change, re-record the golden fixtures on
   purpose (`node tools/capture-golden.mjs`, with a reason).
+* Changing a `kit.setStage` here changes nothing the golden check can see
+  (it compares the Finished view only). Look at Watch-it-build instead: the
+  roof over the run must stand on the header, posts and bands from the siding
+  step on (see Stage).
+* The NEW wall-frame part also draws posts at the kennel's open front, right
+  beside these wood posts. They never show together in Finished or Framing,
+  only for a moment in Watch-it-build before the siding step hides the
+  framing.
 
 ## Checks that guard it
 

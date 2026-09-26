@@ -20,8 +20,9 @@ under the siding skirt (y0 - SKIRT + 0.02; from the floor line on the kennel,
 whose siding has no skirt) to the wall top -- on a lean-to the two high
 (-x) corners are taller by the lean's rise, on a single slope the two high
 (+x) corners by its rise. A soft shadow strip (the `cornerAO` decal) lies on
-the siding on both sides of each post, from 0.17 to 0.44 ft out from the
-corner.
+the siding on both sides of each post, from 0.17 to 0.44 ft in from the
+post's centre line (the post's own edge is 0.146 ft in), which is about
+0.24 to 0.51 ft in from the corner of the building.
 
 No post where there is no outside corner: the front corners of a front-porch
 or corner-porch building, the right corners of a `porch "R"` building, the

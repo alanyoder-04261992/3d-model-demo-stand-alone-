@@ -1,0 +1,10 @@
+/* THE FLOOR PLAN'S OWN LOOK (ui/blueprint.js adds this file to the page).
+
+   ui/styles.css already places canvas#bp over the 3D picture and shows it in
+   the Inside view (.stage.bpmode). This adds only what the plan's touch code
+   needs: a closed hand while an item is being slid across the plan, and the
+   plan's navy as the stage colour in the Inside view so the paper never
+   flashes the 3D picture's light backdrop while it is being sized. */
+
+#bp.bpdragging{cursor:grabbing}
+.stage.bpmode{background:#0A2C49}

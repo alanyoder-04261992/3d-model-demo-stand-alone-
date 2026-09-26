@@ -104,9 +104,11 @@ The siding texture is LP rough-sawn panel with one groove every 8 in
   porch (`porch "F"`) or a corner porch (`porch "C"`), the right wall of a
   `porch "R"` building (no style uses `"R"`; Barnwright's branch is kept so
   the code stays Barnwright's), and every porch wall (S*, P*).
-* The corner porch's F stub starts at y0 (not yb0), and its R wall starts
-  12 ft back from the front (`-half+12`): the porch deck is in `L`, which is
-  4 ft longer than the size says (Barnwright's `dims()`).
+* The corner porch's F stub is written with `y0` where the other branches
+  use `yb0`; on a corner porch the F wall's `yb0` IS `y0` (no skirt), so the
+  two agree -- keep Barnwright's spelling. Its R wall starts 12 ft back from
+  the front (`-half+12`): the porch deck is in `L`, which is 4 ft longer than
+  the size says (Barnwright's `dims()`).
 * The side porch trims 4 ft off the F wall only when the notch is at the
   front end (not flipped, not in the middle), and 4 ft off the B wall only
   when it is flipped.

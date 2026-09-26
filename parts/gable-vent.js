@@ -33,7 +33,12 @@ import { roofShape, lengthOf } from "../model/roof-shapes.js";
 
 /* Where the vent goes and whether there is one: {rx, ry, show}. rx, ry is the
    ridge point the vent hangs under (the highest inner profile point; on a
-   lean-to or single slope a point 0.9 ft in from the high side). */
+   lean-to or single slope a point 0.9 ft in from the high side).
+   On a lean-to or single slope the vent hangs a FIXED distance under the
+   high side, not under the sloping roof line, so it fits only near the
+   default rise: a lean-to steeper than about 0.21 x the width has its top
+   corner cut by the roof, and a rise under 0.80 ft (single slope 1.56 ft)
+   hangs it below the wall top. See the part-gable-vent skill. */
 export function ventSpot(plan){
   var W=plan.W, t=plan.t, topY=plan.topY, prof=plan.prof;
   var rx=0,ry=-1;for(var pv=1;pv<prof.length-1;pv++){if(prof[pv][1]>ry){ry=prof[pv][1];rx=prof[pv][0];}}

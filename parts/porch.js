@@ -9,8 +9,9 @@
    (the trim colour, white on the real cabins), and the underside of the roof
    over the porch is a white ceiling. A wooden railing -- a flat cap board, a
    top rail, a bottom rail and 2x2 balusters -- closes the open sides, except
-   one gap left open as the way in. A side porch also gets a two-riser wooden
-   step at that gap. The customer can add extra posts ("Porch Post" items);
+   one gap left open as the way in. A side porch also gets a two-step wooden
+   stair at that gap (two boxes, their tops 0.30 and 0.64 ft off the ground,
+   then the deck at 0.92: three rises). The customer can add extra posts ("Porch Post" items);
    the railing then runs post to post.
 
    THREE KINDS OF PORCH (the style's `porch` trait, docs/ARCHITECTURE.md):
@@ -229,7 +230,7 @@ export default {
   id: "porch",
   name: "Porch",
   stage: ["porch", "porch-frame"],
-  realLife: "The cabin's open porch: {porch.post} posts of natural pressure-treated wood at the open corners, a painted header band over the opening, a white ceiling under the roof, and a wooden railing round the open sides (a flat cap, top and bottom rails and 2x2 balusters) with the widest gap left open as the way in -- and on a side porch a two-riser wooden step at the entry.",
+  realLife: "The cabin's open porch: {porch.post} posts of natural pressure-treated wood at the open corners, a painted header band over the opening, a white ceiling under the roof, and a wooden railing round the open sides (a flat cap, top and bottom rails and 2x2 balusters) with the widest gap left open as the way in -- and on a side porch a two-step wooden stair at the entry.",
   appliesTo(plan) { return plan.t.porch === "F" || plan.t.porch === "C" || plan.t.porch === "S"; },
   build(plan, kit, core) {
     var W=plan.W, L=plan.L, t=plan.t, topY=plan.topY;

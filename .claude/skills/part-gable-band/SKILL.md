@@ -77,9 +77,17 @@ band instead of overlapping it."
 
 ## Kept quirks
 
-* The inset at both ends uses the slope of the FIRST profile segment
-  (`prof[1]`), so on a saltbox both ends are inset by the steep front
-  slope's rate.
+* The inset at both ends is worked out from the profile's SECOND point
+  (`prof[1]`): its height above the wall top (`rL2`) over its distance in from
+  the building's side (`kx2 = W/2 - |prof[1][0]|`). On a gable (ridge at x=0)
+  and a gambrel (the knee) that is exactly the slope at each end. On a
+  saltbox (ridge at +0.18W) it is the steep FRONT slope's rate, used at the
+  shallow back end too, so the back end of the band is inset too little. The
+  cottage gets away with it only because its raised eave (`cottageEave`) lifts
+  the roof line: the band's top is 0.27 ft over the wall top and the cottage
+  roof line there is about 0.32 ft (worked out for 8, 10 and 12 ft wide). A
+  saltbox style WITHOUT the cottage trait (none exists today) would put the
+  back end of the band about 0.13 ft through the roof line.
 * A gable window on the R or L wall counts as being on the FRONT end
   (`gableBandY`), so it drops the front band of a gambrel from 40% to the
   eave line.

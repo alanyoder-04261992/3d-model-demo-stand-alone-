@@ -517,7 +517,7 @@ export default {
   id: "roofing",
   name: "Roofing",
   stage: ["roofing", "trim"],
-  realLife: "Painted steel roof panels with a raised rib every 9 in, screwed down in rows over the roof framing, a ridge cap along the peak, and painted trim boards at the edges: the rake boards on the gable ends and, on boxed eaves, the fascia and the soffit.",
+  realLife: "Painted steel roof panels with a raised rib every 9 in, screwed down in rows over the roof framing, a ridge cap along the peak where the roof has one, and painted trim boards at the edges: the rake boards on the gable ends and, on boxed eaves, the fascia and the soffit.",
   appliesTo() { return true; },
   build(plan, kit) {
     kit.setStage("roofing");

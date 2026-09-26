@@ -33,9 +33,13 @@
      Barnwright's (rule 1);
    * dims() -> plan.d, state -> plan.state, STEP -> kit.STEP, y0 from
      engine/constants.js, the texture names from engine/tex-names.js (rule 1);
-   * kit.setStage calls added (rule 7): the siding faces are "siding", the
-     cream header, junction board and band are "trim", the doggie doors are
-     "doors", and the chain-link, gates, posts, rails, ceiling and rims are
+   * kit.setStage calls added (rule 7): the siding faces and the pieces that
+     CARRY THE ROOF over the open run -- the front header board, the three
+     wood front posts, the band along the top of each run wall and the
+     galvanized line posts under it -- are "siding" (the siding step hides the
+     wall framing, so anything later leaves the roof floating in
+     Watch-it-build); the junction board is "trim"; the doggie doors are
+     "doors"; the chain-link, gates, divider rails, ceiling and rims are
      "extras" -- the order a kennel is really finished in.
    Unused parameters are kept as Barnwright has them (kennelFront's mB,
    kennelExtras's prof). */
@@ -68,7 +72,11 @@ export function kennelFront(plan,kit,w,half,topY,mB,mT){
   var mGalvD=mat("galvD",texFlat,"#a6adb3",0.4,36);
   var hy=topY-0.15, zF=w.at;
   /* one cream header board across the front */
-  kit.setStage("trim");
+  /* The header and the three posts carry the front of the roof over the open
+     run, so they go up WITH the siding ("siding"): the siding step hides the
+     wall framing (parts/stages.js COVERS), and anything later would leave the
+     front of the roof standing on nothing in Watch-it-build. */
+  kit.setStage("siding");
   wq(mT,w,-half,hy,half,topY+0.21,0.05);
   /* chain-link, both faces */
   kit.setStage("extras");
@@ -76,8 +84,10 @@ export function kennelFront(plan,kit,w,half,topY,mB,mT){
   var wIn={ax:[-1,0,0],n:[0,0,-1],at:zF,cx:0};
   meshWall(kit,mGalvD,wIn,-half+0.14,y0+0.10,half-0.14,hy-0.03,0.46,0.01);
   /* three chunky wood posts */
+  kit.setStage("siding");
   [-(half-0.17),0,half-0.17].forEach(function(u){ box(mWd2,u,y0,zF-0.17,0.34,hy-y0+0.04,0.34); });
   /* two full-width galvanized pipe gates */
+  kit.setStage("extras");
   [[-half+0.44,-0.25,-1],[0.25,half-0.44,1]].forEach(function(g){
     var a=g[0],b2=g[1],hs=g[2],gt=hy-0.12,gb=y0+0.12,fw=0.07;
     /* fixed frame posts + header */
@@ -123,6 +133,10 @@ export function kennelSide(plan,kit,w,k,half,topY,mB,mT){
   kit.setStage("trim");
   wq(mT,w,-0.16,y0,0.16,topY-0.02,0.045);
   /* cream band over the run */
+  /* The band along the top of the run and the line posts under it carry the
+     side of the roof over the run: "siding", like the front header and posts
+     in kennelFront, so the roof never floats in Watch-it-build. */
+  kit.setStage("siding");
   wq(mT,w,Math.min(run0,run1),hy,Math.max(run0,run1)+0.02,topY+0.01,0.05);
   /* chain-link over the run, both faces */
   kit.setStage("extras");
@@ -130,6 +144,7 @@ export function kennelSide(plan,kit,w,k,half,topY,mB,mT){
   var wIn2={ax:[-w.ax[0],0,-w.ax[2]],n:[-w.n[0],0,-w.n[2]],at:w.at,cx:0};
   meshWall(kit,mGalvD,wIn2,-run1+0.12,y0+0.10,-run0-0.12,hy-0.03,0.46,0.01);
   /* galvanized line posts along the run (thin metal, like the real one) */
+  kit.setStage("siding");
   var mGalvP=mat("galv",texFlat,"#cfd4d8",0.5,44);
   var pxm=w.at - w.n[0]*0.10;
   box(mGalvP,pxm,y0+0.04,0.22,0.10,hy-y0-0.05,0.10);

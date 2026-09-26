@@ -54,13 +54,34 @@ Two stages (`parts/stages.js`):
   mitred rake board.
 
 Finished view: both shown (it is Barnwright's geometry). Framing view: hidden
-(finish stages). Watch-it-build: the steel lands at the `roofing` step and
-covers the roof framing, roof deck, loft and dormer framing (`COVERS` in
-`parts/stages.js`); the boards land later, at the `trim` step.
+(finish stages). Watch-it-build: the steel lands at the `roofing` step and,
+from the next step on, hides the roof framing, roof deck, loft and dormer
+framing (`COVERS` in `parts/stages.js`); the boards land later, at the
+`trim` step.
 
 The single slope's roof UNDERSIDE is painted trim-colour (Barnwright's boxed
 eave), but it is the underside of the whole roof slab, so it stays `roofing`
--- otherwise the roof would have no underside until the trim step.
+-- otherwise the roof would have no underside until the trim step. (It also
+has to: `tools/check-framing-roof.mjs` finds the roof as drawn from the
+`roofU` triangles at stage `roofing`, and would find no roof on a single
+slope if they were `trim`.)
+
+WHAT WATCH-IT-BUILD SHOWS BETWEEN THE TWO STEPS (rendered Sep 26 2026): the
+roof framing is hidden from the step AFTER `roofing` (`buildVisibility`
+hides a covered step once the cover is before the current one), and the
+trim boards land at `trim`, a step or two later. In between, the steel is on
+and the boards are not, so:
+* on a COTTAGE the eave box is open -- no fascia, no soffit -- and a low view
+  sees through the slot along the eave (exactly what the soffit comment
+  below warns about);
+* on the SINGLE SLOPE the two eave edges of the roof slab are open (the
+  fascia closes them), so the ribs show through the edge;
+* on every other roof nothing opens: the metal edge (stage `roofing`) closes
+  the slab at the gable ends, and a cut eave is all metal. Only the trim
+  strip under the gable-end metal and the barn's rake board are missing.
+This is what the contract's split (boards = `trim`) and `buildOrder` (trim
+after roofing) give; it is not a porting fault. Changing it is a
+`buildOrder` / `COVERS` decision, not a change to this file.
 
 PIPELINE entry 12, `roofing` (`parts/index.js`), after the porch and before
 the dormer -- Barnwright's `buildShed` calls `profileRoof` at line 4039, and
@@ -193,6 +214,21 @@ the code:
 
 > one continuous mitered rake board + metal rake trim covering 2/3 of it
 
+Short notes in the same function that also say how the real building is
+(kept word for word in the code too):
+
+> gambrel (barn/lofted) roofs: metal wraps a near-flush edge
+
+> 4-inch eave over the door, flush at the back
+
+(the lean-to)
+
+> single slope: deep eave shading the tall door wall
+
+> eave edge strips at the low outer edges (metal on gambrel — no trim across the side wall)
+
+> close the tail at both gable ends, or you look into the quarter inch between the two sheets from anywhere off the end
+
 And from the call in `buildShed` (lines 4035-4038), kept above the call in
 `build()`:
 
@@ -213,9 +249,11 @@ And from the call in `buildShed` (lines 4035-4038), kept above the call in
   by the same fascia.
 * The cottage soffit is at `prof[0][1]` (the ORIGINAL profile, the wall top),
   not the eave-extended copy `P`.
-* Non-gambrel ribs overshoot a cut eave by 0.02; ribs at a peak stop 0.055
-  short (hidden by the 0.52 cap); screws exist as geometry AND as painted
-  dots in the texture.
+* Ribs overshoot a CUT eave by 0.02 along the slope -- every roof whose eave
+  is a bare cut edge, the barn (gambrel) roofs included (`eA=(cutE&&i===0)`,
+  and `cutE` is only false on the cottage and the single slope, whose ribs
+  stop flush under the fascia); ribs at a peak stop 0.055 short (hidden by
+  the 0.52 cap); screws exist as geometry AND as painted dots in the texture.
 * `mat("roofEdge")` is made early on a gambrel (as `mE`) but inside the
   segment loop on every other roof (as `mEg`); the dark eave shadow skirt is
   painted as shadow, with only its top inch metal.
@@ -245,9 +283,24 @@ And from the call in `buildShed` (lines 4035-4038), kept above the call in
 * `node tools/check-golden.mjs --part roofing` -- every roofing triangle of
   the 148 recorded Barnwright buildings, number for number (347,528
   triangles, Sep 26 2026), plus the part drawn on its own and with the
-  framing added. Once no part is pending, the same check also compares the
-  roofing's materials (texture, tint, shine) and their place in the draw
-  order.
+  framing added. It does NOT compare the materials: `--part` skips the
+  whole-building comparison.
+* `node tools/check-golden.mjs` (no `--part`) -- once no part is pending, it
+  also compares every material's settings (texture, tint, shine) and the draw
+  order, which is where a reordered or re-painted `kit.mat` call in this part
+  would show. Run this one too.
+* NOT checked by either: the building step (the 9th number) -- the golden
+  check drops it. `tools/check-framing.mjs` proves this part draws no
+  FRAMING step, but nothing checks which of its two finish steps (`trim` or
+  `roofing`) a triangle gets, beyond `tools/check-framing-roof.mjs` reading
+  the roof underside at `roofing` (below). If you move a board between the
+  two, count them again by hand (Sep 26 2026: 1,600 triangles in the `trim`
+  material and the 40 cottage-soffit triangles are `trim`; all other
+  347,528 - 1,640 are `roofing`).
+* `node tools/check-framing-roof.mjs` -- the roof framing fits under the roof
+  AS THIS PART DRAWS IT: it finds the roof from the `roofU` triangles at stage
+  `roofing` (so the cottage soffit, stage `trim`, is not mistaken for the
+  roof). It does not vary the eave, rake or cottage-eave settings.
 * `node tools/check-model-live.mjs` -- the rake overhang each style gets
   equals what Barnwright's page hands `profileRoof`; `cottageEave` and
   `profileYat` equal the page's.

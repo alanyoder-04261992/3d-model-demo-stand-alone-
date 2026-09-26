@@ -1,0 +1,56 @@
+/* THE VIEW SWITCHER'S LOOK (ui/views.js): the Outside / Inside / Framing /
+   Watch it build buttons over the top-left of the 3D picture, the one-line
+   Framing note, and the Watch it build player along the bottom. Loaded by
+   ui/views.js itself, so the designer's own stylesheet (ui/styles.css) is
+   not touched. Every class here starts with "vw-" so nothing here can change
+   anything else on the page. The pills wear the same Oswald capitals and the
+   same see-through navy as the camera View buttons on the right. */
+
+.vw-tabs{display:flex;gap:3px;padding:3px;border-radius:999px;background:rgba(14,58,95,.82);border:1px solid rgba(255,255,255,.28);box-shadow:0 2px 8px rgba(10,30,50,.25);max-width:100%}
+.vw-tab{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;background:transparent;color:var(--cream);border:0;border-radius:999px;padding:6px 10px;white-space:nowrap;line-height:1.2}
+.vw-tab:hover{background:rgba(255,255,255,.12)}
+.vw-tab.on{background:var(--cream);color:var(--navy-deep)}
+.vw-short{display:none}
+@media(max-width:560px){
+  .vw-long{display:none}
+  .vw-short{display:inline}
+  .vw-tab{padding:6px 8px;letter-spacing:.06em}
+}
+
+/* the hint ("Drag to spin...") moves below the buttons, and is not wanted at
+   all while the framing or the build is on show */
+.viewmount:not(:empty) ~ .hint{top:48px}
+.stage.vw-framing .hint,.stage.vw-build .hint{display:none}
+/* no "Add here" menu over a view that hides the walls' doors and windows */
+.stage.vw-framing .addpop,.stage.vw-build .addpop{display:none!important}
+/* the player takes the bottom of the picture while the building goes up */
+.stage.vw-build .plate{display:none}
+
+.vw-note{position:absolute;left:10px;top:46px;z-index:5;max-width:calc(100% - 20px);background:rgba(255,255,255,.93);border:1.5px solid var(--navy);border-radius:9px;padding:6px 10px;font-size:11.5px;line-height:1.4;color:var(--ink);box-shadow:0 2px 8px rgba(10,30,50,.18)}
+.vw-note b{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);margin-right:4px}
+.vw-note[hidden]{display:none}
+
+.vw-player{position:absolute;left:10px;right:10px;bottom:10px;z-index:6;max-width:640px;max-height:52%;display:flex;flex-direction:column;gap:6px;background:rgba(255,255,255,.95);border:1.5px solid var(--navy);border-radius:11px;box-shadow:0 6px 20px rgba(10,30,50,.25);padding:9px 11px 8px}
+.vw-player[hidden]{display:none}
+.vw-cap{overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch;touch-action:pan-y}
+.vw-step{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--navy)}
+.vw-step b{color:var(--red);font-weight:600}
+.vw-text{font-size:12px;line-height:1.45;color:var(--ink);margin-top:3px}
+.vw-text p+p{margin-top:4px}
+.vw-text b{font-weight:600}
+.vw-bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;flex-shrink:0}
+.vw-bar i{display:block;height:100%;width:0;background:var(--navy);transition:width .25s}
+.vw-ctl{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.vw-ctl button{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:13px;font-weight:600;line-height:1;min-width:34px;height:32px;border-radius:8px;border:1.5px solid var(--card-line);background:#fff;color:var(--navy);padding:0 9px}
+.vw-ctl button:disabled{opacity:.4;cursor:default}
+.vw-ctl .vw-main{background:var(--navy);color:var(--cream);border-color:var(--navy);min-width:44px}
+.vw-ctl .vw-endbtn{margin-left:auto;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase}
+.vw-count{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:11px;letter-spacing:.06em;color:var(--sub);white-space:nowrap}
+@media(max-width:430px){
+  .vw-player{left:6px;right:6px;bottom:6px;padding:7px 8px}
+  .vw-text{font-size:11.5px}
+  .vw-ctl{gap:4px}
+  .vw-ctl button{min-width:30px;padding:0 7px}
+}
+@media(prefers-reduced-motion:reduce){.vw-bar i{transition:none}}
+@media print{.vw-tabs,.vw-player,.vw-note{display:none}}

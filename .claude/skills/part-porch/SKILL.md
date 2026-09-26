@@ -11,8 +11,9 @@ A cabin's porch is part of the building's own floor: the floor runs out past
 a wall that stands back from the edge, and the roof carries on over it.
 
 * At the open corners stand **4x4 posts of natural pressure-treated wood**
-  (drawn 0.34 ft square, 0.28 ft in from the corner, from the deck up to the
-  wall top). The customer can add more ("Porch Post" items, drawn by the
+  (drawn 0.34 ft square, from the deck up to the wall top; centred 0.28 ft
+  in from each open edge -- except on a front porch, where the two posts are
+  0.28 ft in from the sides but only 0.20 ft back from the front edge). The customer can add more ("Porch Post" items, drawn by the
   openings part); the railing then runs post to post.
 * Across the opening, under the roof, runs a **1x4 header band** painted the
   trim colour (white on the real cabins), 0.29 ft deep under the wall top,
@@ -26,16 +27,17 @@ a wall that stands back from the edge, and the roof carries on over it.
 * **The widest gap is the way in**: between the corner posts and any added
   posts, the widest gap is left open. On a side porch the bay in front of the
   porch door stays open instead (the widest gap only if there is no door).
-* A side porch gets a **two-riser wooden step** at the entry: a lower box
+* A side porch gets a **two-step wooden stair** at the entry: a lower box
   1.42 ft deep and 0.30 tall standing on the ground, and an upper box 0.72
-  deep and 0.34 tall on it, both 2.6 ft wide.
+  deep and 0.34 tall on it, both 2.6 ft wide -- two treads (tops at 0.30 and
+  0.64 ft), then the deck at 0.92 ft: three rises of 0.30, 0.34 and 0.28 ft.
 
 Three kinds, set by the style's `porch` trait:
 
 | `porch` | styles (standard line) | what it is |
 |---|---|---|
 | `F` | Cabin, Lofted Barn Cabin | a 4 ft deep porch across the whole front end, inside the length (the front wall stands 4 ft back). Header band across the end, a 4 ft wrap band down each side, ceiling, two corner posts, railing across the front and down both sides from 3.75 ft back. |
-| `S` | Side Cabin, Loft Side Cabin | a 4 ft deep notch in the door side (+x), 8 or 12 ft long -- 8 on a building under 20 ft -- at the back end, flipped to the front end, or in the middle (the design's `pLen`, `pFlip`, `pMid`; `plan.span`). Header band across the open end (not when centred), a band along the opening, ceiling, a fixed post at the wrap corner (not when centred), railing along the edge, a railing across the porch end, the step. |
+| `S` | Side Cabin, Loft Side Cabin | a 4 ft deep notch in the door side (+x), 8 or 12 ft long -- 8 on a building under 20 ft -- at the back end, flipped to the front end, or in the middle (the design's `pLen`, `pFlip`, `pMid`; `plan.span`). Header band across the open end (not when centred), a band along the opening, ceiling, a fixed post at the wrap corner (not when centred), railing along the edge, a railing across the porch end (not when centred), the step. |
 | `C` | Deluxe Side Cabin, Deluxe Loft Side Cabin | a wrap porch: a 4 ft deck across the front end (the style adds 4 ft to L for it) plus a 12 ft run down the door side, closed behind by the P1 (angled), P2 and P3 porch walls. Bands across the end, along the 12 ft opening and on the 4 ft stub on the -x side, ceiling over the end 12 ft, two corner posts, railing across the end and down the side, a rail stub on the -x side. |
 
 There is no porch deck here: the building's floor slab (`parts/floor.js`)
@@ -146,6 +148,21 @@ Barnwright's comments, kept word for word in the code:
 * A new porch shape is a new `porch` value AND new walls in `wallDefs`
   (`model/frame.js`) AND the siding cut-outs (`parts/siding.js`) AND the
   junction boards; do not bend an existing branch.
+* OTHER PARTS COPY THIS PART'S RULES -- change them together:
+  * `parts/ramp.js` imports `railAnchors` (a front or corner porch's ramp goes
+    in the widest gap) and keeps its OWN copy of the side porch's entry rule
+    (`entryZ`: in front of the porch door, else the middle of the widest
+    gap). Change the way in here and the ramp lands in the wrong gap unless
+    `ramp.js` changes too.
+  * `parts/porch-deck-frame.js` (with `parts/floor-frame.js`) decks every
+    porch and frames the front porch's floor under these posts; the posts
+    stand on its boards in the Framing view.
+  * `parts/openings/porch-post.js` draws the customer's extra posts in the
+    same "pwood" paint at the same 0.34 ft size and the same edge offsets
+    (0.20 ft on the front, 0.20 ft on the side), so the railing meets them.
+* The STAGES are not checked by anything but eye (the golden check only drops
+  framing-kind stages): posts and bands must stay `porch-frame` (shown in the
+  Framing view), ceiling, rails and step `porch`, junction boards `trim`.
 * If the look must really change, re-record the golden fixtures on purpose
   (`node tools/capture-golden.mjs`, with a reason).
 
@@ -155,6 +172,13 @@ Barnwright's comments, kept word for word in the code:
   junction trim included) of all 148 recorded Barnwright buildings, number
   for number: 15,112 triangles in 32 buildings; with `--case` on those 32 it
   also proves the porch drawn on its own is exactly its triangles on the
-  whole building.
+  whole building. Run with no `--part` it also proves the WHOLE building --
+  the draw order of every material and every material's triangles and
+  settings -- which is what proves the porch's triangles land in the right
+  place among the other parts' in the shared "trim" material, and that
+  "ceil" / "pwood" are made in Barnwright's order.
+* `node tools/check-golden-labels.mjs` -- Barnwright's page redrawn and
+  relabelled region by region (buildShed 3946-3960 and 4020-4034 are
+  `porch`).
 * `node tools/check-parts.mjs` -- valid part, caption fills in, this skill.
 * `node tools/check-imports.mjs` -- loads in Node with no browser.

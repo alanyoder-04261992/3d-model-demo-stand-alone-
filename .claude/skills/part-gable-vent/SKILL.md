@@ -33,8 +33,25 @@ makes them (its gable loop draws fill, band and vent of F, then of B).
 * `roof.shapes.lean.rise`, `roof.shapes.slope.rise` -- where the vent sits on
   a lean-to or single slope (under the high side). Defaults `{"w": 0.17}` and
   `{"w": 0.28}`, bit for bit Barnwright's `W*0.17` and `W*0.28`, the same
-  settings the roof line is drawn from, so the vent stays under the roof
-  (checked with a steeper rise).
+  settings the roof line is drawn from. The vent is hung a FIXED distance
+  under the high side (Barnwright's numbers), not under the sloping roof line,
+  so it only fits for rises near the default. Worked out and rendered (Sep
+  2026), with f = rise / width:
+  * lean-to: the vent's top corner nearest the low side clears the roof line
+    by `0.28 - 1.32 f` ft -- 0.056 ft at the default 0.17. From about
+    f = 0.21 (roughly a 2 1/2 in 12 pitch) the roof line cuts that corner off
+    (hidden inside the 0.26 ft roof panel up to about f = 0.41, then showing
+    above the roof). The vent's bottom is `rise - 0.80` ft above the wall top,
+    so a rise under 0.80 ft (f under 0.13 on a 6 ft lean-to) hangs it below
+    the wall top onto the end wall.
+  * single slope: the corner clears the roof line by `0.80 - 1.46 f` ft,
+    fine up to about f = 0.55; its bottom is `rise - 1.56` ft above the wall
+    top, so a rise under 1.56 ft hangs it onto the end wall.
+  A company that changes either rise far from the default needs a vent rule
+  that follows the roof line -- a look decision, not a port (it would move
+  the default too unless written as a separate branch).
+  `parts/roof-frame.js` frames round the vent with `ventSpot`, so the same
+  limits apply there.
 * On the other roofs the vent hangs under the ridge of `plan.prof`.
 
 ## Where it came from in Barnwright

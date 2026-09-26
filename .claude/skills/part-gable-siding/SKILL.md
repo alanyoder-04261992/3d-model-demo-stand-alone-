@@ -75,6 +75,22 @@ the cottage eave, Aug 2026):
 
 The eave itself (Alan, Aug 2026, in `model/roof-shapes.js`): back 4 in, front
 (the door side) 8 in, both level soffits, the roof raised one 4 in fascia.
+Barnwright's note on it (2185-2196), word for word -- it is what decides how
+high this fill reaches at each corner (`model/roof-shapes.js` keeps a shorter
+version):
+
+> THE COTTAGE EAVE, and it has to satisfy two drawings of Alan's at once.
+> His RED line over the designer is ONE STRAIGHT RUN each side, ridge to the
+> outer tip, no kink at the wall. His BLUE section of the same eave is a 4 in
+> fascia and then 8 in of level soffit back to the wall, which is also what
+> "they are straight 90 degree with the wall" was pointing at.
+> Both are true only if the deck runs PAST the wall top and lands at the
+> fascia, one fascia depth above the soffit -- which is how the real one is
+> framed: rafters bearing on the plate, tails cut off level for the soffit.
+> Pushed along the slope instead (what shipped first) the tip lands half a
+> foot BELOW his line; a level return at the wall bends a line he drew
+> straight. Measured off his screenshot, this construction puts all three of
+> his points -- both tips and the ridge -- inside the width of his brush.
 
 ## Kept quirks
 

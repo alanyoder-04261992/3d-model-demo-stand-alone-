@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Parts of a shed</title>
+<meta name="description" content="Every part of a shed drawn on its own, with what it is in real life.">
+<meta name="robots" content="noindex">
+<!-- THE PARTS GALLERY. Every real-life part of one building (skids, floor
+     frame, studs, trusses, siding, roofing, each door and window ...) drawn
+     by itself, with its building step, what it is in real life (filled in
+     from the company's own construction numbers) and the name of its skill.
+     ?company=<id> picks the company (default "demo"); ?style=UT&size=10x16
+     picks the building. Everything on the page is filled in by
+     ui/parts-gallery.js; the look is the designer's (ui/styles.css) plus the
+     few rules below. -->
+<link rel="stylesheet" href="ui/styles.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  html,body{height:auto;touch-action:auto}
+  .hdr.pg-hdr{position:relative;top:auto}
+  .pg-offscreen{position:absolute;left:-10000px;top:0;width:2px;height:2px;pointer-events:none}
+  .pg-wrap{max-width:1180px;margin:0 auto;padding:16px 14px 60px}
+  .pg-intro{font-size:14px;line-height:1.55;color:var(--sub);max-width:760px}
+  .pg-intro b{color:var(--ink)}
+  .pg-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:14px 0 6px}
+  .pg-controls label{display:flex;flex-direction:column;gap:4px;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--navy)}
+  .pg-controls select{border:1.5px solid var(--card-line);border-radius:8px;padding:9px 10px;font-size:14px;background:#fff;color:var(--ink);min-width:180px;font-family:'IBM Plex Sans',system-ui,sans-serif;letter-spacing:0;text-transform:none;font-weight:500}
+  .pg-controls .pg-check{flex-direction:row;align-items:center;gap:8px;padding-bottom:9px;cursor:pointer}
+  .pg-check input{width:18px;height:18px;accent-color:var(--navy)}
+  .pg-check small{font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:11px;font-weight:400;letter-spacing:0;text-transform:none;color:var(--sub)}
+  .pg-building{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:20px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);margin:14px 0 2px}
+  .pg-status{font-size:12px;color:var(--sub);min-height:1.4em}
+  .pg-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:12px}
+  .pg-card{background:#fff;border:1px solid var(--card-line);border-radius:11px;box-shadow:0 1px 3px rgba(20,32,42,.06);overflow:hidden;display:flex;flex-direction:column;break-inside:avoid}
+  .pg-pic{aspect-ratio:4/3;background:linear-gradient(180deg,#E4E9ED 0%,#D6DDE2 60%,#C9D1D7 100%);display:flex;align-items:center;justify-content:center;color:var(--sub);font-size:12px;padding:8px;text-align:center}
+  .pg-pic img{width:100%;height:100%;object-fit:contain;display:block}
+  .pg-pic img:not([src]){visibility:hidden}
+  .pg-body{padding:11px 13px 13px}
+  .pg-body h3{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--navy)}
+  .pg-stages{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0 8px}
+  .pg-stage{font-size:10.5px;font-weight:600;letter-spacing:.03em;color:var(--kraft-ink);background:var(--kraft);border-radius:5px;padding:2px 7px}
+  .pg-real{font-size:13px;line-height:1.5;color:var(--ink)}
+  .pg-real+.pg-real{margin-top:6px}
+  .pg-skill{font-size:11.5px;color:var(--sub);margin-top:8px}
+  .pg-skill a{color:var(--navy);font-family:ui-monospace,Menlo,Consolas,monospace}
+  .pg-off{margin-top:26px}
+  .pg-off h2,.pg-msg h2{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);margin-bottom:6px}
+  .pg-off p{font-size:13px;color:var(--sub);line-height:1.6}
+  .pg-msg{background:#fff;border:1.5px solid var(--red);border-radius:11px;padding:16px;margin:20px auto;max-width:760px}
+  .pg-msg li{margin:6px 0 0 18px;font-size:14px;line-height:1.5}
+  .pg-hdr a{color:var(--cream)}
+  .pg-hdr .t2 a{color:var(--hdr-sub)}
+  @media print{.pg-controls{display:none}.pg-grid{grid-template-columns:repeat(3,1fr)}.pg-card{box-shadow:none}}
+</style>
+</head>
+<body>
+<header class="hdr pg-hdr">
+  <div class="wkbadge" id="pg-badge"></div>
+  <div>
+    <div class="t1" id="pg-company">Parts of a shed</div>
+    <div class="t2">Parts of a shed — each one on its own · <a href="index.html">back to the designer</a></div>
+  </div>
+</header>
+<main class="pg-wrap" id="pg-main">
+  <p class="pg-intro">Every part of this building, <b>drawn on its own</b>, in the order the shop puts them together. Under each picture: the building step it belongs to, <b>what it is in real life</b> (using this company's own lumber sizes and spacings), and the name of the skill that tells the next person how to change it safely.</p>
+  <div class="pg-controls">
+    <label>Style <select id="pg-style" aria-label="Style"></select></label>
+    <label>Size <select id="pg-size" aria-label="Size"></select></label>
+    <label class="pg-check"><input type="checkbox" id="pg-extras"> Show the optional parts too <small>an outside light, a ramp, the electric package, a bench, a shelf and shutters</small></label>
+  </div>
+  <h1 class="pg-building" id="pg-building"></h1>
+  <div class="pg-status" id="pg-status" aria-live="polite">Loading…</div>
+  <div class="pg-grid" id="pg-grid"></div>
+  <section class="pg-off" id="pg-off"></section>
+</main>
+<noscript><p style="padding:20px">This page needs JavaScript switched on.</p></noscript>
+<script type="module">
+  import { startGallery } from "./ui/parts-gallery.js";
+  startGallery().catch(function (e) { console.error("The parts gallery failed:", e); });
+</script>
+</body>
+</html>
