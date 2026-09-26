@@ -1,0 +1,514 @@
+{
+ "case": "cs-12x32",
+ "description": "Cottage Shed 12x32 (largest size) with its standard doors and windows",
+ "barnwright": {
+  "file": "boisterous-lokum-a737e0/public/3ddesign.html",
+  "sha256": "0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c"
+ },
+ "steps": [{"op":"setType","type":"CS"},{"op":"setSize","size":"12x32"},{"op":"resetItems"}],
+ "viewport": {"width":1440,"height":900,"deviceScaleFactor":1},
+ "canvas": {"clientWidth":742,"clientHeight":803},
+ "fitDist": 74.61119999999998,
+ "gr": 96,
+ "state": {
+  "type": "CS",
+  "size": "12x32",
+  "body": "#FAF9F3",
+  "trim": "#2E3134",
+  "roof": "#2E3134",
+  "items": [
+   {
+    "id": "i0",
+    "cat": "w72",
+    "wall": "R",
+    "pos": -11.933499999999999,
+    "inc": true,
+    "origCat": "w72",
+    "shut": false,
+    "dbl": false
+   },
+   {"id":"i1","cat":"w23","wall":"R","pos":3.6165000000000003,"inc":true,"origCat":"w23","shut":false,"dbl":true}
+  ],
+  "dormer": "9",
+  "pLen": 12,
+  "pFlip": false,
+  "pMid": false,
+  "doorC": "",
+  "shutC": "",
+  "sel": null,
+  "seq": 2,
+  "opts": {"dbl":false,"jo12":false,"mbF":false,"mbW":false,"rbS":false,"rbR":false},
+  "xopt": {},
+  "elec": {"pkg":0,"ext":false},
+  "ramp": "none"
+ },
+ "order": [
+  "body",
+  "trim",
+  "wood",
+  "skid",
+  "cornerAO",
+  "vent",
+  "ventD",
+  "roof",
+  "roofCap",
+  "roofScrew",
+  "capShade",
+  "roofU",
+  "eaveEdge",
+  "eaveShade",
+  "lapShade",
+  "roofEdge",
+  "dark",
+  "white",
+  "glass",
+  "aoWall",
+  "doorF",
+  "doorSh",
+  "iron",
+  "glShade",
+  "screen",
+  "ground",
+  "ctshadow"
+ ],
+ "totals": {"triangles":2734,"materials":27},
+ "parts": {
+  "skids": 624,
+  "floor": 156,
+  "siding": 8,
+  "corner-trim": 68,
+  "gable-siding": 6,
+  "gable-band": 20,
+  "gable-vent": 24,
+  "roofing": 1420,
+  "door-wood": 180,
+  "window": 154,
+  "ground": 74
+ },
+ "buckets": [
+  {
+   "key": "body",
+   "params": {
+    "tex": "siding",
+    "age": 4,
+    "bump": 0.6,
+    "gloss": 14,
+    "glow": 0,
+    "spec": 0.06,
+    "tint": [0.9573695761995268,0.9489649381781952,0.8993845130465294]
+   },
+   "triangles": 14,
+   "hash": "93fc0f3886acc3b8ed0d2cbbed6d490e3a10c09f94ddae33f37638c423ab27a2",
+   "segments": [{"part":"siding","from":0,"count":8},{"part":"gable-siding","from":8,"count":6}],
+   "parts": {
+    "siding": {"triangles":8,"hash":"9e0470146030ee9446f2d66e971b6dbf36974f94f20adef8378a8c7360e0803c"},
+    "gable-siding": {"triangles":6,"hash":"3e257d5188ca40e6534ac21bbfd1ef3deadf4b7e996fe6f5f7eddbbd0cc8bef3"}
+   },
+   "prints": "c2d6deb6c843fe59f3f454858c537518caa3a5ef0895e17004f8296a78fd157d66e2fde4ac43c92da0f7"
+  },
+  {
+   "key": "trim",
+   "params": {
+    "tex": "trim",
+    "bump": 0.12,
+    "gloss": 20,
+    "glow": 0,
+    "spec": 0.1,
+    "tint": [0.023103556157921437,0.026548682828472916,0.030256518852388652]
+   },
+   "triangles": 278,
+   "hash": "a94cb0c1f8b79dee5d01983a1ea9d5ed9e1bd74a0cf157061edb27f137364c39",
+   "segments": [
+    {"part":"corner-trim","from":0,"count":52},
+    {"part":"gable-band","from":52,"count":20},
+    {"part":"roofing","from":72,"count":20},
+    {"part":"door-wood","from":92,"count":144},
+    {"part":"window","from":236,"count":42}
+   ],
+   "parts": {
+    "corner-trim": {"triangles":52,"hash":"a3d3db854833e3f7f083d877b21a8ec96ec58567e8ae0ca62f82a6ed482ac566"},
+    "gable-band": {"triangles":20,"hash":"5647d1d80a6f70ce5396990754b9b7f068d75b4af84ef459a7017d613a45e14b"},
+    "roofing": {"triangles":20,"hash":"9a435814d39253b36894bbcbfb41e2e10045b57040d36299ffd7e2957ecffa8a"},
+    "door-wood": {"triangles":144,"hash":"abd0bf8b9778ffe7a796fc1dc1e2ed17552ce8f33b61c831f2d44e791926a443"},
+    "window": {"triangles":42,"hash":"530a0657ebfdb49b0486ed04bc41e4628b73101ffc1b218ffd67b8fc536030e1"}
+   },
+   "prints": "5ddf56f70e73865782ba18652825de114308e7f854d0631f1484881068bdfceb3b3f1eda8de292526028f68df2c05567618fe0c7c10bfdf4e3310ad87064f729909d3aea0b0066c366140303fefd07e7311d221c4b7acce0a26a480cacbde4ef5ac62e3a1223e9bdd88fb5bfb54e0635c9cdf04b257d58a0f0340d8b3becc6e9532f6e7d4005c8b3a157f0f10d09e665b09a090f446f7565a6a821a25b48cd3e34c8c3e0a2ec9980052593220c096f72d6a8e9cd3754c030512a4331f0a01c90ab84356e094b3ad2f94504a14d2c0fbdd5b661d619c935a54435b26392bf9060f4df9dd67baf9475eee8f0ed7f58ef6e7fbad6cf6f624baf12055f22c9a0fb7e4a8883d4342055a71db5492d0497b40757fea9cf2534679306a44532b418d7ccd17bdfe836e09244f5e9fa087becf78b0350f25412df60ceb79270728791cf29d255bfed767cdd8b74184ba56839f86215ef7daeb39e18d1cc497ad3dc5d5e4e40a9c60c110c9bb0d480be6bb6c3ca8ed77d14c5dbd3ffba48b8304cef27efa5d48781a501ae9ecec8da7489d61ec126af54d38f9edc8a5a56d58cdf178addb2bf0d513d20cfb27630d7a77652f043d447c109f0afa561c53547515334e070f0c071301641c1011c43dd38a60bb92649ca180971b87d9381a99a0c97739800e5795836369ab9f8837c124a75bd90178620363e39decd837d1f71aa114a33ea22dcfc277ab843540171cf534745f68a4eca1bf7eece62be62b8808535cc3a7b3ea31646db703a18ffdd54df8f148dcee64908bbe74cc6737a082f9b11d51a3e140d6c595901c1e110d41bb49072f7e464e416429d7f5de3be1427bff094749420822d6d90dd872c9f1fcc53aa5c25982bad654c44663087ea664c785b11060e8ae5ae9539a61b7077a6e33d4a8f7054b317bee950c8977c4892f86d5a1f82205db3f6d160d64e8608cf4fd25040b7dd80713ff3b15384903bcf13264d2d3e2fa50dc74f9010c884e269ec889fa38e9e4ae262daddcfc76389735619d3c058716077e60bacc5f25c55e6c651e993b6905c1b4f08e3381b6f918f512c99c5750165032459756be2c3c37a28136bd407d07fe328d39bb362a524c84b304046b96966fcdb70b34875d9c99644c7a2c1ebf64add62b599687eee0f78aaab12d3b6089edfa2"
+  },
+  {
+   "key": "wood",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 10,
+    "glow": 0,
+    "spec": 0.04,
+    "tint": [0.16044351072534352,0.1061560678127439,0.051122050056493396]
+   },
+   "triangles": 156,
+   "hash": "2af3fe14226a2a5ccfe8eade54911d214c24f5dba9d0f85b541d5f181038227a",
+   "segments": [{"part":"floor","from":0,"count":156}],
+   "parts": {"floor":{"triangles":156,"hash":"2af3fe14226a2a5ccfe8eade54911d214c24f5dba9d0f85b541d5f181038227a"}},
+   "prints": "9c3d18330100e0bb39814a7abb204671a267e978c1b59893bb65837a2db8002641bada617acdb304b0c6b2d840035e8f355a6d9c63ad38b04f5fbffa967251a59bac91028608a835053b27041762b9217095f922755ec96f4a009fbd2dfabbdfed72c72477a832edfc46fd4ac3423b9560df51f47ee00d46365baf4c3116356f5f17d9b4917b6d7ffe41635fb19a7461343ea22e5526682345df195f5e91b196db5dc412a3ef960b1301c7341767b434d93ffad270052a2fb33fa6d20fac590e7e317428e6e0617c36783fa14c719db58622a1292309d0812e6cc8f9c6e6dbbf31e5393bb926af8c2442c1c52a3e96cda314644c416eefe8df4da7ef2fbcedc27108e2874aa01bd983450b2cc300f0ea188e639ca2ca86425a75a35da016f3a599a9cecf73d96dcc81fe1b2e56ea6542748a16e8d13cde7722eb9be53debf6de837c2f4f9441e93c220214d7f60b6d26e37682314b2bca42c1387ca1ef912e01ab5d9c924ca38689628ad7bf735ce4a96cc728752a3980396f5894a47bf2ee9c50ccd5472998ed8318d5180f9673fe62a350c123c24d3632b884513fc80151c42809d462dda759fc639f3d8ab05fcdf83bbd8ffbaac9fe25984ab8756ffb3e11a0a6e04a47d25ef935d25322c5f198038fbcc943"
+  },
+  {
+   "key": "skid",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 10,
+    "glow": 0,
+    "spec": 0.04,
+    "tint": [0.15415226081216518,0.11392093340633272,0.06381487094867724]
+   },
+   "triangles": 624,
+   "hash": "3d0bdae751858df5f24d63743c7e12a041588cfaccc24d13408a6710be434649",
+   "segments": [{"part":"skids","from":0,"count":624}],
+   "parts": {"skids":{"triangles":624,"hash":"3d0bdae751858df5f24d63743c7e12a041588cfaccc24d13408a6710be434649"}},
+   "prints": "ce166a12060eb5a4dd8bf0add9ce53e3135bb0e769aabad8a469c2f9ca03a16a8116f20fccc04ecd1460089488e3d9bf11e5c5f9e0df9481f2b12403ae2b814655f22a0d149513732ed0dbf381913c015794b3311925651d551883b9a1b284d2d41d4a6e64fcbb7cb8b7418ad34a2b856de60efb6d235ca1b506a243983a5525f993d356b68e62df19424140587c80a4c68380bc487e84c1f1029ce8fddaa34cef741ee13f8ed822c7dec1cadca3b05d59a224af2f0156cfd801b28ece1b00c98e9b100012de4f5c04c1a9f05ea11d6d3783f16b8edc5cf9d4518b61363ee8a065d891a3c12112681b5a65bb420e83efaa63fc7d0ffe4369373609eb578bf74ef1086f1aea3a8e8e8bfea4c34c8d07288ac1acbff3abc03e1948934d4403d0bdaa56173026a98c0209bc937488e5cbaaefb64522c37d17467c8066b70f45ef70aeadf3a79d44c2386bd98f840901a7cb29937cc0ecf4d48fb9b963eed1db95df5aa3473ee514d49e55532d18a393e1ec98035b2afc6f480cbedad64fc13ca9fa43785b2d0ff0859838d5bfd3a8c712748d801ba6a3595e272ab2f48ea7d5e845fd57c7042f38fb7e19c6bc719a871786add7f8a050751a57343ee3d55f9f6f2cea3207f1f5c9da45f71a796c93a22a9ce0ec4ca5df1a4e9dc8c7da4282df3fd6ce6bbec7123d084eb225c75ddee9197c70d15f93efc364f8de8365cfe3ec6982eca27be4e8e4e24b310a635e167649e12cb3ba563bc16bd4cdf01ed346abb01d4fe75965d7d2a3499ab0f78998033b5e96cce896bf1f55aa0011ec160f87321fac8d41af3a6be65e7dd15daa7ba3560c83a8e8cb890aa5e71c21b185a25a27e8e03304e75d7c138e4e7ef287d74da059d2a612601def9adcfec2e45dd7e4cb41cda9240d4fd56d681fd4dd001ef7231b9ed54ba1856156e39cabe4ad6df7010ac03bf2b1b80724d613bbd2362e48868ea89a373d99f0f7e5381f00c76b2b385045d373c018205826558839c18076517d6d885df292aef72f1b297bd10dab0b065b75739f24a81ca83ca23b3f64c282df39a4d661b67fbb7b0e6d3780345a649968c17512fc66c936083fa67b7125f96aedc5eb4b3355538abd5f4fd9a5356c68c7ff1a32f16269c94c2acb48babf8c10b8c57c2daec7c48c7cf6b81c788f979c621293f0dc54cbbe8f1731e8cbd4fc72c2b2ca8a5f8585173f4849ebdfb7b843244a0b64ed3d4d695007f64ef8ab5c995fdec5b6a01b764bd4df7b57bd1c89f64776208dffb3ee094744eb7e7944e4523be941b96865a09e626b066a9dc082348824d510f9a2257469ce0329172500db4461a2ef932854fa80202f5a706b43d3dd3759602d9eaf656369dd0ab671d541d15b166f48d449eac6c5d1435ca001e1e360f450034de70cd6984cf92b613766f6e80ed856c69b8a212f061daa38bd7a9d9d6e49fd58f713c08face43ce6f9a3fbda9acbb88a6e9ba06403e7e68384c6b4c70c06870b2f2bf89273aa0957b9cd855180df7ee8fa0c752c99799744d0cfe73a3443f9d5884d6e13dc0596c40ad098e179c5c317a2a3a8ba3ececd20f8b67e350432042af2a33a58896ed4c73d67334d886405e154e1436820aede36deaaafab0244373e5b096abadc04f581a5c3c64569943391603b78812c48f42f9a88ee0ad8cca660833e99ec9ee61835c94856efea1f2ea9656f2ee59dc5be9ad6099b1aecd1dbfd034089f788dc2d627c84587761f196ab53f1bf1526602a8a82862d9bafd7eb6b44da7fb8deb1f4a412747f3d89db4a7f80c110b564f0c2067c27d8a7490d5197d328a32513d938955d4359a290b87e2f54d6059d59ee290e4ce8ef10d8580fd15b05cf32e8a2edabdaae02f167a35c0dfd35fe2322b20f8733cdb496d7a50a8508ac698ec2586ef2fa9650fe09084129a5b52d3fb79b12c61bbd617d78cf2574ac40ebc7e033a06ea36035f28c33394094ae1d36b573d394ed0a94ef88eb5b1461f81e75b17563884dffd8a3e4c4a7d2d01baa039ae6533a0fbaf8c4c479acc628942a56187f9cf714df578f66aefd3f5cf239574f16344a847f7025eaf05a72945c6d9b0326cf665657bc53f24a96bdd4222ae9c75ef80d630bccf0f3fe3e25ada0e33f183fcccee7c70d4ce40e8928ddec87ec23fd3e4783729d56868b781e3794ee0ba0a64026dd24ba3980832d1ef6063bdc28570a6675fdb34805fc0b7a42d2f75cc138e7a2e2e9833e046ec3090f86bd01a621de105130cd8008b5d86b6eb1e015848555a0c2f9c2603f88c3237939f739b2973dfbd8702f67194476ff966c88e5bc36bcbb1725ab60498b7d8435bb2c38a79c51309bdf1f8098bacef568638759ae9e7e352c4953e42347e354aebc429b0e967df7715d66ad28b6b872feecc89875d1ec0d18e0e074a729116efa252fe271112df439077c91f7d9ac459fa8ed6db22e8b484a8ce208b04365dc16eac3c7da7d5d8e4baaf575736f1bc19ebb479f931a7092ac5260fda9fad905de5731791bc7f61af436c34b787cfa71adcff0f597aa7ed67cffd717adc8b56272c6765e12eede42af7f93f9f443316ce634efb2f922f52f80680c515515de58c93ec010a3f6b75933b40dc3eeb23ed389ffcffea50e17646630"
+  },
+  {
+   "key": "cornerAO",
+   "params": {"tex":"aoCorner","bump":0,"gloss":8,"glow":0,"noCast":true,"spec":0,"tint":[1,1,1],"unlit":true},
+   "triangles": 16,
+   "hash": "100a0fe4aa60337222f59b1f5000476ab99b86a02b122cb73b5c0b761b00854f",
+   "segments": [{"part":"corner-trim","from":0,"count":16}],
+   "parts": {"corner-trim":{"triangles":16,"hash":"100a0fe4aa60337222f59b1f5000476ab99b86a02b122cb73b5c0b761b00854f"}},
+   "prints": "4a6385791b2cc2659d12b04cbc2b8b50e27fd18407bab56f67cf404850e930a76a543b27faba710655107cb9db22924c"
+  },
+  {
+   "key": "vent",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 12,
+    "glow": 0,
+    "spec": 0.05,
+    "tint": [0.785043052483612,0.77815124930612,0.737495300698154]
+   },
+   "triangles": 4,
+   "hash": "676d634865aa25c55a7b002b30875975f8c0176bc1166fddf693e70e41d2dc83",
+   "segments": [{"part":"gable-vent","from":0,"count":4}],
+   "parts": {"gable-vent":{"triangles":4,"hash":"676d634865aa25c55a7b002b30875975f8c0176bc1166fddf693e70e41d2dc83"}},
+   "prints": "be1591a2ccabd2410436e31d"
+  },
+  {
+   "key": "ventD",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 12,
+    "glow": 0,
+    "spec": 0.05,
+    "tint": [0.43081630928978704,0.42703422218018783,0.40472303087093825]
+   },
+   "triangles": 20,
+   "hash": "f053267d0008fb770fc85efae3533c368e15ef98fcacd9c2cf20cfaeb2b3509a",
+   "segments": [{"part":"gable-vent","from":0,"count":20}],
+   "parts": {"gable-vent":{"triangles":20,"hash":"f053267d0008fb770fc85efae3533c368e15ef98fcacd9c2cf20cfaeb2b3509a"}},
+   "prints": "dffe3f8d7a02e4319179b437e85f49b46d453ad70ba5f26fff323a11d262658efa28d35d8ce538ca2db5145c06fd7ca0c66fba45e8db936e3d2f6264"
+  },
+  {
+   "key": "roof",
+   "params": {
+    "tex": "roofMetal",
+    "bump": 0.6,
+    "gloss": 80,
+    "glow": 0,
+    "spec": 0.34,
+    "tint": [0.023103556157921437,0.026548682828472916,0.030256518852388652]
+   },
+   "triangles": 520,
+   "hash": "0508cbd5f5a3f9432e8b1c66041bc86677fe42df839b7998af2e3fddda73235f",
+   "segments": [{"part":"roofing","from":0,"count":520}],
+   "parts": {"roofing":{"triangles":520,"hash":"0508cbd5f5a3f9432e8b1c66041bc86677fe42df839b7998af2e3fddda73235f"}},
+   "prints": "bb467c36877010eb79e0058beb6b67e4ce89c8ecece27f6a7ad50fe47e58fbb6a1798613ddc495a5dfce5e21c00cc3032d8e30503de1c057dd3f07ff5de1e2d6c630193cd119c0b8972d7530848cd75dec47caefe4d2b0a3f7becd0a09ef1da7b35e1ae57c84f0b3e42abaa1cb07a5be835c80667f4b46eb40dd5e4581abe31b27c0a856f99b13eb301aab50df6f5df618122d630a6478acb2fc77407c603153a366368bc5cf745f9435eff2c2b2ed4eecfc6c1d8b3efea9368e9a6b4c26b78542d7ef1b94579cfe48d8802dacf12daed51ab5d11b2c3603c1306731e503e46d044f02f185155a7aa54d2dd1e459ac753d5f980f479f1c2ae4b8aa307d03900202b8d8fac82c38070cb1a19b27460e50dc565cca5d3f6cad30a6e8c0dd3a52bf93f1a4560beabbb336d20c075728598c479847f0dfea010d69ad4eaff9ca523618cd063625fdfcde92b0214fe38645cab2660b18e99e0793c40b8db7b7f15cb2ed599ee7f786503a73ccb4862af6aaf9f22636e5cb80632ed568e89dacf825f01125fd24a4587bf3ddbcb9473f0bafe479d79fee95ce41d15713356b09146b66ac3f3e8af3dfc7baf5c488a2438553e65428e30c0da13e8b8aab1ec53286e3428e7ad4555555050a4c38a4ab6fe8dbda67e66e0220769ea7fcb0b14c72d911a06b26734ddbc79f5b0c31f93e0a838365724ff9ac99ba32ba78c566dbeebcbcebe8a8fae6c19dc55b47aba5b194d2360be05eba931f01a0c1d27441ad9cfdcad14664e4e169c5b427051871441cb601cd08dc9ad09448b6eddd83e84a4758e8f4e71f7e5286032b12821f98336ed35106b12fd79d5997cc85504753b9d0b776f0d63b64690f084efc55237478142f6b8b97ba9a05e72640cebdaf0cdba650fa9b276e21c5886be1d58bfaa8afca82f21144f11b24e65125d02629fdc5539233d51934bea0fcb10f56cb5f6457fc4ef9bbc69ec8ec54ae49f47fd15005af27f78fe378dd34afe4507c45fe827728af610e56783dad1ef42441de9ff3897bc0aae0dd57e035cd2b5d7b67088412b1154ced119c43752498fb662d368c6debd0dded056a01a29e2722ac9afb8cf2e7179927c3989e17cc09e373f264c76a774df0f219e05d664ffa178c8c1c75b96fcb7f9d8d89f6bbe287c8c7e269e86a23bce71bd5167cdb0efc22bc991302dd27bc8a4522da6d779637535113a909dc96758eaab31fc47ffcd84cd5c35bf3fa0d1ce1f6708b74629e44077db782898855914317296c756168162ea61e8a738906f9b251e27ad4ffdca2ad9c87efe9ce2ff73f1b58bec426dd94966d301a1c91a3b5fe16afb542c8eb2e4ab4b1b97ad6cf34668b9f8c3b950e447195342f7a2e59cab6d24b272993514a6a733b1b7b17501b22fa49e6da11aec3ef889a7caceff7b9da1a510f61366552ad4d5bbdf3cde0a5c252f1cf155704ee759847ad35427a19f92c0d6b94a7e4f0c4556507a3e2bb834e9c11e8eb1932d2f6343835a1e56ac5d1fb6de7fabc7eead73ef67ff81b6dd23d24c377fda5b72ee3443a6c6a6fdef1384cfd53ed50b8702732e20a65d4c3bd06588d7138f7dca2d3f8682fa5f3573e43d61ab9e2d51fd35880fc73561805e9350c83f078a9bb7715b7c23aa00fc654c9d4c867b9a3501fed7d4db754968766cba426895a9961571fef1dbb8dfee67607cc42bf56d03f9ba295e35dc966395bdb7b72cac620392359973d131ec7fc32e05c3facec1fc2bda2c4e7aca0ef0f1839d0a9fcbaa2db5184c0b0858179c18f3b592ac3fe769757e155a26baf5237b9e8db67c3f60520cbf79bda95254a2e9ffc0256828c87266208a26bf96cdf208b9fee5bc422af3bbd9299f2e959c875e82f3d42bc17627e90605a1c3f0330ca10c55d53f1e1af12d06bffb0950d3935bcb4f12e260f0d145bb270a5b37e73aac09583ab849b15cc55a42339af78cecd046f1d21f75d24bf13e397ae3e3531632e152eaf07a9d9c1116aa5eb8a783fe667baa20aca7763dbd79ffa92e254a6ea010e7dd1b9aaa5ac1e74aa0488a5ba2cbaa2263ff25ea0221c279fe7b6a4f239932b6cff6d8831b22d514b087325e59dda089c15e30d334ea28adcce0beca170a2fff1c42e8be5501bc77d19254b60b36426f1cc43319320d44e87133430df9ca1c14d6db8840fa9845698114c772d3626db8dca5fdc88a431d66e"
+  },
+  {
+   "key": "roofCap",
+   "params": {
+    "tex": "roofCap",
+    "bump": 0.35,
+    "gloss": 92,
+    "glow": 0,
+    "spec": 0.38,
+    "tint": [0.021255271665287723,0.024424788202195083,0.02783599734419756]
+   },
+   "triangles": 16,
+   "hash": "2dd4e8fd1d78fc7cdc6e2646d65c0cfdf4cdb1e2d730b852bde0f1af321fc478",
+   "segments": [{"part":"roofing","from":0,"count":16}],
+   "parts": {"roofing":{"triangles":16,"hash":"2dd4e8fd1d78fc7cdc6e2646d65c0cfdf4cdb1e2d730b852bde0f1af321fc478"}},
+   "prints": "2911b0d96455e662ca0d6261285741b369ebdd27bfd59244fccaf83479bc8907e910c523be9e1bb3031e5f370a3b1d6f"
+  },
+  {
+   "key": "roofScrew",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 44,
+    "glow": 0,
+    "spec": 0.3,
+    "tint": [0.006931066847376431,0.007964604848541874,0.009076955655716595]
+   },
+   "triangles": 844,
+   "hash": "f2fcc06f5c4ad677df16517db557e4101b1891be834cdbe50c14ccf547018308",
+   "segments": [{"part":"roofing","from":0,"count":844}],
+   "parts": {"roofing":{"triangles":844,"hash":"f2fcc06f5c4ad677df16517db557e4101b1891be834cdbe50c14ccf547018308"}},
+   "prints": "5184aa604be4c590b814160ea4706f0ef5e6fbbc72188788b0646243063a37d603226d3c870cb5b6a5368972f89534b67c039c466ffdb2bbe648ae893ea2caee040d9537b87c2ade8c449a4d5d3cff12f9eac85b1aded6f609f8bc834801a7fb237c2e2f50144e55eb72b38dcba4b78f6956d2872182f1283eb33dc157699d12208ee376dcb694ae3eefbe3bdf9e3ad08d14937878c2cca0aaa4f129cca041019a27f21326c37cb10e0d7bd835afd76471c7f326491d24ae92c4bc647562a41ab5086b43583c99baec4f12c45a954750e21e4d4adb5da6acd4f8b1d25c2d5a9742f8b09bee306aee692965aade76b741040a4b4c918fb2e9743a3059da00d625faa13af87ba750955d7f1e283fb20f62fa4b80c1c22dbe39a2b0011edd38f6fb47faa9e289f030f952155b5434f121980b4f7a6be8bed815d5500d7e7c20dbb3ae40ba88c07e31a83756e3d6599a325f455fbe13d0fb25ffbe4e1e3cd4f8b3d60f3b1bceff02e78276a1387638b73a9079db644a350e4f7c2e2c3838d9bffc41ccf388a881831272648431a95c4ffcab6407ddeb19214c81ec6123ce20fea17ff4411d2becd9f77683e89ebfdfb14fb58cb25653085617f802d19afd752d1793396a8c558a1e0b92a3cab2ae858365af217104c666d6ee46311480a2388957075924d15818cc3ef9fb61e9f78e1613445ceda3700b0989efa22a5dc5b21de86de98cb5c52f8356bc45e0415fb0b0f3145589b75be55639031bce5c0db10727b22087f8fdf3743d5d764f121a0d6165d2a5fc25b5b4a23ad803da6d4b6bd2ace9a7a16ebf737e8eea426437cdc1262d6df4608148ce726dafc50e8dde716101468960d0b85a5e767f4e9f48f4d96a6ec2ba2cb23cce00243358debf81d2ecc9d8469826e62950e0f305fcd4a88edeef73825d80ab1cfce62f6781defcebb259578dada33f093fd4d44d0f9e1b06c169ddf8506343c989c7bff091bfbbe68411cfbd56c8615642b802848bb96c9d9edb1f830bdad3a738c7645a21e02524bd5ada5b08b103398b82f23ec82c312827975f9e72271f025975ae9d333a8ae1d3a50779bab23284e02457479773a1ac859f9f770428e5790cd85e2daab8771444eb42b0dc0653dff1987b283f2655006a6d605c50435c161af8e32b077e3277084716f5ff2b5152a63baf0d14b3997b90e7caf0eb116cb2559a25eecb883d4932c66ef642107c9ea2eb905908822a16a9104f1744909ac1d38c59012d1cd8e67dc50e235fc3f72c9e71a114b35ac1e62b6d8ba0f786bf0d43b1d45c7c3f6598ba7e369ee05704e322fe41c2cc2772ffba302b1c83d0cd7dbd1f399543bfa2eb1c150ef69c0f226a481a81659e0fbe16f4a4f0f97ecb7f79bae4987db41c5727fb018d897f71267b9e9ee26691c9c318711de49b0db668ab4247300c145336e50ad1ae4089891eb073ed315b263091200241ff407d121949d3282d329c89f6255543505fc23ef116e415b503e0fdac51761272c4b3bdb0cce2c0cff0d50bed8eeff61f08d7e596826adcaf52235eb00816daabd19da7c31c18f5ca7afbf99d1aba15010ddcf5ae4116aebd9b6ae2d1d1c9bfa1cb24d7cf6306526d3126e3396329aab7ce99989007cd95372619ffb0dc018025ce181373c802b17e08bd7d2596c65f73bf19e5dd2de371fa6b496a3808cfe7b5403aff6e2ca89d7bc81cb768e84fd6fe433dfb0620e26e60c3ace55e9ff2f98f6e9607fa3b7dfb195e55c06e8c12b3486110d8361e5bbb1909bec8a6a99059c895add4ca352e570c5b3fc1717e0373e8cfdd318ffa497d73c3b1668ddbda74abd32e328086afb432aa5db5e56c0482537bdaeefea88d68296bbec4649e26dcb869359b4a8eb32d156138d3fed4617a5be0d3129ba2373dd46110529d850cf842bfd7766a8c0b80b4112342c10c4385d07a742fd182a477fb14545cb6df947d92679002c03d1fd6543c3c4b59d703bc3c54899dd74e873dd3cea62869cff00582308b9828c661ce6912a3e2b6cb77dd3077b30191f097295f2f62cdb3049e8ed2eb9978b1b50a8a57d8e28dafd6a7bbf24b2e9e0ea44f3482d829b979ed970168f4448415315629f0387b2700e35aae493db03f7798e05d2db8e0269e8ae3e0d36c91f39f722bbd4ed5aee2f377c8662610de9c2cd6a28dea6b6611164531e787a376fe7badbe1949c394797bf1cf44986981442a51b70eadc31403f76833150d7f37742849f804c5b3171e1404166ed71424f4a1c08b582a2406b1df3faac24ff49903bc968d8707b69754cea30e9060390f90791103b4d24444ff310971201a2a3bc2453e59e35a122aa571290be5bb18212a5fb0d83c8ff17fce8f1f69c2fca69ca131aa0f50d61a50db94fb08b420ca9ff9b5e20ca40cb75b0582e50c119f839656362d20b46506a1dcefe6f6873102a087ff1b1394f351566f0666e853cbfa1220dd51a1b638e34165b15907e3d58ae5537932b2144ac9960271d860dd6ee3fbd18f7ea4e843a5f8b22a14812fe0bb3373cf48b037abaa0031132e01b87f63e9804175eacdd5cc37e9f1c49cc8a26519eea3ab17293c2323b3b7437153e26370f6a8c9601230f61446a00f794eaae8614f0ffa2df2f5537d94b147de5ffe58163e70c4e6e027421537acf26abb157c14d6a6a48adfad12d6ffa6ed6aa37bde07d8dfd0573cd073e5f9d518324da3fb02ce3fc8f826755c4c966defa33ff520b26157bee828ffd692406d0654352d2d6471cdd0a8d5e52b6d53bd20bc37a09a356ae747b3a716cb96bc3b9da293f86abc000b6467af17ddce82e0404ca01f38b577c3dcfeb94f854ddd4eab18efc4432ce6f26c60206654208dfeb5af68823e67feb2d53d29b833ea069bda6bc98840b8ee0ecbd0f5b211ed1218392407b445e5a03ec75ee11d5df6ecc0541cfa3d351bacf6c8066b75877ef60d006c66f40c0293ee7094af60948ac4e95ba4fe853f4f77f783c4a6ad074a917170f16d9128a42d2c43de83ab177732b9aafd38266467dc80e91b64faa3c3837f68c61ad853d56da645592fda672e9b8cd8db3ecec443c4017931039c39a80a75ae8a97a1cfdf494f9e1c780be849a2037a02bda3eddc6314b888737e71d48310e9c4082ea04bf9c716643d2b794722f716712b44effd5caf20979a4fe4d0292089231395cffd9d040384fc02a7030fae7bf926f26f16f82292453f3658a7ca25576bbc33c612d876150817a064dd265b4d43145dabe169497020bb8b8204ed676724925746c33ed13115704f462270435b906c4b56873114eaee55578b326eb5bbae37621c08fa6a18dd9635a2893385d243263979b48bc370f5c9888d27127bde2a68bd29498fd69d1d2fb8b0ca6460dfdd7214c489b7dd24f3c88deaa073ab35c9b5124f398aedf136cd9128bccd38789fec534e11cee95bb859d67c2f03f03a57bdcd502fb6d59aec8e52dc79e6891dcea6a6139470612d9af100776aaf4c1b11f22bd6d1ed13a95501f38bac22050e53e05533b8c1354c453aa656d000b158f3de7c0451e3cfbb3bb4cec5de567a423f5b93c88eecfc"
+  },
+  {
+   "key": "capShade",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 20,
+    "glow": 0,
+    "spec": 0.1,
+    "tint": [0.017558702680020292,0.020176998949639417,0.022994954327815377]
+   },
+   "triangles": 4,
+   "hash": "9873f102dbfc454eaa5bd1f0e8119daab2a8ef326a33013399bd137aa3a4dec7",
+   "segments": [{"part":"roofing","from":0,"count":4}],
+   "parts": {"roofing":{"triangles":4,"hash":"9873f102dbfc454eaa5bd1f0e8119daab2a8ef326a33013399bd137aa3a4dec7"}},
+   "prints": "9fa089382067a1db846e6ccf"
+  },
+  {
+   "key": "roofU",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 10,
+    "glow": 0,
+    "spec": 0.03,
+    "tint": [0.012706955886856792,0.014601775555660106,0.01664108536881376]
+   },
+   "triangles": 8,
+   "hash": "fba49ef5ec929b0f543a19c78a14c5798b57f63a0e6b0eb585156ccdd9bc0545",
+   "segments": [{"part":"roofing","from":0,"count":8}],
+   "parts": {"roofing":{"triangles":8,"hash":"fba49ef5ec929b0f543a19c78a14c5798b57f63a0e6b0eb585156ccdd9bc0545"}},
+   "prints": "6b071bba8cc2354a1c348a18c30abe0ff95746dffeb7bf4c"
+  },
+  {
+   "key": "eaveEdge",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 34,
+    "glow": 0,
+    "spec": 0.18,
+    "tint": [0.014324204817911291,0.016460183353653207,0.018759041688480964]
+   },
+   "triangles": 0,
+   "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "segments": [],
+   "parts": {},
+   "prints": ""
+  },
+  {
+   "key": "eaveShade",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 10,
+    "glow": 0,
+    "spec": 0.04,
+    "tint": [0.005082782354742716,0.005840710222264041,0.006656434147525503]
+   },
+   "triangles": 0,
+   "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "segments": [],
+   "parts": {},
+   "prints": ""
+  },
+  {
+   "key": "lapShade",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 14,
+    "glow": 0,
+    "spec": 0.06,
+    "tint": [0.01571041818738658,0.018053104323361584,0.020574432819624285]
+   },
+   "triangles": 0,
+   "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "segments": [],
+   "parts": {},
+   "prints": ""
+  },
+  {
+   "key": "roofEdge",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 60,
+    "glow": 0,
+    "spec": 0.4,
+    "tint": [0.020793200542129294,0.023893814545625624,0.027230866967149787]
+   },
+   "triangles": 8,
+   "hash": "ed99daf45411e75a8e56bf2b707b777267bde8ac7344bdad0a131b0cf11a5de8",
+   "segments": [{"part":"roofing","from":0,"count":8}],
+   "parts": {"roofing":{"triangles":8,"hash":"ed99daf45411e75a8e56bf2b707b777267bde8ac7344bdad0a131b0cf11a5de8"}},
+   "prints": "8e44afe6bd462063e25e8ffdb69335bee58c666972a940a4"
+  },
+  {
+   "key": "dark",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 30,
+    "glow": 0,
+    "spec": 0.3,
+    "tint": [0.023103556157921437,0.026548682828472916,0.030256518852388652]
+   },
+   "triangles": 0,
+   "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+   "segments": [],
+   "parts": {},
+   "prints": ""
+  },
+  {
+   "key": "white",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 22,
+    "glow": 0,
+    "spec": 0.12,
+    "tint": [0.9658146535031301,0.9658146535031301,0.940600707035753]
+   },
+   "triangles": 88,
+   "hash": "ba7b63593697dde2a5e6be730811fb51e95f8ba940fbafc84edd5803c9e4f3d0",
+   "segments": [{"part":"window","from":0,"count":88}],
+   "parts": {"window":{"triangles":88,"hash":"ba7b63593697dde2a5e6be730811fb51e95f8ba940fbafc84edd5803c9e4f3d0"}},
+   "prints": "ff33301905438b3f94dbb92a16ba3d67bf4589441e97b18c1328679b1da2ddcd722091fe8f027f94afd2ab10799c99370e5e93692ca7f2ef543c180d1dd6afe66396470f283c44bebd322dab8f83e406ced13e8024bb1eb87d7a622b694789a49e112171a4ce42dccb0586af200ba26b52117ef621b190d60f6f9e678ea1bd43dd8c40499f8dd6d764b4b34113ae662dab8ef66200fe903ac98f0125541f76c4af6d123354e8e235ba4db64576b016dd220605397b4374c8f570c8f11502043d81bdf91802fcb1bb8469e296fb4ca32080f0c56bbf6075ea482c0dbd8ca31dd09fbdbdb24817ba784068f1ada765c265d3e9e13c8ddfd2135829d700f05770f2622a81cbeb39adde"
+  },
+  {
+   "key": "glass",
+   "params": {"tex":"glass","bump":0,"glassM":1,"gloss":80,"glow":0,"spec":1.2,"tint":[1,1,1]},
+   "triangles": 8,
+   "hash": "6a059ed270669ac9d383c87722d9c5ec296ad02129b2740fd71b8cfc9e85c418",
+   "segments": [{"part":"window","from":0,"count":8}],
+   "parts": {"window":{"triangles":8,"hash":"6a059ed270669ac9d383c87722d9c5ec296ad02129b2740fd71b8cfc9e85c418"}},
+   "prints": "8abb8bfeca1c57efc7e8c681314d432638dc57d8125b7012"
+  },
+  {
+   "key": "aoWall",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 8,
+    "glow": 0,
+    "spec": 0.04,
+    "tint": [0.574421745719716,0.569378962906917,0.5396307078279177]
+   },
+   "triangles": 8,
+   "hash": "c1c92ba8067cffb3406cd7034e266601de2d950f46a0518bb8c1862388212724",
+   "segments": [{"part":"door-wood","from":0,"count":4},{"part":"window","from":4,"count":4}],
+   "parts": {
+    "door-wood": {"triangles":4,"hash":"cf6e4e520ee81e7f91232fa6a574681d6b911f68230fddadace4428b3400a293"},
+    "window": {"triangles":4,"hash":"fcc3066b5a6bdc24906605ed65f650fff7a71d8f6e7d2d2e7d839cc6746f86f0"}
+   },
+   "prints": "38089a8440e30592f9c57570f0f5e4e329d8ae029f7cb66e"
+  },
+  {
+   "key": "doorF",
+   "params": {
+    "tex": "siding",
+    "age": 4,
+    "bump": 0.6,
+    "gloss": 14,
+    "glow": 0,
+    "spec": 0.06,
+    "tint": [0.9573695761995268,0.9489649381781952,0.8993845130465294]
+   },
+   "triangles": 4,
+   "hash": "72d2948d3065ae71c8489d78842e7f6f32121176cb94b6c29249d14ec9aedc3c",
+   "segments": [{"part":"door-wood","from":0,"count":4}],
+   "parts": {"door-wood":{"triangles":4,"hash":"72d2948d3065ae71c8489d78842e7f6f32121176cb94b6c29249d14ec9aedc3c"}},
+   "prints": "ff7e980d857d5b7f33f7344e"
+  },
+  {
+   "key": "doorSh",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 10,
+    "glow": 0,
+    "spec": 0.05,
+    "tint": [0.5935691372437066,0.588358261670481,0.5576183980888483]
+   },
+   "triangles": 4,
+   "hash": "0337777e1230f18e69b5bfac136d62c5565989a85ce5856db7fa70e5271cb18e",
+   "segments": [{"part":"door-wood","from":0,"count":4}],
+   "parts": {"door-wood":{"triangles":4,"hash":"0337777e1230f18e69b5bfac136d62c5565989a85ce5856db7fa70e5271cb18e"}},
+   "prints": "3fcfdb9310ad263d20c47097"
+  },
+  {
+   "key": "iron",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 26,
+    "glow": 0,
+    "spec": 0.18,
+    "tint": [0.005028203456855535,0.006040593654849813,0.007155037004573032]
+   },
+   "triangles": 24,
+   "hash": "71b01ecd5c3894145ad61f8981b8581b5c09947eed58c3cbba1415316bc6d582",
+   "segments": [{"part":"door-wood","from":0,"count":24}],
+   "parts": {"door-wood":{"triangles":24,"hash":"71b01ecd5c3894145ad61f8981b8581b5c09947eed58c3cbba1415316bc6d582"}},
+   "prints": "df1f4c3812c7c8ffb9f6dce5043fb8766bed81130f2e06b43ceffe0009831414644e0c123a89d4221fa26a6b8ffdefc21616984ab1b389d4ed0bd48f8453bd0881172b0f1493a510"
+  },
+  {
+   "key": "glShade",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 20,
+    "glow": 0,
+    "spec": 0.2,
+    "tint": [0.013473396940142641,0.020951131914781092,0.028991186547107816]
+   },
+   "triangles": 8,
+   "hash": "c208353a81857790fb4a7e3bcdc1c6d61494207ba146e694d49136aafd3bbd46",
+   "segments": [{"part":"window","from":0,"count":8}],
+   "parts": {"window":{"triangles":8,"hash":"c208353a81857790fb4a7e3bcdc1c6d61494207ba146e694d49136aafd3bbd46"}},
+   "prints": "cd1ec601444dd8fedb63df6a1b5897ffcc787aaf687413e9"
+  },
+  {
+   "key": "screen",
+   "params": {
+    "tex": "flat",
+    "bump": 0,
+    "gloss": 10,
+    "glow": 0,
+    "spec": 0.05,
+    "tint": [0.10114516420959989,0.11657577617857154,0.12752977781342206]
+   },
+   "triangles": 4,
+   "hash": "fbd180b5e39924284ccbec88dd16be0a41e7913c5e147edddb2ba8041c191996",
+   "segments": [{"part":"window","from":0,"count":4}],
+   "parts": {"window":{"triangles":4,"hash":"fbd180b5e39924284ccbec88dd16be0a41e7913c5e147edddb2ba8041c191996"}},
+   "prints": "f9bc18db19c20d1bee5f9271"
+  },
+  {
+   "key": "ground",
+   "params": {"tex":"flat","bump":0,"gloss":14,"glow":0,"noCast":true,"spec":0.03,"tint":[0.855,0.853,0.84],"turf":0},
+   "triangles": 72,
+   "hash": "045a00dbde75172f6c63eb196383eb923d89f47b58ece293ebabca18e7b2f9c8",
+   "segments": [{"part":"ground","from":0,"count":72}],
+   "parts": {"ground":{"triangles":72,"hash":"045a00dbde75172f6c63eb196383eb923d89f47b58ece293ebabca18e7b2f9c8"}},
+   "prints": "331164ebbee036284658f532c908ef53086f4c88307780c1e0f391c53b6edf23305ef8f52d79532ce45926e2a447a6a67dfad05a1e193f73e43c6933bde609391da2a6291958921299b297bbe9cf85b1c9d67ff9bef3eb91dee4b68255ebf8257666ef0bc95e216f2e7105284173f432668f6b951b754db580d776935dac7953afec17c03f603336e6c349470333d526d1aa4686b83b21ccfa9a73b2d19065b27e06fe4bfb205fa51fd07b0f677d3b5a3d82ba7d13ad3e01216487ce8e0bc6abe07681ab7de98f7cc0f5620e8b1ed68f489f29b4dcb8ec63"
+  },
+  {
+   "key": "ctshadow",
+   "params": {"tex":"ao","bump":0,"gloss":8,"glow":0,"noCast":true,"spec":0,"tint":[1,1,1],"unlit":true},
+   "triangles": 2,
+   "hash": "a915754d0707f909501c907671c1c6f0ffe93aec7fb207bf12908e76b57441df",
+   "segments": [{"part":"ground","from":0,"count":2}],
+   "parts": {"ground":{"triangles":2,"hash":"a915754d0707f909501c907671c1c6f0ffe93aec7fb207bf12908e76b57441df"}},
+   "prints": "34b88d9f544a"
+  }
+ ]
+}

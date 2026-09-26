@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Engine smoke test</title>
+<!-- A TINY TEST PAGE FOR THE ENGINE, used by tools/check-engine-smoke.mjs.
+     It draws a pretend shed out of a few boxes with the real drawing kit and
+     the real renderer: a lawn (step "site"), skids, a grey body ("siding"),
+     a RED door ("doors") and a BLUE roof ("roofing"), a gable triangle, a
+     soft contact shadow and one piece of framing lumber ("roof-frame").
+     The red and blue are there so the check can find those two steps in the
+     picture and prove that hiding a step removes it and lifting a step raises
+     it. ?true=1 uses the true-colour shader; ?seed=0 paints the textures with
+     ordinary randomness instead of the repeatable test kind. Open it in a
+     browser (npm run serve, then /tools/engine-smoke.html) to look at it. -->
+<style>
+  html,body{margin:0;background:#fff;font:13px system-ui,sans-serif}
+  .stage{width:480px;height:360px;position:relative}
+  #c{width:480px;height:360px;display:block}
+</style>
+</head>
+<body>
+<div class="stage" id="stage"><canvas id="c"></canvas></div>
+<script type="module">
+import { createRenderer, stageTableFor } from "../engine/renderer.js";
+import { createBuild, makeKit } from "../engine/buckets.js";
+import { fitDistFor } from "../engine/camera.js";
+import { paintBackdrop } from "../engine/scene.js";
+import { snapshot } from "../engine/snapshot.js";
+import { y0 } from "../engine/constants.js";
+import * as TN from "../engine/tex-names.js";
+
+const q = new URLSearchParams(location.search);
+const trueColour = q.get("true") === "1";
+const seeded = q.get("seed") !== "0";
+
+function hash(bytes) {                          /* FNV-1a, 32 bit, plus the length */
+  let h = 0x811c9dc5;
+  for (let i = 0; i < bytes.length; i++) { h ^= bytes[i]; h = Math.imul(h, 0x01000193) >>> 0; }
+  return bytes.length + ":" + h.toString(16);
+}
+/* a hash of each texture as it goes to the graphics card */
+const texHashes = [];
+if (typeof WebGLRenderingContext !== "undefined") {
+  const texImage2D = WebGLRenderingContext.prototype.texImage2D;
+  WebGLRenderingContext.prototype.texImage2D = function (...a) {
+    if (a.length === 6 && a[5] instanceof ImageData) texHashes.push(hash(a[5].data));
+    return texImage2D.apply(this, a);
+  };
+}
+
+const canvas = document.getElementById("c");
+const r = createRenderer(canvas, { trueColour, scene: "studio", seededTextures: seeded });
+r.test.freezeWatchdog = true; r.test.forceShadow = true; r.test.dprCap = 1;
+paintBackdrop(document.getElementById("stage"), r.scene);
+
+/* ---- the pretend shed, 10 x 12 ---- */
+const W = 10, L = 12, wallH = 7.4, rise = 2.7;
+const H = y0 + wallH + rise;
+function makeShed(sel) {
+  const build = createBuild({ sel: sel || null });
+  let GR = 0;
+  const fitDist = fitDistFor(W, L, { w: canvas.clientWidth, h: canvas.clientHeight }, "barnwright");
+  const kit = makeKit(build, { view: { fitDist, scene: r.scene } });
+  const g = r.scene.ground;
+  kit.part("ground", () => {
+    kit.setStage("site");
+    const mGr = kit.MAT("ground", g.tex === "grass" ? TN.texGrass : TN.texFlat, g.tint, g.spec, g.gloss, 0, g.bump);
+    mGr.noCast = true; mGr.turf = g.turf;
+    GR = Math.max(fitDist * 1.28, Math.max(W, L) * 3.0); const SEG = 72;
+    for (let s = 0; s < SEG; s++) {
+      const a0 = s / SEG * Math.PI * 2, a1 = (s + 1) / SEG * Math.PI * 2;
+      kit.pushTri(mGr, [0, 0.004, 0], [Math.cos(a1) * GR, 0.004, Math.sin(a1) * GR], [Math.cos(a0) * GR, 0.004, Math.sin(a0) * GR],
+        [0, 0], [Math.cos(a1) * GR / 3.0, Math.sin(a1) * GR / 3.0], [Math.cos(a0) * GR / 3.0, Math.sin(a0) * GR / 3.0]);
+    }
+  });
+  kit.part("skids", () => {
+    kit.setStage("skids");
+    const mSk = kit.mat("skid", TN.texFlat, "#6d5f49", 0.04, 10);
+    kit.box(mSk, -3, 0, 0, 0.5, 0.5, L); kit.box(mSk, 3, 0, 0, 0.5, 0.5, L);
+  });
+  kit.part("siding", () => {
+    kit.setStage("siding");
+    const mB = kit.mat("body", TN.texSiding, "#c8c8c8", 0.06, 14, 0.6); mB.age = 4;
+    kit.box(mB, 0, 0.5, 0, W, y0 + wallH - 0.5, L);
+  });
+  kit.part("gable", () => {
+    kit.setStage("gable-end");
+    const mG = kit.mat("body", TN.texSiding, "#c8c8c8", 0.06, 14, 0.6);
+    kit.gq2(mG, [[-W / 2, y0 + wallH], [W / 2, y0 + wallH], [0, H]], L / 2, 1, 0, "sid");
+  });
+  kit.part("door", () => {
+    kit.setStage("doors");
+    kit.setItem("d1");
+    const mD = kit.mat("door", TN.texFlat, "#d02020", 0.05, 12);
+    kit.box(mD, 0, y0, L / 2 + 0.08, 3, 6.3, 0.16);
+    kit.setItem(null);
+  });
+  kit.part("roof", () => {
+    kit.setStage("roofing");
+    const mR = kit.mat("roof", TN.texRoofMetal, "#2040d0", 0.34, 80, 0.6);
+    kit.box(mR, 0, y0 + wallH, 0, W + 1, 0.35, L + 1);
+  });
+  kit.part("frame", () => {
+    kit.setStage("roof-frame");
+    const mL = kit.mat("lumber", TN.texFlat, "#caa472", 0.04, 10);
+    kit.beam(mL, [-W / 2 - 1.5, y0 + wallH + 1.2, L / 2 + 1], [W / 2 + 1.5, y0 + wallH + 1.2, L / 2 + 1], 0.3, 0.5, [0, 1, 0]);
+  });
+  kit.part("shadow", () => {
+    kit.setStage("shading");
+    const mCS = kit.DECAL("ctshadow", TN.texAO), exd = 0.85;
+    kit.pushQuad(mCS, [-W / 2 - exd, 0.012, L / 2 + exd], [W / 2 + exd, 0.012, L / 2 + exd], [W / 2 + exd, 0.012, -L / 2 - exd], [-W / 2 - exd, 0.012, -L / 2 - exd], [0, 0], [1, 0], [1, 1], [0, 1]);
+  });
+  return { build, bounds: { W, L, H }, gr: GR, fitDist };
+}
+const shed = makeShed();
+r.show(shed);
+
+/* ---- what the check asks for ---- */
+function classify(px) {
+  const d = px.data; let nonBlank = 0, red = 0, blue = 0, blueRowsFromTop = 0, rb = 0;
+  for (let i = 0, p = 0; i < d.length; i += 4, p++) {
+    const R = d[i], G = d[i + 1], B = d[i + 2], A = d[i + 3];
+    if (A === 0) continue;
+    nonBlank++; rb += R - B;
+    if (R > 90 && R > G * 1.8 && R > B * 1.8) red++;
+    if (B > 60 && B > R * 1.3 && B > G * 1.1) { blue++; blueRowsFromTop += (px.h - 1 - Math.floor(p / px.w)); }
+  }
+  return { nonBlank, red, blue, blueTop: blue ? blueRowsFromTop / blue : null, warmth: nonBlank ? rb / nonBlank : 0, w: px.w, h: px.h, hash: hash(d) };
+}
+function render(table) {
+  r.setStages(table || null);
+  const drew = r.draw();
+  const px = r.test.readPixels();          /* same task as the draw */
+  return Object.assign({ drew }, classify(px));
+}
+async function pngStats(url) {
+  const img = new Image(); img.src = url; await img.decode();
+  const c = document.createElement("canvas"); c.width = img.width; c.height = img.height;
+  const x = c.getContext("2d"); x.drawImage(img, 0, 0);
+  const d = x.getImageData(0, 0, c.width, c.height).data; let n = 0;
+  for (let i = 3; i < d.length; i += 4) if (d[i]) n++;
+  return { w: img.width, h: img.height, nonBlank: n };
+}
+const frames = () => new Promise((res) => requestAnimationFrame(() => requestAnimationFrame(res)));
+window.SMOKE = {
+  ready: true, trueColour, seeded, texHashes, render, shed,
+  /* for the no-WebGL run: the page must carry on without 3D */
+  noWebGL() {
+    const note = canvas.previousElementSibling;
+    let snapErr = null;
+    try { snapshot(r, { result: makeShed(), size: { w: 100, h: 80 } }); } catch (e) { snapErr = e.message; }
+    return { off: r.off, canvasHidden: canvas.style.display === "none", note: note ? note.textContent : null, drew: r.draw(), snapErr };
+  },
+  hasShadow: () => r.hasShadow, extDeriv: () => r.extDeriv,
+  views() { return { finished: render(stageTableFor("finished")), framing: render(stageTableFor("framing")), noBoard: render({ "roof-frame": { hidden: true } }), all: render(null) }; },
+  /* a rebuild (new buffers, the old ones deleted) must not lose the shadows
+     for a frame: before, just after and one frame later must be identical */
+  rebuildTest() {
+    r.setStages(null);
+    r.draw(); const before = classify(r.test.readPixels()).hash;
+    r.show(makeShed());
+    r.draw(); const first = classify(r.test.readPixels()).hash;
+    r.draw(); const second = classify(r.test.readPixels()).hash;
+    return { before, first, second };
+  },
+  async snapshotTest() {
+    r.setStages(null);
+    const url = snapshot(r, { result: makeShed(), size: { w: 200, h: 150 }, dpr: 1, cam: { yaw: Math.PI / 2, pitch: 0.2 } });
+    const live = { w: canvas.width, h: canvas.height };
+    return { png: url.slice(0, 22), stats: await pngStats(url), live, camYaw: r.cam.yaw };
+  },
+  async loopTest() {
+    const out = {};
+    r.cam.autoSpin = false;
+    r.projCache = {};
+    r.needsDraw = true;
+    r.startLoop({ fit: "barnwright" });
+    await frames(); await frames();
+    out.drewByItself = r.needsDraw === false && typeof r.projCache.proj === "function";
+    const p = r.projCache.proj([0, y0, L / 2]);
+    out.projects = Array.isArray(p) && p[0] > 0 && p[0] < 480 && p[1] > 0 && p[1] < 360;
+    canvas.style.width = "300px"; canvas.style.height = "200px";
+    await frames(); await frames(); await frames();
+    out.resized = { w: canvas.width, h: canvas.height, fitDist: r.cam.fitDist, fitWanted: fitDistFor(W, L, { w: 300, h: 200 }, "barnwright") };
+    canvas.style.width = "0px"; canvas.style.height = "0px";
+    await frames(); await frames();
+    out.zeroDraw = r.draw();
+    out.zeroSizeKeptWaiting = r.needsDraw === true;
+    canvas.style.width = "480px"; canvas.style.height = "360px";
+    await frames(); await frames(); await frames();
+    out.back = { w: canvas.width, h: canvas.height, needsDraw: r.needsDraw };
+    r.stopLoop();
+    return out;
+  },
+};
+</script>
+</body>
+</html>

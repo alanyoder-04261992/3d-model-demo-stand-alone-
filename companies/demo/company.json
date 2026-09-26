@@ -1,0 +1,280 @@
+{
+  "_help": [
+    "THE SALES DEMO: every standard style at every standard size, drawn exactly as Barnwright draws them, with EXAMPLE prices.",
+    "The example prices are NOT a real company's price list. Every building is priced by one simple formula: $900 + a rate per square foot of floor (width x length), rounded to the nearest $5. The rate is by category: Utility & Storage $26, Barns $29, Cabins $36, Garages $34, Metal Buildings $31, Dog Kennels $52. Doors, windows and options carry round example numbers.",
+    "Barnwright's real prices live only in test/golden/barnwright-catalogue.json and are used only by the checks.",
+    "No leads are sent from the demo (leads.mode none): it is a showroom."
+  ],
+  "id": "demo",
+  "status": "active",
+  "manufacturer": "standard",
+  "brand": {
+    "name": "Portable Buildings",
+    "short": "Portable Buildings",
+    "initials": "PB",
+    "tagline": "Portable Storage Buildings",
+    "phone": "",
+    "email": "",
+    "website": "",
+    "colors": {"header": "#1F2A24", "accent": "#B8893A"},
+    "logo": "",
+    "credit": {"text": "3D designer by Barnwright", "url": "", "show": true}
+  },
+  "offer": {
+    "UT": {
+      "sizes": {
+        "8x12": 3395,
+        "8x16": 4230,
+        "10x12": 4020,
+        "10x16": 5060,
+        "10x20": 6100,
+        "12x16": 5890,
+        "12x20": 7140,
+        "12x24": 8390,
+        "12x32": 10885,
+        "14x20": 8180,
+        "14x24": 9635,
+        "14x28": 11090,
+        "14x32": 12550,
+        "14x40": 15460
+      }
+    },
+    "SU": {
+      "sizes": {
+        "8x12": 3395,
+        "8x16": 4230,
+        "10x12": 4020,
+        "10x14": 4540,
+        "10x16": 5060,
+        "10x20": 6100,
+        "12x16": 5890,
+        "12x20": 7140,
+        "12x24": 8390,
+        "12x30": 10260,
+        "12x32": 10885
+      }
+    },
+    "DS": {
+      "sizes": {
+        "8x12": 3395,
+        "8x16": 4230,
+        "10x12": 4020,
+        "10x14": 4540,
+        "10x16": 5060,
+        "10x20": 6100,
+        "12x16": 5890,
+        "12x20": 7140,
+        "12x24": 8390,
+        "12x30": 10260,
+        "12x32": 10885
+      }
+    },
+    "BU": {"sizes": {"6x8": 2150, "6x10": 2460, "6x12": 2770}},
+    "GU": {"sizes": {"6x8": 2150, "6x10": 2460, "6x12": 2770}},
+    "SB": {"sizes": {"8x12": 3685, "10x12": 4380}},
+    "LB": {
+      "sizes": {
+        "8x12": 3685,
+        "8x16": 4610,
+        "10x12": 4380,
+        "10x16": 5540,
+        "10x20": 6700,
+        "12x16": 6470,
+        "12x20": 7860,
+        "12x24": 9250,
+        "12x32": 12035,
+        "14x20": 9020,
+        "14x24": 10645,
+        "14x28": 12270,
+        "14x32": 13890,
+        "14x40": 17140
+      }
+    },
+    "SLB": {
+      "sizes": {
+        "8x12": 3685,
+        "8x16": 4610,
+        "10x12": 4380,
+        "10x16": 5540,
+        "10x20": 6700,
+        "12x16": 6470,
+        "12x20": 7860,
+        "12x24": 9250,
+        "12x32": 12035
+      }
+    },
+    "CS": {
+      "sizes": {
+        "8x12": 3685,
+        "10x12": 4380,
+        "10x16": 5540,
+        "10x20": 6700,
+        "12x16": 6470,
+        "12x20": 7860,
+        "12x24": 9250,
+        "12x32": 12035
+      }
+    },
+    "SS": {
+      "sizes": {
+        "8x12": 3685,
+        "8x16": 4610,
+        "10x12": 4380,
+        "10x16": 5540,
+        "10x20": 6700,
+        "12x16": 6470,
+        "12x20": 7860,
+        "12x24": 9250,
+        "12x32": 12035
+      }
+    },
+    "C": {
+      "sizes": {
+        "8x12": 4355,
+        "8x16": 5510,
+        "10x16": 6660,
+        "10x20": 8100,
+        "12x16": 7810,
+        "12x20": 9540,
+        "12x24": 11270,
+        "12x32": 14725
+      }
+    },
+    "LBC": {
+      "sizes": {
+        "8x16": 5510,
+        "10x16": 6660,
+        "10x20": 8100,
+        "12x18": 8675,
+        "12x20": 9540,
+        "12x24": 11270,
+        "12x30": 13860,
+        "12x32": 14725
+      }
+    },
+    "SC": {"sizes": {"10x20": 8100, "12x20": 9540, "12x24": 11270, "12x30": 13860, "12x32": 14725}},
+    "LSC": {"sizes": {"10x20": 8100, "12x20": 9540, "12x24": 11270, "12x30": 13860, "12x32": 14725}},
+    "DSC": {"sizes": {"12x20": 9540, "12x24": 11270, "12x30": 13860, "12x32": 14725}},
+    "SLC": {"sizes": {"12x20": 9540, "12x24": 11270, "12x30": 13860, "12x32": 14725}},
+    "G": {
+      "sizes": {
+        "12x20": 9060,
+        "12x24": 10690,
+        "12x30": 13140,
+        "12x32": 13955,
+        "14x20": 10420,
+        "14x24": 12325,
+        "14x28": 14230,
+        "14x32": 16130,
+        "14x40": 19940
+      }
+    },
+    "LBG": {"sizes": {"12x20": 9060, "12x24": 10690, "12x30": 13140, "12x32": 13955}},
+    "MU": {
+      "sizes": {
+        "8x12": 3875,
+        "10x12": 4620,
+        "10x16": 5860,
+        "10x20": 7100,
+        "12x16": 6850,
+        "12x20": 8340,
+        "12x24": 9830,
+        "12x32": 12805
+      }
+    },
+    "MLB": {
+      "sizes": {
+        "8x12": 3875,
+        "10x12": 4620,
+        "10x16": 5860,
+        "10x20": 7100,
+        "12x16": 6850,
+        "12x20": 8340,
+        "12x24": 9830,
+        "12x32": 12805
+      }
+    },
+    "MG": {"sizes": {"12x20": 8340, "12x24": 9830, "12x30": 12060, "12x32": 12805}},
+    "MCS": {
+      "sizes": {
+        "8x12": 3875,
+        "10x12": 4620,
+        "10x16": 5860,
+        "10x20": 7100,
+        "12x16": 6850,
+        "12x20": 8340,
+        "12x24": 9830,
+        "12x32": 12805
+      }
+    },
+    "DK": {"sizes": {"8x12": 5890, "8x16": 7555}}
+  },
+  "categories": [
+    ["Utility & Storage", ["UT", "SU", "DS", "BU", "GU"]],
+    ["Barns", ["SB", "LB", "SLB", "CS", "SS"]],
+    ["Cabins", ["C", "LBC", "SC", "LSC", "DSC", "SLC"]],
+    ["Garages", ["G", "LBG"]],
+    ["Metal Buildings", ["MU", "MLB", "MG", "MCS"]],
+    ["Dog Kennels", ["DK"]]
+  ],
+  "items": {
+    "w48": 175,
+    "w72": 325,
+    "w36": 150,
+    "light": 90,
+    "d36in": 475,
+    "d36lite": 525,
+    "dfr": 725,
+    "ru6": 600,
+    "ru8": 675,
+    "w23": 195,
+    "w33": 245,
+    "tr": 145,
+    "bench": 22,
+    "shelf": 14,
+    "outlet": 70,
+    "gfci": 0,
+    "ilight": 95,
+    "fake": 0,
+    "g1824": 195,
+    "oct": 195,
+    "ppost": 0
+  },
+  "options": {
+    "dormers": {"6": 1250, "9": 1550, "12": 1850},
+    "ramps": {"r4": 240, "r6": 290, "kit": 165},
+    "elec": {"1": 675, "2": 775, "3": 875},
+    "misc": {"shutter": 70, "lite": 45, "ext": 95},
+    "rates": {"dbl": 1.9, "jo12": 0.8, "mbF": 0.55, "mbW": 0.55, "rbS": 0.65, "rbR": 0.85},
+    "extras": []
+  },
+  "defaults": {
+    "style": "LB",
+    "size": "10x20",
+    "colors": {"body": "White", "trim": "Black", "roof": "Black"},
+    "dormer": "9",
+    "porchLength": 12
+  },
+  "construction": {},
+  "pricing": {
+    "show": "price",
+    "roundTo": 5,
+    "minCharge": 5,
+    "roofAreaFactor": 1.15,
+    "rto": {"factors": {"36": 0.6, "48": 0.53, "60": 0.45}, "showTerm": null}
+  },
+  "notes": {
+    "finePrint": "Example prices for a demonstration, not a real price list.",
+    "sizeNotes": {
+      "12": "A 12′ wide building's actual width is 11′2″.",
+      "14": "14-ft wide buildings need a permit / pilot-car delivery fee — we'll include it in your quote."
+    }
+  },
+  "leads": {"mode": "none"},
+  "embed": {"origins": [], "shareUrl": ""},
+  "look": {"trueColour": false, "scene": "studio"},
+  "features": {"framingView": true, "buildPlayback": true, "floorPlan": true},
+  "license": {"plan": "demo", "renews": ""},
+  "renames": {"items": {}, "sizes": {}, "colors": {}},
+  "cfg": 1
+}

@@ -1,0 +1,881 @@
+{
+ "about": "The buildings recorded from Barnwright's 3D designer by tools/capture-golden.mjs. See test/golden/README.md.",
+ "barnwright": {
+  "file": "boisterous-lokum-a737e0/public/3ddesign.html",
+  "sha256": "0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c"
+ },
+ "viewport": {"width":1440,"height":900,"deviceScaleFactor":1},
+ "canvas": {"clientWidth":742,"clientHeight":803},
+ "lookCamera": {"yaw":0.62,"pitch":0.215,"distOverFit":1},
+ "count": 148,
+ "cases": [
+  {
+   "id": "ut-8x12",
+   "description": "Utility Shed 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": true
+  },
+  {
+   "id": "ut-10x20",
+   "description": "Utility Shed 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "ut-14x40",
+   "description": "Utility Shed 14x40 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "su-8x12",
+   "description": "Side Utility 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "su-10x20",
+   "description": "Side Utility 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "su-12x32",
+   "description": "Side Utility 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "ds-8x12",
+   "description": "Dormer Shed 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "ds-10x20",
+   "description": "Dormer Shed 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "ds-12x32",
+   "description": "Dormer Shed 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "bu-6x8",
+   "description": "Backyard Utility 6x8 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": true
+  },
+  {
+   "id": "bu-6x12",
+   "description": "Backyard Utility 6x12 (typical and largest size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "gu-6x8",
+   "description": "Garden Utility 6x8 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gu-6x12",
+   "description": "Garden Utility 6x12 (typical and largest size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "sb-8x12",
+   "description": "Standard Barn 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "sb-10x12",
+   "description": "Standard Barn 10x12 (typical and largest size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "lb-8x12",
+   "description": "Lofted Barn 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": true
+  },
+  {
+   "id": "lb-10x20",
+   "description": "Lofted Barn 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "lb-14x40",
+   "description": "Lofted Barn 14x40 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "slb-8x12",
+   "description": "Side Lofted Barn 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "slb-10x20",
+   "description": "Side Lofted Barn 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "slb-12x32",
+   "description": "Side Lofted Barn 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "cs-8x12",
+   "description": "Cottage Shed 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": true
+  },
+  {
+   "id": "cs-10x20",
+   "description": "Cottage Shed 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "cs-12x32",
+   "description": "Cottage Shed 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "ss-8x12",
+   "description": "Single Slope 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": true
+  },
+  {
+   "id": "ss-10x20",
+   "description": "Single Slope 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "ss-12x32",
+   "description": "Single Slope 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "c-8x12",
+   "description": "Cabin 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "c-10x20",
+   "description": "Cabin 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "c-12x32",
+   "description": "Cabin 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "lbc-8x16",
+   "description": "Lofted Barn Cabin 8x16 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "lbc-10x20",
+   "description": "Lofted Barn Cabin 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "lbc-12x32",
+   "description": "Lofted Barn Cabin 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "sc-10x20",
+   "description": "Side Cabin 10x20 (smallest and typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "sc-12x32",
+   "description": "Side Cabin 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "lsc-10x20",
+   "description": "Loft Side Cabin 10x20 (smallest and typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "lsc-12x32",
+   "description": "Loft Side Cabin 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "dsc-12x20",
+   "description": "Deluxe Side Cabin 12x20 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "dsc-12x32",
+   "description": "Deluxe Side Cabin 12x32 (typical and largest size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "slc-12x20",
+   "description": "Deluxe Loft Side Cabin 12x20 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "slc-12x32",
+   "description": "Deluxe Loft Side Cabin 12x32 (typical and largest size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "g-12x20",
+   "description": "Garage 12x20 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "g-14x20",
+   "description": "Garage 14x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "g-14x40",
+   "description": "Garage 14x40 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "lbg-12x20",
+   "description": "Lofted Barn Garage 12x20 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "lbg-12x32",
+   "description": "Lofted Barn Garage 12x32 (typical and largest size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "mu-8x12",
+   "description": "Metal Utility 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "mu-10x20",
+   "description": "Metal Utility 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "mu-12x32",
+   "description": "Metal Utility 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "mlb-8x12",
+   "description": "Metal Lofted Barn 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "mlb-10x20",
+   "description": "Metal Lofted Barn 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "mlb-12x32",
+   "description": "Metal Lofted Barn 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "mg-12x20",
+   "description": "Metal Garage 12x20 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "mg-12x32",
+   "description": "Metal Garage 12x32 (typical and largest size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "mcs-8x12",
+   "description": "Metal Cottage 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "mcs-10x20",
+   "description": "Metal Cottage 10x20 (typical size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "mcs-12x32",
+   "description": "Metal Cottage 12x32 (largest size) with its standard doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "dk-8x12",
+   "description": "Dog Kennel 8x12 (smallest size) with its standard doors and windows",
+   "look": false,
+   "full": true
+  },
+  {
+   "id": "dk-8x16",
+   "description": "Dog Kennel 8x16 (typical and largest size) with its standard doors and windows",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "col-lb-barnred-white-galvalume",
+   "description": "Lofted Barn 10x20 in Barn Red with White trim and a Galvalume roof",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "col-ut-navy-beige-hunter-doors",
+   "description": "Utility Shed 10x20 in Navy, Beige trim, Hunter Green roof, Chocolate door colour",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "col-mu-galvalume-copper",
+   "description": "Metal Utility 10x20 in Galvalume with Charcoal trim and a Copper roof",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "col-mlb-burgundy-galleryblue",
+   "description": "Metal Lofted Barn 10x20 in Burgundy with White trim and a Gallery Blue roof",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "col-mg-forest-slate",
+   "description": "Metal Garage 12x32 in Forest with Barn Red trim and a Burnished Slate roof",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "col-mcs-tan-clay",
+   "description": "Metal Cottage 10x20 in Tan with Chocolate trim and a Clay roof",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "col-cs-pequea-shutters-navy",
+   "description": "Cottage Shed 10x20 in Pequea Green, White trim, Brown roof, shutters on its window in Navy",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "col-dk-clay-hunter",
+   "description": "Dog Kennel 8x16 in Clay with Hunter Green trim (the inner back wall is a shade of the body colour)",
+   "look": false,
+   "full": false
+  },
+  {"id":"dormer-ds-10x20-none","description":"Dormer Shed 10x20 with no dormer","look":false,"full":false},
+  {"id":"dormer-ds-10x20-6","description":"Dormer Shed 10x20 with the 6 ft dormer","look":false,"full":false},
+  {"id":"dormer-ds-10x20-12","description":"Dormer Shed 10x20 with the 12 ft dormer","look":false,"full":false},
+  {
+   "id": "dormer-ds-8x12-12",
+   "description": "Dormer Shed 8x12 with the 12 ft dormer (a big dormer on the smallest building)",
+   "look": false,
+   "full": false
+  },
+  {"id":"dormer-ds-12x32-6","description":"Dormer Shed 12x32 with the 6 ft dormer","look":false,"full":false},
+  {
+   "id": "porch-sc-12x24-p8",
+   "description": "Side Cabin 12x24 with the 4x8 corner porch",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "porch-sc-12x24-p12",
+   "description": "Side Cabin 12x24 with the 4x12 corner porch",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "porch-sc-12x24-p8-flip",
+   "description": "Side Cabin 12x24, 4x8 porch flipped to the other end",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "porch-sc-12x24-p12-flip",
+   "description": "Side Cabin 12x24, 4x12 porch flipped to the other end",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "porch-sc-12x24-mid-p8",
+   "description": "Side Cabin 12x24 with a 4x8 porch in the middle of the long side",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "porch-sc-12x24-mid-p12",
+   "description": "Side Cabin 12x24 with a 4x12 porch in the middle of the long side",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "porch-lsc-10x20-p8-flip",
+   "description": "Loft Side Cabin 10x20, 4x8 porch flipped",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "porch-lsc-12x32-mid-p12",
+   "description": "Loft Side Cabin 12x32 with a 4x12 middle porch",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "porch-lsc-12x30-p8",
+   "description": "Loft Side Cabin 12x30 with the 4x8 corner porch",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "post-c-10x20-front",
+   "description": "Cabin 10x20 with an extra porch post on the front porch",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "post-lbc-12x24-two-moved",
+   "description": "Lofted Barn Cabin 12x24 with two extra porch posts dragged apart",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "post-dsc-12x20-front",
+   "description": "Deluxe Side Cabin 12x20 with an extra post on the front of the corner porch",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "post-dsc-12x24-side",
+   "description": "Deluxe Side Cabin 12x24 with an extra post on the side of the corner porch",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "post-slc-12x30-both",
+   "description": "Deluxe Loft Side Cabin 12x30 with a post on each face of the corner porch",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "post-sc-12x24-side",
+   "description": "Side Cabin 12x24 with an extra post on the side porch",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "sel-door-ut-10x20",
+   "description": "Utility Shed 10x20 with its double doors selected (the blue selection glow)",
+   "look": true,
+   "full": false
+  },
+  {
+   "id": "sel-window-su-10x20",
+   "description": "Side Utility 10x20 with a window selected (the blue selection glow)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "sel-gable-lb-10x20",
+   "description": "Lofted Barn 10x20 with its faux loft window selected",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "dbl-su-10x20-w23",
+   "description": "Side Utility 10x20 with one 2x3 window made a double window",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "dbl-ut-12x24-w33-shut",
+   "description": "Utility Shed 12x24 with a 3x3 double window, shutters on, added to the right wall",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "dbl-c-12x24-tr",
+   "description": "Cabin 12x24 with a transom window made double, on the left wall",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "dbl-ss-12x24-w23-shut-colour",
+   "description": "Single Slope 12x24: a double 2x3 window with Barn Red shutters",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "shut-su-10x20-both",
+   "description": "Side Utility 10x20 with shutters on both windows (shutters match the trim)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "shut-lb-10x20-w33-off-on",
+   "description": "Lofted Barn 10x20: a 3x3 window added to the right wall, shutters on then off (back to none)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "lite-ut-10x20-w72",
+   "description": "Utility Shed 10x20 with windows in its double doors",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "lite-ut-12x24-w36-w48",
+   "description": "Utility Shed 12x24 with a 36 in door (window in it) on the left and a 48 in door (window in it) on the back",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "lite-lb-10x20-w48",
+   "description": "Lofted Barn 10x20 with a 48 in door (window in it) on the right wall",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "lite-su-10x20-steel-swap",
+   "description": "Side Utility 10x20 with a 36 in in-swing steel door on the back, swapped to the 11-lite door",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "doors-ut-12x24-a",
+   "description": "Utility Shed 12x24 with a 36 in door (left), 48 in door (back) and in-swing steel door (right)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "doors-ut-14x28-b",
+   "description": "Utility Shed 14x28 with 72 in double doors (right), 11-lite door (left) and French doors (back)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "doors-mu-10x20",
+   "description": "Metal Utility 10x20 with a 48 in door (right) and French doors (left): doors on a metal building",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "doors-lb-10x20-back-dfr",
+   "description": "Lofted Barn 10x20 with French doors on the back gable end (a gambrel end wall)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "doors-gu-6x8-w48-back",
+   "description": "Garden Utility 6x8 with a 48 in door on the back (a small gable rising into the roof)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "doors-cs-10x20-w36-back",
+   "description": "Cottage Shed 10x20 with a 36 in door on the back gable end (saltbox roof)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "rollup-g-14x40-sides",
+   "description": "Garage 14x40 with a 6 ft roll-up on the right and an 8 ft roll-up on the left",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "rollup-g-12x20-back",
+   "description": "Garage 12x20 with an 8 ft roll-up on the back gable end",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "rollup-lbg-12x24-side",
+   "description": "Lofted Barn Garage 12x24 with a 6 ft roll-up on the right wall (gambrel)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "rollup-mg-12x32-side",
+   "description": "Metal Garage 12x32 with a 6 ft roll-up on the left wall (metal)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "rollup-ut-10x20-front",
+   "description": "Utility Shed 10x20 with its doors swapped for an 8 ft roll-up on the front gable end",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "win-ut-12x24-kinds",
+   "description": "Utility Shed 12x24 with a 2x3 window (left), 3x3 window (back) and transom (right)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "win-ut-12x24-tr-rotated",
+   "description": "Utility Shed 12x24 with a transom on the right wall turned on end (rotated)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "win-ss-12x24-tr-band",
+   "description": "Single Slope 12x24 with another transom on the tall right wall (the high transom row)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "win-ss-10x20-tr-rotated-left",
+   "description": "Single Slope 10x20 with a transom on the low left wall, turned on end",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "win-bu-6x12-back",
+   "description": "Backyard Utility 6x12 (lean-to roof) with a 2x3 window on the back",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "win-gu-6x8-w33-side",
+   "description": "Garden Utility 6x8 with a 3x3 window on the left wall",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "win-lbg-12x32-w23-back",
+   "description": "Lofted Barn Garage 12x32 with a 2x3 window on the back gambrel end",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-ut-10x20-g1824-front",
+   "description": "Utility Shed 10x20 with an 18x24 gable window on the front gable",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-ut-10x20-oct-back",
+   "description": "Utility Shed 10x20 with an octagon gable window moved to the back gable",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-ut-10x20-fake-back",
+   "description": "Utility Shed 10x20 with a faux loft window moved to the back gable",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-ut-12x24-g1824-right",
+   "description": "Utility Shed 12x24 with an 18x24 gable window moved to the right side wall",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-lb-12x24-oct-left-dragged",
+   "description": "Lofted Barn 12x24 with an octagon window on the left side wall, dragged along and up",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-gu-6x8-g1824",
+   "description": "Garden Utility 6x8 with an 18x24 gable window (too big for the gable: clipped at the roof)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-ut-8x12-oct-dragged",
+   "description": "Utility Shed 8x12 with an octagon window dragged sideways and up on the front gable",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-sb-10x12-oct",
+   "description": "Standard Barn 10x12 with an octagon gable window (short gambrel)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-cs-10x20-g1824-back",
+   "description": "Cottage Shed 10x20 with an 18x24 gable window on the back (saltbox gable)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-ss-10x20-oct",
+   "description": "Single Slope 10x20 with an octagon window on the front end (sloped end wall)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-bu-6x12-fake",
+   "description": "Backyard Utility 6x12 with a faux loft window on the front end (lean-to end wall)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "gable-mlb-10x20-g1824-back",
+   "description": "Metal Lofted Barn 10x20 with an 18x24 gable window on the back",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "light-ut-10x20-right",
+   "description": "Utility Shed 10x20 with an outside light on the right wall",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "light-ut-10x20-raised",
+   "description": "Utility Shed 10x20 with an outside light dragged up (clamped to its top limit)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "light-lb-10x20-lowered",
+   "description": "Lofted Barn 10x20 with an outside light dragged down 3 ft on the left wall",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "light-ut-10x20-front-gable",
+   "description": "Utility Shed 10x20 with an outside light on the front end beside the doors",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "light-ss-10x20-tall-wall",
+   "description": "Single Slope 10x20 with an outside light on the tall right wall (under the belt band)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "int-ut-10x20-bench-shelf",
+   "description": "Utility Shed 10x20 with a work bench and a shelf (floor-plan items, nothing new in 3D)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "int-lb-10x20-elec1",
+   "description": "Lofted Barn 10x20 with electric package 1 (switch, GFCI, one overhead light)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "int-ut-12x24-elec2",
+   "description": "Utility Shed 12x24 with electric package 2 (four outlets)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "int-su-10x20-elec3-ext",
+   "description": "Side Utility 10x20 with electric package 3 and the outside light (the light is drawn in 3D)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "int-ut-10x20-options",
+   "description": "Utility Shed 10x20 with double floor, 12 in joists, moisture barrier and a ramp ticked (no 3D change)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "kennel-dk-8x12-window-back",
+   "description": "Dog Kennel 8x12 with a 2x3 window added (the kennel sends a front add to the back wall)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "kennel-dk-8x16-door-light",
+   "description": "Dog Kennel 8x16 with a 36 in door on the left and a light on the right (kennel side-wall rule)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "resize-ut-10x20-to-8x12",
+   "description": "Utility Shed 10x20 resized to 8x12 WITHOUT re-laying the doors and windows (they are clamped)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "resize-lb-10x20-to-14x40",
+   "description": "Lofted Barn 10x20 resized to 14x40 keeping its doors and windows",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "resize-sc-12x24-to-10x20",
+   "description": "Side Cabin 12x24 resized to 10x20 keeping its items",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "drag-su-10x20-window-far",
+   "description": "Side Utility 10x20 with a window dragged past the end of its wall (clamped)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "drag-ut-12x24-window-into-door",
+   "description": "Utility Shed 12x24: a 3x3 window added beside the doors on the front and pushed into them (settles clear)",
+   "look": false,
+   "full": false
+  },
+  {
+   "id": "drag-c-12x32-window-porch",
+   "description": "Cabin 12x32 with a 2x3 window added on the front porch wall and dragged along it",
+   "look": false,
+   "full": false
+  }
+ ]
+}

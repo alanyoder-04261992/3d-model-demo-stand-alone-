@@ -1,0 +1,102 @@
+{
+  "_help": [
+    "HOW THE SHEDS ARE REALLY BUILT: the default construction numbers every building starts from.",
+    "A manufacturer file can change any of them (its 'construction' block), then a company can (its own 'construction' block), then the options the customer picks can (for example 12 in joists). Later wins.",
+    "Any value can be a plain value or a RULE LIST, first match wins: [{\"when\": {\"maxW\": 8}, \"value\": \"2x4\"}, {\"value\": \"2x6\"}]. 'when' may test minW maxW minL maxL (feet), styles (a list of style keys), roof (a roof shape or a list of them) and metal (true or false). The header rule tests maxSpanFt/minSpanFt, the width of the opening, and is picked per opening.",
+    "Numbers ending In are inches, Ft are feet. A number with no unit in its name is a count.",
+    "Everything a drawing depends on keeps Barnwright's value as the default, so the finished building looks exactly like Barnwright's unless a company changes it on purpose."
+  ],
+  "site": {
+    "_help": "What the building sits on. Blocks are laid one per perimeterFtPerBlock feet of outside wall. Anchor counts are an ASSUMPTION (Barnwright never drew anchors): confirm with the shop's master anchor plan.",
+    "blocks": "4x8x16",
+    "perimeterFtPerBlock": 4,
+    "anchors": [
+      { "when": { "maxL": 16 }, "value": 4 },
+      { "when": { "maxL": 28 }, "value": 6 },
+      { "value": 8 }
+    ],
+    "anchorsAssumed": true
+  },
+  "skids": {
+    "_help": "The runners under the floor: treated 4x6 on edge. table gives, per building width in feet, the inches from each side edge to a skid's centre (Alan's build sheet); a width not in the table uses bunk spacing: skids bunkSpacingIn apart, centred, at least 6 in in.",
+    "size": "4x6",
+    "onEdge": true,
+    "treated": true,
+    "table": { "6": [6], "8": [18], "10": [30], "12": [8, 37], "14": [8, 54] },
+    "bunkSpacingIn": 60
+  },
+  "floor": {
+    "_help": "Joists run across the width on skids, a rim joist along both long sides, then tongue-and-groove decking. 8 ft wide and smaller use 2x4 joists.",
+    "joist": [
+      { "when": { "maxW": 8 }, "value": "2x4" },
+      { "value": "2x6" }
+    ],
+    "spacingIn": 16,
+    "rim": "2x6",
+    "deck": { "thicknessIn": 0.625, "sheet": "4x8 T&G", "layers": 1 }
+  },
+  "walls": {
+    "_help": "Studs on one bottom plate with two top plates; king and jack studs and a header at every opening. Loft (short-wall) studs are 75 in, tall-wall studs 89 in (caption only: the drawn wall height is the style's wallH).",
+    "stud": "2x4",
+    "spacingIn": 16,
+    "bottomPlates": 1,
+    "topPlates": 2,
+    "corner": "3-stud",
+    "header": [
+      { "when": { "maxSpanFt": 4 }, "value": "2x6 doubled" },
+      { "when": { "maxSpanFt": 6.5 }, "value": "2x8 doubled" },
+      { "value": "2x10 doubled" }
+    ],
+    "studLengthIn": { "loft": 75, "tall": 89 }
+  },
+  "openings": {
+    "_help": "Wooden shop-door opening heights by roof shape ('other' for every roof not named): 71 1/2 in on loft (gambrel) builds, 76 1/2 in on tall walls. They are drawn to the nearest ten-thousandth of a foot, as Barnwright does (71.5 in draws as 5.9583 ft). windowTop: on loft builds a window top sits belowWallTopIn under the wall top; on tall walls it is level with the door head, but never closer than minBelowWallTopFt to the wall top.",
+    "doorHeightIn": { "gambrel": 71.5, "other": 76.5 },
+    "windowTop": {
+      "gambrel": { "belowWallTopIn": 5 },
+      "other": { "levelWithDoor": true, "minBelowWallTopFt": 0.15 }
+    }
+  },
+  "roof": {
+    "_help": "Trusses at spacingIn on centre with plywood gussets. shapes: the roof cross-section numbers by roof shape; {\"w\": 0.27} means 0.27 times the building width, {\"ft\": 2.43} a fixed number of feet. rise is the ridge height above the wall top (for the gambrel it is only used to frame the camera and the shadow box -- 0.45W, a kept Barnwright quirk); lowerRise/upperRise/knee are the gambrel's shoulders; ridge is where a saltbox ridge sits across the width; dormerRise is the main roof's rise on a style with a dormer; eaveOverhang is feet along the slope at the -x and +x eaves; cottageEave is the cottage-style eave instead (a level soffit backIn at the back, frontIn at the door side, the roof raised one fascia of fasciaIn); rakeOverhang is the gable-end overhang (a style can override it; a gambrel's is drawn at 0.10 whatever this says, a kept Barnwright quirk).",
+    "framing": "truss",
+    "spacingIn": 24,
+    "chord": "2x4",
+    "gussets": "plywood",
+    "dormerRise": { "w": 0.30 },
+    "cottageEave": { "backIn": 4, "frontIn": 8, "fasciaIn": 4 },
+    "shapes": {
+      "gable": { "rise": { "w": 0.27 }, "eaveOverhang": { "left": 0.42, "right": 0.42 }, "rakeOverhang": 0.45 },
+      "gambrel": { "rise": { "w": 0.45 }, "lowerRise": { "w": 0.32 }, "upperRise": { "w": 0.13 }, "knee": { "w": 0.38 }, "eaveOverhang": { "left": 0.42, "right": 0.42 }, "rakeOverhang": 0.12 },
+      "salt": { "rise": { "w": 0.26 }, "ridge": { "w": 0.18 }, "rakeOverhang": 0.45 },
+      "lean": { "rise": { "w": 0.17 }, "eaveOverhang": { "left": 0, "right": 0.333 }, "rakeOverhang": 0.12 },
+      "slope": { "rise": { "w": 0.28 }, "eaveOverhang": { "left": 0.35, "right": 1.15 }, "rakeOverhang": 0.45 }
+    }
+  },
+  "roofDeck": {
+    "_help": "What the roofing is fastened to: purlins (2x4 laid flat) on metal buildings, OSB sheathing otherwise.",
+    "type": [
+      { "when": { "metal": true }, "value": "purlins" },
+      { "value": "osb" }
+    ],
+    "purlins": { "size": "2x4", "flat": true, "spacingIn": 24 },
+    "sheathingIn": 0.4375
+  },
+  "loft": {
+    "_help": "Loft floor joists on the styles with a loft, at the wall top.",
+    "joist": "2x6",
+    "spacingIn": 16,
+    "deck": { "thicknessIn": 0.625 }
+  },
+  "porch": {
+    "_help": "Porch posts, deck joists and the rail height.",
+    "post": "4x4",
+    "joist": "2x6",
+    "railHeightIn": 34
+  },
+  "buildOrder": ["site", "foundation", "skids", "floor-frame", "floor-deck", "wall-frame", "siding", "porch-frame", "roof-frame", "dormer-frame", "loft", "gable-end", "roof-deck", "roofing", "dormer", "trim", "porch", "doors", "windows", "extras", "interior", "ramp"],
+  "notes": {
+    "12": "A 12 ft wide building is 11 ft 2 in actual.",
+    "14": "14 ft wide needs a permit or pilot car."
+  }
+}

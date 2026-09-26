@@ -1,0 +1,127 @@
+{
+  "_help": [
+    "A COMPANY'S SETTINGS FILE -- the ONLY thing a new company needs. tools/new-company.mjs copies this file to companies/<id>/company.json and fills in the name, phone and styles; then the prices go in (tools/import-prices.mjs reads them from a spreadsheet).",
+    "Every setting below has a note beside it, in a key that starts with _help. Notes are ignored by the designer; delete them or leave them.",
+    "EVERY PRICE IN THIS TEMPLATE IS $1, on purpose: a price nobody filled in shows up as $1.00 on screen instead of looking believable. A company inherits NO price from anywhere: every size, item and option it sells must carry its own price here, or the file does not load."
+  ],
+  "_help_id": "The company's id: 2 to 40 lower-case letters, digits or dashes, the same as its folder name (companies/<id>/). It appears in the designer's address (/c/<id>/).",
+  "id": "your-company-id",
+  "_help_status": "\"active\", or \"suspended\" to switch the designer off (it then says the designer is not available and shows the phone number).",
+  "status": "active",
+  "_help_manufacturer": "Which builder's line this company sells: a file in library/manufacturers/. \"standard\" is the standard portable-building line.",
+  "manufacturer": "standard",
+  "brand": {
+    "_help": "How the company appears: name (on the designer and every quote), short (on the price plate), initials (the badge), tagline, phone, email, website, colors (header and accent, as #hex), logo (an image address, or empty), credit (the small \"3D designer by Barnwright\" line; show false for a white-label customer).",
+    "name": "Your Company Name",
+    "short": "Your Company",
+    "initials": "YC",
+    "tagline": "Storage buildings, delivered",
+    "phone": "(555) 010-0100",
+    "email": "sales@yourcompany.example",
+    "website": "https://yourcompany.example",
+    "colors": {"header": "#1F2A24", "accent": "#B8893A"},
+    "logo": "",
+    "credit": {"text": "3D designer by Barnwright", "url": "", "show": true}
+  },
+  "offer": {
+    "_help": "The styles this company sells. ONLY these styles load. For each: its sizes, written width x length in feet, each with its price (the building with its standard doors and windows), in the order the size buttons should show. \"name\" renames the style for this company (optional). The style keys are the manufacturer file's.",
+    "UT": {"sizes": {"8x12": 1, "10x16": 1, "12x20": 1}},
+    "LB": {"sizes": {"10x16": 1, "12x24": 1}, "name": "Lofted Barn"}
+  },
+  "_help_categories": "How the style buttons are grouped: [label, [style keys]]. Every offered style must be in a group. Leave this out to group by the manufacturer's categories.",
+  "categories": [["Sheds and barns", ["UT", "LB"]]],
+  "items": {
+    "_help": "The doors, windows and fixtures offered, each with its price (bench and shelf are per foot). Every door or window a style comes with as standard needs a price here (0 is fine), because swapping it for a bigger one is charged as the difference. An item left out is simply not offered. To rename one: \"w48\": {\"price\": 150, \"name\": \"4 ft door\"}.",
+    "w72": 1,
+    "w48": 1,
+    "w23": 1,
+    "w33": 1,
+    "fake": 0,
+    "light": 1,
+    "outlet": 1,
+    "gfci": 0,
+    "ilight": 1,
+    "bench": 1,
+    "shelf": 1
+  },
+  "options": {
+    "_help": "Option prices. dormers (by size in feet), ramps (r4 r6 kit), elec (electrical packages 1-3: they need outlet, gfci and ilight priced in items), misc (shutter = one pair, lite = a window in a wooden door, ext = the exterior light with a package), rates (per square foot: dbl double floor, jo12 12 in joists, mbF/mbW moisture barrier floor/walls, rbS/rbR radiant barrier siding/roof), extras (the company's own: {key, name, input: check | qty | lf | sqftF | sqftW | sqftR | pct, price}). Leave one out and it is not offered.",
+    "ramps": {"r4": 1, "r6": 1},
+    "elec": {"1": 1},
+    "misc": {"shutter": 1, "lite": 1, "ext": 1},
+    "rates": {"jo12": 1},
+    "extras": []
+  },
+  "palettes": {
+    "_help": "The colours offered: paint (siding, doors, shutters), trim, metal (every roof, and the siding of metal styles). Each entry is a colour name from the manufacturer file, or [name, \"#rrggbb\"] for the company's own. Leave a list out to offer all of the manufacturer's.",
+    "paint": ["White", "Beige", "Gray", "Barn Red", "Navy"],
+    "trim": ["White", "Black"],
+    "metal": ["Galvalume", "Black", "Barn Red"]
+  },
+  "defaults": {
+    "_help": "The building a new visitor starts on: style, size, colours by name (body = siding), and optionally dormer and porchLength (8 or 12).",
+    "style": "LB",
+    "size": "10x16",
+    "colors": {"body": "White", "trim": "Black", "roof": "Black"}
+  },
+  "construction": {
+    "_help": "Changes to the real-life construction numbers (library/construction.json), for this company only. For example {\"floor\": {\"spacingIn\": 12}} if every building gets 12 in joists. Leave empty to build the standard way."
+  },
+  "pricing": {
+    "_help": "show: price | from | none. roundTo and minCharge: how per-square-foot charges are rounded (to the nearest $5, never under $5). roofAreaFactor: roof area = floor area x this. rto: rent-to-own factors by term in months (monthly = price / factor / months) and the term to show, or null to show none.",
+    "show": "price",
+    "roundTo": 5,
+    "minCharge": 5,
+    "roofAreaFactor": 1.15,
+    "rto": {"factors": {"36": 0.6, "48": 0.53, "60": 0.45}, "showTerm": null}
+  },
+  "notes": {
+    "_help": "finePrint: one line under the price. sizeNotes: a note shown for a building width, by width in feet.",
+    "finePrint": "Prices plus tax.",
+    "sizeNotes": {}
+  },
+  "leads": {
+    "_help": "Where a quote request goes. mode: none (a showroom, no quote button) | form (posts to a form service the company already uses; url is the form's address) | mailto (opens the visitor's e-mail; leads.email or brand.email) | webhook (posts JSON to url) | postMessage (hands it to the page the designer is embedded in; needs embed.origins). fields: name phone email zip address note, each required | optional | off. smsConsent: the wording of an unticked \"you may text me\" box, or null. images: attach pictures (webhook only).",
+    "mode": "none",
+    "url": "",
+    "fields": {
+      "name": "required",
+      "phone": "required",
+      "email": "optional",
+      "zip": "required",
+      "address": "optional",
+      "note": "optional"
+    },
+    "smsConsent": null,
+    "images": false
+  },
+  "embed": {
+    "_help": "origins: the company's own websites allowed to show the designer inside their pages, like \"https://yourcompany.com\" (https only; never \"*\"). shareUrl: the page on the company's site that holds the designer, so a shared design link opens there (optional).",
+    "origins": [],
+    "shareUrl": ""
+  },
+  "look": {
+    "_help": "trueColour: true draws colours with neutral (grey) light, so a paint colour looks like its chip; false keeps Barnwright's warm late-afternoon sun. scene: studio | yard | paper.",
+    "trueColour": true,
+    "scene": "studio"
+  },
+  "features": {
+    "_help": "Switch whole screens on or off: framingView (see the studs and trusses), buildPlayback (watch it build), floorPlan (the Inside view).",
+    "framingView": true,
+    "buildPlayback": true,
+    "floorPlan": true
+  },
+  "license": {
+    "_help": "plan: hosted (Barnwright hosts it) or self; renews: the date the licence renews (YYYY-MM-DD).",
+    "plan": "hosted",
+    "renews": ""
+  },
+  "renames": {
+    "_help": "When an item, size or colour is renamed or replaced, saved designs still use the old one. List old -> new here and old links keep working, e.g. {\"items\": {\"w36\": \"w48\"}, \"colors\": {\"Grey\": \"Gray\"}}.",
+    "items": {},
+    "sizes": {},
+    "colors": {}
+  },
+  "_help_cfg": "A number to raise by one whenever prices or items change. Saved designs remember it, so an old link can say its prices may have changed.",
+  "cfg": 1
+}
