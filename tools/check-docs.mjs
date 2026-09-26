@@ -23,11 +23,15 @@
       test/out/ (the checks make those as they run).
    2. TOOLS AND SKILLS. Every tool named bare (check-golden, import-prices
       ...) is a file in tools/, and every skill named (`new-company` skill,
-      part-skids ...) has its SKILL.md -- except a name in a paragraph that
-      says it is "not written yet" (then it is listed as promised).
+      part-skids, "the add-a-style skill" in plain words ...) has its
+      SKILL.md -- except a name in a SENTENCE that says it is "not written
+      yet" AND that the contract (docs/ARCHITECTURE.md) promises (then it is
+      listed as promised; any other missing name fails).
    3. COMMANDS. Every "node tools/<x>.mjs" names a real tool, and every
-      --option given to it is one that tool's own source reads; every
-      "npm run <x>" is a script in package.json.
+      --option given to it is one that tool's own source names as a whole
+      word (--nam is not --name); an --option written in backticks on its own
+      (`--dry-run`) is one some tool reads; every "npm run <x>" is a script
+      in package.json.
    4. LINKS. Every relative link [text](target) leads to a file that exists,
       and a #section on a Markdown file to a heading that exists.
    5. THE WORKFLOW SKILLS each start with frontmatter whose name is their
@@ -38,10 +42,17 @@
    7. THE FACTS ALAN IS TOLD ARE THE FILES' FACTS: every number the settings
       files still mark as an ASSUMPTION (library/construction.json
       "...Assumed", a style's "assumed": true) is listed under "What you still
-      need to decide" in docs/FOR-ALAN.md with its current values; and the
-      things FOR-ALAN.md states as settled numbers (the template's true
-      colour, the demo's warm light, 7/16 in OSB, 4x8x16 blocks one per 4 ft,
-      24 in trusses, 16 in studs and joists) are what the files say.
+      need to decide" in docs/FOR-ALAN.md with its current values; a settings
+      note that says ASSUMPTION without that mark fails (Alan would never be
+      asked); and every number FOR-ALAN.md states about how the sheds are
+      built (the light, OSB, purlins, blocks, trusses, studs, headers,
+      plates, stud lengths, floor joists, decking, rim, door openings, bench
+      and shelf, loft joists, porch, the width notes and the Watch it build
+      order, step by step) is READ from its sentence and compared with the
+      files -- a changed number fails; only a sentence that is gone is a note.
+   8. THE COUNTS: every "N recorded buildings" is test/golden's count, every
+      "N finished pictures" test/golden/look's, and README's "browser?"
+      column says what tools/check-all.mjs decides for each check.
    Printed as NOTES (they never fail the check, so another person's new check
    or a fix elsewhere cannot turn this red): a tools/check-*.mjs the README's
    table does not list yet, and a document that still calls something "not
@@ -52,6 +63,7 @@ import { resolve, dirname, join, relative, basename, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
 import { PIPELINE } from "../parts/index.js";
+import { INTERIOR_DEFAULTS } from "../parts/interior.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BARNWRIGHT_ROOT = "/home/user/boisterous-lokum-a737e0";   /* read only, never written */
@@ -143,12 +155,33 @@ function scanText(src) {
 }
 function paragraphs(src) { return src.split(/\r?\n\s*\r?\n/); }
 
-const FILE_RE = /(^|[^A-Za-z0-9_.\/<>*~-])(\/?(?:[A-Za-z0-9_.<>*-]+\/)*[A-Za-z0-9_<>*-][A-Za-z0-9_.<>*-]*\.(?:mjs|js|json|md|html|css|toml|csv|png|jpg|woff2|txt))(?![A-Za-z0-9_])/g;
+const FILE_RE = /(^|[^A-Za-z0-9_.\/<>*~-])(\/?(?:[A-Za-z0-9_.<>*-]+\/)*[A-Za-z0-9_<>*-][A-Za-z0-9_.<>*-]*\.(?:mjs|js|json|md|html|css|toml|csv|png|jpe?g|gif|webp|svg|ico|woff2?|ttf|otf|txt|pdf|sh|py|ya?ml|xml))(?![A-Za-z0-9_])/g;
 const DIR_RE = new RegExp("(^|[\\s`(\"'])((?:" + TOP_DIRS.map((d) => d.replace(".", "\\.")).join("|") + ")\\/(?:[A-Za-z0-9_.<>*-]+\\/)*)(?=[\\s`),;:!?\"']|\\.(?:\\s|$)|$)", "gm");
 const NODE_RE = /\bnode\s+(tools\/[A-Za-z0-9_.-]+\.mjs)([^\n`|]*)/g;
 const NPM_RE = /\bnpm\s+run\s+([a-z0-9:_-]+)/g;
 const BARE_RE = new RegExp("(^|[^A-Za-z0-9_\\/.-])((?:check-[a-z0-9-]+)|" + BARE_TOOLS.join("|") + ")(?![A-Za-z0-9_-])(?!\\.mjs)", "g");
-const SKILL_RE = /`([a-z0-9][a-z0-9-]*)`\s+skill|skills?\s+`([a-z0-9][a-z0-9-]*)`|(?<![A-Za-z0-9_-])(part-[a-z0-9<>-]*[a-z0-9>])(?![A-Za-z0-9_-])/g;
+/* a skill named in backticks, a part-<id> name, or a hyphenated name followed by
+   the word "skill" in plain words ("use the add-a-style skill") */
+const SKILL_RE = /`([a-z0-9][a-z0-9-]*)`\s+skill|skills?\s+`([a-z0-9][a-z0-9-]*)`|(?<![A-Za-z0-9_-])(part-[a-z0-9<>-]*[a-z0-9>])(?![A-Za-z0-9_-])|(?<=\bthe\s+)([a-z0-9]+(?:-[a-z0-9]+)+)\s+skill\b/g;
+/* an --option written in backticks anywhere (`--dry-run`, `--part skids,floor`) */
+const FLAG_TICK_RE = /`(--[a-z][a-z0-9-]*)(?=[\s=`])/g;
+/* does a tool's source mention --flag as a whole word (not --name for --nam)? */
+function readsFlag(src, flag) { return new RegExp("--" + flag.replace(/[-]/g, "\\-") + "(?![A-Za-z0-9-])").test(src); }
+/* every source under tools/ (the checks, the setup tools and tools/lib) */
+const ALL_TOOL_SRC = readdirSync(resolve(ROOT, "tools")).filter((n) => n.endsWith(".mjs")).map((n) => "tools/" + n)
+  .concat(existsSync(resolve(ROOT, "tools/lib")) ? readdirSync(resolve(ROOT, "tools/lib")).filter((n) => n.endsWith(".mjs")).map((n) => "tools/lib/" + n) : []);
+/* A name excused as "not written yet" must be something the contract really
+   promises (docs/ARCHITECTURE.md names it) -- otherwise the phrase would let
+   any misspelt tool name through. */
+const CONTRACT = existsSync(resolve(ROOT, "docs/ARCHITECTURE.md")) ? readFileSync(resolve(ROOT, "docs/ARCHITECTURE.md"), "utf8") : "";
+function promisedByContract(name) { return !!name && CONTRACT.includes(name); }
+/* Is the text at index i in a sentence that says "not written yet"? */
+function inPromise(text, i) {
+  const before = text.slice(0, i), after = text.slice(i);
+  const s0 = Math.max(before.lastIndexOf(". "), before.lastIndexOf("! "), before.lastIndexOf("? "), before.lastIndexOf("\n\n"));
+  const e = after.search(/[.!?](\s|$)/);
+  return /not written yet/i.test(text.slice(s0 + 1, e < 0 ? text.length : i + e + 1));
+}
 const LINK_RE = /\[([^\]\n]*)\]\(([^)\s]+)\)/g;
 
 const pkg = JSON.parse(read("package.json"));
@@ -184,11 +217,22 @@ for (const doc of DOCS) {
     if (frag && /\.md$/.test(rel)) ok(`${doc}: the link [${m[1]}](${target}) leads to a section that exists`, headingsOf(rel).has(frag), `${rel} has no heading "#${frag}"`);
   }
 
+  /* 3b. an --option written in backticks away from its command (`--part
+     skids,floor`, `--dry-run`): some tool in tools/ reads it (a misspelt or
+     invented option is read by none). */
+  for (const m of raw.replace(/\\\r?\n/g, " ").matchAll(FLAG_TICK_RE)) {
+    const flag = m[1].slice(2);
+    tally.flags++;
+    ok(`${doc}: the option --${flag} is one a tool in tools/ reads`, ALL_TOOL_SRC.some((t) => readsFlag(toolSource(t) || "", flag)), "no tool in tools/ mentions --" + flag);
+  }
+
   for (const para of paragraphs(raw)) {
     const text = scanText(para);
-    const promises = /not written yet/i.test(para);
+    /* a name is excused as "not written yet" only in a sentence that says so,
+       and only when the contract (docs/ARCHITECTURE.md) promises that name */
+    const excused = (i, name) => inPromise(text, i) && promisedByContract(name);
     /* a sentence that calls a tool "not written yet" when the tool is there now */
-    if (promises) for (const sentence of text.split(/(?<=[.!?])\s+/)) {
+    if (/not written yet/i.test(para)) for (const sentence of text.split(/(?<=[.!?])\s+/)) {
       if (!/not written yet/i.test(sentence)) continue;
       for (const m of sentence.matchAll(/(?:tools\/)?(check-[a-z0-9-]+)(?:\.mjs)?/g)) {
         if (existsSync(resolve(ROOT, "tools", m[1] + ".mjs"))) notes.push(`${doc} still calls ${m[1]} "not written yet", but tools/${m[1]}.mjs exists now -- update it`);
@@ -206,7 +250,7 @@ for (const doc of DOCS) {
       if (r.how === "barnwright" || r.how === "absolute") tally.outside++;
       if (r.how === "barnwright-absent") { tally.barnwrightAbsent++; continue; }
       const base = basename(p).replace(/\.mjs$/, "");
-      if (!r.ok && promises && /^tools\//.test(p) || (!r.ok && promises && !p.includes("/"))) { tally.promised.add(base); continue; }
+      if (!r.ok && excused(m.index, base)) { tally.promised.add(base); continue; }
       ok(`${doc}: names ${p}, which exists`, r.ok, r.how === "pattern" ? "no file matches that pattern" : "not found");
     }
     /* 1. folders (with the file paths taken out first) */
@@ -224,12 +268,12 @@ for (const doc of DOCS) {
       const tool = m[1];
       const src = toolSource(tool);
       tally.tools++;
-      if (!src && promises) { tally.promised.add(basename(tool, ".mjs")); continue; }
+      if (!src && excused(m.index, basename(tool, ".mjs"))) { tally.promised.add(basename(tool, ".mjs")); continue; }
       if (!ok(`${doc}: "node ${tool}" names a tool that exists`, !!src)) continue;
       const args = m[2].replace(/\s#.*$/, "");
       for (const f of args.matchAll(/(?:^|\s)--([a-z][a-z0-9-]*)/g)) {
         tally.flags++;
-        ok(`${doc}: "node ${tool} --${f[1]}" -- the tool reads --${f[1]}`, src.includes(f[1]), `${tool} never mentions "${f[1]}"`);
+        ok(`${doc}: "node ${tool} --${f[1]}" -- the tool reads --${f[1]}`, readsFlag(src, f[1]), `${tool} never mentions "--${f[1]}"`);
       }
     }
     for (const m of text.matchAll(NPM_RE)) {
@@ -245,16 +289,16 @@ for (const doc of DOCS) {
       if (WORKFLOW_SKILLS.includes(name) && !existsSync(resolve(ROOT, "tools", name + ".mjs"))) continue;   /* a skill, checked below */
       tally.tools++;
       const there = existsSync(resolve(ROOT, "tools", name + ".mjs")) || skillExists(name);
-      if (!there && promises) { tally.promised.add(name); continue; }
+      if (!there && inPromise(bare, m.index) && promisedByContract(name)) { tally.promised.add(name); continue; }
       ok(`${doc}: names ${name}, which is a tool in tools/ (or a skill)`, there, `there is no tools/${name}.mjs`);
     }
     for (const m of text.matchAll(SKILL_RE)) {
-      const name = m[1] || m[2] || m[3];
+      const name = m[1] || m[2] || m[3] || m[4];
       if (!name || /^part-$/.test(name)) continue;
       if (/</.test(name)) { tally.skills++; ok(`${doc}: the skill pattern ${name} matches a skill`, DIRS.some((d) => patternRe(".claude/skills/" + name).test(d))); continue; }
-      if (m[3] && !skillExists(name) && existsSync(resolve(ROOT, "tools", name + ".mjs"))) continue;
+      if ((m[3] || m[4]) && !skillExists(name) && existsSync(resolve(ROOT, "tools", name + ".mjs"))) continue;
       tally.skills++;
-      if (!skillExists(name) && promises) { tally.promised.add(name); continue; }
+      if (!skillExists(name) && excused(m.index, name)) { tally.promised.add(name); continue; }
       ok(`${doc}: names the skill ${name}, which has .claude/skills/${name}/SKILL.md`, skillExists(name));
     }
   }
@@ -334,27 +378,135 @@ ok("tools/check-parts.mjs passes (every part valid, every skill well formed, no 
     }
   }
 
-  /* the settled numbers FOR-ALAN.md states, against the files */
+  /* the numbers FOR-ALAN.md states -- settled or chosen -- against the files.
+     Each sentence is found by its SHAPE ("<lumber> studs <n> in on centre"),
+     so a changed number is read and compared, never skipped; only a sentence
+     that is gone altogether is a note. */
   const tpl = JSON.parse(read("companies/_template/company.json"));
   const demo = JSON.parse(read("companies/demo/company.json"));
-  const CLAIMS = [
-    [/New companies start with \*\*true colour\*\*/, () => tpl.look && tpl.look.trueColour === true, "companies/_template/company.json look.trueColour is not true"],
-    [/demo keeps \*\*Barnwright's warm/, () => demo.look && demo.look.trueColour === false, "companies/demo/company.json look.trueColour is not false"],
-    [/7\/16 in OSB/, () => con.roofDeck && con.roofDeck.sheathingIn === 0.4375, "library/construction.json roofDeck.sheathingIn is not 0.4375 (7/16 in)"],
-    [/4x8x16 concrete blocks, one per 4 ft/, () => con.site.blocks === "4x8x16" && con.site.perimeterFtPerBlock === 4, "library/construction.json site is not 4x8x16 one per 4 ft"],
-    [/trusses\*\* \(not rafters\) \*\*24 in on centre/, () => con.roof.framing === "truss" && con.roof.spacingIn === 24 && con.roof.chord === "2x4", "library/construction.json roof is not 2x4 trusses at 24 in"],
-    [/2x4 studs 16 in on centre, three-stud corners/, () => con.walls.stud === "2x4" && con.walls.spacingIn === 16 && con.walls.corner === "3-stud", "library/construction.json walls are not 2x4 at 16 in with 3-stud corners"],
-    [/Floor joists 16 in on centre/, () => con.floor.spacingIn === 16 && con.floor.rim === "2x6", "library/construction.json floor is not 16 in with a 2x6 rim"],
-    [/4x4 posts, 2x6 deck joists, railing 34 in/, () => con.porch.post === "4x4" && con.porch.joist === "2x6" && con.porch.railHeightIn === 34, "library/construction.json porch is not 4x4 / 2x6 / 34 in"],
-    [/2x4 purlins laid flat,\s+24 in apart/, () => con.roofDeck.purlins.size === "2x4" && con.roofDeck.purlins.spacingIn === 24, "library/construction.json purlins are not 2x4 at 24 in"],
+  const std = JSON.parse(read("library/manufacturers/standard.json"));
+  const flatAlan = alan.replace(/\s+/g, " ");
+  const FRAC = { 0.4375: "7/16", 0.625: "5/8", 0.5: "1/2", 0.75: "3/4", 0.375: "3/8", 0.25: "1/4" };
+  const frac = (x) => FRAC[x] || String(x);
+  const half = (x) => (x % 1 === 0.5 ? Math.floor(x) + "½" : String(x));
+  const WORDNUM = { one: 1, two: 2, three: 3, four: 4, five: 5 };
+  const num = (w) => (w in WORDNUM ? WORDNUM[w] : Number(w));
+  const rule = (v) => (Array.isArray(v) ? v : [{ value: v }]);
+  const hdr = rule(con.walls.header);
+  const joist = rule(con.floor.joist);
+  const FACTS = [
+    ["the light new companies start with", /New companies start with \*\*([^*]+)\*\*/g,
+      (m) => [tpl.look.trueColour === true ? "true colour" : "Barnwright's warm light", m[1]], "companies/_template/company.json look.trueColour"],
+    ["the demo's light", /demo keeps \*\*([^*]+?)\*\*/g,
+      (m) => [demo.look.trueColour === false ? "warm" : "true colour", /warm/i.test(m[1]) ? "warm" : m[1]], "companies/demo/company.json look.trueColour"],
+    ["the OSB roof deck", /(\d+\/\d+) in OSB/g, (m) => [frac(con.roofDeck.sheathingIn), m[1]], "library/construction.json roofDeck.sheathingIn"],
+    ["the purlins", /(\d+x\d+) purlins laid flat, (\d+) in apart/g,
+      (m) => [con.roofDeck.purlins.size + " / " + con.roofDeck.purlins.spacingIn, m[1] + " / " + m[2]], "library/construction.json roofDeck.purlins"],
+    ["the blocks", /(\d+x\d+x\d+) concrete blocks, one per (\d+) ft/g,
+      (m) => [con.site.blocks + " / " + con.site.perimeterFtPerBlock, m[1] + " / " + m[2]], "library/construction.json site"],
+    ["the roof framing", /\*\*Roof framing: (\w+)\*\* \(not \w+\) \*\*(\d+) in on centre\*\*, (\d+x\d+) chords, (\w+) gussets/g,
+      (m) => [con.roof.framing + " / " + con.roof.spacingIn + " / " + con.roof.chord + " / " + con.roof.gussets, (/sses$/.test(m[1]) ? m[1].slice(0, -2) : m[1].replace(/s$/, "")) + " / " + m[2] + " / " + m[3] + " / " + m[4]], "library/construction.json roof"],
+    ["the studs", /(\d+x\d+) studs (\d+) in on centre, (\w+)-stud corners/g,
+      (m) => [con.walls.stud + " / " + con.walls.spacingIn + " / " + con.walls.corner, m[1] + " / " + m[2] + " / " + num(m[3]) + "-stud"], "library/construction.json walls"],
+    ["the headers", /headers (\d+x\d+ \w+) over openings up to ([\d½.]+) ft, (\d+x\d+ \w+) up to ([\d½.]+) ft, (\d+x\d+ \w+) wider/g,
+      (m) => [hdr.map((r) => r.value + (r.when ? " <= " + half(r.when.maxSpanFt) : "")).join(", "), m[1] + " <= " + m[2] + ", " + m[3] + " <= " + m[4] + ", " + m[5]], "library/construction.json walls.header"],
+    ["the plates", /(\w+) bottom plate and (\w+) top plates/g,
+      (m) => [con.walls.bottomPlates + " / " + con.walls.topPlates, num(m[1]) + " / " + num(m[2])], "library/construction.json walls plates"],
+    ["the stud lengths", /(\d+) in studs on loft walls and (\d+) in on tall walls/g,
+      (m) => [con.walls.studLengthIn.loft + " / " + con.walls.studLengthIn.tall, m[1] + " / " + m[2]], "library/construction.json walls.studLengthIn"],
+    ["the floor joists", /(\d+x\d+) floor joists on the skids \((\d+x\d+) on (\d+) ft wide and narrower\), (\d+) in on centre/g,
+      (m) => [joist.map((r) => r.value + (r.when ? " <=" + r.when.maxW : "")).join(", ") + " @ " + con.floor.spacingIn, m[2] + " <=" + m[3] + ", " + m[1] + " @ " + m[4]], "library/construction.json floor"],
+    ["the decking", /(\d+\/\d+) in decking in (\S+) tongue-and-groove sheets/g,
+      (m) => [frac(con.floor.deck.thicknessIn) + " / " + String(con.floor.deck.sheet).split(" ")[0], m[1] + " / " + m[2]], "library/construction.json floor.deck"],
+    ["the rim joists", /\*\*Rim joists: (\d+x\d+)\*\*/g, (m) => [con.floor.rim, m[1]], "library/construction.json floor.rim"],
+    ["the door openings", /door openings (\d+½?) in on barns and (\d+½?) in on tall walls/g,
+      (m) => [half(con.openings.doorHeightIn.gambrel) + " / " + half(con.openings.doorHeightIn.other), m[1] + " / " + m[2]], "library/construction.json openings.doorHeightIn"],
+    ["the bench and shelf", /work bench (\d+) ft deep and (\d+) ft high, the shelf (\d+) ft deep and (\d+) ft high/g,
+      (m) => [[std.items.bench.dep, INTERIOR_DEFAULTS.benchHeightIn / 12, std.items.shelf.dep, INTERIOR_DEFAULTS.shelfHeightIn / 12].join(" / "), [m[1], m[2], m[3], m[4]].join(" / ")], "the bench and shelf items (standard.json) and parts/interior.js INTERIOR_DEFAULTS"],
+    ["the loft joists", /loft joists (\d+x\d+) at (\d+) in, a (\d+\/\d+) in loft floor/g,
+      (m) => [con.loft.joist + " / " + con.loft.spacingIn + " / " + frac(con.loft.deck.thicknessIn), m[1] + " / " + m[2] + " / " + m[3]], "library/construction.json loft"],
+    ["the porch", /(\d+x\d+) posts, (\d+x\d+) deck joists, railing (\d+) in/g,
+      (m) => [con.porch.post + " / " + con.porch.joist + " / " + con.porch.railHeightIn, m[1] + " / " + m[2] + " / " + m[3]], "library/construction.json porch"],
   ];
-  for (const [re, test, why] of CLAIMS) {
-    if (!re.test(alan)) { notes.push(`docs/FOR-ALAN.md no longer says ${re} -- the fact check for it was skipped`); continue; }
-    ok(`docs/FOR-ALAN.md states what the files say (${String(re).slice(1, 50)}...)`, test(), why);
+  for (const [what, re, cmp, where] of FACTS) {
+    const ms = [...flatAlan.matchAll(re)];
+    if (!ms.length) { notes.push(`docs/FOR-ALAN.md no longer states ${what} in the words this check reads (${String(re).slice(1, 60)}...) -- that fact was not compared`); continue; }
+    for (const m of ms) {
+      const [want, got] = cmp(m);
+      ok(`docs/FOR-ALAN.md states ${what} as the files say`, String(want) === String(got), `it says "${got}", ${where} says "${want}"`);
+    }
   }
-  const order = (con.buildOrder || []).length;
-  ok(`docs/FOR-ALAN.md lists the Watch it build order with all ${order} steps`, (/\*\*The Watch it build order\*\* \(([^)]*)\)/.exec(alan) || [, ""])[1].split(",").length === order,
-    "the list in 'What you still need to decide' does not have one entry per step of library/construction.json buildOrder");
+  /* the width notes, word for word */
+  {
+    const it = itemsAbout("width notes")[0] || "";
+    const quoted = [...it.matchAll(/"([^"]+)"/g)].map((m) => m[1].replace(/\.$/, ""));
+    const files = Object.values(con.notes || {}).filter((v) => typeof v === "string").map((v) => v.replace(/\.$/, ""));
+    if (!it) notes.push("docs/FOR-ALAN.md has no item about the width notes -- they were not compared");
+    else ok("docs/FOR-ALAN.md quotes the width notes exactly as library/construction.json has them", J(quoted.slice().sort()) === J(files.slice().sort()), `it quotes ${J(quoted)}, the file has ${J(files)}`);
+  }
+  /* the Watch it build order, step by step and in order */
+  {
+    const WORDS = { foundation: "blocks", "floor-frame": "floor frame", "floor-deck": "decking", "wall-frame": "walls", "porch-frame": "porch posts",
+      "roof-frame": "trusses", "dormer-frame": "dormer framing", "gable-end": "gable ends", "roof-deck": "roof deck", interior: "inside" };
+    const want = (con.buildOrder || []).map((k) => WORDS[k] || k);
+    const list = (/\*\*The Watch it build order\*\* \(([^)]*)\)/.exec(flatAlan) || [, ""])[1];
+    const got = list.split(",").map((x) => x.trim()).filter(Boolean);
+    ok(`docs/FOR-ALAN.md lists the Watch it build order as library/construction.json buildOrder has it (${want.length} steps, in order)`, J(got) === J(want),
+      `it lists ${J(got)}; buildOrder reads ${J(want)}`);
+  }
+
+  /* a settings note that says ASSUMPTION must also carry the mark this check
+     reads (a key ending in Assumed, or "assumed": true), or Alan would never
+     be asked about it */
+  function helpAssumptions(file, root) {
+    (function walk(v, path, holder) {
+      if (Array.isArray(v)) { v.forEach((x, i) => walk(x, path + "[" + i + "]", holder)); return; }
+      if (!v || typeof v !== "object") return;
+      for (const k of Object.keys(v)) {
+        if (/^_help/.test(k) && /ASSUMPTION/.test(J(v[k]))) {
+          let marked = false;
+          (function look(x) { if (!x || typeof x !== "object" || marked) return; for (const kk of Object.keys(x)) { if ((/Assumed$/.test(kk) || kk === "assumed") && x[kk] === true) { marked = true; return; } look(x[kk]); } })(v);
+          ok(`${file}${path ? " " + path : ""}: its note says ASSUMPTION and the settings mark it (a key ending in Assumed, or "assumed": true), so Alan is asked about it`, marked,
+            "add the mark next to the number (like site.anchorsAssumed) and list it under What you still need to decide in docs/FOR-ALAN.md");
+        } else if (!/^_help/.test(k)) walk(v[k], path ? path + "." + k : k, v);
+      }
+    })(root, "", null);
+  }
+  helpAssumptions("library/construction.json", con);
+  for (const f of readdirSync(resolve(ROOT, "library/manufacturers")).filter((n) => n.endsWith(".json"))) helpAssumptions("library/manufacturers/" + f, JSON.parse(read("library/manufacturers/" + f)));
+}
+
+/* ------------------------------------------------------------------ 8 */
+/* The counts the documents quote: the recorded buildings and pictures, and
+   whether each check in README's table opens a browser (the same test
+   tools/check-all.mjs uses). */
+{
+  const cases = JSON.parse(read("test/golden/cases.json"));
+  const nCases = cases.count || (cases.cases || []).length;
+  const nLook = existsSync(resolve(ROOT, "test/golden/look")) ? readdirSync(resolve(ROOT, "test/golden/look")).filter((n) => n.endsWith(".png")).length : 0;
+  for (const doc of DOCS) {
+    if (!existsSync(resolve(ROOT, doc))) continue;
+    const t = read(doc).replace(/\s+/g, " ");
+    for (const m of t.matchAll(/(?<![\d,.])(\d+) (?:recorded (?:Barnwright )?|golden |Barnwright )?buildings\b/g)) {
+      if (/more than $|over $/.test(t.slice(Math.max(0, m.index - 10), m.index))) continue;   /* "more than 1,000 buildings" is another count */
+      /* only a count of the RECORDED buildings: said so, or said beside Barnwright, golden or triangles */
+      if (!/recorded|golden|Barnwright/.test(m[0]) && !/Barnwright|golden|recorded|triangle/i.test(t.slice(Math.max(0, m.index - 80), m.index + m[0].length + 40))) continue;
+      ok(`${doc}: "${m[0]}" is the number of recorded buildings in test/golden/cases.json`, Number(m[1]) === nCases, `test/golden has ${nCases}`);
+    }
+    for (const m of t.matchAll(/(?<![\d,.])(\d+) finished pictures/g)) ok(`${doc}: "${m[0]}" is the number of pictures in test/golden/look/`, Number(m[1]) === nLook, `test/golden/look has ${nLook}`);
+  }
+  const readme = existsSync(resolve(ROOT, "README.md")) ? read("README.md") : "";
+  const isBrowser = (src) => {
+    const head = src.slice(0, 6000);
+    if (/check-all:\s*node/.test(head)) return false;
+    if (/check-all:\s*browser/.test(head)) return true;
+    return /chromium\.launch|launchBrowser\(|loadPlaywright\(|openBarnwright\(/.test(src);
+  };
+  for (const m of readme.matchAll(/^\|\s*`(check-[a-z0-9-]+\.mjs)`\s*\|\s*(yes|no)\s*\|/gm)) {
+    const src = toolSource("tools/" + m[1]);
+    if (!src) continue;   /* a missing file is reported above */
+    ok(`README.md says ${m[1]} ${m[2] === "yes" ? "opens" : "does not open"} a browser, as tools/check-all.mjs decides it`, isBrowser(src) === (m[2] === "yes"), `check-all treats it as ${isBrowser(src) ? "a browser check" : "a node check"}`);
+  }
 }
 
 /* ------------------------------------------------------------------ notes */
@@ -366,6 +518,8 @@ ok("tools/check-parts.mjs passes (every part valid, every skill well formed, no 
   const app = existsSync(resolve(ROOT, "ui/app.js")) ? read("ui/app.js") : "";
   const alan = existsSync(resolve(ROOT, "docs/FOR-ALAN.md")) ? read("docs/FOR-ALAN.md") : "";
   if (/embed-mode/.test(app.replace(/\/\*[\s\S]*?\*\//g, "")) && /does not\s+load it yet/.test(alan)) notes.push("ui/app.js loads ui/embed-mode.js now, but docs/FOR-ALAN.md still says it does not -- update \"Not finished yet\"");
+  const views = existsSync(resolve(ROOT, "ui/views.js")) ? read("ui/views.js") : "";
+  if (views && !/\} trusses \{/.test(views) && /still reads\s+the word "trusses"/.test(alan)) notes.push("ui/views.js no longer writes \"trusses\" whatever the roof framing, but docs/FOR-ALAN.md still says it does -- update \"Not finished yet\"");
 }
 
 /* ------------------------------------------------------------------ report */
@@ -381,7 +535,8 @@ if (failures.length) {
     `${tally.barnwrightAbsent ? `; ${tally.barnwrightAbsent} in Barnwright skipped -- no copy on this machine` : ""}); ${tally.tools} tool names and commands, ${tally.flags} --options each read by its tool, ${tally.npm} npm scripts, ${tally.skills} skill names and ${tally.links} relative links all real.`);
   console.log(`  The ${WORKFLOW_SKILLS.length} workflow skills have frontmatter that names them and says when to use them.`);
   console.log(`  Every one of the ${partIds.size} parts and part labels in the PIPELINE has its skill, and tools/check-parts.mjs passes.`);
-  console.log(`  Every number the settings still mark as an ASSUMPTION is listed for Alan in docs/FOR-ALAN.md with its current values, and the settled numbers it states are the files' numbers.`);
+  console.log(`  Every number the settings still mark as an ASSUMPTION is listed for Alan in docs/FOR-ALAN.md with its current values, and every building number it states was read and compared with the files.`);
+  console.log(`  The counts quoted (recorded buildings, finished pictures) are test/golden's, and README's browser column matches tools/check-all.mjs.`);
   if (promised.length) console.log(`  Named as promised but not written yet: ${promised.join(", ")}.`);
   for (const n of notes) console.log("  note: " + n);
 }

@@ -42,6 +42,12 @@ with no `when`:
 the opening instead: `minSpanFt maxSpanFt`. A test the reader does not know is
 refused in plain words, never ignored.
 
+**A misspelt SETTING is not refused**: `"wals": {...}`, `"spacingInch": 24` or
+a lumber size like `"2by6"` loads without a word and simply changes nothing
+(the size one then stops the framing drawing, and the Framing view falls back
+to the finished building with a note). So after every change, open the Framing
+view and read the note -- that is the proof it took.
+
 ## Common changes (in the company's file)
 
 ```json
@@ -130,5 +136,12 @@ assumption in the settings but missing from Alan's list.
 These sweeps build their own test companies; they do **not** read a real
 company's file. For a real company, also open `/?company=<id>` (after
 `npm run serve`), switch to Framing, and look at its smallest and largest
-building: the note under the view names the stud, truss and joist sizes it
-now uses. Then `node tools/check-all.mjs --fast`.
+building: the note under the view buttons names the stud, truss and joist
+sizes it now uses. Then `node tools/check-all.mjs --fast`.
+
+**Known wording gap (not yet fixed):** with `"framing": "rafter"` the note
+still says "trusses" (`FRAMING_SUMMARY` in `ui/views.js`) and the roof-framing
+caption still speaks of gusset plates and a bottom chord (`realLife` in
+`parts/roof-frame.js`). The rafters themselves are drawn and checked
+(`check-framing-roof.mjs`); tell Alan the words lag if a company uses them.
+`docs/FOR-ALAN.md` ("Not finished yet") says the same.

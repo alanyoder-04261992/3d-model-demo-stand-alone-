@@ -38,9 +38,10 @@ The page has the 3D building on one side and six cards on the other:
 6. **Your quote** — the price with everything in it, a quote request form, and
    **Share my design**, which makes a link that opens this exact building.
 
-The price plate on the picture always shows the total. A company can choose to
-show the price, a "from" price, or no price at all, and a rent-to-own monthly
-figure or none.
+The price plate on the picture shows the total as the customer goes. A company
+can choose instead to show a "from" price (the building on its own) or no price
+at all (the plate then says "Ask us"), and a rent-to-own monthly figure or
+none.
 
 ## The views
 
@@ -57,8 +58,8 @@ Four buttons sit over the top-left of the picture:
   floor joists and decking, studs with their headers round every door and
   window, trusses, the loft, the roof deck, and the benches, shelves and
   electrical boxes. The siding, roofing, doors and windows are hidden. A line
-  under the picture gives the sizes (stud size and spacing, trusses, joists),
-  taken from the company's own construction numbers.
+  just under the four buttons gives the sizes (stud size and spacing,
+  trusses, joists), taken from the company's own construction numbers.
 * **Watch it build** — the building put together in the order the shop builds
   it: site, blocks, skids, floor frame, decking, walls, siding, and so on up to
   the roof, doors, windows and extras. Each step is lowered into place with a
@@ -101,7 +102,9 @@ new-company skill."* The skill walks Claude through it. What happens:
    style and size the company offers, drawn with its standard doors and
    windows, with the price the designer will show. Print it or screenshot it
    and send it to the company to sign off. Claude opens the designer itself
-   for the company as well.
+   for the company as well. The contact sheet shows the buildings' prices
+   only: the door, window and upgrade prices are in the spreadsheet the
+   import-prices tool writes out, and none of them may still be $1.
 5. **Allow their website.** Their web address goes into the settings, and the
    build-headers tool (tools/build-headers.mjs) writes the file that tells
    browsers which websites may show this company's designer. Any other website
@@ -179,9 +182,11 @@ the list-companies tool shows it as OVERDUE, and the decision is yours.
 ### Building facts we had to choose
 
 Barnwright's designer never drew any framing, so the framing needed numbers
-it never had. These came from your shop (through Barnwright's notes) and are
-settled: 2x6 floor joists on the skids (2x4 on 8 ft wide and narrower), 5/8 in
-decking, one bottom plate and two top plates, 75 in studs on loft walls and
+it never had. These came from your shop (through Barnwright's notes, and your
+answers for the Yoder site) and are settled: 2x6 floor joists on the skids
+(2x4 on 8 ft wide and narrower), 16 in on centre (your answer: 16 in is
+standard, 12 in is the upgrade), 5/8 in decking in 4x8 tongue-and-groove
+sheets, one bottom plate and two top plates, 75 in studs on loft walls and
 89 in on tall walls, the skid positions from your build sheet, door openings
 71½ in on barns and 76½ in on tall walls, the work bench 2 ft deep and 3 ft
 high, the shelf 1 ft deep and 5 ft high, and a double floor being a second
@@ -209,9 +214,7 @@ everybody or for one company):
 6. **Walls: 2x4 studs 16 in on centre, three-stud corners**; headers 2x6
    doubled over openings up to 4 ft, 2x8 doubled up to 6½ ft, 2x10 doubled
    wider.
-7. **Floor joists 16 in on centre** (Barnwright's price list calls 16 in
-   standard for its 12 in joists upgrade), 2x6 rim joists, 4x8 tongue-and-
-   groove sheets.
+7. **Rim joists: 2x6** along both long sides of the floor.
 8. **Skids: treated 4x6 on edge** (only the caption says so; the picture keeps
    Barnwright's skid).
 9. **Porch: 4x4 posts, 2x6 deck joists, railing 34 in high.**
@@ -274,6 +277,10 @@ proved; the full list is in [the README](../README.md).
   changed the building" by itself (a quote request it already reports): the
   piece that does it (ui/embed-mode.js) is written and tested, but the
   designer page does not load it yet.
+* A company that frames its roofs with rafters instead of trusses still reads
+  the word "trusses" in the Framing line, and the roof-framing caption still
+  talks about gusset plates and a bottom chord. The rafters themselves are
+  drawn and checked; only the words have not caught up.
 * The contract promises one more check that is not written yet: that every
   style's standard doors and windows land without being nudged, at every size
   of every company. Today the demo's are proved to be Barnwright's, and a new

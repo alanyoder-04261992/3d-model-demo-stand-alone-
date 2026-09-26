@@ -28,6 +28,8 @@
      constructionFor(cat, state, t, d)        the whole thing for a live design
      doorHeightFt / windowTopFt               the two opening-height shop rules */
 
+import { STAGES, STAGE_ID } from "../parts/stages.js";
+
 export const BUILDING_WHEN = ["minW", "maxW", "minL", "maxL", "styles", "roof", "metal"];
 export const OPENING_WHEN = ["minSpanFt", "maxSpanFt"];
 
@@ -173,6 +175,72 @@ export function constructionProblems(tree, where = "construction") {
     if (isPlainObject(v)) for (const k of Object.keys(v)) if (!k.startsWith("_")) walk(v[k], `${path}.${k}`);
   }
   walk(tree, where);
+  out.push(...valueProblems(tree, where));
+  return out;
+}
+
+/* WHAT A VALUE MUST LOOK LIKE. A typo in a lumber size ("2y4") used to pass
+   and then break the Framing view for every building; a check here names it
+   in plain words when the settings are loaded instead. Only keys this file
+   knows are tested -- anything else is left alone. */
+const LUMBER_KEYS = new Set(["floor.joist", "floor.rim", "walls.stud", "walls.header", "roof.chord",
+  "roofDeck.purlins.size", "loft.joist", "porch.post", "porch.joist", "skids.size"]);
+const LUMBER_RE = /^\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\b/i;
+const COUNT_KEYS = { "walls.bottomPlates": [1, 3], "walls.topPlates": [1, 3], "floor.deck.layers": [1, 4] };
+const CHOICES = { "roof.framing": ["truss", "rafter"], "roofDeck.type": ["purlins", "osb"] };
+function valueProblems(tree, where) {
+  const out = [];
+  const say = (path, msg) => out.push(`${where}.${path}: ${msg}`);
+  function values(v) { return isRuleList(v) ? v.map((r) => r && r.value) : [v]; }
+  function check(key, v) {
+    if (v === undefined) return;
+    if (LUMBER_KEYS.has(key)) {
+      for (const x of values(v)) {
+        const m = LUMBER_RE.exec(String(x == null ? "" : x));
+        if (!m || !(+m[1] >= 1 && +m[1] <= 12 && +m[2] >= 1 && +m[2] <= 16)) {
+          say(key, `"${x}" is not a lumber size -- write it like "2x4", "2x6 doubled" or "4x4".`);
+        }
+      }
+      return;
+    }
+    if (/spacingIn$/.test(key)) {
+      for (const x of values(v)) if (!(typeof x === "number" && x >= 8 && x <= 48)) say(key, `${JSON.stringify(x)} is not a spacing in inches (between 8 and 48, for example 16 or 24).`);
+      return;
+    }
+    if (COUNT_KEYS[key]) {
+      const [lo, hi] = COUNT_KEYS[key];
+      for (const x of values(v)) if (!(Number.isInteger(x) && x >= lo && x <= hi)) say(key, `${JSON.stringify(x)} should be a whole number from ${lo} to ${hi}.`);
+      return;
+    }
+    if (CHOICES[key]) {
+      for (const x of values(v)) if (CHOICES[key].indexOf(String(x).toLowerCase()) < 0) say(key, `${JSON.stringify(x)} should be one of ${CHOICES[key].join(" or ")}.`);
+      return;
+    }
+    if (/(In|Ft)$/.test(key) && !/^(roof\.shapes|openings\.)/.test(key)) {
+      for (const x of values(v)) if (typeof x === "number" && !(Number.isFinite(x) && x >= 0)) say(key, `${JSON.stringify(x)} should be a measurement of 0 or more.`);
+    }
+  }
+  function walk(v, key) {
+    if (isRuleList(v) || Array.isArray(v) || !isPlainObject(v)) { check(key, v); return; }
+    for (const k of Object.keys(v)) if (!k.startsWith("_")) walk(v[k], key ? key + "." + k : k);
+  }
+  if (isPlainObject(tree)) {
+    for (const k of Object.keys(tree)) {
+      if (k.startsWith("_")) continue;
+      if (k === "buildOrder") {
+        const bo = tree.buildOrder;
+        if (!Array.isArray(bo)) { say("buildOrder", "should be a list of building steps, for example [\"skids\", \"floor-frame\"]."); continue; }
+        const seen = new Set();
+        for (const x of bo) {
+          if (STAGE_ID[x] === undefined) say("buildOrder", `"${x}" is not a building step (the steps are: ${STAGES.map((st) => st.key).join(", ")}).`);
+          else if (seen.has(x)) say("buildOrder", `"${x}" is listed twice.`);
+          seen.add(x);
+        }
+        continue;
+      }
+      walk(tree[k], k);
+    }
+  }
   return out;
 }
 

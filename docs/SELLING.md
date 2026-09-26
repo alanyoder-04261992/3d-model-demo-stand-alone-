@@ -91,11 +91,14 @@
    rates.dbl,2.10,Double floor
    ```
 
-   That is exactly the layout `node tools/import-prices.mjs companies/<id>
+   That is the layout `node tools/import-prices.mjs companies/<id>
    --export` writes, so the easiest way is to set the company up, export
    their price sheet, and send it to them to fill in. A style's sizes appear
    in the order the spreadsheet lists them. Every door, window and option
-   they sell needs a price (0 is fine for something included).
+   they sell needs a price (0 is fine for something included). A spreadsheet
+   program puts quotes round "$5,190" by itself; in a file typed by hand, a
+   price with a comma must be in quotes (or written 5190), or it is read as
+   $5.
 2. **Which styles they sell**, and the building a new visitor should start on.
 3. **Their colours**: the header colour and the accent colour of their
    website (as `#rrggbb` if they know it), and which siding, trim and roof
@@ -130,7 +133,8 @@ procedure for Claude. In short:
       writes `companies/<id>/company.json` and prints what is still to do.
 - [ ] Every item on its "STILL TO DO" list is done; no price is left at $1
       (`node tools/import-prices.mjs companies/<id> <spreadsheet>` for more
-      prices).
+      prices; `node tools/import-prices.mjs companies/<id> --export` lists
+      every price, so a 1 left in the price column is easy to spot).
 - [ ] `node tools/list-companies.mjs` says the file loads.
 - [ ] The designer opens for them: `/?company=<id>` when running it locally
       (`npm run serve`), `/c/<id>/` once hosted — their name, colours, styles
@@ -162,7 +166,8 @@ id in place of `acme`:
 The page can listen for `shed:quote-requested` (the customer sent a quote
 request; the customer's details are included only when the company's leads go
 to its own page). `embed-demo.html` is a sample company page showing all of
-it.
+it (on the hosted site: it opens the designer at `/c/<id>/`, which
+`npm run serve` does not provide, so locally its frame stays empty).
 
 ## After it is live
 

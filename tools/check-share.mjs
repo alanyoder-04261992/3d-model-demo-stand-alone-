@@ -228,6 +228,8 @@ try {
     const q = await open(ctx, LINK.replace("?company=sharetest", "?company=sharetest&view=1"));
     const Q = await snap(q.page);
     ok("?view=1 in the address works the same way", Q.readOnly && Q.viewonly && J(Q.design) === J(A.design), J(Q));
+    const passedOn = await q.page.evaluate(() => window.shedUI.share.link());
+    ok("'Share this design' on a ?view=1 page makes a link WITHOUT view=1 (whoever gets it can change it)", passedOn.startsWith(BASE + "/?company=sharetest#d=") && !/view=1/.test(passedOn), passedOn.slice(0, 80) + " ... " + passedOn.slice(-12));
     await ctx.close();
     /* on a phone */
     const cp = await newContext(browser, { viewport: { width: 390, height: 844 } });

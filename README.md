@@ -45,7 +45,7 @@ address:
 | `/?company=starter` | the designer for another company (here the made-up "Cedar Ridge Sheds") |
 | `/parts.html?company=demo&style=LB` | the parts gallery: every part of one building, each drawn on its own with what it is in real life |
 | `/setup.html?company=starter` | the contact sheet: every building and size a company offers, with its standard doors and windows and its price, to send for sign-off |
-| `/embed-demo.html?company=starter` | a pretend company web page with the designer pasted into it (`embed.js`) |
+| `/embed-demo.html?company=starter` | a pretend company web page with the designer pasted into it (`embed.js`). Only on the hosted site: the frame opens `/c/<id>/`, an address Netlify makes (`netlify.toml`) and `npm run serve` does not, so locally the frame stays empty |
 | `/?company=demo#d=...` | a shared design link opens that exact building (`&view=1` makes it look-only) |
 
 Node 22 or newer. `npm run serve` uses `npx http-server`, which npm fetches the

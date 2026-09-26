@@ -56,6 +56,37 @@ import { resolve } from "../model/company.js";
 import { frameOf } from "../model/frame.js";
 import { roofRise, roofShape, gableBandY, profileYat, cottageEave, gableClip, ROOF_TH } from "../model/roof-shapes.js";
 import { resetItems, clampPos, neighborGaps, snapCenter, freeSpot, pkFixtures, openingRect } from "../model/layout.js";
+import { itemW } from "../model/layout.js";
+
+/* Barnwright's neighborGaps and snapCenter (3ddesign.html 2401-2428), copied
+   verbatim except that widths come from itemW -- the one deliberate
+   difference (a double window is two windows and a middle board wide). */
+let DBLWALLS = 0;
+function refGaps(it, st, fr, CAT) {
+  var c = CAT[it.cat];
+  if (it.rot && c.draw === "transom") c = { k: c.k, w: c.h, h: c.w };
+  if (c.gable || c.free || c.stretch || c.k === "post") return null;
+  var w = fr.ws[it.wall]; if (!w) return null;
+  var cw = itemW(it, CAT);
+  var half = w.len / 2, lo = -half, hi = half;
+  st.items.forEach(function (o) {
+    if (o.id === it.id || o.wall !== it.wall) return;
+    var oc = CAT[o.cat];
+    if (oc.gable || oc.k === "post" || oc.k === "light" || oc.k === "out" || oc.k === "ilt" || oc.free || oc.stretch) return;
+    var ow = itemW(o, CAT);
+    if (o.pos <= it.pos) lo = Math.max(lo, o.pos + ow / 2);
+    else hi = Math.min(hi, o.pos - ow / 2);
+  });
+  return { lo: lo, hi: hi, cw: cw, gL: it.pos - cw / 2 - lo, gR: hi - (it.pos + cw / 2) };
+}
+function refSnap(it, st, fr, CAT) {
+  var g = refGaps(it, st, fr, CAT); if (!g) return null;
+  var mid = (g.lo + g.hi) / 2;
+  if (g.hi - g.lo > g.cw + 0.2 && Math.abs(it.pos - mid) < 0.22) { it.pos = mid; g.centered = true; }
+  else g.centered = Math.abs(g.gL - g.gR) < 0.045;
+  g.gL = Math.max(0, it.pos - g.cw / 2 - g.lo); g.gR = Math.max(0, g.hi - (it.pos + g.cw / 2));
+  return g;
+}
 import { priceParts, pSizes, minPrice, pPrice, money, rateCharges } from "../model/pricing.js";
 import { defaults } from "../model/design.js";
 import { makePlan } from "../model/plan.js";
@@ -254,8 +285,26 @@ try {
     const fr = frameOf(s, cat);
     s.items.forEach((it) => clampPos(it, s, fr));
     same("clampPos (random positions, added items)", label, s.items, b.after);
-    same("neighborGaps", label, s.items.map((it) => neighborGaps(it, s, fr)), b.gaps);
-    same("snapCenter", label, s.items.map((it) => { const g = snapCenter(it, s, fr); return [g, it.pos]; }), b.snaps);
+    /* Gaps and the snap to the middle: Barnwright's numbers, except on a wall
+       carrying a DOUBLE window, where Barnwright measured the double as a
+       single (docs/DIFFERENCES.md). There the expected value is Barnwright's
+       own sequence re-run with itemW -- refGaps/refSnap below, a verbatim
+       copy of his neighborGaps/snapCenter with that one change. */
+    const dblWall = (it) => s.items.some((o) => o.wall === it.wall && o.dbl && cat.CAT[o.cat].k === "win" && !cat.CAT[o.cat].gable);
+    const r = copy(s);
+    const gapsRef = r.items.map((it) => refGaps(it, r, fr, cat.CAT));
+    const snapsRef = r.items.map((it) => { const g = refSnap(it, r, fr, cat.CAT); return [g, it.pos]; });
+    const gapsOurs = s.items.map((it) => neighborGaps(it, s, fr));
+    s.items.forEach((it, j) => {
+      const dbl = dblWall(it);
+      if (dbl) DBLWALLS++;
+      same(dbl ? "neighborGaps (double window on the wall: measured with itemW)" : "neighborGaps", label, gapsOurs[j], dbl ? gapsRef[j] : b.gaps[j]);
+    });
+    const snapsOurs = s.items.map((it) => { const g = snapCenter(it, s, fr); return [g, it.pos]; });
+    s.items.forEach((it, j) => {
+      const dbl = dblWall(it);
+      same(dbl ? "snapCenter (double window on the wall: measured with itemW)" : "snapCenter", label, snapsOurs[j], dbl ? snapsRef[j] : b.snaps[j]);
+    });
     same("freeSpot", label, ["F", "B", "R", "L"].map((w) => [freeSpot(w, 2.1, s, fr), freeSpot(w, 4.021, s, fr), freeSpot(w, 8, s, fr)]), b.spots);
   });
 

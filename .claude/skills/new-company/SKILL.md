@@ -75,7 +75,9 @@ node tools/import-prices.mjs companies/acme prices.csv             # write it
 node tools/import-prices.mjs companies/acme --export acme-prices.csv   # their sheet, to send them
 ```
 
-* Rows: `style,size,price` (name or code; "10 x 16"; "$5,190" all fine),
+* Rows: `style,size,price` (name or code; "10 x 16"; "$5,190" all fine --
+  in quotes: a spreadsheet program adds them, but in a hand-typed file
+  `UT,10x16,$5,190` is read as **$5** with "190" ignored as a note),
   `item,price` and `option,price` (`ramps.r4`, `dormers.6`, `elec.1`,
   `misc.shutter`, `rates.dbl` per sq ft). **Use item CODES** (`w48`, `w23`):
   item names only match when spelled exactly as the manufacturer file spells
@@ -110,9 +112,11 @@ The ones that usually need a hand edit:
   `brand.email`); `fields`: `name phone email zip address note`, each
   `required`, `optional` or `off`; `smsConsent`: their exact words for an
   un-ticked "you may text me" box, or `null`; `images`: pictures with a
-  `webhook` only. A `webhook` must answer with `Access-Control-Allow-Origin`
-  for the page to know it arrived (Zapier, Make, n8n and Pipedream do);
-  `postMessage` needs their site in `embed.origins`.
+  `webhook` only; `target: "tab"` for a form service that shows its own
+  "are you human?" page (the request then opens in a new tab). A `webhook`
+  must answer with `Access-Control-Allow-Origin` for the page to know it
+  arrived (Zapier, Make, n8n and Pipedream do); `postMessage` needs their
+  site in `embed.origins`.
 * `embed.origins` -- `https://` addresses only, never `*`; `embed.shareUrl`.
 * `pricing.show` (`price`, `from`, `none`), `pricing.rto.showTerm` (a term like
   60, or `null`), `notes.finePrint`, `notes.sizeNotes` (by width in feet).
@@ -141,12 +145,19 @@ Open `setup.html?company=acme` (same server). One tile per style and size, in
 their category order, with the standard doors and windows and the price the
 designer shows, and lines at the bottom to sign. "Draw every picture" draws
 any tile not yet drawn. Take a full-page picture for Alan (Playwright from
-`/opt/node22/lib/node_modules/playwright/index.js`, Chromium with
+`/opt/node22/lib/node_modules/playwright/index.js` -- it is a CommonJS
+package, so `import pw from "..."; const { chromium } = pw;` -- Chromium with
 `--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`;
 wait for `window.contactSheet.ready`, call `window.contactSheet.drawAll()`,
 then screenshot with `fullPage: true` into `test/out/`). **Look at every tile
 yourself before sending it**: no `$1.00`, the right doors and windows, the
 width notes. Alan sends it to the company; they sign it or mark changes.
+
+The contact sheet shows BUILDING prices only. A door, window, fixture or
+upgrade still at the $1 placeholder never appears on it: run
+`node tools/import-prices.mjs companies/acme --export` and look down the price
+column for a 1 (the STILL TO DO list from step 2 names them too, but only at
+the moment the file was made).
 
 ## 7. Allow their website, and publish
 
@@ -166,7 +177,10 @@ published to the site Alan hosts, and Alan sends the company the two lines:
 
 (`data-height` at least 520; `data-target` another CSS selector;
 `data-fullscreen="off"`.) Their designer is at `/c/acme/`, and
-`embed-demo.html?company=acme` shows it inside a sample company page.
+`embed-demo.html?company=acme` shows it inside a sample company page -- on the
+hosted site only: the frame opens `/c/acme/`, which Netlify makes
+(`netlify.toml`) and `npm run serve` does not, so locally the frame stays
+empty. `node tools/check-embed.mjs` proves the embedding without a host.
 
 ## 8. Before you say it is done
 

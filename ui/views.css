@@ -35,7 +35,12 @@
 .vw-cap{overflow-y:auto;min-height:0;-webkit-overflow-scrolling:touch;touch-action:pan-y}
 .vw-step{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--navy)}
 .vw-step b{color:var(--red);font-weight:600}
+.vw-head{display:flex;align-items:flex-start;gap:8px}
+.vw-head .vw-step{flex:1;min-width:0}
+.vw-more{flex-shrink:0;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;border:1.5px solid var(--card-line);background:#fff;color:var(--navy);border-radius:7px;padding:3px 8px;line-height:1.2}
 .vw-text{font-size:12px;line-height:1.45;color:var(--ink);margin-top:3px}
+.vw-player.vw-compact .vw-text{display:none}
+.vw-player.vw-compact .vw-step{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .vw-text p+p{margin-top:4px}
 .vw-text b{font-weight:600}
 .vw-bar{height:3px;background:var(--line);border-radius:2px;overflow:hidden;flex-shrink:0}

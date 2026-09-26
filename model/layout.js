@@ -174,21 +174,29 @@ export function itemById(state, id) { for (var i = 0; i < state.items.length; i+
    with the catalogue width, not itemW -- a double window's full width is not
    used here, as in Barnwright.) */
 export function neighborGaps(it, state, frame) {
+  /* DELIBERATE DIFFERENCE (docs/DIFFERENCES.md): Barnwright measured every
+     opening here by its catalogue width (c.w), so a DOUBLE window -- two
+     windows and a shared middle board, itemW = 2w + CASING -- was measured
+     as a single one: the floor plan said 6'-11" where the real gap was
+     5'-9", and "ease onto the middle" landed off-centre. Both the item and
+     its neighbours are now measured with itemW, the width clampPos already
+     spaces them by. Every other opening measures exactly as before. */
   var CAT = frame.CAT;
   var c = CAT[it.cat];
   if (it.rot && c.draw === "transom") c = { k: c.k, w: c.h, h: c.w };
   if (c.gable || c.free || c.stretch || c.k === "post") return null;
   var w = frame.ws[it.wall]; if (!w) return null;
+  var cw = itemW(it, CAT);
   var half = w.len / 2, lo = -half, hi = half;
   state.items.forEach(function (o) {
     if (o.id === it.id || o.wall !== it.wall) return;
     var oc = CAT[o.cat];
     if (oc.gable || oc.k === "post" || oc.k === "light" || oc.k === "out" || oc.k === "ilt" || oc.free || oc.stretch) return;
-    var ow = (o.rot && oc.draw === "transom") ? oc.h : oc.w;
+    var ow = itemW(o, CAT);
     if (o.pos <= it.pos) lo = Math.max(lo, o.pos + ow / 2);
     else hi = Math.min(hi, o.pos - ow / 2);
   });
-  return { lo: lo, hi: hi, cw: c.w, gL: it.pos - c.w / 2 - lo, gR: hi - (it.pos + c.w / 2) };
+  return { lo: lo, hi: hi, cw: cw, gL: it.pos - cw / 2 - lo, gR: hi - (it.pos + cw / 2) };
 }
 
 /* while dragging: ease the item onto the midpoint of its free span */

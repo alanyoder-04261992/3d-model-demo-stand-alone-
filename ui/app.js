@@ -54,6 +54,8 @@
                              "select"  {id, item}        an item was picked / put down
                              "rebuild" {plan, result}    the building was rebuilt
                              "mode"    {mode}            Outside / Inside switched
+                             "rebuild-error" {message, frames}  a rebuild threw; the
+                                                   last good picture is still on screen
      getMode() / setMode("out" | "in")   the 3D picture or the floor plan:
                            setMode puts .bpmode on the stage (which shows
                            canvas#bp and hides the hint and camera menu),
@@ -92,7 +94,9 @@
                            (detail: the api) at that moment.
 
    PLUGINS: after the first picture, this page imports, in order,
-   ui/views.js, ui/blueprint.js, ui/quote.js and ui/share.js. Each exports
+   ui/views.js, ui/blueprint.js, ui/quote.js and ui/share.js -- and, only when
+   the page runs inside a company's own web page (?embed=1), ui/embed-mode.js
+   (the messages to that page, the "Tap to design" and Ctrl-to-zoom rules). Each exports
    install(api) (or a default function): it is called once with the api and
    may be async. A plugin file that does not exist yet is skipped (the
    browser notes the missing file in its console; nothing else happens); a
@@ -308,6 +312,7 @@ async function boot() {
       if (msg !== lastBuildError) console.error("Part of the 3D building could not be drawn:", e);
       lastBuildError = msg;
       note("Part of the 3D picture could not be drawn just now — everything below still works.");
+      emit("rebuild-error", { message: msg, frames: !!buildOpts.frames });
       return null;
     }
   }
@@ -408,8 +413,8 @@ async function boot() {
   refreshUI();
   renderer.startLoop({ fit: "fitref" });
 
-  /* 6. the plugins */
-  for (const name of PLUGINS) {
+  /* 6. the plugins (embed-mode only inside a company's own page) */
+  for (const name of embedded ? PLUGINS.concat(["embed-mode"]) : PLUGINS) {
     try {
       const mod = await import("./" + name + ".js");
       const install = typeof mod.install === "function" ? mod.install : (typeof mod.default === "function" ? mod.default : null);

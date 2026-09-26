@@ -255,7 +255,9 @@ export function install(api) {
   const player = document.createElement("div");
   player.className = "vw-player"; player.id = "vw-player"; player.hidden = true;
   player.innerHTML =
-    '<div class="vw-cap"><div class="vw-step" id="vw-step" aria-live="polite"></div><div class="vw-text" id="vw-text"></div></div>' +
+    '<div class="vw-cap"><div class="vw-head"><div class="vw-step" id="vw-step" aria-live="polite"></div>' +
+      '<button type="button" data-act="more" id="vw-more" class="vw-more" aria-expanded="false" aria-controls="vw-text">More</button></div>' +
+      '<div class="vw-text" id="vw-text"></div></div>' +
     '<div class="vw-bar"><i id="vw-fill"></i></div>' +
     '<div class="vw-ctl">' +
       '<button type="button" data-act="restart" id="vw-restart" title="Start again" aria-label="Start again">&#8634;</button>' +
@@ -276,7 +278,17 @@ export function install(api) {
     else if (a === "next") next();
     else if (a === "play") { if (playing) pause(); else play(); }
     else if (a === "end") finish();
+    else if (a === "more") { expanded = !expanded; drawPlayer(); }
   });
+
+  /* ON A SMALL SCREEN THE CAPTION FOLDS TO ONE LINE, so the step being put
+     together (blocks, skids, the floor) is not hidden behind it; "More"
+     opens the full sentence. On a bigger picture it is open from the start. */
+  let expanded = null;          /* null: decided by the size of the picture */
+  function compactNow() {
+    if (expanded !== null) return !expanded;
+    return stage.clientHeight < 640 || stage.clientWidth < 600;
+  }
 
   /* ---- state ---- */
   let view = "finished";
@@ -404,6 +416,11 @@ export function install(api) {
   function drawPlayer() {
     player.hidden = view !== "build";
     if (view !== "build") return;
+    const compact = compactNow();
+    player.classList.toggle("vw-compact", compact);
+    const mb = $("vw-more");
+    mb.textContent = compact ? "More" : "Less";
+    mb.setAttribute("aria-expanded", compact ? "false" : "true");
     if (!steps.length) {
       /* the company's build order names no step this building has */
       $("vw-step").innerHTML = "<b>Nothing to show step by step</b>";
@@ -480,6 +497,34 @@ export function install(api) {
   function finish() { playing = false; setView("finished", "end"); }
 
   /* ---- keep in step with the page ---- */
+  /* A rebuild that throws while the framing is showing (a size or option
+     whose framing cannot be drawn): go back to the finished building and say
+     so, rather than leave the last framing picture on screen as if it were
+     this building's. */
+  api.on("rebuild-error", (d) => {
+    if (view !== "framing" && view !== "build") return;
+    stopTimer(); playing = false;
+    view = "finished";
+    if (d && d.frames) framesOn(false);
+    renderer.setStages(stageTableFor("finished"));
+    player.hidden = true; stageClass(); drawNote();
+    flash("The framing for this building could not be drawn just now, so here is the finished building.");
+    renderer.needsDraw = true;
+  });
+  /* Nothing is picked while the building is going together: a door that has
+     already landed would open its card over the player. (In Framing the doors
+     and windows are hidden, so their tap targets are skipped anyway.) */
+  api.on("select", (d) => {
+    if ((view === "build" || view === "framing") && d && d.id) api.select(null);
+  });
+  /* Something added while Framing or Watch it build is showing is hidden
+     there (a door, a window) -- go back to Outside so it can be seen and
+     dragged. Inside items open the floor plan themselves. */
+  api.on("change", (d) => {
+    if (d && d.reason === "add" && (view === "framing" || view === "build")) {
+      if (api.getMode() !== "in") setView("finished", "add");
+    }
+  });
   api.on("rebuild", () => {
     if (view === "build") { readBuild(); applyStep(currentLift()); drawPlayer(); }
     else if (view === "framing") drawNote();

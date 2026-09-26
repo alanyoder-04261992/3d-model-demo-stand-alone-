@@ -169,6 +169,31 @@ for (const t of Object.keys(DEMO.P)) for (const z of Object.keys(DEMO.P[t])) {
   check("every demo building settles", Math.abs((b[1][1] - a[1][1]) - 10 * (0.35 - 0.27)) < 1e-12, "a company's roof rise did not move the roof line");
 }
 
+/* ------------------------------------------------ bad values are named */
+{
+  /* A typo in a lumber size used to pass and then break the Framing view;
+     settings with impossible values must be refused, in plain words. */
+  const bad = [
+    [{ roof: { chord: "2y4" } }, /roof\.chord: "2y4" is not a lumber size/],
+    [{ walls: { header: [{ when: { maxSpanFt: 4 }, value: "2x6 doubled" }, { value: "2z10" }] } }, /walls\.header: "2z10" is not a lumber size/],
+    [{ floor: { spacingIn: 0 } }, /floor\.spacingIn: 0 is not a spacing/],
+    [{ walls: { topPlates: 7 } }, /walls\.topPlates: 7 should be a whole number from 1 to 3/],
+    [{ roof: { framing: "beams" } }, /roof\.framing: "beams" should be one of truss or rafter/],
+    [{ roofDeck: { type: "tin" } }, /roofDeck\.type: "tin" should be one of purlins or osb/],
+    [{ buildOrder: ["skids", "skids"] }, /"skids" is listed twice/],
+    [{ buildOrder: ["frame"] }, /"frame" is not a building step/],
+  ];
+  for (const [tree, re] of bad) {
+    const bc = barnwrightCompany(); bc.construction = tree;
+    let msgs = [];
+    try { resolve(bc, M, LIB); msgs = ["(accepted)"]; } catch (e) { msgs = String(e.message || e).split("\n"); }
+    check("bad construction values are refused in plain words", msgs.some((m) => re.test(m)), `${JSON.stringify(tree)} gave: ${msgs.slice(0, 3).join(" | ")}`);
+  }
+  const good = barnwrightCompany(); good.construction = { walls: { stud: "2x6", spacingIn: 24, header: [{ value: "2x8 tripled" }] }, roof: { framing: "Rafter", chord: "2x6" }, floor: { deck: { layers: 2 } } };
+  let okGood = true; try { resolve(good, M, LIB); } catch (e) { okGood = false; }
+  check("bad construction values are refused in plain words", okGood, "a sensible company construction block (2x6 studs at 24 in, tripled 2x8 headers, rafters) was refused");
+}
+
 /* ---------------------------------------------------------------- report */
 let total = 0, bad = 0;
 console.log("Construction settings:");

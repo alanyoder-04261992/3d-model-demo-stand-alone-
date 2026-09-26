@@ -93,8 +93,10 @@ what a Barnwright style comes with, or a **data recipe**: a list of
 Numbers are formulas over `W L q len CASING CAT.<item>.w CAT.<item>.h` with
 `+ - * / ( ) ? :`, comparisons and `min max floor ceil round abs` -- read by a
 small parser, never `eval`. `model/loadouts.js` has the full rules; the data
-recipes in `tools/check-companies.mjs` (section 8) reproduce every Barnwright
-recipe and are the best examples.
+recipes in `tools/check-companies.mjs` (section 8) are the best examples: they
+reproduce thirteen of the named Barnwright recipes exactly, at every size (the
+utility, side-door, garden, barn, single-slope, garage and kennel ones -- the
+cottage, backyard utility, dormer shed and the cabins have no data twin yet).
 
 Every item a style comes with must be priced by every company that sells the
 style (0 is fine): included items are charged as the difference when swapped.

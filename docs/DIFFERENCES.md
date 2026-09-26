@@ -74,3 +74,33 @@ on this list with a reason.
     its server.)
 15. **Every text from a company file, a link or a lead is fully HTML-escaped.**
     Barnwright's view page escaped only some characters.
+
+## Added while building the product (Sep 26 2026)
+
+16. **A double window is measured at its real width** (two windows and the
+    shared board) in the gap readout and the "ease onto the middle" snap.
+    Barnwright measured it as a single window, so the floor plan said 6'-11"
+    where the real gap was 5'-9". `model/layout.js neighborGaps`;
+    `tools/check-model-live.mjs` holds every other opening to Barnwright's
+    numbers and double-window walls to Barnwright's own code re-run with the
+    real width.
+17. **An item the catalogue no longer has, or on a wall the building does not
+    have, draws nothing** instead of stopping the whole drawing with an error.
+    (The design loader already warns about it in plain words.)
+18. **The ramp is drawn in 3D** when a 4 or 6 ft ramp is chosen (Barnwright
+    only priced it and drew it on the floor plan). It is new geometry on its
+    own building step, so every building without a ramp is unchanged.
+19. **The floor plan** (ui/blueprint.js lists each one in its header):
+    a double window drawn as wide as it is; the side porch outlined where it
+    really is; the ramp drawn where the 3D ramp is; a plan that would run off
+    the paper made a little smaller; the plan kept clear of the view buttons
+    and, on phones, of the price plate; a lifted finger no longer "clicks" the
+    Outside button underneath; a tap never slides the picked item; tapping
+    empty paper does not rebuild the building.
+20. **New views Barnwright never had**: Framing and Watch it build (the
+    finished view is unchanged), and nothing can be picked while the building
+    is going together; adding something in those views goes back to Outside
+    so it can be seen and dragged.
+21. **Construction settings are checked when a company is loaded**: a lumber
+    size that is not one ("2y4"), a spacing of 0, an unknown build step and so
+    on are refused in plain words, instead of breaking the Framing view later.
