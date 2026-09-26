@@ -32,12 +32,18 @@
       chooseSize, priced by model/pricing.js priceParts); the standard doors
       and windows are named; a 14 ft wide tile carries the company's note for
       that width. One WebGL context.
-   5. For the demo company (161 buildings) the pictures are drawn only as
-      they come near the screen: at first only some are drawn, and
-      scrolling to the bottom draws the last one. Printing hides the buttons.
+   5. For the demo company (161 buildings) every price is the designer's
+      (some of them are above the size's base price, which the starter
+      company's are not), and the pictures are drawn only as they come near
+      the screen: at first only some are drawn, and scrolling to the bottom
+      draws the last one. Printing hides the buttons.
    BOTH
    6. A company name with HTML in it is shown as text and runs nothing; an
       unknown company says so in plain words; no console errors otherwise.
+   7. The gallery's cards come in the order the shop puts the building
+      together (the company's build order), as the page says; and on the
+      hosted website -- which does not serve the skills folder -- each skill
+      name is shown as text rather than as a link that goes nowhere.
    It saves test/out/gallery-demo.png, gallery-cabin-extras.png and
    contact-sheet-starter.png. */
 
@@ -85,6 +91,21 @@ function labelsOf(state, cat) {
   const r = assemble(makePlan(state, cat), { viewport: { w: 320, h: 240 }, fit: "fitref", frames: true });
   const out = new Set();
   for (const k of r.build.ORDER) for (const sg of r.build.tags[k] || []) if (sg.count > 0) out.add(sg.part);
+  return out;
+}
+
+/* the building steps each part label's triangles are on (the 9th number of
+   every triangle), for the order the shop puts the parts together */
+function stagesByLabel(state, cat) {
+  const r = assemble(makePlan(state, cat), { viewport: { w: 320, h: 240 }, fit: "fitref", frames: true });
+  const out = new Map();
+  for (const k of r.build.ORDER) {
+    const b = r.build.buckets[k];
+    for (const sg of r.build.tags[k] || []) for (let t = sg.from; t < sg.from + sg.count; t++) {
+      if (!out.has(sg.part)) out.set(sg.part, new Set());
+      out.get(sg.part).add(STAGES[b.v[t * 27 + 8]].key);
+    }
+  }
   return out;
 }
 
@@ -196,6 +217,13 @@ try {
       gl: window.__glCanvases, style: document.getElementById("pg-style").value, size: document.getElementById("pg-size").value,
     }));
     const got = g.cards.map((c) => c.part);
+    /* the page says "in the order the shop puts them together": each part at
+       its earliest step in the company's build order, parts on no step of it
+       (the finished floor slab) last, the rest in the parts list's own order */
+    const order = makePlan(st, DEMO).construction.buildOrder, sbl = stagesByLabel(st, DEMO);
+    const firstStep = (l) => Math.min(...[...(sbl.get(l) || [])].map((k) => order.indexOf(k)).filter((i) => i >= 0), Infinity);
+    const wantOrder = ALL_LABELS.filter((l) => want.has(l)).sort((a, b) => (firstStep(a) - firstStep(b)) || (ALL_LABELS.indexOf(a) - ALL_LABELS.indexOf(b)));
+    ok(`the cards come in the order the shop puts the building together (${got.slice(0, 5).join(", ")}, ...)`, J(got) === J(wantOrder), J({ got, want: wantOrder }));
     ok(`the gallery shows the ${DEMO.TYPES[st.type].name} ${st.size} (the company's default building)`, g.style === st.type && g.size === st.size, J({ style: g.style, size: g.size }));
     ok(`it has one card for each of the ${want.size} parts this building really has (framing included), no more, no fewer`, got.length === want.size && got.every((p) => want.has(p)), J({ got, want: [...want] }));
     const stats = await imageStats(page, ".pg-card img");
@@ -321,6 +349,23 @@ try {
     let total = 0;
     for (const t of Object.keys(DEMO.TYPES)) total += pSizes(t, DEMO).length;
     ok(`the sheet has all ${total} demo buildings`, first.total === total, J(first));
+    /* every demo price too: the starter company's buildings all cost exactly
+       their size's base price, so only here can the sheet be caught showing
+       the base price where the designer shows the total */
+    const dtiles = await page.evaluate(() => Array.from(document.querySelectorAll(".cs-tile")).map((t) => ({ key: t.getAttribute("data-style") + " " + t.getAttribute("data-size"), price: (t.querySelector(".cs-price") || {}).textContent })));
+    const dwant = new Map();
+    let aboveBase = 0;
+    for (const t of Object.keys(DEMO.TYPES)) for (const sz of pSizes(t, DEMO)) {
+      const s = defaults(DEMO);
+      S.chooseType(s, t, DEMO); normalize(s, null, DEMO);
+      if (s.size !== sz) S.chooseSize(s, sz, DEMO);
+      normalize(s, null, DEMO);
+      const pp = priceParts(s, DEMO);
+      if (pp.total !== pp.base) aboveBase++;
+      dwant.set(t + " " + sz, money(pp.total));
+    }
+    const dbad = dtiles.filter((t) => dwant.get(t.key) !== t.price).map((t) => `${t.key}: sheet ${t.price}, designer ${dwant.get(t.key)}`);
+    ok(`all ${dtiles.length} demo prices are what the designer shows (${aboveBase} of them are more than the size's base price, because of what comes standard)`, dtiles.length === total && aboveBase > 0 && dbad.length === 0, dbad.slice(0, 5).join("; "));
     ok(`at first only the ones near the screen are drawn (${first.drawn} of ${first.total})`, first.drawn > 0 && first.drawn < first.total / 3 && !first.last, J(first));
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await page.waitForFunction(() => window.contactSheet.tiles[window.contactSheet.tiles.length - 1].drawn, null, { timeout: 60000 }).catch(() => {});
@@ -364,6 +409,27 @@ try {
     }
     await c2.close();
   }
+
+  /* ================================================================ 7 */
+  section("7. On the hosted website a skill name is plain text, not a link that goes nowhere");
+  {
+    const toml = readFileSync(resolve(ROOT, "netlify.toml"), "utf8");
+    const blocked = /from\s*=\s*"\/\.claude\/\*"[\s\S]{0,80}?status\s*=\s*404/.test(toml);
+    ok("the website does not serve the skills folder (netlify.toml answers \"not found\" for /.claude/*)", blocked);
+    const ctx = await newContext(browser);
+    /* the same files, opened under a website's name instead of this computer's */
+    await ctx.route(/^http:\/\/designer\.example\//, async (r) => { const resp = await r.fetch({ url: r.request().url().replace("http://designer.example", BASE) }); await r.fulfill({ response: resp }); });
+    const page = await ctx.newPage();
+    const noise = [];
+    page.on("console", (m) => { if (m.type() === "error") noise.push({ type: "error", text: m.text(), url: (m.location() || {}).url }); });
+    page.on("pageerror", (e) => noise.push({ type: "pageerror", text: String(e) }));
+    await page.goto("http://designer.example/parts.html?company=demo", { waitUntil: "load" });
+    await page.waitForFunction(galleryReady, null, { timeout: 180000 });
+    const h = await page.evaluate(() => ({ cards: document.querySelectorAll(".pg-card").length, links: document.querySelectorAll(".pg-skill a").length, named: Array.from(document.querySelectorAll(".pg-card")).filter((c) => /part-[a-z0-9-]+/.test((c.querySelector(".pg-skill code") || {}).textContent || "")).length }));
+    ok(`opened from a website address, all ${h.cards} cards still name their skill, as text (no links to the skills folder)`, h.cards > 0 && h.links === 0 && h.named === h.cards, J(h));
+    ok("no console errors there", realNoise(noise).length === 0, J(realNoise(noise)));
+    await ctx.close();
+  }
 } catch (e) {
   ok("the check ran to the end", false, e && e.stack || e);
 } finally {
@@ -375,6 +441,7 @@ console.log(`\ncheck-gallery: ${pass} passed, ${fail} failed`);
 if (fail) { console.log("FAILED:\n - " + failures.join("\n - ")); process.exit(1); }
 console.log(`PROVED: the parts gallery draws every part a building has on its own (one WebGL context), with its step, a caption in the company's own numbers and a working link to its skill, ` +
   `and across the demo's styles every one of the ${ALL_LABELS.length} parts of the shed is drawn at least once; the contact sheet shows every offered style and size of the starter company ` +
-  "with its picture, the designer's own price, its standard doors and windows and its size notes, draws the demo's whole sheet as you scroll, prints without its buttons, and shows company words as text. " +
+  "with its picture, the designer's own price, its standard doors and windows and its size notes, draws the demo's whole sheet as you scroll (every one of its prices the designer's too), prints without its buttons, and shows company words as text; " +
+  "the gallery's cards follow the company's build order, and on the hosted website skill names are text, not links that go nowhere. " +
   "Pictures in test/out/gallery-*.png and contact-sheet-starter.png.");
 process.exit(0);

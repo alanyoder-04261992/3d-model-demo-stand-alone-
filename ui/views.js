@@ -40,10 +40,15 @@
 
    For checks and other plugins it hangs a small controller on the page API:
    shedUI.views = { view, set(name), steps(), step(), playing(), play(),
-   pause(), next(), prev(), restart(), caption(), framingNote(), timeScale }.
+   pause(), next(), prev(), restart(), caption(), framingNote(), message(),
+   timeScale }.
+   If the framing cannot be drawn for a building (a part fails), Framing and
+   Watch it build go back to Outside with a plain-words message instead of
+   showing an empty yard; a company whose build order names no step of the
+   building gets "Nothing to show step by step" instead of an empty player.
 
-   The pure helpers at the top (stagesPresent, partCatalogue, stageCaption,
-   buildSteps, framingSummary) are also used by the parts gallery
+   The pure helpers at the top (stageTriangles, stagesPresent, partCatalogue,
+   stageCaption, buildSteps, framingSummary) are also used by the parts gallery
    (ui/parts-gallery.js). They touch no page. */
 
 import { STAGES, STAGE_ID, buildVisibility } from "../parts/stages.js";
@@ -62,37 +67,37 @@ export const HOLD_MS = 1500;       /* then it rests this long before the next st
 
 const stagesOf = (m) => (Array.isArray(m.stage) ? m.stage : [m.stage]);
 
-/* Which building steps this drawing has triangles on, and which parts drew
-   them: Map stageKey -> Set of part labels, in drawing order. Reads the 9th
+/* How many triangles each part drew on each building step:
+   Map stageKey -> Map part label -> count, in drawing order. Reads the 9th
    number of each triangle's first corner (every corner of a triangle carries
    the same step). */
-export function stagesPresent(build) {
+export function stageTriangles(build) {
   const out = new Map();
   const add = (sid, part) => {
     const st = STAGES[sid];
     if (!st) return;
     let s = out.get(st.key);
-    if (!s) { s = new Set(); out.set(st.key, s); }
-    s.add(part);
+    if (!s) { s = new Map(); out.set(st.key, s); }
+    s.set(part, (s.get(part) || 0) + 1);
   };
   for (const k of build.ORDER) {
     const b = build.buckets[k];
     if (!b || !b.n) continue;
     const segs = build.tags && build.tags[k];
     if (segs && segs.length) {
-      for (const sg of segs) {
-        let last = -1;
-        for (let tri = sg.from; tri < sg.from + sg.count; tri++) {
-          const sid = b.v[tri * 27 + 8];
-          if (sid === last) continue;
-          last = sid;
-          add(sid, sg.part);
-        }
-      }
+      for (const sg of segs) for (let tri = sg.from; tri < sg.from + sg.count; tri++) add(b.v[tri * 27 + 8], sg.part);
     } else {
       for (let i = 8; i < b.v.length; i += 27) add(b.v[i], "?");
     }
   }
+  return out;
+}
+
+/* Which building steps this drawing has triangles on, and which parts drew
+   them: Map stageKey -> Set of part labels, in drawing order. */
+export function stagesPresent(build, counts) {
+  const out = new Map();
+  for (const [key, parts] of (counts || stageTriangles(build))) out.set(key, new Set(parts.keys()));
   return out;
 }
 
@@ -123,21 +128,35 @@ export function partCatalogue() {
    (stagesPresent). Each label's own part tells what it is in real life,
    filled from plan.construction; a part whose MAIN step is this one is
    preferred (the roofing's rake boards are on the trim step, but the trim
-   step is about the corner trim). */
-export function stageCaption(stageKey, labels, construction) {
+   step is about the corner trim) -- unless `counts` (that step's
+   Map label -> triangles, from stageTriangles) shows another part carrying
+   at least a quarter of what lands on the step: then it is told too (the
+   porch's own corner posts and beam land on "Porch posts and beam", beside
+   the extra post a customer adds). The part named after the step leads
+   (Roof framing before the gable studs). */
+export const CAPTION_SHARE = 0.25;
+export function stageCaption(stageKey, labels, construction, counts) {
   const st = STAGES[STAGE_ID[stageKey]];
   const pc = partCatalogue();
   const want = pc.order.filter((t) => labels && labels.has(t));
-  const picks = [];
+  let total = 0;
+  if (counts) for (const t of want) total += counts.get(t) || 0;
+  const main = [], big = [], rest = [];
   for (const tag of want) {
     const cands = pc.byLabel[tag] || [];
     let p = cands.filter((m) => stagesOf(m)[0] === stageKey);
+    const isMain = p.length > 0;
     if (!p.length) p = cands.filter((m) => stagesOf(m).indexOf(stageKey) >= 0);
     if (!p.length && cands.length) p = [cands[0]];
-    for (const m of p) if (picks.indexOf(m) < 0) picks.push(m);
+    const large = !!counts && total > 0 && (counts.get(tag) || 0) >= total * CAPTION_SHARE;
+    for (const m of p) {
+      const into = isMain ? main : (large ? big : rest);
+      if (main.indexOf(m) < 0 && big.indexOf(m) < 0 && rest.indexOf(m) < 0) into.push(m);
+    }
   }
-  const main = picks.filter((m) => stagesOf(m)[0] === stageKey);
-  const use = main.length ? main : picks;
+  const use = main.length ? main.concat(big) : big.concat(rest);
+  const lead = use.findIndex((m) => m.id === stageKey);
+  if (lead > 0) use.unshift(use.splice(lead, 1)[0]);
   return {
     key: stageKey,
     title: st ? st.name : stageKey,
@@ -253,8 +272,8 @@ export function install(api) {
 
   /* ---- state ---- */
   let view = "finished";
-  let steps = [], k = 0, present = new Map(), playing = false;
-  let stepStart = 0, raf = 0;
+  let steps = [], k = 0, present = new Map(), counts = new Map(), playing = false;
+  let stepStart = 0, raf = 0, flashTimer = 0;
   const ctl = { timeScale: 1 };
 
   function stageClass() {
@@ -266,14 +285,18 @@ export function install(api) {
     }
   }
 
+  /* build the framing, or stop building it; false when the building could
+     not be drawn that way (a part failed -- the page keeps its last picture) */
   function framesOn(want) {
     const cur = !!api.getBuildOptions().frames;
-    if (cur !== want) api.setBuildOptions({ frames: want });
+    if (cur !== want) return api.setBuildOptions({ frames: want }) != null;
+    return true;
   }
 
   function readBuild() {
     const res = api.getResult();
-    present = res && res.build ? stagesPresent(res.build) : new Map();
+    counts = res && res.build ? stageTriangles(res.build) : new Map();
+    present = stagesPresent(null, counts);
     const plan = api.getPlan();
     const order = plan && plan.construction && plan.construction.buildOrder;
     const old = steps[k];
@@ -287,6 +310,8 @@ export function install(api) {
     if (!offer[v]) return view;
     stopTimer();
     playing = false;
+    api.hideAddPop();        /* a menu opened (unseen) in Framing must not pop up on Outside */
+    clearFlash();
     const was = view;
     view = v;
     if (v !== "inside" && api.getMode() === "in") api.setMode("out");
@@ -296,8 +321,19 @@ export function install(api) {
     }
     if (v === "framing" || v === "build") {
       if (api.getState().sel) api.select(null);   /* nothing selected that this view may hide */
-      api.hideAddPop();
-      framesOn(true);
+      if (!framesOn(true)) {
+        /* the framing could not be drawn for this building: showing the
+           finished building with its finish hidden would be an empty yard,
+           so go back to Outside and say why in plain words */
+        view = "finished";
+        framesOn(false);
+        renderer.setStages(stageTableFor("finished"));
+        player.hidden = true;
+        stageClass(); drawNote();
+        flash("The framing for this building could not be drawn just now, so here is the finished building.");
+        renderer.needsDraw = true;
+        return view;
+      }
     }
     if (v === "framing") renderer.setStages(stageTableFor("framing"));
     if (v === "inside" && api.getMode() !== "in") {
@@ -313,7 +349,7 @@ export function install(api) {
       readBuild();
       k = 0;
       showStep(0);
-      play();
+      if (steps.length) play();
     } else {
       player.hidden = true;
     }
@@ -322,7 +358,17 @@ export function install(api) {
     return view;
   }
 
+  /* a short plain-words message in the note's place, gone after 8 s or at
+     the next switch */
+  function clearFlash() { if (flashTimer) clearTimeout(flashTimer); flashTimer = 0; note.classList.remove("vw-flash"); }
+  function flash(msg) {
+    clearFlash();
+    note.textContent = msg; note.hidden = false; note.classList.add("vw-flash");
+    flashTimer = setTimeout(() => { flashTimer = 0; note.classList.remove("vw-flash"); drawNote(); }, 8000);
+  }
+
   function drawNote() {
+    if (flashTimer) return;
     if (view !== "framing") { note.hidden = true; note.textContent = ""; return; }
     const plan = api.getPlan();
     note.innerHTML = "<b>Framing</b> " + esc(framingSummary(plan && plan.construction));
@@ -345,11 +391,23 @@ export function install(api) {
     const plan = api.getPlan();
     const key = steps[k];
     if (!key) return { key: null, title: "", lines: [] };
-    return stageCaption(key, present.get(key), plan && plan.construction);
+    return stageCaption(key, present.get(key), plan && plan.construction, counts.get(key));
   }
   function drawPlayer() {
     player.hidden = view !== "build";
     if (view !== "build") return;
+    if (!steps.length) {
+      /* the company's build order names no step this building has */
+      $("vw-step").innerHTML = "<b>Nothing to show step by step</b>";
+      $("vw-text").textContent = "This company's settings list no building steps for this building. Tap Finished to see the whole building.";
+      $("vw-count").textContent = "";
+      $("vw-fill").style.width = "0%";
+      const pb0 = $("vw-play");
+      pb0.innerHTML = "&#9654;"; pb0.title = "Play"; pb0.setAttribute("aria-label", "Play");
+      pb0.disabled = true; $("vw-prev").disabled = true; $("vw-next").disabled = true; $("vw-restart").disabled = true;
+      return;
+    }
+    $("vw-play").disabled = false; $("vw-next").disabled = false; $("vw-restart").disabled = false;
     const c = caption();
     $("vw-step").innerHTML = "<b>Step " + (k + 1) + " of " + steps.length + "</b> &middot; " + esc(c.title);
     $("vw-text").innerHTML = c.lines.map((l) => "<p><b>" + esc(l.name) + ".</b> " + esc(l.text) + "</p>").join("");
@@ -388,6 +446,7 @@ export function install(api) {
   }
   function play() {
     if (view !== "build") { setView("build", "play"); return; }
+    if (!steps.length) { drawPlayer(); return; }
     if (!playing) {
       /* carry on from where the step is: it finishes landing, then rests in full */
       const t = now() - stepStart, drop = DROP_MS * scale();
@@ -407,6 +466,7 @@ export function install(api) {
   function prev() { if (view === "build" && k > 0) showStep(k - 1); }
   function restart() {
     if (view !== "build") { setView("build", "restart"); return; }
+    if (!steps.length) { drawPlayer(); return; }
     playing = true; showStep(0);
   }
   function finish() { playing = false; setView("finished", "end"); }
@@ -437,7 +497,8 @@ export function install(api) {
     step: () => k,
     playing: () => playing,
     play, pause, next, prev, restart, finish,
-    caption, framingNote: () => (note.hidden ? "" : note.textContent),
+    caption, framingNote: () => (note.hidden || flashTimer ? "" : note.textContent),
+    message: () => (flashTimer ? note.textContent : ""),
     reducedMotion: () => reduced,
   });
   api.views = ctl;

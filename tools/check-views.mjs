@@ -49,6 +49,12 @@
    9. At phone size (390x844) the buttons and the player stay inside the
       picture, clear of the camera View button, with no sideways scroll.
    10. No console errors (a plugin file not written yet may be missing).
+   11. A long press in Framing leaves no "Add here" menu to pop up on
+       Outside; a company whose framing cannot be drawn (a lumber size typo)
+       goes back to Outside with a plain message instead of an empty yard;
+       an empty build order says "Nothing to show step by step". And the
+       captions: Roof framing leads with the trusses, and the "Porch posts
+       and beam" step tells about the porch's own posts and beam.
    It saves pictures of Framing and of a step half way through Watch it
    build for three buildings to test/out/views-*.png. */
 
@@ -314,7 +320,7 @@ try {
       await face(page, 0.62);
       await page.evaluate(() => { window.shedUI.camera.interacted = false; });
     }
-    const bad = [];
+    const bad = [], capIds = {};
     const mid = Math.max(0, bs.steps.indexOf("roof-frame"));
     for (let i = 0; i < bs.steps.length; i++) {
       const s = await page.evaluate(() => ({
@@ -326,6 +332,7 @@ try {
       const shown = expectShown(bs.steps, i);
       const tabBad = STAGES.filter((st) => (tb2[st.id * 4] > 0.5) === shown.has(st.key) || tb2[st.id * 4 + 1] !== 0).map((st) => st.key);
       const key = bs.steps[i];
+      capIds[key] = s.cap.lines.map((l) => l.id);
       if (s.k !== i || s.hidden) bad.push(`step ${i}: at ${s.k}`);
       if (tabBad.length) bad.push(`step ${i} (${key}): wrong in the table: ${tabBad.join(" ")}`);
       if (s.head.indexOf(`Step ${i + 1} of ${bs.steps.length}`) !== 0 || s.head.indexOf(NAME[key]) < 0 || s.count !== `${i + 1} / ${bs.steps.length}`) bad.push(`step ${i}: heading "${s.head}" / "${s.count}"`);
@@ -339,6 +346,10 @@ try {
       await sleep(30);
     }
     ok(`${style}: every one of the ${bs.steps.length} steps, in order, shows exactly the steps landed so far (covered framing hidden), with its counter and a filled caption`, bad.length === 0, bad.slice(0, 6).join("\n       "));
+    ok(`${style}: the Roof framing step's caption starts with the roof framing itself (${(capIds["roof-frame"] || []).join(", ")})`, (capIds["roof-frame"] || [])[0] === "roof-frame", J(capIds["roof-frame"]));
+    if (bs.steps.indexOf("porch-frame") >= 0) {
+      ok(`${style}: the "Porch posts and beam" step tells about the porch's own posts and beam, not only an added post (${capIds["porch-frame"].join(", ")})`, capIds["porch-frame"].indexOf("porch") >= 0, J(capIds["porch-frame"]));
+    }
     await sleep(80);
     const end = await page.evaluate(() => ({ view: window.shedUI.views.view, frames: window.shedUI.getBuildOptions().frames, player: document.getElementById("vw-player").hidden }));
     const E = await picture(page, "E-" + style, "F-" + style);
@@ -442,6 +453,60 @@ try {
     await cf.close();
   }
 
+  /* ================================================================ 11 */
+  section("A menu left open, and settings that are wrong");
+  {
+    const ca = await newContext(browser);
+    const a = await openPage(ca, "?company=demo");
+    await tabClick(a.page, "framing");
+    await sleep(80);
+    const cb = await a.page.evaluate(() => { const r = window.shedUI.canvas.getBoundingClientRect(); return { x: r.left + r.width * 0.5, y: r.top + r.height * 0.55 }; });
+    await a.page.mouse.move(cb.x, cb.y); await a.page.mouse.down(); await sleep(750); await a.page.mouse.up(); await sleep(80);
+    await tabClick(a.page, "finished");
+    await sleep(80);
+    const pop = await a.page.evaluate(() => { const e = document.getElementById("addpop"); return { open: e.classList.contains("open"), shown: getComputedStyle(e).display !== "none" }; });
+    ok("a long press on a wall in Framing (which shows no menu there) leaves no \"Add here\" menu popping up on Outside", !pop.open && !pop.shown, J(pop));
+    const door = await a.page.evaluate(() => { const api = window.shedUI, cat = api.getCatalogue(); const it = api.getState().items.find((i) => cat.CAT[i.cat] && cat.CAT[i.cat].k === "door"); api.select(it.id); return it.id; });
+    await sleep(80);
+    await tabClick(a.page, "framing");
+    await sleep(80);
+    const ds = await a.page.evaluate(() => ({ sel: window.shedUI.getState().sel, sheet: document.getElementById("sheet").classList.contains("open") }));
+    ok(`a door selected on Outside (${door}) is put down when Framing hides it: nothing selected, its card closed`, ds.sel === null && ds.sheet === false, J(ds));
+    await ca.close();
+
+    const bad = JSON.parse(JSON.stringify(DEMO));
+    bad.construction = Object.assign({}, bad.construction, { roof: Object.assign({}, (bad.construction || {}).roof, { chord: "2y4" }) });
+    const cw = await newContext(browser, { company: bad });
+    const w = await openPage(cw, "?company=demo");
+    const WF = await picture(w.page, "W-F");
+    await tabClick(w.page, "framing");
+    await sleep(120);
+    const wr = await w.page.evaluate(() => ({ view: window.shedUI.views.view, frames: window.shedUI.getBuildOptions().frames, msg: window.shedUI.views.message(), on: document.querySelector(".vw-tab.on").getAttribute("data-view") }));
+    const WR = await picture(w.page, "W-R", "W-F");
+    ok(`a company whose roof lumber size is a typo ("2y4"): Framing cannot be drawn, so the page goes back to Outside and says so ("${wr.msg.slice(0, 60)}...")`, wr.view === "finished" && wr.on === "finished" && wr.frames === false && /could not be drawn/.test(wr.msg), J(wr));
+    ok("and shows the finished building, not an empty yard (identical to Outside)", WR.hash === WF.hash && WR.diff === 0, J({ WR: WR.hash, WF: WF.hash }));
+    await tabClick(w.page, "build");
+    await sleep(120);
+    const wb = await w.page.evaluate(() => ({ view: window.shedUI.views.view, player: document.getElementById("vw-player").hidden }));
+    ok("Watch it build does the same (back to Outside, no player)", wb.view === "finished" && wb.player === true, J(wb));
+    const other = realNoise(w.noise).filter((m) => !/could not be drawn|not a lumber size/.test(m.text));
+    ok("nothing else goes wrong (only the page's own note about the drawing)", other.length === 0, J(other));
+    await cw.close();
+
+    const none = JSON.parse(JSON.stringify(DEMO));
+    none.construction = Object.assign({}, none.construction, { buildOrder: [] });
+    const cn = await newContext(browser, { company: none });
+    const n = await openPage(cn, "?company=demo");
+    await tabClick(n.page, "build");
+    await sleep(2800);
+    const nb = await n.page.evaluate(() => ({ view: window.shedUI.views.view, head: document.getElementById("vw-step").textContent, text: document.getElementById("vw-text").textContent, play: document.getElementById("vw-play").disabled }));
+    ok(`a company whose build order is empty: the player says so in plain words ("${nb.head}") rather than "Step 1 of 0", and waits for Finished`, nb.view === "build" && /Nothing to show/.test(nb.head) && !/of 0/.test(nb.head + nb.text) && nb.play === true, J(nb));
+    await n.page.click("#vw-end");
+    ok("and Finished takes it back to Outside", (await view(n.page)) === "finished");
+    ok("no console errors with an empty build order", realNoise(n.noise).length === 0, J(realNoise(n.noise)));
+    await cn.close();
+  }
+
   /* ================================================================ 6 (motion) */
   section("Motion: each step is lowered into place");
   {
@@ -506,5 +571,6 @@ console.log(`\ncheck-views: ${pass} passed, ${fail} failed`);
 if (fail) { console.log("FAILED:\n - " + failures.join("\n - ")); process.exit(1); }
 console.log(`PROVED: the Framing view and Watch it build work on ${BUILDINGS.length} buildings (${BUILDINGS.map((b) => b[0]).join(", ")}): Framing hides the siding and shows the lumber, ` +
   "the playback steps through the company's build order and ends identical to the finished picture, hidden doors cannot be tapped, the captions carry the company's own numbers, " +
-  "the buttons follow the company's features, motion and reduced motion both behave, Inside works, and the phone layout fits. Pictures in test/out/views-*.png.");
+  "the buttons follow the company's features, motion and reduced motion both behave, Inside works, the phone layout fits, no hidden menu or selection is left behind, " +
+  "a framing that cannot be drawn goes back to Outside with a plain message, and an empty build order says so. Pictures in test/out/views-*.png.");
 process.exit(0);

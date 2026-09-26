@@ -4,13 +4,16 @@
    IN NODE (no browser):
      * the plan's words are safe: a company name with HTML in it is painted as
        those very letters (the plan paints with fillText and never builds
-       HTML), control characters are taken out and a very long name is cut;
+       HTML), control characters (and the invisible right-to-left turners)
+       are taken out and a very long name is cut; a picture for a quote
+       leaves "PINCH TO ZOOM" off its footer;
      * the porch outline for every porch kind, and the "Add here" choices come
        from what the company sells.
    IN A REAL BROWSER (the repo served on port 8350, Barnwright on 8351 for the
    side-by-side), software graphics, the demo company:
      1. the Inside button opens the plan (navy paper on the stage, the canvas
-        as sharp as the screen) and closes it again;
+        as sharp as the screen, the title written below the view switcher)
+        and closes it again;
      2. the plan of a Utility Shed, a Lofted Barn, a Side Cabin (side porch),
         a Deluxe Side Cabin (corner porch) and a Dog Kennel is drawn: pixel
         checks region by region -- the paper, every wall of the building
@@ -32,8 +35,15 @@
         along its wall, a bench across the floor) by the distance the finger
         went, within the rules; the 3D building is NOT rebuilt while the
         finger moves and IS when it lifts; back Outside the 3D picture shows
-        the item where the plan put it; an item that is not picked does not
-        move (the plan moves instead);
+        the item where the plan put it; a picked window is drawn in the
+        picked-item blue; pulled far past the end of its wall it stops where
+        the rules stop it, and let go near the middle of its space it is
+        eased onto the middle; a TAP on the picked item (a finger wobbles a
+        pixel or two) does not slide it; the plan's WORDS say the right
+        numbers (the size, and the gaps to the next window and to the
+        corner) and the right labels (a turned bench's label turned with
+        it, the shelf's level, FRONT, the footer); an item that is not
+        picked does not move (the plan moves instead);
      5. dragging empty paper moves the plan; two fingers pinch it to 2x and
         never past 5x or under 1x; a double-tap puts it back;
      6. press and hold: on open floor "Add here" offers a work bench, a shelf
@@ -48,16 +58,25 @@
         door opens onto the porch, where the 3D ramp is);
      9. a look-only page can be zoomed but nothing on it picked or added;
     10. drawPlanPicture (the quote pictures) hands back the plan on its own
-        canvas, the size asked for, with or without the picked item;
+        canvas, the size asked for, with or without the picked item, and its
+        footer does not ask anybody to pinch a picture;
     11. on a phone (390 x 844, two pixels per point, touch) the plan is drawn
-        at full sharpness, a finger taps and pinches it;
+        at full sharpness; the front of the building (the doors, the ends of
+        their swings, FRONT) is drawn above the price plate that lies across
+        the foot of the picture, not under it; a finger tapping the doors
+        picks them AND the plan stays up (the item sheet scrolls the page,
+        and the phone's click after the tap used to land on "Outside" and
+        throw the customer back to the 3D picture); on a computer the plate
+        sits in the corner and no room is kept for it (section 1);
     12. SIDE BY SIDE WITH BARNWRIGHT: the same buildings drawn by Barnwright's
         own page and by ours (at Barnwright's size -- the Dog Kennel's picture
         adds a fourth panel, the plan as our page shows it, a little smaller so
         its back door's swing stays on the paper), at Barnwright's canvas
         size, pixel for pixel:
-        outside the letters (Barnwright's page falls back to a serif font here,
-        ours to a narrow sans-serif) nothing differs on the plain buildings; on
+        outside the letters (Barnwright's page falls back to a serif font here;
+        ours has Oswald, which this site serves itself) nothing differs on the
+        plain buildings (20 pixels at most -- a dimension line one foot short
+        is about 60); on
         the Side Cabin only the porch outline differs, as intended. The
         pictures are written to test/out/ (Barnwright | ours | where they
         differ);
@@ -106,6 +125,8 @@ const DEMO = loadCatalogue("demo");
   ok("a company name with HTML in it is painted as those letters, control characters taken out",
     f === "<IMG SRC=X ONERROR=ALERT(1)> & \"SONS\" · 10 × 16 UTILITY <B>SHED</B> · PINCH TO ZOOM", f);
   ok("a very long company name is cut short so it cannot run off the paper", paperText("x".repeat(200), 48).length === 48);
+  ok("the invisible characters that would turn the rest of the footer round, right to left, are taken out", paperText("Acme‮sdehS⁦ Co‏") === "Acme sdehS Co", J(paperText("Acme‮sdehS⁦ Co‏")));
+  ok("a picture for a quote leaves PINCH TO ZOOM off the footer (nobody can pinch a picture in an e-mail)", footerText({ type: "UT", size: "8x12" }, { brand: { name: "Acme" }, TYPES: { UT: { name: "Utility Shed" } } }, false) === "ACME · 8 × 12 UTILITY SHED");
   ok("no company name: the footer just says the size and style", footerText({ type: "UT", size: "8x12" }, { brand: {}, TYPES: { UT: { name: "Utility Shed" } } }) === "8 × 12 UTILITY SHED · PINCH TO ZOOM");
   ok("the title reads like Barnwright's: 12′ × 24′ — FLOOR PLAN", titleText(12, 24) === "12′ × 24′ — FLOOR PLAN");
 }
@@ -392,6 +413,15 @@ try {
     ok("the plan canvas has one pixel per screen pixel (as sharp as the screen)", inView.w === inView.cw && Math.abs(inView.h - inView.ch) <= 1, J(inView));
     ok("the paper is Barnwright's navy blueprint", inView.corner, J(inView));
     ok("the plan's own stylesheet (ui/blueprint.css) is on the page", inView.css);
+    /* the title is written clear of the view switcher that sits over the top of the stage */
+    const tsw = await page.evaluate(() => {
+      const vm = shedUI.mounts.view, cv = shedUI.mounts.bp, v = shedUI.blueprint.view();
+      const r = vm.getBoundingClientRect(), cr = cv.getBoundingClientRect();
+      return { switcherBottom: r.bottom - cr.top, switcherRight: r.right - cr.left, titleBaseline: (18 * v.d + (v.top || 0)) / v.d, titleTop: (18 * v.d + (v.top || 0)) / v.d - 11, mid: cr.width / 2, shown: !!vm.children.length };
+    });
+    ok(`the title is written below the view switcher, not under it (switcher ends ${tsw.switcherBottom.toFixed(0)} px down, the title's letters start ${tsw.titleTop.toFixed(0)} px down)`, !tsw.shown || tsw.switcherRight < tsw.mid - 90 || tsw.titleTop > tsw.switcherBottom + 2, J(tsw));
+    const botDesk = await page.evaluate(() => shedUI.blueprint.view().bot);
+    ok("on a computer the price plate sits in the corner, clear of the plan, so no room is kept for it (the plan keeps Barnwright's size)", botDesk === 0, botDesk);
     await page.click("#modebar");
     ok("tapping it again goes back to the 3D picture", await page.evaluate(() => shedUI.getMode() === "out" && !document.getElementById("stage").classList.contains("bpmode")));
     await page.click("#modebar");
@@ -554,6 +584,19 @@ try {
     await page.mouse.click(p0[0], p0[1]);
     const t1 = await page.evaluate((id) => ({ sel: shedUI.getState().sel, sheet: document.getElementById("sheet").classList.contains("open"), id }), winId);
     ok("tapping a window on the plan picks it (and the item sheet opens)", t1.sel === winId && t1.sheet, J(t1));
+    /* ...and the plan shows it picked: its three lines turn the light blue
+       of a picked item (and back to white when it is put down) */
+    const blue = async () => page.evaluate((id) => {
+      const H = __bp, R = H.live(), it = H.LAY.itemById(shedUI.getState(), id), cw = H.LAY.itemW(it, H.cat.CAT);
+      let cyan = 0, n = 0;
+      for (const o of [-0.13, 0, 0.13]) for (let f = -0.35; f <= 0.35; f += 0.05) { n++; const q = H.wp(R, it, it.pos + cw * f, o); if (H.anyNear(R, q, 1, (c) => !!c && c[2] > 200 && c[0] < 170 && c[1] > 170)) cyan++; }
+      return cyan / n;
+    }, winId);
+    const pickedBlue = await blue();
+    await page.evaluate(() => shedUI.select(null));
+    const plainBlue = await blue();
+    await page.evaluate((id) => shedUI.select(id), winId);
+    ok(`the picked window is drawn in the picked-item blue (${(pickedBlue * 100).toFixed(0)}% of its lines; ${(plainBlue * 100).toFixed(0)}% when it is not picked)`, pickedBlue > 0.9 && plainBlue < 0.1, J({ pickedBlue, plainBlue }));
     const before = await page.evaluate((id) => { const it = __bp.LAY.itemById(shedUI.getState(), id); __bp.rebuilds = 0; return { pos: it.pos, s: shedUI.blueprint.view().s }; }, winId);
     const dy = 90;
     await page.mouse.move(p0[0], p0[1]);
@@ -573,6 +616,39 @@ try {
     ok("where it ended up is a place the rules allow (clampPos leaves it there)", after.legal, J(after));
     ok("the 3D building is not rebuilt while the finger moves, and is when it lifts", mid === 0 && after.rebuilds >= 1 && after.planPos === after.pos, J({ mid, after }));
     ok("the window is still the picked item after the drag", after.sel === winId);
+    /* the rules while dragging: pulled far past the end of the wall, the
+       window stops where the rules stop it (clampPos) -- never off the wall */
+    {
+      const far = await page.evaluate((id) => ({ at: __bp.itemScreen(id), s: shedUI.blueprint.view().s }), winId);
+      await page.mouse.move(far.at[0], far.at[1]); await page.mouse.down();
+      for (let i = 1; i <= 10; i++) await page.mouse.move(far.at[0], far.at[1] + (880 - far.at[1]) * i / 10);   /* to the foot of the window: many feet past the wall's end */
+      await page.mouse.up();
+      const f2 = await page.evaluate((id) => {
+        const H = __bp, st = shedUI.getState(), it = H.LAY.itemById(st, id), fr = H.B.planFrame(st, H.cat), w = fr.ws[it.wall], cw = H.LAY.itemW(it, H.cat.CAT);
+        const probe = JSON.parse(JSON.stringify(it)); probe.pos = 1e6; H.LAY.clampPos(probe, st, fr);
+        return { pos: it.pos, limit: probe.pos, end: w.len / 2 - cw / 2 };
+      }, winId);
+      ok(`dragged far past the front end of the wall, the window stops where the rules stop it (${f2.pos.toFixed(3)} ft along; the furthest the rules allow is ${f2.limit.toFixed(3)}, the wall's end ${f2.end.toFixed(3)})`, Math.abs(f2.pos - f2.limit) < 1e-6 && f2.pos <= f2.end + 1e-6, J(f2));
+    }
+    /* and eased onto the middle of its space: let go 0.1 ft from the middle of
+       an empty wall, it lands exactly on the middle (snapCenter) */
+    {
+      const sn = await page.evaluate(() => {
+        const H = __bp, cat = H.cat;
+        const it = shedUI.setState((s) => H.ST.addAt(s, "w23", { wall: "R", u: 3 }, cat));
+        shedUI.setState((s) => { H.LAY.itemById(s, it.id).pos = 3; });
+        shedUI.select(it.id);
+        return { id: it.id, at: H.itemScreen(it.id), s: shedUI.blueprint.view().s };
+      });
+      /* the R wall runs toward the back (-z = up the plan): 2.9 ft down the plan brings it to 0.1 ft from the middle */
+      const dy2 = 2.9 * sn.s;
+      await page.mouse.move(sn.at[0], sn.at[1]); await page.mouse.down();
+      for (let i = 1; i <= 8; i++) await page.mouse.move(sn.at[0], sn.at[1] + dy2 * i / 8);
+      await page.mouse.up();
+      const sn2 = await page.evaluate((id) => { const it = __bp.LAY.itemById(shedUI.getState(), id); const pos = it.pos; shedUI.setState((s) => { s.items = s.items.filter((i) => i.id !== id); s.sel = null; }); return pos; }, sn.id);
+      ok(`let go 0.1 ft from the middle of an empty wall, a window is eased onto the exact middle (it landed at ${sn2.toFixed(4)} ft)`, Math.abs(sn2) < 1e-9, sn2);
+      await page.evaluate((id) => shedUI.select(id), winId);
+    }
     /* back outside: the 3D picture has the window where the plan put it */
     await page.click("#modebar");
     const threeD = await page.evaluate((id) => {
@@ -591,6 +667,49 @@ try {
     await page.mouse.up();
     const b1 = await page.evaluate((id) => { const it = __bp.LAY.itemById(shedUI.getState(), id); return { px: it.px, pz: it.pz }; }, bench);
     ok(`a picked work bench slides across the floor with the finger (${(b1.px - b0.px).toFixed(2)} ft across, ${(b1.pz - b0.pz).toFixed(2)} ft along)`, Math.abs(b1.px - b0.px - 60 / b0.s) < 0.05 && Math.abs(b1.pz - b0.pz - 45 / b0.s) < 0.05, J({ b0, b1 }));
+    /* a TAP on the picked item -- a finger always wobbles a pixel or two --
+       must not slide it: 0.15 ft off the middle of an empty wall is inside
+       the snap-to-the-middle distance, so any slide at all would jump it */
+    const jig = await page.evaluate(() => {
+      const H = __bp, cat = H.cat;
+      const it = shedUI.setState((s) => { const w = H.ST.addAt(s, "w23", { wall: "R", u: 0 }, cat); return w; });
+      shedUI.setState((s) => { H.LAY.itemById(s, it.id).pos = 0.15; });
+      shedUI.select(it.id);
+      window.__bpChanges = 0; if (!window.__bpChangeHook) { window.__bpChangeHook = true; shedUI.on("change", () => { window.__bpChanges++; }); }
+      return { id: it.id, at: H.itemScreen(it.id) };
+    });
+    await page.mouse.move(jig.at[0], jig.at[1]); await page.mouse.down(); await page.mouse.move(jig.at[0], jig.at[1] + 2); await page.mouse.up();
+    const jig2 = await page.evaluate((id) => { const it = __bp.LAY.itemById(shedUI.getState(), id), pl = shedUI.getPlan().state.items.find((i) => i.id === id); return { pos: it.pos, planPos: pl && pl.pos, sel: shedUI.getState().sel === id, changes: window.__bpChanges }; }, jig.id);
+    ok(`a tap on the picked window (the finger wobbling 2 px) leaves it where it was (${jig2.pos.toFixed(3)} ft; it was 0.150) and it stays picked`, Math.abs(jig2.pos - 0.15) < 1e-9 && jig2.planPos === jig2.pos && jig2.sel, J(jig2));
+    await page.evaluate((id) => shedUI.setState((s) => { s.items = s.items.filter((i) => i.id !== id); s.sel = null; }), jig.id);
+    /* THE WORDS ON THE PLAN say the right numbers (the pixel comparisons
+       leave the letters out, so this is where the numbers are proved): the
+       size in the title and on the two dimension lines, and for a picked
+       window the gap to the NEXT window along the wall on one side and to
+       the corner on the other (model/layout.js neighborGaps) */
+    const wr = await page.evaluate(() => {
+      const H = __bp, cat = H.cat, ft = shedUI.ftIn;
+      shedUI.setState((s) => { H.ST.chooseType(s, "UT", cat); H.ST.chooseSize(s, "12x24", cat); });
+      const a = shedUI.setState((s) => H.ST.addAt(s, "w23", { wall: "L", u: -6 }, cat));
+      const b = shedUI.setState((s) => H.ST.addAt(s, "w23", { wall: "L", u: 3 }, cat));
+      shedUI.setState((s) => { H.LAY.itemById(s, a.id).pos = -6; H.LAY.itemById(s, b.id).pos = 3; });
+      /* a bench turned to run along the length, and a shelf across */
+      const bench = shedUI.setState((s) => { const it = H.ST.addInterior(s, "bench", cat, 0); it.px = -3; it.pz = -6; it.rot = true; it.ln = 6; return it; });
+      const shelf = shedUI.setState((s) => { const it = H.ST.addInterior(s, "shelf", cat, 0); it.px = 2; it.pz = 6; it.rot = false; it.ln = 8; return it; });
+      shedUI.select(b.id);
+      const P = CanvasRenderingContext2D.prototype, keep = P.fillText, got = [], turn = {};
+      P.fillText = function (t) { got.push(String(t)); const m = this.getTransform(); turn[String(t)] = Math.abs(m.b) > 0.9 * Math.abs(m.a) + 0.1 ? "turned" : "level"; return keep.apply(this, arguments); };
+      try { shedUI.blueprint.draw(); } finally { P.fillText = keep; }
+      const st = shedUI.getState(), A = H.LAY.itemById(st, a.id), B = H.LAY.itemById(st, b.id), cw = H.LAY.itemW(B, cat.CAT), fr = H.B.planFrame(st, cat), w = fr.ws.L;
+      /* worked out here from the two windows' own places, not from the plan's code */
+      const toNeighbour = (B.pos - cw / 2) - (A.pos + H.LAY.itemW(A, cat.CAT) / 2), toCorner = w.len / 2 - (B.pos + cw / 2), toFarCorner = (B.pos - cw / 2) + w.len / 2;
+      const want = { title: "12′ × 24′ — FLOOR PLAN", width: ft(12), length: ft(24), toNeighbour: ft(toNeighbour), toCorner: ft(toCorner), bench: "BENCH 6′", shelf: "SHELF 8′", front: "FRONT", footer: "PORTABLE BUILDINGS · 12 × 24 UTILITY SHED · PINCH TO ZOOM" };
+      shedUI.setState((s) => { s.items = s.items.filter((i) => [a.id, b.id, bench.id, shelf.id].indexOf(i.id) < 0); s.sel = null; });
+      return { got, want, wrongCorner: ft(toFarCorner), turn };
+    });
+    const miss = Object.keys(wr.want).filter((k) => wr.got.indexOf(wr.want[k]) < 0);
+    ok(`the plan's words say the right numbers: the title, ${wr.want.width} across, ${wr.want.length} long, and for the picked window ${wr.want.toNeighbour} to the next window and ${wr.want.toCorner} to the corner`, ["title", "width", "length", "toNeighbour", "toCorner"].every((k) => miss.indexOf(k) < 0) && wr.got.indexOf(wr.wrongCorner) < 0, J({ miss, got: wr.got, want: wr.want }));
+    ok(`... and the other words: "${wr.want.bench}" written along its turned bench, "${wr.want.shelf}" across its shelf, FRONT, and the footer with the company's name`, miss.length === 0 && wr.turn[wr.want.bench] === "turned" && wr.turn[wr.want.shelf] === "level", J({ miss, turn: wr.turn }));
     /* an item that is NOT picked does not move: the plan moves */
     await page.evaluate(() => { shedUI.select(null); shedUI.blueprint.reset(); });
     const p2 = await page.evaluate((id) => __bp.itemScreen(id), winId);
@@ -762,15 +881,21 @@ try {
       const a = H.B.drawPlanPicture(shedUI.getState(), H.cat, 600, 420);
       const b = H.B.drawPlanPicture(shedUI.getState(), H.cat, 600, 420, { selection: false });
       const c = H.B.drawPlanPicture(shedUI.getState(), H.cat, 1200, 840, { scale: 2 });
+      /* the words painted on a picture, and on the live plan */
+      const words = (fn) => { const P = CanvasRenderingContext2D.prototype, keep = P.fillText, got = []; P.fillText = function (t) { got.push(String(t)); return keep.apply(this, arguments); }; try { fn(); } finally { P.fillText = keep; } return got; };
+      const picWords = words(() => H.B.drawPlanPicture(shedUI.getState(), H.cat, 600, 420, { selection: false }));
+      const liveWords = words(() => shedUI.blueprint.draw());
       const R = { img: H.imgOf(a), W: 600, H: 420 };
       const mode = shedUI.getMode();
       shedUI.select(null);
-      return { a: [a.width, a.height], c: [c.width, c.height], paper: H.isPaper(H.px(R, 3, 200)), cyanSel: cyan(a), cyanNo: cyan(b), url: c.toDataURL("image/png"), mode, isCanvas: a instanceof HTMLCanvasElement };
+      return { a: [a.width, a.height], c: [c.width, c.height], paper: H.isPaper(H.px(R, 3, 200)), cyanSel: cyan(a), cyanNo: cyan(b), url: c.toDataURL("image/png"), mode, isCanvas: a instanceof HTMLCanvasElement, picWords, liveWords };
     });
     ok("drawPlanPicture(state, catalogue, 600, 420) hands back a 600 x 420 canvas with the plan on its navy paper", r.isCanvas && J(r.a) === J([600, 420]) && r.paper, J({ a: r.a, paper: r.paper }));
     ok("scale 2 draws the same plan twice the size (1200 x 840)", J(r.c) === J([1200, 840]));
     ok("with selection:false the picked item's highlight and measurements are left out", r.cyanSel > r.cyanNo, J({ with: r.cyanSel, without: r.cyanNo }));
     ok("making the picture does not change the screen (still Inside)", r.mode === "in");
+    const foot = (ws) => ws.find((w) => /SIDE CABIN/.test(w)) || "";
+    ok(`the picture's footer names the company and the building without "PINCH TO ZOOM" ("${foot(r.picWords)}"); the plan on the screen still says it`, /^PORTABLE BUILDINGS · 12 × 24 SIDE CABIN$/.test(foot(r.picWords)) && /PINCH TO ZOOM$/.test(foot(r.liveWords)) && !r.picWords.some((w) => /PINCH/.test(w)), J({ pic: r.picWords, live: r.liveWords }));
     const file = resolve(OUT, "blueprint-picture-SC-12x24.png");
     writeFileSync(file, Buffer.from(r.url.split(",")[1], "base64"));
     shots.push([file, "drawPlanPicture of a Side Cabin 12x24 at 1200 x 840, scale 2 (the quote picture)"]);
@@ -787,9 +912,32 @@ try {
     const r = await pp.evaluate(() => { const cv = document.getElementById("bp"), H = __bp, R = H.live(); return { w: cv.width, h: cv.height, cw: cv.clientWidth, ch: cv.clientHeight, d: R.d, door: H.symbol(R, shedUI.getState().items[0]), mode: shedUI.getMode() }; });
     ok(`the plan is drawn at two pixels per point (${r.w} x ${r.h} for a ${r.cw} x ${r.ch} canvas)`, r.mode === "in" && r.w === r.cw * 2 && Math.abs(r.h - r.ch * 2) <= 2 && r.d === 2, J(r));
     ok("the double doors are drawn on the phone too", r.door.ok, J(r.door));
+    /* the price plate lies right across the foot of a phone's picture: the
+       front of the plan -- the doors, the ends of their swings, FRONT -- must
+       be drawn above it, where a finger and an eye can reach it */
+    const clear = await pp.evaluate(() => {
+      const H = __bp, st = shedUI.getState(), cat = H.cat, v = shedUI.blueprint.view(), fr = H.B.planFrame(st, cat), cv = shedUI.mounts.bp, cr = cv.getBoundingClientRect();
+      const on = (wx, wz) => { const p = shedUI.blueprint.toScreen(wx, wz), q = [cr.left + p[0], cr.top + p[1]]; return document.elementFromPoint(q[0], q[1]) === cv; };
+      const spots = [];
+      for (const it of st.items) {
+        const c = cat.CAT[it.cat]; if (!c || c.k !== "door") continue;
+        const w = fr.ws[it.wall], cw = H.LAY.itemW(it, cat.CAT), r = c.leaves === 2 ? cw / 2 : cw;
+        for (const u of [it.pos - cw / 2, it.pos + cw / 2, it.pos]) { const q = H.wallPt(w, u, 0, u === it.pos ? 0 : r); spots.push(on(q[0], q[2])); }
+      }
+      const fy = (v.cy + fr.d.L / 2 * v.s + 26 * v.d) / v.d, fx = v.cx / v.d;
+      const front = document.elementFromPoint(cr.left + fx, cr.top + fy - 3) === cv;
+      return { spots, front, bot: v.bot, plate: document.getElementById("plate").getBoundingClientRect().top - cr.top };
+    });
+    ok(`on the phone the doors, the ends of their swings and FRONT are drawn above the price plate, not under it (${clear.spots.filter(Boolean).length} of ${clear.spots.length} door points on show, FRONT ${clear.front ? "on show" : "hidden"})`, clear.spots.length >= 3 && clear.spots.every(Boolean) && clear.front && clear.bot > 0, J(clear));
     const door = await pp.evaluate(() => __bp.itemScreen(shedUI.getState().items[0].id));
     await pp.touchscreen.tap(door[0], door[1]);
+    await sleep(350);
     ok("a finger tapping the doors picks them", await pp.evaluate(() => shedUI.getState().sel === shedUI.getState().items[0].id));
+    /* picking opens the item sheet, which scrolls the page; the click a phone
+       sends after a tap must not then land on the Outside button that has
+       scrolled under the finger */
+    const stay = await pp.evaluate(() => ({ mode: shedUI.getMode(), scrolled: window.scrollY }));
+    ok(`... and the plan stays on the screen (the page scrolled ${stay.scrolled} px to show the item sheet; the tap did not also press "Outside")`, stay.mode === "in", J(stay));
     const file = resolve(OUT, "blueprint-phone-LB-12x24.png");
     await (await pp.$("#stage")).screenshot({ path: file });
     shots.push([file, "the Inside view on a phone, Lofted Barn 12x24 with its doors picked (the measurements to the corners show)"]);
@@ -875,7 +1023,9 @@ try {
       const pct = (v) => (100 * v / cmp.total).toFixed(3) + "%";
       console.log(`       ${name} ${size} at Barnwright's ${cmp.w} x ${cmp.h}: ${pct(cmp.diff)} of the pixels differ, ${pct(cmp.diffOut)} outside the letters; the white lines (walls, doors, windows) overlap ${(cmp.lineIoU * 100).toFixed(1)}%` + (cmp.sameAsShown ? "" : " -- compared at Barnwright's size; the page draws this one a little smaller so its door swing stays on the paper (fourth picture)"));
       if (kind === "plain") {
-        ok(`${name} ${size}: outside the letters ours is Barnwright's plan pixel for pixel (${pct(cmp.diffOut)} differ)`, cmp.diffOut / cmp.total < 0.0005, J({ diff: cmp.diff, diffOut: cmp.diffOut }));
+        /* pixel for pixel means pixel for pixel: a dimension line one foot
+           short is only ~60 pixels, so the allowance is 20 pixels, not a share */
+        ok(`${name} ${size}: outside the letters ours is Barnwright's plan pixel for pixel (${cmp.diffOut} of ${cmp.total} pixels differ)`, cmp.diffOut <= 20, J({ diff: cmp.diff, diffOut: cmp.diffOut }));
         ok(`${name} ${size}: the walls, doors and windows are the same lines (${(cmp.lineIoU * 100).toFixed(1)}% overlap)`, cmp.lineIoU > 0.97, cmp.lineIoU);
       } else {
         ok(`${name} ${size}: the lines of the building are Barnwright's (${(cmp.lineIoU * 100).toFixed(1)}% overlap) -- only the porch outline moved, to the porch`, cmp.lineIoU > 0.95 && cmp.diffOut / cmp.total < 0.02, J({ diffOut: cmp.diffOut, iou: cmp.lineIoU }));

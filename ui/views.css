@@ -54,3 +54,5 @@
 }
 @media(prefers-reduced-motion:reduce){.vw-bar i{transition:none}}
 @media print{.vw-tabs,.vw-player,.vw-note{display:none}}
+/* a plain-words message in the note's place (the framing could not be drawn) */
+.vw-note.vw-flash{border-color:var(--red)}

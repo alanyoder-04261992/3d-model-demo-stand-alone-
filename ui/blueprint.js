@@ -59,7 +59,9 @@
    FOR THE QUOTE PICTURES (another file uses it):
      drawPlanPicture(state, catalogue, w, h, opts) -> a new <canvas>, w x h
        pixels, with the whole plan fitted in it (no zoom, no pan), exactly as
-       the Inside view draws it. opts: { scale (default 1): how big the lines
+       the Inside view draws it -- except that its footer does not say
+       "PINCH TO ZOOM", which nobody can do to a picture in an e-mail
+       (Barnwright's quote picture said it). opts: { scale (default 1): how big the lines
        and letters are -- pass 2 for a sharp picture twice the size;
        selection (default true): false leaves out the picked item's
        highlight and its measurements }.
@@ -99,6 +101,20 @@
        check uses it);
      * when the view switcher (ui/views.js) sits over the top of the stage,
        the title and the plan move down below it instead of under it;
+     * on a phone the price plate lies right across the foot of the stage,
+       and Barnwright drew the front of the building -- the doors, their
+       swings, the word FRONT -- underneath it; the plan now keeps clear of
+       the plate whenever the plate covers its middle (a phone, a tablet
+       held sideways). On a computer the plate sits in the corner, clear of
+       the plan, and nothing moves;
+     * a finger lifted off the plan does not also "click" what is under it
+       a moment later (the touch's end is cancelled): picking an item opens
+       the item sheet, which scrolls the page, and that click then landed on
+       the "Outside" button and threw the customer back to the 3D picture;
+     * a TAP on the picked item never slides it: the picked item only
+       starts to follow the finger once the finger has moved more than
+       3 px (Barnwright slid it by the finger's wobble, eased it up to
+       0.22 ft onto the middle of its space, and never saved that move);
      * tapping empty paper with nothing picked does not rebuild the 3D
        building (Barnwright did, for nothing) -- which is also what keeps a
        quick double-tap quick.
@@ -136,20 +152,23 @@ export const BP_FONT = "Oswald, 'Arial Narrow', 'Roboto Condensed', Arial, sans-
 function font(weight, px) { return weight + " " + px + "px " + BP_FONT; }
 
 /* A word from a settings file, fit to paint on the paper: no control
-   characters, not longer than `max`. (fillText never reads HTML.) */
+   characters (nor the invisible ones that turn the rest of a line round,
+   right to left), not longer than `max`. (fillText never reads HTML.) */
 export function paperText(v, max) {
-  let s = String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f-\u009f]/g, " ").replace(/\s+/g, " ").trim();
+  let s = String(v == null ? "" : v).replace(/[\u0000-\u001f\u007f-\u009f\u200e\u200f\u202a-\u202e\u2066-\u2069]/g, " ").replace(/\s+/g, " ").trim();
   max = max || 60;
   if (s.length > max) s = s.slice(0, max - 1) + "…";
   return s;
 }
 
-/* The footer line: "ACME SHEDS · 12 × 24 SIDE CABIN · PINCH TO ZOOM". */
-export function footerText(state, cat) {
+/* The footer line: "ACME SHEDS · 12 × 24 SIDE CABIN · PINCH TO ZOOM".
+   hint false leaves "PINCH TO ZOOM" off -- a picture for a quote cannot be
+   pinched. */
+export function footerText(state, cat, hint) {
   const t = cat.TYPES[state.type] || {};
   const brand = paperText((cat.brand && (cat.brand.name || cat.brand.short)) || "", 48).toUpperCase();
   const what = paperText(String(state.size).replace("x", " × ") + " " + (t.name || ""), 60).toUpperCase();
-  return (brand ? brand + " · " : "") + what + " · PINCH TO ZOOM";
+  return (brand ? brand + " · " : "") + what + (hint === false ? "" : " · PINCH TO ZOOM");
 }
 
 /* The title: "12′ × 24′ — FLOOR PLAN" (the corner porch counts its deck in
@@ -189,9 +208,11 @@ function dimLine(x, d, ax, ay, bx, by, label) {
    pixels per CSS pixel; view {zoom, ox, oy} (the pan is clamped IN PLACE,
    as Barnwright clamps bpOX / bpOY); opts {selection: false (leave the
    picked item's highlight and measurements out), topReserve (pixels kept
-   free at the top), fit: "barnwright" (Barnwright's size even when a door
-   swing runs off the paper)}. Returns where the plan landed:
-   { s (pixels per foot), cx, cy (where x = 0, z = 0 is), d, fr }. */
+   free at the top), bottomReserve (pixels at the bottom the price plate
+   covers: the building, its swings and FRONT stay above them), fit:
+   "barnwright" (Barnwright's size even when a door swing runs off the
+   paper)}. Returns where the plan landed:
+   { s (pixels per foot), cx, cy (where x = 0, z = 0 is), d, fr, top, bot }. */
 export function drawPlan(x, Wc, Hc, d, state, cat, view, opts) {
   opts = opts || {};
   view = view || { zoom: 1, ox: 0, oy: 0 };
@@ -201,25 +222,32 @@ export function drawPlan(x, Wc, Hc, d, state, cat, view, opts) {
   const sel = opts.selection === false ? null : state.sel;
   /* room kept free at the top (the view switcher sits there on the page) */
   const top = Math.max(0, Math.min(Hc * 0.3, opts.topReserve || 0));
+  /* ...and at the bottom (on a phone the price plate lies across the foot
+     of the picture): the margin under the building is made big enough for
+     the plate plus the FRONT label; with no plate there it is Barnwright's */
+  const bot = Math.max(0, Math.min(Hc * 0.3, opts.bottomReserve || 0));
   const m = Math.round(Math.min(Wc, Hc) * 0.16);
-  const fitB = Math.min((Wc - 2 * m) / W, (Hc - top - 2 * m) / L);   /* Barnwright's fit */
+  const mBot = bot > 0 ? Math.max(m, bot + 30 * d) : m;
+  const fitB = Math.min((Wc - 2 * m) / W, (Hc - top - m - mBot) / L);   /* Barnwright's fit */
+  const cy0 = (Hc + top + m - mBot) / 2;                                 /* Barnwright's: (Hc + top) / 2 */
   let fit = fitB;
   if (opts.fit !== "barnwright") {
     /* ...made a little smaller ONLY when a door's swing or the ramp would
-       otherwise run off the paper (or, at the back, up into the title) */
-    const r = planReach(state, fr, CAT), half = (Hc - top) / 2;
+       otherwise run off the paper (or, at the back, up into the title, or
+       at the front under the price plate) */
+    const r = planReach(state, fr, CAT);
     const side = 4 * d, below = 4 * d, above = 24 * d;
     if (r.x1 > W / 2 + 1e-6) fit = Math.min(fit, (Wc / 2 - side) / r.x1);
     if (-r.x0 > W / 2 + 1e-6) fit = Math.min(fit, (Wc / 2 - side) / -r.x0);
-    if (r.z1 > L / 2 + 1e-6) fit = Math.min(fit, (half - below) / r.z1);
-    if (-r.z0 > L / 2 + 1e-6) fit = Math.min(fit, (half - above) / -r.z0);
+    if (r.z1 > L / 2 + 1e-6) fit = Math.min(fit, (Hc - bot - cy0 - below) / r.z1);
+    if (-r.z0 > L / 2 + 1e-6) fit = Math.min(fit, (cy0 - top - above) / -r.z0);
     fit = Math.max(fit, fitB * 0.4);                                /* never shrink it to a speck */
   }
   const S = fit * (view.zoom || 1);
   view.ox = Math.max(-W / 2 * S, Math.min(W / 2 * S, view.ox || 0));
   view.oy = Math.max(-L / 2 * S, Math.min(L / 2 * S, view.oy || 0));
-  const cx = Wc / 2 + view.ox, cy = (Hc + top) / 2 + view.oy;
-  const BPS = { s: S, cx: cx, cy: cy, d: d, fr: fr, Wc: Wc, Hc: Hc };
+  const cx = Wc / 2 + view.ox, cy = cy0 + view.oy;
+  const BPS = { s: S, cx: cx, cy: cy, d: d, fr: fr, Wc: Wc, Hc: Hc, top: top, bot: bot };
   function Pt(wx, wz) { return [cx + wx * S, cy + wz * S]; }
   const catOf = (it) => CAT[it.cat] || null;
 
@@ -420,7 +448,7 @@ export function drawPlan(x, Wc, Hc, d, state, cat, view, opts) {
   x.fillStyle = "rgba(207,227,242,.55)"; x.font = font(600, 8.5 * d);
   x.fillText("FRONT", cx, Pt(0, L / 2)[1] + 26 * d);
   x.textAlign = "right"; x.fillStyle = "rgba(207,227,242,.6)";
-  x.fillText(footerText(state, cat), Wc - 10 * d, Hc - 10 * d);
+  x.fillText(footerText(state, cat, opts.hint), Wc - 10 * d, Hc - 10 * d);
   return BPS;
 }
 
@@ -553,7 +581,7 @@ export function drawPlanPicture(state, catalogue, w, h, opts) {
   cv.height = Math.max(2, Math.round(h || 420));
   const x = cv.getContext("2d");
   if (!x) throw new Error("drawPlanPicture: this browser cannot draw on a canvas.");
-  drawPlan(x, cv.width, cv.height, opts.scale || 1, state, catalogue, { zoom: 1, ox: 0, oy: 0 }, { selection: opts.selection });
+  drawPlan(x, cv.width, cv.height, opts.scale || 1, state, catalogue, { zoom: 1, ox: 0, oy: 0 }, { selection: opts.selection, hint: false });
   return cv;
 }
 
@@ -606,10 +634,24 @@ export function install(api) {
     if (r.right - cr.left < cr.width / 2 - 90) return 0;       /* clear of the title's middle */
     return Math.max(0, (r.bottom - cr.top) + 16 - 18) * dpr();
   }
+  /* The price plate (#plate) lies over the foot of the stage. On a phone it
+     runs the whole width, right across the front of the building -- the
+     doors, their swings and the word FRONT were drawn underneath it. When
+     it covers the middle of the plan, the plan keeps clear of it. (On a
+     computer it sits in the corner, clear of the plan, and nothing moves.) */
+  function bottomReserve() {
+    const pl = document.getElementById("plate");
+    if (!pl) return 0;
+    const r = pl.getBoundingClientRect(), cr = canvas.getBoundingClientRect();
+    if (!r.width || !r.height || !cr.width || r.top >= cr.bottom || r.bottom <= cr.top) return 0;
+    const mid = cr.left + cr.width / 2;
+    if (r.right < mid - 90 || r.left > mid + 90) return 0;       /* off to one side, clear of the plan's middle */
+    return Math.max(0, cr.bottom - r.top + 4) * dpr();
+  }
   function draw() {
     if (api.getMode() !== "in") return null;
     if (canvas.width < 3) size();
-    try { BPS = drawPlan(x, canvas.width, canvas.height, dpr(), api.getState(), cat, view, { topReserve: topReserve() }); }
+    try { BPS = drawPlan(x, canvas.width, canvas.height, dpr(), api.getState(), cat, view, { topReserve: topReserve(), bottomReserve: bottomReserve() }); }
     catch (e) { console.error("The floor plan could not be drawn:", e); }
     return BPS;
   }
@@ -715,6 +757,13 @@ export function install(api) {
     if (!down || lpf) return;
     if (Math.hypot(p[0] - down[0], p[1] - down[1]) > 3 * d) { moved = true; if (lp) { clearTimeout(lp); lp = null; } }
     if (dragIt && BPS) {
+      /* nothing slides until the finger has really moved (more than 3 px):
+         a tap on the picked item always wobbles a pixel or two, and even
+         that used to slide it -- and ease it up to 0.22 ft onto the middle
+         of its space -- without the move ever being saved as a change (a
+         tap is not a drag). The first real move then carries the whole way
+         from where the finger went down, so a drag loses nothing. */
+      if (!moved) return;
       const dwx = (p[0] - last[0]) / BPS.s, dwz = (p[1] - last[1]) / BPS.s;
       const c = cat.CAT[dragIt.cat], state = api.getState(), fr = dragFr || frameOf(state, cat);
       if (c.free || c.stretch) { dragIt.px = (dragIt.px || 0) + dwx; dragIt.pz = (dragIt.pz || 0) + dwz; }
@@ -746,12 +795,21 @@ export function install(api) {
   canvas.addEventListener("pointerup", end);
   canvas.addEventListener("pointercancel", end);
   canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+  /* A finger lifted off the plan must not ALSO "click" whatever is under it
+     a moment later. Picking an item opens the item sheet, which scrolls the
+     page; the click the browser sends after a tap then landed on the
+     "Outside -- 3D view" button now under the finger and threw the customer
+     back to the 3D picture (found on a 390 x 844 phone: tap the doors on
+     the plan, and the plan was gone). Cancelling the end of the touch stops
+     that click; the plan works from the pointer events above and never
+     needed it. */
+  canvas.addEventListener("touchend", function (e) { if (e.cancelable) e.preventDefault(); }, { passive: false });
 
   /* ---------- for the checks, and for anybody plugging in after us ---------- */
   api.blueprint = {
     draw: draw,
     /* {zoom, ox, oy, s, cx, cy, d}: where the plan is on the canvas now */
-    view: function () { return Object.assign({ zoom: view.zoom, ox: view.ox, oy: view.oy }, BPS ? { s: BPS.s, cx: BPS.cx, cy: BPS.cy, d: BPS.d, TH: BPS.TH } : {}); },
+    view: function () { return Object.assign({ zoom: view.zoom, ox: view.ox, oy: view.oy }, BPS ? { s: BPS.s, cx: BPS.cx, cy: BPS.cy, d: BPS.d, TH: BPS.TH, top: BPS.top, bot: BPS.bot } : {}); },
     /* feet on the floor (x across, z along, front +z) -> CSS pixels in the canvas */
     toScreen: function (wx, wz) { if (!BPS) draw(); if (!BPS) return null; return [(BPS.cx + wx * BPS.s) / BPS.d, (BPS.cy + wz * BPS.s) / BPS.d]; },
     toWorld: function (px, py) { if (!BPS) draw(); if (!BPS) return null; return [(px * BPS.d - BPS.cx) / BPS.s, (py * BPS.d - BPS.cy) / BPS.s]; },

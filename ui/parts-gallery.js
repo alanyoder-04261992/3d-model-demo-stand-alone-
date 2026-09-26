@@ -10,7 +10,11 @@
      * its real-life caption, filled in from THIS company's construction
        numbers (a company with 24 in stud spacing reads "24 in on centre"),
      * the name of its skill (.claude/skills/part-<id>/SKILL.md), the notes a
-       Claude session reads before changing that part, as a link.
+       Claude session reads before changing that part -- a link when the page
+       is opened on Alan's own computer, plain text on the hosted website
+       (which does not serve those notes; see skillsAreServed).
+   The cards come in the order the shop puts the building together (the
+   company's build order), each part at its first step.
    Parts the building does not have (a dormer on a utility shed, a porch...)
    are listed at the bottom by name.
 
@@ -260,9 +264,13 @@ export function framePart(sub, full, size) {
   };
 }
 
-/* the part labels on this building, in PIPELINE order, with the steps each
-   one's triangles are on */
-export function partsOnBuilding(build) {
+/* the part labels on this building, with the steps each one's triangles are
+   on. Given the company's build order (plan.construction.buildOrder), the
+   parts come in the order the shop puts them together -- each part at its
+   earliest step in that order -- which is what the page promises; parts on
+   no step of the order (the finished floor slab) come last. Without it, and
+   between parts on the same step, PIPELINE order. */
+export function partsOnBuilding(build, buildOrder) {
   const present = stagesPresent(build);
   const stagesByLabel = new Map();
   for (const [key, labels] of present) for (const l of labels) {
@@ -271,10 +279,29 @@ export function partsOnBuilding(build) {
   }
   for (const [, keys] of stagesByLabel) keys.sort((a, b) => STAGE_ID[a] - STAGE_ID[b]);
   const pc = partCatalogue();
-  return {
-    on: pc.order.filter((l) => stagesByLabel.has(l)).map((l) => ({ label: l, stages: stagesByLabel.get(l) })),
-    off: pc.order.filter((l) => !stagesByLabel.has(l)),
-  };
+  const on = pc.order.filter((l) => stagesByLabel.has(l)).map((l) => ({ label: l, stages: stagesByLabel.get(l) }));
+  if (Array.isArray(buildOrder)) {
+    const when = (p) => {
+      let best = Infinity;
+      for (const k of p.stages) { const i = buildOrder.indexOf(k); if (i >= 0 && i < best) best = i; }
+      return best;
+    };
+    const at = new Map(on.map((p, i) => [p, [when(p), i]]));
+    on.sort((a, b) => (at.get(a)[0] - at.get(b)[0]) || (at.get(a)[1] - at.get(b)[1]));
+  }
+  return { on, off: pc.order.filter((l) => !stagesByLabel.has(l)) };
+}
+
+/* A skill is a file among the designer's own notes (.claude/skills/...),
+   which the hosted website deliberately does not serve (netlify.toml answers
+   "not found" for /.claude/*). So its name is a link only when the page is
+   opened from Alan's own computer; on the website it is shown as plain text
+   with the file's path, never as a link that goes nowhere. */
+export function skillsAreServed(loc) {
+  const l = loc || (typeof location !== "undefined" ? location : null);
+  if (!l) return false;
+  if (l.protocol === "file:") return true;
+  return /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])$/i.test(String(l.hostname || ""));
 }
 
 /* the real-life text for one part label on this building: every module that
@@ -330,6 +357,7 @@ export async function startGallery() {
   catch (e) { showProblems($("pg-main"), "This browser cannot draw 3D pictures", [String(e && e.message || e)]); out.error = String(e); out.ready = true; return out; }
   if (renderer.off) { showProblems($("pg-main"), "This browser cannot draw 3D pictures", ["WebGL is switched off or not available, so there is nothing to draw the parts with."]); out.error = "no WebGL"; out.ready = true; return out; }
 
+  const linkSkills = skillsAreServed();
   let run = 0;
   async function draw() {
     const my = ++run;
@@ -339,7 +367,7 @@ export async function startGallery() {
     const plan = makePlan(state, cat);
     const size = { w: PART_PIC.w, h: PART_PIC.h };
     const full = assemble(plan, { viewport: size, fit: "fitref", frames: true });
-    const { on, off } = partsOnBuilding(full.build);
+    const { on, off } = partsOnBuilding(full.build, plan.construction && plan.construction.buildOrder);
     const T = cat.TYPES[state.type];
     $("pg-building").textContent = state.size.replace("x", " × ") + " " + T.name;
     status.textContent = "Drawing " + on.length + " parts…";
@@ -353,7 +381,11 @@ export async function startGallery() {
         '<div class="pg-body"><h3>' + esc(texts[0] ? texts[0].name : p.label) + "</h3>" +
         '<div class="pg-stages">' + stageNames.map((n) => '<span class="pg-stage">' + esc(n) + "</span>").join("") + "</div>" +
         texts.map((t) => '<p class="pg-real">' + (texts.length > 1 ? "<b>" + esc(t.name) + ".</b> " : "") + esc(t.text) + "</p>").join("") +
-        '<p class="pg-skill">Skill: ' + texts.map((t) => '<a href="' + esc(".claude/skills/part-" + t.id + "/SKILL.md") + '" target="_blank" rel="noopener">part-' + esc(t.id) + "</a>").join(", ") + "</p>" +
+        '<p class="pg-skill">Skill: ' + texts.map((t) => {
+          const path = ".claude/skills/part-" + t.id + "/SKILL.md";
+          return linkSkills ? '<a href="' + esc(path) + '" target="_blank" rel="noopener">part-' + esc(t.id) + "</a>"
+            : '<code title="' + esc("In the designer's files: " + path) + '">part-' + esc(t.id) + "</code>";
+        }).join(", ") + "</p>" +
         "</div>";
       grid.appendChild(card);
       const rec = { label: p.label, stages: p.stages.slice(), caption: texts.map((t) => t.text).join(" "), skills: texts.map((t) => "part-" + t.id), img: null, drawn: false };
