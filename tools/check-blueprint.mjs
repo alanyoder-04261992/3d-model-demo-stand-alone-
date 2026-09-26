@@ -24,7 +24,10 @@
         counted by sampling the known positions: a window is three lines, a
         roll-up a dashed line, a door a leaf and a swing arc drawn OUTWARD
         (two leaves on double doors, one on the rest), a post a square, an
-        outlet a dot, a light a gold ring;
+        outlet a dot, a light a gold ring; and every door's swing is on the
+        paper: where Barnwright's size would run it off the edge (the 4 ft door
+        on a 6x8 Garden Utility) or up into the title (the Dog Kennel's back
+        door), the plan is drawn a little smaller, and ONLY there;
      4. tapping an item on the plan picks it; dragging it moves it (a window
         along its wall, a bench across the floor) by the distance the finger
         went, within the rules; the 3D building is NOT rebuilt while the
@@ -49,7 +52,10 @@
     11. on a phone (390 x 844, two pixels per point, touch) the plan is drawn
         at full sharpness, a finger taps and pinches it;
     12. SIDE BY SIDE WITH BARNWRIGHT: the same buildings drawn by Barnwright's
-        own page and by ours, at Barnwright's canvas size, pixel for pixel:
+        own page and by ours (at Barnwright's size -- the Dog Kennel's picture
+        adds a fourth panel, the plan as our page shows it, a little smaller so
+        its back door's swing stays on the paper), at Barnwright's canvas
+        size, pixel for pixel:
         outside the letters (Barnwright's page falls back to a serif font here,
         ours to a narrow sans-serif) nothing differs on the plain buildings; on
         the Side Cabin only the porch outline differs, as intended. The
@@ -197,7 +203,7 @@ async function installHelpers() {
     o = o || {};
     const cv = document.createElement("canvas"); cv.width = w; cv.height = h;
     const x = cv.getContext("2d");                              /* an ordinary canvas, drawn the way the page draws */
-    const b = H.B.drawPlan(x, w, h, o.d || 1, state, cat, { zoom: 1, ox: 0, oy: 0 }, { selection: o.selection });
+    const b = H.B.drawPlan(x, w, h, o.d || 1, state, cat, { zoom: o.zoom || 1, ox: 0, oy: 0 }, { selection: o.selection, fit: o.fit });
     return H.withPosts({ img: H.imgOf(cv), W: w, H: h, s: b.s, cx: b.cx, cy: b.cy, d: b.d, TH: b.TH, fr: b.fr, canvas: cv }, state);
   };
   H.px = (R, x, y) => {
@@ -251,7 +257,10 @@ async function installHelpers() {
       /* a solid square: nearly every pixel of its middle lit (a wall's edge alone is a thin stripe) */
       const q = H.B.postPoint(it, R.fr, (x, z) => H.P(R, x, z));
       let lit = 0, all = 0;
-      for (let dy = -2.5 * d; dy <= 2.5 * d; dy++) for (let dx = -2.5 * d; dx <= 2.5 * d; dx++) { all++; const col = H.px(R, q[0] + dx, q[1] + dy); if (col && H.lum(col) > 150) lit++; }
+      /* the middle 5 x 5 (x d) pixels of the 7 x 7 square: its outermost pixels are
+         only half covered when the square lands between pixels */
+      const k = Math.round(2 * d);
+      for (let dy = -k; dy <= k; dy++) for (let dx = -k; dx <= k; dx++) { all++; const col = H.px(R, Math.round(q[0]) + dx, Math.round(q[1]) + dy); if (col && H.lum(col) > 150) lit++; }
       return { kind: "post", ok: lit / all > 0.9, why: "lit " + lit + "/" + all, at: q };
     }
     if (c.k === "ilt") {
@@ -305,19 +314,19 @@ async function installHelpers() {
     const hinges = two ? [[it.pos - cw / 2, 1], [it.pos + cw / 2, -1]] : [[it.pos - cw / 2, 1]];
     const leaf = hinges.map((h) => H.litLine(R, H.wp(R, it, h[0], 0.2 * r), H.wp(R, it, h[0], 0.85 * r)));
     const inside = hinges.map((h) => H.litLine(R, H.wp(R, it, h[0], -0.3 * r), H.wp(R, it, h[0], -0.6 * r), 0));
-    let arc = 0, arcOn = 0;
+    let arc = 0, arcOn = 0, arcOff = 0;
     hinges.forEach((h) => {
-      for (let a = 15; a <= 75; a += 10) {
+      for (let a = 15; a <= 90; a += 15) {
         const tt = a * Math.PI / 180;
         const q = H.wp(R, it, h[0] + h[1] * r * Math.cos(tt), r * Math.sin(tt));
-        if (!H.px(R, q[0], q[1])) continue;                       /* past the edge of the sheet */
+        if (!H.px(R, q[0], q[1])) { arcOff++; continue; }          /* past the edge of the sheet */
         arcOn++; if (H.maxLum(R, q, Math.round(2 * d)) > 130) arc++;
       }
     });
     const farJamb = two ? 0 : H.litLine(R, H.wp(R, it, it.pos + cw / 2, 0.35 * r), H.wp(R, it, it.pos + cw / 2, 0.65 * r), 0);
     const good = lineRuns.frac > 0.9 && leaf.every((f) => f > 0.9) && inside.every((f) => !(f >= 0.1)) && arcOn >= 2 && arc >= arcOn * 0.6 && !(farJamb >= 0.1);
     const f2 = (v) => isNaN(v) ? "off the sheet" : +v.toFixed(2);
-    return { kind: two ? "double door" : "door", ok: good, leaves: hinges.length, why: J2({ sill: f2(lineRuns.frac), leaf: leaf.map(f2), inside: inside.map(f2), arc: arc + "/" + arcOn, farJamb: f2(farJamb) }), at: H.wp(R, it, it.pos, 0) };
+    return { kind: two ? "double door" : "door", ok: good, leaves: hinges.length, arcOff, why: J2({ sill: f2(lineRuns.frac), leaf: leaf.map(f2), inside: inside.map(f2), arc: arc + "/" + arcOn, farJamb: f2(farJamb) }), at: H.wp(R, it, it.pos, 0) };
   };
   function J2(v) { return JSON.stringify(v); }
   /* where the pixels change when one item is taken off the design */
@@ -481,7 +490,7 @@ try {
   if (want(3)) section("3. Every standard opening of every style, at every size the demo sells");
   if (want(3)) {
     const r = await page.evaluate(() => {
-      const H = __bp, cat = H.cat, out = { buildings: 0, symbols: 0, kinds: {}, bad: [], gable: 0, leaves: { one: 0, two: 0 }, control: 0, controlBad: [] };
+      const H = __bp, cat = H.cat, out = { buildings: 0, symbols: 0, kinds: {}, bad: [], gable: 0, leaves: { one: 0, two: 0 }, control: 0, controlBad: [], swings: 0, offPaper: [] };
       for (const t of Object.keys(cat.TYPES)) {
         const sizes = Object.keys(cat.P[t] || {});
         const variants = cat.TYPES[t].porch === "S" ? [{}, { pMid: true }, { pFlip: true }] : [{}];
@@ -505,6 +514,7 @@ try {
             out.symbols++;
             out.kinds[sy.kind] = (out.kinds[sy.kind] || 0) + 1;
             if (sy.leaves === 1) out.leaves.one++; else if (sy.leaves === 2) out.leaves.two++;
+            if (sy.leaves) { out.swings++; if (sy.arcOff) out.offPaper.push(t + " " + size + ": " + it.cat + " on " + it.wall + " (" + sy.arcOff + " points of its swing past the edge)"); }
             if (!sy.ok) out.bad.push(t + " " + size + (v.pMid ? " (porch in the middle)" : v.pFlip ? " (porch flipped)" : "") + ": " + it.cat + " on " + it.wall + " at " + (+it.pos).toFixed(2) + " -- " + sy.kind + " " + sy.why);
           }
         }
@@ -515,6 +525,24 @@ try {
     ok(`the double doors are drawn with two leaves (${r.leaves.two}) and every other door with one (${r.leaves.one})`, r.leaves.two > 50 && r.leaves.one > 50, J(r.leaves));
     ok(`the sampling can tell: on the same buildings drawn with no doors or windows, none of ${r.control} symbols is found`, r.control > 100 && r.controlBad.length === 0, r.controlBad.slice(0, 8).join("\n       "));
     console.log(`       (${r.gable} gable windows sit up in the gable and are left off the floor plan, as Barnwright)`);
+    ok(`every door's swing is on the paper, all the way round (${r.swings} doors)`, r.swings > 150 && r.offPaper.length === 0, r.offPaper.slice(0, 8).join("\n       "));
+    /* the rule that does it: only buildings whose swing would run off get a smaller plan */
+    const fitR = await page.evaluate(() => {
+      const H = __bp, cat = H.cat, w = 742, h = 803, res = {};
+      const mk = (t, size) => { const s = H.DES.defaults(cat); H.ST.chooseType(s, t, cat); H.ST.chooseSize(s, size, cat); H.DES.normalize(s, null, cat); return s; };
+      const offOf = (R, s) => s.items.reduce((n, it) => n + (H.symbol(R, it).arcOff || 0), 0);
+      for (const [t, size] of [["GU", "6x8"], ["DK", "8x12"], ["UT", "10x16"], ["LB", "12x24"]]) {
+        const s = mk(t, size), a = H.off(s, w, h, { selection: false, fit: "barnwright" }), b = H.off(s, w, h, { selection: false });
+        const reach = H.B.planReach(s, b.fr, cat);
+        res[t] = { bwOff: offOf(a, s), ourOff: offOf(b, s), bwS: +a.s.toFixed(3), ourS: +b.s.toFixed(3),
+          /* how far below the title's line the highest point of the drawing is, in pixels */
+          backGap: +((b.cy + reach.z0 * b.s) - 18).toFixed(1), bwBackGap: +((a.cy + reach.z0 * a.s) - 18).toFixed(1) };
+      }
+      return res;
+    });
+    ok(`Barnwright's size runs the 4 ft door's swing off a 6x8 Garden Utility (${fitR.GU.bwOff} points off); ours shrinks that plan (${fitR.GU.bwS} -> ${fitR.GU.ourS} px a foot) and keeps it all on (${fitR.GU.ourOff} off)`, fitR.GU.bwOff > 0 && fitR.GU.ourOff === 0 && fitR.GU.ourS < fitR.GU.bwS, J(fitR.GU));
+    ok(`the Dog Kennel's back door no longer swings up into the title (Barnwright: ${fitR.DK.bwBackGap} px from the title line, ours ${fitR.DK.backGap} px below it)`, fitR.DK.bwBackGap < 6 && fitR.DK.backGap >= 6, J(fitR.DK));
+    ok(`buildings whose swings already fit keep exactly Barnwright's size (Utility Shed 10x16 ${fitR.UT.ourS} px a foot, Lofted Barn 12x24 ${fitR.LB.ourS})`, fitR.UT.ourS === fitR.UT.bwS && fitR.LB.ourS === fitR.LB.bwS, J({ UT: fitR.UT, LB: fitR.LB }));
   }
 
   /* ---------------------------------------------------------------- 4 */
@@ -798,7 +826,11 @@ try {
         const w = bwShot.w, h = bwShot.h;
         const bcv = document.createElement("canvas"); bcv.width = w; bcv.height = h; const bx = bcv.getContext("2d", { willReadFrequently: true }); bx.drawImage(img, 0, 0);
         const A = bx.getImageData(0, 0, w, h).data;
-        const ours = H.off(st, w, h, { selection: false }), Bd = ours.img.data, R = ours, d = 1;
+        /* the same rules as Barnwright (its size); the page itself may draw a
+           plan a little smaller when a door swing would run off the paper */
+        const ours = H.off(st, w, h, { selection: false, fit: "barnwright" }), Bd = ours.img.data, R = ours, d = 1;
+        const shown = H.off(st, w, h, { selection: false });
+        const sameAsShown = shown.s === ours.s;
         const fr = R.fr, W = fr.d.W, L = fr.d.L;
         /* the boxes where letters are written (Barnwright's page falls back to a serif font, ours to a sans-serif) */
         const P = (x, z) => H.P(R, x, z);
@@ -820,12 +852,15 @@ try {
         }
         const mcv = document.createElement("canvas"); mcv.width = w; mcv.height = h; mcv.getContext("2d").putImageData(new ImageData(map, w, h), 0, 0);
         /* Barnwright | ours | the difference, with a caption strip */
-        const comp = document.createElement("canvas"); comp.width = w * 3 + 40; comp.height = h + 44;
+        const panels = sameAsShown ? 3 : 4;
+        const comp = document.createElement("canvas"); comp.width = w * panels + 20 * (panels - 1); comp.height = h + 44;
         const cx2 = comp.getContext("2d"); cx2.fillStyle = "#ffffff"; cx2.fillRect(0, 0, comp.width, comp.height);
         cx2.drawImage(bcv, 0, 44); cx2.drawImage(ours.canvas, w + 20, 44); cx2.drawImage(mcv, 2 * w + 40, 44);
+        if (!sameAsShown) cx2.drawImage(shown.canvas, 3 * w + 60, 44);
         cx2.fillStyle = "#0E3A5F"; cx2.font = "600 18px Arial, sans-serif"; cx2.textBaseline = "middle";
-        cx2.fillText("BARNWRIGHT — " + name, 10, 22); cx2.fillText("OURS — " + name, w + 30, 22); cx2.fillText("DIFFERENCE (red: shape, orange: letters)", 2 * w + 50, 22);
-        return { w, h, diff, diffOut, total: w * h, lineIoU: lineBoth / Math.max(1, lineA + lineB - lineBoth), comp: comp.toDataURL("image/png"), ours: ours.canvas.toDataURL("image/png") };
+        cx2.fillText("BARNWRIGHT — " + name, 10, 22); cx2.fillText("OURS — " + name + (sameAsShown ? "" : " (Barnwright's size)"), w + 30, 22); cx2.fillText("DIFFERENCE (red: shape, orange: letters)", 2 * w + 50, 22);
+        if (!sameAsShown) cx2.fillText("OURS AS THE PAGE SHOWS IT (swing kept on)", 3 * w + 70, 22);
+        return { w, h, diff, diffOut, total: w * h, lineIoU: lineBoth / Math.max(1, lineA + lineB - lineBoth), sameAsShown, comp: comp.toDataURL("image/png"), ours: shown.canvas.toDataURL("image/png") };
       }, [bwShot, name]);
       const base = `blueprint-vs-barnwright-${t}-${size}`;
       writeFileSync(resolve(OUT, base + ".png"), Buffer.from(cmp.comp.split(",")[1], "base64"));
@@ -833,7 +868,7 @@ try {
       writeFileSync(resolve(OUT, `blueprint-ours-${t}-${size}.png`), Buffer.from(cmp.ours.split(",")[1], "base64"));
       shots.push([resolve(OUT, base + ".png"), `Barnwright | ours | difference, ${name} ${size}`]);
       const pct = (v) => (100 * v / cmp.total).toFixed(3) + "%";
-      console.log(`       ${name} ${size} at Barnwright's ${cmp.w} x ${cmp.h}: ${pct(cmp.diff)} of the pixels differ, ${pct(cmp.diffOut)} outside the letters; the white lines (walls, doors, windows) overlap ${(cmp.lineIoU * 100).toFixed(1)}%`);
+      console.log(`       ${name} ${size} at Barnwright's ${cmp.w} x ${cmp.h}: ${pct(cmp.diff)} of the pixels differ, ${pct(cmp.diffOut)} outside the letters; the white lines (walls, doors, windows) overlap ${(cmp.lineIoU * 100).toFixed(1)}%` + (cmp.sameAsShown ? "" : " -- compared at Barnwright's size; the page draws this one a little smaller so its door swing stays on the paper (fourth picture)"));
       if (kind === "plain") {
         ok(`${name} ${size}: outside the letters ours is Barnwright's plan pixel for pixel (${pct(cmp.diffOut)} differ)`, cmp.diffOut / cmp.total < 0.0005, J({ diff: cmp.diff, diffOut: cmp.diffOut }));
         ok(`${name} ${size}: the walls, doors and windows are the same lines (${(cmp.lineIoU * 100).toFixed(1)}% overlap)`, cmp.lineIoU > 0.97, cmp.lineIoU);

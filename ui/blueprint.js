@@ -90,6 +90,13 @@
        wall, across the porch floor);
      * letters fall back to Arial Narrow / a plain sans-serif when the Oswald
        font is not loaded (Barnwright's fell back to the browser's serif);
+     * a door whose swing would run off the paper (the 4 ft door on a 6x8
+       Garden Utility, the Dog Kennel's back door running up into the title)
+       or a ramp that would, makes the whole plan a little smaller so all of
+       it is on the paper; Barnwright let it run off the edge. Every other
+       building is drawn at exactly Barnwright's size (drawPlan's option
+       fit: "barnwright" draws Barnwright's size always -- the side-by-side
+       check uses it);
      * when the view switcher (ui/views.js) sits over the top of the stage,
        the title and the plan move down below it instead of under it;
      * tapping empty paper with nothing picked does not rebuild the 3D
@@ -180,7 +187,10 @@ function dimLine(x, d, ax, ay, bx, by, label) {
 /* ------------------------------------------------------------------------
    THE DRAWING (Barnwright bpDraw). x: a 2D context on a Wc x Hc canvas; d:
    pixels per CSS pixel; view {zoom, ox, oy} (the pan is clamped IN PLACE,
-   as Barnwright clamps bpOX / bpOY). Returns where the plan landed:
+   as Barnwright clamps bpOX / bpOY); opts {selection: false (leave the
+   picked item's highlight and measurements out), topReserve (pixels kept
+   free at the top), fit: "barnwright" (Barnwright's size even when a door
+   swing runs off the paper)}. Returns where the plan landed:
    { s (pixels per foot), cx, cy (where x = 0, z = 0 is), d, fr }. */
 export function drawPlan(x, Wc, Hc, d, state, cat, view, opts) {
   opts = opts || {};
@@ -192,7 +202,19 @@ export function drawPlan(x, Wc, Hc, d, state, cat, view, opts) {
   /* room kept free at the top (the view switcher sits there on the page) */
   const top = Math.max(0, Math.min(Hc * 0.3, opts.topReserve || 0));
   const m = Math.round(Math.min(Wc, Hc) * 0.16);
-  const fit = Math.min((Wc - 2 * m) / W, (Hc - top - 2 * m) / L);
+  const fitB = Math.min((Wc - 2 * m) / W, (Hc - top - 2 * m) / L);   /* Barnwright's fit */
+  let fit = fitB;
+  if (opts.fit !== "barnwright") {
+    /* ...made a little smaller ONLY when a door's swing or the ramp would
+       otherwise run off the paper (or, at the back, up into the title) */
+    const r = planReach(state, fr, CAT), half = (Hc - top) / 2;
+    const side = 4 * d, below = 4 * d, above = 24 * d;
+    if (r.x1 > W / 2 + 1e-6) fit = Math.min(fit, (Wc / 2 - side) / r.x1);
+    if (-r.x0 > W / 2 + 1e-6) fit = Math.min(fit, (Wc / 2 - side) / -r.x0);
+    if (r.z1 > L / 2 + 1e-6) fit = Math.min(fit, (half - below) / r.z1);
+    if (-r.z0 > L / 2 + 1e-6) fit = Math.min(fit, (half - above) / -r.z0);
+    fit = Math.max(fit, fitB * 0.4);                                /* never shrink it to a speck */
+  }
   const S = fit * (view.zoom || 1);
   view.ox = Math.max(-W / 2 * S, Math.min(W / 2 * S, view.ox || 0));
   view.oy = Math.max(-L / 2 * S, Math.min(L / 2 * S, view.oy || 0));
@@ -422,6 +444,27 @@ export function porchRect(fr) {
    right-hand edge). */
 export function postPoint(it, fr, Pt) {
   return (it.wall === "F") ? Pt(it.pos, fr.d.L / 2 - 0.2) : Pt(fr.d.W / 2 - 0.2, -it.pos);
+}
+
+/* How far the drawing reaches, in feet from the middle of the building:
+   {x0, x1, z0, z1} -- the building's own outline, pushed out wherever a
+   door's leaf swings past it or the ramp runs out from it. (The same items
+   the drawing treats as doors: anything on a wall that is not a window, a
+   roll-up, an outlet, an outside light, a gable window or a post.) */
+export function planReach(state, fr, CAT) {
+  const W = fr.d.W, L = fr.d.L, ws = fr.ws;
+  let x0 = -W / 2, x1 = W / 2, z0 = -L / 2, z1 = L / 2;
+  const take = function (p) { x0 = Math.min(x0, p[0]); x1 = Math.max(x1, p[0]); z0 = Math.min(z0, p[2]); z1 = Math.max(z1, p[2]); };
+  (state.items || []).forEach(function (it) {
+    const c = CAT[it.cat]; if (!c || c.gable || c.k === "post" || c.int) return;
+    if (c.k === "out" || c.k === "light" || c.k === "win" || c.k === "ru") return;
+    const w = ws[it.wall]; if (!w) return;
+    const cw = itemW(it, CAT), r = c.leaves === 2 ? cw / 2 : cw;
+    take(wallPt(w, it.pos - cw / 2, 0, r)); take(wallPt(w, it.pos + cw / 2, 0, r));
+  });
+  const rs = rampOf(fr);
+  if (rs) { take(wallPt(rs.w, rs.u - rs.width / 2, 0, 0.25 + rs.len)); take(wallPt(rs.w, rs.u + rs.width / 2, 0, 0.25 + rs.len)); }
+  return { x0: x0, x1: x1, z0: z0, z1: z1 };
 }
 
 /* The ramp on the plan: {w, u, width, len} or null. */
