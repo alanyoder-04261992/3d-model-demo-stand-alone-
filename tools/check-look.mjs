@@ -145,9 +145,10 @@ async function labelled(png, labels) {
       const x = c.getContext("2d"); x.drawImage(img, 0, 0);
       x.font = "600 13px system-ui, sans-serif"; x.textBaseline = "top";
       for (const l of labels) {
-        const w = Math.ceil(x.measureText(l.text).width) + 12;
-        x.fillStyle = "rgba(255,255,255,0.9)"; x.fillRect(l.x + 6, l.y + 6, w, 21);
-        x.fillStyle = "#1d2a33"; x.fillText(l.text, l.x + 12, l.y + 10);
+        const lines = String(l.text).split("\n");
+        const w = Math.ceil(Math.max(...lines.map((t) => x.measureText(t).width))) + 12;
+        x.fillStyle = "rgba(255,255,255,0.9)"; x.fillRect(l.x + 6, l.y + 6, w, 5 + 16 * lines.length);
+        x.fillStyle = "#1d2a33"; lines.forEach((t, i) => x.fillText(t, l.x + 12, l.y + 10 + 16 * i));
       }
       return c.toDataURL("image/png");
     }, { url, labels });
@@ -155,7 +156,8 @@ async function labelled(png, labels) {
     return encodePng(img.width, img.height, img.rgba);
   } catch { return png; }
 }
-const shortName = (fx) => String(fx.description || fx.case || "").split(" (")[0];
+/* "Utility Shed 10x20 (typical size) with ..." -> "Utility Shed 10x20"; a second line for what is special */
+const shortName = (fx) => String(fx.description || fx.case || "").split(" (")[0].replace(/ with its (.+)$/, "\n$1 (the blue glow)");
 /* where two pictures differ: red, brighter the bigger the difference, over a pale copy of the first */
 function diffPanel(a, cmp) {
   return {
@@ -243,6 +245,14 @@ try {
     }
     ok(`${id}: every one of the ${total} pixels identical to Barnwright's (${drawn} of them drawn on, ${I.triangles} triangles, ${secs.toFixed(1)} s)`, same, note || (cmp.sameSize ? "" : "the pictures are different sizes"));
     results.push({ id, same, differing: cmp.differing, maxDiff: cmp.maxDiff, secs, size: pic.width + "x" + pic.height });
+  }
+
+  /* nothing recorded was left out: every picture in test/golden/look/ is one of the cases compared */
+  if (!caseArg) {
+    const files = readdirSync(resolve(ROOT, "test/golden/look")).filter((f) => f.endsWith(".png")).map((f) => f.slice(0, -4)).sort();
+    const missing = files.filter((f) => !ids.includes(f)), noFile = ids.filter((id) => !files.includes(id));
+    ok(`every one of the ${files.length} pictures in test/golden/look/ was compared (the README promises 24), and every case compared has its picture`,
+      files.length >= 24 && missing.length === 0 && noFile.length === 0, `not compared: ${missing.join(", ") || "none"}; no picture: ${noFile.join(", ") || "none"}`);
   }
 
   /* the graphics context was asked for by OUR renderer (engine/gl.js), with Barnwright's settings */
