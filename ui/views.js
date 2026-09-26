@@ -73,22 +73,30 @@ const stagesOf = (m) => (Array.isArray(m.stage) ? m.stage : [m.stage]);
    the same step). */
 export function stageTriangles(build) {
   const out = new Map();
-  const add = (sid, part) => {
+  const add = (sid, part, n) => {
     const st = STAGES[sid];
-    if (!st) return;
+    if (!st || !n) return;
     let s = out.get(st.key);
     if (!s) { s = new Map(); out.set(st.key, s); }
-    s.set(part, (s.get(part) || 0) + 1);
+    s.set(part, (s.get(part) || 0) + n);
+  };
+  /* counted in runs of triangles on the same step, so a big framing build
+     costs one lookup per run, not one per triangle */
+  const run = (v, from, to, part) => {
+    let sid = -1, n = 0;
+    for (let tri = from; tri < to; tri++) {
+      const x = v[tri * 27 + 8];
+      if (x !== sid) { add(sid, part, n); sid = x; n = 0; }
+      n++;
+    }
+    add(sid, part, n);
   };
   for (const k of build.ORDER) {
     const b = build.buckets[k];
     if (!b || !b.n) continue;
     const segs = build.tags && build.tags[k];
-    if (segs && segs.length) {
-      for (const sg of segs) for (let tri = sg.from; tri < sg.from + sg.count; tri++) add(b.v[tri * 27 + 8], sg.part);
-    } else {
-      for (let i = 8; i < b.v.length; i += 27) add(b.v[i], "?");
-    }
+    if (segs && segs.length) for (const sg of segs) run(b.v, sg.from, sg.from + sg.count, sg.part);
+    else run(b.v, 0, Math.floor(b.v.length / 27), "?");
   }
   return out;
 }

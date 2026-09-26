@@ -41,6 +41,12 @@
       link; where copying is blocked, the link is shown selected to copy by
       hand.
    9. A DIFFERENT link opened in the same tab replaces the building.
+  10. The day a link says it was priced is the customer's own calendar day
+      (9:30 pm in Florida is not yet tomorrow), and a day the calendar does
+      not have (February 30) is never printed as one.
+  11. A company that shows no prices: its links carry no price inside them,
+      and its look-only page shows no dollar figure. A company's phone
+      number and fine print, even with HTML in them, show as typed.
    Pictures: test/out/share-*.png. */
 
 import { spawn } from "node:child_process";
@@ -48,7 +54,7 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
-import { encode, encodeSync } from "../model/design.js";
+import { encode, encodeSync, decode } from "../model/design.js";
 import { money } from "../model/pricing.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -98,7 +104,13 @@ function company(id, extra) {
 const COS = {
   sharetest: company("sharetest"),
   shareown: company("shareown", { embed: { origins: [], shareUrl: "https://acme-sheds.example/design?from=site#old" } }),
+  /* a company that shows no prices */
+  sharenone: company("sharenone", { pricing: Object.assign({}, DEMO.pricing, { show: "none" }) }),
 };
+/* a company whose phone and fine print have HTML in them */
+COS.shareevil = company("shareevil");
+COS.shareevil.brand.phone = '(555) 010-0142 <img src=x onerror="window.__pwned=true">';
+COS.shareevil.notes.finePrint = '<img src=x onerror="window.__pwned=true"> Prices plus tax.';
 
 async function newContext(browser, o) {
   o = o || {};
@@ -246,6 +258,10 @@ try {
     const k = await open(ctx, BASE + "/?company=sharetest#d=" + junk + "&view=1");
     const kr = await k.page.evaluate(() => ({ note: window.shedUI.share.priceNote, pw: window.__pwned, imgs: document.querySelectorAll(".vcard img").length }));
     ok("a hand-made 'price' that is not a number is ignored, and nothing in it runs", kr.note === "" && kr.pw === undefined && kr.imgs === 0, J(kr));
+    const feb30 = await encode(Object.assign({}, A.design, { priced: { total: 1234.5, at: "2026-02-30" } }));
+    const f = await open(ctx, BASE + "/?company=sharetest#d=" + feb30 + "&view=1");
+    const fr = await f.page.evaluate(() => window.shedUI.share.priceNote);
+    ok("a day the calendar does not have (February 30) is not printed as a date ('priced at $1,234.50 earlier')", /priced at \$1,234\.50 earlier;/.test(fr) && !/February/.test(fr), fr);
     await ctx.close();
   }
 
@@ -266,6 +282,10 @@ try {
     ok("an item named <img src=x onerror=...> shows as those characters -- nothing runs, no picture is made", r.items.some((t) => t.indexOf('<img src=x onerror="window.__pwned=1">') >= 0) && r.imgs === 0 && r.pw === undefined, J(r));
     await picture(page, "share-warnings.png", ".vcard.shview");
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
+    /* a company whose phone number and fine print have an <img> tag in them */
+    const ev = await open(ctx, BASE + "/?company=shareevil#d=" + (await encode(A.design)) + "&view=1");
+    const er = await ev.page.evaluate(() => { const c = document.querySelector(".vcard.shview"); const call = c && c.querySelector(".shcall"); return { pw: window.__pwned, imgs: document.querySelectorAll(".vcard img").length, text: c ? c.textContent : "", tel: call ? call.getAttribute("href") : "" }; });
+    ok("a company phone number and fine print with an <img> tag in them show as typed on the look-only card -- nothing runs -- and the Call button still dials the digits", er.pw === undefined && er.imgs === 0 && er.text.indexOf('(555) 010-0142 <img src=x onerror="window.__pwned=true">') >= 0 && er.text.indexOf('<img src=x onerror="window.__pwned=true"> Prices plus tax.') >= 0 && er.tel === "tel:5550100142", J(er));
     await ctx.close();
   }
 
@@ -388,6 +408,36 @@ try {
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
     await ctx.close();
   }
+
+  /* ------------------------------------------------------------ 10 */
+  section("10. The day a link was priced is the customer's own day");
+  {
+    /* 9:30 in the evening in Florida is already tomorrow in London */
+    const ctx = await newContext(browser, { extra: { timezoneId: "America/New_York" } });
+    const page = await ctx.newPage();
+    await page.clock.setFixedTime(new Date("2026-01-15T02:30:00Z"));
+    await page.goto(BASE + "/?company=sharetest", { waitUntil: "load" });
+    await page.waitForFunction(() => window.shedUI && window.shedUI.ready, null, { timeout: 90000 });
+    const r = await page.evaluate(async () => ({ clock: new Date().toString(), link: await window.shedUI.share.link() }));
+    const d = await decode(r.link);
+    ok("a link made at 9:30 pm on January 14 in Florida says it was priced on 2026-01-14, not London's January 15 (" + r.clock.slice(0, 24) + ")", d.priced && d.priced.at === "2026-01-14", J(d.priced));
+    await ctx.close();
+  }
+
+  /* ------------------------------------------------------------ 11 */
+  section("11. A company that shows no prices");
+  {
+    const ctx = await newContext(browser);
+    const { page, noise } = await open(ctx, BASE + "/?company=sharenone");
+    const link = await page.evaluate(() => window.shedUI.share.viewLink());
+    const d = await decode(link);
+    ok("its share link carries no price at all (anybody can unpack a link and read it)", d.priced === undefined && !/\$/.test(JSON.stringify(d)), J(d.priced));
+    const v = await open(ctx, link);
+    const t = await v.page.evaluate(() => ({ card: (document.querySelector(".vcard.shview") || {}).textContent || "", plate: document.getElementById("plateprice").textContent, ro: window.shedUI.readOnly }));
+    ok("its look-only page shows no dollar figure anywhere on the card", t.ro && t.card && !/\$/.test(t.card) && !/priced at/.test(t.card), J(t));
+    ok("no console errors", realNoise(noise).length === 0 && realNoise(v.noise).length === 0, J(realNoise(noise).concat(realNoise(v.noise))));
+    await ctx.close();
+  }
 } catch (e) {
   ok("the check ran to the end", false, e && e.stack || e);
 } finally {
@@ -397,5 +447,5 @@ try {
 
 console.log(`\ncheck-share: ${pass} passed, ${fail} failed`);
 if (fail) { console.log("FAILED:\n - " + failures.join("\n - ")); process.exit(1); }
-console.log("PROVED: a shared link opens the same building at the same price (even one far longer than it was sized for); a look-only link cannot be changed and prices from today's list, saying so when the price has changed; anything no longer offered is listed in plain words; a damaged link shows the standard building with a plain message; the link points at the company's own page when it has one; and on a phone the share sheet opens, or the link is shown to copy by hand.");
+console.log("PROVED: a shared link opens the same building at the same price (even one far longer than it was sized for); a look-only link cannot be changed and prices from today's list, saying so when the price has changed (dated by the customer's own calendar), and a company that shows no prices puts no price in its links; anything no longer offered is listed in plain words; a damaged link shows the standard building with a plain message; the link points at the company's own page when it has one; and on a phone the share sheet opens, or the link is shown to copy by hand.");
 process.exit(0);

@@ -589,7 +589,7 @@ try {
     const blue = async () => page.evaluate((id) => {
       const H = __bp, R = H.live(), it = H.LAY.itemById(shedUI.getState(), id), cw = H.LAY.itemW(it, H.cat.CAT);
       let cyan = 0, n = 0;
-      for (const o of [-0.13, 0, 0.13]) for (let f = -0.35; f <= 0.35; f += 0.05) { n++; const q = H.wp(R, it, it.pos + cw * f, o); if (H.anyNear(R, q, 1, (c) => !!c && c[2] > 200 && c[0] < 170 && c[1] > 170)) cyan++; }
+      for (const o of [-0.13, 0, 0.13]) for (let f = -0.35; f <= 0.35; f += 0.05) { n++; const q = H.wp(R, it, it.pos + cw * f, o); if (H.anyNear(R, q, 1, (c) => !!c && c[2] > 160 && c[2] - c[0] > 70)) cyan++; }   /* the light blue, also where a thin line lights two pixels by half */
       return cyan / n;
     }, winId);
     const pickedBlue = await blue();
@@ -667,6 +667,20 @@ try {
     await page.mouse.up();
     const b1 = await page.evaluate((id) => { const it = __bp.LAY.itemById(shedUI.getState(), id); return { px: it.px, pz: it.pz }; }, bench);
     ok(`a picked work bench slides across the floor with the finger (${(b1.px - b0.px).toFixed(2)} ft across, ${(b1.pz - b0.pz).toFixed(2)} ft along)`, Math.abs(b1.px - b0.px - 60 / b0.s) < 0.05 && Math.abs(b1.pz - b0.pz - 45 / b0.s) < 0.05, J({ b0, b1 }));
+    /* pulled right out through the left wall, the bench stops inside the room where the rules stop it */
+    {
+      const bb = await page.evaluate((id) => __bp.itemScreen(id), bench);
+      await page.mouse.move(bb[0], bb[1]); await page.mouse.down();
+      for (let i = 1; i <= 8; i++) await page.mouse.move(bb[0] + (8 - bb[0]) * i / 8, bb[1]);   /* to the left edge of the window */
+      await page.mouse.up();
+      const b2 = await page.evaluate((id) => {
+        const H = __bp, st = shedUI.getState(), it = H.LAY.itemById(st, id), fr = H.B.planFrame(st, H.cat), c = H.cat.CAT[it.cat];
+        const probe = JSON.parse(JSON.stringify(it)); probe.px = -1e6; H.LAY.clampPos(probe, st, fr);
+        const halfX = (it.rot ? c.dep : (it.ln || 4)) / 2;
+        return { px: it.px, limit: probe.px, inside: it.px - halfX >= -fr.d.W / 2 - 1e-6 };
+      }, bench);
+      ok(`pulled out through the left wall, the bench stops inside the room (${b2.px.toFixed(3)} ft across; the rules stop it at ${b2.limit.toFixed(3)})`, Math.abs(b2.px - b2.limit) < 1e-6 && b2.inside, J(b2));
+    }
     /* a TAP on the picked item -- a finger always wobbles a pixel or two --
        must not slide it: 0.15 ft off the middle of an empty wall is inside
        the snap-to-the-middle distance, so any slide at all would jump it */
@@ -688,10 +702,10 @@ try {
        window the gap to the NEXT window along the wall on one side and to
        the corner on the other (model/layout.js neighborGaps) */
     const wr = await page.evaluate(() => {
-      const H = __bp, cat = H.cat, ft = shedUI.ftIn;
-      shedUI.setState((s) => { H.ST.chooseType(s, "UT", cat); H.ST.chooseSize(s, "12x24", cat); });
-      const a = shedUI.setState((s) => H.ST.addAt(s, "w23", { wall: "L", u: -6 }, cat));
-      const b = shedUI.setState((s) => H.ST.addAt(s, "w23", { wall: "L", u: 3 }, cat));
+      const H = __bp, cat = H.cat, ft = shedUI.ftIn;          /* still the Utility Shed 12x24 of this section */
+      /* the right-hand wall, which has nothing else on it */
+      const a = shedUI.setState((s) => H.ST.addAt(s, "w23", { wall: "R", u: -6 }, cat));
+      const b = shedUI.setState((s) => H.ST.addAt(s, "w23", { wall: "R", u: 3 }, cat));
       shedUI.setState((s) => { H.LAY.itemById(s, a.id).pos = -6; H.LAY.itemById(s, b.id).pos = 3; });
       /* a bench turned to run along the length, and a shelf across */
       const bench = shedUI.setState((s) => { const it = H.ST.addInterior(s, "bench", cat, 0); it.px = -3; it.pz = -6; it.rot = true; it.ln = 6; return it; });
@@ -700,15 +714,16 @@ try {
       const P = CanvasRenderingContext2D.prototype, keep = P.fillText, got = [], turn = {};
       P.fillText = function (t) { got.push(String(t)); const m = this.getTransform(); turn[String(t)] = Math.abs(m.b) > 0.9 * Math.abs(m.a) + 0.1 ? "turned" : "level"; return keep.apply(this, arguments); };
       try { shedUI.blueprint.draw(); } finally { P.fillText = keep; }
-      const st = shedUI.getState(), A = H.LAY.itemById(st, a.id), B = H.LAY.itemById(st, b.id), cw = H.LAY.itemW(B, cat.CAT), fr = H.B.planFrame(st, cat), w = fr.ws.L;
+      const st = shedUI.getState(), A = H.LAY.itemById(st, a.id), B = H.LAY.itemById(st, b.id), cw = H.LAY.itemW(B, cat.CAT), fr = H.B.planFrame(st, cat), w = fr.ws.R;
+      const others = st.items.filter((i) => i.wall === "R" && i.id !== a.id && i.id !== b.id).length;
       /* worked out here from the two windows' own places, not from the plan's code */
       const toNeighbour = (B.pos - cw / 2) - (A.pos + H.LAY.itemW(A, cat.CAT) / 2), toCorner = w.len / 2 - (B.pos + cw / 2), toFarCorner = (B.pos - cw / 2) + w.len / 2;
       const want = { title: "12′ × 24′ — FLOOR PLAN", width: ft(12), length: ft(24), toNeighbour: ft(toNeighbour), toCorner: ft(toCorner), bench: "BENCH 6′", shelf: "SHELF 8′", front: "FRONT", footer: "PORTABLE BUILDINGS · 12 × 24 UTILITY SHED · PINCH TO ZOOM" };
       shedUI.setState((s) => { s.items = s.items.filter((i) => [a.id, b.id, bench.id, shelf.id].indexOf(i.id) < 0); s.sel = null; });
-      return { got, want, wrongCorner: ft(toFarCorner), turn };
+      return { got, want, wrongCorner: ft(toFarCorner), turn, others };
     });
     const miss = Object.keys(wr.want).filter((k) => wr.got.indexOf(wr.want[k]) < 0);
-    ok(`the plan's words say the right numbers: the title, ${wr.want.width} across, ${wr.want.length} long, and for the picked window ${wr.want.toNeighbour} to the next window and ${wr.want.toCorner} to the corner`, ["title", "width", "length", "toNeighbour", "toCorner"].every((k) => miss.indexOf(k) < 0) && wr.got.indexOf(wr.wrongCorner) < 0, J({ miss, got: wr.got, want: wr.want }));
+    ok(`the plan's words say the right numbers: the title, ${wr.want.width} across, ${wr.want.length} long, and for the picked window ${wr.want.toNeighbour} to the next window and ${wr.want.toCorner} to the corner`, wr.others === 0 && ["title", "width", "length", "toNeighbour", "toCorner"].every((k) => miss.indexOf(k) < 0) && wr.got.indexOf(wr.wrongCorner) < 0, J({ miss, got: wr.got, want: wr.want }));
     ok(`... and the other words: "${wr.want.bench}" written along its turned bench, "${wr.want.shelf}" across its shelf, FRONT, and the footer with the company's name`, miss.length === 0 && wr.turn[wr.want.bench] === "turned" && wr.turn[wr.want.shelf] === "level", J({ miss, turn: wr.turn }));
     /* an item that is NOT picked does not move: the plan moves */
     await page.evaluate(() => { shedUI.select(null); shedUI.blueprint.reset(); });

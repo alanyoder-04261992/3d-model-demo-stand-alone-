@@ -27,13 +27,16 @@
       shed:ready, shed:design-changed (after a colour tap) and
       shed:quote-requested (the real quote form, leads to the company's page);
       a message from ANY other frame, from the page itself, of an unknown kind
-      or another version, is ignored.
+      or another version, named like a built-in ("constructor"), or from the
+      designer's own frame once it shows another website, is ignored.
    4. FULL SCREEN. The button fills the screen and gives it back; where the
-      browser cannot (an iPhone), the designer is laid over the whole page
-      instead, and Close (or Esc) puts it back.
+      browser cannot (an iPhone), or says no afterwards, the designer is laid
+      over the whole page instead -- even inside a section the company's page
+      moves or animates -- and Close (or Esc) puts everything back.
    5. PHONES. On a touch screen a "Tap to design" cover lets a finger scroll
-      the company's page without turning the building; after a tap, the
-      finger moves the building and the page stays put.
+      the company's page, up AND down, without turning the building or
+      scrolling the designer's own cards; after a tap, the finger moves the
+      building and the page stays put.
    6. WHO MAY SHOW IT. A website not on the list gets an empty frame (the
       browser refuses), and even without that rule the designer tells such a
       page nothing.
@@ -113,7 +116,7 @@ for (const c of real.companies) {
 ok("starter (Cedar Ridge) may be shown on https://cedarridge.example and this site, nowhere else",
   J(ancestorsOf(cspOf("/c/starter/")[0])) === J(["'self'", "https://cedarridge.example"]));
 ok("the demo may be shown on this site only (it has no embed.origins)", J(ancestorsOf(cspOf("/c/demo/")[0])) === J(["'self'"]));
-for (const p of ["/", "/index.html"]) ok(`${p}: framed by this site only, so /c/<company>/ is the only way into another website`, J(ancestorsOf((cspOf(p) || [])[0])) === J(["'self'"]) && cspOf(p).length === 1);
+for (const p of ["/", "/index.html", "/index"]) ok(`${p}: framed by this site only, so /c/<company>/ is the only way into another website`, J(ancestorsOf((cspOf(p) || [])[0])) === J(["'self'"]) && cspOf(p).length === 1);
 ok("an address of a company not set up gets no policy of anyone else's", cspOf("/c/nobody/").length === 0);
 const hashes = inlineScriptHashes(INDEX);
 const scriptSrc = (/script-src ([^;]+)/.exec(cspOf("/c/starter/")[0] || "") || [])[1] || "";
@@ -307,15 +310,17 @@ try {
 
   /* messages from anywhere else are ignored */
   const nBefore = (await events(pA)).length;
+  await pA.evaluate(() => { window.__odd = []; for (const t of ["shed:constructor", "shed:toString", "shed:__proto__", "shed:hasOwnProperty"]) document.addEventListener(t, () => window.__odd.push(t)); });
   const rogueX = pA.frames().find((f) => f.url().startsWith(X));
   const rogueD = pA.frames().find((f) => /OFL\.txt/.test(f.url()));
   await rogueX.evaluate(() => parent.postMessage({ type: "shed:quote-requested", v: 1, rogue: "another website's frame" }, "*"));
   await rogueD.evaluate(() => parent.postMessage({ type: "shed:quote-requested", v: 1, rogue: "a frame from the designer's own website" }, "*"));
   await pA.evaluate(() => window.postMessage({ type: "shed:quote-requested", v: 1, rogue: "the page itself" }, "*"));
-  await fA.evaluate((h) => { parent.postMessage({ type: "shed:hello", v: 1, rogue: "an unknown kind" }, h); parent.postMessage({ type: "shed:ready", v: 2, rogue: "another version" }, h); parent.postMessage("shed:ready", h); }, H);
+  await fA.evaluate((h) => { parent.postMessage({ type: "shed:hello", v: 1, rogue: "an unknown kind" }, h); parent.postMessage({ type: "shed:ready", v: 2, rogue: "another version" }, h); parent.postMessage("shed:ready", h);
+    for (const t of ["shed:constructor", "toString", "shed:__proto__", "hasOwnProperty"]) parent.postMessage({ type: t, v: 1, rogue: "a name every object has (" + t + ")" }, h); }, H);
   await sleep(900);
   const after = (await events(pA)).slice(nBefore);
-  ok("a message from another website's frame, from another frame of the designer's own website, from the page itself, of an unknown kind or version: all ignored", after.length === 0, J(after));
+  ok("a message from another website's frame, from another frame of the designer's own website, from the page itself, of an unknown kind or version, or named like a built-in (\"constructor\", \"toString\"): all ignored", after.length === 0 && (await pA.evaluate(() => window.__odd.length)) === 0, J({ after, odd: await pA.evaluate(() => window.__odd) }));
 
   /* the real quote form, leads to the company's page */
   const hasQuote = await fA.evaluate(() => !!(window.shedUI.quote && document.querySelector("#quote-mount .qform")));
@@ -359,6 +364,36 @@ try {
   await sleep(300);
   const ov2 = await pA.evaluate(() => { const w = document.querySelector("#shed-designer .shed-embed"), f = w.querySelector("iframe").getBoundingClientRect(); return { pos: getComputedStyle(w).position, h: f.height, lock: document.documentElement.style.overflow, full: document.getElementById("shed-designer").getAttribute("data-shed-full") }; });
   ok("Esc (or Close) puts it back in the page, 640 pixels tall", ov2.pos !== "fixed" && Math.abs(ov2.h - 640) < 1 && ov2.lock === "" && ov2.full === null, J(ov2));
+  /* a browser that has the full-screen button's name but then says no with
+     an event (older Safari): it must still end up laid over the page */
+  await pA.evaluate(() => { const w = document.querySelector("#shed-designer .shed-embed"); w.webkitRequestFullscreen = function () { setTimeout(() => document.dispatchEvent(new Event("webkitfullscreenerror")), 10); }; });
+  await pA.click("#shed-designer .shed-embed-fullscreen");
+  await sleep(500);
+  const ov3 = await pA.evaluate(() => { const w = document.querySelector("#shed-designer .shed-embed"), r = w.getBoundingClientRect(); return { full: document.getElementById("shed-designer").getAttribute("data-shed-full"), pos: getComputedStyle(w).position, top: r.top, h: r.height }; });
+  ok("where the browser says no to full screen afterwards (an event, not an error), the designer is still laid over the page", ov3.full === "overlay" && ov3.pos === "fixed" && ov3.top === 0 && Math.abs(ov3.h - vp.height) < 2, J(ov3));
+  await pA.keyboard.press("Escape");
+  await sleep(300);
+  /* a company page whose section is moved or animated (website builders do
+     that): a "fixed" box inside it is pinned to the section, not the window */
+  await pA.evaluate(() => { document.getElementById("box").style.transform = "translateZ(0)"; document.getElementById("box").style.willChange = "transform"; const w = document.querySelector("#shed-designer .shed-embed"); w.webkitRequestFullscreen = undefined; });
+  await pA.click("#shed-designer .shed-embed-fullscreen");
+  await sleep(500);
+  const ov4 = await pA.evaluate(() => { const r = document.querySelector("#shed-designer .shed-embed").getBoundingClientRect(); return { top: r.top, left: r.left, w: r.width, h: r.height, full: document.getElementById("shed-designer").getAttribute("data-shed-full") }; });
+  ok("inside a moved/animated section of the company's page, the overlay still covers the whole window", ov4.full === "overlay" && ov4.top === 0 && ov4.left === 0 && Math.abs(ov4.w - vp.width) < 2 && Math.abs(ov4.h - vp.height) < 2, J({ ov4, vp }));
+  await pA.keyboard.press("Escape");
+  await sleep(300);
+  const back4 = await pA.evaluate(() => { const b = document.getElementById("box"); return { t: b.style.transform, wc: b.style.willChange, h: b.querySelector("iframe").getBoundingClientRect().height }; });
+  ok("... and Close gives that section back exactly as it was", back4.t === "translateZ(0px)" && back4.wc === "transform" && Math.abs(back4.h - 640) < 1, J(back4));
+  /* the designer's OWN frame, sent to another website: its messages are not the designer's */
+  const nFor = (await events(pA)).length;
+  await pA.evaluate((x) => { document.querySelector("#shed-designer iframe").src = x + "/blank.html"; }, X);
+  let foreign = null;
+  for (let i = 0; i < 40 && !foreign; i++) { await sleep(150); foreign = pA.frames().find((f) => f.url().startsWith(X + "/blank.html") && f.parentFrame() === pA.mainFrame() && f.name() !== "rogue-x"); }
+  if (foreign) {
+    await foreign.evaluate(() => parent.postMessage({ type: "shed:quote-requested", v: 1, rogue: "another website inside the designer's own frame" }, "*"));
+    await sleep(700);
+  }
+  ok("a message from the designer's own frame once it shows ANOTHER website is ignored (the address is checked, not only the frame)", !!foreign && (await events(pA)).length === nFor, J({ foreign: !!foreign, extra: (await events(pA)).slice(nFor) }));
   await ctxA.close();
 
   /* sizes, with nothing loaded */
@@ -406,7 +441,20 @@ try {
     await sleep(600);
     const y1 = await pP.evaluate(() => scrollY);
     const cam1 = await fP.evaluate(() => ({ yaw: window.shedUI.camera.yaw, pitch: window.shedUI.camera.pitch }));
-    ok("a finger swiping over the cover scrolls the company's page, and the building does not move", y1 < y0 - 60 && Math.abs(cam1.yaw - cam0.yaw) < 1e-9 && Math.abs(cam1.pitch - cam0.pitch) < 1e-9, J({ y0, y1, cam0, cam1 }));
+    ok("a finger swiping DOWN over the cover scrolls the company's page up, and the building does not move", y1 < y0 - 60 && Math.abs(cam1.yaw - cam0.yaw) < 1e-9 && Math.abs(cam1.pitch - cam0.pitch) < 1e-9, J({ y0, y1, cam0, cam1 }));
+    /* and UP -- a visitor scrolling DOWN the company's page past the
+       designer. The designer's own page must not take the swipe (it did:
+       8 swipes through the cards before the company's page moved on) */
+    await pP.evaluate((t) => window.scrollTo(0, t - 120), geo0.top);
+    await sleep(400);
+    const boxU = await pP.evaluate(() => { const r = document.querySelector("#shed-designer iframe").getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + 140) }; });
+    const u0 = await pP.evaluate(() => scrollY), iu0 = await fP.evaluate(() => [scrollY, document.getElementById("wrap").scrollTop]);
+    await drag(boxU.x, boxU.y, 0, -220);
+    await sleep(600);
+    const u1 = await pP.evaluate(() => scrollY), iu1 = await fP.evaluate(() => [scrollY, document.getElementById("wrap").scrollTop]);
+    const cam1u = await fP.evaluate(() => ({ yaw: window.shedUI.camera.yaw, pitch: window.shedUI.camera.pitch }));
+    ok("a finger swiping UP over the cover scrolls the company's page down -- not the designer's own cards -- and the building does not move", u1 > u0 + 60 && J(iu1) === J(iu0) && Math.abs(cam1u.yaw - cam0.yaw) < 1e-9, J({ u0, u1, inner: [iu0, iu1] }));
+    await fP.evaluate(() => { window.scrollTo(0, 0); document.getElementById("wrap").scrollTop = 0; });   /* so a failure here does not spill into the next checks */
     await pP.evaluate((t) => window.scrollTo(0, t - 120), geo0.top);
     await sleep(400);
     const box2 = await pP.evaluate(() => { const r = document.querySelector("#shed-designer iframe").getBoundingClientRect(); return { x: Math.round(r.left + r.width / 2), y: Math.round(r.top + 140) }; });

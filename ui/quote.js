@@ -74,7 +74,7 @@
    (or .textContent) before it touches the page.
 
    For the checks: shedUI.quote = { mode, last, lastPost, minMs, timeoutMs
-   (can be changed), summary(contact), link(), images() }. */
+   (can be changed), summary(contact), link(), images(cap) }. */
 
 import { esc, safeUrl } from "./esc.js";
 import { money, priceParts } from "../model/pricing.js";
@@ -84,7 +84,7 @@ import { makePlan } from "../model/plan.js";
 import { assemble } from "../engine/assemble.js";
 import { snapshotCanvas } from "../engine/snapshot.js";
 import { stageTableFor } from "../engine/renderer.js";
-import { keepLink, copyText, contactHtml } from "./share.js";
+import { keepLink, copyText, contactHtml, today } from "./share.js";
 
 export const MIN_MS = 3000;            /* the least time a person spends before sending */
 export const TIMEOUT_MS = 20000;       /* how long a form service or webhook gets to answer */
@@ -102,7 +102,10 @@ export const FIELDS = [
   { key: "note", words: "a note", ph: "Anything else we should know?", type: "textarea", max: 1000, cls: "qwide" },
 ];
 const LABEL = { name: "Name", phone: "Phone", zip: "ZIP", email: "E-mail", address: "Address", note: "Note" };
-const EMAIL_RE = /^[^\s@<>"',;:?&]+@[^\s@<>"',;:?&]+\.[^\s@<>"',;:?&]+$/;
+const EMAIL_RE = /^[^\s@<>"',;:?&]+@[^\s@<>"',;:?&]+\.[^\s@<>"',;:?&]+$/;   /* an address put INTO a mail link: strict */
+/* the customer's own address, only ever sent as data: looser, because real
+   addresses have apostrophes in them (o'brien@...) and must not be turned away */
+const CUSTOMER_EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]+$/;
 
 function andList(a) { return a.length < 2 ? (a[0] || "") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
 function asked(cat, key) { const m = (cat.leads.fields || {})[key]; return m === "required" || m === "optional"; }
@@ -381,13 +384,14 @@ export function install(api) {
     set timeoutMs(v) { if (v > 0) state.timeoutMs = +v; },
     summary: (contact) => summaryText(api.getState(), cat, contact || null, keeper ? keeper.now() : ""),
     link: () => (keeper ? keeper.get() : Promise.resolve("")),
-    images: () => leadImages(api),
+    images: (cap) => leadImages(api, cap),
   };
   if (mode === "none" || !mount) return;            /* a showroom */
   addCss();
 
   keeper = keepLink(api, { view: true });
   const who = cat.brand.name || "the company";
+  const canReach = !!contactHtml(cat, {});         /* the company has a phone or an e-mail to show */
   const shownAt = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
   const since = () => ((typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now()) - shownAt;
 
@@ -430,7 +434,7 @@ export function install(api) {
       words.push("Please add a phone number or an e-mail address so " + who + " can reach you.");
     }
     if (c.phone && c.phone.replace(/[^0-9]/g, "").length < 7) { bad.push("phone"); words.push("Please check your phone number — it looks too short."); }
-    if (c.email && !EMAIL_RE.test(c.email)) { bad.push("email"); words.push("Please check your e-mail address — it doesn't look complete."); }
+    if (c.email && !CUSTOMER_EMAIL_RE.test(c.email)) { bad.push("email"); words.push("Please check your e-mail address — it doesn't look complete."); }
     if (c.zip && !/[0-9A-Za-z]{3}/.test(c.zip)) { bad.push("zip"); words.push("Please check your ZIP code."); }
     bad.forEach((k) => { const el = box(k); if (el) { el.classList.add("qbad"); el.setAttribute("aria-invalid", "true"); } });
     if (bad.length) { const el = box(bad[0]); if (el) { try { el.focus(); } catch (e) { /* ignore */ } } }
@@ -487,7 +491,7 @@ export function install(api) {
     wireAgain();
   }
   function showFailed(link, summary, why) {
-    res.innerHTML = '<div class="qerr"><b>We couldn’t send your request just now.</b> Nothing is lost — reach ' + esc(who) + " directly below, or try again in a minute.</div>" + fallback(link, summary);
+    res.innerHTML = '<div class="qerr"><b>We couldn’t send your request just now.</b> Nothing is lost — ' + (canReach ? "reach " + esc(who) + " directly below" : "copy the link to your design below and send it to " + esc(who)) + ", or try again in a minute.</div>" + fallback(link, summary);
     wireFallback(link, summary);
     btn.hidden = false; btn.disabled = false; btn.textContent = "Try again";
     if (why) res.querySelector(".qerr").setAttribute("data-why", why);
@@ -525,7 +529,7 @@ export function install(api) {
     if (trap && String(trap.value || "").trim()) {
       const link = now || await keeper.get();
       const summary = summaryText(api.getState(), cat, c, link);
-      res.innerHTML = '<div class="qerr">We couldn’t send this one automatically. Please reach ' + esc(who) + " directly:</div>" + fallback(link, summary);
+      res.innerHTML = '<div class="qerr">We couldn’t send this one automatically. Please ' + (canReach ? "reach " + esc(who) + " directly:" : "copy the link to your design below and send it to " + esc(who) + ".") + "</div>" + fallback(link, summary);
       wireFallback(link, summary);
       return record({ status: "dropped", why: "honeypot" });
     }
@@ -566,13 +570,13 @@ export function install(api) {
         }
         showMailto(href, link, summary);
         out = record({ status: "opened", why: "", href: href, length: href.length });
-        tellParent({ type: "shed:quote-requested", v: 1, mode: mode, sent: true, design: api.getDesign({ priced: true }), link: link }, false);
+        tellParent({ type: "shed:quote-requested", v: 1, mode: mode, sent: true, design: api.getDesign({ priced: true, at: today() }), link: link }, false);
         return out;
       }
 
       if (!link) link = await keeper.get();
       summary = summaryText(api.getState(), cat, c, link);
-      const design = api.getDesign({ priced: true });
+      const design = api.getDesign({ priced: true, at: today() });   /* the customer's own day */
       let r;
       if (mode === "form") {
         const pp = api.price();

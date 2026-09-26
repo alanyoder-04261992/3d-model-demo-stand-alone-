@@ -62,6 +62,15 @@ export function parseArgs(argv) {
 
 const norm = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
 
+/* 2027-09-01 yes; 2027-13-45 no (it has the right shape, but no such day --
+   list-companies would count the days to a date that does not exist) */
+function realDate(s) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return false;
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  return d.getUTCFullYear() === +m[1] && d.getUTCMonth() === +m[2] - 1 && d.getUTCDate() === +m[3];
+}
+
 function initialsOf(name) {
   const w = String(name).split(/\s+/).filter((x) => /[A-Za-z0-9]/.test(x));
   const skip = /^(and|of|the|&)$/i;
@@ -130,7 +139,7 @@ export function makeCompany(o, csvText) {
   if (!name) problems.push("--name is missing: the company's name, like --name \"Acme Sheds\".");
   for (const k of ["header", "accent"]) if (o[k] && !HEX_RE.test(String(o[k]))) problems.push(`--${k} "${o[k]}" is not a colour: write it like "#2F4A3B".`);
   if (o.leads && LEAD_MODES.indexOf(o.leads) < 0) problems.push(`--leads "${o.leads}" is not a way to receive quotes (use ${LEAD_MODES.join(", ")}).`);
-  if (o.renews && !/^\d{4}-\d{2}-\d{2}$/.test(String(o.renews))) problems.push(`--renews "${o.renews}" must be a date like 2027-09-01.`);
+  if (o.renews && !realDate(String(o.renews))) problems.push(`--renews "${o.renews}" must be a real date like 2027-09-01.`);
   const origins = o.origins ? String(o.origins).split(",").map((s) => s.trim().replace(/\/$/, "")).filter(Boolean) : [];
   for (const x of origins) { const p = originProblem(x); if (p) problems.push(`--origins: "${x}" ${p}.`); }
 

@@ -35,7 +35,10 @@
       drag spins the building), and a cover INSIDE the stage inherits that
       unless the stage lets go while the cover is up -- which is what the
       :has(.tapcover) rule below does. Without it a swipe over the cover moved
-      nothing at all, neither the building nor the company's page.
+      nothing at all, neither the building nor the company's page. And the
+      embedded designer never scrolls as a page (the EMBEDDED AND STACKED
+      rule below), or an upward swipe scrolled the designer's own cards
+      instead of the company's page.
 
    Staff-only Barnwright styles (the dealer chip, the order bars) are left out.
    The quote classes (.qgrid .bigbtn .sent .qok .qerr .copybtn .smsok) and the
@@ -258,6 +261,21 @@ body.embedded .hdr{display:none}
   .wrap{flex:1 1 42%;max-width:none;height:calc(100vh - 58px);height:calc(100dvh - 58px);overflow-y:auto;padding:16px 18px 60px}
   body.embedded .wrap{height:100vh;height:100dvh}
   .sheet{position:absolute;left:auto;right:16px;bottom:55px;width:340px;margin:0;box-shadow:0 8px 28px rgba(10,30,50,.35);z-index:6}
+}
+/* EMBEDDED AND STACKED (a phone, an upright tablet, or a company page that
+   gives the designer less than 940 pixels): the designer fits its frame
+   exactly -- the building on top, the cards scrolling in their own panel
+   underneath -- so the designer's own page never scrolls. That is what lets
+   a finger on the "Tap to design" cover (and a mouse wheel on the building
+   before a click) scroll the COMPANY'S page in BOTH directions. With a page
+   of its own to scroll, the frame kept every upward swipe for itself: a
+   visitor scrolling down past the designer went through all of its cards
+   first (measured: 8 swipes on a 390-pixel phone before the company's page
+   moved). The same rule the two-column layout above already follows. */
+@media not all and (min-width:940px) and (min-aspect-ratio:1/1){
+  body.embedded .layout{height:100%;display:flex;flex-direction:column}
+  body.embedded .stagewrap{flex:0 0 auto}
+  body.embedded .wrap{flex:1 1 auto;min-height:0;width:100%;overflow-y:auto}
 }
 @media(max-width:430px){.hdr .t2{display:none}.hdr .t1{font-size:14px}}
 @media(prefers-reduced-motion:reduce){.hint{transition:none}.tgl,.tgl:after,.card h3:after{transition:none}}

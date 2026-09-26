@@ -30,7 +30,9 @@
       {design, contact, summary, link, priceComputedBy: "browser"}; no
       pictures unless the company asked for them (leads.images); with them,
       a 2x2 picture of the building and the floor plan that the browser can
-      open, together under 300 KB. A broken webhook (it answers 500) shows the
+      open, together under 300 KB (and, with a smaller cap, made smaller
+      step by step until they fit). A customer e-mail address with an
+      apostrophe in it is accepted. A broken webhook (it answers 500) shows the
       "reach us directly" box: Call and Text links with the company's phone,
       a "Copy my design link" button that copies the link, and the summary.
    5. E-MAIL (mailto): the mail link is addressed to the company, carries the
@@ -45,8 +47,10 @@
       and in the other modes an allowed page is told a quote was requested
       WITHOUT the customer's details.
    7. ESCAPING: a customer named <img src=x onerror=...>, a company named
-      with <b> in it and texting words with <i> in them all show as the
-      characters typed -- nothing runs, no element is made.
+      with <b> in it, a company phone with an <img> tag in it and texting
+      words with <i> in them all show as the characters typed -- nothing
+      runs, no element is made. A company with no phone or e-mail on file is
+      not promised to the customer as a way to reach it.
    8. A showroom company (leads.mode "none") has no quote form.
    9. No console errors (the browser's own "failed to load" line for the
       deliberately broken endpoints and Google Fonts aside).
@@ -122,7 +126,11 @@ function companies() {
     leademb: company("leademb", { mode: "webhook", url: FAKE + "/hook" }, { embed: allowed }),
     leadnone: company("leadnone", { mode: "none" }),
     leadesc: company("leadesc", { mode: "webhook", url: FAKE + "/hook", smsConsent: SMS_WORDS }, {
-      brand: Object.assign({}, DEMO.brand, { name: 'Acme <b>Sheds</b> & "Co"', short: "Acme", phone: PHONE, email: "sales@acme.example" }),
+      brand: Object.assign({}, DEMO.brand, { name: 'Acme <b>Sheds</b> & "Co"', short: "Acme", phone: PHONE + ' <img src=x onerror="window.__pwned=true">', email: "sales@acme.example" }),
+    }),
+    /* a company with no phone number and no e-mail address on file */
+    leadbare: company("leadbare", { mode: "webhook", url: FAKE + "/fail" }, {
+      brand: Object.assign({}, DEMO.brand, { name: "Bare Sheds", short: "Bare", phone: "", email: "" }),
     }),
   };
 }
@@ -311,18 +319,21 @@ try {
   {
     const ctx = await newContext(browser);
     const { page, noise, readyAt } = await openDesigner(ctx, "leadhook");
-    await fillBasics(page, { email: "jane@example.com" });
+    /* a real address with an apostrophe in it must not be turned away */
+    await fillBasics(page, { email: "jane.o'hara@example.com" });
     await pastMinimum(readyAt);
     fake.reset();
     await page.click("#quote-mount .qsend");
-    const got = await fake.waitFor((r) => r.method === "POST" && r.path === "/hook", 20000);
-    const last = await waitLast(page, ["sent", "failed"]);
+    /* "invalid" too: a form that turned the address away is a failure to report, not a stall */
+    const first = await waitLast(page, ["sent", "failed", "invalid"]);
+    const got = first.status === "invalid" ? null : await fake.waitFor((r) => r.method === "POST" && r.path === "/hook", 20000);
+    const last = await waitLast(page, ["sent", "failed", "invalid"]);
     const onPage = await page.evaluate(() => ({ design: window.shedUI.getDesign(), total: window.shedUI.price().total }));
     const j = (got && got.json) || {};
     ok("the webhook receives the post as text/plain;charset=UTF-8", got && /^text\/plain;\s*charset=UTF-8$/i.test(got.headers["content-type"]), got && got.headers["content-type"]);
     ok("with no permission request (preflight) before it", preflights(fake).length === 0, J(preflights(fake)));
     ok("it carries design, contact, summary, link and priceComputedBy: \"browser\" -- and no pictures (leads.images is off)", J(Object.keys(j).sort()) === J(["contact", "design", "link", "priceComputedBy", "summary"]) && j.priceComputedBy === "browser", J(Object.keys(j)));
-    ok("the contact is what was typed, with the texting answer (not ticked: false)", j.contact && j.contact.name === "Jane Doe" && j.contact.phone === "(941) 555-0123" && j.contact.zip === "33952" && j.contact.email === "jane@example.com" && j.contact.smsOk === false, J(j.contact));
+    ok("the contact is what was typed -- an e-mail address with an apostrophe in it (jane.o'hara@...) is accepted -- with the texting answer (not ticked: false)", j.contact && j.contact.name === "Jane Doe" && j.contact.phone === "(941) 555-0123" && j.contact.zip === "33952" && j.contact.email === "jane.o'hara@example.com" && j.contact.smsOk === false, J(j.contact));
     const dd = j.design ? Object.assign({}, j.design) : {};
     delete dd.priced;
     ok("the design is the one on screen (and carries the price the browser worked out)", J(dd) === J(onPage.design) && j.design.priced && Math.abs(j.design.priced.total - onPage.total) < 0.005, J({ got: dd, want: onPage.design }));
@@ -369,6 +380,11 @@ try {
       return { v, p, busy, dark };
     }, { view: im.view, plan: im.plan });
     ok("the browser can open both pictures; the building picture is a 2x2 (" + (dims.v ? dims.v.w + "x" + dims.v.h : "none") + ") with a building in it", dims.v && dims.p && dims.v.w % 2 === 0 && dims.v.h % 2 === 0 && dims.busy > 200, J(dims));
+    /* the 300 KB cap is only ever reached by a big, busy building, so the
+       smaller-and-smaller steps are proved here with a smaller cap */
+    const CAP = 60 * 1024;
+    const small = await page.evaluate(async (cap) => { const r = await window.shedUI.quote.images(cap); return { bytes: r.bytes, steps: r.steps, view: !!(r.images && r.images.view), plan: !!(r.images && r.images.plan) }; }, CAP);
+    ok("with a smaller cap (60 KB) the pictures are made smaller, step by step, until they fit (" + Math.round(small.bytes / 1024) + " KB after " + small.steps + " steps; the building kept)", small.view && small.bytes > 0 && small.bytes <= CAP && small.steps > 1, J(small));
     const after = await page.evaluate(() => ({ view: window.shedUI.views && window.shedUI.views.view, sidingHidden: window.shedUI.renderer.stageTable[9 * 4] }));
     ok("sent from the Framing view, the pictures are of the FINISHED building (its black roof is in them: " + dims.dark + " dark pixels)", framing && dims.dark > 2000, J({ framing, dark: dims.dark }));
     ok("...and the screen is left in the Framing view it was in (the siding still hidden there)", after.view === "framing" && after.sidingHidden === 1, J(after));
@@ -413,10 +429,15 @@ try {
     const btn = await page.textContent("#quote-mount .qsend");
     await fillBasics(page, { email: "jane@example.com" });
     await pastMinimum(readyAt);
+    /* the browser really is asked to open the mail app (not just told about it) */
+    const mailOpened = [];
+    page.on("request", (rq) => { if (/^mailto:/i.test(rq.url())) mailOpened.push(rq.url()); });
     await page.click("#quote-mount .qsend");
     const last = await waitLast(page, ["opened", "failed"]);
     const want = await page.evaluate(() => window.shedUI.quote.link());
     const href = last.href || "";
+    await sleep(300);
+    ok("the tap itself asks the browser to open the customer's mail app, with that mail link", mailOpened.length === 1 && mailOpened[0].slice(0, 60) === href.slice(0, 60), J({ opened: mailOpened.map((u) => u.slice(0, 60)), href: href.slice(0, 60) }));
     const body = decodeURIComponent((/[?&]body=([^&]*)/.exec(href) || [])[1] || "");
     const subj = decodeURIComponent((/[?&]subject=([^&]*)/.exec(href) || [])[1] || "");
     ok("the button says what it does ('E-mail my quote request')", /E-mail my quote request/.test(btn), btn);
@@ -555,10 +576,26 @@ try {
     await waitLast(p2.page, ["failed", "sent"]);
     const r2 = await p2.page.evaluate(() => {
       const m = document.getElementById("quote-mount");
-      return { pwned: window.__pwned, els: planted(m), sum: (m.querySelector(".qsumtext") || {}).textContent || "", err: (m.querySelector(".qerr") || {}).textContent || "" };
+      return { pwned: window.__pwned, els: planted(m), sum: (m.querySelector(".qsumtext") || {}).textContent || "", err: (m.querySelector(".qerr") || {}).textContent || "",
+        call: (m.querySelector(".shcall") || {}).textContent || "", tel: (m.querySelector(".shcall") || {}).getAttribute ? m.querySelector(".shcall").getAttribute("href") : "" };
     });
-    ok("...and on the 'reach us directly' box: the summary shows the name as typed, the company name as typed, nothing runs", r2.pwned === undefined && r2.els === 0 && r2.sum.indexOf(evil) >= 0 && r2.err.indexOf('Acme <b>Sheds</b> & "Co"') >= 0, J(r2));
+    ok("...and on the 'reach us directly' box: the summary shows the name as typed, the company name as typed, a company phone with an <img> tag in it shows as typed, nothing runs", r2.pwned === undefined && r2.els === 0 && r2.sum.indexOf(evil) >= 0 && r2.err.indexOf('Acme <b>Sheds</b> & "Co"') >= 0 && r2.call.indexOf('<img src=x onerror="window.__pwned=true">') >= 0 && r2.tel === "tel:5550100142", J(r2));
     ok("no console errors", realNoise(noise).length === 0 && realNoise(p2.noise, [/status of 500/]).length === 0, J(realNoise(noise).concat(realNoise(p2.noise, [/status of 500/]))));
+    await ctx.close();
+  }
+
+  /* ------------------------------------------------------------ 7b */
+  section("7b. A company with no phone number or e-mail on file");
+  {
+    const ctx = await newContext(browser);
+    const { page, noise, readyAt } = await openDesigner(ctx, "leadbare");
+    await fillBasics(page);
+    await pastMinimum(readyAt);
+    await page.click("#quote-mount .qsend");
+    await waitLast(page, ["sent", "failed"]);
+    const b = await page.evaluate(() => { const r = document.querySelector("#quote-mount .qresult"); return { err: (r.querySelector(".qerr") || {}).textContent || "", links: r.querySelectorAll(".shcontact a").length, copy: !!r.querySelector(".qcopy") }; });
+    ok("when the company has no phone or e-mail to show, the failure box does not promise a way to 'reach them directly below' -- it says to copy the link and send it to them", /copy the link to your design below and send it to Bare Sheds/.test(b.err) && !/directly below/.test(b.err) && b.links === 0 && b.copy, J(b));
+    ok("no console errors (the browser's own line for the 500 aside)", realNoise(noise, [/status of 500/]).length === 0, J(realNoise(noise, [/status of 500/])));
     await ctx.close();
   }
 

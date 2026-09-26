@@ -180,12 +180,44 @@
     btn.setAttribute("aria-label", full ? "Close full screen" : "Show the designer full screen");
   }
   label();
+  /* THE OVERLAY MUST COVER THE WHOLE WINDOW. A "fixed" box normally does --
+     but not inside a part of the page that is moved, tilted, filtered or
+     "contained" (website builders do that to sections all the time, for their
+     animations): there the box is pinned to that section instead, and the
+     designer came out a few pixels tall. The frame cannot be moved elsewhere
+     in the page (moving a frame reloads it, and the customer's building with
+     it), so while the overlay is up those few settings are switched off on
+     the boxes around it, and put back exactly as they were on Close. */
+  var TRAP = [["transform", "none"], ["translate", "none"], ["rotate", "none"], ["scale", "none"], ["perspective", "none"],
+    ["filter", "none"], ["backdrop-filter", "none"], ["-webkit-backdrop-filter", "none"], ["contain", "none"],
+    ["container-type", "normal"], ["will-change", "auto"], ["content-visibility", "visible"]];
+  var freed = [];
+  function freeAncestors() {
+    freed = [];
+    for (var el = wrap.parentElement; el && el !== document.documentElement; el = el.parentElement) {
+      var cs; try { cs = getComputedStyle(el); } catch (e) { continue; }
+      for (var i = 0; i < TRAP.length; i++) {
+        var prop = TRAP[i][0], neutral = TRAP[i][1], v = cs.getPropertyValue(prop);
+        if (!v || v === neutral || (prop === "will-change" && v === "auto")) continue;
+        freed.push([el, prop, el.style.getPropertyValue(prop), el.style.getPropertyPriority(prop)]);
+        el.style.setProperty(prop, neutral, "important");
+      }
+    }
+  }
+  function restoreAncestors() {
+    for (var i = freed.length - 1; i >= 0; i--) {
+      var f = freed[i];
+      if (f[2]) f[0].style.setProperty(f[1], f[2], f[3]); else f[0].style.removeProperty(f[1]);
+    }
+    freed = [];
+  }
   function enterStyles(kind) {
     full = kind;
     saved = { wrap: wrap.getAttribute("style"), html: document.documentElement.style.overflow };
     css(wrap, { background: "#fff", padding: "8px", display: "flex", flexDirection: "column" });
     if (kind === "overlay") {
-      css(wrap, { position: "fixed", top: "0", left: "0", right: "0", bottom: "0", width: "auto", height: "auto", zIndex: "2147483000" });
+      freeAncestors();
+      css(wrap, { position: "fixed", top: "0", left: "0", right: "0", bottom: "0", width: "auto", height: "auto", maxWidth: "none", zIndex: "2147483000" });
       document.documentElement.style.overflow = "hidden";
     } else css(wrap, { width: "100%", height: "100%" });
     if (bar) css(bar, { padding: "8px 0 0" });
@@ -196,6 +228,7 @@
     if (!full) return;
     full = null;
     if (saved) { wrap.setAttribute("style", saved.wrap || ""); document.documentElement.style.overflow = saved.html || ""; }
+    restoreAncestors();
     if (bar) css(bar, { padding: "6px 0 0" });
     label(); size();
     host.removeAttribute("data-shed-full");
@@ -204,14 +237,22 @@
   function onFsChange() {
     if (full === "native" && nativeEl() !== wrap) leaveStyles();
   }
+  /* the browser said no (an older Safari says so with an event, not an
+     error): lay it over the page instead */
+  function onFsError() {
+    if (full === "native" && nativeEl() !== wrap) { leaveStyles(); enterStyles("overlay"); }
+  }
   document.addEventListener("fullscreenchange", onFsChange);
   document.addEventListener("webkitfullscreenchange", onFsChange);
+  document.addEventListener("fullscreenerror", onFsError);
+  document.addEventListener("webkitfullscreenerror", onFsError);
   document.addEventListener("keydown", function (e) { if (full === "overlay" && (e.key === "Escape" || e.key === "Esc")) leaveStyles(); });
 
   function enter() {
     load();
     var req = wrap.requestFullscreen || wrap.webkitRequestFullscreen;
-    if (!req) { enterStyles("overlay"); return; }
+    var allowed = document.fullscreenEnabled != null ? document.fullscreenEnabled : document.webkitFullscreenEnabled;
+    if (!req || allowed === false) { enterStyles("overlay"); return; }
     enterStyles("native");
     var p;
     try { p = req.call(wrap); } catch (e) { leaveStyles(); enterStyles("overlay"); return; }
@@ -234,7 +275,7 @@
     if (!d || typeof d !== "object" || typeof d.type !== "string") return;
     if (d.v != null && d.v !== 1) return;
     var name = d.type.replace(/^shed:/, "");
-    if (!EVENTS[name]) return;
+    if (!Object.prototype.hasOwnProperty.call(EVENTS, name)) return;   /* not "constructor", "toString" ... */
     if (name === "ready") host.setAttribute("data-shed-state", "ready");
     fire(host, "shed:" + name, d);
   });

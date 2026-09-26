@@ -16,7 +16,7 @@
       websites listed for that company -- its company.json "embed.origins" --
       and on this site itself ('self'). Any other website that tries to show
       Acme's designer (to pass it off as its own, or without a licence) gets
-      an empty box. The plain designer address (/ and /index.html) may be
+      an empty box. The plain designer address (/, /index.html, /index) may be
       framed by this site only, so /c/<company>/ is the one way in.
    2. WHAT THE DESIGNER PAGE MAY LOAD AND RUN ("Content-Security-Policy"): only
       its own files; the two small scripts written inside index.html (by their
@@ -74,8 +74,17 @@ export function inlineScriptHashes(html) {
   return out;
 }
 
+/* a website's origin, or null. Only letters, digits, dots and dashes in the
+   name (and a port number): a web address may legally carry a ";" in its
+   name ("https://acme.com;frame-ancestors"), and one of those written into
+   the policy below would start a new rule of its own -- one stray paste
+   could switch a company's designer off on every website. */
 function originOf(u) {
-  try { const x = new URL(u); return /^https?:$/.test(x.protocol) ? x.origin : null; } catch (e) { return null; }
+  try {
+    const x = new URL(u);
+    if (!/^https?:$/.test(x.protocol) || !/^https?:\/\/[a-z0-9.-]+(:\d+)?$/.test(x.origin)) return null;
+    return x.origin;
+  } catch (e) { return null; }
 }
 
 /* where a company's quote requests go, for the policy */
@@ -152,8 +161,8 @@ export function buildHeaders({ companies, indexHtml }) {
   rule("/*", [["X-Content-Type-Options", "nosniff"], ["Referrer-Policy", "strict-origin-when-cross-origin"]]);
   L.push("# the plain designer address: shown in a frame by this site only (embedding goes through /c/<company>/)");
   const plain = designerCsp({ hashes, googleFonts, form: allForm, connect: allConnect, ancestors: [] });
-  rule("/", [["Content-Security-Policy", plain]]);
-  rule("/index.html", [["Content-Security-Policy", plain]]);
+  /* "/index" too: Netlify also answers the address without ".html" */
+  for (const p of ["/", "/index.html", "/index"]) rule(p, [["Content-Security-Policy", plain]]);
   L.push("# the staff pages: this site only");
   for (const p of ["/setup.html", "/setup", "/parts.html", "/parts"]) rule(p, [["Content-Security-Policy", "frame-ancestors 'self'"]]);
   L.push("# the one script a company pastes on its website; may be loaded from any site");

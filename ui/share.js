@@ -29,9 +29,12 @@
          (ui/quote.js) sends the company, so the person reading a quote sees
          the building, not a list of codes.
        - A LINK NEVER CARRIES A PRICE ANYONE SHOULD TRUST (docs/DIFFERENCES.md
-         #14). The link remembers what the design cost the day it was made;
-         when today's price is different the card says so: "This design was
-         priced at $X on <date>; prices may have changed -- contact <company>".
+         #14). The link remembers what the design cost the day it was made
+         (the customer's own day, not London's); when today's price is
+         different the card says so: "This design was priced at $X on <date>;
+         prices may have changed -- contact <company>". A company that shows
+         no prices (pricing.show "none") gets links with no price in them at
+         all: anybody can unpack a link and read what is inside it.
        - Anything in the link the company no longer offers (a size, a colour,
          a door, an upgrade) was left off or swapped by model/design.js
          toState; the card lists what, in its own plain sentences.
@@ -49,6 +52,10 @@
    FOR ui/quote.js (and checks) this file exports the link and the contact
    helpers, so a quote carries the very same link the Share button makes:
      shareBase(cat, href)          the address a link starts with
+     today()                       "2026-01-14" on the customer's own calendar
+     linkDesign(api)               the design as a link carries it: with the
+                                   price and today's date, or with no price
+                                   at all for a company that shows none
      designLink(api, {view})       -> Promise of the full link for the design
                                    now on screen (view: true adds "&view=1")
      keepLink(api, {view})         the same link kept ready: .now() / .get()
@@ -88,9 +95,28 @@ export function shareBase(cat, href) {
   return u.toString().replace(/\?$/, "");
 }
 
+/* Today on the customer's own calendar, "2026-01-14". (The day in London is
+   no use: at 9 pm in Florida it is already tomorrow there, and the look-only
+   page would say the design was priced on a day that had not come yet.) */
+export function today(now) {
+  const d = now || new Date();
+  const two = (n) => (n < 10 ? "0" : "") + n;
+  return d.getFullYear() + "-" + two(d.getMonth() + 1) + "-" + two(d.getDate());
+}
+
+/* The design as a link carries it: with the price the customer saw and the
+   day -- except for a company that shows no prices (pricing.show "none"),
+   whose links carry no price at all, because anybody can read what is in a
+   link. */
+export function linkDesign(api) {
+  const cat = api.getCatalogue();
+  const showsPrices = !(cat.pricing && cat.pricing.show === "none");
+  return api.getDesign(showsPrices ? { priced: true, at: today() } : {});
+}
+
 export async function designLink(api, opts) {
   opts = opts || {};
-  const design = api.getDesign({ priced: true });
+  const design = linkDesign(api);
   const text = await encode(design);
   return shareBase(api.getCatalogue(), opts.href) + "#d=" + text + (opts.view ? "&view=1" : "");
 }
@@ -199,6 +225,9 @@ export function contactHtml(cat, words) {
 export function niceDate(at) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(at == null ? "" : at));
   if (!m || +m[2] < 1 || +m[2] > 12 || +m[3] < 1 || +m[3] > 31) return "";
+  /* a day the calendar does not have (February 30, from a hand-made link) is no date */
+  const d = new Date(Date.UTC(+m[1], +m[2] - 1, +m[3]));
+  if (d.getUTCMonth() !== +m[2] - 1 || d.getUTCDate() !== +m[3]) return "";
   return MONTHS[+m[2] - 1] + " " + (+m[3]) + ", " + m[1];
 }
 
