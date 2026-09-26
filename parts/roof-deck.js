@@ -1,0 +1,21 @@
+/* ROOF DECK -- A STUB, waiting to be ported. Node-safe.
+
+   This file only exists so parts/index.js (the PIPELINE) can load while the
+   real part is being written. It draws nothing and says so ("pending: true"):
+   tools/check-golden.mjs reports its triangles as PENDING, not failed, and
+   tools/check-parts.mjs does not ask it for a skill yet.
+
+   What it will be: What the roofing is fastened to: purlins on a metal building, sheathing otherwise ({roofDeck.type} on this building).
+   Barnwright source: new -- Barnwright drew none.
+   Replace this whole file with the real part (see parts/README.md and
+   docs/SKILL-TEMPLATE.md). */
+
+export default {
+  id: "roof-deck",
+  name: "Roof deck",
+  stage: "roof-deck",
+  realLife: "What the roofing is fastened to: purlins on a metal building, sheathing otherwise ({roofDeck.type} on this building).",
+  pending: true,
+  appliesTo(plan) { return true; },
+  build() {},
+};
