@@ -253,8 +253,11 @@ export function createRenderer(canvas, opts){
     if(canvas.width!==cwc*dpr||canvas.height!==chc*dpr){canvas.width=cwc*dpr;canvas.height=chc*dpr;}
     var H=bd.H;
     var targetY=H*0.42;
-    var cp=[cam.dist*Math.cos(cam.pitch)*Math.sin(cam.yaw), targetY+cam.dist*Math.sin(cam.pitch), cam.dist*Math.cos(cam.pitch)*Math.cos(cam.yaw)];
-    var view=matLook(cp,[0,targetY,0],[0,1,0]);
+    // Optional focus for a part close-up. The ordinary designer keeps its
+    // original target and arithmetic; lighting remains on the whole model.
+    var target=Array.isArray(cam.target)&&cam.target.length===3&&cam.target.every(Number.isFinite)?cam.target:[0,targetY,0];
+    var cp=[target[0]+cam.dist*Math.cos(cam.pitch)*Math.sin(cam.yaw), target[1]+cam.dist*Math.sin(cam.pitch), target[2]+cam.dist*Math.cos(cam.pitch)*Math.cos(cam.yaw)];
+    var view=matLook(cp,target,[0,1,0]);
     var pers=matPersp(0.55,cwc/chc,1,fitDist*5);
     var vp=matMul(pers,view);
     var LIGHT=sunFromCam(cam); r.light=LIGHT;

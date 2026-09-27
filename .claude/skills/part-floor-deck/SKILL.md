@@ -5,6 +5,37 @@ description: The tongue-and-groove floor decking sheets over the floor joists (o
 
 # Floor decking (`parts/floor-deck.js`)
 
+## Scope of the current floor lesson
+
+On September 27, 2026 Alan confirmed **skids**, **notches**, the actual skid
+and crosswise member sections, their 1 in notched seating, and 16 in standard
+spacing with extra notches for a 12 in option. This did **not** confirm the
+term **floor decking**, the sheet specification or its layout in the current
+lesson. Keep that label proposed and the sheet values identified as existing
+model defaults until discussed. The earlier shop notes below remain source
+evidence, not a new confirmation from the photos.
+
+The learning page's opt-in `floorStudy` plan keeps the crosswise members at
+their confirmed actual 5 1/2 in height, seated 1 in into actual 5 1/2 in-high
+skids. When sheets are manually added, they sit on that corrected frame top.
+Do not compress the frame or force the lesson deck top to the legacy `y0`.
+The normal finished reference retains its older envelope below. Start the
+lesson with skids only and reveal sheets when Alan directs it.
+
+The opt-in is [floorStudyPlan](../../../model/floor-study.js), reading
+`construction.floorStudy`. `floorDeckMembers(plan)` already reads the frame
+top from `floorPlanOf(plan)`, so it follows the corrected study height when
+`plan.floorStudy` is present; ordinary plans still use the legacy height.
+
+The supplied photos corroborate the notched connection, not dimensions
+measured from pixels. Do not publish the photos. Alan's 30 in skid offset is
+confirmed from the outside wall to the inside skid face, toward the floor's
+middle. The lesson uses `floorStudy.skids.insetToInsideIn: 30` and a confirmed
+`supportOffset` status; the legacy skid table is unchanged. Keep
+first-notch-center/end offsets, cut clearance, skid count and crosswise cut
+length pending.
+See [the example](../../../docs/examples/10x16-side-loft.md).
+
 ## What it is in real life
 
 The floor is decked with 4x8 tongue-and-groove sheets nailed over the
@@ -31,8 +62,9 @@ lands on the floor frame. PIPELINE: among the framing entries, only with
 * `floor.deck.thicknessIn` -- per layer (default 0.625, 5/8 in).
 * `floor.deck.layers` -- 1, or 2 with the "Double floor" option
   (`rate.dbl` construction effect).
-The joists under it are drawn shallower by thickness x layers so the top of
-the decking is always y0.
+On the normal-model path the joists under it are drawn shallower by thickness
+x layers so the deck top remains y0. The opt-in lesson instead lays the
+specified sheet thickness on the full-height corrected frame.
 
 ## Where it came from in Barnwright
 
@@ -43,6 +75,8 @@ is the room's outline (`roomOutline` in `parts/floor-frame.js`, the same walls
 `parts/siding.js` draws), inset to the slab.
 
 ## The owner's facts
+
+These are earlier source notes, separate from this lesson's confirmed terms.
 
 * Barnwright 2147-2150 (the shop): "2x6 joists on skids with 5/8" decking".
 * Alan, Aug 2026: "Double floors is the 4x8 tongue and groove flooring that

@@ -32,6 +32,7 @@
    Barnwright's. */
 
 import { floorSegments } from "./floor.js";
+import { floorFrameMembers, floorPlanOf, prismMember, cleanPoly, drawPrism } from "./floor-frame.js";
 
 /* WHERE THE SKIDS SIT UNDER THE BUILDING. Alan's build sheet, Sep 2026,
    measured from each side edge of the building in to the CENTRE of a skid:
@@ -68,6 +69,63 @@ export function skidXs(w, skids){
   return xs;
 }
 
+/* A single notched timber for the opt-in teaching plan. Its side profile is
+   extruded across the measured width: no overlapping boxes or segment seams.
+   Notch widths, layout origin, end joints and support positions retain their
+   separate confirmation status in plan.floorStudy.status. */
+export function skidStudyMembers(plan) {
+  const study = plan.floorStudy;
+  if (!study) return [];
+  const W = study.skids.widthFt, H = study.skids.heightFt;
+  const z0 = -study.skids.lengthFt/2, z1 = study.skids.lengthFt/2;
+  const seat = study.joistBottomFt, half = study.notches.widthFt/2;
+  const F = floorPlanOf(plan);
+  const cross = floorFrameMembers(plan).filter((m) => ["joist", "end-joist", "wall-joist"].includes(m.kind));
+  // This explicit two-skid lesson datum is from the outside wall to the
+  // timber's INSIDE face, not its centre. Ordinary plans still use skidXs.
+  const inset = study.skids.insetToInsideIn;
+  const centreX = inset == null ? null : plan.W/2-(inset-study.skids.widthIn/2)/12;
+  const xs = centreX == null ? skidXs(plan.W,plan.construction.skids) : [-centreX,centreX];
+  return xs.map((xFt) => {
+    const candidates = [];
+    function add(center, source) {
+      const lo = Math.max(z0,center-half), hi = Math.min(z1,center+half);
+      if (hi > lo+1e-9) candidates.push({z0Ft:lo,z1Ft:hi,sources:[source]});
+    }
+    for (const m of cross) {
+      const lo = Math.min(m.p0[0],m.p1[0]), hi = Math.max(m.p0[0],m.p1[0]);
+      if (xFt+W/2 > lo && xFt-W/2 < hi) add((m.p0[2]+m.p1[2])/2,m.kind === "joist" ? "standard" : m.kind);
+    }
+    const alt = study.notches.alternateSpacingFt;
+    if (alt != null) {
+      // Same still-provisional back datum as the regular cross members.
+      for (let k=1; ; k++) {
+        const center=F.roomRect.z0+k*alt;
+        if (center+half > F.roomRect.z1-F.joist.t+1e-9) break;
+        add(center,"alternate");
+      }
+    }
+    candidates.sort((a,b)=>a.z0Ft-b.z0Ft);
+    const merged=[];
+    for (const cut of candidates) {
+      const previous=merged[merged.length-1];
+      if (previous && cut.z0Ft <= previous.z1Ft+1e-9) {
+        previous.z1Ft=Math.max(previous.z1Ft,cut.z1Ft);
+        previous.sources=[...new Set(previous.sources.concat(cut.sources))];
+      } else merged.push({...cut});
+    }
+    const notches=merged.map((cut)=>({ ...cut,xFt,centerZFt:(cut.z0Ft+cut.z1Ft)/2,
+      widthFt:cut.z1Ft-cut.z0Ft,depthFt:H-seat,seatYFt:seat,topYFt:H }));
+    const profile=[[z0,0],[z1,0],[z1,H]];
+    for (const cut of notches.slice().reverse()) profile.push([cut.z1Ft,H],[cut.z1Ft,seat],[cut.z0Ft,seat],[cut.z0Ft,H]);
+    profile.push([z0,H]);
+    const member=prismMember("notched-skid","treated",cleanPoly(profile),[xFt-W/2,0,0],
+      [0,0,1],[0,1,0],[1,0,0],W,{xFt,nominal:study.skids.nominal,notches});
+    member.stage="skids";
+    return member;
+  });
+}
+
 export default {
   id: "skids",
   name: "Skids",
@@ -78,6 +136,10 @@ export default {
     var W = plan.W;
     var mSk = core.mSk;
     kit.setStage("skids");
+    if (plan.floorStudy) {
+      skidStudyMembers(plan).forEach(function(member) { drawPrism(kit,mSk,member); });
+      return;
+    }
     var SKX=skidXs(W,plan.construction&&plan.construction.skids);
     floorSegments(plan).forEach(function (s) {
       var fend=s.fl+(s.fi===0||s.fi===s.NF-1?0.2:0);

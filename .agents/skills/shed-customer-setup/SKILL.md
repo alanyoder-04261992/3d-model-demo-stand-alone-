@@ -44,9 +44,8 @@ it out or annotate the view when the available tools make that useful.
 For the current floor-first lesson, Alan has selected **the long supports
 underneath** as the starting physical piece. The manual floor page starts
 with those supports only: no frame, top sheets, walls or roof, and no autoplay.
-Show them first, then point to them and ask what he calls them. **Skids** and
-**runners** remain draft names; choosing the physical piece does not confirm
-either term or its specification. The optional `?step=frame` and `?step=deck`
+He has now named them **skids** and their top cuts **notches**. Use those
+confirmed terms; **runners** remains an unconfirmed alternate. The optional `?step=frame` and `?step=deck`
 views are later manual additions. This is a learning order, not an approved
 shop sequence. Do not impose the software's `buildOrder` as the order the shop
 uses. Agree on the current part's meaning before moving on, and follow Alan's
@@ -56,13 +55,13 @@ when the starting view changes.
 Alan has explicitly requested a **3D render with the terms** to check names
 and how pieces fit together. Provide labels anchored to actual rendered
 parts using leader lines or another clear visual pointer; text in a glossary
-or a detached list is not sufficient. For the floor lesson, the candidate
-labels are **skids / runners**, **floor joist**, **rim joist** and **floor
-decking**. Mark them as proposed; none was confirmed by requesting the render.
+or a detached list is not sufficient. For the floor lesson, **skids** and
+**notches** are confirmed labels; **floor joist**, **rim joist**, **floor
+decking** and **runners** remain proposed.
 Start with the selected supports, then reveal floor layers manually as Alan
-directs so he can see supports under crosswise members, perimeter members
-around them, and sheets on top. Discuss and verify those model relationships
-without claiming that they are approved shop specifications. Inspect the
+directs so he can see the crosswise members seated in the skids' notches,
+perimeter members around them, and sheets on top. Distinguish that confirmed
+seating from the remaining model assumptions. Inspect the
 actual 3D result before saying that labels or connections are visible.
 
 Alan also requested **measurements on the render** so he can check the
@@ -74,15 +73,44 @@ Inspect the visible dimension lines and readout together before reporting
 success. Naming a part and measuring the model do not confirm a shop's
 physical specification or authorize treating the result as a cut list.
 
-Preserve the known discrepancy notes in the
-[10x16 example](../../../docs/examples/10x16-side-loft.md#floor-measurements-to-show):
-the support settings say `4x6`, but legacy support boxes draw 6 in square;
-their overall length extent on this nominal 16 ft building is 16.14 ft
-(16 ft 1.68 in). The floor frame also fits the older floor-height envelope,
-so its drawn depth with one 5/8 in deck layer is 4.415 in despite a `2x6`
-setting. Verify these against `parts/skids.js`, `parts/floor.js` and
-`parts/floor-frame.js`; recalculate if geometry or settings change. Do not
-hide discrepancies by labeling the drawing with nominal sizes.
+Alan confirmed these example-specific facts on September 27, 2026: nominal
+4x6 skids are actual 3 1/2 x 5 1/2 in and 16 ft long; nominal 2x6 members are
+actual 1 1/2 x 5 1/2 in, running across and sitting 1 in down in skid
+notches. Standard spacing is 16 in on center; extra notches provide the
+12 in on center option and may be unused in the standard layout. The
+12 in unit was explicitly clarified. His supplied photos corroborate the
+connection; use the stated dimensions rather than measurements from pixels,
+and do not publish the photos.
+
+Alan clarified the **30 in skid offset** as **outside of the wall to the
+inside face of the skid**, the face toward the middle of the floor. With
+the actual 3 1/2 in width, the derived wall-to-center distance is 28 1/4 in.
+The current two-skid lesson consequently has 63 1/2 in between centers
+across the nominal 10 ft width; two remains a provisional count. Record the
+lesson offset in `construction.floorStudy.skids.insetToInsideIn: 30` with
+`construction.floorStudy.status.supportOffset: "confirmed"`; do not alter
+the normal model's legacy skid table. Keep first-notch-center/end offsets,
+notch cut clearance, skid count and crosswise cut length pending.
+A provisional 1 1/2 in notch width is a
+modeling fit to the member, not a confirmed clearance. Use the opt-in
+`floorStudy` plan only for the learning page to show the corrected sections
+and notched connection. Call
+[floorStudyPlan](../../../model/floor-study.js) on the lesson's plan; it
+reads `construction.floorStudy` and adds `plan.floorStudy` with separate
+confirmation statuses. A company having the settings alone must not enable
+the correction in its normal designer. Keep the finished reference's legacy geometry
+unchanged: 6 in square support boxes, 16.14 ft outer extent and a 4.415 in
+frame depth with one 5/8 in deck layer. Those older values are historical
+drawing differences, not this lesson's approved sizes. See the
+[measurement record](../../../docs/examples/10x16-side-loft.md#floor-measurements-to-show)
+and the three affected part skills. A partly confirmed model is not a
+complete cut list.
+
+Alan's nominal-size explanation for the examples discussed is to subtract
+1/2 in from each dimension: 2x4 → 1 1/2 x 3 1/2 in; 2x6 → 1 1/2 x 5 1/2 in;
+4x6 → 3 1/2 x 5 1/2 in. Record these as confirmed conversation examples.
+Do not universalize the rule to other sections or overwrite shared lumber
+conversions without confirmation for those sections.
 
 Propose a name as a draft, then ask whether the description identifies the
 same part and what Alan's shop calls it. For example: "I mean the white outside

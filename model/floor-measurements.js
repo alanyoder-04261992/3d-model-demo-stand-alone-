@@ -1,7 +1,7 @@
 /* Measurements of the existing drawing, in feet. No construction settings
    or geometry are changed. Nominal settings are returned separately: the
    preserved drawing does not always have the lumber's physical section. */
-import skids from "../parts/skids.js";
+import skids, { skidStudyMembers } from "../parts/skids.js";
 import { floorFrameMembers, lumberSize } from "../parts/floor-frame.js";
 import { floorDeckMembers } from "../parts/floor-deck.js";
 
@@ -50,9 +50,16 @@ function settingsSection(name) {
 
 export function floorMeasurements(plan) {
   const boxes = [];
+  const studyMembers = skidStudyMembers(plan);
   // Capture the existing part's box arguments. This reads its real segment
   // extents and cross-section, rather than guessing from nominal settings.
-  skids.build(plan, {
+  if (plan.floorStudy) {
+    for (const member of studyMembers) {
+      const zs = member.poly.map((p)=>p[0]), ys = member.poly.map((p)=>p[1]);
+      boxes.push({ xFt:member.meta.xFt,x0Ft:member.origin[0],x1Ft:member.origin[0]+member.t,
+        y0Ft:Math.min(...ys),y1Ft:Math.max(...ys),z0Ft:Math.min(...zs),z1Ft:Math.max(...zs) });
+    }
+  } else skids.build(plan, {
     setStage() {},
     box(_material, x, y, z, width, depth, length) {
       boxes.push({ xFt: x, x0Ft: x - width / 2, x1Ft: x + width / 2,
@@ -62,7 +69,11 @@ export function floorMeasurements(plan) {
   const xsFt = [...new Set(boxes.map((box) => box.xFt))].sort((a, b) => a - b);
   const runs = xsFt.map((xFt) => {
     const bounds = boundsOf(boxes.filter((box) => box.xFt === xFt));
-    return { xFt, ...bounds, lengthFt: bounds.z1Ft - bounds.z0Ft,
+    const insideFaceXFt = xFt < 0 ? bounds.x1Ft : bounds.x0Ft;
+    return { xFt, ...bounds,insideFaceXFt,
+      nearestInsideFaceFt:plan.W/2-Math.abs(insideFaceXFt),
+      notches:studyMembers.find((member)=>member.meta.xFt===xFt)?.meta.notches || [],
+      lengthFt: bounds.z1Ft - bounds.z0Ft,
       widthFt: bounds.x1Ft - bounds.x0Ft, depthFt: bounds.y1Ft - bounds.y0Ft };
   });
   const supportBounds = boundsOf(boxes);
@@ -83,19 +94,27 @@ export function floorMeasurements(plan) {
   const construction = plan.construction || {}, floor = construction.floor || {}, deck = floor.deck || {};
   const skidLumber = construction.skids?.size || null;
   return {
+    study: plan.floorStudy ? { enabled:true,status:plan.floorStudy.status,
+      joistSeatHeightFt:plan.floorStudy.joistBottomFt,joistTopFt:plan.floorStudy.joistTopFt,
+      skidTopFt:plan.floorStudy.skids.heightFt,notchPlacement:plan.floorStudy.notches.placement } : null,
     nominal: { widthFt: plan.W, lengthFt: plan.L },
     supports: { ...supportBounds, xsFt, runs, count: runs.length,
       lengthFt: supportBounds ? supportBounds.z1Ft - supportBounds.z0Ft : 0,
       widthFt: runs[0]?.widthFt || 0, depthFt: runs[0]?.depthFt || 0,
       centerSpacingsFt: xsFt.slice(1).map((x, index) => x - xsFt[index]),
-      insetCentersFt: xsFt.map((xFt) => ({ xFt, fromLeftFt: xFt + plan.W / 2,
-        fromRightFt: plan.W / 2 - xFt, nearestSideFt: plan.W / 2 - Math.abs(xFt) })),
-      nominalLumber: skidLumber, settingsSection: settingsSection(skidLumber) },
+      insetCentersFt: runs.map((run) => ({ xFt:run.xFt, fromLeftFt:run.xFt + plan.W / 2,
+        fromRightFt:plan.W / 2-run.xFt,nearestSideFt:plan.W / 2-Math.abs(run.xFt),
+        insideFaceXFt:run.insideFaceXFt,nearestInsideFaceFt:run.nearestInsideFaceFt })),
+      nominalLumber: plan.floorStudy?.skids.nominal || skidLumber, settingsSection: settingsSection(skidLumber),
+      notches:studyMembers.flatMap((member)=>member.meta.notches),
+      notchWidthFt:plan.floorStudy?.notches.widthFt || 0,
+      notchDepthFt:plan.floorStudy?.notches.depthFt || 0,
+      notchSeatYFt:plan.floorStudy?.joistBottomFt ?? null },
     frame: { members: frameMembers, joists, rims, joist, rim, spacingPairs,
       spacingFt: spacingPairs[0]?.spacingFt ?? null, bounds: boundsOf(frameMembers.map((record) => record.bounds)),
-      nominalJoist: floor.joist, nominalRim: floor.rim,
-      settingsJoistSection: settingsSection(floor.joist), settingsRimSection: settingsSection(floor.rim),
-      nominalSpacingIn: floor.spacingIn },
+      nominalJoist: plan.floorStudy?.joists.nominal || floor.joist, nominalRim: floor.rim,
+      settingsJoistSection: settingsSection(plan.floorStudy?.joists.nominal || floor.joist), settingsRimSection: settingsSection(floor.rim),
+      nominalSpacingIn: plan.floorStudy?.joists.spacingIn ?? floor.spacingIn },
     deck: { sheets, representative, thicknessFt: representative?.thicknessFt || 0,
       nominalSheet: deck.sheet, nominalThicknessIn: deck.thicknessIn, layers: highestLayer },
   };

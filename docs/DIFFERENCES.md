@@ -11,6 +11,14 @@ on this list with a reason.
 
 ## Drawing
 
+The separate `learn.html` floor lesson is an opt-in teaching view. It uses
+Alan's confirmed actual timber sections, 16 ft skids, 1 in notched seating,
+16/12 in spacing and the outside-wall-to-inside-skid-face offset recorded in
+[the example](examples/10x16-side-loft.md). It starts with skids only and
+adds layers by hand. Its close-up camera and anchored dimensions let Alan
+check the connection. Remaining layout assumptions stay labeled; the normal
+finished designer retains the golden geometry.
+
 1. **The first picture after a change has its shadows.** Barnwright draws the
    first frame after every rebuild with NO cast shadow at all: its shadow pass
    left the normal and texture attribute slots switched on after the rebuild

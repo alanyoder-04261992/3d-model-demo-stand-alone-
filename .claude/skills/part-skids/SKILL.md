@@ -5,13 +5,63 @@ description: The skids (treated runners) under a portable building -- read befor
 
 # Skids (`parts/skids.js`)
 
+## Confirmed floor lesson and its scope
+
+Alan confirmed **skids** and **notches** on September 27, 2026. For the
+10x16 lesson the skids are nominal 4x6, actual **3 1/2 x 5 1/2 in**, with a
+total length of **16 ft**. The top notches are **1 in deep** and receive
+crosswise nominal 2x6 members, actual **1 1/2 x 5 1/2 in**. Those members
+seat down into the cuts rather than sit on an uncut skid top.
+
+He also confirmed **16 in on center standard**, with extra notches for the
+**12 in on center option**; the extra positions can be unused at standard
+spacing. Alan clarified the skid offset as **30 in from the outside of the
+wall to the inside face of the skid**, toward the middle of the floor.
+With a 3 1/2 in-wide skid, this gives **28 1/4 in to its center**. Across the
+nominal 10 ft width, the current two-skid lesson gives **63 1/2 in between
+centers**; the count of two is still provisional. First-notch-center/end
+offsets, cut clearance, skid count and crosswise cut length remain pending.
+A 1 1/2 in drawn slot width is only a
+provisional fit to the stated member width. **Runners** remains a draft
+alternate name, while “floor joist” and other frame names await agreement.
+
+His supplied photos corroborate the notched connection. The numbers above
+come from his words; do not measure them from image pixels or publish the
+photos. Record corrections in [the glossary](../../../docs/BUILDING-TERMS.md)
+and [the example](../../../docs/examples/10x16-side-loft.md).
+
+Alan's nominal-size examples subtract 1/2 in per dimension: 2x4 is actual
+1 1/2 x 3 1/2 in, 2x6 is 1 1/2 x 5 1/2 in and 4x6 is 3 1/2 x 5 1/2 in.
+These examples do not establish the conversion for other sections.
+
+The learning page uses an opt-in `floorStudy` plan for the actual sections,
+16 ft length and notches. The ordinary finished model keeps the legacy
+boxes below. Do not enable the lesson correction for every company or
+silently change the reference geometry. Neither the historical drawing nor
+the partly confirmed lesson is a complete physical cut list.
+
+The entry point is [floorStudyPlan](../../../model/floor-study.js), reading
+`construction.floorStudy` and adding `plan.floorStudy` on a copied plan.
+The lesson setting `floorStudy.skids.insetToInsideIn: 30` measures to the
+inside face and has `floorStudy.status.supportOffset: "confirmed"`. The
+normal model's center-based `skids.table` is unchanged. Do not conflate the
+confirmed offset with the still-provisional number of skids.
+`skidStudyMembers(plan)` in `parts/skids.js` extrudes each notched side
+profile across its actual width. It combines the standard cross-member cuts
+and 12 in alternate positions, merging coincident cuts. It records notch
+bounds and sources for the measurement view. First-center/end placement and
+clearance remain separately provisional despite confirmed spacing values.
+
 ## What it is in real life
 
 Every portable building sits on skids: heavy treated timbers laid on edge
 along the whole length of the building. They let the finished building be
-winched onto a trailer and set down on blocks, and the floor joists sit on
-top of them. A 6, 8 or 10 ft wide building has two skids; a 12 or 14 ft wide
-one has four (a pair tucked under the walls and a pair on the trailer bunks).
+winched onto a trailer and set down on blocks, and carry the crosswise floor
+members. In the corrected lesson these members sit in the confirmed notches.
+The existing standard catalogue uses two skids on a 6, 8 or 10 ft width and
+four on a 12 or 14 ft width; the count remains a model default awaiting
+confirmation for the current lesson. The lesson's offset uses the confirmed
+inside-face rule above instead of the normal model's center-based table.
 
 ## Stage
 
@@ -22,6 +72,8 @@ thing in `buildShed`, inside the floor loop, before the walls.
 
 ## Construction settings
 
+The settings below describe the normal model's legacy path.
+
 * `skids.table` -- per building width in feet, the inches from each side edge
   in to a skid's centre. Default (Alan's build sheet):
   `{ "6": [6], "8": [18], "10": [30], "12": [8, 37], "14": [8, 54] }`. Each
@@ -29,7 +81,8 @@ thing in `buildShed`, inside the floor loop, before the walls.
   skids elsewhere changes this table and the drawing follows.
 * `skids.bunkSpacingIn` -- for a width not in the table: two skids this many
   inches apart, centred (never closer than 6 in to the edge). Default 60.
-* `skids.size` (`"4x6"`), `skids.onEdge`, `skids.treated` -- the caption only.
+* `skids.size` (`"4x6"`), `skids.onEdge`, `skids.treated` -- the caption only
+  on the legacy path.
   The drawn skid stays Barnwright's 0.5 x 0.5 ft box whatever the size says.
 
 ## Where it came from in Barnwright
@@ -49,6 +102,10 @@ materials, so drawing them in two passes gives each material the same
 triangles in the same order); `mSk` is `core.mSk`; `kit.setStage("skids")`.
 
 ## The owner's facts
+
+These earlier records explain the default positions. The September 27 floor
+lesson confirms the section, length and notched connection above; it does
+not reconfirm the number or positions of skids from this older table.
 
 From Alan's build sheet, Sep 2026 (Barnwright's comment, kept word for word
 in `parts/skids.js`):
@@ -70,16 +127,24 @@ The skids are treated 4x6 laid on edge (`library/construction.json`).
 
 ## Kept quirks
 
+These quirks belong to the normal finished model, not the opt-in lesson.
+
 * The drawn skid is a 0.5 x 0.5 ft (6 in) square box from the ground to
   y 0.5, not the real 3 1/2 x 5 1/2 in 4x6 -- the finished picture is
   Barnwright's.
 * The skids are drawn in pieces, one per floor segment (the floor is split
   into `max(3, ceil(L / 2.5))` pieces), and the two end pieces are 0.2 ft
   longer, so the skids poke about 0.1 ft past each end of the floor.
+  On the nominal 16 ft SLB this totals 16.14 ft in outer extent. The corrected
+  `floorStudy` lesson uses Alan's confirmed 16 ft total instead.
 * The table is looked up by the ROUNDED width (`Math.round(w)`).
 
 ## How to change it safely
 
+* For the opt-in lesson, verify actual skid extents, visible notch depth,
+  the two spacing provisions, and that the crosswise members seat in the
+  cuts. Retain pending labels for end offsets, clearance and other layout
+  defaults. Run the ordinary golden check too, to prove its path is unchanged.
 * A company's skid positions: change `skids.table` in its company file (or
   the manufacturer file), never the code.
 * Anything in `parts/skids.js` or `floorSegments()` in `parts/floor.js` moves

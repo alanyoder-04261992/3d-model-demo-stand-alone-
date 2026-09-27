@@ -1,5 +1,5 @@
-/* Names and dimensions follow the existing geometry and the camera.
-   These are model measurements and proposed names for discussion. */
+/* Names and dimensions follow the geometry and camera. Skids and notches
+   are agreed names; the other floor-piece names remain proposals. */
 import { floorFrameMembers } from "../parts/floor-frame.js";
 import { floorMeasurements, formatFeetInches as feetText, formatInches as inchesText } from "../model/floor-measurements.js";
 
@@ -31,11 +31,11 @@ export function createFloorLabels(viewport, renderer, plan) {
     if(!a || !b || !a.every(Number.isFinite) || !b.every(Number.isFinite)) return;
     overlay.appendChild(svgNode("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:color,"stroke-width":1.25,...(dash?{"stroke-dasharray":dash}:{})}));
   }
-  function dimension(project,a,b,text,offset,color,width,height,dashed=false) {
+  function dimension(project,a,b,text,offset,color,width,height,dashed=false,minLength=30) {
     const p=project(a), q=project(b);
     if(!p || !q || !p.every(Number.isFinite) || !q.every(Number.isFinite)) return;
     const dx=q[0]-p[0],dy=q[1]-p[1],length=Math.hypot(dx,dy);
-    if(length<30) return;
+    if(length<minLength) return;
     let nx=-dy/length,ny=dx/length;
     if(nx*((p[0]+q[0])/2-width/2)+ny*((p[1]+q[1])/2-height/2)<0) {nx=-nx;ny=-ny;}
     const A=[p[0]+nx*offset,p[1]+ny*offset],B=[q[0]+nx*offset,q[1]+ny*offset];
@@ -51,7 +51,7 @@ export function createFloorLabels(viewport, renderer, plan) {
     overlay.appendChild(svgNode("rect",{x:x-boxW/2,y:y-10,width:boxW,height:20,rx:3,fill:"#f8fbfd","fill-opacity":.97}));
     overlay.appendChild(svgNode("text",{x,y:y+4,"text-anchor":"middle",fill:color,"font-family":"IBM Plex Sans, sans-serif","font-size":11,"font-weight":600},text));
   }
-  function update(selection) {
+  function update(selection, detailNotch=null) {
     overlay.replaceChildren();
     const width=viewport.clientWidth,height=viewport.clientHeight;
     overlay.setAttribute("viewBox",`0 0 ${width} ${height}`);
@@ -60,38 +60,67 @@ export function createFloorLabels(viewport, renderer, plan) {
     const selected=new Set(selection), small=width<500;
     const nearEnd=Math.cos(renderer.cam.yaw)>=0?1:-1,side=Math.sin(renderer.cam.yaw)>=0?1:-1;
     const nearZ=nearEnd>0?supports.z1Ft:supports.z0Ft;
-    const labels=[];
-    // Nominal outline differs from the inset frame and extended supports.
-    const corners=[[-plan.W/2,0,-plan.L/2],[plan.W/2,0,-plan.L/2],[plan.W/2,0,plan.L/2],[-plan.W/2,0,plan.L/2]];
-    for(let i=0;i<4;i++) line(project(corners[i]),project(corners[(i+1)%4]),"#8198a8","5 5");
-    dimension(project,[-plan.W/2,0,-nearEnd*plan.L/2],[plan.W/2,0,-nearEnd*plan.L/2],`${formatFeetInches(plan.W)} wide · nominal`,23,"#526b7d",width,height,true);
-    dimension(project,[-side*plan.W/2,0,-plan.L/2],[-side*plan.W/2,0,plan.L/2],`${formatFeetInches(plan.L)} long · nominal`,23,"#526b7d",width,height,true);
-    if(selected.has("supports")) labels.push({
-      text:"Skids / runners",detail:`${formatInches(supports.widthFt)} × ${formatInches(supports.depthFt)} drawn`,
-      x:14,y:selection.length>1?height-72:16,w:small?157:174,
-      points:supports.xsFt.map(x=>[x,supports.depthFt/2,nearZ])
-    });
+    const labels=[], detail=!!detailNotch, actual=!!measures.study;
+    const section=`${formatInches(supports.widthFt)} × ${formatInches(supports.depthFt)} ${actual?"actual":"drawn"}`;
+    const nearX=side>0?Math.max(...supports.xsFt):Math.min(...supports.xsFt);
+    const notch=detailNotch || supports.notches.filter(n=>n.xFt===nearX && n.sources.includes("alternate") && !n.sources.includes("standard"))
+      .sort((a,b)=>Math.abs(a.centerZFt)-Math.abs(b.centerZFt))[0];
+    if(!detail) {
+      // The dashed footprint is nominal; member measurements use the mesh.
+      const corners=[[-plan.W/2,0,-plan.L/2],[plan.W/2,0,-plan.L/2],[plan.W/2,0,plan.L/2],[-plan.W/2,0,plan.L/2]];
+      for(let i=0;i<4;i++) line(project(corners[i]),project(corners[(i+1)%4]),"#8198a8","5 5");
+      dimension(project,[-plan.W/2,0,-nearEnd*plan.L/2],[plan.W/2,0,-nearEnd*plan.L/2],`${formatFeetInches(plan.W)} wide · nominal`,23,"#526b7d",width,height,true);
+      dimension(project,[-side*plan.W/2,0,-plan.L/2],[-side*plan.W/2,0,plan.L/2],`${formatFeetInches(plan.L)} long · nominal`,23,"#526b7d",width,height,true);
+    }
+    // An opaque deck can hide the timber. Do not attach a skid name to the
+    // deck surface that happens to cover its projected anchor.
+    if(selected.has("supports") && !selected.has("deck")) {
+      const points=detail ? [[notch.xFt+side*supports.widthFt/2,supports.depthFt/2,notch.centerZFt]]
+        : supports.xsFt.map(x=>[x,supports.depthFt/2,nearZ]);
+      labels.push({text:"Skids",detail:section,footer:"confirmed name",x:14,
+        y:selection.length>1?height-72:16,w:small?157:174,points});
+      if(notch && !selected.has("deck") && (detail || !selected.has("frame"))) {
+        labels.push({text:"Notches · confirmed",detail:`${formatInches(notch.depthFt)} down from top`,
+          footer:"width / grid start pending",x:width-(small?157:174)-14,y:16,w:small?157:174,
+          points:[[notch.xFt,notch.seatYFt,notch.centerZFt]]});
+        if(detail) {
+          const x=notch.xFt+side*supports.widthFt/2, z=nearEnd>0?notch.z0Ft:notch.z1Ft;
+          dimension(project,[x,notch.seatYFt,z],[x,notch.topYFt,z],`${formatInches(notch.depthFt)} deep`,28,"#135872",width,height,false,1);
+        }
+      }
+    }
     if(selected.has("deck") && sheet) {
       labels.push({text:"Floor decking",detail:`${formatFeetInches(sheet.acrossFt)} × ${formatFeetInches(sheet.alongFt)}`,x:width-(small?190:210)-14,y:16,w:small?190:210,points:[sheetPoint(sheet.member)]});
       const p=sheet.member, xs=p.poly.map(v=>v[0]),zs=p.poly.map(v=>v[1]);
       const y=sheetPoint(p)[1],x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs);
-      dimension(project,[x1,y,z0],[x1,y,z1],formatFeetInches(sheet.alongFt),17,"#135872",width,height);
-      dimension(project,[x0,y,z1],[x1,y,z1],formatFeetInches(sheet.acrossFt),17,"#135872",width,height);
+      if(!detail) {
+        dimension(project,[x1,y,z0],[x1,y,z1],formatFeetInches(sheet.alongFt),17,"#135872",width,height);
+        dimension(project,[x0,y,z1],[x1,y,z1],formatFeetInches(sheet.acrossFt),17,"#135872",width,height);
+      }
     } else if(selected.has("frame")) {
-      if(joist) labels.push({text:"Floor joist",detail:`${formatFeetInches(joist.lengthFt)} long`,x:14,y:16,w:small?150:170,points:[beamPoint(joist.member,true)]});
+      const visibleJoist=detail ? measures.frame.joists.slice().sort((a,b)=>Math.abs(a.center[2]-notch.centerZFt)-Math.abs(b.center[2]-notch.centerZFt))[0] : joist;
+      if(visibleJoist) labels.push({text:"Floor joist",detail:detail?`${formatInches(visibleJoist.widthFt)} × ${formatInches(visibleJoist.depthFt)} actual`:`${formatFeetInches(visibleJoist.lengthFt)} long`,
+        x:14,y:16,w:small?150:170,points:[detail ? [notch.xFt,visibleJoist.bounds.y1Ft,visibleJoist.center[2]] : beamPoint(visibleJoist.member,true)]});
       const rim=members.find(m=>m.kind==="rim" && m.meta.side===(side>0?"R":"L"));
-      if(rim) {
+      if(rim && !detail) {
         const p=beamPoint(rim,false); p[0]+=side*rim.w/2;
         labels.push({text:"Rim joist",detail:`${formatFeetInches(measures.frame.rim.lengthFt)} long`,x:width-(small?158:177)-14,y:16,w:small?158:177,points:[p]});
         dimension(project,rim.p0,rim.p1,formatFeetInches(measures.frame.rim.lengthFt),20,"#135872",width,height);
       }
-      if(joist) dimension(project,joist.p0,joist.p1,formatFeetInches(joist.lengthFt),15,"#135872",width,height);
-    } else if(selected.has("supports")) {
-      const x=side>0?Math.max(...supports.xsFt):Math.min(...supports.xsFt);
+      if(joist && !detail) dimension(project,joist.p0,joist.p1,formatFeetInches(joist.lengthFt),15,"#135872",width,height);
+    } else if(selected.has("supports") && !detail) {
+      const x=nearX;
       dimension(project,[x,supports.depthFt,supports.z0Ft],[x,supports.depthFt,supports.z1Ft],`${formatFeetInches(supports.lengthFt)} support`,23,"#135872",width,height);
-      if(supports.xsFt.length===2) dimension(project,[supports.xsFt[0],supports.depthFt,nearZ],[supports.xsFt[1],supports.depthFt,nearZ],`${formatInches(supports.centerSpacingsFt[0])} center to center`,27,"#135872",width,height);
+      const run=supports.runs.find(r=>r.xFt===x), inset=supports.insetCentersFt.find(r=>r.xFt===x);
+      if(run) {
+        // Inside means the face toward the building's centre. On the right
+        // skid that is x0; on the left it is x1, never the centreline.
+        const innerX=x>=0?run.x0Ft:run.x1Ft, wallX=(x>=0?1:-1)*plan.W/2;
+        const distance=inset?.nearestInsideFaceFt ?? Math.abs(wallX-innerX);
+        dimension(project,[wallX,0,nearZ],[innerX,0,nearZ],`${formatInches(distance)} wall to inside face`,27,"#135872",width,height);
+      }
     }
-    overlay.setAttribute("aria-label","Proposed names and model measurements: "+labels.map(l=>`${l.text}, ${l.detail}`).join("; "));
+    overlay.setAttribute("aria-label","Floor names and measurements: "+labels.map(l=>`${l.text}, ${l.detail}, ${l.footer || "proposed name"}`).join("; "));
     for(const label of labels) {
       const points=label.points.map(project).filter(p=>p&&p[0]>=0&&p[0]<=width&&p[1]>=0&&p[1]<=height);
       if(!points.length) continue;
@@ -105,7 +134,7 @@ export function createFloorLabels(viewport, renderer, plan) {
       overlay.appendChild(svgNode("rect",{x,y,width:label.w,height:56,rx:5,fill:"white","fill-opacity":.97,stroke:"#bacbd7"}));
       overlay.appendChild(svgNode("text",{x:x+10,y:y+16,fill:"#173b56","font-family":"IBM Plex Sans, sans-serif","font-size":small?13:14,"font-weight":600},label.text));
       overlay.appendChild(svgNode("text",{x:x+10,y:y+32,fill:"#173b56","font-family":"IBM Plex Sans, sans-serif","font-size":12},label.detail));
-      overlay.appendChild(svgNode("text",{x:x+10,y:y+47,fill:"#526879","font-family":"IBM Plex Sans, sans-serif","font-size":10},"proposed name · model size"));
+      overlay.appendChild(svgNode("text",{x:x+10,y:y+47,fill:"#526879","font-family":"IBM Plex Sans, sans-serif","font-size":10},label.footer || "proposed name · model size"));
     }
   }
   return {update};

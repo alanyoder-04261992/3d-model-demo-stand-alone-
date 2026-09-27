@@ -189,6 +189,33 @@ the list-companies tool shows it as OVERDUE, and the decision is yours.
 
 ### Building facts we had to choose
 
+**Floor lesson update, September 27, 2026:** you have now confirmed the names
+**skids** and **notches**. For the 10x16 example the skids are nominal 4x6,
+actual 3 1/2 x 5 1/2 in, total length 16 ft. Crosswise nominal 2x6 members,
+actual 1 1/2 x 5 1/2 in, sit in notches cut 1 in down into the skid tops.
+You confirmed 16 in on center as standard and extra notches for the 12 in
+on center option; the extra cuts can be unused with the standard spacing.
+Your photos corroborate the connection, and the dimensions are from your
+words. The photos are not published with the lesson.
+
+You clarified that the 30 in skid offset is from the **outside of the wall
+to the inside face of the skid**, toward the middle of the floor. The
+confirmed 3 1/2 in width puts the center 28 1/4 in from that wall. For the
+current pair across a nominal 10 ft width, that gives 63 1/2 in between
+centers; the skid count itself is still provisional. First-notch-center/end
+offsets, cut clearance and crosswise cut length also remain open.
+Your nominal/actual examples are now recorded as 2x4 =
+1 1/2 x 3 1/2 in, 2x6 = 1 1/2 x 5 1/2 in and 4x6 = 3 1/2 x 5 1/2 in;
+other lumber sections have not been confirmed by these examples.
+The names “floor joist,” “rim joist” and
+“floor decking” are also still proposed in this terminology lesson. The
+opt-in learning model uses the corrected sections and notched seating; the
+normal finished reference keeps its earlier drawing dimensions. See the
+[example's current record](examples/10x16-side-loft.md#floor-measurements-to-show).
+
+The older notes below record the background defaults; they do not establish
+those remaining details for the current lesson.
+
 Barnwright's designer never drew any framing, so the framing needed numbers
 it never had. These came from your shop (through Barnwright's notes, and your
 answers for the Yoder site) and are settled: 2x6 floor joists on the skids
@@ -223,8 +250,11 @@ everybody or for one company):
    doubled over openings up to 4 ft, 2x8 doubled up to 6½ ft, 2x10 doubled
    wider.
 7. **Rim joists: 2x6** along both long sides of the floor.
-8. **Skids: treated 4x6 on edge** (only the caption says so; the picture keeps
-   Barnwright's skid).
+8. **Skids:** the 4x6 nominal / 3 1/2 x 5 1/2 in actual section and 16 ft
+   length are now confirmed for this lesson, with the notched connection
+   described above. Treatment and the remaining placement/cut details have
+   not been newly confirmed. The ordinary finished reference keeps
+   Barnwright's older skid; the learning page uses the corrected section.
 9. **Porch: 4x4 posts, 2x6 deck joists, railing 34 in high.**
 10. **The Watch it build order** (site, blocks, skids, floor frame, decking,
     walls, siding, porch posts, trusses, dormer framing, loft, gable ends, roof

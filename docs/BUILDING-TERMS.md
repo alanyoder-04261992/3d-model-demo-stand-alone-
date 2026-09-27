@@ -24,18 +24,20 @@ names and how the pieces fit together. The lesson should place each label
 on the rendered part using a leader line or another clear visual anchor;
 a written glossary alone does not satisfy that request. Start with supports
 only, then reveal the floor layers manually to discuss what rests on what.
-Use proposed labels **skids / runners**, **floor joist**, **rim joist** and
-**floor decking** on the corresponding pieces, visibly marked as proposed
-until Alan confirms them. This describes the intended lesson method; verify
-the labels against the actual render before claiming they are shown.
+Use confirmed labels **skids** and **notches** on those pieces. **Floor
+joist**, **rim joist**, **floor decking** and the alternate word **runners**
+remain proposed. Verify the labels against the actual render before
+claiming they are shown.
 
 Alan also requested measurements on the render to check the lengths. Anchor
 dimension lines to the actual visible endpoints or faces and identify what
 is measured. Keep **nominal building size**, **configured lumber size** and
-**drawn geometry** separate. For this example, a nominal 16 ft building has
-drawn support extents of 16.14 ft (16 ft 1.68 in); its support settings say
-4x6 while the preserved drawing uses 6 in square boxes. These are known
-model differences, not confirmed shop lengths. The
+**drawn geometry** separate. Alan has now confirmed the skids as nominal
+4x6, actual 3 1/2 x 5 1/2 in, with a total length of 16 ft. Their notches are
+1 in deep and receive crosswise nominal 2x6 members, actual 1 1/2 x 5 1/2 in.
+The corrected floor lesson uses those values. The older finished model's
+6 in square, 16.14 ft support extent remains a legacy drawing reference,
+not the specification of this lesson. The
 [example's measurement notes](examples/10x16-side-loft.md#floor-measurements-to-show)
 record the sources. A visible number does not confirm a term or provide a
 physical cut list.
@@ -47,25 +49,39 @@ physical cut list.
 | Confirmed meaning | “Side loft” | A lofted barn with a side entrance; matched to the model's Side Lofted Barn (`SLB`). This does not confirm every feature of its existing model. | Alan's reply, September 27, 2026 |
 | Superseded starting choice | Start with the finished building | This was the earlier starting point; Alan later requested floor first. It no longer controls the lesson. | Earlier reply, September 27, 2026 |
 | Current learning direction | “Build a floor first and we build it step by step” | Start with the floor in the manual learning page. Add further stages only after we agree what the visible piece means. | Alan's later request, September 27, 2026 |
-| Confirmed starting piece; name pending | Long supports underneath | Show only those supports first, with no floor frame or top sheets yet. “Skids” and “runners” remain proposed names until we point to the visible pieces and agree. | Alan's later reply, September 27, 2026 |
+| Confirmed part term and dimensions | **Skids** | The long supports underneath: nominal 4x6, actual 3 1/2 x 5 1/2 in, total length 16 ft in this example. Start by showing these alone. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
+| Confirmed connection term and depth | **Notches** | Cuts 1 in down into the skid tops, where crosswise nominal 2x6 members, actual 1 1/2 x 5 1/2 in, sit. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
+| Confirmed spacing and extra-cut purpose | **16 in on center standard; 12 in on center option** | Standard crosswise member spacing is 16 in. The extra notches provide positions for the 12 in option and may be unused with the standard spacing. Alan clarified that the option is 12 inches. | Alan's follow-up replies, September 27, 2026 |
+| Confirmed distance and reference | **30 in outside wall to inside face of skid** | The inside face is the face toward the middle of the floor. With a 3 1/2 in-wide skid, its center is 28 1/4 in from that outside wall. The current two-skid model therefore has 63 1/2 in between centers across its nominal 10 ft width; the count of two is still provisional. | Alan's clarification, September 27, 2026; center distances calculated from his dimensions |
+| Confirmed size-language examples | **Nominal / actual lumber size** | In this conversation subtract 1/2 in from each nominal dimension for the named examples: 2x4 → 1 1/2 x 3 1/2 in; 2x6 → 1 1/2 x 5 1/2 in; 4x6 → 3 1/2 x 5 1/2 in. Other sections are not established by these examples. | Alan's explanation, September 27, 2026 |
 | Confirmed preferred term | **“Lofted roof”** | The whole roof shape with a gentle upper slope and a steep lower slope on each side. The code calls this `gambrel`; use **lofted roof** with Alan. This confirms the name and intended shape, not dimensions or individual roof-part names. | Alan's reply, September 27, 2026 |
 | Confirmed part term | **Ridge cap** | The highest long metal strip covering the meeting line of the two roof sides. This identifies that piece; it does not confirm its dimensions or installation details. | Alan's reply, September 27, 2026 |
 
 ## What remains to agree on
 
-The first agreed terms are **side loft**, **lofted roof** and **ridge cap**.
+The agreed terms are **side loft**, **lofted roof**, **ridge cap**, **skids**
+and **notches**.
 The remaining candidate names below await a later discussion, one physical
 part at a time. Their presence in code or an older skill does not make them
 agreed. `gambrel` remains the project's code reference for the whole lofted
 roof shape, not Alan's preferred spoken term.
 
-**The first piece is now agreed:** the long supports underneath. Show those
-pieces before asking what Alan calls them. **Skids** and **runners** are
-still candidate names; the physical starting choice does not confirm either
-word. The learning page begins with supports only, without a floor frame,
-top sheets, walls or roof, and has no autoplay. Later views can add the frame
-and sheets manually once we agree on the current piece and continue. This
-learning order is not a confirmed shop construction sequence.
+**The connection is now agreed:** the crosswise 2x6 members sit down in the
+skids' 1 in deep notches. Show that seating clearly. The photos corroborate
+the relationship; do not infer dimensions from their pixels or publish the
+photos. Alan confirmed **16 in on center standard**, with extra notches for
+the **12 in on center option**. He clarified the skid position as **30 in
+from the outside of the wall to the skid's inside face**, toward the middle
+of the floor. This gives 28 1/4 in to its center with the confirmed width.
+**First-notch-center/end offsets, cut clearance, skid count, and crosswise
+cut length remain pending.** The
+purpose of the extra cuts is confirmed; their exact placement still depends
+on the unconfirmed end offsets.
+
+The learning page begins with skids only, without a floor frame, top sheets,
+walls or roof, and has no autoplay. Later views can add the frame and sheets
+manually as Alan directs. This learning order is not a confirmed shop
+construction sequence.
 
 ## Candidate names and directions
 
@@ -120,7 +136,7 @@ can wait until Alan wants to add them.
 
 | Proposed label | Intended physical part | Existing model/skill reference |
 | --- | --- | --- |
-| **Skids / runners** | Long supports under the floor, running along the building's length. | [Skids](../.claude/skills/part-skids/SKILL.md) |
+| **Runners** | A possible alternate name for the confirmed skids; Alan has confirmed “skids,” not this alias. | [Skids](../.claude/skills/part-skids/SKILL.md) |
 | **Floor joists / rim joists** | Joists support the floor across the building; the rim boards close the floor frame's perimeter. | [Floor frame](../.claude/skills/part-floor-frame/SKILL.md) |
 | **Floor decking** | The sheet material laid over the joists. | [Floor deck](../.claude/skills/part-floor-deck/SKILL.md) |
 | **Stud / top plate / bottom plate** | Upright wall member / horizontal board at the top / horizontal board at the bottom. | [Wall frame](../.claude/skills/part-wall-frame/SKILL.md) |
@@ -128,7 +144,6 @@ can wait until Alan wants to add them.
 | **Truss / chord / gusset** | Roof-supporting assembly / a principal member of that assembly / a plate joining members. | [Roof frame](../.claude/skills/part-roof-frame/SKILL.md) |
 | **Roof deck / sheathing** | The layer under the roof covering. Keep this distinct from the steel roofing above it. | [Roof deck](../.claude/skills/part-roof-deck/SKILL.md) |
 | **Loft / loft joists / loft deck** | A raised storage floor near an end of the building / its supporting members / its sheet floor. “Side loft” does not mean the loft projects from a sidewall. | [Loft](../.claude/skills/part-loft/SKILL.md) |
-| **On center (OC)** | Spacing measured from one member's center to the next member's center. | [Construction settings](../.claude/skills/change-construction/SKILL.md) |
 
 The current loft geometry belongs to the `loft` framing stage. It is absent
 from our floor-first starting assembly. In the regular designer it is also

@@ -32,8 +32,11 @@ Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
 For local development,
 run the designer and open `learn.html?company=learning-side-loft` to start
 with the long floor supports and reveal pieces by hand. Labels and dimensions
-point to the visible pieces; model measurements are separate from unconfirmed
-shop specifications. Nothing advances automatically.
+point to the visible pieces. The lesson now draws Alan's 16 ft, actual
+3½ × 5½ in skids, with 1 in-deep notches for actual 1½ × 5½ in crosswise
+members. Standard 16 in spacing and extra 12 in cuts are confirmed; remaining
+layout assumptions are labeled. “Notch close-up” shows the connection.
+Nothing advances automatically.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the
 [building terms](docs/BUILDING-TERMS.md), then use

@@ -346,6 +346,13 @@ export function floorPlanOf(plan) {
   var rim = lumberSize(fl.rim || fl.joist || "2x6");
   var porchJoist = lumberSize((con.porch && con.porch.joist) || fl.joist || "2x6");
   var spacing = (fl.spacingIn != null ? +fl.spacingIn : 16) / 12;
+  /* Only the manual floor study uses Alan's measured section and notched
+     seat. Every ordinary plan retains the original finished-floor datum. */
+  var study = plan.floorStudy;
+  if (study) {
+    joist = Object.assign({}, joist, { nominal:study.joists.nominal, t:study.joists.widthFt, d:study.joists.heightFt });
+    spacing = study.joists.spacingFt;
+  }
   var front = (t.porch === "F" || t.porch === "C");
   var zP = front ? plan.ws.F.at : null;
   var fpPoly = rect(fp.x0, fp.x1, fp.z0, fp.z1);
@@ -358,7 +365,8 @@ export function floorPlanOf(plan) {
     porches: porches,                             /* the open porch decks */
     joist: joist, rim: rim, porchJoist: porchJoist, spacing: spacing,
     layers: layers, deckT1: deckT1, deckT: deckT,
-    joistBot: FLOOR_TOP_OF_SKIDS, joistTop: y0 - deckT,
+    joistBot: study ? study.joistBottomFt : FLOOR_TOP_OF_SKIDS,
+    joistTop: study ? study.joistTopFt : y0 - deckT,
     frontPorch: front, zP: zP,
     roomRect: { x0: fp.x0, x1: fp.x1, z0: fp.z0, z1: front ? zP : fp.z1 },
     porchRect: front ? { x0: fp.x0, x1: fp.x1, z0: zP, z1: fp.z1 } : null,

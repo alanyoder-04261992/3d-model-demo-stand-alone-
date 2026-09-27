@@ -1,10 +1,12 @@
-/* A manual, one-piece-at-a-time floor study. Geometry comes unchanged from
-   the existing assembly. Only floor parts are uploaded; no playback or spin.
+/* A manual, one-piece-at-a-time floor study. The lesson opts in to confirmed
+   floor sections and notched seating. Only floor parts are uploaded; no playback or spin.
    Browser verification API: window.floorLesson.{ready,error,selection,parts,
    renderer,plan,select(keys,focus),setCamera(name)}. */
 import { loadCatalogue } from "./load.js";
 import { defaults } from "../model/design.js";
 import { makePlan } from "../model/plan.js";
+import { floorStudyPlan } from "../model/floor-study.js";
+import { floorMeasurements } from "../model/floor-measurements.js";
 import { FLOOR_PIECES, initialFloorSelection, floorParts, floorPiece } from "../model/floor-lesson.js";
 import { assemble, onlyParts } from "../engine/assemble.js";
 import { createRenderer } from "../engine/renderer.js";
@@ -53,7 +55,7 @@ export async function startFloorLesson() {
     const cat=await loadCatalogue(COMPANY);
     const state=defaults(cat);
     if(state.type!=="SLB" || state.size!=="10x16") throw new Error("This lesson needs the 10 × 16 side loft example. Check its starting building settings, then reload.");
-    const plan=makePlan(state,cat);
+    const plan=floorStudyPlan(makePlan(state,cat));
     const full=assemble(plan,{frames:true,scene:"studio",trueColour:true});
     // Fit the complete floor footprint once so adding a piece does not move
     // the camera. No wall, roof, ground or finished-floor slab can be shown.
@@ -68,19 +70,25 @@ export async function startFloorLesson() {
     Object.assign(renderer.cam,ANGLE);
     const labels=createFloorLabels(viewport,renderer,plan);
     const measurements=createMeasurementReadout($("piece-measurements"),$("measurement-note"),plan);
-    let zoom=BASE_ZOOM, raf=0, focus="supports";
+    const measures=floorMeasurements(plan);
+    const detailNotch=measures.supports.notches.filter(n=>n.xFt>0 && n.sources.includes("alternate"))
+      .filter(n=>!measures.frame.members.some(m=>m.member.kind!=="rim" && m.bounds.z0Ft<n.z1Ft && m.bounds.z1Ft>n.z0Ft))
+      .sort((a,b)=>Math.abs(a.centerZFt)-Math.abs(b.centerZFt))[0] || measures.supports.notches[0];
+    let zoom=BASE_ZOOM, raf=0, focus="supports", detail=false;
+    const detailTarget=detailNotch?[detailNotch.xFt,detailNotch.seatYFt+.12,detailNotch.centerZFt]:null;
+    const detailBox=detailTarget?{x0:detailTarget[0]-1.2,x1:detailTarget[0]+1.2,y0:detailTarget[1]-.6,y1:detailTarget[1]+.6,z0:detailTarget[2]-1.4,z1:detailTarget[2]+1.4}:box;
     const size=()=>({w:Math.max(1,canvas.clientWidth),h:Math.max(1,canvas.clientHeight)});
     const markManual=()=>{
-      for(const button of cameraButtons) if(["angle","top"].includes(button.dataset.camera)) button.setAttribute("aria-pressed","false");
+      for(const button of cameraButtons) if(["angle","top","notch"].includes(button.dataset.camera)) button.setAttribute("aria-pressed","false");
     };
     function draw() {
       raf=0;
       if(api.error || !renderer.mesh) return;
-      const fitted=distToFit(box,renderer.cam.yaw,renderer.cam.pitch,size());
+      const fitted=distToFit(detail?detailBox:box,renderer.cam.yaw,renderer.cam.pitch,size());
       renderer.cam.fitDist=fitted;
-      renderer.cam.dist=fitted*zoom;
+      renderer.cam.dist=Math.max(2.5,fitted*zoom);
       renderer.draw();
-      labels.update(api.selection);
+      labels.update(api.selection,detail?detailNotch:null);
     }
     function requestDraw() { if(!raf) raf=requestAnimationFrame(draw); }
     function select(keys,nextFocus) {
@@ -92,7 +100,7 @@ export async function startFloorLesson() {
       renderer.show({build,bounds,gr:full.gr,fitDist:distToFit(box,renderer.cam.yaw,renderer.cam.pitch,size())});
       renderer.setStages(null);
       const piece=floorPiece(api.selection,focus);
-      $("piece-title").textContent=piece ? (piece.key==="supports" ? "The long supports underneath" : piece.label) : "Choose a floor piece";
+      $("piece-title").textContent=piece ? (piece.key==="supports" ? "Skids — the long supports underneath" : piece.label) : "Choose a floor piece";
       $("piece-description").textContent=piece ? piece.description : "Use the boxes to add a piece back into the view.";
       $("piece-draft").textContent=piece ? piece.draft : "We will work through the pieces together.";
       canvas.setAttribute("aria-label",piece ? "Rotatable 3D floor view. Showing: "+FLOOR_PIECES.filter((p)=>api.selection.includes(p.key)).map((p)=>p.label).join(", ")+"." : "3D floor view with all pieces hidden.");
@@ -104,10 +112,11 @@ export async function startFloorLesson() {
     function setCamera(name) {
       if(name==="in") zoom=clamp(zoom/1.15,.5,2.1);
       else if(name==="out") zoom=clamp(zoom*1.15,.5,2.1);
-      else if(name==="top") { renderer.cam.yaw=0; renderer.cam.pitch=Math.PI/2-.01; zoom=BASE_ZOOM; }
-      else { Object.assign(renderer.cam,ANGLE); zoom=BASE_ZOOM; }
+      else if(name==="notch" && detailTarget) { detail=true; renderer.cam.target=detailTarget; renderer.cam.yaw=.9; renderer.cam.pitch=.55; zoom=1; }
+      else if(name==="top") { detail=false; renderer.cam.target=null; renderer.cam.yaw=0; renderer.cam.pitch=Math.PI/2-.01; zoom=BASE_ZOOM; }
+      else { detail=false; renderer.cam.target=null; Object.assign(renderer.cam,ANGLE); zoom=BASE_ZOOM; }
       if(!["in","out"].includes(name)) {
-        for(const button of cameraButtons) if(["angle","top"].includes(button.dataset.camera)) button.setAttribute("aria-pressed",String(button.dataset.camera===(name==="top"?"top":"angle")));
+        for(const button of cameraButtons) if(["angle","top","notch"].includes(button.dataset.camera)) button.setAttribute("aria-pressed",String(button.dataset.camera===(detail?"notch":name==="top"?"top":"angle")));
       }
       requestDraw();
     }

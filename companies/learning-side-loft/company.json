@@ -68,7 +68,21 @@
       "roof": "Black"
     }
   },
-  "construction": {},
+  "construction": {
+    "floorStudy": {
+      "skids": { "nominal": "4x6", "widthIn": 3.5, "heightIn": 5.5, "lengthFt": 16, "insetToInsideIn": 30 },
+      "joists": { "nominal": "2x6", "widthIn": 1.5, "heightIn": 5.5, "spacingIn": 16 },
+      "notches": { "depthIn": 1, "widthIn": 1.5, "alternateSpacingIn": 12 },
+      "status": {
+        "skidSection": "confirmed", "skidLength": "confirmed",
+        "joistSection": "confirmed", "standardSpacing": "confirmed",
+        "alternateSpacing": "confirmed", "notchDepth": "confirmed",
+        "notchWidth": "provisional", "notchPositions": "provisional",
+        "supportOffset": "confirmed", "supportLayout": "provisional", "frameFootprint": "provisional",
+        "rimSection": "provisional", "deck": "provisional"
+      }
+    }
+  },
   "pricing": {
     "show": "none",
     "roundTo": 5,
@@ -127,7 +141,8 @@
   "_help": [
     "LEARNING EXAMPLE, not a customer price list. The numeric prices are $1 placeholders required by the model; do not copy them into a customer quote.",
     "Alan confirmed: side loft means Side Lofted Barn (SLB), with the entrance on the long wall. See docs/BUILDING-TERMS.md and docs/examples/10x16-side-loft.md.",
-    "Uses existing standard geometry and unconfirmed shop assumptions, including 4 ft lofts at both ends. This example does not confirm construction specifications.",
+    "The floor lesson uses Alan's confirmed skid and crosswise member sizes, 1 inch seating, 16/12 inch spacing and 30 inches from outside wall to inside skid face. Cut clearance, first notch offsets and remaining layout details are pending.",
+    "The finished reference retains existing standard geometry and unconfirmed assumptions, including 4 ft lofts at both ends.",
     "Alan's current lesson starts with the floor at learn.html?company=learning-side-loft and proceeds manually. The regular designer remains a finished-building reference."
   ]
 }

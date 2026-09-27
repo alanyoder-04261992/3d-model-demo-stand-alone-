@@ -305,6 +305,17 @@ the item primitives (`wret wrev wslab wbevel wdisc wdrum wslant`) live in
 
 ## Framing datums (how real lumber fits Barnwright's drawn envelope)
 
+The separate floor lesson explicitly calls `floorStudyPlan` in
+`model/floor-study.js`. It reads company `construction.floorStudy` and adds
+a frozen `plan.floorStudy`; ordinary `makePlan` does not activate it.
+For that path, `skidStudyMembers` creates true notched prisms and
+`floorPlanOf` sets joist bottom at skid height minus notch depth, then adds
+the full actual joist depth. Sheets follow that top. Measurements and labels
+read those same members. The lesson's confirmed outside-wall-to-inside-face
+offset is separate from the normal skid table's center offsets. See
+[the lesson agreement](examples/10x16-side-loft.md) for confirmed and pending
+dimensions. The legacy datums below still govern the normal designer.
+
 Barnwright's envelope was drawn to look right, not stacked from real lumber.
 Frame parts fit INTO it; the caption names the real lumber.
 

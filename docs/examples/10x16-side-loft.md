@@ -21,14 +21,19 @@ to point to; they are not yet agreed shop language.
 | Confirmed | Alan: “side loft” | A lofted barn with a side entrance, matched to `SLB`; other details still need discussion. | Alan's reply, September 27, 2026 |
 | Superseded choice | Start with the finished building | Earlier starting view, replaced by the later floor-first request. | Earlier reply, September 27, 2026 |
 | Current direction | “Build a floor first and we build it step by step” | Begin with the floor, discuss one visible piece at a time, and wait for agreement before adding the next stage. | Later request, September 27, 2026 |
-| Confirmed starting piece; name pending | Long supports underneath | Show these alone first. No floor frame or top sheets yet; “skids” and “runners” remain proposed names. | Alan's later reply, September 27, 2026 |
+| Confirmed term and dimensions | **Skids** | Long supports underneath, nominal 4x6, actual 3 1/2 x 5 1/2 in, total length 16 ft. Start with these alone. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
+| Confirmed term and connection | **Notches** | Cuts 1 in down into the skid tops. Crosswise nominal 2x6 members, actual 1 1/2 x 5 1/2 in, sit in them. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
+| Confirmed spacing and option | **16 in on center standard; 12 in on center option** | Extra notches provide the 12 in positions and can remain unused in the standard layout. Alan clarified 12 inches, not feet. | Alan's follow-up replies, September 27, 2026 |
+| Confirmed distance and reference | **30 in outside wall to inside face of skid** | Inside means the face toward the middle of the floor. The confirmed 3 1/2 in width puts the center 28 1/4 in from that wall. | Alan's clarification, September 27, 2026; center distance calculated from his dimensions |
+| Confirmed size-language examples | **Nominal / actual** | 2x4 → 1 1/2 x 3 1/2 in; 2x6 → 1 1/2 x 5 1/2 in; 4x6 → 3 1/2 x 5 1/2 in. Alan's half-inch subtraction applies to these discussed examples; other sections need their own evidence. | Alan's explanation, September 27, 2026 |
 | Confirmed | Alan: **“Lofted roof”** | The whole roof with a gentle upper slope and a steep lower slope on each side. `gambrel` is its code reference, not Alan's preferred term. | Alan's reply, September 27, 2026 |
 | Confirmed | **Ridge cap** | The highest long metal strip covering the meeting line of the two roof sides. | Alan's reply, September 27, 2026 |
 
 The whole shape is **lofted roof**, and its highest long metal meeting strip
 is **ridge cap** in our conversation. We have agreed on those specific
-meanings. The other part names remain draft for later discussion; no
-dimensions or installation details were confirmed by those naming replies.
+meanings. The later skid/notch description confirms the specific dimensions
+and seating recorded above. Other names, dimensions and installation
+details remain pending.
 
 Open the [floor learning page](../../learn.html), for example
 `http://127.0.0.1:8282/learn.html?company=learning-side-loft` after
@@ -46,33 +51,36 @@ offer only this style and size.
 
 Alan selected **the long supports underneath** as the first piece. The
 learning page therefore begins with those supports alone: no floor frame,
-top sheets, walls or roof, and no autoplay. Show the supports first, then
-point to them and ask what Alan calls them. **Skids** and **runners** remain
-candidate names; choosing the physical piece has not confirmed a name or
-its specifications.
+top sheets, walls or roof, and no autoplay. Alan has now named them **skids**
+and identified their **notches**. Use those confirmed words, while retaining
+**runners** only as an unconfirmed alternate label.
 
 Alan's latest request is to put the terms **on the 3D render** so we can
 check our names and understanding of how the pieces fit. In the
 [learning page](../../learn.html), anchor each proposed label to its actual
 piece with a leader line or another unambiguous visual pointer. Use
-**skids / runners** for the long supports, **floor joist** for a crosswise
+**skids** for the long supports and **notches** for their top cuts. Propose
+**floor joist** for a crosswise
 floor-frame member, **rim joist** for its perimeter member, and **floor
-decking** for a top sheet. All these names remain proposed. Inspect the
+decking** for a top sheet; those three names remain proposed. Inspect the
 rendered labels before reporting that this visual requirement is complete.
 
 As Alan directs the lesson, manually reveal the frame and then the sheets
-to show the model's intended relationship: crosswise members resting on
-the long supports, perimeter members enclosing the frame, and sheets over
-the members. Keep the supports-only starting view and no autoplay. These
-are relationships to examine together, not newly confirmed shop details.
+to show the confirmed connection: the actual 1 1/2 x 5 1/2 in crosswise
+members seat 1 in down into notches in the actual 3 1/2 x 5 1/2 in skids.
+They are not simply stacked on an uncut skid top. The optional perimeter
+members and sheets remain modeled relationships to examine together. Keep
+the skids-only starting view and no autoplay.
 
 | Status | Candidate description | What still needs agreement |
 | --- | --- | --- |
-| Starting piece confirmed; name pending | Long supports underneath | His name for the visible pieces; proposed words are “skids” or “runners.” |
-| Later; pending | Open rectangular frame | Its members and whole-frame names when Alan is ready to add it. |
+| Confirmed piece, name, sections, spacing options and skid offset | Skids and notches | First-notch-center/end offsets, cut clearance and skid count still need confirmation. |
+| Member section and notched seating confirmed; names/layout pending | Crosswise 2x6 members and open frame | “Floor joist” and “rim joist,” the crosswise cut length and remaining frame details. |
 | Later; pending | Flat sheets on top | Their name and meaning when Alan is ready to add them. |
 
-Stay with the visible supports until we agree on their name. The optional
+The spacing is now confirmed: 16 in on center standard, with extra cuts for
+the 12 in option. First-center/end offsets and cutting clearance remain
+pending; do not infer them by measuring the photos. The optional
 `?step=frame` and `?step=deck` views are for later manual additions, not an
 automatic sequence. A learning display choice is not a declaration of the
 shop's build order. Agree on the current meaning and record corrections before
@@ -92,16 +100,59 @@ building footprint** separate from the dimensions of its supports, frame
 and sheets; inspect the visible lines and values before reporting them as
 shown correctly.
 
-The current model preserves some older drawing sizes. For this example:
+Alan's September 27, 2026 description confirms these values for the
+corrected lesson. His photos corroborate the notched connection; dimensions
+come from his stated numbers, not pixel measurements. Do not publish the
+photos as part of the website or GitHub documentation.
 
-| Measurement | Current model value | What it means |
+| Measurement | Confirmed value | Scope |
 | --- | --- | --- |
-| Nominal building footprint | 10 ft x 16 ft | The selected building size; it is not every individual piece's length. |
-| Overall support extent along the length | 16.14 ft = 16 ft 1.68 in | The outer extent of the drawn support boxes, including their extensions past the inset floor. It is not an approved stock or cut length. |
-| Support cross-section | Drawn 6 in x 6 in; configured size `4x6` | A preserved drawing discrepancy. The settings' nominal lumber size does not control these boxes' thickness or height. |
-| Floor-frame depth with one 5/8 in deck layer | Drawn 4.415 in; configured joist size `2x6` | The frame fits the older floor envelope: `(0.92 - 0.5) ft x 12 - 0.625 in`. It does not draw the 5 1/2 in depth associated with a nominal 2x6. |
+| Skid section | Nominal 4x6; actual 3 1/2 x 5 1/2 in | Use the actual section for the corrected lesson geometry and dimensions. |
+| Skid total length | 16 ft | Replaces the older drawn 16.14 ft extent for this lesson. |
+| Crosswise member section | Nominal 2x6; actual 1 1/2 x 5 1/2 in | Section confirmed; the crosswise cut length and “floor joist” name remain pending. |
+| Notch depth | 1 in down into the skid top | The crosswise member sits in that cut. Cutting clearance remains pending. |
+| Standard member spacing | 16 in on center | Center-to-center along the skid; the first-center/end offset remains pending. |
+| Optional member spacing | 12 in on center | Extra notches allow this spacing; extra cuts may stay empty with the standard 16 in layout. |
+| Skid offset | 30 in from outside wall to inside skid face | Confirmed; the inside face points toward the middle of the floor. |
+| Derived wall-to-center distance | 28 1/4 in | `30 - 3.5 / 2`; calculated from the confirmed offset and actual skid width. |
+| Derived center spacing in the current two-skid lesson | 63 1/2 in | `120 - 2 x 28.25` across the nominal 10 ft wall-to-wall width; two skids remains a provisional count. |
 
-The support extent follows the inset floor length plus the end extensions:
+The lesson's opt-in `floorStudy` plan uses these actual sections and the
+notched seating. It is enabled only for the learning page. The normal
+finished-building reference retains its legacy geometry; do not treat its
+old dimensions as the corrected lesson's values.
+The opt-in is [floorStudyPlan](../../model/floor-study.js), which reads the
+learning company's `construction.floorStudy` settings and adds the study
+dimensions and confirmation statuses to a copied plan. Saving these settings
+does not by itself change the normal designer.
+The lesson-only offset is
+`construction.floorStudy.skids.insetToInsideIn: 30`, with
+`construction.floorStudy.status.supportOffset: "confirmed"`. It measures
+to the inside face, not to the center. The normal model's legacy skid table
+is unchanged, and the lesson's skid count remains separately provisional.
+
+**Still pending:** first-notch-center/end offsets, cutting clearance, skid
+count, crosswise cut length, and the
+names **floor joist**, **rim joist** and **floor decking**. Any interim
+layout retained to draw the example must remain identified as a model
+assumption. A modeled notch width of 1 1/2 in only matches the stated member
+width provisionally; Alan has not confirmed cut clearance. The nominal
+10 x 16 ft footprint alone does not settle these details.
+
+For nominal-versus-actual wording, Alan explained subtracting 1/2 in from
+each dimension for the examples discussed here: 2x4 means 1 1/2 x 3 1/2 in,
+2x6 means 1 1/2 x 5 1/2 in, and 4x6 means 3 1/2 x 5 1/2 in. Do not apply
+that conversation rule to other unconfirmed lumber sections or change the
+shared lumber conversion table based on these examples alone.
+
+### Legacy drawing reference
+
+The older model drew 6 in square support boxes and a 16.14 ft overall
+support extent. Its frame fit a fixed envelope, giving 4.415 in depth with
+one 5/8 in deck layer despite a `2x6` setting. These notes describe the
+unchanged finished reference, not Alan's corrected floor lesson.
+
+That old support extent follows the inset floor length plus end extensions:
 `16 - 2 x 0.03 + 0.2 = 16.14 ft`. The supports are drawn in segments, so do
 not present this overall extent as a measured single timber or interpret
 the segment seams as confirmed shop joints. Sources:
@@ -110,11 +161,9 @@ the segment seams as confirmed shop joints. Sources:
 [floor-frame envelope](../../parts/floor-frame.js), and
 [construction settings](../../library/construction.json).
 
-These values describe what the model currently draws. The floor names,
-physical measurements, materials and connections still need Alan's
-confirmation. Keep any mismatch visible for discussion; do not silently
-label the drawn support “16 ft” or its cross-section “4x6,” and do not
-promise a physical cut list from this rendering.
+Keep the corrected lesson's labels tied to its corrected geometry. A
+confirmed section, length and notch depth are not a complete physical cut
+list; the remaining layout and cut details still need Alan's answers.
 
 ## Finished-model reference for later
 
@@ -226,8 +275,10 @@ confirm our shared understanding of the actual loft. See
 entrance; our latest starting direction is **floor first, then step by
 step**, beginning with **the long supports underneath**; and Alan calls the whole
 two-slope-per-side shape **lofted roof** (`gambrel` in code). **Ridge cap**
-means the highest long metal strip covering where its sides meet. Other
-anatomy names and their intended pieces remain pending.
+means the highest long metal strip covering where its sides meet. **Skids**
+and **notches**, their listed dimensions and the crosswise member seating
+are now confirmed too. “Floor joist,” “rim joist” and “floor decking,” plus
+the remaining layout and cut details, remain pending.
 
 **Verified in the code:** the dimension order, roof profile, long-side
 entrance, standard door/window layout and opening rules above. This proves

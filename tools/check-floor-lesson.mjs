@@ -10,6 +10,8 @@ import { assemble, onlyParts } from "../engine/assemble.js";
 import { STAGE_ID } from "../parts/stages.js";
 import { initialFloorSelection, floorParts, floorPiece } from "../model/floor-lesson.js";
 import { floorMeasurements, formatInches, formatFeetInches } from "../model/floor-measurements.js";
+import { floorStudyPlan } from "../model/floor-study.js";
+import { skidStudyMembers } from "../parts/skids.js";
 
 const choices = ["supports", "frame", "deck"];
 const parts = ["skids", "floor-frame", "floor-deck"];
@@ -146,4 +148,148 @@ assert.equal(formatFeetInches(11.999 / 12), "1 ft", "rounded inches carry to the
 assert.equal(formatFeetInches(0), "0 in");
 assert.equal(formatInches(NaN), "—");
 
-console.log(`PROVED: supports-only start, all 8 manual floor selections, ${triangleChecks} selected triangles preserved, no hidden building parts, source geometry unchanged, and measurements match rendered geometry with default and changed builder settings.`);
+// The lesson opts in to the measured notched floor. Company settings alone
+// must never change the ordinary designer or any legacy framing geometry.
+const confirmedSpec = {
+  skids:{nominal:"4x6",widthIn:3.5,heightIn:5.5,lengthFt:16,insetToInsideIn:30},
+  joists:{nominal:"2x6",widthIn:1.5,heightIn:5.5,spacingIn:16},
+  notches:{widthIn:1.5,depthIn:1,alternateSpacingIn:12},
+  status:{skidSection:"confirmed",skidLength:"confirmed",joistSection:"confirmed",
+    standardSpacing:"confirmed",alternateSpacing:"confirmed",notchDepth:"confirmed",supportOffset:"confirmed",
+    notchWidth:"provisional",notchPositions:"provisional"},
+};
+const noStudy = structuredClone(plan);
+delete noStudy.construction.floorStudy;
+assert.equal(floorStudyPlan(noStudy),noStudy,"an ordinary plan is returned unchanged");
+const configured = structuredClone(noStudy);
+configured.construction.floorStudy=confirmedSpec;
+const configuredBefore=JSON.stringify(configured);
+assert.equal(JSON.stringify(assemble(configured,{frames:true}).build),original,
+  "study settings alone cannot change normal finished or framing triangles");
+const studyPlan=floorStudyPlan(configured);
+assert.equal(JSON.stringify(configured),configuredBefore,"opting in never mutates the ordinary plan");
+assert.ok(Object.isFrozen(studyPlan)&&Object.isFrozen(studyPlan.floorStudy.skids));
+const studyDrawing=assemble(studyPlan,{frames:true}).build;
+const study=floorMeasurements(studyPlan);
+const members=skidStudyMembers(studyPlan);
+assert.equal(members.length,measurements.supports.count,"one continuous prism per support, with no artificial segment seams");
+const withoutInset=structuredClone(configured);
+delete withoutInset.construction.floorStudy.skids.insetToInsideIn;
+assert.deepEqual(floorMeasurements(floorStudyPlan(withoutInset)).supports.xsFt,measurements.supports.xsFt,
+  "a study without the explicit inside-face datum retains the old support positions");
+near(study.supports.centerSpacingsFt[0]*12,63.5,"inside-face datum gives 63.5in between centres on a 10ft width");
+for(const inset of study.supports.insetCentersFt) {
+  near(inset.nearestInsideFaceFt*12,30,"outside wall to inside skid face");
+  near(inset.nearestSideFt*12,28.25,"outside wall to skid centre is 28.25in");
+}
+// Independent of the readout helper: the prism definition has the correct
+// inner face. The rendered triangles are checked separately below.
+for(const member of members) {
+  const insideFace=member.meta.xFt<0 ? member.origin[0]+member.t : member.origin[0];
+  near((plan.W/2-Math.abs(insideFace))*12,30,"actual inner prism face is 30in from the outside wall");
+}
+matchesBounds(study.supports,geometryBounds(studyDrawing,"skids"),"measured support envelope");
+matchesBounds(study.frame.bounds,geometryBounds(studyDrawing,"floor-frame"),"measured frame envelope");
+for(const run of study.supports.runs) {
+  near(run.lengthFt,16,"confirmed exact support length");
+  near(run.widthFt*12,3.5,"confirmed support width");
+  near(run.depthFt*12,5.5,"confirmed support height");
+  near(run.z0Ft,-8,"support back at exact 16ft length"); near(run.z1Ft,8,"support front at exact 16ft length");
+  assert.ok(run.notches.some((cut)=>cut.sources.includes("standard")&&cut.sources.includes("alternate")),"coincident 12in/16in cuts merge");
+  assert.ok(run.notches.some((cut)=>cut.sources.length===1&&cut.sources[0]==="alternate"),"unused 12in-option notches remain visible");
+  for(let i=0;i<run.notches.length;i++) {
+    const cut=run.notches[i];
+    near(cut.depthFt*12,1,"confirmed cut depth");
+    near(cut.widthFt*12,1.5,"provisional width fits the board");
+    near(cut.seatYFt*12,4.5,"notch seat height");
+    assert.ok(cut.z0Ft>=-8&&cut.z1Ft<=8,"all cuts clipped to timber ends");
+    if(i) assert.ok(cut.z0Ft>run.notches[i-1].z1Ft,"merged cuts cannot overlap or self-intersect");
+  }
+}
+for(const record of study.frame.members) {
+  near(record.bounds.y0Ft*12,4.5,"cross members and rims begin at the seated floor height");
+  near(record.bounds.y1Ft*12,10,"full-depth joist tops are 10in above skid bottoms");
+  near(record.depthFt*12,5.5,"joists are not squashed to the old finished datum");
+}
+near(study.frame.joist.widthFt*12,1.5,"cross-member thickness");
+near(study.frame.spacingFt*12,16,"standard joist pitch from lesson data");
+near(study.frame.joist.lengthFt,measurements.frame.joist.lengthFt,"provisional frame width stays unchanged");
+near(study.deck.representative.topPoint[1]*12,10.625,"deck rests on actual joist tops");
+for(const sheet of study.deck.sheets) near(sheet.member.origin[1],study.frame.bounds.y1Ft,"first deck layer touches joists");
+assert.equal(study.study.status.notchDepth,"confirmed");
+assert.equal(study.study.status.notchWidth,"provisional");
+assert.equal(study.study.status.notchPositions,"provisional");
+assert.equal(study.study.status.supportOffset,"confirmed");
+assert.equal(study.study.status.supportLayout,"provisional","omitted status is never promoted to confirmed");
+
+function trianglesFor(build,part) {
+  const triangles=[];
+  for(const key of build.ORDER) for(const segment of build.tags[key]||[]) {
+    if(segment.part!==part) continue;
+    const v=build.buckets[key].v;
+    for(let i=segment.from*27;i<(segment.from+segment.count)*27;i+=27) {
+      triangles.push([v.slice(i,i+3),v.slice(i+9,i+12),v.slice(i+18,i+21)]);
+      for(let j=0;j<3;j++) assert.equal(v[i+j*9+8],STAGE_ID.skids,"notched support retains its stage");
+    }
+  }
+  return triangles;
+}
+const skidTriangles=trianglesFor(studyDrawing,"skids");
+const meshCenters=[];
+for(const sign of [-1,1]) {
+  const xs=skidTriangles.flatMap((triangle)=>triangle.filter((p)=>Math.sign(p[0])===sign).map((p)=>p[0]));
+  const lo=Math.min(...xs),hi=Math.max(...xs);
+  const insideFace=sign<0?hi:lo, center=(lo+hi)/2;
+  near((plan.W/2-Math.abs(insideFace))*12,30,"rendered inside face is exactly 30in from the outside wall");
+  near((plan.W/2-Math.abs(center))*12,28.25,"rendered centre is 28.25in from the outside wall");
+  meshCenters.push(center);
+}
+near((meshCenters[1]-meshCenters[0])*12,63.5,"rendered support centre spacing is 63.5in");
+// Intersect vertical lines with the actual rendered triangles, independently
+// of the member/notch records. A notch must have a real floor and no top cap.
+function meshTopAt(x,z) {
+  const hits=[];
+  for(const [a,b,c] of skidTriangles) {
+    const den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);
+    if(Math.abs(den)<1e-12) continue;
+    const u=((b[2]-c[2])*(x-c[0])+(c[0]-b[0])*(z-c[2]))/den;
+    const v=((c[2]-a[2])*(x-c[0])+(a[0]-c[0])*(z-c[2]))/den;
+    const w=1-u-v;
+    if(u>=-1e-9&&v>=-1e-9&&w>=-1e-9) hits.push(u*a[1]+v*b[1]+w*c[1]);
+  }
+  assert.ok(hits.length,"vertical line must intersect the support mesh");
+  return Math.max(...hits);
+}
+for(const run of study.supports.runs) {
+  let previousEnd=run.z0Ft;
+  for(const cut of run.notches) {
+    for(const across of [-.3,0,.3]) for(const along of [.2,.5,.8]) {
+      near(meshTopAt(run.xFt+run.widthFt*across,cut.z0Ft+cut.widthFt*along),cut.seatYFt,"actual notch mesh is open above its 1in-deep seat");
+    }
+    if(cut.z0Ft>previousEnd+1e-9) near(meshTopAt(run.xFt,(previousEnd+cut.z0Ft)/2),run.y1Ft,"wood between cuts remains full height");
+    previousEnd=cut.z1Ft;
+  }
+  if(previousEnd<run.z1Ft) near(meshTopAt(run.xFt,(previousEnd+run.z1Ft)/2),run.y1Ft,"end wood remains full height");
+  for(const record of study.frame.members.filter((record)=>["joist","end-joist","wall-joist"].includes(record.member.kind))) {
+    if(run.x1Ft<=record.bounds.x0Ft||run.x0Ft>=record.bounds.x1Ft) continue;
+    const cut=run.notches.find((cut)=>record.bounds.z0Ft>=cut.z0Ft-1e-9&&record.bounds.z1Ft<=cut.z1Ft+1e-9);
+    assert.ok(cut,"every crosswise board has a matching cut through each supporting timber");
+    near(record.bounds.y0Ft,cut.seatYFt,"board sits on the notch floor with no gap");
+    for(const fraction of [.2,.5,.8]) near(meshTopAt(run.xFt,record.bounds.z0Ft+(record.bounds.z1Ft-record.bounds.z0Ft)*fraction),record.bounds.y0Ft,
+      "skid solid ends at the board underside: no wood intersection");
+  }
+}
+// A closed outward-facing mesh has the analytical timber-minus-notches volume.
+const signedVolume=skidTriangles.reduce((sum,[a,b,c])=>sum+(a[0]*(b[1]*c[2]-b[2]*c[1])+a[1]*(b[2]*c[0]-b[0]*c[2])+a[2]*(b[0]*c[1]-b[1]*c[0]))/6,0);
+const expectedVolume=study.supports.runs.reduce((sum,run)=>sum+run.widthFt*(run.lengthFt*run.depthFt-run.notches.reduce((removed,cut)=>removed+cut.widthFt*cut.depthFt,0)),0);
+near(signedVolume,expectedVolume,"prism caps/winding enclose exactly the wood left after cutting");
+for(const [key,value] of [["depthIn",5.5],["widthIn",1],["alternateSpacingIn",1]]) {
+  const invalid=structuredClone(configured); invalid.construction.floorStudy.notches[key]=value;
+  assert.throws(()=>floorStudyPlan(invalid),/floorStudy/);
+}
+for(const value of [0,-1,3,60,61,Infinity]) {
+  const invalid=structuredClone(configured);invalid.construction.floorStudy.skids.insetToInsideIn=value;
+  assert.throws(()=>floorStudyPlan(invalid),/floorStudy/);
+}
+
+console.log(`PROVED: supports-only start, all 8 manual floor selections, ${triangleChecks} legacy triangles preserved, no hidden building parts, measured notched skids and full-depth seated joists, real open cuts/contact/no intersections, deck fit, 16in/12in notch patterns, provisional status, and ordinary geometry unchanged.`);
