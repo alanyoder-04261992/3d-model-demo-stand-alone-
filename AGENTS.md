@@ -6,8 +6,8 @@ This project is separate from Barnwright; never modify the Barnwright repository
 For customer setup, terminology, or a new buyer's design, use
 [shed-customer-setup](.agents/skills/shed-customer-setup/SKILL.md).
 [BUILDING-TERMS.md](docs/BUILDING-TERMS.md) is the shared glossary, and
-[the 10x16 example](docs/examples/10x16-side-loft.md) records Alan's first
-confirmed style and view choices. Keep model defaults and unconfirmed shop
+[the 10x16 example](docs/examples/10x16-side-loft.md) records Alan's
+confirmed style and current floor-first, manual learning approach. Keep model defaults and unconfirmed shop
 assumptions distinct from facts Alan or a builder has confirmed.
 
 A dealer/company gets one settings file; an individual shed buyer gets a

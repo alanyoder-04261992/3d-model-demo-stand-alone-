@@ -21,8 +21,12 @@ refer to them instead of copying the glossary into each customer's files.
   the design using the existing designer. Do not create a new company for
   each shed buyer.
 - A **learning exercise** can start at
-  `/?company=learning-side-loft` after `npm run serve`. Its only building is
-  the 10x16 Side Lofted Barn (`SLB`), with prices hidden and quotes off.
+  [the manual floor page](../../../learn.html),
+  `learn.html?company=learning-side-loft` after `npm run serve`. Alan's latest
+  request is to build a floor first, then build step by step; this supersedes
+  his earlier choice to begin with the finished building. The example is the
+  10x16 Side Lofted Barn (`SLB`), with prices hidden and quotes off. Its regular
+  designer at `/?company=learning-side-loft` is a finished-model reference.
   This example is not a customer's price book.
 
 Use facts already provided or recorded. Ask only for missing information that
@@ -31,11 +35,54 @@ company intake. Preserve the user's selected scope and view choices.
 
 ## Learn the terms together
 
-Start with the building and view currently visible to Alan. During terminology
-learning, discuss one physical part at a time. Locate it in plain visual words
-before naming it: its position, appearance, and a nearby feature Alan can see.
-Point it out or annotate the view when the available tools make that useful.
-Stay with visible parts when the user has chosen the finished building.
+Follow the user's latest learning direction and show the relevant view,
+including an incomplete assembly when requested. During terminology learning,
+discuss one physical part at a time. Locate it in plain visual words before
+naming it: its position, appearance, and a nearby feature Alan can see. Point
+it out or annotate the view when the available tools make that useful.
+
+For the current floor-first lesson, Alan has selected **the long supports
+underneath** as the starting physical piece. The manual floor page starts
+with those supports only: no frame, top sheets, walls or roof, and no autoplay.
+Show them first, then point to them and ask what he calls them. **Skids** and
+**runners** remain draft names; choosing the physical piece does not confirm
+either term or its specification. The optional `?step=frame` and `?step=deck`
+views are later manual additions. This is a learning order, not an approved
+shop sequence. Do not impose the software's `buildOrder` as the order the shop
+uses. Agree on the current part's meaning before moving on, and follow Alan's
+direction and pace in the conversation. Preserve already confirmed terms even
+when the starting view changes.
+
+Alan has explicitly requested a **3D render with the terms** to check names
+and how pieces fit together. Provide labels anchored to actual rendered
+parts using leader lines or another clear visual pointer; text in a glossary
+or a detached list is not sufficient. For the floor lesson, the candidate
+labels are **skids / runners**, **floor joist**, **rim joist** and **floor
+decking**. Mark them as proposed; none was confirmed by requesting the render.
+Start with the selected supports, then reveal floor layers manually as Alan
+directs so he can see supports under crosswise members, perimeter members
+around them, and sheets on top. Discuss and verify those model relationships
+without claiming that they are approved shop specifications. Inspect the
+actual 3D result before saying that labels or connections are visible.
+
+Alan also requested **measurements on the render** so he can check the
+lengths. Anchor dimension lines to the measured geometry and name the span
+they measure. Derive lengths, spacing and cross-sections from the same part
+geometry or member data used by the renderer; show units and distinguish
+nominal footprint, configured lumber sizes and actual modeled extents.
+Inspect the visible dimension lines and readout together before reporting
+success. Naming a part and measuring the model do not confirm a shop's
+physical specification or authorize treating the result as a cut list.
+
+Preserve the known discrepancy notes in the
+[10x16 example](../../../docs/examples/10x16-side-loft.md#floor-measurements-to-show):
+the support settings say `4x6`, but legacy support boxes draw 6 in square;
+their overall length extent on this nominal 16 ft building is 16.14 ft
+(16 ft 1.68 in). The floor frame also fits the older floor-height envelope,
+so its drawn depth with one 5/8 in deck layer is 4.415 in despite a `2x6`
+setting. Verify these against `parts/skids.js`, `parts/floor.js` and
+`parts/floor-frame.js`; recalculate if geometry or settings change. Do not
+hide discrepancies by labeling the drawing with nominal sizes.
 
 Propose a name as a draft, then ask whether the description identifies the
 same part and what Alan's shop calls it. For example: "I mean the white outside
@@ -92,9 +139,10 @@ starting on this example, set `defaults.style` to `SLB` and `defaults.size`
 to `10x16`; that style and size must also exist in `offer`.
 
 For this learning company, `features.framingView` and `features.buildPlayback`
-are `false`, and `features.floorPlan` is `true`. Use those switches rather than
-removing shared rendering code. They are this example's choices, not defaults
-to impose on future customers.
+are `false`, and `features.floorPlan` is `true` in the regular designer. Those
+menu settings do not block the separate manual learning page or override the
+latest request to show an incomplete floor assembly. Keep shared rendering
+code intact; do not impose these menu choices on future customers.
 
 A company inherits no prices. Use its supplied prices; never substitute demo
 or golden-test prices. The setup tool uses `$1` placeholders when prices are
@@ -121,6 +169,9 @@ On another machine, use available browser tooling to verify the result and
 report which automated checks could not run; do not claim they passed.
 For terminology-only edits, verify source facts and relative links and run
 `node tools/check-docs.mjs` where applicable.
+For a learning-page change, open `learn.html?company=learning-side-loft` and
+verify the requested starting assembly, manual additions and absence of
+unrequested walls, roof or automatic stage changes.
 
 Keep the glossary, example and skill changes together in version control.
 When GitHub work is requested, follow the repository's branch/PR workflow and

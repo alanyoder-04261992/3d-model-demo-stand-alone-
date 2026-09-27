@@ -2,8 +2,10 @@
 
 Alan confirmed on September 27, 2026 that “10 x 16 side loft” means a
 **Side Lofted Barn (`SLB`)**: a lofted barn with a side entrance. He also
-confirmed that we should start with the finished building. This example
-gives us one building to point at while agreeing on
+initially chose the finished building, then changed the starting approach:
+**“build a floor first and we build it step by step.”** That later request
+now controls the lesson. This example gives us one building to point at
+while agreeing on
 [our building terms](../BUILDING-TERMS.md), one physical part at a time.
 
 Alan has asked us to check that we mean the same thing before treating a
@@ -17,7 +19,9 @@ to point to; they are not yet agreed shop language.
 | Status | Alan's wording or proposed term | What it points to | Confirmation |
 | --- | --- | --- | --- |
 | Confirmed | Alan: “side loft” | A lofted barn with a side entrance, matched to `SLB`; other details still need discussion. | Alan's reply, September 27, 2026 |
-| Confirmed | Start with the finished building | Begin in Outside; Framing and Watch it build stay off for this example. | Alan's reply, September 27, 2026 |
+| Superseded choice | Start with the finished building | Earlier starting view, replaced by the later floor-first request. | Earlier reply, September 27, 2026 |
+| Current direction | “Build a floor first and we build it step by step” | Begin with the floor, discuss one visible piece at a time, and wait for agreement before adding the next stage. | Later request, September 27, 2026 |
+| Confirmed starting piece; name pending | Long supports underneath | Show these alone first. No floor frame or top sheets yet; “skids” and “runners” remain proposed names. | Alan's later reply, September 27, 2026 |
 | Confirmed | Alan: **“Lofted roof”** | The whole roof with a gentle upper slope and a steep lower slope on each side. `gambrel` is its code reference, not Alan's preferred term. | Alan's reply, September 27, 2026 |
 | Confirmed | **Ridge cap** | The highest long metal strip covering the meeting line of the two roof sides. | Alan's reply, September 27, 2026 |
 
@@ -26,14 +30,91 @@ is **ridge cap** in our conversation. We have agreed on those specific
 meanings. The other part names remain draft for later discussion; no
 dimensions or installation details were confirmed by those naming replies.
 
-Open the designer with `?company=learning-side-loft`, for example
-`http://127.0.0.1:8282/?company=learning-side-loft` after `npm run serve`.
+Open the [floor learning page](../../learn.html), for example
+`http://127.0.0.1:8282/learn.html?company=learning-side-loft` after
+`npm run serve`.
 The [example's settings](../../companies/learning-side-loft/company.json)
 offer only this style and size.
 
-## What the current model draws
+## Our first floor discussion
 
-This table records the model we opened for discussion. Except for the
+Alan selected **the long supports underneath** as the first piece. The
+learning page therefore begins with those supports alone: no floor frame,
+top sheets, walls or roof, and no autoplay. Show the supports first, then
+point to them and ask what Alan calls them. **Skids** and **runners** remain
+candidate names; choosing the physical piece has not confirmed a name or
+its specifications.
+
+Alan's latest request is to put the terms **on the 3D render** so we can
+check our names and understanding of how the pieces fit. In the
+[learning page](../../learn.html), anchor each proposed label to its actual
+piece with a leader line or another unambiguous visual pointer. Use
+**skids / runners** for the long supports, **floor joist** for a crosswise
+floor-frame member, **rim joist** for its perimeter member, and **floor
+decking** for a top sheet. All these names remain proposed. Inspect the
+rendered labels before reporting that this visual requirement is complete.
+
+As Alan directs the lesson, manually reveal the frame and then the sheets
+to show the model's intended relationship: crosswise members resting on
+the long supports, perimeter members enclosing the frame, and sheets over
+the members. Keep the supports-only starting view and no autoplay. These
+are relationships to examine together, not newly confirmed shop details.
+
+| Status | Candidate description | What still needs agreement |
+| --- | --- | --- |
+| Starting piece confirmed; name pending | Long supports underneath | His name for the visible pieces; proposed words are “skids” or “runners.” |
+| Later; pending | Open rectangular frame | Its members and whole-frame names when Alan is ready to add it. |
+| Later; pending | Flat sheets on top | Their name and meaning when Alan is ready to add them. |
+
+Stay with the visible supports until we agree on their name. The optional
+`?step=frame` and `?step=deck` views are for later manual additions, not an
+automatic sequence. A learning display choice is not a declaration of the
+shop's build order. Agree on the current meaning and record corrections before
+advancing, following Alan's direction and pace in the conversation.
+
+The [regular designer](../../index.html) at
+`/?company=learning-side-loft` remains available as a finished-building
+reference. It is no longer the starting page for this lesson.
+
+## Floor measurements to show
+
+Alan requested measurements on the 3D render so he can check the lengths.
+Dimension lines should attach to the actual measured endpoints or faces,
+and the readout should say which piece or spacing they describe. Derive the
+values from the same geometry that is drawn. Keep the nominal **10 x 16 ft
+building footprint** separate from the dimensions of its supports, frame
+and sheets; inspect the visible lines and values before reporting them as
+shown correctly.
+
+The current model preserves some older drawing sizes. For this example:
+
+| Measurement | Current model value | What it means |
+| --- | --- | --- |
+| Nominal building footprint | 10 ft x 16 ft | The selected building size; it is not every individual piece's length. |
+| Overall support extent along the length | 16.14 ft = 16 ft 1.68 in | The outer extent of the drawn support boxes, including their extensions past the inset floor. It is not an approved stock or cut length. |
+| Support cross-section | Drawn 6 in x 6 in; configured size `4x6` | A preserved drawing discrepancy. The settings' nominal lumber size does not control these boxes' thickness or height. |
+| Floor-frame depth with one 5/8 in deck layer | Drawn 4.415 in; configured joist size `2x6` | The frame fits the older floor envelope: `(0.92 - 0.5) ft x 12 - 0.625 in`. It does not draw the 5 1/2 in depth associated with a nominal 2x6. |
+
+The support extent follows the inset floor length plus the end extensions:
+`16 - 2 x 0.03 + 0.2 = 16.14 ft`. The supports are drawn in segments, so do
+not present this overall extent as a measured single timber or interpret
+the segment seams as confirmed shop joints. Sources:
+[support geometry](../../parts/skids.js),
+[floor segmentation and inset](../../parts/floor.js),
+[floor-frame envelope](../../parts/floor-frame.js), and
+[construction settings](../../library/construction.json).
+
+These values describe what the model currently draws. The floor names,
+physical measurements, materials and connections still need Alan's
+confirmation. Keep any mismatch visible for discussion; do not silently
+label the drawn support “16 ft” or its cross-section “4x6,” and do not
+promise a physical cut list from this rendering.
+
+## Finished-model reference for later
+
+This table records the complete model behind the floor lesson. The walls,
+openings and roof listed here are absent from the initial floor display.
+Except for the
 confirmed side-entrance style choice, lofted roof term and ridge cap term
 above, its labels and details still need checking against Alan's meaning
 and his building.
@@ -54,7 +135,8 @@ the faux loft window from the end-entry Lofted Barn (`LB`) into this example.
 
 ## Model orientation to check together
 
-Stand outside facing the doors. The wall in front of you is 16 ft long.
+For the finished-model reference, stand outside facing the doors. The wall
+in front of you is 16 ft long.
 Internally it is `R`. The two ends to your left and right are each 10 ft wide.
 The model calls those `F` and `B`; “front” in a customer's conversation may
 instead mean the entrance side.
@@ -111,23 +193,23 @@ See [the item catalogue](../../library/manufacturers/standard.json),
 
 ## How we learn from this example
 
-Use **Outside** to point to one visible part, describe where it is, and
-agree that both of us mean the same piece. Then record Alan's wording and
-the agreed term. The list of candidate terms in the glossary gives us
-questions to work through; it is not a lesson of already confirmed names.
-**Inside** is available for discussing the floor plan and opening placement
-when useful.
+Follow Alan's latest request: use the manual floor page to point to one
+visible piece, describe where it is, and agree that both of us mean that
+piece. Then record his wording and the agreed term. The candidate list
+gives us questions to work through; it is not a lesson of already confirmed
+names. Show incomplete assemblies whenever that helps this conversation.
+Do not use the saved `buildOrder` or automatic playback as an approved shop
+sequence, and do not advance stages before shared agreement.
 
-For this learning example, following Alan's confirmed preference, Framing
-and Watch it build are switched off:
-`framingView: false`, `buildPlayback: false`; `floorPlan: true` keeps Inside
-available. This is an example preference, not a rule for every customer.
+The regular designer still has `framingView: false`,
+`buildPlayback: false` and `floorPlan: true`. Those switches describe that
+designer's menus; they do not prohibit the separate manual floor lesson or
+override Alan's new direction. **Inside** remains its floor-plan view.
 
-**The loft is not visible in either of these views.** Its geometry is a
-framing part, hidden in Outside, and Inside is the floor plan. The loft's
-location and assumed depth are recorded here as model background. They do
-not confirm our shared understanding of the actual loft; a visible loft
-discussion would need a separate view decision. See
+**The loft is absent from the initial floor assembly.** In the regular
+designer, it is also hidden in Outside, while Inside is a floor plan. The
+loft's location and assumed depth below are model background; they do not
+confirm our shared understanding of the actual loft. See
 [the loft stage](../../parts/stages.js),
 [view behavior](../../ui/views.js), and
 [loft skill](../../.claude/skills/part-loft/SKILL.md).
@@ -135,7 +217,8 @@ discussion would need a separate view decision. See
 ## Keep agreement, source evidence and specifications separate
 
 **Agreed in this conversation:** “side loft” means a lofted barn with a side
-entrance; we begin with the finished building; and Alan calls the whole
+entrance; our latest starting direction is **floor first, then step by
+step**, beginning with **the long supports underneath**; and Alan calls the whole
 two-slope-per-side shape **lofted roof** (`gambrel` in code). **Ridge cap**
 means the highest long metal strip covering where its sides meet. Other
 anatomy names and their intended pieces remain pending.
@@ -161,7 +244,7 @@ band does not establish the loft floor's elevation.
 No real sale price or quote destination has been set up. This teaching
 company hides pricing and uses internal `$1` placeholders where the schema
 requires prices. Those are not estimates. The owner contact sheet
-(`setup.html`) can show those placeholders, so use the designer link above
+(`setup.html`) can show those placeholders, so use the floor learning link above
 for this lesson and enter real prices before preparing a customer sign-off.
 
 ## Reuse it for the next customer

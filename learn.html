@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex">
+  <meta name="description" content="Start with the floor of a 10 by 16 side loft, adding one piece at a time.">
+  <title>Floor first — 10 × 16 side loft</title>
+  <link rel="stylesheet" href="ui/styles.css">
+  <link rel="stylesheet" href="ui/learn.css">
+</head>
+<body class="lesson-page">
+  <header class="lesson-header">
+    <div><h1>Floor first</h1><p>10 × 16 side loft</p></div>
+    <a href="index.html?company=learning-side-loft">Finished example</a>
+  </header>
+  <main class="lesson-main">
+    <section class="lesson-view" aria-labelledby="piece-title">
+      <div class="lesson-toolbar" aria-label="View controls">
+        <div class="lesson-view-buttons">
+          <button type="button" data-camera="angle" disabled>Angled view</button>
+          <button type="button" data-camera="top" disabled>From above</button>
+        </div>
+        <div class="lesson-view-buttons">
+          <button type="button" data-camera="out" aria-label="Zoom out" disabled>−</button>
+          <button type="button" data-camera="in" aria-label="Zoom in" disabled>+</button>
+          <button type="button" data-camera="reset" disabled>Reset view</button>
+        </div>
+      </div>
+      <div class="lesson-viewport" id="lesson-viewport" aria-busy="true">
+        <canvas id="lesson-canvas" tabindex="0" role="img"
+          aria-label="Rotatable 3D view of the floor pieces"
+          aria-describedby="lesson-gestures lesson-keyboard piece-description">
+          A 3D view of the selected floor pieces. Their description appears below.
+        </canvas>
+        <p class="lesson-loading" id="lesson-loading" role="status">Loading the first piece…</p>
+        <div class="lesson-error" id="lesson-error" role="alert" hidden>
+          <h2>The floor view could not load</h2>
+          <p id="lesson-error-text"></p>
+          <button type="button" id="lesson-reload">Try again</button>
+        </div>
+        <div class="lesson-empty" id="lesson-empty" hidden>Select a piece below to put it back in the view.</div>
+      </div>
+      <p class="lesson-gestures" id="lesson-gestures">Drag to turn. Scroll or pinch to zoom.</p>
+      <p class="lesson-sr-only" id="lesson-keyboard">Keyboard: focus the drawing, then use arrow keys to turn, plus and minus to zoom, and Home to reset the view.</p>
+    </section>
+    <section class="lesson-bottom" aria-label="Floor pieces">
+      <div class="lesson-caption" aria-live="polite" aria-atomic="true">
+        <h2 id="piece-title">The long supports underneath</h2>
+        <p id="piece-description">The long wooden pieces that run underneath the floor.</p>
+        <p class="lesson-draft" id="piece-draft">Possible shop terms: skids or runners. We will confirm the name together.</p>
+      </div>
+      <fieldset class="lesson-pieces" id="lesson-pieces" disabled>
+        <legend>Add or remove a piece</legend>
+        <label><input type="checkbox" name="piece" value="supports" checked><span>Long supports underneath</span></label>
+        <label><input type="checkbox" name="piece" value="frame"><span>Wooden floor frame</span></label>
+        <label><input type="checkbox" name="piece" value="deck"><span>Flat sheets on top</span></label>
+      </fieldset>
+    </section>
+    <section class="lesson-measurements" aria-labelledby="measurements-title">
+      <h2 id="measurements-title">Measurements in this drawing</h2>
+      <p>Dashed outline = the nominal 10′ × 16′ building. Solid dimension lines measure the visible pieces.</p>
+      <dl id="piece-measurements"></dl>
+      <p class="lesson-measurement-note" id="measurement-note"></p>
+    </section>
+    <p class="lesson-reference">This is the existing model for us to discuss. The piece names, lumber sizes and spacing still need your shop’s confirmation.</p>
+  </main>
+  <noscript><p class="lesson-noscript">Turn on JavaScript to rotate the floor and add pieces.</p></noscript>
+  <script type="module" src="ui/learn.js"></script>
+</body>
+</html>

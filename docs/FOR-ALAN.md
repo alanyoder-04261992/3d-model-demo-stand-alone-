@@ -18,8 +18,10 @@ Selling it — what a company gets, what they send you, what you charge for —
 is in [SELLING.md](SELLING.md).
 
 Start learning with the [10x16 Side Lofted Barn](examples/10x16-side-loft.md)
-and [our building terms](BUILDING-TERMS.md). The example opens the finished
-building, with Framing and Watch it build switched off. Use the
+and [our building terms](BUILDING-TERMS.md). Start at
+`learn.html?company=learning-side-loft` to build from the floor, revealing
+pieces by hand and agreeing on each part before moving on. The regular
+designer still offers the finished building as a reference. Use the
 [shed-customer-setup skill](../.agents/skills/shed-customer-setup/SKILL.md)
 to reuse the terminology and setup steps for the next customer.
 

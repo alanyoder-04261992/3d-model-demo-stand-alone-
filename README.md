@@ -28,12 +28,17 @@ company that only wants the designer.
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
-run the designer and open `/?company=learning-side-loft` for a finished
-building with prices and quote requests hidden. Learn the
+run the designer and open `learn.html?company=learning-side-loft` to start
+with the long floor supports and reveal pieces by hand. Labels and dimensions
+point to the visible pieces; model measurements are separate from unconfirmed
+shop specifications. Nothing advances automatically.
+The finished reference remains at `/?company=learning-side-loft`, with prices
+and quote requests hidden. Agree on the
 [building terms](docs/BUILDING-TERMS.md), then use
 [shed-customer-setup](.agents/skills/shed-customer-setup/SKILL.md) for the next
-company or shed buyer. This learning example has Framing and Watch it build
-switched off; other companies keep their own choices.
+company or shed buyer. The regular designer's Framing and Watch it build
+stay switched off; the separate floor lesson follows Alan's latest request
+to learn one piece at a time. Other companies keep their own choices.
 
 Selling it to a company: [docs/SELLING.md](docs/SELLING.md).
 The rules every file is built to: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -141,6 +146,7 @@ Chromium's software graphics, each on its own port.
 | `check-framing-roof.mjs` | no | the trusses, gable studs, roof deck, loft and dormer framing fit inside the roof as drawn and follow the construction numbers |
 | `check-companies.mjs` | yes | a company is one checked settings file, never given a price it did not set; about 35 mistakes give the right plain-English error |
 | `check-design.mjs` | no | a design saved, shared and opened again is the same building at the same price; nothing missing is dropped silently |
+| `check-floor-lesson.mjs` | no | the lesson starts with supports; all eight selections preserve original floor geometry, and measurements match drawn pieces |
 | `check-model-live.mjs` | yes | the rules (sizes, walls, roof line, standard doors and windows, clamping, prices) are Barnwright's, number for number, against its live page |
 | `check-ui.mjs` | yes | the designer page works: every style, size, colour, door and window, drag, "Add here", layouts on phone and desktop, escaping |
 | `check-views.mjs` | yes | Outside, Inside, Framing and Watch it build on seven buildings, from real clicks and real pixels |
