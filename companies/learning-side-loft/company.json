@@ -70,7 +70,10 @@
   },
   "construction": {
     "floorStudy": {
-      "skids": { "nominal": "4x6", "widthIn": 3.5, "heightIn": 5.5, "lengthFt": 16, "insetToInsideIn": 30, "treated": true },
+      "skids": {
+        "nominal": "4x6", "widthIn": 3.5, "heightIn": 5.5, "lengthFt": 16, "insetToInsideIn": 30, "treated": true,
+        "bottomCuts": { "reachIn": 3, "angleDeg": 45 }
+      },
       "joists": { "nominal": "2x6", "widthIn": 1.5, "heightIn": 5.5, "spacingIn": 16 },
       "notches": {
         "depthIn": 1, "widthIn": 1.5, "alternateSpacingIn": 12,
@@ -86,7 +89,7 @@
         "notchWidth": "provisional", "notchPositions": "provisional",
         "supportOffset": "confirmed", "supportLayout": "provisional", "frameFootprint": "provisional",
         "rimSection": "provisional", "deck": "provisional",
-        "endRebates": "confirmed", "endMemberPlacement": "provisional"
+        "endRebates": "confirmed", "endMemberPlacement": "provisional", "bottomCuts": "confirmed"
       }
     }
   },

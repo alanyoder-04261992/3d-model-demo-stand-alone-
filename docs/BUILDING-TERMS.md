@@ -51,7 +51,7 @@ physical cut list.
 | Current learning direction | “Build a floor first and we build it step by step” | Start with the floor in the manual learning page. Add further stages only after we agree what the visible piece means. | Alan's later request, September 27, 2026 |
 | Confirmed part term, material and dimensions | **Skids** | The long supports underneath, made of treated wood: nominal 4x6, actual 3 1/2 x 5 1/2 in, total length 16 ft in this example. Start by showing these alone. | Alan's descriptions and explicit treated-wood confirmation, September 27, 2026; dimensions from his words |
 | Confirmed connection term and depth | **Notches** | Cuts 1 in down into the skid tops, where crosswise nominal 2x6 members, actual 1 1/2 x 5 1/2 in, sit. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
-| Confirmed end cuts; bevel extent pending | **Skid ends and end notches** | One end notch runs 3 in inward from its tip, the other 1 1/2 in; both are 1 in deep. The piece beyond the end notch stays at notch height. A 45-degree cut on each bottom corner slopes upward toward the skid tip; its extent is not yet confirmed. | Alan's description and clarifications, September 27, 2026 |
+| Confirmed end cuts | **Skid ends and end notches** | One end notch runs 3 in inward from its tip, the other 1 1/2 in; both are 1 in deep. The piece beyond the end notch stays at notch height. The bottom-corner cut reaches 3 in back from each skid tip and slopes upward toward that tip at 45 degrees. | Alan's description and clarifications, September 27, 2026 |
 | Confirmed spacing and extra-cut purpose | **16 in on center standard; 12 in on center option** | Standard crosswise member spacing is 16 in. The extra notches provide positions for the 12 in option and may be unused with the standard spacing. Alan clarified that the option is 12 inches. | Alan's follow-up replies, September 27, 2026 |
 | Confirmed distance and reference | **30 in outside wall to inside face of skid** | The inside face is the face toward the middle of the floor. With a 3 1/2 in-wide skid, its center is 28 1/4 in from that outside wall. The current two-skid model therefore has 63 1/2 in between centers across its nominal 10 ft width; the count of two is still provisional. | Alan's clarification, September 27, 2026; center distances calculated from his dimensions |
 | Confirmed size-language examples | **Nominal / actual lumber size** | In this conversation subtract 1/2 in from each nominal dimension for the named examples: 2x4 → 1 1/2 x 3 1/2 in; 2x6 → 1 1/2 x 5 1/2 in; 4x6 → 3 1/2 x 5 1/2 in. Other sections are not established by these examples. | Alan's explanation, September 27, 2026 |
@@ -84,10 +84,15 @@ end notches run inward from the respective tips and are **both 1 in deep**.
 The little raised piece beyond the end notch should **stay at notch
 height**, leaving no full-height lip beyond that cut. He also confirmed
 that each **45-degree bottom-corner cut slopes upward toward the skid tip**;
-this supersedes the earlier plan-view side-corner interpretation. The
-bevel's extent remains pending. Do not assign the unequal notches to front
-or back or invent a bevel size. Confirm the resulting shape against the
-visible render. The wider end notch does not establish an extra end board.
+this supersedes the earlier plan-view side-corner interpretation. He has
+now confirmed **3 in back from each end** for those bottom cuts. Both ends
+use that reach, independently of the unequal top-notch lengths.
+At 45 degrees the **3 in rise is calculated** from the confirmed reach.
+The notch seat is 4 1/2 in above the skid bottom (`5 1/2 - 1`), leaving a
+**calculated 1 1/2 in vertical end face** above the sloped bottom cut
+(`4 1/2 - 3`). Do not assign the unequal top notches to front or back.
+Confirm the resulting shape against the visible render. The wider top
+notch does not establish an extra end board.
 
 Alan explicitly confirmed **the skids are treated wood**. He also requested
 **a little texture and knots in the wood** for the render. This is a visual

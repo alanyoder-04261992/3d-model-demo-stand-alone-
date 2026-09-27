@@ -60,8 +60,9 @@ one board. Its `meta.placementStatus` comes from
 The confirmed 3 in cut does not imply another board or confirm this shop
 placement. The rim and deck footprints and the ordinary designer are
 unchanged by that fitting adjustment. See the
-[skid skill](../part-skids/SKILL.md) for the confirmed 45-degree bottom-cut
-direction and its still-pending extent.
+[skid skill](../part-skids/SKILL.md) for the confirmed 45-degree bottom cuts,
+each reaching 3 in back from its tip. This does not confirm end-member
+placement.
 
 Alan also confirmed the discussed nominal/actual examples by subtracting
 1/2 in from each dimension: 2x4 → 1 1/2 x 3 1/2 in, 2x6 → 1 1/2 x 5 1/2 in,

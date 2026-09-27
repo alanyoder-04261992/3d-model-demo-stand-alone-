@@ -44,9 +44,13 @@ Alan confirmed the end details on September 27, 2026: one notch runs
 **both are 1 in deep**. The little raised piece beyond the end notch should
 **stay at notch height**, leaving no full-height lip beyond the cut.
 Each **45-degree bottom-corner cut slopes upward toward the skid tip**;
-this supersedes the earlier plan-view side-corner interpretation. The
-bevel's extent remains pending. Do not invent a cut size or assign the
-unequal end notches to front/back. Keep repeated-notch first-center
+this supersedes the earlier plan-view side-corner interpretation. Alan
+confirmed the reach as **3 in back from each skid tip**, the same at both
+ends. At 45 degrees this gives a **calculated 3 in rise**. The top-notch
+seat is `5.5 - 1 = 4.5 in` above the bottom, so the remaining vertical end
+face between cut and seat is **calculated as 1 1/2 in**. Record the confirmed
+reach and angle separately from those derived heights. Do not assign the
+unequal top notches to front/back. Keep repeated-notch first-center
 placement and cutting clearance separately provisional. The 3 in notch
 does not establish an extra board, and end-member placement remains
 provisional. Check the visible end shape before claiming it is corrected.
@@ -56,7 +60,13 @@ The opt-in setting is `floorStudy.notches.endRebates`, with
 `positive: { lengthIn: 1.5, depthIn: 1 }`. Negative/positive are display
 coordinates only. Use `status.endRebates: "confirmed"` for those dimensions
 and keep `status.endMemberPlacement: "provisional"`. This does not confirm
-the repeated-notch layout datum or the pending extent of the bottom cut.
+the repeated-notch layout datum.
+
+Use `floorStudy.skids.bottomCuts: { reachIn: 3, angleDeg: 45 }` and
+`floorStudy.status.bottomCuts: "confirmed"` for the two bottom cuts.
+Derive the rise from reach and angle; apply the same bottom profile at both
+ends without changing the confirmed 16 ft tip-to-tip length. The unequal
+top-notch lengths are a separate setting.
 
 His supplied photos corroborate the notched connection. The numbers above
 come from his words; do not measure them from image pixels or publish the
@@ -177,7 +187,7 @@ These quirks belong to the normal finished model, not the opt-in lesson.
 * For the opt-in lesson, verify actual skid extents, visible notch depth,
   the two spacing provisions, and that the crosswise members seat in the
   cuts. Retain pending labels for repeated-notch first-center placement,
-  clearance, bottom-cut extent, end-member placement and other layout
+  clearance, end-member placement and other layout
   defaults. Run the ordinary golden check too, to prove its path is unchanged.
 * A company's skid positions: change `skids.table` in its company file (or
   the manufacturer file), never the code.

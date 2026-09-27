@@ -73,6 +73,7 @@ export function floorMeasurements(plan) {
     return { xFt, ...bounds,insideFaceXFt,
       nearestInsideFaceFt:plan.W/2-Math.abs(insideFaceXFt),
       notches:studyMembers.find((member)=>member.meta.xFt===xFt)?.meta.notches || [],
+      bottomCuts:studyMembers.find((member)=>member.meta.xFt===xFt)?.meta.bottomCuts || [],
       lengthFt: bounds.z1Ft - bounds.z0Ft,
       widthFt: bounds.x1Ft - bounds.x0Ft, depthFt: bounds.y1Ft - bounds.y0Ft };
   });
@@ -97,7 +98,7 @@ export function floorMeasurements(plan) {
     study: plan.floorStudy ? { enabled:true,status:plan.floorStudy.status,
       joistSeatHeightFt:plan.floorStudy.joistBottomFt,joistTopFt:plan.floorStudy.joistTopFt,
       skidTopFt:plan.floorStudy.skids.heightFt,notchPlacement:plan.floorStudy.notches.placement,
-      endRebates:plan.floorStudy.notches.endRebates } : null,
+      endRebates:plan.floorStudy.notches.endRebates,bottomCuts:plan.floorStudy.skids.bottomCuts } : null,
     nominal: { widthFt: plan.W, lengthFt: plan.L },
     supports: { ...supportBounds, xsFt, runs, count: runs.length,
       lengthFt: supportBounds ? supportBounds.z1Ft - supportBounds.z0Ft : 0,
@@ -109,6 +110,7 @@ export function floorMeasurements(plan) {
       nominalLumber: plan.floorStudy?.skids.nominal || skidLumber, settingsSection: settingsSection(skidLumber),
       notches:studyMembers.flatMap((member)=>member.meta.notches),
       endRebates:studyMembers.flatMap((member)=>member.meta.notches.filter((cut)=>cut.end)),
+      bottomCuts:studyMembers.flatMap((member)=>member.meta.bottomCuts),
       notchWidthFt:plan.floorStudy?.notches.widthFt || 0,
       notchDepthFt:plan.floorStudy?.notches.depthFt || 0,
       notchSeatYFt:plan.floorStudy?.joistBottomFt ?? null },

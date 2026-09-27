@@ -23,7 +23,7 @@ to point to; they are not yet agreed shop language.
 | Current direction | “Build a floor first and we build it step by step” | Begin with the floor, discuss one visible piece at a time, and wait for agreement before adding the next stage. | Later request, September 27, 2026 |
 | Confirmed term, material and dimensions | **Skids** | Long supports underneath, made of treated wood: nominal 4x6, actual 3 1/2 x 5 1/2 in, total length 16 ft. Start with these alone. | Alan's descriptions and explicit treated-wood confirmation, September 27, 2026; dimensions from his words |
 | Confirmed term and connection | **Notches** | Cuts 1 in down into the skid tops. Crosswise nominal 2x6 members, actual 1 1/2 x 5 1/2 in, sit in them. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
-| Confirmed end cuts; bevel extent pending | **Skid ends and end notches** | One end notch runs 3 in inward from its tip, the other 1 1/2 in; both are 1 in deep. The piece beyond the end notch stays at notch height. Each 45-degree bottom-corner cut slopes upward toward the skid tip; its extent remains pending. | Alan's description and clarifications, September 27, 2026 |
+| Confirmed end cuts | **Skid ends and end notches** | One end notch runs 3 in inward from its tip, the other 1 1/2 in; both are 1 in deep. The piece beyond the end notch stays at notch height. Each 45-degree bottom-corner cut reaches 3 in back from its skid tip and slopes upward toward that tip. | Alan's description and clarifications, September 27, 2026 |
 | Confirmed spacing and option | **16 in on center standard; 12 in on center option** | Extra notches provide the 12 in positions and can remain unused in the standard layout. Alan clarified 12 inches, not feet. | Alan's follow-up replies, September 27, 2026 |
 | Confirmed distance and reference | **30 in outside wall to inside face of skid** | Inside means the face toward the middle of the floor. The confirmed 3 1/2 in width puts the center 28 1/4 in from that wall. | Alan's clarification, September 27, 2026; center distance calculated from his dimensions |
 | Confirmed size-language examples | **Nominal / actual** | 2x4 → 1 1/2 x 3 1/2 in; 2x6 → 1 1/2 x 5 1/2 in; 4x6 → 3 1/2 x 5 1/2 in. Alan's half-inch subtraction applies to these discussed examples; other sections need their own evidence. | Alan's explanation, September 27, 2026 |
@@ -82,7 +82,7 @@ the skids-only starting view and no autoplay.
 
 | Status | Candidate description | What still needs agreement |
 | --- | --- | --- |
-| Confirmed piece, name, sections, spacing options, skid offset and end notches | Skids and notches | Repeated-notch first-center placement, cut clearance, skid count and bottom-cut extent still need confirmation. |
+| Confirmed piece, name, sections, spacing options, skid offset and end cuts | Skids and notches | Repeated-notch first-center placement, cut clearance, skid count and end-member placement still need confirmation. |
 | Member section and notched seating confirmed; names/layout pending | Crosswise 2x6 members and open frame | “Floor joist” and “rim joist,” the crosswise cut length and remaining frame details. |
 | Later; pending | Flat sheets on top | Their name and meaning when Alan is ready to add them. |
 
@@ -113,7 +113,7 @@ corrected lesson. His photos corroborate the notched connection; dimensions
 come from his stated numbers, not pixel measurements. Do not publish the
 photos as part of the website or GitHub documentation.
 
-| Measurement | Confirmed value | Scope |
+| Measurement | Value | Confirmation or calculation |
 | --- | --- | --- |
 | Skid section | Nominal 4x6; actual 3 1/2 x 5 1/2 in | Use the actual section for the corrected lesson geometry and dimensions. |
 | Skid material | Treated wood | Explicitly confirmed for the skids; no species, grade, treatment chemistry or frame-member treatment is established. |
@@ -126,7 +126,9 @@ photos as part of the website or GitHub documentation.
 | Derived wall-to-center distance | 28 1/4 in | `30 - 3.5 / 2`; calculated from the confirmed offset and actual skid width. |
 | Derived center spacing in the current two-skid lesson | 63 1/2 in | `120 - 2 x 28.25` across the nominal 10 ft wall-to-wall width; two skids remains a provisional count. |
 | End notches | 3 in inward from one skid tip; 1 1/2 in inward from the other; both 1 in deep | The unequal ends have no confirmed front/back assignment. The part beyond the end notch stays at notch height. |
-| Bottom-corner end cuts | 45 degrees, sloping upward toward each skid tip | Direction and angle confirmed; the cut's extent remains pending. |
+| Bottom-corner end cuts | 3 in back from each skid tip at 45 degrees, sloping upward toward the tip | Reach, direction and angle confirmed at both ends; separate from the unequal top-notch lengths. |
+| Derived bottom-cut rise | 3 in at each tip | Calculated from the confirmed 3 in reach and 45-degree angle. |
+| Derived vertical end face below the notch seat | 1 1/2 in | Notch seat is `5.5 - 1 = 4.5 in` above the bottom; the sloped cut reaches 3 in high, leaving `4.5 - 3 = 1.5 in`. |
 
 ### Skid-end details
 
@@ -135,8 +137,18 @@ other **1 1/2 in inward**, and **both are 1 in deep**. The little raised
 piece beyond the end notch should **stay at notch height**, leaving no
 full-height lip beyond the cut. Each **45-degree bottom-corner cut slopes
 upward toward the skid tip**. This clarified direction supersedes the
-earlier plan-view side-corner interpretation; the bevel's extent remains
-pending. Do not invent its size or assign the unequal notches to front/back.
+earlier plan-view side-corner interpretation. Alan confirmed that each
+bottom cut reaches **3 in back from its end**. Both use the same bottom
+cut, while the top-notch lengths differ. The 45-degree angle gives a
+**calculated 3 in rise**. The notch seat is a calculated 4 1/2 in above
+the bottom, leaving **1 1/2 in of vertical end face** between the cut top
+and the seat. Do not assign the unequal top notches to front/back.
+
+Record the confirmed bottom cuts as
+`floorStudy.skids.bottomCuts: { reachIn: 3, angleDeg: 45 }`, with
+`floorStudy.status.bottomCuts: "confirmed"`. Derive the rise from the reach
+and angle and use the same bottom cut at both ends. Keep derived heights
+distinct from Alan's directly stated measurements in labels and readouts.
 
 The lesson setting is `floorStudy.notches.endRebates`, with
 `negative: { lengthIn: 3, depthIn: 1 }` and
@@ -165,7 +177,7 @@ to the inside face, not to the center. The normal model's legacy skid table
 is unchanged, and the lesson's skid count remains separately provisional.
 
 **Still pending:** repeated-notch first-center placement, cutting clearance,
-skid count, crosswise cut length, bottom-cut extent, end-member placement, and the
+skid count, crosswise cut length, end-member placement, and the
 names **floor joist**, **rim joist** and **floor decking**. Any interim
 layout retained to draw the example must remain identified as a model
 assumption. A modeled notch width of 1 1/2 in only matches the stated member

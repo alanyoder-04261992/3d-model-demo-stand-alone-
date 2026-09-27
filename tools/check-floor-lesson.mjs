@@ -151,12 +151,13 @@ assert.equal(formatInches(NaN), "—");
 // The lesson opts in to the measured notched floor. Company settings alone
 // must never change the ordinary designer or any legacy framing geometry.
 const confirmedSpec = {
-  skids:{nominal:"4x6",widthIn:3.5,heightIn:5.5,lengthFt:16,insetToInsideIn:30},
+  skids:{nominal:"4x6",widthIn:3.5,heightIn:5.5,lengthFt:16,insetToInsideIn:30,
+    bottomCuts:{reachIn:3,angleDeg:45}},
   joists:{nominal:"2x6",widthIn:1.5,heightIn:5.5,spacingIn:16},
   notches:{widthIn:1.5,depthIn:1,alternateSpacingIn:12,
     endRebates:{negative:{lengthIn:3,depthIn:1},positive:{lengthIn:1.5,depthIn:1}}},
   status:{skidSection:"confirmed",skidLength:"confirmed",joistSection:"confirmed",
-    standardSpacing:"confirmed",alternateSpacing:"confirmed",notchDepth:"confirmed",supportOffset:"confirmed",endRebates:"confirmed",
+    standardSpacing:"confirmed",alternateSpacing:"confirmed",notchDepth:"confirmed",supportOffset:"confirmed",endRebates:"confirmed",bottomCuts:"confirmed",
     notchWidth:"provisional",notchPositions:"provisional"},
 };
 const noStudy = structuredClone(plan);
@@ -173,6 +174,15 @@ assert.ok(Object.isFrozen(studyPlan)&&Object.isFrozen(studyPlan.floorStudy.skids
 const studyDrawing=assemble(studyPlan,{frames:true}).build;
 const study=floorMeasurements(studyPlan);
 const members=skidStudyMembers(studyPlan);
+assert.deepEqual(plan.construction.floorStudy.skids.bottomCuts,{reachIn:3,angleDeg:45},"the learning company opts in to both confirmed bottom cuts");
+assert.equal(study.supports.bottomCuts.length,4,"two bottom cuts per skid are available to the annotation layer");
+const withoutBottomCuts=structuredClone(configured);
+delete withoutBottomCuts.construction.floorStudy.skids.bottomCuts;
+for(const member of skidStudyMembers(floorStudyPlan(withoutBottomCuts))) {
+  assert.deepEqual(member.meta.bottomCuts,[],"a study without bottom-cut dimensions keeps the prior flat bottom");
+  assert.ok(member.poly.some(([z,y])=>z===-8&&y===0));
+  assert.ok(member.poly.some(([z,y])=>z===8&&y===0));
+}
 assert.equal(members.length,measurements.supports.count,"one continuous prism per support, with no artificial segment seams");
 const withoutInset=structuredClone(configured);
 delete withoutInset.construction.floorStudy.skids.insetToInsideIn;
@@ -196,6 +206,17 @@ for(const run of study.supports.runs) {
   near(run.widthFt*12,3.5,"confirmed support width");
   near(run.depthFt*12,5.5,"confirmed support height");
   near(run.z0Ft,-8,"support back at exact 16ft length"); near(run.z1Ft,8,"support front at exact 16ft length");
+  assert.equal(run.bottomCuts.length,2,"both bottom corners are cut across each timber's width");
+  for(const cut of run.bottomCuts) {
+    near(cut.reachFt*12,3,"confirmed 3in reach from each end");
+    near(cut.riseFt*12,3,"45-degree slope gives a 3in rise");
+    near(cut.angleDeg,45,"confirmed bottom-cut angle");
+    near(Math.abs(cut.startZFt-cut.tipZFt),cut.reachFt,"bottom cut starts the measured distance inward from its tip");
+    near(cut.tipZFt,cut.end==="negative"?run.z0Ft:run.z1Ft,"cut ends at the original skid tip");
+    near(cut.bottomYFt,0,"bottom cut starts at the original underside");
+    near(cut.tipYFt,3/12,"bottom of the tip rises 3in");
+    near(study.supports.notchSeatYFt-cut.tipYFt,1.5/12,"1.5in of vertical tip remains below the open notch seat");
+  }
   assert.ok(run.notches.some((cut)=>cut.sources.includes("standard")&&cut.sources.includes("alternate")),"coincident 12in/16in cuts merge");
   assert.ok(run.notches.some((cut)=>cut.sources.length===1&&cut.sources[0]==="alternate"),"unused 12in-option notches remain visible");
   for(let i=0;i<run.notches.length;i++) {
@@ -236,6 +257,7 @@ assert.equal(study.study.status.notchWidth,"provisional");
 assert.equal(study.study.status.notchPositions,"provisional");
 assert.equal(study.study.status.supportOffset,"confirmed");
 assert.equal(study.study.status.endRebates,"confirmed");
+assert.equal(study.study.status.bottomCuts,"confirmed");
 assert.equal(study.study.status.endMemberPlacement,"provisional");
 assert.equal(study.study.status.supportLayout,"provisional","omitted status is never promoted to confirmed");
 
@@ -245,11 +267,23 @@ function trianglesFor(build,part) {
     if(segment.part!==part) continue;
     const v=build.buckets[key].v;
     for(let i=segment.from*27;i<(segment.from+segment.count)*27;i+=27) {
-      triangles.push([v.slice(i,i+3),v.slice(i+9,i+12),v.slice(i+18,i+21)]);
-      for(let j=0;j<3;j++) assert.equal(v[i+j*9+8],STAGE_ID.skids,"notched support retains its stage");
+      const triangle=[v.slice(i,i+3),v.slice(i+9,i+12),v.slice(i+18,i+21)];
+      triangles.push(triangle);
+      const normal=triangleNormal(triangle);
+      for(let j=0;j<3;j++) {
+        assert.equal(v[i+j*9+8],STAGE_ID.skids,"notched support retains its stage");
+        for(let axis=0;axis<3;axis++) near(v[i+j*9+3+axis],normal[axis],"stored lighting normal agrees with triangle winding");
+      }
     }
   }
   return triangles;
+}
+function triangleNormal([a,b,c]) {
+  const u=b.map((v,i)=>v-a[i]),v=c.map((value,i)=>value-a[i]);
+  const n=[u[1]*v[2]-u[2]*v[1],u[2]*v[0]-u[0]*v[2],u[0]*v[1]-u[1]*v[0]];
+  const length=Math.hypot(...n);
+  assert.ok(length>1e-10,"every skid triangle has nonzero area");
+  return n.map((value)=>value/length);
 }
 const skidTriangles=trianglesFor(studyDrawing,"skids");
 const meshCenters=[];
@@ -264,7 +298,7 @@ for(const sign of [-1,1]) {
 near((meshCenters[1]-meshCenters[0])*12,63.5,"rendered support centre spacing is 63.5in");
 // Intersect vertical lines with the actual rendered triangles, independently
 // of the member/notch records. A notch must have a real floor and no top cap.
-function meshTopAt(x,z) {
+function meshYAt(x,z) {
   const hits=[];
   for(const [a,b,c] of skidTriangles) {
     const den=(b[2]-c[2])*(a[0]-c[0])+(c[0]-b[0])*(a[2]-c[2]);
@@ -275,11 +309,35 @@ function meshTopAt(x,z) {
     if(u>=-1e-9&&v>=-1e-9&&w>=-1e-9) hits.push(u*a[1]+v*b[1]+w*c[1]);
   }
   assert.ok(hits.length,"vertical line must intersect the support mesh");
-  return Math.max(...hits);
+  return {top:Math.max(...hits),bottom:Math.min(...hits)};
 }
+function meshTopAt(x,z) { return meshYAt(x,z).top; }
 for(const run of study.supports.runs) {
   near(meshTopAt(run.xFt,run.z0Ft),4.5/12,"negative tip top is the seat, with no raised lip");
   near(meshTopAt(run.xFt,run.z1Ft),4.5/12,"positive tip top is the seat, with no raised lip");
+  near(meshYAt(run.xFt,0).bottom,0,"the middle of the skid keeps its flat bottom");
+  for(const cut of run.bottomCuts) {
+    for(const across of [-.3,0,.3]) for(const fraction of [0,.2,.5,.8,1]) {
+      const z=cut.tipZFt+(cut.startZFt-cut.tipZFt)*fraction;
+      near(meshYAt(run.xFt+run.widthFt*across,z).bottom,cut.riseFt*(1-fraction),
+        "actual bottom mesh slopes up toward the tip at 45 degrees across the full skid width");
+    }
+    const outward=cut.end==="negative"?-1:1;
+    const cutFaces=skidTriangles.filter((triangle)=>{
+      const center=triangle[0].map((_,axis)=>triangle.reduce((sum,p)=>sum+p[axis]/3,0));
+      if(center[0]<=run.x0Ft||center[0]>=run.x1Ft) return false;
+      const fromTip=Math.abs(center[2]-cut.tipZFt);
+      return fromTip>1e-9&&fromTip<cut.reachFt-1e-9&&
+        Math.abs(center[1]-cut.riseFt*(1-fromTip/cut.reachFt))<1e-9;
+    });
+    assert.equal(cutFaces.length,2,"each bottom cut is one continuous surface made from two triangles");
+    for(const face of cutFaces) {
+      const normal=triangleNormal(face);
+      near(normal[0],0,"bottom cut has no sideways normal");
+      near(normal[1],-Math.SQRT1_2,"bottom cut faces downward");
+      near(normal[2],outward*Math.SQRT1_2,"bottom cut faces toward its skid tip");
+    }
+  }
   let previousEnd=run.z0Ft;
   for(const cut of run.notches) {
     for(const across of [-.3,0,.3]) for(const along of [.2,.5,.8]) {
@@ -300,7 +358,9 @@ for(const run of study.supports.runs) {
 }
 // A closed outward-facing mesh has the analytical timber-minus-notches volume.
 const signedVolume=skidTriangles.reduce((sum,[a,b,c])=>sum+(a[0]*(b[1]*c[2]-b[2]*c[1])+a[1]*(b[2]*c[0]-b[0]*c[2])+a[2]*(b[0]*c[1]-b[1]*c[0]))/6,0);
-const expectedVolume=study.supports.runs.reduce((sum,run)=>sum+run.widthFt*(run.lengthFt*run.depthFt-run.notches.reduce((removed,cut)=>removed+cut.widthFt*cut.depthFt,0)),0);
+const expectedVolume=study.supports.runs.reduce((sum,run)=>sum+run.widthFt*(run.lengthFt*run.depthFt-
+  run.notches.reduce((removed,cut)=>removed+cut.widthFt*cut.depthFt,0)-
+  run.bottomCuts.reduce((removed,cut)=>removed+cut.reachFt*cut.riseFt/2,0)),0);
 near(signedVolume,expectedVolume,"prism caps/winding enclose exactly the wood left after cutting");
 for(const [key,value] of [["depthIn",5.5],["widthIn",1],["alternateSpacingIn",1]]) {
   const invalid=structuredClone(configured); invalid.construction.floorStudy.notches[key]=value;
@@ -314,5 +374,11 @@ for(const value of [0,1,192]) {
   const invalid=structuredClone(configured);invalid.construction.floorStudy.notches.endRebates.positive.lengthIn=value;
   assert.throws(()=>floorStudyPlan(invalid),/floorStudy/);
 }
+for(const bottomCuts of [{reachIn:0,angleDeg:45},{reachIn:3,angleDeg:0},
+  {reachIn:3,angleDeg:90},{reachIn:3,angleDeg:NaN},{reachIn:4.5,angleDeg:45},
+  {reachIn:96,angleDeg:1},{reachIn:Infinity,angleDeg:45}]) {
+  const invalid=structuredClone(configured);invalid.construction.floorStudy.skids.bottomCuts=bottomCuts;
+  assert.throws(()=>floorStudyPlan(invalid),/floorStudy/,"invalid cuts cannot erase the tip face or the flat skid bottom");
+}
 
-console.log(`PROVED: supports-only start, all 8 manual floor selections, ${triangleChecks} legacy triangles preserved, measured notched skids and full-depth seated joists, exact 3in/1.5in open end rebates with no lip, board contact/no intersections, deck fit, 16in/12in patterns, provisional end placement, and ordinary geometry unchanged.`);
+console.log(`PROVED: supports-only start, all 8 manual floor selections, ${triangleChecks} legacy triangles preserved, measured notched skids and full-depth seated joists, exact 3in/1.5in open end rebates with no lip, both 3in/45-degree bottom cuts with outward normals and intact tip faces, board contact/no intersections, deck fit, 16in/12in patterns, provisional end placement, and ordinary geometry unchanged.`);

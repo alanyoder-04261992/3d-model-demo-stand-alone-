@@ -38,7 +38,9 @@ members. Standard 16 in spacing and extra 12 in cuts are confirmed; remaining
 layout assumptions are labeled. “Notch close-up” shows the connection.
 The two end views show open 3 in and 1½ in notches, both 1 in deep, without
 raised lips. Skids are confirmed treated wood; light grain and knots help
-show the lumber. The 45° bottom corner cuts await their extent measurement.
+show the lumber. Alan confirmed that the 45° bottom corner cuts reach 3 in
+back from **each** skid tip. That gives a calculated 3 in rise and leaves
+a 1½ in vertical end face below the notch seat.
 Nothing advances automatically.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the

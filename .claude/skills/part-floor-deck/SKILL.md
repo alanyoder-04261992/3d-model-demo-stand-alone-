@@ -32,7 +32,7 @@ measured from pixels. Do not publish the photos. Alan's 30 in skid offset is
 confirmed from the outside wall to the inside skid face, toward the floor's
 middle. The lesson uses `floorStudy.skids.insetToInsideIn: 30` and a confirmed
 `supportOffset` status; the legacy skid table is unchanged. Keep
-first-notch-center/end offsets, cut clearance, skid count and crosswise cut
+repeated-notch first-center placement, cut clearance, skid count and crosswise cut
 length pending.
 See [the example](../../../docs/examples/10x16-side-loft.md).
 

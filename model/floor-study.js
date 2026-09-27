@@ -45,15 +45,25 @@ export function floorStudyPlan(plan) {
   }
   if ((endRebates.negative?.lengthFt || 0)+(endRebates.positive?.lengthFt || 0) >= lengthFt)
     throw new Error("floorStudy end rebates must leave timber between the two ends.");
+  let bottomCuts = null;
+  if (skid.bottomCuts != null) {
+    const reachIn = positive(skid.bottomCuts.reachIn,"skids.bottomCuts.reachIn");
+    const angleDeg = positive(skid.bottomCuts.angleDeg,"skids.bottomCuts.angleDeg");
+    if (angleDeg >= 90) throw new Error("floorStudy.skids.bottomCuts.angleDeg must be less than 90 degrees.");
+    const riseIn = angleDeg===45 ? reachIn : reachIn*Math.tan(angleDeg*Math.PI/180);
+    if (reachIn*2 >= lengthFt*12 || riseIn >= heightIn-depthIn-1e-9)
+      throw new Error("floorStudy.skids.bottomCuts must leave a flat bottom and wood beneath the notch seat at both tips.");
+    bottomCuts = { reachIn,angleDeg,riseIn,reachFt:reachIn/12,riseFt:riseIn/12 };
+  }
   const status = {};
   for (const key of ["skidSection", "skidLength", "skidTreatment", "joistSection", "standardSpacing", "alternateSpacing",
-    "notchDepth", "notchWidth", "notchPositions", "endRebates", "endMemberPlacement",
+    "notchDepth", "notchWidth", "notchPositions", "endRebates", "endMemberPlacement", "bottomCuts",
     "supportOffset", "supportLayout", "frameFootprint", "rimSection", "deck"]) {
     status[key] = raw.status?.[key] === "confirmed" ? "confirmed" : "provisional";
   }
   const study = {
     skids: { nominal:skid.nominal || "4x6", widthIn,heightIn,lengthFt,insetToInsideIn,
-      widthFt:widthIn/12,heightFt:heightIn/12,treated:skid.treated===true },
+      widthFt:widthIn/12,heightFt:heightIn/12,treated:skid.treated===true,bottomCuts },
     joists: { nominal:joist.nominal || "2x6", widthIn:joistWidthIn,heightIn:joistHeightIn,
       spacingIn,widthFt:joistWidthIn/12,heightFt:joistHeightIn/12,spacingFt:spacingIn/12 },
     notches: { widthIn:notchWidthIn,depthIn,widthFt:notchWidthIn/12,depthFt:depthIn/12,

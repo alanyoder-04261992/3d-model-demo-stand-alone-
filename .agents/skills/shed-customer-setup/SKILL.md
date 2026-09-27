@@ -93,8 +93,15 @@ Alan confirmed end notches measuring **3 in inward from one skid tip** and
 **1 1/2 in inward from the other**, **both 1 in deep**. The little raised
 piece beyond the end notch should **stay at notch height**. He clarified
 that the **45-degree bottom-corner cuts slope upward toward the tips**;
-this supersedes the earlier plan-view side-corner interpretation. The cut's
-extent remains pending: do not invent a bevel size or front/back assignment.
+this supersedes the earlier plan-view side-corner interpretation. Alan
+confirmed **3 in back from each end** for both bottom cuts. Their rise is
+**calculated as 3 in** from the 45-degree angle. With the notch seat
+`5.5 - 1 = 4.5 in` above the bottom, the vertical end face between cut and
+seat is **calculated as 1 1/2 in**. Keep these derived values distinct from
+his directly stated dimensions. Record
+`floorStudy.skids.bottomCuts: { reachIn: 3, angleDeg: 45 }` and
+`floorStudy.status.bottomCuts: "confirmed"`. The same bottom cut applies at
+both ends; it does not assign the unequal top notches to front/back.
 The lesson's `floorStudy.notches.endRebates` negative/positive entries are
 display coordinates, not agreed front/back names. Keep end-member placement
 provisional; a 3 in notch does not establish a second end board. Inspect the
@@ -109,8 +116,8 @@ across the nominal 10 ft width; two remains a provisional count. Record the
 lesson offset in `construction.floorStudy.skids.insetToInsideIn: 30` with
 `construction.floorStudy.status.supportOffset: "confirmed"`; do not alter
 the normal model's legacy skid table. Keep repeated-notch first-center
-placement, notch cut clearance, skid count, crosswise cut length, bottom-cut
-extent and end-member placement pending.
+placement, notch cut clearance, skid count, crosswise cut length and
+end-member placement pending.
 A provisional 1 1/2 in notch width is a
 modeling fit to the member, not a confirmed clearance. Use the opt-in
 `floorStudy` plan only for the learning page to show the corrected sections

@@ -122,9 +122,9 @@ export async function startFloorLesson() {
       else if((name==="notch" && middleNotch) || (name.startsWith("end-") && endNotches[name.slice(4)])) {
         detailNotch=name==="notch"?middleNotch:endNotches[name.slice(4)];
         detail=true;
-        renderer.cam.target=[detailNotch.xFt,detailNotch.seatYFt+.12,detailNotch.centerZFt];
+        renderer.cam.target=[detailNotch.xFt,detailNotch.seatYFt+(detailNotch.end ? -.03 : .12),detailNotch.centerZFt];
         renderer.cam.yaw=detailNotch.end==="negative"?Math.PI-.9:.9;
-        renderer.cam.pitch=.55; zoom=1;
+        renderer.cam.pitch=detailNotch.end ? .32 : .55; zoom=1;
       }
       else if(name==="top") { detail=false; renderer.cam.target=null; renderer.cam.yaw=0; renderer.cam.pitch=Math.PI/2-.01; zoom=BASE_ZOOM; }
       else { detail=false; renderer.cam.target=null; Object.assign(renderer.cam,ANGLE); zoom=BASE_ZOOM; }

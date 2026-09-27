@@ -132,9 +132,20 @@ export function skidStudyMembers(plan) {
       if(cut.z1Ft<z1-1e-9) top.push([cut.z1Ft,H]);
     }
     top.push([z1,notches[notches.length-1]?.z1Ft===z1 ? seat : H]);
-    const profile=[[z0,0],[z1,0],...top.reverse()];
+    const bottomCut=study.skids.bottomCuts;
+    const bottomCuts=bottomCut ? [
+      {xFt,end:"negative",tipZFt:z0,startZFt:z0+bottomCut.reachFt,bottomYFt:0,
+        tipYFt:bottomCut.riseFt,reachFt:bottomCut.reachFt,riseFt:bottomCut.riseFt,angleDeg:bottomCut.angleDeg},
+      {xFt,end:"positive",tipZFt:z1,startZFt:z1-bottomCut.reachFt,bottomYFt:0,
+        tipYFt:bottomCut.riseFt,reachFt:bottomCut.reachFt,riseFt:bottomCut.riseFt,angleDeg:bottomCut.angleDeg},
+    ] : [];
+    // Remove the bottom corners across the width. The tips remain at the
+    // original length, with a positive vertical face below each open seat.
+    const bottom=bottomCut ? [[z0,bottomCut.riseFt],[z0+bottomCut.reachFt,0],
+      [z1-bottomCut.reachFt,0],[z1,bottomCut.riseFt]] : [[z0,0],[z1,0]];
+    const profile=[...bottom,...top.reverse()];
     const member=prismMember("notched-skid","treated",cleanPoly(profile),[xFt-W/2,0,0],
-      [0,0,1],[0,1,0],[1,0,0],W,{xFt,nominal:study.skids.nominal,notches});
+      [0,0,1],[0,1,0],[1,0,0],W,{xFt,nominal:study.skids.nominal,notches,bottomCuts});
     member.stage="skids";
     return member;
   });

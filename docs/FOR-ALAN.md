@@ -196,14 +196,24 @@ actual 1 1/2 x 5 1/2 in, sit in notches cut 1 in down into the skid tops.
 You confirmed 16 in on center as standard and extra notches for the 12 in
 on center option; the extra cuts can be unused with the standard spacing.
 Your photos corroborate the connection, and the dimensions are from your
-words. The photos are not published with the lesson.
+words. The photos are not published with the lesson. You also confirmed
+that the skids are treated wood.
+
+The top end notches run 3 in inward from one tip and 1 1/2 in from the
+other, both 1 in deep, without a raised lip beyond the cut. You confirmed
+45-degree bottom-corner cuts sloping upward toward the tips, reaching
+**3 in back from each end**. The resulting 3 in rise is calculated from
+that reach and angle. With the notch seat 4 1/2 in above the bottom, the
+remaining vertical end face is a calculated 1 1/2 in high. The unequal
+top notches have no agreed front/back assignment; fitting an end board
+into them remains provisional.
 
 You clarified that the 30 in skid offset is from the **outside of the wall
 to the inside face of the skid**, toward the middle of the floor. The
 confirmed 3 1/2 in width puts the center 28 1/4 in from that wall. For the
 current pair across a nominal 10 ft width, that gives 63 1/2 in between
-centers; the skid count itself is still provisional. First-notch-center/end
-offsets, cut clearance and crosswise cut length also remain open.
+centers; the skid count itself is still provisional. Repeated-notch
+first-center placement, cut clearance and crosswise cut length also remain open.
 Your nominal/actual examples are now recorded as 2x4 =
 1 1/2 x 3 1/2 in, 2x6 = 1 1/2 x 5 1/2 in and 4x6 = 3 1/2 x 5 1/2 in;
 other lumber sections have not been confirmed by these examples.

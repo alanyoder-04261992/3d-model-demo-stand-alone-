@@ -21,7 +21,13 @@ export function createMeasurementReadout(list,note,plan) {
       if(ends) {
         rows.push(["Open end notches · confirmed",`${inches(ends.negative.lengthFt)} / ${inches(ends.positive.lengthFt)} long`],
           ["Both end notches · confirmed depth",inches(ends.negative.depthFt)]);
-        notes.push("The end notches remain at seat height all the way to the tips, with no raised lip. The 45° bottom corner cuts still need a cut-size measurement.");
+        notes.push("The end notches remain at seat height all the way to the tips, with no raised lip.");
+      }
+      const bottomCut=m.supports.bottomCuts?.[0];
+      if(bottomCut) {
+        rows.push(["Both bottom end cuts · confirmed",`${bottomCut.angleDeg}° · ${inches(bottomCut.reachFt)} back from each tip`],
+          ["Bottom cut rise · calculated",inches(bottomCut.riseFt)]);
+        notes.push(`The ${bottomCut.angleDeg}° cuts remove the bottom corners. The ${inches(bottomCut.reachFt)} reach gives a ${inches(bottomCut.riseFt)} rise toward each tip.`);
       }
     }
     if(selected.has("frame")) {

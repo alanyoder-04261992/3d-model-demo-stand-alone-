@@ -31,7 +31,7 @@ export function createFloorLabels(viewport, renderer, plan) {
     if(!a || !b || !a.every(Number.isFinite) || !b.every(Number.isFinite)) return;
     overlay.appendChild(svgNode("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:color,"stroke-width":1.25,...(dash?{"stroke-dasharray":dash}:{})}));
   }
-  function dimension(project,a,b,text,offset,color,width,height,dashed=false,minLength=30) {
+  function dimension(project,a,b,text,offset,color,width,height,dashed=false,minLength=30,maxY=height-12) {
     const p=project(a), q=project(b);
     if(!p || !q || !p.every(Number.isFinite) || !q.every(Number.isFinite)) return;
     const dx=q[0]-p[0],dy=q[1]-p[1],length=Math.hypot(dx,dy);
@@ -46,7 +46,7 @@ export function createFloorLabels(viewport, renderer, plan) {
     const x=Math.max(boxW/2+5,Math.min(width-boxW/2-5,midX));
     // On phones the top name cards share the drawing's width. Keep dimension
     // text below their 72px band and inside the canvas at every camera angle.
-    const y=Math.max(width<500?86:12,Math.min(height-12,midY));
+    const y=Math.max(width<500?86:12,Math.min(maxY,midY));
     if(Math.hypot(x-midX,y-midY)>2) line([midX,midY],[x,y],color);
     overlay.appendChild(svgNode("rect",{x:x-boxW/2,y:y-10,width:boxW,height:20,rx:3,fill:"#f8fbfd","fill-opacity":.97}));
     overlay.appendChild(svgNode("text",{x,y:y+4,"text-anchor":"middle",fill:color,"font-family":"IBM Plex Sans, sans-serif","font-size":11,"font-weight":600},text));
@@ -58,6 +58,7 @@ export function createFloorLabels(viewport, renderer, plan) {
     const project=renderer.projCache && renderer.projCache.proj;
     if(!project || !width || !height || !selection.length) return;
     const selected=new Set(selection), small=width<500;
+    const cardWidth=small?Math.min(157,(width-42)/2):174;
     const nearEnd=Math.cos(renderer.cam.yaw)>=0?1:-1,side=Math.sin(renderer.cam.yaw)>=0?1:-1;
     const nearZ=nearEnd>0?supports.z1Ft:supports.z0Ft;
     const labels=[], detail=!!detailNotch, actual=!!measures.study;
@@ -65,6 +66,7 @@ export function createFloorLabels(viewport, renderer, plan) {
     const nearX=side>0?Math.max(...supports.xsFt):Math.min(...supports.xsFt);
     const notch=detailNotch || supports.notches.filter(n=>n.xFt===nearX && n.sources.includes("alternate") && !n.sources.includes("standard"))
       .sort((a,b)=>Math.abs(a.centerZFt)-Math.abs(b.centerZFt))[0];
+    const bottomCut=detailNotch?.end ? supports.bottomCuts?.find(c=>c.xFt===notch.xFt && c.end===notch.end) : null;
     if(!detail) {
       // The dashed footprint is nominal; member measurements use the mesh.
       const corners=[[-plan.W/2,0,-plan.L/2],[plan.W/2,0,-plan.L/2],[plan.W/2,0,plan.L/2],[-plan.W/2,0,plan.L/2]];
@@ -75,14 +77,21 @@ export function createFloorLabels(viewport, renderer, plan) {
     // An opaque deck can hide the timber. Do not attach a skid name to the
     // deck surface that happens to cover its projected anchor.
     if(selected.has("supports") && !selected.has("deck")) {
-      const points=detail ? [[notch.xFt+side*supports.widthFt/2,supports.depthFt/2,notch.centerZFt]]
-        : supports.xsFt.map(x=>[x,supports.depthFt/2,nearZ]);
+      // Keep name anchors on the remaining timber above the sloped underside.
+      const detailBottom=bottomCut ? bottomCut.bottomYFt+bottomCut.riseFt*Math.max(0,1-Math.abs(notch.centerZFt-bottomCut.tipZFt)/bottomCut.reachFt) : 0;
+      const points=detail ? [[notch.xFt+side*supports.widthFt/2,(detailBottom+notch.seatYFt)/2,notch.centerZFt]]
+        : supports.xsFt.map(x=>{
+          const end=nearEnd>0?"positive":"negative";
+          const cut=supports.bottomCuts?.find(c=>c.xFt===x && c.end===end);
+          const top=supports.notches.find(n=>n.xFt===x && n.end===end)?.seatYFt ?? supports.depthFt;
+          return [x,((cut?.tipYFt ?? 0)+top)/2,nearZ];
+        });
       labels.push({text:"Skids",detail:section,footer:plan.floorStudy?.skids.treated?"treated wood · confirmed":"confirmed name",x:14,
-        y:selection.length>1?height-72:16,w:small?157:174,points});
+        y:selection.length>1?height-72:16,w:cardWidth,points});
       if(notch && !selected.has("deck") && (detail || !selected.has("frame"))) {
         const end=notch.end || (notch.sources.includes("end-negative")?"negative":notch.sources.includes("end-positive")?"positive":null);
         labels.push({text:"Notches · confirmed",detail:end?`${formatInches(notch.z1Ft-notch.z0Ft)} long × ${formatInches(notch.depthFt)} deep`:`${formatInches(notch.depthFt)} down from top`,
-          footer:end?"length / depth confirmed":"width / grid start pending",x:width-(small?157:174)-14,y:16,w:small?157:174,
+          footer:end?"length / depth confirmed":"width / grid start pending",x:width-cardWidth-14,y:16,w:cardWidth,
           points:[[notch.xFt,notch.seatYFt,notch.centerZFt]]});
         if(detail) {
           // An open end has no raised tip. Measure depth at the shoulder
@@ -90,8 +99,18 @@ export function createFloorLabels(viewport, renderer, plan) {
           const x=notch.xFt+side*supports.widthFt/2;
           const z=end==="negative"?notch.z1Ft:end==="positive"?notch.z0Ft:nearEnd>0?notch.z0Ft:notch.z1Ft;
           dimension(project,[x,notch.seatYFt,z],[x,notch.topYFt,z],`${formatInches(notch.depthFt)} deep`,28,"#135872",width,height,false,1);
-          if(end) dimension(project,[x,notch.seatYFt,notch.z0Ft],[x,notch.seatYFt,notch.z1Ft],`${formatInches(notch.z1Ft-notch.z0Ft)} long`,56,"#135872",width,height,false,1);
+          if(end) dimension(project,[x,notch.seatYFt,notch.z0Ft],[x,notch.seatYFt,notch.z1Ft],`${formatInches(notch.z1Ft-notch.z0Ft)} notch`,-32,"#135872",width,height,false,1);
         }
+      }
+      if(bottomCut) {
+        const x=bottomCut.xFt+side*supports.widthFt/2;
+        labels.push({text:`${bottomCut.angleDeg}° bottom cut`,detail:`${formatInches(bottomCut.reachFt)} back · ${formatInches(bottomCut.riseFt)} up`,
+          footer:"rise calculated",x:width-cardWidth-14,y:height-72,w:cardWidth,
+          points:[[x,(bottomCut.bottomYFt+bottomCut.tipYFt)/2,(bottomCut.startZFt+bottomCut.tipZFt)/2]]});
+        // The reach is parallel to the skid, not the length of the sloping face.
+        // Extend the raised tip down to the bottom datum for this dimension.
+        line(project([x,bottomCut.tipYFt,bottomCut.tipZFt]),project([x,bottomCut.bottomYFt,bottomCut.tipZFt]),"#7a5b30","3 3");
+        dimension(project,[x,bottomCut.bottomYFt,bottomCut.startZFt],[x,bottomCut.bottomYFt,bottomCut.tipZFt],`${formatInches(bottomCut.reachFt)} back`,24,"#7a5b30",width,height,false,1,height-90);
       }
     }
     if(selected.has("deck") && sheet) {
@@ -106,7 +125,7 @@ export function createFloorLabels(viewport, renderer, plan) {
       const crossMembers=measures.frame.members.filter(m=>["joist","end-joist","wall-joist"].includes(m.member.kind));
       const visibleJoist=detail ? crossMembers.sort((a,b)=>Math.abs(a.center[2]-notch.centerZFt)-Math.abs(b.center[2]-notch.centerZFt))[0] : joist;
       if(visibleJoist) labels.push({text:visibleJoist.member.kind==="end-joist"?"End joist":"Floor joist",detail:detail?`${formatInches(visibleJoist.widthFt)} × ${formatInches(visibleJoist.depthFt)} actual`:`${formatFeetInches(visibleJoist.lengthFt)} long`,
-        x:14,y:16,w:small?150:170,points:[detail ? [notch.xFt,visibleJoist.bounds.y1Ft,visibleJoist.center[2]] : beamPoint(visibleJoist.member,true)]});
+        x:14,y:16,w:small?cardWidth:170,points:[detail ? [notch.xFt,visibleJoist.bounds.y1Ft,visibleJoist.center[2]] : beamPoint(visibleJoist.member,true)]});
       const rim=members.find(m=>m.kind==="rim" && m.meta.side===(side>0?"R":"L"));
       if(rim && !detail) {
         const p=beamPoint(rim,false); p[0]+=side*rim.w/2;
@@ -124,13 +143,12 @@ export function createFloorLabels(viewport, renderer, plan) {
         // skid that is x0; on the left it is x1, never the centreline.
         const innerX=x>=0?run.x0Ft:run.x1Ft, wallX=(x>=0?1:-1)*plan.W/2;
         const distance=inset?.nearestInsideFaceFt ?? Math.abs(wallX-innerX);
-        dimension(project,[wallX,0,nearZ],[innerX,0,nearZ],`${formatInches(distance)} wall to inside face`,27,"#135872",width,height);
+        const end=nearEnd>0?"positive":"negative", cut=run.bottomCuts?.find(c=>c.end===end);
+        const faceY=cut ? (cut.tipYFt+endHeight(end))/2 : 0;
+        dimension(project,[wallX,faceY,nearZ],[innerX,faceY,nearZ],`${formatInches(distance)} wall to inside face`,27,"#135872",width,height);
       }
     }
     overlay.setAttribute("aria-label","Floor names and measurements: "+labels.map(l=>`${l.text}, ${l.detail}, ${l.footer || "proposed name"}`).join("; "));
-    if(detailNotch?.end && selected.has("supports") && !selected.has("deck")) {
-      overlay.appendChild(svgNode("text",{x:width/2,y:height-6,"text-anchor":"middle",fill:"#765527","font-family":"IBM Plex Sans, sans-serif","font-size":11},"45° bottom cut: size still to confirm"));
-    }
     for(const label of labels) {
       const points=label.points.map(project).filter(p=>p&&p[0]>=0&&p[0]<=width&&p[1]>=0&&p[1]<=height);
       if(!points.length) continue;
@@ -142,9 +160,10 @@ export function createFloorLabels(viewport, renderer, plan) {
         overlay.appendChild(svgNode("circle",{cx:p[0],cy:p[1],r:4,fill:"#173b56",stroke:"white","stroke-width":1.5}));
       }
       overlay.appendChild(svgNode("rect",{x,y,width:label.w,height:56,rx:5,fill:"white","fill-opacity":.97,stroke:"#bacbd7"}));
-      overlay.appendChild(svgNode("text",{x:x+10,y:y+16,fill:"#173b56","font-family":"IBM Plex Sans, sans-serif","font-size":small?13:14,"font-weight":600},label.text));
-      overlay.appendChild(svgNode("text",{x:x+10,y:y+32,fill:"#173b56","font-family":"IBM Plex Sans, sans-serif","font-size":12},label.detail));
-      overlay.appendChild(svgNode("text",{x:x+10,y:y+47,fill:"#526879","font-family":"IBM Plex Sans, sans-serif","font-size":10},label.footer || "proposed name · model size"));
+      const narrow=label.w<145;
+      overlay.appendChild(svgNode("text",{x:x+10,y:y+16,fill:"#173b56","font-family":"IBM Plex Sans, sans-serif","font-size":narrow?11:small?13:14,"font-weight":600},label.text));
+      overlay.appendChild(svgNode("text",{x:x+10,y:y+32,fill:"#173b56","font-family":"IBM Plex Sans, sans-serif","font-size":narrow?10:12},label.detail));
+      overlay.appendChild(svgNode("text",{x:x+10,y:y+47,fill:"#526879","font-family":"IBM Plex Sans, sans-serif","font-size":narrow?8.5:10},label.footer || "proposed name · model size"));
     }
   }
   return {update};
