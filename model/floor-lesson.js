@@ -2,7 +2,7 @@
    Pure selection data; it does not change the building or its construction. */
 export const FLOOR_PIECES = Object.freeze([
   Object.freeze({ key: "supports", part: "skids", label: "Long supports underneath",
-    description: "The 16-foot skids run underneath the floor. Their top notches receive the crosswise 2×6s, one inch down.",
+    description: "The 16-foot skids are treated wood. Their top notches receive the crosswise 2×6s, one inch down. The end notches stay open through the tips.",
     draft: "Confirmed names: skids and notches. 4×6 nominal = 3½×5½ inches actual." }),
   Object.freeze({ key: "frame", part: "floor-frame", label: "Wooden floor frame",
     description: "The crosswise 2×6s sit one inch down in the skid notches. Standard spacing is 16 inches on center; extra notches allow 12 inches on center.",

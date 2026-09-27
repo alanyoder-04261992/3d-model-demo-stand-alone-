@@ -92,7 +92,13 @@ export function skidStudyMembers(plan) {
       const lo = Math.max(z0,center-half), hi = Math.min(z1,center+half);
       if (hi > lo+1e-9) candidates.push({z0Ft:lo,z1Ft:hi,sources:[source]});
     }
+    const ends = study.notches.endRebates || {};
+    if (ends.negative) candidates.push({z0Ft:z0,z1Ft:z0+ends.negative.lengthFt,sources:["end-negative"],end:"negative"});
+    if (ends.positive) candidates.push({z0Ft:z1-ends.positive.lengthFt,z1Ft:z1,sources:["end-positive"],end:"positive"});
     for (const m of cross) {
+      // Do not silently widen an explicit rebate by retaining the legacy
+      // inset end-joist notch underneath it.
+      if (m.kind === "end-joist" && ends[m.meta.end === "back" ? "negative" : "positive"]) continue;
       const lo = Math.min(m.p0[0],m.p1[0]), hi = Math.max(m.p0[0],m.p1[0]);
       if (xFt+W/2 > lo && xFt-W/2 < hi) add((m.p0[2]+m.p1[2])/2,m.kind === "joist" ? "standard" : m.kind);
     }
@@ -112,13 +118,21 @@ export function skidStudyMembers(plan) {
       if (previous && cut.z0Ft <= previous.z1Ft+1e-9) {
         previous.z1Ft=Math.max(previous.z1Ft,cut.z1Ft);
         previous.sources=[...new Set(previous.sources.concat(cut.sources))];
+        if(cut.end) previous.end=cut.end;
       } else merged.push({...cut});
     }
     const notches=merged.map((cut)=>({ ...cut,xFt,centerZFt:(cut.z0Ft+cut.z1Ft)/2,
       widthFt:cut.z1Ft-cut.z0Ft,depthFt:H-seat,seatYFt:seat,topYFt:H }));
-    const profile=[[z0,0],[z1,0],[z1,H]];
-    for (const cut of notches.slice().reverse()) profile.push([cut.z1Ft,H],[cut.z1Ft,seat],[cut.z0Ft,seat],[cut.z0Ft,H]);
-    profile.push([z0,H]);
+    // Trace the top without an up-and-back spike at either open end.
+    const top=[];
+    top.push([z0,notches[0]?.z0Ft===z0 ? seat : H]);
+    for (const cut of notches) {
+      if(cut.z0Ft>z0+1e-9) top.push([cut.z0Ft,H],[cut.z0Ft,seat]);
+      top.push([cut.z1Ft,seat]);
+      if(cut.z1Ft<z1-1e-9) top.push([cut.z1Ft,H]);
+    }
+    top.push([z1,notches[notches.length-1]?.z1Ft===z1 ? seat : H]);
+    const profile=[[z0,0],[z1,0],...top.reverse()];
     const member=prismMember("notched-skid","treated",cleanPoly(profile),[xFt-W/2,0,0],
       [0,0,1],[0,1,0],[1,0,0],W,{xFt,nominal:study.skids.nominal,notches});
     member.stage="skids";

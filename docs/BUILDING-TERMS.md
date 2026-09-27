@@ -49,8 +49,9 @@ physical cut list.
 | Confirmed meaning | “Side loft” | A lofted barn with a side entrance; matched to the model's Side Lofted Barn (`SLB`). This does not confirm every feature of its existing model. | Alan's reply, September 27, 2026 |
 | Superseded starting choice | Start with the finished building | This was the earlier starting point; Alan later requested floor first. It no longer controls the lesson. | Earlier reply, September 27, 2026 |
 | Current learning direction | “Build a floor first and we build it step by step” | Start with the floor in the manual learning page. Add further stages only after we agree what the visible piece means. | Alan's later request, September 27, 2026 |
-| Confirmed part term and dimensions | **Skids** | The long supports underneath: nominal 4x6, actual 3 1/2 x 5 1/2 in, total length 16 ft in this example. Start by showing these alone. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
+| Confirmed part term, material and dimensions | **Skids** | The long supports underneath, made of treated wood: nominal 4x6, actual 3 1/2 x 5 1/2 in, total length 16 ft in this example. Start by showing these alone. | Alan's descriptions and explicit treated-wood confirmation, September 27, 2026; dimensions from his words |
 | Confirmed connection term and depth | **Notches** | Cuts 1 in down into the skid tops, where crosswise nominal 2x6 members, actual 1 1/2 x 5 1/2 in, sit. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
+| Confirmed end cuts; bevel extent pending | **Skid ends and end notches** | One end notch runs 3 in inward from its tip, the other 1 1/2 in; both are 1 in deep. The piece beyond the end notch stays at notch height. A 45-degree cut on each bottom corner slopes upward toward the skid tip; its extent is not yet confirmed. | Alan's description and clarifications, September 27, 2026 |
 | Confirmed spacing and extra-cut purpose | **16 in on center standard; 12 in on center option** | Standard crosswise member spacing is 16 in. The extra notches provide positions for the 12 in option and may be unused with the standard spacing. Alan clarified that the option is 12 inches. | Alan's follow-up replies, September 27, 2026 |
 | Confirmed distance and reference | **30 in outside wall to inside face of skid** | The inside face is the face toward the middle of the floor. With a 3 1/2 in-wide skid, its center is 28 1/4 in from that outside wall. The current two-skid model therefore has 63 1/2 in between centers across its nominal 10 ft width; the count of two is still provisional. | Alan's clarification, September 27, 2026; center distances calculated from his dimensions |
 | Confirmed size-language examples | **Nominal / actual lumber size** | In this conversation subtract 1/2 in from each nominal dimension for the named examples: 2x4 → 1 1/2 x 3 1/2 in; 2x6 → 1 1/2 x 5 1/2 in; 4x6 → 3 1/2 x 5 1/2 in. Other sections are not established by these examples. | Alan's explanation, September 27, 2026 |
@@ -73,10 +74,26 @@ photos. Alan confirmed **16 in on center standard**, with extra notches for
 the **12 in on center option**. He clarified the skid position as **30 in
 from the outside of the wall to the skid's inside face**, toward the middle
 of the floor. This gives 28 1/4 in to its center with the confirmed width.
-**First-notch-center/end offsets, cut clearance, skid count, and crosswise
+**Repeated-notch first-center placement, cut clearance, skid count, and crosswise
 cut length remain pending.** The
 purpose of the extra cuts is confirmed; their exact placement still depends
-on the unconfirmed end offsets.
+on the unconfirmed layout datum.
+
+**Skid-end correction:** Alan confirmed that the **3 in** and **1 1/2 in**
+end notches run inward from the respective tips and are **both 1 in deep**.
+The little raised piece beyond the end notch should **stay at notch
+height**, leaving no full-height lip beyond that cut. He also confirmed
+that each **45-degree bottom-corner cut slopes upward toward the skid tip**;
+this supersedes the earlier plan-view side-corner interpretation. The
+bevel's extent remains pending. Do not assign the unequal notches to front
+or back or invent a bevel size. Confirm the resulting shape against the
+visible render. The wider end notch does not establish an extra end board.
+
+Alan explicitly confirmed **the skids are treated wood**. He also requested
+**a little texture and knots in the wood** for the render. This is a visual
+request, not confirmation of species, grade, treatment chemistry or the
+crosswise members' treatment. Keep subtle grain and knots separate from
+the geometry and measurements we are agreeing on.
 
 The learning page begins with skids only, without a floor frame, top sheets,
 walls or roof, and has no autoplay. Later views can add the frame and sheets

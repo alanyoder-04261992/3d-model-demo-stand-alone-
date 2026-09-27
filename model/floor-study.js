@@ -30,18 +30,34 @@ export function floorStudyPlan(plan) {
   if (notchWidthIn < joistWidthIn) throw new Error("floorStudy.notches.widthIn must fit the joist width.");
   if (spacingIn <= notchWidthIn || (alternateSpacingIn != null && alternateSpacingIn <= notchWidthIn))
     throw new Error("floorStudy notch spacing must leave wood between cuts.");
+  const endRebates = {};
+  for (const end of ["negative","positive"]) {
+    const rebate = notch.endRebates?.[end];
+    if (rebate == null) continue;
+    const endLengthIn = positive(rebate.lengthIn,`notches.endRebates.${end}.lengthIn`);
+    const endDepthIn = positive(rebate.depthIn,`notches.endRebates.${end}.depthIn`);
+    if (endLengthIn < joistWidthIn || endLengthIn >= lengthFt*12)
+      throw new Error(`floorStudy.notches.endRebates.${end} must fit an end joist and leave timber along the skid.`);
+    if (Math.abs(endDepthIn-depthIn)>1e-9)
+      throw new Error(`floorStudy.notches.endRebates.${end} must use the floor's notch-seat depth.`);
+    endRebates[end] = { lengthIn:endLengthIn,depthIn:endDepthIn,
+      lengthFt:endLengthIn/12,depthFt:endDepthIn/12,seatYFt:(heightIn-endDepthIn)/12 };
+  }
+  if ((endRebates.negative?.lengthFt || 0)+(endRebates.positive?.lengthFt || 0) >= lengthFt)
+    throw new Error("floorStudy end rebates must leave timber between the two ends.");
   const status = {};
-  for (const key of ["skidSection", "skidLength", "joistSection", "standardSpacing", "alternateSpacing",
-    "notchDepth", "notchWidth", "notchPositions", "supportOffset", "supportLayout", "frameFootprint", "rimSection", "deck"]) {
+  for (const key of ["skidSection", "skidLength", "skidTreatment", "joistSection", "standardSpacing", "alternateSpacing",
+    "notchDepth", "notchWidth", "notchPositions", "endRebates", "endMemberPlacement",
+    "supportOffset", "supportLayout", "frameFootprint", "rimSection", "deck"]) {
     status[key] = raw.status?.[key] === "confirmed" ? "confirmed" : "provisional";
   }
   const study = {
     skids: { nominal:skid.nominal || "4x6", widthIn,heightIn,lengthFt,insetToInsideIn,
-      widthFt:widthIn/12,heightFt:heightIn/12 },
+      widthFt:widthIn/12,heightFt:heightIn/12,treated:skid.treated===true },
     joists: { nominal:joist.nominal || "2x6", widthIn:joistWidthIn,heightIn:joistHeightIn,
       spacingIn,widthFt:joistWidthIn/12,heightFt:joistHeightIn/12,spacingFt:spacingIn/12 },
     notches: { widthIn:notchWidthIn,depthIn,widthFt:notchWidthIn/12,depthFt:depthIn/12,
-      alternateSpacingIn, alternateSpacingFt:alternateSpacingIn == null ? null : alternateSpacingIn/12,
+      alternateSpacingIn, alternateSpacingFt:alternateSpacingIn == null ? null : alternateSpacingIn/12,endRebates,
       placement:alternateSpacingIn == null ? "cross-members" : "cross-members-and-alternate-grid" },
     joistBottomFt:(heightIn-depthIn)/12,
     joistTopFt:(heightIn-depthIn+joistHeightIn)/12,

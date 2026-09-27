@@ -96,7 +96,8 @@ export function floorMeasurements(plan) {
   return {
     study: plan.floorStudy ? { enabled:true,status:plan.floorStudy.status,
       joistSeatHeightFt:plan.floorStudy.joistBottomFt,joistTopFt:plan.floorStudy.joistTopFt,
-      skidTopFt:plan.floorStudy.skids.heightFt,notchPlacement:plan.floorStudy.notches.placement } : null,
+      skidTopFt:plan.floorStudy.skids.heightFt,notchPlacement:plan.floorStudy.notches.placement,
+      endRebates:plan.floorStudy.notches.endRebates } : null,
     nominal: { widthFt: plan.W, lengthFt: plan.L },
     supports: { ...supportBounds, xsFt, runs, count: runs.length,
       lengthFt: supportBounds ? supportBounds.z1Ft - supportBounds.z0Ft : 0,
@@ -107,6 +108,7 @@ export function floorMeasurements(plan) {
         insideFaceXFt:run.insideFaceXFt,nearestInsideFaceFt:run.nearestInsideFaceFt })),
       nominalLumber: plan.floorStudy?.skids.nominal || skidLumber, settingsSection: settingsSection(skidLumber),
       notches:studyMembers.flatMap((member)=>member.meta.notches),
+      endRebates:studyMembers.flatMap((member)=>member.meta.notches.filter((cut)=>cut.end)),
       notchWidthFt:plan.floorStudy?.notches.widthFt || 0,
       notchDepthFt:plan.floorStudy?.notches.depthFt || 0,
       notchSeatYFt:plan.floorStudy?.joistBottomFt ?? null },

@@ -9,6 +9,7 @@ export function createMeasurementReadout(list,note,plan) {
     const selected=new Set(selection),rows=[],notes=[];
     if(selected.has("supports")) {
       rows.push(["Each skid · confirmed length",length(m.supports.lengthFt)],
+        ["Skid material · confirmed",plan.floorStudy.skids.treated?"Treated wood":"To confirm"],
         ["Skid · nominal → actual",`${m.supports.nominalLumber} → ${inches(m.supports.widthFt)} × ${inches(m.supports.depthFt)}`],
         ["Notch depth · confirmed",inches(m.supports.notchDepthFt)],
         ["Spacing · confirmed options",`${m.frame.nominalSpacingIn} in on center standard / ${plan.floorStudy.notches.alternateSpacingIn} in option`],
@@ -16,6 +17,12 @@ export function createMeasurementReadout(list,note,plan) {
         ["Outside wall → inside skid face · confirmed",inches(m.supports.insetCentersFt[0].nearestInsideFaceFt)],
         ["Outside wall → skid center · calculated",inches(m.supports.insetCentersFt[0].nearestSideFt)]);
       notes.push("Inside face means the side of the skid facing the middle of the floor. Notch width is drawn to fit the 1½-inch member; cutting clearance and the first notch position still need confirmation.");
+      const ends=plan.floorStudy.notches.endRebates;
+      if(ends) {
+        rows.push(["Open end notches · confirmed",`${inches(ends.negative.lengthFt)} / ${inches(ends.positive.lengthFt)} long`],
+          ["Both end notches · confirmed depth",inches(ends.negative.depthFt)]);
+        notes.push("The end notches remain at seat height all the way to the tips, with no raised lip. The 45° bottom corner cuts still need a cut-size measurement.");
+      }
     }
     if(selected.has("frame")) {
       rows.push(["Crosswise member · nominal → actual",`${m.frame.nominalJoist} → ${inches(m.frame.joist.widthFt)} × ${inches(m.frame.joist.depthFt)}`],

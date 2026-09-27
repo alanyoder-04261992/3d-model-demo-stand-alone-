@@ -36,6 +36,9 @@ point to the visible pieces. The lesson now draws Alan's 16 ft, actual
 3½ × 5½ in skids, with 1 in-deep notches for actual 1½ × 5½ in crosswise
 members. Standard 16 in spacing and extra 12 in cuts are confirmed; remaining
 layout assumptions are labeled. “Notch close-up” shows the connection.
+The two end views show open 3 in and 1½ in notches, both 1 in deep, without
+raised lips. Skids are confirmed treated wood; light grain and knots help
+show the lumber. The 45° bottom corner cuts await their extent measurement.
 Nothing advances automatically.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the

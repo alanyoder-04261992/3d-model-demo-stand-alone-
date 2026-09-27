@@ -70,16 +70,23 @@
   },
   "construction": {
     "floorStudy": {
-      "skids": { "nominal": "4x6", "widthIn": 3.5, "heightIn": 5.5, "lengthFt": 16, "insetToInsideIn": 30 },
+      "skids": { "nominal": "4x6", "widthIn": 3.5, "heightIn": 5.5, "lengthFt": 16, "insetToInsideIn": 30, "treated": true },
       "joists": { "nominal": "2x6", "widthIn": 1.5, "heightIn": 5.5, "spacingIn": 16 },
-      "notches": { "depthIn": 1, "widthIn": 1.5, "alternateSpacingIn": 12 },
+      "notches": {
+        "depthIn": 1, "widthIn": 1.5, "alternateSpacingIn": 12,
+        "endRebates": {
+          "negative": { "lengthIn": 3, "depthIn": 1 },
+          "positive": { "lengthIn": 1.5, "depthIn": 1 }
+        }
+      },
       "status": {
-        "skidSection": "confirmed", "skidLength": "confirmed",
+        "skidSection": "confirmed", "skidLength": "confirmed", "skidTreatment": "confirmed",
         "joistSection": "confirmed", "standardSpacing": "confirmed",
         "alternateSpacing": "confirmed", "notchDepth": "confirmed",
         "notchWidth": "provisional", "notchPositions": "provisional",
         "supportOffset": "confirmed", "supportLayout": "provisional", "frameFootprint": "provisional",
-        "rimSection": "provisional", "deck": "provisional"
+        "rimSection": "provisional", "deck": "provisional",
+        "endRebates": "confirmed", "endMemberPlacement": "provisional"
       }
     }
   },

@@ -427,6 +427,24 @@ export function floorFrameMembers(plan) {
       { frame: "room", wall: wp.key, size: F.joist.nominal, zc: c, support: "bear" });
     out.push(m); joists.push(m);
   });
+  /* The lesson's explicit open end rebates replace the old inset end cuts.
+     Keep a single board at each end, moving it only enough to fit its seat.
+     This placement is provisional; the rim/deck footprint stays unchanged. */
+  var endRebates = plan.floorStudy && plan.floorStudy.notches.endRebates;
+  if (endRebates) out.forEach(function(m) {
+    if (m.kind !== "end-joist") return;
+    var end = m.meta.end === "back" ? "negative" : "positive";
+    var rebate = endRebates[end];
+    if (!rebate) return;
+    var tip = plan.floorStudy.skids.lengthFt/2;
+    var a = end === "negative" ? -tip : tip-rebate.lengthFt;
+    var b = end === "negative" ? -tip+rebate.lengthFt : tip;
+    var centre = (m.p0[2]+m.p1[2])/2;
+    var next = Math.max(a+m.w/2,Math.min(b-m.w/2,centre));
+    m.p0[2] += next-centre; m.p1[2] += next-centre;
+    m.meta.zc = next; m.meta.endRebate = end;
+    m.meta.placementStatus = plan.floorStudy.status.endMemberPlacement;
+  });
   out.forEach(function (m) { m.stage = "floor-frame"; });
   return out;
 }

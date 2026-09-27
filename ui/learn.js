@@ -13,10 +13,12 @@ import { createRenderer } from "../engine/renderer.js";
 import { distToFit } from "./parts-gallery.js";
 import { createFloorLabels } from "./learn-labels.js";
 import { createMeasurementReadout } from "./learn-measurements.js";
+import { installFloorWood, woodFinish } from "./learn-wood.js";
 
 const COMPANY = "learning-side-loft";
 const ANGLE = { yaw:0.7, pitch:0.65 };
 const BASE_ZOOM = 1.15; // Leave room for dimension lines beyond the footprint.
+const CAMERA_VIEWS = ["angle","top","notch","end-negative","end-positive"];
 const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
 const $ = (id) => document.getElementById(id);
 
@@ -65,26 +67,31 @@ export async function startFloorLesson() {
     const renderer=createRenderer(canvas,{trueColour:true,scene:"studio",note:" "});
     api.renderer=renderer; api.plan=plan;
     if(renderer.off) throw new Error("3D is not available in this browser. Try another browser or enable graphics acceleration, then reload. The first piece is described below.");
+    installFloorWood(renderer);
     renderer.cam.autoSpin=false; renderer.cam.interacted=true;
     renderer.setStages(null); // Frame and deck stages must be visible here.
     Object.assign(renderer.cam,ANGLE);
     const labels=createFloorLabels(viewport,renderer,plan);
     const measurements=createMeasurementReadout($("piece-measurements"),$("measurement-note"),plan);
     const measures=floorMeasurements(plan);
-    const detailNotch=measures.supports.notches.filter(n=>n.xFt>0 && n.sources.includes("alternate"))
+    const middleNotch=measures.supports.notches.filter(n=>n.xFt>0 && n.sources.includes("alternate"))
       .filter(n=>!measures.frame.members.some(m=>m.member.kind!=="rim" && m.bounds.z0Ft<n.z1Ft && m.bounds.z1Ft>n.z0Ft))
       .sort((a,b)=>Math.abs(a.centerZFt)-Math.abs(b.centerZFt))[0] || measures.supports.notches[0];
-    let zoom=BASE_ZOOM, raf=0, focus="supports", detail=false;
-    const detailTarget=detailNotch?[detailNotch.xFt,detailNotch.seatYFt+.12,detailNotch.centerZFt]:null;
-    const detailBox=detailTarget?{x0:detailTarget[0]-1.2,x1:detailTarget[0]+1.2,y0:detailTarget[1]-.6,y1:detailTarget[1]+.6,z0:detailTarget[2]-1.4,z1:detailTarget[2]+1.4}:box;
+    const endNotches=Object.fromEntries(["negative","positive"].map(end=>[end,measures.supports.notches.find(n=>n.xFt>0 && n.end===end)]));
+    let zoom=BASE_ZOOM, raf=0, focus="supports", detail=false, detailNotch=middleNotch;
+    function detailBox() {
+      const p=renderer.cam.target;
+      const rx=detailNotch?.end ? .7 : 1.2, rz=detailNotch?.end ? .9 : 1.4;
+      return p?{x0:p[0]-rx,x1:p[0]+rx,y0:p[1]-.45,y1:p[1]+.45,z0:p[2]-rz,z1:p[2]+rz}:box;
+    }
     const size=()=>({w:Math.max(1,canvas.clientWidth),h:Math.max(1,canvas.clientHeight)});
     const markManual=()=>{
-      for(const button of cameraButtons) if(["angle","top","notch"].includes(button.dataset.camera)) button.setAttribute("aria-pressed","false");
+      for(const button of cameraButtons) if(CAMERA_VIEWS.includes(button.dataset.camera)) button.setAttribute("aria-pressed","false");
     };
     function draw() {
       raf=0;
       if(api.error || !renderer.mesh) return;
-      const fitted=distToFit(detail?detailBox:box,renderer.cam.yaw,renderer.cam.pitch,size());
+      const fitted=distToFit(detail?detailBox():box,renderer.cam.yaw,renderer.cam.pitch,size());
       renderer.cam.fitDist=fitted;
       renderer.cam.dist=Math.max(2.5,fitted*zoom);
       renderer.draw();
@@ -96,7 +103,7 @@ export async function startFloorLesson() {
       api.parts=floorParts(api.selection);
       if(nextFocus) focus=nextFocus;
       for(const input of boxes) input.checked=api.selection.includes(input.value);
-      const build=onlyParts(full.build,api.parts);
+      const build=woodFinish(onlyParts(full.build,api.parts),measures);
       renderer.show({build,bounds,gr:full.gr,fitDist:distToFit(box,renderer.cam.yaw,renderer.cam.pitch,size())});
       renderer.setStages(null);
       const piece=floorPiece(api.selection,focus);
@@ -112,11 +119,17 @@ export async function startFloorLesson() {
     function setCamera(name) {
       if(name==="in") zoom=clamp(zoom/1.15,.5,2.1);
       else if(name==="out") zoom=clamp(zoom*1.15,.5,2.1);
-      else if(name==="notch" && detailTarget) { detail=true; renderer.cam.target=detailTarget; renderer.cam.yaw=.9; renderer.cam.pitch=.55; zoom=1; }
+      else if((name==="notch" && middleNotch) || (name.startsWith("end-") && endNotches[name.slice(4)])) {
+        detailNotch=name==="notch"?middleNotch:endNotches[name.slice(4)];
+        detail=true;
+        renderer.cam.target=[detailNotch.xFt,detailNotch.seatYFt+.12,detailNotch.centerZFt];
+        renderer.cam.yaw=detailNotch.end==="negative"?Math.PI-.9:.9;
+        renderer.cam.pitch=.55; zoom=1;
+      }
       else if(name==="top") { detail=false; renderer.cam.target=null; renderer.cam.yaw=0; renderer.cam.pitch=Math.PI/2-.01; zoom=BASE_ZOOM; }
       else { detail=false; renderer.cam.target=null; Object.assign(renderer.cam,ANGLE); zoom=BASE_ZOOM; }
       if(!["in","out"].includes(name)) {
-        for(const button of cameraButtons) if(["angle","top","notch"].includes(button.dataset.camera)) button.setAttribute("aria-pressed",String(button.dataset.camera===(detail?"notch":name==="top"?"top":"angle")));
+        for(const button of cameraButtons) if(CAMERA_VIEWS.includes(button.dataset.camera)) button.setAttribute("aria-pressed",String(button.dataset.camera===(detail?name:name==="top"?"top":"angle")));
       }
       requestDraw();
     }

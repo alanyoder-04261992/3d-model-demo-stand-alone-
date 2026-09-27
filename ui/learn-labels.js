@@ -77,15 +77,20 @@ export function createFloorLabels(viewport, renderer, plan) {
     if(selected.has("supports") && !selected.has("deck")) {
       const points=detail ? [[notch.xFt+side*supports.widthFt/2,supports.depthFt/2,notch.centerZFt]]
         : supports.xsFt.map(x=>[x,supports.depthFt/2,nearZ]);
-      labels.push({text:"Skids",detail:section,footer:"confirmed name",x:14,
+      labels.push({text:"Skids",detail:section,footer:plan.floorStudy?.skids.treated?"treated wood · confirmed":"confirmed name",x:14,
         y:selection.length>1?height-72:16,w:small?157:174,points});
       if(notch && !selected.has("deck") && (detail || !selected.has("frame"))) {
-        labels.push({text:"Notches · confirmed",detail:`${formatInches(notch.depthFt)} down from top`,
-          footer:"width / grid start pending",x:width-(small?157:174)-14,y:16,w:small?157:174,
+        const end=notch.end || (notch.sources.includes("end-negative")?"negative":notch.sources.includes("end-positive")?"positive":null);
+        labels.push({text:"Notches · confirmed",detail:end?`${formatInches(notch.z1Ft-notch.z0Ft)} long × ${formatInches(notch.depthFt)} deep`:`${formatInches(notch.depthFt)} down from top`,
+          footer:end?"length / depth confirmed":"width / grid start pending",x:width-(small?157:174)-14,y:16,w:small?157:174,
           points:[[notch.xFt,notch.seatYFt,notch.centerZFt]]});
         if(detail) {
-          const x=notch.xFt+side*supports.widthFt/2, z=nearEnd>0?notch.z0Ft:notch.z1Ft;
+          // An open end has no raised tip. Measure depth at the shoulder
+          // where the full-height timber resumes, and length along the seat.
+          const x=notch.xFt+side*supports.widthFt/2;
+          const z=end==="negative"?notch.z1Ft:end==="positive"?notch.z0Ft:nearEnd>0?notch.z0Ft:notch.z1Ft;
           dimension(project,[x,notch.seatYFt,z],[x,notch.topYFt,z],`${formatInches(notch.depthFt)} deep`,28,"#135872",width,height,false,1);
+          if(end) dimension(project,[x,notch.seatYFt,notch.z0Ft],[x,notch.seatYFt,notch.z1Ft],`${formatInches(notch.z1Ft-notch.z0Ft)} long`,56,"#135872",width,height,false,1);
         }
       }
     }
@@ -98,8 +103,9 @@ export function createFloorLabels(viewport, renderer, plan) {
         dimension(project,[x0,y,z1],[x1,y,z1],formatFeetInches(sheet.acrossFt),17,"#135872",width,height);
       }
     } else if(selected.has("frame")) {
-      const visibleJoist=detail ? measures.frame.joists.slice().sort((a,b)=>Math.abs(a.center[2]-notch.centerZFt)-Math.abs(b.center[2]-notch.centerZFt))[0] : joist;
-      if(visibleJoist) labels.push({text:"Floor joist",detail:detail?`${formatInches(visibleJoist.widthFt)} × ${formatInches(visibleJoist.depthFt)} actual`:`${formatFeetInches(visibleJoist.lengthFt)} long`,
+      const crossMembers=measures.frame.members.filter(m=>["joist","end-joist","wall-joist"].includes(m.member.kind));
+      const visibleJoist=detail ? crossMembers.sort((a,b)=>Math.abs(a.center[2]-notch.centerZFt)-Math.abs(b.center[2]-notch.centerZFt))[0] : joist;
+      if(visibleJoist) labels.push({text:visibleJoist.member.kind==="end-joist"?"End joist":"Floor joist",detail:detail?`${formatInches(visibleJoist.widthFt)} × ${formatInches(visibleJoist.depthFt)} actual`:`${formatFeetInches(visibleJoist.lengthFt)} long`,
         x:14,y:16,w:small?150:170,points:[detail ? [notch.xFt,visibleJoist.bounds.y1Ft,visibleJoist.center[2]] : beamPoint(visibleJoist.member,true)]});
       const rim=members.find(m=>m.kind==="rim" && m.meta.side===(side>0?"R":"L"));
       if(rim && !detail) {
@@ -110,7 +116,8 @@ export function createFloorLabels(viewport, renderer, plan) {
       if(joist && !detail) dimension(project,joist.p0,joist.p1,formatFeetInches(joist.lengthFt),15,"#135872",width,height);
     } else if(selected.has("supports") && !detail) {
       const x=nearX;
-      dimension(project,[x,supports.depthFt,supports.z0Ft],[x,supports.depthFt,supports.z1Ft],`${formatFeetInches(supports.lengthFt)} support`,23,"#135872",width,height);
+      const endHeight=end=>supports.notches.find(n=>n.xFt===x && n.end===end)?.seatYFt ?? supports.depthFt;
+      dimension(project,[x,endHeight("negative"),supports.z0Ft],[x,endHeight("positive"),supports.z1Ft],`${formatFeetInches(supports.lengthFt)} support`,23,"#135872",width,height);
       const run=supports.runs.find(r=>r.xFt===x), inset=supports.insetCentersFt.find(r=>r.xFt===x);
       if(run) {
         // Inside means the face toward the building's centre. On the right
@@ -121,6 +128,9 @@ export function createFloorLabels(viewport, renderer, plan) {
       }
     }
     overlay.setAttribute("aria-label","Floor names and measurements: "+labels.map(l=>`${l.text}, ${l.detail}, ${l.footer || "proposed name"}`).join("; "));
+    if(detailNotch?.end && selected.has("supports") && !selected.has("deck")) {
+      overlay.appendChild(svgNode("text",{x:width/2,y:height-6,"text-anchor":"middle",fill:"#765527","font-family":"IBM Plex Sans, sans-serif","font-size":11},"45° bottom cut: size still to confirm"));
+    }
     for(const label of labels) {
       const points=label.points.map(project).filter(p=>p&&p[0]>=0&&p[0]<=width&&p[1]>=0&&p[1]<=height);
       if(!points.length) continue;

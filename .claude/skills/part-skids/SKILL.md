@@ -5,6 +5,13 @@ description: The skids (treated runners) under a portable building -- read befor
 
 # Skids (`parts/skids.js`)
 
+The lesson's surface finish is in `ui/learn-wood.js`: subtle lengthwise grain,
+small knots and end grain, with a muted treated-wood tint. It changes only
+the lesson's surface material and texture coordinates. Keep dimensions,
+normals and stages unchanged. `floorStudy.skids.treated: true` and
+`status.skidTreatment: "confirmed"` record Alan's material confirmation;
+colour and knot placement are illustrative, not a species or grade claim.
+
 ## Confirmed floor lesson and its scope
 
 Alan confirmed **skids** and **notches** on September 27, 2026. For the
@@ -13,17 +20,43 @@ total length of **16 ft**. The top notches are **1 in deep** and receive
 crosswise nominal 2x6 members, actual **1 1/2 x 5 1/2 in**. Those members
 seat down into the cuts rather than sit on an uncut skid top.
 
+Alan explicitly confirmed **the skids are treated wood** on September 27,
+2026. This is now a direct example fact, not only an older catalogue
+default. His request for **a little texture and knots in the wood** is a
+visual finish request; use subtle detail in the lesson without changing
+the dimensions or obscuring the cuts. It does not establish species, grade,
+treatment chemistry, or whether the crosswise frame members are treated.
+
 He also confirmed **16 in on center standard**, with extra notches for the
 **12 in on center option**; the extra positions can be unused at standard
 spacing. Alan clarified the skid offset as **30 in from the outside of the
 wall to the inside face of the skid**, toward the middle of the floor.
 With a 3 1/2 in-wide skid, this gives **28 1/4 in to its center**. Across the
 nominal 10 ft width, the current two-skid lesson gives **63 1/2 in between
-centers**; the count of two is still provisional. First-notch-center/end
-offsets, cut clearance, skid count and crosswise cut length remain pending.
+centers**; the count of two is still provisional. Repeated-notch first-center
+placement, cut clearance, skid count and crosswise cut length remain pending.
 A 1 1/2 in drawn slot width is only a
 provisional fit to the stated member width. **Runners** remains a draft
 alternate name, while “floor joist” and other frame names await agreement.
+
+Alan confirmed the end details on September 27, 2026: one notch runs
+**3 in inward from its skid tip**, the other **1 1/2 in inward**, and
+**both are 1 in deep**. The little raised piece beyond the end notch should
+**stay at notch height**, leaving no full-height lip beyond the cut.
+Each **45-degree bottom-corner cut slopes upward toward the skid tip**;
+this supersedes the earlier plan-view side-corner interpretation. The
+bevel's extent remains pending. Do not invent a cut size or assign the
+unequal end notches to front/back. Keep repeated-notch first-center
+placement and cutting clearance separately provisional. The 3 in notch
+does not establish an extra board, and end-member placement remains
+provisional. Check the visible end shape before claiming it is corrected.
+
+The opt-in setting is `floorStudy.notches.endRebates`, with
+`negative: { lengthIn: 3, depthIn: 1 }` and
+`positive: { lengthIn: 1.5, depthIn: 1 }`. Negative/positive are display
+coordinates only. Use `status.endRebates: "confirmed"` for those dimensions
+and keep `status.endMemberPlacement: "provisional"`. This does not confirm
+the repeated-notch layout datum or the pending extent of the bottom cut.
 
 His supplied photos corroborate the notched connection. The numbers above
 come from his words; do not measure them from image pixels or publish the
@@ -49,7 +82,7 @@ confirmed offset with the still-provisional number of skids.
 `skidStudyMembers(plan)` in `parts/skids.js` extrudes each notched side
 profile across its actual width. It combines the standard cross-member cuts
 and 12 in alternate positions, merging coincident cuts. It records notch
-bounds and sources for the measurement view. First-center/end placement and
+bounds and sources for the measurement view. Repeated-notch first-center placement and
 clearance remain separately provisional despite confirmed spacing values.
 
 ## What it is in real life
@@ -143,7 +176,8 @@ These quirks belong to the normal finished model, not the opt-in lesson.
 
 * For the opt-in lesson, verify actual skid extents, visible notch depth,
   the two spacing provisions, and that the crosswise members seat in the
-  cuts. Retain pending labels for end offsets, clearance and other layout
+  cuts. Retain pending labels for repeated-notch first-center placement,
+  clearance, bottom-cut extent, end-member placement and other layout
   defaults. Run the ordinary golden check too, to prove its path is unchanged.
 * A company's skid positions: change `skids.table` in its company file (or
   the manufacturer file), never the code.

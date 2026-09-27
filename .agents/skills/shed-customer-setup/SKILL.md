@@ -82,6 +82,25 @@ notches. Standard spacing is 16 in on center; extra notches provide the
 connection; use the stated dimensions rather than measurements from pixels,
 and do not publish the photos.
 
+Alan explicitly confirmed **the skids are treated wood** and requested **a
+little texture and knots in the wood**. Keep any added surface finish subtle
+and confined to the learning example. Inspect it alongside the labels and
+measurements. Do not infer species, grade or treatment chemistry, and do
+not treat a wood finish on the frame as confirmation that the crosswise
+members are treated.
+
+Alan confirmed end notches measuring **3 in inward from one skid tip** and
+**1 1/2 in inward from the other**, **both 1 in deep**. The little raised
+piece beyond the end notch should **stay at notch height**. He clarified
+that the **45-degree bottom-corner cuts slope upward toward the tips**;
+this supersedes the earlier plan-view side-corner interpretation. The cut's
+extent remains pending: do not invent a bevel size or front/back assignment.
+The lesson's `floorStudy.notches.endRebates` negative/positive entries are
+display coordinates, not agreed front/back names. Keep end-member placement
+provisional; a 3 in notch does not establish a second end board. Inspect the
+render before reporting these corrections as visible, and keep using
+**skids** and **notches** without requiring another part name.
+
 Alan clarified the **30 in skid offset** as **outside of the wall to the
 inside face of the skid**, the face toward the middle of the floor. With
 the actual 3 1/2 in width, the derived wall-to-center distance is 28 1/4 in.
@@ -89,8 +108,9 @@ The current two-skid lesson consequently has 63 1/2 in between centers
 across the nominal 10 ft width; two remains a provisional count. Record the
 lesson offset in `construction.floorStudy.skids.insetToInsideIn: 30` with
 `construction.floorStudy.status.supportOffset: "confirmed"`; do not alter
-the normal model's legacy skid table. Keep first-notch-center/end offsets,
-notch cut clearance, skid count and crosswise cut length pending.
+the normal model's legacy skid table. Keep repeated-notch first-center
+placement, notch cut clearance, skid count, crosswise cut length, bottom-cut
+extent and end-member placement pending.
 A provisional 1 1/2 in notch width is a
 modeling fit to the member, not a confirmed clearance. Use the opt-in
 `floorStudy` plan only for the learning page to show the corrected sections

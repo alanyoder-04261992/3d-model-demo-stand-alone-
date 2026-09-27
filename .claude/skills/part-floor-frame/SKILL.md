@@ -5,6 +5,12 @@ description: The floor frame (joists, rims and end joists on the skids) of a por
 
 # Floor frame (`parts/floor-frame.js`)
 
+The lesson-only `ui/learn-wood.js` finish adds subtle grain and knots by
+changing material and texture coordinates after assembly; its vertices,
+normals and stages remain unchanged. Alan explicitly confirmed treatment
+for skids; the frame's illustration does not establish its treatment,
+species or grade.
+
 ## Confirmed connection for the opt-in floor lesson
 
 Alan's September 27, 2026 description and supplied photos identify the
@@ -16,7 +22,7 @@ Do not publish the photos.
 
 He confirmed **16 in on center standard** and extra skid notches for the
 **12 in on center option**. The purpose of unused cuts is settled; the
-first-notch-center/end offsets and notch cut clearance remain pending, as
+repeated-notch first-center placement and notch cut clearance remain pending, as
 do skid count and crosswise member cut length. Alan clarified skid placement
 as 30 in from the outside wall to the inside skid face, toward the floor's
 middle. A 3 1/2 in skid puts its center 28 1/4 in from that wall and the
@@ -40,6 +46,22 @@ full member height. Plans without that opt-in retain the legacy datums.
 The lesson's skid offset is `floorStudy.skids.insetToInsideIn: 30`, with
 `floorStudy.status.supportOffset: "confirmed"`; the legacy skid table stays
 unchanged.
+
+Alan also confirmed end notches running **3 in inward from one skid tip**
+and **1 1/2 in inward from the other**, **both 1 in deep**, with the piece
+beyond each cut kept at notch height. The lesson's
+`floorStudy.notches.endRebates` uses `negative` for 3 in and `positive` for
+1 1/2 in; these are display coordinates, not agreed front/back names.
+`floorFrameMembers(plan)` keeps a single end member at each end and moves
+it only enough to fit the corresponding seat. In the current 10x16 lesson,
+the narrow-end member moves outward by **0.36 in**; the wider end retains
+one board. Its `meta.placementStatus` comes from
+`floorStudy.status.endMemberPlacement`, which remains **provisional**.
+The confirmed 3 in cut does not imply another board or confirm this shop
+placement. The rim and deck footprints and the ordinary designer are
+unchanged by that fitting adjustment. See the
+[skid skill](../part-skids/SKILL.md) for the confirmed 45-degree bottom-cut
+direction and its still-pending extent.
 
 Alan also confirmed the discussed nominal/actual examples by subtracting
 1/2 in from each dimension: 2x4 → 1 1/2 x 3 1/2 in, 2x6 → 1 1/2 x 5 1/2 in,
@@ -141,7 +163,7 @@ These quirks belong to the normal model, not the opt-in floor lesson.
 
 * In the opt-in lesson, check the 1 1/2 x 5 1/2 in member sections and their
   seating 1 in below skid tops, with no solid material left inside the slots.
-  Keep spacing separate from the still-pending first-center/end offset and
+  Keep spacing separate from the still-pending repeated-notch first-center placement and
   cut clearance. Check normal-model golden fixtures to preserve that path.
 * A company's joists: change `floor.joist`, `floor.spacingIn`, `floor.rim` in
   its construction settings (or give an option a `construction` effect),

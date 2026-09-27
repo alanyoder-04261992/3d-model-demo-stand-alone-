@@ -153,9 +153,10 @@ assert.equal(formatInches(NaN), "—");
 const confirmedSpec = {
   skids:{nominal:"4x6",widthIn:3.5,heightIn:5.5,lengthFt:16,insetToInsideIn:30},
   joists:{nominal:"2x6",widthIn:1.5,heightIn:5.5,spacingIn:16},
-  notches:{widthIn:1.5,depthIn:1,alternateSpacingIn:12},
+  notches:{widthIn:1.5,depthIn:1,alternateSpacingIn:12,
+    endRebates:{negative:{lengthIn:3,depthIn:1},positive:{lengthIn:1.5,depthIn:1}}},
   status:{skidSection:"confirmed",skidLength:"confirmed",joistSection:"confirmed",
-    standardSpacing:"confirmed",alternateSpacing:"confirmed",notchDepth:"confirmed",supportOffset:"confirmed",
+    standardSpacing:"confirmed",alternateSpacing:"confirmed",notchDepth:"confirmed",supportOffset:"confirmed",endRebates:"confirmed",
     notchWidth:"provisional",notchPositions:"provisional"},
 };
 const noStudy = structuredClone(plan);
@@ -200,12 +201,26 @@ for(const run of study.supports.runs) {
   for(let i=0;i<run.notches.length;i++) {
     const cut=run.notches[i];
     near(cut.depthFt*12,1,"confirmed cut depth");
-    near(cut.widthFt*12,1.5,"provisional width fits the board");
+    near(cut.widthFt*12,cut.end==="negative"?3:1.5,cut.end?"confirmed end rebate length":"provisional width fits the board");
     near(cut.seatYFt*12,4.5,"notch seat height");
     assert.ok(cut.z0Ft>=-8&&cut.z1Ft<=8,"all cuts clipped to timber ends");
     if(i) assert.ok(cut.z0Ft>run.notches[i-1].z1Ft,"merged cuts cannot overlap or self-intersect");
   }
+  assert.equal(run.notches.filter((cut)=>cut.end).length,2,"both skid tips have an open rebate");
+  const negative=run.notches.find((cut)=>cut.end==="negative"),positive=run.notches.find((cut)=>cut.end==="positive");
+  near(negative.z0Ft,run.z0Ft,"3in rebate starts exactly at the negative tip");
+  near(positive.z1Ft,run.z1Ft,"1.5in rebate reaches exactly to the positive tip");
+  assert.deepEqual(negative.sources,["end-negative"],"explicit end cut replaces the inset end-notch candidate");
+  assert.deepEqual(positive.sources,["end-positive"],"narrow cut cannot silently grow to fit the old inset board");
 }
+const endMembers=study.frame.members.filter((record)=>record.member.kind==="end-joist");
+assert.equal(endMembers.length,2,"a 3in end rebate does not invent a doubled end board");
+const positiveEnd=endMembers.find((record)=>record.member.meta.endRebate==="positive");
+near(positiveEnd.bounds.z1Ft,8,"narrow-end board is provisionally flush with the tip");
+near(positiveEnd.bounds.z0Ft,8-1.5/12,"narrow-end board fits the exact 1.5in open seat");
+assert.equal(positiveEnd.member.meta.placementStatus,"provisional");
+const negativeEnd=endMembers.find((record)=>record.member.meta.endRebate==="negative");
+near(negativeEnd.bounds.z0Ft,-7.97,"3in-end board keeps its provisional existing location when it already fits");
 for(const record of study.frame.members) {
   near(record.bounds.y0Ft*12,4.5,"cross members and rims begin at the seated floor height");
   near(record.bounds.y1Ft*12,10,"full-depth joist tops are 10in above skid bottoms");
@@ -220,6 +235,8 @@ assert.equal(study.study.status.notchDepth,"confirmed");
 assert.equal(study.study.status.notchWidth,"provisional");
 assert.equal(study.study.status.notchPositions,"provisional");
 assert.equal(study.study.status.supportOffset,"confirmed");
+assert.equal(study.study.status.endRebates,"confirmed");
+assert.equal(study.study.status.endMemberPlacement,"provisional");
 assert.equal(study.study.status.supportLayout,"provisional","omitted status is never promoted to confirmed");
 
 function trianglesFor(build,part) {
@@ -261,6 +278,8 @@ function meshTopAt(x,z) {
   return Math.max(...hits);
 }
 for(const run of study.supports.runs) {
+  near(meshTopAt(run.xFt,run.z0Ft),4.5/12,"negative tip top is the seat, with no raised lip");
+  near(meshTopAt(run.xFt,run.z1Ft),4.5/12,"positive tip top is the seat, with no raised lip");
   let previousEnd=run.z0Ft;
   for(const cut of run.notches) {
     for(const across of [-.3,0,.3]) for(const along of [.2,.5,.8]) {
@@ -291,5 +310,9 @@ for(const value of [0,-1,3,60,61,Infinity]) {
   const invalid=structuredClone(configured);invalid.construction.floorStudy.skids.insetToInsideIn=value;
   assert.throws(()=>floorStudyPlan(invalid),/floorStudy/);
 }
+for(const value of [0,1,192]) {
+  const invalid=structuredClone(configured);invalid.construction.floorStudy.notches.endRebates.positive.lengthIn=value;
+  assert.throws(()=>floorStudyPlan(invalid),/floorStudy/);
+}
 
-console.log(`PROVED: supports-only start, all 8 manual floor selections, ${triangleChecks} legacy triangles preserved, no hidden building parts, measured notched skids and full-depth seated joists, real open cuts/contact/no intersections, deck fit, 16in/12in notch patterns, provisional status, and ordinary geometry unchanged.`);
+console.log(`PROVED: supports-only start, all 8 manual floor selections, ${triangleChecks} legacy triangles preserved, measured notched skids and full-depth seated joists, exact 3in/1.5in open end rebates with no lip, board contact/no intersections, deck fit, 16in/12in patterns, provisional end placement, and ordinary geometry unchanged.`);
