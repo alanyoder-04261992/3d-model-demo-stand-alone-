@@ -157,6 +157,12 @@ its requested quote setup.
 
 ## Verify and preserve the result
 
+For a phone or another device, provide an HTTPS link to a hosted preview.
+The current [floor preview](https://yoder-3d-floor-preview.netlify.app/learn.html)
+is a separate site Alan approved for this lesson. A localhost URL or a Windows
+file path is not a phone-accessible deliverable. Verify the hosted render and
+its narrow-screen layout; distinguish browser emulation from real iOS testing.
+
 For company edits, run `node tools/list-companies.mjs` and
 `node tools/check-all.mjs --fast`. Open the affected designer and check the
 starting style/size, standard openings and enabled views. Use the contact sheet

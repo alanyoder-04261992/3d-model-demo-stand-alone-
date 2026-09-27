@@ -28,6 +28,8 @@ company that only wants the designer.
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
+[open the hosted floor lesson on a phone or computer](https://yoder-3d-floor-preview.netlify.app/learn.html).
+For local development,
 run the designer and open `learn.html?company=learning-side-loft` to start
 with the long floor supports and reveal pieces by hand. Labels and dimensions
 point to the visible pieces; model measurements are separate from unconfirmed

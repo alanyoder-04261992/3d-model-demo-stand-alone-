@@ -33,6 +33,12 @@ dimensions or installation details were confirmed by those naming replies.
 Open the [floor learning page](../../learn.html), for example
 `http://127.0.0.1:8282/learn.html?company=learning-side-loft` after
 `npm run serve`.
+For Alan's iOS phone, use the
+[hosted floor preview](https://yoder-3d-floor-preview.netlify.app/learn.html).
+The localhost address only works on the computer running the server.
+Alan approved this separate Netlify preview site on September 27, 2026.
+Phone-width layout was checked in the available browser; physical iOS Safari
+validation remains for Alan's device.
 The [example's settings](../../companies/learning-side-loft/company.json)
 offer only this style and size.
 

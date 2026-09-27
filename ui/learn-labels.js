@@ -42,7 +42,12 @@ export function createFloorLabels(viewport, renderer, plan) {
     line(p,[A[0]+nx*5,A[1]+ny*5],color); line(q,[B[0]+nx*5,B[1]+ny*5],color);
     line(A,B,color,dashed?"4 3":null);
     for(const end of [A,B]) line([end[0]-nx*4,end[1]-ny*4],[end[0]+nx*4,end[1]+ny*4],color);
-    const boxW=text.length*6.1+14, x=(A[0]+B[0])/2, y=(A[1]+B[1])/2;
+    const boxW=text.length*6.1+14, midX=(A[0]+B[0])/2, midY=(A[1]+B[1])/2;
+    const x=Math.max(boxW/2+5,Math.min(width-boxW/2-5,midX));
+    // On phones the top name cards share the drawing's width. Keep dimension
+    // text below their 72px band and inside the canvas at every camera angle.
+    const y=Math.max(width<500?86:12,Math.min(height-12,midY));
+    if(Math.hypot(x-midX,y-midY)>2) line([midX,midY],[x,y],color);
     overlay.appendChild(svgNode("rect",{x:x-boxW/2,y:y-10,width:boxW,height:20,rx:3,fill:"#f8fbfd","fill-opacity":.97}));
     overlay.appendChild(svgNode("text",{x,y:y+4,"text-anchor":"middle",fill:color,"font-family":"IBM Plex Sans, sans-serif","font-size":11,"font-weight":600},text));
   }
