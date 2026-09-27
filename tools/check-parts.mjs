@@ -70,7 +70,7 @@ const plans = readGoldenCases().cases.map((c) => ({ id: c.id, plan: makePlan(rea
 const parts = new Map();          /* id -> { file, m } */
 const helpers = [];
 for (const file of walk(PARTS)) {
-  const rel = relative(ROOT, file);
+  const rel = relative(ROOT, file).replaceAll("\\", "/"); // PIPELINE paths use forward slashes on every OS.
   if (rel === "parts/index.js" || rel === "parts/stages.js") continue;
   let mod;
   try { mod = await import(pathToFileURL(file).href); }

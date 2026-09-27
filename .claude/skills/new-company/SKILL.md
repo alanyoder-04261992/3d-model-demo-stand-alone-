@@ -12,10 +12,18 @@ company, never edit the manufacturer file for one company, and never guess a
 price. The business side (what they get, what they send) is
 `docs/SELLING.md`; this is the procedure.
 
+For the shared vocabulary and the first building exercise, read
+[Building terms](../../../docs/BUILDING-TERMS.md) and
+[the 10x16 Side Lofted Barn](../../../docs/examples/10x16-side-loft.md).
+The [shed-customer-setup skill](../../../.agents/skills/shed-customer-setup/SKILL.md)
+distinguishes a new company from a buyer's design within an existing company.
+Reuse facts already supplied; ask only for information still needed for the
+current setup.
+
 ## 1. Get what you need (ask the company, through Alan)
 
-Ask for everything below in one message; a company that has to be asked twice
-feels the setup is slow.
+Gather what is still missing below in one message when it is needed for the
+current setup; do not ask the company to repeat information already supplied.
 
 1. **Prices as a spreadsheet** (CSV). Best: set the company up first with its
    styles, export its price sheet (step 3) and send that for them to fill in.
@@ -144,12 +152,14 @@ designer -- read them and fix the file.
 Open `setup.html?company=acme` (same server). One tile per style and size, in
 their category order, with the standard doors and windows and the price the
 designer shows, and lines at the bottom to sign. "Draw every picture" draws
-any tile not yet drawn. Take a full-page picture for Alan (Playwright from
-`/opt/node22/lib/node_modules/playwright/index.js` -- it is a CommonJS
-package, so `import pw from "..."; const { chromium } = pw;` -- Chromium with
-`--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`;
-wait for `window.contactSheet.ready`, call `window.contactSheet.drawAll()`,
-then screenshot with `fullPage: true` into `test/out/`). **Look at every tile
+any tile not yet drawn. Take a full-page picture for Alan. In the original
+Linux environment, `loadPlaywright()` in `tools/lib/barnwright-page.mjs` loads
+Playwright; launch Chromium with
+`--use-angle=swiftshader --enable-unsafe-swiftshader --ignore-gpu-blocklist`.
+On another system, use the available browser tooling and report any automated
+checks that could not run. Wait for `window.contactSheet.ready`, call
+`window.contactSheet.drawAll()`, then screenshot with `fullPage: true` into
+`test/out/`. **Look at every tile
 yourself before sending it**: no `$1.00`, the right doors and windows, the
 width notes. Alan sends it to the company; they sign it or mark changes.
 

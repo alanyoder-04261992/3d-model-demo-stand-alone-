@@ -97,10 +97,12 @@ A red golden check is a look change. **Fix the code**; do not re-record.
 
 `npm run serve`, then compare `http://127.0.0.1:8282/?company=demo` with
 Barnwright's own designer at the same style, size and colours. For pictures
-use Playwright from `/opt/node22/lib/node_modules/playwright/index.js` with
-Chromium and `--use-angle=swiftshader --enable-unsafe-swiftshader
+use the Playwright loader in `tools/lib/barnwright-page.mjs` (`loadPlaywright`)
+with Chromium and `--use-angle=swiftshader --enable-unsafe-swiftshader
 --ignore-gpu-blocklist`, wait for `window.shedUI.ready`, and save into
-`test/out/`. The demo company uses Barnwright's warm light
+`test/out/`. That loader targets the original Linux environment; on another
+machine, use available browser tooling for visual inspection and report any
+automated checks that could not run. The demo company uses Barnwright's warm light
 (`look.trueColour: false`); a company with true colour on looks different
 on purpose (grey light), so never compare the look with one.
 

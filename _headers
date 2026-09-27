@@ -42,6 +42,13 @@
 /c/demo/*
   Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-EVv//PJcYkTWRntOxW4/t4Pr6o+55r3Oduxouv8ya74=' 'sha256-/sU2VgyZ6gxb2zgkwZzfkUdy0fXWzmhxAnUS4mPfb5c='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' data: blob:; form-action 'self'; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'
 
+# learning-side-loft: not embedded on any other website yet
+/c/learning-side-loft
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-EVv//PJcYkTWRntOxW4/t4Pr6o+55r3Oduxouv8ya74=' 'sha256-/sU2VgyZ6gxb2zgkwZzfkUdy0fXWzmhxAnUS4mPfb5c='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' data: blob:; form-action 'self'; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'
+
+/c/learning-side-loft/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-EVv//PJcYkTWRntOxW4/t4Pr6o+55r3Oduxouv8ya74=' 'sha256-/sU2VgyZ6gxb2zgkwZzfkUdy0fXWzmhxAnUS4mPfb5c='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' data: blob:; form-action 'self'; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'
+
 # starter: may be shown on https://cedarridge.example
 /c/starter
   Content-Security-Policy: default-src 'self'; script-src 'self' 'sha256-EVv//PJcYkTWRntOxW4/t4Pr6o+55r3Oduxouv8ya74=' 'sha256-/sU2VgyZ6gxb2zgkwZzfkUdy0fXWzmhxAnUS4mPfb5c='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob: https:; connect-src 'self' data: blob:; form-action 'self' https://formspree.io; frame-src 'self' https://formspree.io; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'self' https://cedarridge.example

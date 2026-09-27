@@ -27,6 +27,14 @@ company that only wants the designer.
   service, a webhook, e-mail, or its own web page).
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
+Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
+run the designer and open `/?company=learning-side-loft` for a finished
+building with prices and quote requests hidden. Learn the
+[building terms](docs/BUILDING-TERMS.md), then use
+[shed-customer-setup](.agents/skills/shed-customer-setup/SKILL.md) for the next
+company or shed buyer. This learning example has Framing and Watch it build
+switched off; other companies keep their own choices.
+
 Selling it to a company: [docs/SELLING.md](docs/SELLING.md).
 The rules every file is built to: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 Where it deliberately behaves differently from Barnwright: [docs/DIFFERENCES.md](docs/DIFFERENCES.md).

@@ -5,6 +5,21 @@ description: The steel roof (ribbed panels, screws, ridge cap, barn-roof laps, t
 
 # Roofing (`parts/roofing.js`)
 
+## Shared terminology with Alan
+
+Confirmed September 27, 2026: Alan calls the whole roof with a gentle upper
+slope and a steep lower slope on each side the **lofted roof**. Use that
+preferred term with him; `gambrel` is the existing code/reference alias.
+This confirms the intended shape and wording only, not its dimensions or
+the names of all its individual pieces. Alan also confirmed **ridge cap**
+for the highest long metal strip covering the meeting line of the two roof
+sides, on the same date. That confirms the specific piece and name, not its
+dimensions or installation details. Other technical names in this skill
+remain reference labels until we agree on the same physical part. Record
+each agreement in
+[Our building terms](../../../docs/BUILDING-TERMS.md) and the
+[10 x 16 example](../../../docs/examples/10x16-side-loft.md).
+
 ## What it is in real life
 
 The last big step of the shell: sheets of painted, ribbed steel screwed down

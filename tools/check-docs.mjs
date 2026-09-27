@@ -68,15 +68,16 @@ import { INTERIOR_DEFAULTS } from "../parts/interior.js";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BARNWRIGHT_ROOT = "/home/user/boisterous-lokum-a737e0";   /* read only, never written */
 
-export const WORKFLOW_SKILLS = Object.freeze(["new-company", "add-a-style", "add-a-part", "check-the-look", "change-construction"]);
+export const WORKFLOW_SKILLS = Object.freeze(["new-company", "add-a-style", "add-a-part", "check-the-look", "change-construction", "shed-customer-setup"]);
 export const DOCS = Object.freeze(["README.md", "docs/FOR-ALAN.md", "docs/SELLING.md",
+  "docs/BUILDING-TERMS.md", "docs/examples/10x16-side-loft.md", ".agents/skills/shed-customer-setup/SKILL.md",
   ...WORKFLOW_SKILLS.map((s) => `.claude/skills/${s}/SKILL.md`)]);
 
 /* Names that are examples on purpose, never real files. */
 const EXAMPLE_SEGMENTS = new Set(["acme"]);
 const EXAMPLE_FILES = new Set(["prices.csv", "acme-prices.csv"]);
 /* Folders at the top of the repo a path may start with. */
-const TOP_DIRS = [".claude", "tools", "model", "engine", "parts", "ui", "library", "companies", "docs", "test", "fonts"];
+const TOP_DIRS = [".agents", ".claude", "tools", "model", "engine", "parts", "ui", "library", "companies", "docs", "test", "fonts"];
 /* Tools named bare, without tools/ in front (besides every check-*). */
 const BARE_TOOLS = ["new-company", "import-prices", "list-companies", "build-headers", "capture-golden", "extract-barnwright-catalogue"];
 
@@ -314,7 +315,13 @@ for (const s of WORKFLOW_SKILLS) {
   const name = /^name:\s*(.+?)\s*$/m.exec(fm[1]), desc = /^description:\s*(.+?)\s*$/m.exec(fm[1]);
   ok(`${rel}: frontmatter name is "${s}"`, !!name && name[1] === s, name ? `it is "${name[1]}"` : "no name");
   ok(`${rel}: frontmatter description says when to use it`, !!desc && desc[1].length > 40 && /\b(use|read) (it )?when\b|\bwhen\b/i.test(desc[1]), desc ? desc[1] : "no description");
-  ok(`${rel}: has a # title and at least three ## sections`, /^# \S/m.test(text) && (text.match(/^## /gm) || []).length >= 3);
+  // A Claude entry point may forward to the same named Codex skill; check
+  // its actual workflow instead of requiring duplicate instructions.
+  const canonical = `.agents/skills/${s}/SKILL.md`;
+  const forwards = text.includes(`](../../../${canonical})`) && existsSync(resolve(ROOT, canonical));
+  const workflow = forwards ? read(canonical) : text;
+  ok(`${rel}: workflow has a # title and at least three ## sections${forwards ? " in " + canonical : ""}`,
+    /^# \S/m.test(workflow) && (workflow.match(/^## /gm) || []).length >= 3);
 }
 
 /* ------------------------------------------------------------------ 6 */

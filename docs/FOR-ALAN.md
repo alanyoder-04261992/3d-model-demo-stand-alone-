@@ -17,6 +17,12 @@ company is one settings file rather than new programming.
 Selling it — what a company gets, what they send you, what you charge for —
 is in [SELLING.md](SELLING.md).
 
+Start learning with the [10x16 Side Lofted Barn](examples/10x16-side-loft.md)
+and [our building terms](BUILDING-TERMS.md). The example opens the finished
+building, with Framing and Watch it build switched off. Use the
+[shed-customer-setup skill](../.agents/skills/shed-customer-setup/SKILL.md)
+to reuse the terminology and setup steps for the next customer.
+
 ## What the customer can do
 
 The page has the 3D building on one side and six cards on the other:

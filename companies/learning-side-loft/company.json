@@ -1,0 +1,132 @@
+{
+  "id": "learning-side-loft",
+  "status": "active",
+  "manufacturer": "standard",
+  "brand": {
+    "name": "Side Loft Learning Example",
+    "short": "10 x 16 Side Loft",
+    "initials": "SL",
+    "tagline": "Learn the building terms",
+    "phone": "",
+    "email": "",
+    "website": "",
+    "colors": {
+      "header": "#1F2A24",
+      "accent": "#B8893A"
+    },
+    "logo": "",
+    "credit": {
+      "text": "3D designer by Barnwright",
+      "url": "",
+      "show": true
+    }
+  },
+  "offer": {
+    "SLB": {
+      "sizes": {
+        "10x16": 1
+      }
+    }
+  },
+  "categories": [
+    [
+      "Learning example",
+      [
+        "SLB"
+      ]
+    ]
+  ],
+  "items": {
+    "w72": 1,
+    "w23": 1
+  },
+  "options": {},
+  "palettes": {
+    "paint": [
+      "White",
+      "Beige",
+      "Gray",
+      "Barn Red",
+      "Navy"
+    ],
+    "trim": [
+      "White",
+      "Black"
+    ],
+    "metal": [
+      "Galvalume",
+      "Black",
+      "Barn Red"
+    ]
+  },
+  "defaults": {
+    "style": "SLB",
+    "size": "10x16",
+    "colors": {
+      "body": "White",
+      "trim": "Black",
+      "roof": "Black"
+    }
+  },
+  "construction": {},
+  "pricing": {
+    "show": "none",
+    "roundTo": 5,
+    "minCharge": 5,
+    "roofAreaFactor": 1.15,
+    "rto": {
+      "factors": {
+        "36": 0.6,
+        "48": 0.53,
+        "60": 0.45
+      },
+      "showTerm": null
+    }
+  },
+  "notes": {
+    "finePrint": "Learning example only. Prices are not configured.",
+    "sizeNotes": {}
+  },
+  "leads": {
+    "mode": "none",
+    "url": "",
+    "fields": {
+      "name": "required",
+      "phone": "required",
+      "email": "optional",
+      "zip": "required",
+      "address": "optional",
+      "note": "optional"
+    },
+    "smsConsent": null,
+    "images": false
+  },
+  "embed": {
+    "origins": [],
+    "shareUrl": ""
+  },
+  "look": {
+    "trueColour": true,
+    "scene": "studio"
+  },
+  "features": {
+    "framingView": false,
+    "buildPlayback": false,
+    "floorPlan": true
+  },
+  "license": {
+    "plan": "hosted",
+    "renews": ""
+  },
+  "renames": {
+    "items": {},
+    "sizes": {},
+    "colors": {}
+  },
+  "cfg": 1,
+  "_help": [
+    "LEARNING EXAMPLE, not a customer price list. The numeric prices are $1 placeholders required by the model; do not copy them into a customer quote.",
+    "Alan confirmed: side loft means Side Lofted Barn (SLB), with the entrance on the long wall. See docs/BUILDING-TERMS.md and docs/examples/10x16-side-loft.md.",
+    "Uses existing standard geometry and unconfirmed shop assumptions, including 4 ft lofts at both ends. This example does not confirm construction specifications."
+  ]
+}
