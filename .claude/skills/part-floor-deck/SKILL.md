@@ -45,8 +45,12 @@ or sheet treatment: treated wood was confirmed for the floor timbers,
 not these sheets. Any surface appearance is illustrative.
 
 On September 28, 2026 Alan supplied two private photographs as visual
-references: use a matte, muted brown-gray/olive surface with fine, close,
-parallel ribbing and quieter hairline seams. The photographs do not identify
+references for fine, close, parallel ribbing and quieter hairline seams.
+His later “Here the color” photo on the same date is the preferred color
+reference: a warmer, muted taupe-brown. The lesson's `#a39c91` source tint
+approximates that photo under the model's texture and lighting; it is not a
+measured product color or manufacturer code. Keep the existing fine texture
+and faint seams when correcting the color. The photographs do not identify
 a product, manufacturer, material, treatment or fastening method. Rib spacing
 was not measured; keep its rendered scale illustrative.
 

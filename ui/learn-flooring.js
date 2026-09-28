@@ -1,12 +1,14 @@
 /* An illustrative surface for the floor lesson, based on Alan's close-up:
-   matte brown-gray/olive, fine parallel ribs and tiny flecks. This does not
+   matte warm taupe-brown, fine parallel ribs and tiny flecks. This does not
    identify the product or specify its rib/profile dimensions. No photo asset,
    sheet geometry, normal or construction stage is changed. */
 import { hexRGB, srgbLin } from "../engine/math.js";
 import { mulberry32 } from "../engine/seeded.js";
 
 const PREFIX = "lessonFlooring-", VARIANTS = 4, EPSILON = 1e-7;
-const TINT = hexRGB("#8c8979").map(srgbLin);
+// Approximate display tint from Alan's later color-reference photo, allowing
+// for the neutral texture/lighting. This is not a manufacturer color code.
+const TINT = hexRGB("#a39c91").map(srgbLin);
 
 function sheetHash(value) {
   let hash = 2166136261;

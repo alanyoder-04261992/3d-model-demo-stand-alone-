@@ -88,10 +88,12 @@ renders of the [flooring](../../images/flooring.png) and
 [surface close-up](../../images/flooring-closeup.png). Refresh these when the
 flooring geometry or finish changes. They are model renders, not private photographs.
 
-On September 28, 2026 Alan supplied two private visual references for a
-matte, muted brown-gray/olive surface with fine, close, parallel ribbing and
-quieter hairline seams. The lesson's finish follows that appearance without
-changing dimensions or layout. Rib spacing is illustrative, not measured;
+On September 28, 2026 Alan supplied two private visual references for fine,
+close, parallel ribbing and quieter hairline seams. His later “Here the color”
+photo sets the preferred matte, warm taupe-brown tone. The lesson's `#a39c91`
+source tint approximates that photo under the current texture and lighting;
+it is not a manufacturer color code. The finish keeps its fine texture,
+dimensions and layout. Rib spacing is illustrative, not measured;
 the photographs do not confirm a product, material, manufacturer, treatment
 or fastening method. The original photographs remain private.
 

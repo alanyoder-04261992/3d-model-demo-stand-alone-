@@ -194,7 +194,7 @@ def render_flooring():
 
     im,project=scene([-1,b['y1Ft'],-4],1.65,yaw=.18,pitch=1.04)
     seam_lines(im,project);d=ImageDraw.Draw(im)
-    title(d,'Flooring · surface close-up','Fine parallel ribs · matte brown-gray finish · quieter seams')
+    title(d,'Flooring · surface close-up','Fine parallel ribs · matte taupe-brown finish · quieter seams')
     leader(d,project([-.78,b['y1Ft'],-3.95]),(620,748,540,110),'Fine ribbed texture',['Based on your close-up photo'])
     leader(d,project([-1,b['y1Ft'],-4.18]),(40,748,530,110),'Tight sheet joint',['Hairline drawn at the real sheet edge'])
     d.text((40,890),'Surface detail is illustrative; the sheet sizes and ⅝ in thickness are unchanged.',font=font(22),fill='#526879')
