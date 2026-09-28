@@ -57,10 +57,10 @@ export async function startWallLesson({gable=false}={}) {
     if($("lesson-pieces-section")) $("lesson-pieces-section").setAttribute("aria-label",gable?"Gable board study":"Wall study");
     if($("lesson-heading")) $("lesson-heading").textContent=gable?"Gable framing":"Walls";
     if($("measurement-explanation")) $("measurement-explanation").textContent=gable
-      ? "The 2×6 follows the upper plate on edge. Connection close-up measures the 2½-inch projection and the ½-inch inside ledge."
+      ? "The gable board is a 2×6 on edge along the upper plate. Connection close-up measures the 2½-inch projection and the ½-inch inside ledge."
       : "Measurements follow the actual boards. Plates close-up shows their names; Wall end close-up shows the 3½-inch step.";
     if($("lesson-reference")) $("lesson-reference").textContent=gable
-      ? "The board's section and fit are confirmed. Its 118-inch length is calculated from the actual upper plate and both end projections. A formal shop name and wood treatment have not been confirmed."
+      ? "Gable board is the confirmed name. It is nailed to the upper plate and supports the truss. Its 118-inch length is calculated from the plate and both end projections."
       : "Side wall, end wall, stud, bottom plate, top plate and upper plate are confirmed names. This view studies one plain wall on the completed floor.";
     const stepLink=$("lesson-step-link");if(stepLink) {stepLink.href=gable?"learn.html?step=walls":"learn.html?step=gable";stepLink.textContent=gable?"Earlier: plain walls":"Next: gable framing";}
     for(const button of buttons) {
@@ -155,10 +155,10 @@ export async function startWallLesson({gable=false}={}) {
       canvas.setAttribute("aria-label",`Rotatable 3D ${wallName.toLowerCase()} on the completed floor. Stud, bottom plate, top plate and upper plate.`);
     }
     function gableCaption(g) {
-      $("piece-title").textContent="2×6 along the end-wall upper plate";
+      $("piece-title").textContent=g.name+" — 2×6 along the end-wall upper plate";
       $("piece-description").textContent="The board stands on its narrow edge on top of the upper plate. Its inside face leaves a ½-inch ledge, and it projects 2½ inches past each cut end of the upper plate.";
-      $("piece-draft").textContent="The section and fit are confirmed. We have not assigned a formal shop name or confirmed wood treatment for this board.";
-      const rows=[["2×6 length · calculated",`${formatInches(g.lengthFt)} (${formatFeetInches(g.lengthFt)})`],
+      $("piece-draft").textContent="The gable board is nailed to the upper plate. Wood treatment and nail size or spacing remain unspecified. The truss and gable studs follow once their geometry is established.";
+      const rows=[["Gable board length · calculated",`${formatInches(g.lengthFt)} (${formatFeetInches(g.lengthFt)})`],
         ["Actual section · on edge",`${formatInches(g.thicknessFt)} thick × ${formatInches(g.heightFt)} high`],
         ["Upper plate beneath · calculated",`${formatInches(g.upperPlate.lengthFt)} (${formatFeetInches(g.upperPlate.lengthFt)})`],
         ["Past first cut end · confirmed",formatInches(g.endProjectionFt.start)],
@@ -167,7 +167,7 @@ export async function startWallLesson({gable=false}={}) {
       const list=$("piece-measurements");list.replaceChildren();
       for(const [title,value] of rows) {const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=title;dd.textContent=value;row.append(dt,dd);list.appendChild(row);}
       $("measurement-note").textContent=`Length: ${formatInches(g.upperPlate.lengthFt)} upper plate + ${formatInches(g.endProjectionFt.start)} at one end + ${formatInches(g.endProjectionFt.end)} at the other = ${formatInches(g.lengthFt)}. The ½-inch ledge is measured from the upper plate's inside face to the 2×6's inside face.`;
-      canvas.setAttribute("aria-label","Rotatable 3D end wall and 2×6 on top of its upper plate. The new board is on edge, with a half-inch inside ledge and two-and-a-half-inch projection past each upper-plate end.");
+      canvas.setAttribute("aria-label","Rotatable 3D end wall and gable board on top of its upper plate. The 2×6 gable board is on edge, with a half-inch inside ledge and two-and-a-half-inch projection past each upper-plate end.");
     }
     function setWall(kind) {
       if(!["side","end"].includes(kind) || (gable && kind!=="end")) return;

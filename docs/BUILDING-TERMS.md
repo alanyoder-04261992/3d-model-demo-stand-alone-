@@ -19,7 +19,7 @@ agreement before adding the next stage. The earlier
 finished-building starting preference is superseded; the agreed roof names
 below remain valid.
 
-**Current stage: The 2x6 along the end wall's upper plate.** Use
+**Current rendered stage: The gable board on the end wall's upper plate.** Use
 `learn.html?company=learning-side-loft&step=gable` for the end wall and this
 single new board over the existing floor. It stands on edge on top of the
 upper plate, leaves a 1/2 in inside ledge and extends 2 1/2 in past both
@@ -27,6 +27,9 @@ cut ends of that plate. The [picture page](../gable.html) shows the same
 assembly and a connection detail. Keep manual control; further gable pieces,
 joined corners, openings and autoplay are not part of this step. The earlier
 wall selector at `?step=walls` and Flooring view at `?step=deck` remain available.
+Alan has now described the truss and gable studs for the next stage; their
+confirmed facts and unresolved layout details are recorded below. Those
+members are not yet shown in this lesson.
 
 Earlier, Alan accepted the skid render (“Ok looks good now the
 next part”) and then confirmed **floor joist** for the crosswise 2x6 seated
@@ -99,7 +102,9 @@ physical cut list.
 | Confirmed term and section | **Upper plate** | The upper of the two horizontal 2x4 boards above the studs; actual 1 1/2 x 3 1/2 in. | Alan's labeled-photo discussion and dimension reply, September 28, 2026 |
 | Confirmed wall spacing and repeated pair | **16 in on center; double stud every 4 ft** | Each 4 ft mark falls between the touching pair. The centers of 1 1/2 in-wide studs are a derived 3/4 in either side of that mark; the starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
 | Confirmed wall-end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; its upper plate is full 16 ft. End bottom/top plates and studs run full 10 ft; its upper plate stops 3 1/2 in short at each end. Derived plate lengths: side bottom/top 185 in (15 ft 5 in), side upper 192 in (16 ft), end bottom/top 120 in (10 ft), end upper 113 in (9 ft 5 in). | Alan's corrections and explicit both-ends reply, September 28, 2026 |
-| Confirmed piece, section, orientation and fit; descriptive label | **2x6 along upper plate** | A nominal 2x6, actual 1 1/2 in thick by 5 1/2 in high, running along and resting on top of the end wall's upper plate, on edge. Its inside face is 1/2 in back from the plate's inside face, leaving a ledge toward the room. It projects 2 1/2 in past each cut end of the upper plate. Its derived length is 118 in (9 ft 10 in); the projection is along the wall, not above the plate. | Alan's photo, clarification and explicit top-seating/both-ends reply, September 28, 2026 |
+| Confirmed name, section, orientation, fit and fastening method; length derived | **Gable board** | The nominal 2x6, actual 1 1/2 in thick by 5 1/2 in high, running along and resting on top of the end wall's upper plate, on edge. It is nailed to the upper plate and supports the truss. Its inside face is 1/2 in back from the plate's inside face, leaving a ledge toward the room. It projects 2 1/2 in past each cut end of the upper plate. Its derived length is 118 in (9 ft 10 in); the projection is along the wall, not above the plate. Earlier descriptive label: “2x6 along upper plate.” Nail size/count/spacing remain unspecified. | Alan's photos, fit clarifications and explicit name/connection statement, September 28, 2026 |
+| Confirmed term, section and support; profile pending | **Truss** | The roof-framing assembly Alan says sits on top of the gable board. Its lumber is nominal 2x4, actual 1 1/2 x 3 1/2 in. He supplied far-point-to-point member lengths of 46 1/2 in and 37 3/4 in; their assignment to the upper and lower slopes is not yet confirmed. | Alan's truss descriptions, photo and “The truss is 2x4” reply, September 28, 2026 |
+| Confirmed description, support and spacing; precise layout pending | **Studs in the gable end** | Alan says these are “turned outward,” sit on the gable board and are 2 ft (24 in) on center. The exact outward-facing lumber face, layout origin, member section and cut lengths are not yet confirmed. | Alan's gable-frame photo and description, September 28, 2026 |
 
 ## What remains to agree on
 
@@ -109,11 +114,21 @@ The agreed terms are **side loft**, **lofted roof**, **ridge cap**, **skids**,
 new piece, use **Board the mule hooks onto**, with **flat treated 2x4** as
 its physical description; do not promote
 “cleat” or “blocking” to an agreed name.
-For the new end-wall piece, use the descriptive label **2x6 along upper
-plate**. Alan has described its fit while starting the gable framing; he has
-not supplied a formal shop part name. Do not turn “chord,” “rafter” or
-“header” into agreed names for this board. Its treatment, species, grade and
-fasteners remain unspecified.
+For the new end-wall piece, use Alan's confirmed name **gable board**.
+Do not substitute “chord,” “rafter” or “header.” Its treatment, species and
+grade remain unspecified. Nailing it to the upper plate is confirmed;
+nail size, count and spacing are not.
+
+The **6 1/4 in** truss measurement is recorded as Alan stated it: from the
+farthest truss point to the upper plate. The direction, exact plate datum
+and whether it applies at both ends still need confirmation. Keep it
+separate from the confirmed **2 1/2 in gable-board end projection**. For the
+46 1/2 in and 37 3/4 in member lengths, establish which piece is which,
+the slopes and end-cut geometry before drawing the roof profile. Do not
+infer these from the photograph or use the finished designer's roof shape
+as a confirmed shop specification. The 24 in gable-stud spacing is distinct
+from the 16 in wall-stud spacing; it does not establish spacing between
+trusses along the building.
 The remaining candidate names below await a later discussion, one physical
 part at a time. Their presence in code or an older skill does not make them
 agreed. `gambrel` remains the project's code reference for the whole lofted
@@ -174,7 +189,7 @@ camera does not rearrange the knots. This does not establish deck treatment,
 species, grade or treatment chemistry. The finish does not change geometry.
 
 The default learning page still begins with skids only. Alan has progressed
-through **Walls** at `?step=walls` to the single **2x6 along upper plate** at
+through **Walls** at `?step=walls` to the single **gable board** at
 `?step=gable`, over the end wall and existing floor. Earlier flooring,
 frame and joists-only views remain available; further roof framing comes later.
 The confirmed 75 in studs plus three flat 1 1/2 in plates give a **derived
@@ -188,7 +203,7 @@ length plus 2 1/2 in at each end. It therefore stops **1 in short of each
 **85 in above the flooring**, derived from `79.5 + 5.5`. The 1/2 in inside
 ledge measures between the room-facing faces, across the wall depth; it
 does not change the board length. These relationships do not confirm the
-next gable member or the whole roof assembly.
+whole roof assembly; the next members' separate confirmations are recorded above.
 The 10 x 16 ft flooring coverage follows the current frame's
 outer bounds without changing its timbers. Manufacturer-specific net sheet
 coverage and joint profile are pending; do not infer OSB, plywood or treated
@@ -206,7 +221,7 @@ preferred wording have not yet been confirmed.**
 | --- | --- |
 | **Side Lofted Barn** | A barn with the agreed lofted roof shape (`gambrel` in code) and its standard entrance on a long side. In this model it has centered wooden double doors with one wall window on each side; those detailed labels and layout still need discussion. |
 | **10 x 16** | Width first, length second, in feet: a 10 ft wide building, 16 ft long. Its nominal footprint is 160 square feet. |
-| **Gable end** | A proposed roof-related alias for a short end. **End wall** is already confirmed for the 10 ft walls, internally `F` and `B`; the alias is not separately agreed. |
+| **Gable end** | Alan uses this wording for the roof-end framing with studs on the gable board. **End wall** remains the confirmed name for the 10 ft wall below, internally `F` and `B`; do not conflate the two framed areas. |
 | **Entrance side** | The wall with the main doors. On the standard Side Lofted Barn it is `R`, a long side. A person may call this the front; that does not change the software's `F` end-wall code. |
 | **Centered** | The center of the opening is at the middle of its wall. Positions run left/right as seen by someone standing outside and facing that wall. |
 
@@ -252,7 +267,7 @@ can wait until Alan wants to add them.
 | **Runners** | A possible alternate name for the confirmed skids; Alan has confirmed “skids,” not this alias. | [Skids](../.claude/skills/part-skids/SKILL.md) |
 | **Rim joist / end joist / floor frame** | Proposed names for the perimeter boards, the end boards and the complete floor-support assembly. **Floor joist** is already confirmed for the regular crosswise member; these additional names remain separate questions. | [Floor frame](../.claude/skills/part-floor-frame/SKILL.md) |
 | **Header / king stud / jack stud** | The member spanning an opening / the full-height stud beside it / the shorter stud supporting the header. | [Wall frame](../.claude/skills/part-wall-frame/SKILL.md) |
-| **Truss / chord / gusset** | Roof-supporting assembly / a principal member of that assembly / a plate joining members. | [Roof frame](../.claude/skills/part-roof-frame/SKILL.md) |
+| **Chord / gusset** | A principal member of a truss / a plate joining members. Alan has confirmed **truss** for the assembly, but these additional terms remain proposed. | [Roof frame](../.claude/skills/part-roof-frame/SKILL.md) |
 | **Roof deck / sheathing** | The layer under the roof covering. Keep this distinct from the steel roofing above it. | [Roof deck](../.claude/skills/part-roof-deck/SKILL.md) |
 | **Loft / loft joists / loft deck** | A raised storage floor near an end of the building / its supporting members / its sheet floor. “Side loft” does not mean the loft projects from a side wall. | [Loft](../.claude/skills/part-loft/SKILL.md) |
 

@@ -1,6 +1,6 @@
 ---
 name: part-gable-frame
-description: The gable-end framing and the opt-in lesson's single 2x6 along the end upper plate. Read before changing that board's seating, ledges or projections, gable stud spacing, or framing around gable openings.
+description: The gable-end framing and the opt-in lesson's gable board on the end upper plate. Read before changing the board's seating, ledges or projections, the learned gable studs, or framing around gable openings.
 ---
 
 # Gable-end framing (`parts/gable-frame.js`)
@@ -9,8 +9,8 @@ description: The gable-end framing and the opt-in lesson's single 2x6 along the 
 
 The manual 10x16 lesson at
 `learn.html?company=learning-side-loft&step=gable` contains the existing floor,
-one end wall and **one 2x6 along upper plate**. That label describes the
-piece; Alan has not named it a chord, rafter or header. The ordinary framing
+one end wall and **one gable board**, Alan's confirmed name for the 2x6
+along the upper plate. Do not substitute chord, rafter or header. The ordinary framing
 described below is separate background and must not fill in the rest of the
 gable during this step.
 
@@ -34,8 +34,10 @@ Derive dimensions from the actual supporting upper plate, never a second
 - `outside ledge = plate depth - inside ledge - board thickness`.
   The current outer ledge is a derived **1 1/2 in**, from `3.5 - 0.5 - 1.5`.
 
-Treatment, species, grade, fasteners, formal shop name and subsequent gable
-members remain unconfirmed. Do not inherit the floor timber's treatment.
+Alan named it **gable board** and confirmed it is **nailed to the upper
+plate**, with the **truss sitting on top of the gable board**. Nail
+size/count/spacing, treatment, species and grade remain unconfirmed.
+Do not inherit the floor timber's treatment.
 Show varied wood grain as a visual finish without treating it as a material
 specification. Keep the private photo out of tracked files and published
 assets; do not derive dimensions from its pixels. See
@@ -56,7 +58,7 @@ The learning company's `construction.gableStudy` record is:
   status: {
     section: "confirmed", orientation: "confirmed", placement: "confirmed",
     innerLedge: "confirmed", endProjection: "confirmed",
-    name: "provisional", treatment: "provisional"
+    name: "confirmed", treatment: "provisional"
   }
 }
 ```
@@ -96,7 +98,32 @@ end projection. Retain the earlier plain-wall and floor views. If browser
 checks cannot run, report that limitation separately from static-picture
 and geometry checks.
 
+## Next learned members: recorded, not yet drawn
+
+On September 28, Alan described the **studs in the gable end** as “turned
+outward,” seated on the gable board and **2 ft (24 in) on center**. Retain
+that wording while resolving which lumber face points outward, the member
+section, the starting layout datum and the cut lengths. Do not copy the
+ordinary model's orientation or wall-stud grid below into this lesson.
+The 24 in value applies to these gable studs, not to wall studs or to the
+spacing of trusses along the building.
+
+He confirmed nominal **2x4 truss lumber**, actual **1 1/2 x 3 1/2 in**,
+with supplied far-point-to-point member lengths of **46 1/2 in** and
+**37 3/4 in**. Upper/lower-slope assignment, slopes and end-cut geometry
+remain unresolved. The separate **6 1/4 in from the farthest truss point
+to the upper plate** still needs its direction, exact plate datum and
+both-end applicability. Do not alter the gable board's confirmed 2 1/2 in
+end projection or create a roof profile from these partial inputs. Keep
+the current board-only geometry until the next members can be positioned
+from agreed inputs. See [roof framing](../part-roof-frame/SKILL.md) for
+the companion record; its ordinary model rules are not confirmations for
+Alan's learned assembly.
+
 ## What it is in real life
+
+This section describes the ordinary model. The learned assembly above has
+its own confirmed gable-board and gable-stud rules.
 
 Each gable end of the roof is closed by a gable-end truss sitting on the end
 wall: the end truss's chords (drawn by `parts/roof-frame.js`, flush inside

@@ -72,7 +72,8 @@ near(contactLength * 12, 113, "bearing length on upper plate");
 near(contactDepth * 12, 1.5, "board's full thickness bears on upper plate");
 for (const key of ["section", "orientation", "placement", "innerLedge", "endProjection"])
   assert.equal(measures.status[key], "confirmed");
-assert.equal(measures.status.name, "provisional");
+assert.equal(measures.name, "Gable board");
+assert.equal(measures.status.name, "confirmed");
 assert.equal(measures.status.treatment, "provisional");
 assert.equal(measures.status.length, "derived");
 assert.equal(measures.members.length, 1, "no gable studs, roof angles or sloping rafters were inferred");

@@ -5,7 +5,40 @@ description: The roof trusses (or rafters) of a portable building, for every roo
 
 # Roof framing (`parts/roof-frame.js`)
 
+## Alan's learned truss: recorded, not yet drawn
+
+For the manual 10x16 lesson, Alan confirmed on September 28, 2026 that the
+**truss sits on top of the gable board**. The gable board is the nominal
+2x6 nailed to the end wall's upper plate, recorded in
+[gable framing](../part-gable-frame/SKILL.md). Its confirmed 2 1/2 in
+projections beyond the upper-plate cuts remain unchanged.
+
+Alan confirmed **2x4 truss lumber**, actual **1 1/2 x 3 1/2 in** using the
+agreed conversion. He supplied **46 1/2 in** and **37 3/4 in** member
+lengths, measured from far point to point. Their upper/lower-slope
+assignment, slope angles and end-cut geometry remain unresolved. Record
+these as supplied member measurements, not horizontal runs or a complete
+roof profile. His **6 1/4 in from the farthest truss point to the upper
+plate** also needs its direction, exact plate datum and both-end
+applicability before deriving a span or an overhang. Do not infer any of
+these from pixels in the private reference photos.
+
+The gable-end studs are confirmed to sit on the gable board, be “turned
+outward” and be **24 in on center**. Their section, exact lumber face,
+layout origin and lengths are still pending. Their spacing does not
+confirm spacing between trusses along the building. Connector dimensions,
+nail schedule, treatment, species, grade and a full roof construction
+sequence are also pending. The lesson at `?step=gable` currently shows the
+gable board alone above the end wall; the roof rules below belong to the
+ordinary finished-model reference and must not fill in these missing inputs.
+Use [the measurement workflow](../../../.agents/skills/shed-measurements/SKILL.md)
+when a different width is requested; these two lengths are not a universal
+scale rule.
+
 ## What it is in real life
+
+This section describes the ordinary model. Its roof profile and construction
+defaults do not establish the missing inputs for Alan's learned truss above.
 
 The frame that holds the roof up. The standard build is TRUSSES: a flat,
 factory-style frame of 2x4s set across the building every 24 in along its

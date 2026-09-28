@@ -47,7 +47,7 @@ For Alan's learned wall assembly, use:
 | Side wall upper plate | `L_in` |
 | End wall bottom plate and top plate | `W_in` |
 | End wall upper plate | `W_in - a_e - b_e` |
-| 2x6 along the end upper plate | `upper plate cut length + start projection + end projection` |
+| Gable board (2x6 along the end upper plate) | `upper plate cut length + start projection + end projection` |
 | Wall height above the flooring | `stud cut + 3 x plate thickness` |
 | Floor joist between equal outer boards | `actual outside frame width in inches - 2 x outer-board thickness` |
 
@@ -68,7 +68,7 @@ length is `12W - 2(1.5)`. The 75 in studs plus three 1.5 in plates give
 79.5 in wall height. Add actual flooring-top elevation only when measuring
 from skid bottom; do not label that combined height as stud length.
 
-For the learned **2x6 along upper plate**, Alan confirmed on-edge seating
+For the learned **gable board**, Alan confirmed on-edge seating
 on top of the end upper plate, a 1/2 in inside ledge and 2 1/2 in projection
 past each cut end. Use the actual plate endpoints: the new start is the
 plate start minus its start projection, and the new end is the plate end
@@ -85,7 +85,36 @@ plate top; board top is `upper plate top + board height`, giving 85 in above
 the flooring here. Keep lengths, ledges and elevations as separate axes.
 Before reusing this fit for a new builder or changed wall section, confirm
 its applicability; a longer building alone does not lengthen an end-wall
-board. Its treatment and formal shop name remain unspecified.
+board. **Gable board** is now the confirmed name, and nailing it to the
+upper plate is confirmed; treatment and nail size/count/spacing remain
+unspecified.
+
+## Resolve the truss before calculating its profile
+
+Alan confirmed the truss sits on top of the gable board and uses nominal
+2x4 lumber, actual 1.5 x 3.5 in. He supplied far-point-to-point member
+lengths of **46.5 in** and **37.75 in** for this 10 ft-wide example. Record
+those values separately from centerline lengths, horizontal runs and the
+overall truss span. Their assignment to the upper/lower slopes and the
+slopes/end-cut geometry remain pending. Two member lengths alone do not
+determine a unique lofted-roof profile. Do not scale them in proportion to
+building width or use the finished model's roof angles as shop inputs.
+
+His **6.25 in** measurement is from the farthest truss point to the upper
+plate. Confirm the direction, exact upper-plate reference and whether both
+ends share it before deriving a truss span or overhang. It is a separate
+measurement from the gable board's **2.5 in** projection past the plate cuts.
+Do not add either distance to a sloping member length.
+
+The gable-end studs sit on the gable board and are **24 in on center**,
+“turned outward.” Their section, precise outward-facing lumber face,
+starting layout datum and cut lengths are unresolved. Once those and the
+truss profile are agreed, lay centers at `gable layout origin + n x 24 in`
+within the supported run and derive each top cut from the actual truss
+underside. Check the full rotated section against that cut, not just the
+center point. Do not reuse the wall's 16 in grid or its doubled-stud rule
+for these members. Confirm any reuse at a different building size with
+the builder, and keep lengthwise spacing between trusses a separate input.
 
 ## Keep the layout datum when the ends change
 
@@ -138,7 +167,7 @@ It is not confirmation that those rules suit a new building.
 | Side upper plate | 192 = 16 ft | 240 = 20 ft |
 | End bottom/top plate | 120 = 10 ft | 144 = 12 ft |
 | End upper plate | `120 - 7 = 113` = 9 ft 5 in | `144 - 7 = 137` = 11 ft 5 in |
-| 2x6 along end upper plate, with 2.5 in projection at each end | `113 + 5 = 118` = 9 ft 10 in | `137 + 5 = 142` = 11 ft 10 in |
+| Gable board, with 2.5 in projection at each end | `113 + 5 = 118` = 9 ft 10 in | `137 + 5 = 142` = 11 ft 10 in |
 | Floor joist | `120 - 3 = 117` = 9 ft 9 in | `144 - 3 = 141` = 11 ft 9 in |
 | Wall height above flooring | `75 + 4.5 = 79.5` in | `75 + 4.5 = 79.5` in |
 | Flooring row widths | 4 + 4 + 2 ft | 4 + 4 + 4 ft |

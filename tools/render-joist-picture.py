@@ -162,9 +162,9 @@ def render_gable():
     assert abs((b['z1Ft']-b['z0Ft'])*12-1.5)<1e-8
     def face(box,x,y):return [x,y,box['z1Ft']]
     im,project=scene(yaw=.32,pitch=.35);d=ImageDraw.Draw(im)
-    title(d,'End wall · first gable board','2×6 standing on edge, along the upper plate')
+    title(d,'End wall · gable board','2×6 standing on edge, nailed to the upper plate')
     leader(d,project(face(b,-1.8,(b['y0Ft']+b['y1Ft'])/2)),(35,150,480,110),
-           '2×6 along upper plate',['1½ × 5½ in actual · on edge'])
+           'Gable board',['2×6 · 1½ × 5½ in actual · on edge'])
     leader(d,project(face(p,2.2,(p['y0Ft']+p['y1Ft'])/2)),(840,300,325,110),
            'Upper plate',['9 ft 5 in · underneath'])
     dimension(d,project,face(b,b['x0Ft'],b['y1Ft']),face(b,b['x1Ft'],b['y1Ft']),
@@ -179,9 +179,9 @@ def render_gable():
 
     target=[p['x0Ft']+.48,p['y1Ft']+.10,p['z1Ft']]
     im,project=scene(target,1.7,yaw=-.62,pitch=.62);d=ImageDraw.Draw(im)
-    title(d,'2×6 connection · inside view','½ in inside ledge · 2½ in past the upper plate’s cut end')
+    title(d,'Gable board · inside view','½ in inside ledge · 2½ in past the upper plate’s cut end')
     leader(d,project(face(b,p['x0Ft']+.78,b['y1Ft']-.19)),(675,150,490,110),
-           '2×6 on edge',['Bottom rests on the upper plate'])
+           'Gable board · 2×6',['Bottom rests on the upper plate'])
     leader(d,project(face(p,p['x0Ft']+.52,p['y0Ft']+.055)),(35,748,540,111),
            'Upper plate',['2×4 · 1½ × 3½ in actual'])
     # The extension is lengthwise. Both endpoints use the board's lower inside edge.

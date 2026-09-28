@@ -77,7 +77,7 @@
       "status": {
         "section": "confirmed", "orientation": "confirmed", "placement": "confirmed",
         "innerLedge": "confirmed", "endProjection": "confirmed",
-        "name": "provisional", "treatment": "provisional"
+        "name": "confirmed", "treatment": "provisional"
       }
     },
     "wallStudy": {
