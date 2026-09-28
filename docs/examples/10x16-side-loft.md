@@ -43,7 +43,7 @@ to point to; they are not yet agreed shop language.
 | Confirmed wall spacing and pair alignment | **16 in on center; double stud every 4 ft** | The 4 ft mark falls between the touching pair. The starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
 | Confirmed end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; side upper is full 16 ft. End bottom/top plates and studs run full 10 ft; end upper stops 3 1/2 in short at each end. | Alan's corrections and explicit both-ends reply, September 28, 2026 |
 | Confirmed name, fit and fastening method; length derived | **Gable board** | On edge on top of, and nailed to, the end wall's upper plate, leaving a 1/2 in inside ledge and projecting 2 1/2 in past each cut end. Actual section is 1 1/2 in thick by 5 1/2 in high. Derived length is 118 in (9 ft 10 in). It supports the truss. Treatment and nail size/count/spacing are not confirmed. Earlier descriptive label: “2x6 along upper plate.” | Alan's photos, fit clarifications and explicit name/connection statement, September 28, 2026 |
-| Confirmed term, lumber and support; profile pending | **Truss** | Sits on the gable board; nominal 2x4, actual 1 1/2 x 3 1/2 in. Alan supplied far-point-to-point member lengths of 46 1/2 in and 37 3/4 in, without yet assigning them to the upper/lower slopes. | Alan's photos, measurements and “The truss is 2x4” reply, September 28, 2026 |
+| Confirmed term, lumber, support, member lengths and peak height; profile pending | **Truss** | Sits on the gable board; nominal 2x4, actual 1 1/2 x 3 1/2 in. The upper piece leading to the peak measures 54 in at its longest points; the lower, steeper piece is 37 3/4 in. The peak is 4 ft (48 in) above the top of the gable board. | Alan's photos, “The truss is 2x4” reply, corrected measurements and upper-piece clarification, September 28, 2026 |
 | Confirmed description, support and spacing; layout pending | **Studs in the gable end** | “Turned outward,” seated on the gable board, 2 ft (24 in) on center. Exact lumber face, section, starting datum and cut lengths remain pending. | Alan's gable-frame photo and description, September 28, 2026 |
 
 The whole shape is **lofted roof**, and its highest long metal meeting strip
@@ -147,11 +147,20 @@ Treatment, species, grade and nail size/count/spacing remain unconfirmed.
 
 Alan confirmed that the **truss sits on top of the gable board** and is
 made from **2x4 lumber**, actual **1 1/2 x 3 1/2 in** using the agreed
-conversion. He supplied two member lengths, measured from far point to
-point: **46 1/2 in** and **37 3/4 in**. The values are recorded, but their
-assignment to the upper and lower slopes, the slope angles and the end-cut
-geometry are not yet established. These are member measurements, not a
-confirmed roof span or peak height.
+conversion. His current two member lengths, measured from the longest
+points, are **54 in** and **37 3/4 in**. The 54 in correction replaces his
+earlier 46 1/2 in value; 37 3/4 in is unchanged. Alan confirmed that the
+**54 in piece is the upper piece leading to the peak**, assigning the
+**37 3/4 in piece to the lower, steeper slope**. The slope angles and
+end-cut geometry are not yet established. These are member measurements,
+not a confirmed horizontal roof span.
+
+Alan confirmed a **4 ft (48 in) peak height**, measured from the **top of
+the gable board to the highest point of the peak**. With the gable-board
+top already 85 in above the flooring, the peak elevation is a derived
+**133 in above flooring** (`85 + 48`). Keep this vertical measurement
+separate from the sloping member lengths; it does not supply their cuts
+or the unresolved overhang datum.
 
 He also supplied **6 1/4 in from the farthest truss point to the upper
 plate**. Keep the measurement wording and value while confirming its

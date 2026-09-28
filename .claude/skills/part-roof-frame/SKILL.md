@@ -14,14 +14,23 @@ For the manual 10x16 lesson, Alan confirmed on September 28, 2026 that the
 projections beyond the upper-plate cuts remain unchanged.
 
 Alan confirmed **2x4 truss lumber**, actual **1 1/2 x 3 1/2 in** using the
-agreed conversion. He supplied **46 1/2 in** and **37 3/4 in** member
-lengths, measured from far point to point. Their upper/lower-slope
-assignment, slope angles and end-cut geometry remain unresolved. Record
+agreed conversion. His current member lengths are **54 in for the upper
+piece leading to the peak** and **37 3/4 in for the lower, steeper piece**,
+measured from the longest points. Slope angles and end-cut geometry remain
+unresolved. Record
 these as supplied member measurements, not horizontal runs or a complete
 roof profile. His **6 1/4 in from the farthest truss point to the upper
 plate** also needs its direction, exact plate datum and both-end
 applicability before deriving a span or an overhang. Do not infer any of
 these from pixels in the private reference photos.
+
+The confirmed peak height is **4 ft (48 in)** from the **top of the gable
+board to the highest point of the peak**. Derive its elevation by adding
+48 in to the actual gable-board top; for this example, `85 + 48 = 133 in`
+above the flooring. Keep the vertical rise separate from the sloping member
+lengths and from the 6 1/4 in measurement. It does not establish the missing
+overhang datum or cuts, and is not a height to scale
+automatically with a different building width.
 
 The gable-end studs are confirmed to sit on the gable board, be “turned
 outward” and be **24 in on center**. Their section, exact lumber face,

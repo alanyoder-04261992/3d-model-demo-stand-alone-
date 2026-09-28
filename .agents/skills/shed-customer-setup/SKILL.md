@@ -141,8 +141,11 @@ the supplied photo private and preserve the earlier floor and wall lessons.
 For the next roof-framing step, read
 [part-roof-frame](../../../.claude/skills/part-roof-frame/SKILL.md) as well.
 Alan confirmed **truss** and nominal **2x4** lumber, actual 1 1/2 x 3 1/2 in.
-He supplied **46 1/2 in** and **37 3/4 in** far-point-to-point member lengths;
-the upper/lower-slope assignment, slopes and end cuts are not yet confirmed.
+His current longest-point member lengths are **54 in for the upper piece
+leading to the peak** and **37 3/4 in for the lower, steeper piece**.
+He confirmed a **4 ft (48 in)** height from the **top of the gable board
+to the highest point of the peak**. Slope angles and end cuts are not yet
+confirmed.
 His separate **6 1/4 in from the farthest truss point to the upper plate**
 needs an exact datum, direction and both-end applicability. Do not turn
 those unresolved inputs into a drawn roof profile. The gable-end studs
