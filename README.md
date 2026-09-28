@@ -89,8 +89,9 @@ thick and 5 1/2 in high. The [gable picture page](gable.html) includes a
 Alan's confirmed name for this piece is **gable board**. It is nailed to
 the upper plate and supports the truss; treatment and nail size/count/spacing
 remain unconfirmed. He confirmed **2x4 truss lumber** and supplied
-46 1/2 in and 37 3/4 in far-point-to-point member lengths. Their assignment
-to the roof slopes and the cut geometry remain pending, as does the exact
+54 in for the upper piece leading to the peak and 37 3/4 in for the lower,
+steeper piece, measured at the longest points. The peak is 4 ft (48 in)
+above the gable-board top. The slope angles and cut geometry remain pending, as does the exact
 datum of his separate 6 1/4 in truss measurement. The gable-end
 studs sit on the gable board, are “turned outward” and are 24 in on center;
 their precise orientation and layout still need agreement. These new facts

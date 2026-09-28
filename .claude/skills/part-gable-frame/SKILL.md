@@ -109,9 +109,13 @@ The 24 in value applies to these gable studs, not to wall studs or to the
 spacing of trusses along the building.
 
 He confirmed nominal **2x4 truss lumber**, actual **1 1/2 x 3 1/2 in**,
-with supplied far-point-to-point member lengths of **46 1/2 in** and
-**37 3/4 in**. Upper/lower-slope assignment, slopes and end-cut geometry
-remain unresolved. The separate **6 1/4 in from the farthest truss point
+with current longest-point member lengths of **54 in for the upper piece
+leading to the peak** and **37 3/4 in for the lower, steeper piece**.
+He confirmed the peak is **4 ft (48 in) above the top of the gable board**,
+measured to the peak's highest point. With the board top at 85 in above
+flooring, this gives a derived peak elevation of **133 in above flooring**.
+Slope angles and end-cut geometry remain unresolved.
+The separate **6 1/4 in from the farthest truss point
 to the upper plate** still needs its direction, exact plate datum and
 both-end applicability. Do not alter the gable board's confirmed 2 1/2 in
 end projection or create a roof profile from these partial inputs. Keep

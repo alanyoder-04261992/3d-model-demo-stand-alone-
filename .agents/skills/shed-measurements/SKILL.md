@@ -92,13 +92,23 @@ unspecified.
 ## Resolve the truss before calculating its profile
 
 Alan confirmed the truss sits on top of the gable board and uses nominal
-2x4 lumber, actual 1.5 x 3.5 in. He supplied far-point-to-point member
-lengths of **46.5 in** and **37.75 in** for this 10 ft-wide example. Record
+2x4 lumber, actual 1.5 x 3.5 in. His current longest-point member
+lengths are **54 in for the upper piece leading to the peak** and
+**37.75 in for the lower, steeper piece** in this 10 ft-wide example. Record
 those values separately from centerline lengths, horizontal runs and the
-overall truss span. Their assignment to the upper/lower slopes and the
-slopes/end-cut geometry remain pending. Two member lengths alone do not
+overall truss span. Slope angles and end-cut geometry remain pending.
+Two member lengths alone do not
 determine a unique lofted-roof profile. Do not scale them in proportion to
 building width or use the finished model's roof angles as shop inputs.
+
+The confirmed peak height is **4 ft = 48 in**, measured vertically from
+the **top of the gable board to the highest point of the peak**. Thus
+`peak elevation = gable-board top elevation + 48 in`; the current example
+gives `85 + 48 = 133 in` above flooring. Do not measure this rise from the
+upper plate or substitute it for a sloping member length. These inputs
+still need the horizontal extent and end-cut geometry
+before resolving the complete profile. Neither the member lengths nor
+the peak height is a universal scaling rule for wider buildings.
 
 His **6.25 in** measurement is from the farthest truss point to the upper
 plate. Confirm the direction, exact upper-plate reference and whether both

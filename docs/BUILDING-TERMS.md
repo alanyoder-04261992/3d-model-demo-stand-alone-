@@ -103,7 +103,7 @@ physical cut list.
 | Confirmed wall spacing and repeated pair | **16 in on center; double stud every 4 ft** | Each 4 ft mark falls between the touching pair. The centers of 1 1/2 in-wide studs are a derived 3/4 in either side of that mark; the starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
 | Confirmed wall-end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; its upper plate is full 16 ft. End bottom/top plates and studs run full 10 ft; its upper plate stops 3 1/2 in short at each end. Derived plate lengths: side bottom/top 185 in (15 ft 5 in), side upper 192 in (16 ft), end bottom/top 120 in (10 ft), end upper 113 in (9 ft 5 in). | Alan's corrections and explicit both-ends reply, September 28, 2026 |
 | Confirmed name, section, orientation, fit and fastening method; length derived | **Gable board** | The nominal 2x6, actual 1 1/2 in thick by 5 1/2 in high, running along and resting on top of the end wall's upper plate, on edge. It is nailed to the upper plate and supports the truss. Its inside face is 1/2 in back from the plate's inside face, leaving a ledge toward the room. It projects 2 1/2 in past each cut end of the upper plate. Its derived length is 118 in (9 ft 10 in); the projection is along the wall, not above the plate. Earlier descriptive label: “2x6 along upper plate.” Nail size/count/spacing remain unspecified. | Alan's photos, fit clarifications and explicit name/connection statement, September 28, 2026 |
-| Confirmed term, section and support; profile pending | **Truss** | The roof-framing assembly Alan says sits on top of the gable board. Its lumber is nominal 2x4, actual 1 1/2 x 3 1/2 in. He supplied far-point-to-point member lengths of 46 1/2 in and 37 3/4 in; their assignment to the upper and lower slopes is not yet confirmed. | Alan's truss descriptions, photo and “The truss is 2x4” reply, September 28, 2026 |
+| Confirmed term, section, support, member lengths and peak height; profile pending | **Truss** | The roof-framing assembly Alan says sits on top of the gable board. Its lumber is nominal 2x4, actual 1 1/2 x 3 1/2 in. The upper piece leading to the peak measures 54 in at its longest points; the lower, steeper piece is 37 3/4 in. The peak is 4 ft (48 in) above the top of the gable board. | Alan's truss descriptions, photo, “The truss is 2x4” reply, corrected measurements and upper-piece clarification, September 28, 2026 |
 | Confirmed description, support and spacing; precise layout pending | **Studs in the gable end** | Alan says these are “turned outward,” sit on the gable board and are 2 ft (24 in) on center. The exact outward-facing lumber face, layout origin, member section and cut lengths are not yet confirmed. | Alan's gable-frame photo and description, September 28, 2026 |
 
 ## What remains to agree on
@@ -123,8 +123,8 @@ The **6 1/4 in** truss measurement is recorded as Alan stated it: from the
 farthest truss point to the upper plate. The direction, exact plate datum
 and whether it applies at both ends still need confirmation. Keep it
 separate from the confirmed **2 1/2 in gable-board end projection**. For the
-46 1/2 in and 37 3/4 in member lengths, establish which piece is which,
-the slopes and end-cut geometry before drawing the roof profile. Do not
+54 in upper and 37 3/4 in lower member lengths, establish the slope angles
+and end-cut geometry before drawing the roof profile. Do not
 infer these from the photograph or use the finished designer's roof shape
 as a confirmed shop specification. The 24 in gable-stud spacing is distinct
 from the 16 in wall-stud spacing; it does not establish spacing between
