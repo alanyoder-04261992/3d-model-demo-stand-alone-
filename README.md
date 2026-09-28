@@ -28,7 +28,7 @@ company that only wants the designer.
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
-[open the flooring model picture saved in GitHub](https://github.com/alanyoder-04261992/3d-model-demo-stand-alone-/blob/codex/side-loft-terminology/images/flooring.png).
+[open the latest wall model picture saved in GitHub](https://github.com/alanyoder-04261992/3d-model-demo-stand-alone-/blob/codex/side-loft-terminology/images/wall-framing.png).
 Netlify hosting is currently unavailable because its account credit limit
 blocks service and deployment; use the GitHub picture or local pages.
 For local development,
@@ -55,25 +55,53 @@ The frame also includes the **Board the mule hooks onto**: a treated 2x4
 lying flat behind the double end boards, on top of the skids. Alan confirmed
 93 in length (7 ft 9 in); its sideways centering is still provisional.
 The picture page includes a [close-up](images/floor-end-backing.png).
-The current view is **Flooring** at `learn.html?company=learning-side-loft&step=deck`:
+The **Flooring** view remains at `learn.html?company=learning-side-loft&step=deck`:
 stated 4x8 ft tongue-and-groove sheets, 5/8 in thick, over the unchanged frame.
 Rows run 8+8 ft, the confirmed 4+8+4 ft stagger, then 8+8 ft trimmed to a
 calculated 2 ft width. The [picture page](flooring.html) shows the flooring
 and its layout. Sheet material, treatment, net coverage and exact joint
 profile remain unspecified. First joist position, notch clearance and
 outer-board dimensions still need agreement; rim/end-joist names remain proposed.
-Nothing advances automatically.
+The current view is **Walls** at `learn.html?company=learning-side-loft&step=walls`.
+Choose one 16 ft **side wall** or one 10 ft **end wall** on the completed floor.
+The studs and all three plates are 2x4, actual 1½ × 3½ in. Alan confirmed
+75 in stud cut lengths, 16 in layout spacing and a double stud every 4 ft,
+with the mark **between the two touching studs**. The bottom plate, top plate
+and upper plate add a calculated 4½ in, giving 79½ in total wall height above
+the flooring. The [wall picture page](walls.html) includes both wall views
+and a [close-up of the plates and double stud](images/wall-framing-detail.png).
+The starting layout datum, final plate cuts, corner connections, openings
+and wall treatment remain unconfirmed. Nothing advances automatically.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the
 [building terms](docs/BUILDING-TERMS.md), then use
 [shed-customer-setup](.agents/skills/shed-customer-setup/SKILL.md) for the next
 company or shed buyer. The regular designer's Framing and Watch it build
-stay switched off; the separate floor lesson follows Alan's latest request
+stay switched off; the separate learning page follows Alan's latest request
 to learn one piece at a time. Other companies keep their own choices.
 
 Selling it to a company: [docs/SELLING.md](docs/SELLING.md).
 The rules every file is built to: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 Where it deliberately behaves differently from Barnwright: [docs/DIFFERENCES.md](docs/DIFFERENCES.md).
+
+## Reusable building skills
+
+These skills live in this project alongside the model. They record what Alan
+has confirmed and what still needs agreement, so future work can reuse the
+same terms and construction details.
+
+| Skill | What it covers |
+| --- | --- |
+| [Customer setup](.agents/skills/shed-customer-setup/SKILL.md) | Set up a company or buyer's design and continue the manual building lesson. |
+| [Skids](.claude/skills/part-skids/SKILL.md) | Treated supports, notches, end cuts and their measurements. |
+| [Floor frame](.claude/skills/part-floor-frame/SKILL.md) | Floor joists, outer/end boards and the board the mule hooks onto. |
+| [Flooring](.claude/skills/part-floor-deck/SKILL.md) | Tongue-and-groove sheets, thickness, staggered seams and appearance. |
+| [Wall framing](.claude/skills/part-wall-frame/SKILL.md) | Side/end walls, studs, three plates and touching double studs. |
+
+Use the [shared building terms](docs/BUILDING-TERMS.md) and
+[10x16 worked example](docs/examples/10x16-side-loft.md) with these skills.
+The [full collection of part skills](.claude/skills/) also covers the other model
+parts; those existing model rules are separate from Alan's confirmed lesson facts.
 
 ## Run it
 
