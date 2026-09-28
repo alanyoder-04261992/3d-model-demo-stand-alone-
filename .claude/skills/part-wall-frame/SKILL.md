@@ -5,6 +5,11 @@ description: The wall framing -- studs, plates, 3-stud corners and the king/jack
 
 # Wall framing (`parts/wall-frame.js`)
 
+For another footprint, use
+[Shed measurements](../../../.agents/skills/shed-measurements/SKILL.md)
+for plate-length formulas, the unchanged global stud datum and the limits
+of carrying this example's rules into a new building.
+
 ## Scope of the current wall lesson
 
 On September 28, 2026 Alan confirmed these labels on the pictured parts:

@@ -10,6 +10,10 @@ Work in this repository. Start with the relevant entries in
 [the 10x16 Side Lofted Barn example](../../../docs/examples/10x16-side-loft.md).
 These hold the confirmed vocabulary, proposed labels and first worked example;
 refer to them instead of copying the glossary into each customer's files.
+For a different building size or an explanation of how the measurements
+were calculated, use [Shed measurements](../shed-measurements/SKILL.md).
+It separates reusable formulas from this example's fixed dimensions and
+records the settings that must be reconsidered together when resizing.
 
 ## Choose what is being set up
 
