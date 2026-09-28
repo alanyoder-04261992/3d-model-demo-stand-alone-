@@ -69,6 +69,17 @@
     }
   },
   "construction": {
+    "gableStudy": {
+      "board": { "nominal": "2x6", "thicknessIn": 1.5, "heightIn": 5.5 },
+      "innerLedgeIn": 0.5,
+      "endProjectionIn": { "start": 2.5, "end": 2.5 },
+      "placement": "on-upper-plate",
+      "status": {
+        "section": "confirmed", "orientation": "confirmed", "placement": "confirmed",
+        "innerLedge": "confirmed", "endProjection": "confirmed",
+        "name": "provisional", "treatment": "provisional"
+      }
+    },
     "wallStudy": {
       "stud": { "nominal": "2x4", "widthIn": 1.5, "depthIn": 3.5, "lengthIn": 75 },
       "plates": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5 },

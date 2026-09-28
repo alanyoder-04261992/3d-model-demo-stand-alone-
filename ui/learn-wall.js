@@ -6,12 +6,15 @@ import { floorStudyPlan } from "../model/floor-study.js";
 import { floorMeasurements, formatInches, formatFeetInches } from "../model/floor-measurements.js";
 import { wallStudyPlan } from "../model/wall-study.js";
 import { wallStudyMeasurements } from "../model/wall-measurements.js";
+import { gableStudyPlan } from "../model/gable-study.js";
+import { gableStudyMeasurements } from "../model/gable-measurements.js";
 import { assemble, onlyParts } from "../engine/assemble.js";
 import { createRenderer } from "../engine/renderer.js";
 import { distToFit } from "./parts-gallery.js";
 import { installFloorWood, woodFinish } from "./learn-wood.js";
 import { installFlooringTexture, flooringFinish } from "./learn-flooring.js";
 import { createWallLabels, wallFocusPair } from "./learn-wall-labels.js";
+import { createGableLabels } from "./learn-gable-labels.js";
 
 const PARTS=["skids","floor-frame","floor-deck","wall-frame"];
 const VIEWS=["angle","wall-front","wall-plates","wall-end"];
@@ -30,9 +33,12 @@ function drawingBox(build) {
 function plainBounds(b) {
   return Object.fromEntries(["x","y","z"].flatMap(a=>[[a+"0",b[a+"0Ft"]],[a+"1",b[a+"1Ft"]]]));
 }
-export async function startWallLesson() {
-  const api={ready:false,error:null,wall:"side",selection:["supports","frame","deck","wall"],parts:PARTS.slice(),renderer:null,plan:null,setWall:null,setCamera:null};
+export async function startWallLesson({gable=false}={}) {
+  const parts=gable?[...PARTS,"gable-frame"]:PARTS.slice();
+  const views=gable?["angle","wall-front","wall-end"]:VIEWS;
+  const api={ready:false,error:null,wall:gable?"end":"side",selection:["supports","frame","deck","wall",...(gable?["gable"]:[])],parts,renderer:null,plan:null,setWall:null,setCamera:null};
   window.floorLesson=api;window.wallLesson=api;
+  if(gable) window.gableLesson=api;
   const canvas=$("lesson-canvas"),viewport=$("lesson-viewport"),controls=$("lesson-wall-controls");
   const buttons=[...document.querySelectorAll("[data-camera]")],radios=[...document.querySelectorAll('input[name="wall-kind"]')];
   $("lesson-reload").addEventListener("click",()=>location.reload());
@@ -44,31 +50,42 @@ export async function startWallLesson() {
   }
   try {
     const pictureLink=$("lesson-picture-link") || $("lesson-error")?.querySelector("a");
-    if(pictureLink) {pictureLink.href="walls.html";pictureLink.textContent="Open the wall pictures";}
+    if(pictureLink) {pictureLink.href=gable?"gable.html":"walls.html";pictureLink.textContent=gable?"Open the gable-board pictures":"Open the wall pictures";}
     if(!controls || radios.length!==2) throw new Error("Reload this page to load the side wall and end wall controls.");
-    document.title="Walls — 10 × 16 side loft";
-    $("lesson-pieces").hidden=true;controls.hidden=false;
-    if($("lesson-pieces-section")) $("lesson-pieces-section").setAttribute("aria-label","Wall study");
-    if($("lesson-heading")) $("lesson-heading").textContent="Walls";
-    if($("measurement-explanation")) $("measurement-explanation").textContent="Measurements follow the actual boards. Plates close-up shows their names; Wall end close-up shows the 3½-inch step.";
-    if($("lesson-reference")) $("lesson-reference").textContent="Side wall, end wall, stud, bottom plate, top plate and upper plate are confirmed names. This view studies one plain wall on the completed floor.";
-    const stepLink=$("lesson-step-link");if(stepLink) {stepLink.href="learn.html?step=deck";stepLink.textContent="Earlier: flooring";}
-    for(const button of buttons) button.hidden=![...VIEWS,"in","out","reset"].includes(button.dataset.camera);
+    document.title=(gable?"Gable framing":"Walls")+" — 10 × 16 side loft";
+    $("lesson-pieces").hidden=true;controls.hidden=gable;
+    if($("lesson-pieces-section")) $("lesson-pieces-section").setAttribute("aria-label",gable?"Gable board study":"Wall study");
+    if($("lesson-heading")) $("lesson-heading").textContent=gable?"Gable framing":"Walls";
+    if($("measurement-explanation")) $("measurement-explanation").textContent=gable
+      ? "The 2×6 follows the upper plate on edge. Connection close-up measures the 2½-inch projection and the ½-inch inside ledge."
+      : "Measurements follow the actual boards. Plates close-up shows their names; Wall end close-up shows the 3½-inch step.";
+    if($("lesson-reference")) $("lesson-reference").textContent=gable
+      ? "The board's section and fit are confirmed. Its 118-inch length is calculated from the actual upper plate and both end projections. A formal shop name and wood treatment have not been confirmed."
+      : "Side wall, end wall, stud, bottom plate, top plate and upper plate are confirmed names. This view studies one plain wall on the completed floor.";
+    const stepLink=$("lesson-step-link");if(stepLink) {stepLink.href=gable?"learn.html?step=walls":"learn.html?step=gable";stepLink.textContent=gable?"Earlier: plain walls":"Next: gable framing";}
+    for(const button of buttons) {
+      button.hidden=![...views,"in","out","reset"].includes(button.dataset.camera);
+      if(gable && button.dataset.camera==="wall-end") button.textContent="Connection close-up";
+    }
     const cat=await loadCatalogue("learning-side-loft"),state=defaults(cat);
     if(state.type!=="SLB" || state.size!=="10x16") throw new Error("This lesson needs the 10 × 16 side loft example.");
     const basePlan=floorStudyPlan(makePlan(state,cat)),cache=new Map();
     const renderer=createRenderer(canvas,{trueColour:true,scene:"studio",note:" "});api.renderer=renderer;
-    if(renderer.off) throw new Error("3D is not available in this browser. Open the wall pictures below, or reload in a browser with graphics enabled.");
+    if(renderer.off) throw new Error(`3D is not available in this browser. Open the ${gable?"gable-board":"wall"} pictures below, or reload in a browser with graphics enabled.`);
     installFloorWood(renderer);installFlooringTexture(renderer);
     renderer.cam.autoSpin=false;renderer.cam.interacted=true;renderer.setStages(null);
-    const labels=createWallLabels(viewport,renderer);
+    const labels=gable?createGableLabels(viewport,renderer):createWallLabels(viewport,renderer);
     let current=null,view="angle",zoom=1.18,raf=0;
     const size=()=>({w:Math.max(1,canvas.clientWidth),h:Math.max(1,canvas.clientHeight)});
     function cameraBox() {
-      if(view==="wall-front") return plainBounds(current.measures.wall.bounds);
+      if(view==="wall-front") {
+        const b=plainBounds(current.measures.wall.bounds);
+        if(gable) b.y1=current.measures.gable.board.bounds.y1Ft;
+        return b;
+      }
       if(!["wall-plates","wall-end"].includes(view)) return current.box;
       const target=renderer.cam.target,along=current.measures.wall.wall==="side"?2:0;
-      const radius=view==="wall-end"?.9:1.3;
+      const radius=view==="wall-end"?(gable?.6:.9):1.3;
       return {x0:target[0]-(along===0?radius:.45),x1:target[0]+(along===0?radius:.45),
         y0:target[1]-.65,y1:target[1]+.65,z0:target[2]-(along===2?radius:.45),z1:target[2]+(along===2?radius:.45)};
     }
@@ -76,36 +93,43 @@ export async function startWallLesson() {
       raf=0;if(api.error || !current || !renderer.mesh) return;
       const fit=distToFit(cameraBox(),renderer.cam.yaw,renderer.cam.pitch,size());
       renderer.cam.fitDist=fit;renderer.cam.dist=Math.max(2.5,fit*zoom);renderer.draw();
-      labels.update(current.measures.wall,{detail:view==="wall-plates",endDetail:view==="wall-end"});
+      if(gable) labels.update(current.measures.gable,{detail:view==="wall-end"});
+      else labels.update(current.measures.wall,{detail:view==="wall-plates",endDetail:view==="wall-end"});
     }
     function requestDraw() {if(!raf) raf=requestAnimationFrame(draw);}
-    function markManual() {for(const button of buttons) if(VIEWS.includes(button.dataset.camera)) button.setAttribute("aria-pressed","false");}
+    function markManual() {for(const button of buttons) if(views.includes(button.dataset.camera)) button.setAttribute("aria-pressed","false");}
     function setCamera(name) {
       if(!current) return;
       if(name==="in") zoom=clamp(zoom/1.15,.5,2.1);
       else if(name==="out") zoom=clamp(zoom*1.15,.5,2.1);
       else {
-        view=VIEWS.includes(name)?name:"angle";zoom=view==="angle"?1.18:1.16;
+        view=views.includes(name)?name:"angle";zoom=view==="angle"?1.18:1.16;
         const m=current.measures.wall,b=m.bounds,side=m.wall==="side";
         if(view==="wall-front") {
           renderer.cam.target=[(b.x0Ft+b.x1Ft)/2,(b.y0Ft+b.y1Ft)/2,(b.z0Ft+b.z1Ft)/2];
+          if(gable) renderer.cam.target[1]=(b.y0Ft+current.measures.gable.board.bounds.y1Ft)/2;
           renderer.cam.yaw=side?Math.PI/2:Math.PI;renderer.cam.pitch=0;
         } else if(view==="wall-plates") {
           const pair=wallFocusPair(m),u=pair?.markFt ?? m.lengthFt/2;
           renderer.cam.target=side?[(b.x0Ft+b.x1Ft)/2,m.plates.top.center[1]-.2,b.z0Ft+u]:[b.x0Ft+u,m.plates.top.center[1]-.2,(b.z0Ft+b.z1Ft)/2];
           renderer.cam.yaw=side?Math.PI/2-.25:Math.PI-.25;renderer.cam.pitch=.25;
+        } else if(view==="wall-end" && gable) {
+          const g=current.measures.gable,board=g.board.bounds;
+          renderer.cam.target=[g.plateStart[0]+.3,g.upperPlate.bounds.y1Ft+.12,(board.z0Ft+board.z1Ft)/2];
+          renderer.cam.yaw=-.7;renderer.cam.pitch=.42;zoom=1.05;
         } else if(view==="wall-end") {
           const axis=side?"z":"x",start=Math.min(m.plates.top.bounds[axis+"0Ft"],m.plates.upper.bounds[axis+"0Ft"]);
           renderer.cam.target=side?[(b.x0Ft+b.x1Ft)/2,m.plates.top.center[1]-.25,start+.45]:[start+.45,m.plates.top.center[1]-.25,(b.z0Ft+b.z1Ft)/2];
           renderer.cam.yaw=side?Math.PI/2+.4:Math.PI+.4;renderer.cam.pitch=.22;
         } else {
-          renderer.cam.target=null;renderer.cam.yaw=side?1.2:Math.PI-.55;renderer.cam.pitch=.32;
+          renderer.cam.target=null;renderer.cam.yaw=gable?.55:side?1.2:Math.PI-.55;renderer.cam.pitch=.32;
         }
-        for(const button of buttons) if(VIEWS.includes(button.dataset.camera)) button.setAttribute("aria-pressed",String(button.dataset.camera===view));
+        for(const button of buttons) if(views.includes(button.dataset.camera)) button.setAttribute("aria-pressed",String(button.dataset.camera===view));
       }
       requestDraw();
     }
     function caption(m) {
+      if(gable) {gableCaption(current.measures.gable);return;}
       const wallName=m.wall==="side"?"Side wall":"End wall";
       $("piece-title").textContent=`${wallName} — ${formatFeetInches(m.lengthFt)} overall span`;
       $("piece-description").textContent=m.wall==="side"
@@ -130,13 +154,29 @@ export async function startWallLesson() {
         +"These lengths follow the confirmed end-offset rule. The bottom plate rests on the flooring; wall height adds the 75-inch stud to three 1½-inch plate thicknesses.";
       canvas.setAttribute("aria-label",`Rotatable 3D ${wallName.toLowerCase()} on the completed floor. Stud, bottom plate, top plate and upper plate.`);
     }
+    function gableCaption(g) {
+      $("piece-title").textContent="2×6 along the end-wall upper plate";
+      $("piece-description").textContent="The board stands on its narrow edge on top of the upper plate. Its inside face leaves a ½-inch ledge, and it projects 2½ inches past each cut end of the upper plate.";
+      $("piece-draft").textContent="The section and fit are confirmed. We have not assigned a formal shop name or confirmed wood treatment for this board.";
+      const rows=[["2×6 length · calculated",`${formatInches(g.lengthFt)} (${formatFeetInches(g.lengthFt)})`],
+        ["Actual section · on edge",`${formatInches(g.thicknessFt)} thick × ${formatInches(g.heightFt)} high`],
+        ["Upper plate beneath · calculated",`${formatInches(g.upperPlate.lengthFt)} (${formatFeetInches(g.upperPlate.lengthFt)})`],
+        ["Past first cut end · confirmed",formatInches(g.endProjectionFt.start)],
+        ["Past opposite cut end · confirmed",formatInches(g.endProjectionFt.end)],
+        ["Inside ledge · confirmed",formatInches(g.innerLedgeFt)]];
+      const list=$("piece-measurements");list.replaceChildren();
+      for(const [title,value] of rows) {const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=title;dd.textContent=value;row.append(dt,dd);list.appendChild(row);}
+      $("measurement-note").textContent=`Length: ${formatInches(g.upperPlate.lengthFt)} upper plate + ${formatInches(g.endProjectionFt.start)} at one end + ${formatInches(g.endProjectionFt.end)} at the other = ${formatInches(g.lengthFt)}. The ½-inch ledge is measured from the upper plate's inside face to the 2×6's inside face.`;
+      canvas.setAttribute("aria-label","Rotatable 3D end wall and 2×6 on top of its upper plate. The new board is on edge, with a half-inch inside ledge and two-and-a-half-inch projection past each upper-plate end.");
+    }
     function setWall(kind) {
-      if(!["side","end"].includes(kind)) return;
+      if(!["side","end"].includes(kind) || (gable && kind!=="end")) return;
       if(!cache.has(kind)) {
-        const plan=wallStudyPlan(basePlan,{wall:kind}),wall=wallStudyMeasurements(plan);
+        const wallPlan=wallStudyPlan(basePlan,{wall:kind}),plan=gable?gableStudyPlan(wallPlan,{gable:true}):wallPlan,wall=wallStudyMeasurements(plan);
         if(!wall) throw new Error("The confirmed wall measurements are missing. Reload the current lesson.");
-        const measures={...floorMeasurements(plan),wall},full=assemble(plan,{frames:true,scene:"studio",trueColour:true});
-        const plain=onlyParts(full.build,PARTS),build=flooringFinish(woodFinish(plain,measures),measures),box=drawingBox(build);
+        const measures={...floorMeasurements(plan),wall,...(gable?{gable:gableStudyMeasurements(plan)}:{})},full=assemble(plan,{frames:true,scene:"studio",trueColour:true});
+        if(gable && !measures.gable) throw new Error("The gable-board measurements are missing. Reload the current lesson.");
+        const plain=onlyParts(full.build,parts),build=flooringFinish(woodFinish(plain,measures),measures),box=drawingBox(build);
         const bounds={W:box.x1-box.x0,L:box.z1-box.z0,H:Math.max(.25,(box.y0+box.y1)/2)/.42};
         cache.set(kind,{plan,measures,build,box,bounds,gr:full.gr});
       }
@@ -170,6 +210,6 @@ export async function startWallLesson() {
     canvas.addEventListener("webglcontextlost",e=>{e.preventDefault();fail("The 3D view was interrupted. Reload this page to restore the wall view.");});
     const observer=new ResizeObserver(requestDraw);observer.observe(viewport);
     window.addEventListener("pagehide",()=>{observer.disconnect();if(raf)cancelAnimationFrame(raf);},{once:true});
-    setWall("side");draw();$("lesson-loading").hidden=true;$("lesson-empty").hidden=true;viewport.setAttribute("aria-busy","false");api.ready=true;return api;
+    setWall(gable?"end":"side");draw();$("lesson-loading").hidden=true;$("lesson-empty").hidden=true;viewport.setAttribute("aria-busy","false");api.ready=true;return api;
   }catch(error){fail(error);return api;}
 }

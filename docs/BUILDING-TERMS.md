@@ -19,11 +19,14 @@ agreement before adding the next stage. The earlier
 finished-building starting preference is superseded; the agreed roof names
 below remain valid.
 
-**Current stage: Walls.** Use
-`learn.html?company=learning-side-loft&step=walls` to select one plain side wall
-or one plain end wall over the existing floor, with manual control and no roof
-or autoplay. Joined corners and openings are not part of this step.
-The earlier Flooring view at `?step=deck` remains available.
+**Current stage: The 2x6 along the end wall's upper plate.** Use
+`learn.html?company=learning-side-loft&step=gable` for the end wall and this
+single new board over the existing floor. It stands on edge on top of the
+upper plate, leaves a 1/2 in inside ledge and extends 2 1/2 in past both
+cut ends of that plate. The [picture page](../gable.html) shows the same
+assembly and a connection detail. Keep manual control; further gable pieces,
+joined corners, openings and autoplay are not part of this step. The earlier
+wall selector at `?step=walls` and Flooring view at `?step=deck` remain available.
 
 Earlier, Alan accepted the skid render (“Ok looks good now the
 next part”) and then confirmed **floor joist** for the crosswise 2x6 seated
@@ -96,6 +99,7 @@ physical cut list.
 | Confirmed term and section | **Upper plate** | The upper of the two horizontal 2x4 boards above the studs; actual 1 1/2 x 3 1/2 in. | Alan's labeled-photo discussion and dimension reply, September 28, 2026 |
 | Confirmed wall spacing and repeated pair | **16 in on center; double stud every 4 ft** | Each 4 ft mark falls between the touching pair. The centers of 1 1/2 in-wide studs are a derived 3/4 in either side of that mark; the starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
 | Confirmed wall-end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; its upper plate is full 16 ft. End bottom/top plates and studs run full 10 ft; its upper plate stops 3 1/2 in short at each end. Derived plate lengths: side bottom/top 185 in (15 ft 5 in), side upper 192 in (16 ft), end bottom/top 120 in (10 ft), end upper 113 in (9 ft 5 in). | Alan's corrections and explicit both-ends reply, September 28, 2026 |
+| Confirmed piece, section, orientation and fit; descriptive label | **2x6 along upper plate** | A nominal 2x6, actual 1 1/2 in thick by 5 1/2 in high, running along and resting on top of the end wall's upper plate, on edge. Its inside face is 1/2 in back from the plate's inside face, leaving a ledge toward the room. It projects 2 1/2 in past each cut end of the upper plate. Its derived length is 118 in (9 ft 10 in); the projection is along the wall, not above the plate. | Alan's photo, clarification and explicit top-seating/both-ends reply, September 28, 2026 |
 
 ## What remains to agree on
 
@@ -105,6 +109,11 @@ The agreed terms are **side loft**, **lofted roof**, **ridge cap**, **skids**,
 new piece, use **Board the mule hooks onto**, with **flat treated 2x4** as
 its physical description; do not promote
 “cleat” or “blocking” to an agreed name.
+For the new end-wall piece, use the descriptive label **2x6 along upper
+plate**. Alan has described its fit while starting the gable framing; he has
+not supplied a formal shop part name. Do not turn “chord,” “rafter” or
+“header” into agreed names for this board. Its treatment, species, grade and
+fasteners remain unspecified.
 The remaining candidate names below await a later discussion, one physical
 part at a time. Their presence in code or an older skill does not make them
 agreed. `gambrel` remains the project's code reference for the whole lofted
@@ -164,14 +173,22 @@ patterns between boards. Use stable per-board variation so changing the
 camera does not rearrange the knots. This does not establish deck treatment,
 species, grade or treatment chemistry. The finish does not change geometry.
 
-The default learning page still begins with skids only. Alan has now moved
-to **Walls** at `?step=walls`, over the existing floor. Earlier flooring,
-frame and joists-only views remain available; the roof comes later.
+The default learning page still begins with skids only. Alan has progressed
+through **Walls** at `?step=walls` to the single **2x6 along upper plate** at
+`?step=gable`, over the end wall and existing floor. Earlier flooring,
+frame and joists-only views remain available; further roof framing comes later.
 The confirmed 75 in studs plus three flat 1 1/2 in plates give a **derived
 79 1/2 in wall height**, from bottom plate underside to upper plate top.
 The confirmed 3 1/2 in end rules determine the plate lengths and their
 alternating overlap recorded above. Extra corner studs, fastening, openings,
 wall treatment and the doubled-stud starting datum remain unconfirmed.
+The new 2x6 is **118 in long, derived** from the end upper plate's 113 in
+length plus 2 1/2 in at each end. It therefore stops **1 in short of each
+120 in end-wall endpoint**. Its on-edge 5 1/2 in height makes its top
+**85 in above the flooring**, derived from `79.5 + 5.5`. The 1/2 in inside
+ledge measures between the room-facing faces, across the wall depth; it
+does not change the board length. These relationships do not confirm the
+next gable member or the whole roof assembly.
 The 10 x 16 ft flooring coverage follows the current frame's
 outer bounds without changing its timbers. Manufacturer-specific net sheet
 coverage and joint profile are pending; do not infer OSB, plywood or treated

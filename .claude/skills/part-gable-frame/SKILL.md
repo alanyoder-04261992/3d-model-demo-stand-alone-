@@ -1,9 +1,100 @@
 ---
 name: part-gable-frame
-description: The gable-end framing -- the studs filling each gable end between the end truss's chords, and the kings, jacks, headers and sills round gable windows, the gable vent and tall end doors -- read before changing gable stud spacing or how a gable opening is framed.
+description: The gable-end framing and the opt-in lesson's single 2x6 along the end upper plate. Read before changing that board's seating, ledges or projections, gable stud spacing, or framing around gable openings.
 ---
 
 # Gable-end framing (`parts/gable-frame.js`)
+
+## Alan's first gable piece: opt-in learning view
+
+The manual 10x16 lesson at
+`learn.html?company=learning-side-loft&step=gable` contains the existing floor,
+one end wall and **one 2x6 along upper plate**. That label describes the
+piece; Alan has not named it a chord, rafter or header. The ordinary framing
+described below is separate background and must not fill in the rest of the
+gable during this step.
+
+Alan confirmed on September 28, 2026 that the nominal 2x6 is **on edge along
+and on top of the end wall's upper plate**. Its actual section is **1 1/2 in
+through the wall depth by 5 1/2 in vertically**. Leave a **1/2 in ledge on
+the inside**: the plate's room-facing edge lies 1/2 in farther inward than
+the board's room-facing face. Extend the board **2 1/2 in past both cut ends
+of the upper plate**, along the wall, not upward. These facts supersede the
+initial ambiguity about an upright stud or a vertical 2 1/2 in extension.
+
+Derive dimensions from the actual supporting upper plate, never a second
+10 ft constant:
+
+- `board length = upper plate length + start projection + end projection`.
+  Here `113 + 2.5 + 2.5 = 118 in`, or **9 ft 10 in**. Each board end stays
+  **1 in short of the 120 in end-wall endpoint**, from `3.5 - 2.5`.
+- `board bottom = upper plate top`; `board top = bottom + board height`.
+  The top is **85 in above flooring**, from `79.5 + 5.5`, or **95 5/8 in
+  above skid bottom** in the current floor model. These are different datums.
+- `outside ledge = plate depth - inside ledge - board thickness`.
+  The current outer ledge is a derived **1 1/2 in**, from `3.5 - 0.5 - 1.5`.
+
+Treatment, species, grade, fasteners, formal shop name and subsequent gable
+members remain unconfirmed. Do not inherit the floor timber's treatment.
+Show varied wood grain as a visual finish without treating it as a material
+specification. Keep the private photo out of tracked files and published
+assets; do not derive dimensions from its pixels. See
+[the example](../../../docs/examples/10x16-side-loft.md#first-gable-piece--september-28-2026)
+and [measurement workflow](../../../.agents/skills/shed-measurements/SKILL.md)
+for provenance and reuse at another size.
+
+### Lesson inputs and geometry
+
+The learning company's `construction.gableStudy` record is:
+
+```js
+{
+  board: { nominal: "2x6", thicknessIn: 1.5, heightIn: 5.5 },
+  innerLedgeIn: 0.5,
+  endProjectionIn: { start: 2.5, end: 2.5 },
+  placement: "on-upper-plate",
+  status: {
+    section: "confirmed", orientation: "confirmed", placement: "confirmed",
+    innerLedge: "confirmed", endProjection: "confirmed",
+    name: "provisional", treatment: "provisional"
+  }
+}
+```
+
+Activate with `gableStudyPlan(endWallPlan, { gable: true })` in
+[model/gable-study.js](../../../model/gable-study.js); its default flag is
+false. First obtain the existing floor study and an end wall study. Company
+settings alone must not activate this lesson in the normal designer.
+`gableStudyMembers(plan)` in this part returns the single board, and
+`gableStudyMeasurements(plan)` in
+[model/gable-measurements.js](../../../model/gable-measurements.js) supplies
+member-based dimensions and anchors. Preserve the existing floor, wall
+members and ordinary finished geometry. For another size, resolve the real
+end upper plate first; do not keep 118 in as a universal board length.
+
+### Lesson checks and pictures
+
+Run `node tools/check-gable-lesson.mjs` for section, measured lengths,
+projection at each end, face-to-face ledge, plate-top seating, opt-in
+behavior and unchanged preceding assemblies. The normal model is guarded
+by the existing framing and golden checks below. A passed geometry check
+does not establish a physical cut list or unknown fastening rule.
+
+Refresh the model pictures with:
+
+```text
+node tools/export-joist-render-data.mjs --gable
+python tools/render-joist-picture.py --gable
+```
+
+The [gable picture page](../../../gable.html) uses
+[the overview](../../../images/gable-framing.png) and
+[the close-up](../../../images/gable-board-detail.png). Inspect both:
+dimension endpoints must land on the actual upper-plate cuts, board ends
+and inside faces; the 1/2 in ledge must be distinguishable from the 2 1/2 in
+end projection. Retain the earlier plain-wall and floor views. If browser
+checks cannot run, report that limitation separately from static-picture
+and geometry checks.
 
 ## What it is in real life
 
