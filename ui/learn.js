@@ -15,6 +15,7 @@ import { distToFit } from "./parts-gallery.js";
 import { createFloorLabels } from "./learn-labels.js";
 import { createMeasurementReadout } from "./learn-measurements.js";
 import { installFloorWood, woodFinish } from "./learn-wood.js";
+import { installFlooringTexture, flooringFinish } from "./learn-flooring.js";
 
 const COMPANY = "learning-side-loft";
 const ANGLE = { yaw:0.7, pitch:0.65 };
@@ -99,6 +100,7 @@ export async function startFloorLesson() {
     api.renderer=renderer; api.plan=plan;
     if(renderer.off) throw new Error("3D is not available in this browser. Try another browser or enable graphics acceleration, then reload. The first piece is described below.");
     installFloorWood(renderer);
+    installFlooringTexture(renderer);
     renderer.cam.autoSpin=false; renderer.cam.interacted=true;
     renderer.setStages(null); // Frame and deck stages must be visible here.
     Object.assign(renderer.cam,ANGLE);
@@ -143,7 +145,8 @@ export async function startFloorLesson() {
       if(nextFocus) focus=nextFocus;
       for(const input of boxes) input.checked=api.selection.includes(input.value);
       const visible=onlyParts(full.build,api.parts);
-      const build=woodFinish(joistsOnly?onlyFloorJoists(visible,measures):visible,measures);
+      const timber=woodFinish(joistsOnly?onlyFloorJoists(visible,measures):visible,measures);
+      const build=flooringFinish(timber,measures);
       renderer.show({build,bounds,gr:full.gr,fitDist:distToFit(box,renderer.cam.yaw,renderer.cam.pitch,size())});
       renderer.setStages(null);
       const piece=floorPiece(api.selection,api.selection.includes("deck")?"deck":flooring&&api.selection.includes("frame")?"frame":focus);

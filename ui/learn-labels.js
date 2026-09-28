@@ -27,9 +27,9 @@ export function createFloorLabels(viewport, renderer, plan, {joistsOnly=false}={
   viewport.appendChild(overlay);
   const measures=floorMeasurements(plan), supports=measures.supports, members=floorFrameMembers(plan);
   const joist=measures.frame.joist, sheet=measures.deck.representative;
-  function line(a,b,color,dash) {
+  function line(a,b,color,dash,style={}) {
     if(!a || !b || !a.every(Number.isFinite) || !b.every(Number.isFinite)) return;
-    overlay.appendChild(svgNode("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:color,"stroke-width":1.25,...(dash?{"stroke-dasharray":dash}:{})}));
+    overlay.appendChild(svgNode("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:color,"stroke-width":1.25,...(dash?{"stroke-dasharray":dash}:{}),...style}));
   }
   function dimension(project,a,b,text,offset,color,width,height,dashed=false,minLength=30,maxY=height-12) {
     const p=project(a), q=project(b);
@@ -123,10 +123,30 @@ export function createFloorLabels(viewport, renderer, plan, {joistsOnly=false}={
       const deck=measures.deck, topSheets=deck.sheets.filter(s=>s.layer===sheet.layer);
       // These are the sheet polygons' own top edges, not a decorative grid.
       // The panels butt together; a line indicates the joint, not a gap.
+      // Merge collinear overlaps, including the unequal segments at a
+      // staggered joint, so a shared edge is never darkened by two strokes.
+      const edgeGroups=new Map();
       for(const panel of topSheets) {
         const p=panel.member;
         const points=p.poly.map(uv=>p.origin.map((v,i)=>v+p.e1[i]*uv[0]+p.e2[i]*uv[1]+p.e3[i]*p.t));
-        for(let i=0;i<points.length;i++) line(project(points[i]),project(points[(i+1)%points.length]),"#675641");
+        for(let i=0;i<points.length;i++) {
+          const a=points[i],b=points[(i+1)%points.length],axis=Math.abs(a[0]-b[0])>Math.abs(a[2]-b[2])?0:2;
+          const fixedAxis=axis===0?2:0,key=[axis,a[fixedAxis].toFixed(9),a[1].toFixed(9)].join(":");
+          if(!edgeGroups.has(key)) edgeGroups.set(key,{axis,base:a,intervals:[]});
+          edgeGroups.get(key).intervals.push([Math.min(a[axis],b[axis]),Math.max(a[axis],b[axis])]);
+        }
+      }
+      for(const {axis,base,intervals} of edgeGroups.values()) {
+        const merged=[];
+        for(const span of intervals.sort((a,b)=>a[0]-b[0])) {
+          const last=merged[merged.length-1];
+          if(last && span[0]<=last[1]+1e-9) last[1]=Math.max(last[1],span[1]);
+          else merged.push(span.slice());
+        }
+        for(const [lo,hi] of merged) {
+          const a=base.slice(),b=base.slice();a[axis]=lo;b[axis]=hi;
+          line(project(a),project(b),"#5c574c",null,{"stroke-width":.7,"stroke-opacity":.4});
+        }
       }
       labels.push({text:"Flooring",detail:`${formatFeetInches(sheet.acrossFt)} × ${formatFeetInches(sheet.alongFt)} sheet`,
         footer:"tongue-and-groove",x:14,y:16,w:cardWidth,points:[sheetPoint(sheet.member)]});

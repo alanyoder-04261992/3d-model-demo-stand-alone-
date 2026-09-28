@@ -84,8 +84,16 @@ to the sheets.
 
 The [flooring picture page](../../flooring.html) provides labeled model
 renders of the [flooring](../../images/flooring.png) and
-[sheet layout](../../images/flooring-layout.png). Refresh both when the
-flooring geometry changes. They are model renders, not private photographs.
+[sheet layout](../../images/flooring-layout.png), plus a
+[surface close-up](../../images/flooring-closeup.png). Refresh these when the
+flooring geometry or finish changes. They are model renders, not private photographs.
+
+On September 28, 2026 Alan supplied two private visual references for a
+matte, muted brown-gray/olive surface with fine, close, parallel ribbing and
+quieter hairline seams. The lesson's finish follows that appearance without
+changing dimensions or layout. Rib spacing is illustrative, not measured;
+the photographs do not confirm a product, material, manufacturer, treatment
+or fastening method. The original photographs remain private.
 
 For Alan's “Can't see it” report, use the
 [joist picture page](../../joists.html). It displays labeled

@@ -3,7 +3,7 @@
    Writes test/out/joist-render-data.json (ignored intermediate).
    Then: python tools/render-joist-picture.py
    With --deck: writes flooring-render-data.json instead; render with
-   python tools/render-joist-picture.py --deck for the two flooring PNGs.
+   python tools/render-joist-picture.py --deck for the flooring PNGs.
    Python needs Pillow and NumPy as development-only rendering dependencies;
    the website itself still has no runtime dependencies or build step. */
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -15,6 +15,7 @@ import { floorStudyPlan } from "../model/floor-study.js";
 import { floorMeasurements } from "../model/floor-measurements.js";
 import { assemble, onlyParts } from "../engine/assemble.js";
 import { woodFinish, floorWoodTexture } from "../ui/learn-wood.js";
+import { flooringFinish, flooringTexture } from "../ui/learn-flooring.js";
 
 const cat=loadCatalogue("learning-side-loft");
 const withDeck=process.argv.includes("--deck");
@@ -23,7 +24,7 @@ const plan=floorStudyPlan(makePlan(defaults(cat),cat));
 const measurements=floorMeasurements(plan);
 const original=assemble(plan,{frames:true,scene:"studio",trueColour:true}).build;
 const isolated=onlyParts(original,selectedParts);
-const build=woodFinish(isolated,measurements);
+const build=flooringFinish(woodFinish(isolated,measurements),measurements);
 function geometrySignature(drawing) {
   const triangles=[];
   for(const key of drawing.ORDER) for(const tag of drawing.tags[key] || []) {
@@ -52,7 +53,7 @@ for(const key of build.ORDER) {
   const group={key,material:{tint:bucket.tint,tintSpace:"linear",texture:bucket.tex,
     spec:bucket.spec,gloss:bucket.gloss,bump:bucket.bump,glow:bucket.glow},triangles:[]};
   if(!textures[bucket.tex]) {
-    const texture=floorWoodTexture(bucket.tex);
+    const texture=floorWoodTexture(bucket.tex) || flooringTexture(bucket.tex);
     if(texture) {
       const filename=bucket.tex+".rgba";
       writeFileSync(new URL("../test/out/"+filename,import.meta.url),texture.pixels);
@@ -86,7 +87,7 @@ assert.equal(partCounts["floor-frame"],measurements.frame.members.length*12);
 const output={
   schemaVersion:1,units:"feet",coordinateAxes:{x:"across building width",y:"up",z:"along skid length"},
   source:`Current learning-side-loft plan: ${selectedParts.join(", ")}; exact assembly vertices.`,
-  renderingNote:"woodFinish material tint, UVs and seeded texture pixels retained. This is mesh data, not a browser capture.",
+  renderingNote:"Lesson timber and flooring material tints, UVs and seeded texture pixels retained. This is mesh data, not a browser capture.",
   modelBounds,partCounts,groups,textures,
   metadata:{nominal:measurements.nominal,status:plan.floorStudy.status,
     supports:measurements.supports,regularJoists:measurements.frame.joists,

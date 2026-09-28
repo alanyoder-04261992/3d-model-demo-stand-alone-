@@ -1,6 +1,6 @@
 ---
 name: part-floor-deck
-description: The flooring sheets over the floor joists, including Alan's confirmed 4x8 tongue-and-groove, 5/8-inch staggered layout -- read before changing sheet size, thickness, coverage, layers or how the flooring is laid.
+description: The flooring sheets over the floor joists, including Alan's confirmed 4x8 tongue-and-groove, 5/8-inch staggered layout -- read before changing sheet size, thickness, coverage, layers, lesson appearance or how the flooring is laid.
 ---
 
 # Flooring (`parts/floor-deck.js`)
@@ -44,6 +44,19 @@ shape or physical seam gap. Do not infer OSB, plywood, wood species, grade
 or sheet treatment: treated wood was confirmed for the floor timbers,
 not these sheets. Any surface appearance is illustrative.
 
+On September 28, 2026 Alan supplied two private photographs as visual
+references: use a matte, muted brown-gray/olive surface with fine, close,
+parallel ribbing and quieter hairline seams. The photographs do not identify
+a product, manufacturer, material, treatment or fastening method. Rib spacing
+was not measured; keep its rendered scale illustrative.
+
+Keep this finish in the deterministic lesson-only texture and appearance
+code, `ui/learn-flooring.js`. Use the same finish in interactive and static
+model renders, with stable variation between sheets. Quiet the seam markings
+without changing sheet geometry, dimensions, coverage, stagger or joint gaps.
+Check the overview and close-up together: the ribbing should be visible close
+up while the seams stay subtle. Do not publish the original photographs.
+
 The opt-in is [floorStudyPlan](../../../model/floor-study.js), reading
 `construction.floorStudy`. Its `deck` record uses
 `{ sheetWidthFt: 4, sheetLengthFt: 8, thicknessIn: 0.625, layers: 1, tongueAndGroove: true, staggerFt: 4, orientation: "lengthwise", coverage: "frame" }`.
@@ -62,9 +75,10 @@ position, cut clearance, long-board dimensions and lateral placement of
 the mule-hook board remain independent questions.
 
 The [flooring picture page](../../../flooring.html) uses labeled model
-renders: [overview](../../../images/flooring.png) and
-[layout](../../../images/flooring-layout.png). Refresh them after relevant
-geometry changes and describe them as model renders. Alan's private
+renders: [overview](../../../images/flooring.png),
+[layout](../../../images/flooring-layout.png) and
+[surface close-up](../../../images/flooring-closeup.png). Refresh them after
+relevant geometry or finish changes and describe them as model renders. Alan's private
 reference photographs must not be published. Netlify hosting is currently
 blocked; do not claim the hosted page is live before deployment succeeds.
 Refresh the model-render artifacts with

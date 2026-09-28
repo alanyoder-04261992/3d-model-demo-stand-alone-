@@ -5,7 +5,7 @@
 # Reads test/out/joist-render-data.json; writes images/floor-joists.png and
 # images/floor-joist-connection.png and images/floor-end-backing.png.
 # Pass --deck to both the Node exporter and this script to write only
-# images/flooring.png and images/flooring-layout.png from flooring-render-data.json.
+# images/flooring.png, flooring-closeup.png and flooring-layout.png from flooring-render-data.json.
 # Windows Segoe UI preserves the original
 # layout; other fonts can change text metrics. No website runtime dependencies.
 import argparse, json, math, sys
@@ -24,6 +24,31 @@ W,H=1200,940
 NAVY='#173b56'
 textures={name:np.frombuffer((ROOT/'test/out'/spec['file']).read_bytes(),dtype=np.uint8).reshape(spec['height'],spec['width'],4)
           for name,spec in data.get('textures',{}).items()}
+flooring_mips={}
+for name,tex in textures.items():
+    if not name.startswith('lessonFlooring-'): continue
+    levels=[tex]
+    while min(levels[-1].shape[:2])>1:
+        h,w=levels[-1].shape[:2]
+        levels.append(np.asarray(Image.fromarray(levels[-1]).resize((max(1,w//2),max(1,h//2)),Image.Resampling.BOX)))
+    flooring_mips[name]=levels
+
+def sample_flooring(name,mapped,uv,s):
+    # Match the browser's mipmapped linear sampling: very fine ribs become
+    # quiet at overview scale instead of aliasing into broad false bands.
+    levels=flooring_mips[name]
+    derivatives=np.linalg.solve(np.array([s[1]-s[0],s[2]-s[0]]),np.array([uv[1]-uv[0],uv[2]-uv[0]]))
+    texels=derivatives*np.array([levels[0].shape[1],levels[0].shape[0]])
+    lod=max(0,min(len(levels)-1,math.log2(max(1,np.linalg.norm(texels[0]),np.linalg.norm(texels[1])))))
+    def bilinear(tex):
+        h,w=tex.shape[:2]
+        x=(mapped[...,0]%1)*w-.5;y=(mapped[...,1]%1)*h-.5
+        ix=np.floor(x).astype(int);iy=np.floor(y).astype(int)
+        fx=(x-ix)[...,None];fy=(y-iy)[...,None]
+        return ((1-fx)*(1-fy)*tex[iy%h,ix%w,:3]+fx*(1-fy)*tex[iy%h,(ix+1)%w,:3]
+                +(1-fx)*fy*tex[(iy+1)%h,ix%w,:3]+fx*fy*tex[(iy+1)%h,(ix+1)%w,:3])/255
+    low=math.floor(lod);high=min(low+1,len(levels)-1);blend=lod-low
+    return bilinear(levels[low])*(1-blend)+bilinear(levels[high])*blend
 def font(size,bold=False):
     override=(args.font_bold or args.font) if bold else args.font
     if override:
@@ -81,9 +106,12 @@ def scene(target=None,extent=None,yaw=.78,pitch=.70):
             if tex is not None:
                 uv=np.array(t['uv'])
                 mapped=u[...,None]*uv[0]+v[...,None]*uv[1]+w[...,None]*uv[2]
-                tx=np.floor((mapped[...,0]%1)*tex.shape[1]).astype(int)
-                ty=np.floor((mapped[...,1]%1)*tex.shape[0]).astype(int)
-                grain=tex[ty,tx,:3]/255.0
+                if g['material']['texture'] in flooring_mips:
+                    grain=sample_flooring(g['material']['texture'],mapped,uv,s)
+                else:
+                    tx=np.floor((mapped[...,0]%1)*tex.shape[1]).astype(int)
+                    ty=np.floor((mapped[...,1]%1)*tex.shape[0]).astype(int)
+                    grain=tex[ty,tx,:3]/255.0
             shade=.64+.43*max(0,float(np.dot(normal,light)))
             color=np.clip(rgb[None,None,:]*shade*grain,0,255).astype(np.uint8)
             bg[y0:y1+1,x0:x1+1][mask]=color[mask];sl[mask]=zz[mask]
@@ -127,11 +155,29 @@ def render_flooring():
     im,project=scene()
     d=ImageDraw.Draw(im)
     title(d,'Flooring · 10 × 16','4 × 8 ft sheets · ⅝ in thick · tongue and groove')
-    for s in deck['sheets']:
-        y=s['bounds']['y1Ft']
-        points=[project([x,y,z]) for x,z in [(s['x0Ft'],s['z0Ft']),(s['x1Ft'],s['z0Ft']),
-                 (s['x1Ft'],s['z1Ft']),(s['x0Ft'],s['z1Ft'])]]
-        d.line([tuple(p) for p in points+[points[0]]],fill='#65513a',width=2)
+    def seam_lines(im,project):
+        edges={};overlay=Image.new('RGBA',im.size);od=ImageDraw.Draw(overlay)
+        for s in deck['sheets']:
+            y=s['bounds']['y1Ft']
+            points=[(x,y,z) for x,z in [(s['x0Ft'],s['z0Ft']),(s['x1Ft'],s['z0Ft']),
+                     (s['x1Ft'],s['z1Ft']),(s['x0Ft'],s['z1Ft'])]]
+            for a,c in zip(points,points[1:]+points[:1]):
+                axis=0 if a[0]!=c[0] else 2;fixed=2 if axis==0 else 0
+                key=(axis,a[fixed],y)
+                edges.setdefault(key,[]).append(sorted((a[axis],c[axis])))
+        # Staggered panels share partial long edges. Merge their intervals,
+        # not just identical segments, to keep every seam the same faint tone.
+        for (axis,fixed,y),intervals in edges.items():
+            merged=[]
+            for lo,hi in sorted(intervals):
+                if merged and lo<=merged[-1][1]+1e-9:merged[-1][1]=max(merged[-1][1],hi)
+                else:merged.append([lo,hi])
+            for lo,hi in merged:
+                a=(lo,y,fixed) if axis==0 else (fixed,y,lo)
+                c=(hi,y,fixed) if axis==0 else (fixed,y,hi)
+                od.line([tuple(project(a)),tuple(project(c))],fill=(85,80,70,90),width=1)
+        crop=overlay.crop((25,145,W-25,706));im.paste(crop,(25,145),crop)
+    seam_lines(im,project)
     yt=b['y1Ft']
     dimension(d,project,[b['x0Ft'],yt,b['z0Ft']],[b['x0Ft'],yt,b['z1Ft']],'16 ft',(-20,-30))
     dimension(d,project,[b['x0Ft'],yt,b['z1Ft']],[b['x1Ft'],yt,b['z1Ft']],'10 ft',(0,38))
@@ -143,8 +189,16 @@ def render_flooring():
                ('Row 3 · trimmed',['2 ft wide · 8 ft + 8 ft'])]
         label,lines=texts[i]
         leader(d,point,(40+i*390,748,355,110),label,lines)
-    d.text((40,890),'Final row: 10 − 4 − 4 = 2 ft wide · sheet surface is illustrative',font=font(23),fill='#526879')
+    d.text((40,890),'Fine ribbed surface from your photo reference · subtle sheet joints',font=font(23),fill='#526879')
     im.save(ROOT/'images/flooring.png')
+
+    im,project=scene([-1,b['y1Ft'],-4],1.65,yaw=.18,pitch=1.04)
+    seam_lines(im,project);d=ImageDraw.Draw(im)
+    title(d,'Flooring · surface close-up','Fine parallel ribs · matte brown-gray finish · quieter seams')
+    leader(d,project([-.78,b['y1Ft'],-3.95]),(620,748,540,110),'Fine ribbed texture',['Based on your close-up photo'])
+    leader(d,project([-1,b['y1Ft'],-4.18]),(40,748,530,110),'Tight sheet joint',['Hairline drawn at the real sheet edge'])
+    d.text((40,890),'Surface detail is illustrative; the sheet sizes and ⅝ in thickness are unchanged.',font=font(22),fill='#526879')
+    im.save(ROOT/'images/flooring-closeup.png')
 
     # Orthographic plan drawn directly from the same seven measured sheet rectangles.
     plan=Image.new('RGB',(1200,1080),'#edf2f6');d=ImageDraw.Draw(plan)
@@ -159,7 +213,7 @@ def render_flooring():
         i=row['row']
         for s in row['sheets']:
             a=point(s['x0Ft'],s['z0Ft']);c=point(s['x1Ft'],s['z1Ft'])
-            d.rectangle((*a,*c),fill=colors[i],outline='#23495c',width=3)
+            d.rectangle((*a,*c),fill=colors[i],outline='#827965',width=1)
             cx=(a[0]+c[0])/2;cy=(a[1]+c[1])/2
             centered(f"{s['acrossFt']:g} × {s['alongFt']:g} ft",cx,cy-14,31)
             centered('Trimmed width' if row['trimmed'] else ('Half sheet' if s['alongFt']==4 else 'Full sheet'),cx,cy+24,23,False)
@@ -169,7 +223,7 @@ def render_flooring():
     # Highlight only the sheet end joints, so their alternating positions read clearly.
     for joint in deck['endJoints']:
         a=point(joint['x0Ft'],joint['zFt']);c=point(joint['x1Ft'],joint['zFt'])
-        d.line([a,c],fill='#214d65',width=6)
+        d.line([a,c],fill='#827965',width=2)
     d.line([(left,218),(left+16*scale,218)],fill=NAVY,width=2)
     for ft in [0,4,8,12,16]:
         x=left+ft*scale
@@ -186,7 +240,7 @@ def render_flooring():
 
 if args.deck:
     render_flooring()
-    print('Saved exact-mesh flooring overview and measured sheet-layout PNGs.')
+    print('Saved exact-mesh flooring overview, surface close-up and measured sheet-layout PNGs.')
     sys.exit(0)
 
 joint=data['metadata']['joint']; j=joint['joist']; skid=joint['skid']; notch=joint['notch']
