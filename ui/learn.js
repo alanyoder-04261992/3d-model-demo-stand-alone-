@@ -8,6 +8,7 @@ import { makePlan } from "../model/plan.js";
 import { floorStudyPlan } from "../model/floor-study.js";
 import { floorMeasurements } from "../model/floor-measurements.js";
 import { FLOOR_PIECES, initialFloorSelection, floorParts, floorPiece } from "../model/floor-lesson.js";
+import { onlyFloorJoists } from "../model/floor-joist-lesson.js";
 import { assemble, onlyParts } from "../engine/assemble.js";
 import { createRenderer } from "../engine/renderer.js";
 import { distToFit } from "./parts-gallery.js";
@@ -18,7 +19,7 @@ import { installFloorWood, woodFinish } from "./learn-wood.js";
 const COMPANY = "learning-side-loft";
 const ANGLE = { yaw:0.7, pitch:0.65 };
 const BASE_ZOOM = 1.15; // Leave room for dimension lines beyond the footprint.
-const CAMERA_VIEWS = ["angle","top","notch","end-negative","end-positive"];
+const CAMERA_VIEWS = ["angle","top","notch","connection","end-negative","end-positive"];
 const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
 const $ = (id) => document.getElementById(id);
 
@@ -42,6 +43,17 @@ export async function startFloorLesson() {
   const canvas=$("lesson-canvas"), viewport=$("lesson-viewport");
   const boxes=[...document.querySelectorAll('input[name="piece"]')];
   const cameraButtons=[...document.querySelectorAll("[data-camera]")];
+  const joistsOnly=new URLSearchParams(location.search).get("step")==="joists";
+  if(joistsOnly) {
+    for(const button of cameraButtons) {
+      if(button.dataset.camera==="connection") button.hidden=false;
+      if(["notch","end-negative","end-positive"].includes(button.dataset.camera)) button.hidden=true;
+    }
+    boxes.find(input=>input.value==="frame").nextElementSibling.textContent="Floor joists";
+    boxes.find(input=>input.value==="deck").closest("label").hidden=true;
+    $("lesson-step-link").href="learn.html";
+    $("lesson-step-link").textContent="Back to skids";
+  }
   $("lesson-reload").addEventListener("click",()=>location.reload());
   function fail(error) {
     api.error=error instanceof Error ? error.message : String(error);
@@ -71,9 +83,10 @@ export async function startFloorLesson() {
     renderer.cam.autoSpin=false; renderer.cam.interacted=true;
     renderer.setStages(null); // Frame and deck stages must be visible here.
     Object.assign(renderer.cam,ANGLE);
-    const labels=createFloorLabels(viewport,renderer,plan);
-    const measurements=createMeasurementReadout($("piece-measurements"),$("measurement-note"),plan);
+    const labels=createFloorLabels(viewport,renderer,plan,{joistsOnly});
+    const measurements=createMeasurementReadout($("piece-measurements"),$("measurement-note"),plan,{joistsOnly});
     const measures=floorMeasurements(plan);
+    const joistNotch=measures.supports.notches.find(n=>n.xFt>0 && measures.frame.joist.bounds.z0Ft>=n.z0Ft-1e-9 && measures.frame.joist.bounds.z1Ft<=n.z1Ft+1e-9);
     const middleNotch=measures.supports.notches.filter(n=>n.xFt>0 && n.sources.includes("alternate"))
       .filter(n=>!measures.frame.members.some(m=>m.member.kind!=="rim" && m.bounds.z0Ft<n.z1Ft && m.bounds.z1Ft>n.z0Ft))
       .sort((a,b)=>Math.abs(a.centerZFt)-Math.abs(b.centerZFt))[0] || measures.supports.notches[0];
@@ -99,18 +112,24 @@ export async function startFloorLesson() {
     }
     function requestDraw() { if(!raf) raf=requestAnimationFrame(draw); }
     function select(keys,nextFocus) {
-      api.selection=FLOOR_PIECES.filter((p)=>Array.isArray(keys)&&keys.includes(p.key)).map((p)=>p.key);
+      api.selection=FLOOR_PIECES.filter((p)=>Array.isArray(keys)&&keys.includes(p.key)&&(!joistsOnly||p.key!=="deck")).map((p)=>p.key);
       api.parts=floorParts(api.selection);
       if(nextFocus) focus=nextFocus;
       for(const input of boxes) input.checked=api.selection.includes(input.value);
-      const build=woodFinish(onlyParts(full.build,api.parts),measures);
+      const visible=onlyParts(full.build,api.parts);
+      const build=woodFinish(joistsOnly?onlyFloorJoists(visible,measures):visible,measures);
       renderer.show({build,bounds,gr:full.gr,fitDist:distToFit(box,renderer.cam.yaw,renderer.cam.pitch,size())});
       renderer.setStages(null);
       const piece=floorPiece(api.selection,focus);
       $("piece-title").textContent=piece ? (piece.key==="supports" ? "Skids — the long supports underneath" : piece.label) : "Choose a floor piece";
       $("piece-description").textContent=piece ? piece.description : "Use the boxes to add a piece back into the view.";
       $("piece-draft").textContent=piece ? piece.draft : "We will work through the pieces together.";
-      canvas.setAttribute("aria-label",piece ? "Rotatable 3D floor view. Showing: "+FLOOR_PIECES.filter((p)=>api.selection.includes(p.key)).map((p)=>p.label).join(", ")+"." : "3D floor view with all pieces hidden.");
+      if(joistsOnly && piece?.key==="frame") {
+        $("piece-title").textContent="Floor joists — the crosswise 2×6s";
+        $("piece-description").textContent="Each floor joist sits 1 inch down in the skid notches. The 2×6 is 1½ inches thick and 5½ inches tall. Standard spacing is 16 inches on center.";
+        $("piece-draft").textContent="Floor joist is our confirmed name. The cut length and wood treatment are still to confirm.";
+      }
+      canvas.setAttribute("aria-label",piece ? "Rotatable 3D floor view. Showing: "+FLOOR_PIECES.filter((p)=>api.selection.includes(p.key)).map((p)=>joistsOnly&&p.key==="frame"?"Floor joists":p.label).join(", ")+"." : "3D floor view with all pieces hidden.");
       $("lesson-empty").hidden=api.parts.length>0;
       measurements.update(api.selection);
       requestDraw();
@@ -119,8 +138,8 @@ export async function startFloorLesson() {
     function setCamera(name) {
       if(name==="in") zoom=clamp(zoom/1.15,.5,2.1);
       else if(name==="out") zoom=clamp(zoom*1.15,.5,2.1);
-      else if((name==="notch" && middleNotch) || (name.startsWith("end-") && endNotches[name.slice(4)])) {
-        detailNotch=name==="notch"?middleNotch:endNotches[name.slice(4)];
+      else if((name==="notch" && middleNotch) || (name==="connection" && joistNotch) || (name.startsWith("end-") && endNotches[name.slice(4)])) {
+        detailNotch=name==="connection"?joistNotch:name==="notch"?middleNotch:endNotches[name.slice(4)];
         detail=true;
         renderer.cam.target=[detailNotch.xFt,detailNotch.seatYFt+(detailNotch.end ? -.03 : .12),detailNotch.centerZFt];
         renderer.cam.yaw=detailNotch.end==="negative"?Math.PI-.9:.9;
@@ -182,8 +201,8 @@ export async function startFloorLesson() {
     const observer=new ResizeObserver(requestDraw); observer.observe(viewport);
     window.addEventListener("pagehide",()=>{observer.disconnect();if(raf)cancelAnimationFrame(raf);},{once:true});
     const selection=initialFloorSelection(new URLSearchParams(location.search).get("step"));
-    select(selection,selection[0]);
-    setCamera("angle");
+    select(selection,joistsOnly?"frame":selection[0]);
+    setCamera(joistsOnly?"connection":"angle");
     draw();
     $("lesson-loading").hidden=true;
     viewport.setAttribute("aria-busy","false");

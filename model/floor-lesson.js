@@ -13,6 +13,7 @@ export const FLOOR_PIECES = Object.freeze([
 ]);
 
 export function initialFloorSelection(step) {
+  if(step === "joists") return ["supports", "frame"];
   const key = FLOOR_PIECES.some((p) => p.key === step) ? step : "supports";
   return [key];
 }

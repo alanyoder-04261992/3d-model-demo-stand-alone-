@@ -2,7 +2,7 @@ import { floorMeasurements, formatFeetInches as length, formatInches as inches }
 
 /* Readouts follow visibility and the same member data as the drawing.
    Confirmed shop facts are separate from remaining layout assumptions. */
-export function createMeasurementReadout(list,note,plan) {
+export function createMeasurementReadout(list,note,plan,{joistsOnly=false}={}) {
   const m=floorMeasurements(plan);
   function update(selection) {
     list.replaceChildren();
@@ -31,12 +31,12 @@ export function createMeasurementReadout(list,note,plan) {
       }
     }
     if(selected.has("frame")) {
-      rows.push(["Crosswise member · nominal → actual",`${m.frame.nominalJoist} → ${inches(m.frame.joist.widthFt)} × ${inches(m.frame.joist.depthFt)}`],
+      rows.push(["Floor joist · nominal → actual",`${m.frame.nominalJoist} → ${inches(m.frame.joist.widthFt)} × ${inches(m.frame.joist.depthFt)}`],
         ["Seated below the skid top · confirmed",inches(m.supports.notchDepthFt)],
-        ["Crosswise member · provisional length",length(m.frame.joist.lengthFt)],
-        ["Long rim · provisional length",length(m.frame.rim.lengthFt)],
+        ["Floor joist · cut length to confirm",length(m.frame.joist.lengthFt)],
         ["Regular centers · confirmed",`${m.frame.nominalSpacingIn} in on center`]);
-      notes.push("Crosswise cut lengths, end offsets and rim details are still model assumptions. “Floor joist” and “rim joist” are proposed names.");
+      if(!joistsOnly) rows.push(["Long rim · provisional length",length(m.frame.rim.lengthFt)]);
+      notes.push(joistsOnly?"Floor joist is the confirmed name. Cut length, wood treatment and the first joist's position still need confirmation.":"Floor joist is the confirmed name. Cut lengths, end offsets and rim details are still model assumptions. “Rim joist” remains a proposed name.");
     }
     if(selected.has("deck")) {
       const sheet=m.deck.representative;

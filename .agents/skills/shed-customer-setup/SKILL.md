@@ -45,7 +45,15 @@ For the current floor-first lesson, Alan has selected **the long supports
 underneath** as the starting physical piece. The manual floor page starts
 with those supports only: no frame, top sheets, walls or roof, and no autoplay.
 He has now named them **skids** and their top cuts **notches**. Use those
-confirmed terms; **runners** remains an unconfirmed alternate. The optional `?step=frame` and `?step=deck`
+confirmed terms; **runners** remains an unconfirmed alternate. Alan then
+accepted the skid render (“Ok looks good now the next part”) and answered
+“Yes—floor joist” for the crosswise 2x6 seated 1 in down in those notches.
+Use **floor joist** as confirmed and continue manually with
+`learn.html?company=learning-side-loft&step=joists`: skids plus regular
+crosswise joists, with a close-up of their connection. Leave perimeter and
+end boards, sheets, walls and roof out of that focused view. The acceptance
+does not confirm remaining cut lengths, treatment or layout assumptions.
+The optional `?step=frame` and `?step=deck`
 views are later manual additions. This is a learning order, not an approved
 shop sequence. Do not impose the software's `buildOrder` as the order the shop
 uses. Agree on the current part's meaning before moving on, and follow Alan's
@@ -55,9 +63,9 @@ when the starting view changes.
 Alan has explicitly requested a **3D render with the terms** to check names
 and how pieces fit together. Provide labels anchored to actual rendered
 parts using leader lines or another clear visual pointer; text in a glossary
-or a detached list is not sufficient. For the floor lesson, **skids** and
-**notches** are confirmed labels; **floor joist**, **rim joist**, **floor
-decking** and **runners** remain proposed.
+or a detached list is not sufficient. For the floor lesson, **skids**,
+**notches** and **floor joist** are confirmed labels; **rim joist**, **end
+joist**, **floor frame**, **floor decking** and **runners** remain proposed.
 Start with the selected supports, then reveal floor layers manually as Alan
 directs so he can see the crosswise members seated in the skids' notches,
 perimeter members around them, and sheets on top. Distinguish that confirmed

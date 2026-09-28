@@ -28,8 +28,27 @@ as 30 in from the outside wall to the inside skid face, toward the floor's
 middle. A 3 1/2 in skid puts its center 28 1/4 in from that wall and the
 current pair 63 1/2 in apart across the nominal 10 ft width. The pair's
 count is still provisional. Do not infer the remaining details from the
-nominal footprint. **Skids** and **notches** are confirmed terms; **floor
-joist**, **rim joist** and other frame labels are still proposed.
+nominal footprint. **Skids**, **notches** and **floor joist** are confirmed
+terms. **Rim joist**, **end joist**, **floor frame** and **floor decking**
+remain proposed.
+
+Alan accepted the skid render (“Ok looks good now the next part”), then
+explicitly answered **“Yes—floor joist”** on September 27, 2026 for the
+regular crosswise 2x6 seated 1 in down in the skid notches. This confirms
+that part's name, not its cut length, treatment or remaining layout. The
+current manual lesson is `learn.html?company=learning-side-loft&step=joists`,
+showing skids with the regular crosswise joists and their joint close-up.
+Keep perimeter and end members, sheets, walls and roof out of this focused
+view. Continue only as Alan directs; the render acceptance does not settle
+unrelated assumptions or authorize autoplay.
+
+The focused view calls `onlyFloorJoists` in
+[floor-joist-lesson](../../../model/floor-joist-lesson.js). It retains the
+existing triangles belonging to regular `kind: "joist"` members; it does
+not rebuild their dimensions or change the shared full-frame part. Rims,
+end members and wall-support members remain absent in that view. The
+retained triangles keep their coordinates, normals, texture coordinates,
+materials and stages.
 
 The learning page opts into a `floorStudy` plan with those actual sections
 and notched seating. Its crosswise members begin at the notch floor and keep
@@ -177,6 +196,10 @@ These quirks belong to the normal model, not the opt-in floor lesson.
 
 ## Checks that guard it
 
+* `node tools/check-floor-joist-lesson.mjs` -- regular joists match an
+  independent member build across all eight manual selections; no rim,
+  end or wall-support members leak into the focused view, and the source
+  frame and other selected parts stay unchanged.
 * `node tools/check-framing.mjs` -- on 956 buildings: joists on their
   floor.spacingIn marks from the back end with no wider bay, 12 in joists
   closer and more of them, every joist resting on a skid, nothing overlapping

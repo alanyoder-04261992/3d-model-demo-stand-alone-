@@ -217,8 +217,12 @@ first-center placement, cut clearance and crosswise cut length also remain open.
 Your nominal/actual examples are now recorded as 2x4 =
 1 1/2 x 3 1/2 in, 2x6 = 1 1/2 x 5 1/2 in and 4x6 = 3 1/2 x 5 1/2 in;
 other lumber sections have not been confirmed by these examples.
-The names “floor joist,” “rim joist” and
-“floor decking” are also still proposed in this terminology lesson. The
+You accepted the skid render and asked for the next part, then confirmed
+**floor joist** for the crosswise 2x6 seated 1 in down in the skid notches.
+The current manual view is `learn.html?company=learning-side-loft&step=joists`.
+That agrees on the piece and name, not its cut length, treatment or remaining
+layout. “Rim joist,” “end joist,” “floor frame” and “floor decking” are
+still proposed in this terminology lesson. The
 opt-in learning model uses the corrected sections and notched seating; the
 normal finished reference keeps its earlier drawing dimensions. See the
 [example's current record](examples/10x16-side-loft.md#floor-measurements-to-show).

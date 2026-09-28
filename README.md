@@ -28,7 +28,7 @@ company that only wants the designer.
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
-[open the hosted floor lesson on a phone or computer](https://yoder-3d-floor-preview.netlify.app/learn.html).
+[open the hosted floor-joist lesson on a phone or computer](https://yoder-3d-floor-preview.netlify.app/learn.html?step=joists).
 For local development,
 run the designer and open `learn.html?company=learning-side-loft` to start
 with the long floor supports and reveal pieces by hand. Labels and dimensions
@@ -41,6 +41,11 @@ raised lips. Skids are confirmed treated wood; light grain and knots help
 show the lumber. Alan confirmed that the 45° bottom corner cuts reach 3 in
 back from **each** skid tip. That gives a calculated 3 in rise and leaves
 a 1½ in vertical end face below the notch seat.
+Alan accepted the skid view and confirmed **floor joist** for the crosswise
+2x6 seated in its notches. Continue manually at
+`learn.html?company=learning-side-loft&step=joists` to focus on skids and
+regular crosswise joists; the member's cut length, treatment and remaining
+layout stay unconfirmed. Perimeter-member and decking names are still proposed.
 Nothing advances automatically.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the
@@ -157,6 +162,7 @@ Chromium's software graphics, each on its own port.
 | `check-companies.mjs` | yes | a company is one checked settings file, never given a price it did not set; about 35 mistakes give the right plain-English error |
 | `check-design.mjs` | no | a design saved, shared and opened again is the same building at the same price; nothing missing is dropped silently |
 | `check-floor-lesson.mjs` | no | the lesson starts with supports; all eight selections preserve original floor geometry, and measurements match drawn pieces |
+| `check-floor-joist-lesson.mjs` | no | the joist lesson retains only regular crosswise joists, preserving their geometry, materials and stages while keeping the full frame unchanged |
 | `check-model-live.mjs` | yes | the rules (sizes, walls, roof line, standard doors and windows, clamping, prices) are Barnwright's, number for number, against its live page |
 | `check-ui.mjs` | yes | the designer page works: every style, size, colour, door and window, drag, "Add here", layouts on phone and desktop, escaping |
 | `check-views.mjs` | yes | Outside, Inside, Framing and Watch it build on seven buildings, from real clicks and real pixels |

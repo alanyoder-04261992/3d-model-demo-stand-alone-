@@ -20,7 +20,10 @@ their confirmed actual 5 1/2 in height, seated 1 in into actual 5 1/2 in-high
 skids. When sheets are manually added, they sit on that corrected frame top.
 Do not compress the frame or force the lesson deck top to the legacy `y0`.
 The normal finished reference retains its older envelope below. Start the
-lesson with skids only and reveal sheets when Alan directs it.
+lesson with skids only; Alan has since accepted that render and confirmed
+**floor joist** for the regular crosswise member. The current manual
+`?step=joists` focus still excludes sheets. Reveal them when Alan directs it;
+the joist term does not confirm decking or perimeter-member names.
 
 The opt-in is [floorStudyPlan](../../../model/floor-study.js), reading
 `construction.floorStudy`. `floorDeckMembers(plan)` already reads the frame

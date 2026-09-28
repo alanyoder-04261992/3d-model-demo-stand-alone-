@@ -19,14 +19,21 @@ agreement before adding the next stage. The earlier
 finished-building starting preference is superseded; the agreed roof names
 below remain valid.
 
+**Current piece:** Alan accepted the skid render (“Ok looks good now the
+next part”) and then confirmed **floor joist** for the crosswise 2x6 seated
+1 in down in the skid notches. Continue manually at
+`learn.html?company=learning-side-loft&step=joists`, focusing on those
+members and their connection to the skids. His acceptance moves the lesson
+forward; it does not confirm all remaining layout or material assumptions.
+
 Alan also requested a **3D render with the terms**, so we can check both the
 names and how the pieces fit together. The lesson should place each label
 on the rendered part using a leader line or another clear visual anchor;
 a written glossary alone does not satisfy that request. Start with supports
 only, then reveal the floor layers manually to discuss what rests on what.
-Use confirmed labels **skids** and **notches** on those pieces. **Floor
-joist**, **rim joist**, **floor decking** and the alternate word **runners**
-remain proposed. Verify the labels against the actual render before
+Use confirmed labels **skids**, **notches** and **floor joist** on those
+pieces. **Rim joist**, **end joist**, **floor frame**, **floor decking** and
+the alternate word **runners** remain proposed. Verify the labels against the actual render before
 claiming they are shown.
 
 Alan also requested measurements on the render to check the lengths. Anchor
@@ -51,6 +58,8 @@ physical cut list.
 | Current learning direction | “Build a floor first and we build it step by step” | Start with the floor in the manual learning page. Add further stages only after we agree what the visible piece means. | Alan's later request, September 27, 2026 |
 | Confirmed part term, material and dimensions | **Skids** | The long supports underneath, made of treated wood: nominal 4x6, actual 3 1/2 x 5 1/2 in, total length 16 ft in this example. Start by showing these alone. | Alan's descriptions and explicit treated-wood confirmation, September 27, 2026; dimensions from his words |
 | Confirmed connection term and depth | **Notches** | Cuts 1 in down into the skid tops, where crosswise nominal 2x6 members, actual 1 1/2 x 5 1/2 in, sit. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
+| Confirmed part term; current focus | **Floor joist** | The crosswise nominal 2x6, actual 1 1/2 x 5 1/2 in, seated 1 in down in the skid notches. The term is agreed; its cut length, treatment and remaining layout are not. | Alan: “Yes—floor joist,” September 27, 2026 |
+| Accepted view; manual progression | Skids look good; next part | Alan accepted the skid render and asked to move on. Show the skids with the regular crosswise floor joists and a close-up of their connection; do not promote unrelated assumptions to confirmed. | Alan: “Ok looks good now the next part,” September 27, 2026 |
 | Confirmed end cuts | **Skid ends and end notches** | One end notch runs 3 in inward from its tip, the other 1 1/2 in; both are 1 in deep. The piece beyond the end notch stays at notch height. The bottom-corner cut reaches 3 in back from each skid tip and slopes upward toward that tip at 45 degrees. | Alan's description and clarifications, September 27, 2026 |
 | Confirmed spacing and extra-cut purpose | **16 in on center standard; 12 in on center option** | Standard crosswise member spacing is 16 in. The extra notches provide positions for the 12 in option and may be unused with the standard spacing. Alan clarified that the option is 12 inches. | Alan's follow-up replies, September 27, 2026 |
 | Confirmed distance and reference | **30 in outside wall to inside face of skid** | The inside face is the face toward the middle of the floor. With a 3 1/2 in-wide skid, its center is 28 1/4 in from that outside wall. The current two-skid model therefore has 63 1/2 in between centers across its nominal 10 ft width; the count of two is still provisional. | Alan's clarification, September 27, 2026; center distances calculated from his dimensions |
@@ -60,8 +69,8 @@ physical cut list.
 
 ## What remains to agree on
 
-The agreed terms are **side loft**, **lofted roof**, **ridge cap**, **skids**
-and **notches**.
+The agreed terms are **side loft**, **lofted roof**, **ridge cap**, **skids**,
+**notches** and **floor joist**.
 The remaining candidate names below await a later discussion, one physical
 part at a time. Their presence in code or an older skill does not make them
 agreed. `gambrel` remains the project's code reference for the whole lofted
@@ -100,9 +109,11 @@ request, not confirmation of species, grade, treatment chemistry or the
 crosswise members' treatment. Keep subtle grain and knots separate from
 the geometry and measurements we are agreeing on.
 
-The learning page begins with skids only, without a floor frame, top sheets,
-walls or roof, and has no autoplay. Later views can add the frame and sheets
-manually as Alan directs. This learning order is not a confirmed shop
+The default learning page still begins with skids only. Alan has now moved
+the discussion to the regular crosswise floor joists using `?step=joists`;
+keep perimeter members, sheets, walls and roof out of that focused view.
+Later views can add other pieces manually as Alan directs. There is no
+autoplay. This learning order is not a confirmed shop
 construction sequence.
 
 ## Candidate names and directions
@@ -159,7 +170,7 @@ can wait until Alan wants to add them.
 | Proposed label | Intended physical part | Existing model/skill reference |
 | --- | --- | --- |
 | **Runners** | A possible alternate name for the confirmed skids; Alan has confirmed “skids,” not this alias. | [Skids](../.claude/skills/part-skids/SKILL.md) |
-| **Floor joists / rim joists** | Joists support the floor across the building; the rim boards close the floor frame's perimeter. | [Floor frame](../.claude/skills/part-floor-frame/SKILL.md) |
+| **Rim joist / end joist / floor frame** | Proposed names for the perimeter boards, the end boards and the complete floor-support assembly. **Floor joist** is already confirmed for the regular crosswise member; these additional names remain separate questions. | [Floor frame](../.claude/skills/part-floor-frame/SKILL.md) |
 | **Floor decking** | The sheet material laid over the joists. | [Floor deck](../.claude/skills/part-floor-deck/SKILL.md) |
 | **Stud / top plate / bottom plate** | Upright wall member / horizontal board at the top / horizontal board at the bottom. | [Wall frame](../.claude/skills/part-wall-frame/SKILL.md) |
 | **Header / king stud / jack stud** | The member spanning an opening / the full-height stud beside it / the shorter stud supporting the header. | [Wall frame](../.claude/skills/part-wall-frame/SKILL.md) |

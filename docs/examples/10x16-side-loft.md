@@ -23,6 +23,8 @@ to point to; they are not yet agreed shop language.
 | Current direction | “Build a floor first and we build it step by step” | Begin with the floor, discuss one visible piece at a time, and wait for agreement before adding the next stage. | Later request, September 27, 2026 |
 | Confirmed term, material and dimensions | **Skids** | Long supports underneath, made of treated wood: nominal 4x6, actual 3 1/2 x 5 1/2 in, total length 16 ft. Start with these alone. | Alan's descriptions and explicit treated-wood confirmation, September 27, 2026; dimensions from his words |
 | Confirmed term and connection | **Notches** | Cuts 1 in down into the skid tops. Crosswise nominal 2x6 members, actual 1 1/2 x 5 1/2 in, sit in them. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
+| Confirmed part term; current focus | **Floor joist** | The crosswise nominal 2x6, actual 1 1/2 x 5 1/2 in, seated 1 in down in the skid notches. Cut length, treatment and remaining layout remain unconfirmed. | Alan: “Yes—floor joist,” September 27, 2026 |
+| Accepted view; manual progression | Skids look good; next part | Alan accepted the skid render and asked for the next part. Move the discussion to the regular crosswise floor joists; this is not blanket approval of unresolved assumptions. | Alan: “Ok looks good now the next part,” September 27, 2026 |
 | Confirmed end cuts | **Skid ends and end notches** | One end notch runs 3 in inward from its tip, the other 1 1/2 in; both are 1 in deep. The piece beyond the end notch stays at notch height. Each 45-degree bottom-corner cut reaches 3 in back from its skid tip and slopes upward toward that tip. | Alan's description and clarifications, September 27, 2026 |
 | Confirmed spacing and option | **16 in on center standard; 12 in on center option** | Extra notches provide the 12 in positions and can remain unused in the standard layout. Alan clarified 12 inches, not feet. | Alan's follow-up replies, September 27, 2026 |
 | Confirmed distance and reference | **30 in outside wall to inside face of skid** | Inside means the face toward the middle of the floor. The confirmed 3 1/2 in width puts the center 28 1/4 in from that wall. | Alan's clarification, September 27, 2026; center distance calculated from his dimensions |
@@ -36,25 +38,36 @@ meanings. The later skid/notch description confirms the specific dimensions
 and seating recorded above. Other names, dimensions and installation
 details remain pending.
 
+**Current piece: floor joist.** Alan accepted the skid view and explicitly
+confirmed this name for the crosswise member. The next manual view is
+`learn.html?company=learning-side-loft&step=joists`: skids plus regular
+crosswise floor joists, with their notched connection available close up.
+Keep rim boards, end boards, sheets, walls and roof out of this focused
+view. No automatic progression is requested.
+
 Open the [floor learning page](../../learn.html), for example
-`http://127.0.0.1:8282/learn.html?company=learning-side-loft` after
+`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=joists` after
 `npm run serve`.
 For Alan's iOS phone, use the
-[hosted floor preview](https://yoder-3d-floor-preview.netlify.app/learn.html).
+[hosted floor-joist lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=joists).
 The localhost address only works on the computer running the server.
 Alan approved this separate Netlify preview site on September 27, 2026.
-Phone-width layout was checked in the available browser; physical iOS Safari
+The earlier skid and full-frame phone layouts were checked in the available
+browser. For the new joists-only view, model and projected-label checks ran;
+browser preview was unavailable in that session. Physical iOS Safari
 validation remains for Alan's device.
 The [example's settings](../../companies/learning-side-loft/company.json)
 offer only this style and size.
 
-## Our first floor discussion
+## Our floor discussion
 
 Alan selected **the long supports underneath** as the first piece. The
 learning page therefore begins with those supports alone: no floor frame,
 top sheets, walls or roof, and no autoplay. Alan has now named them **skids**
 and identified their **notches**. Use those confirmed words, while retaining
 **runners** only as an unconfirmed alternate label.
+That remains the page's default starting view; Alan has now accepted the
+skid render and moved the current discussion to **floor joist**.
 
 He explicitly confirmed **the skids are treated wood** and requested **a
 little texture and knots in the wood**. Use subtle surface detail to help
@@ -67,28 +80,29 @@ Alan's latest request is to put the terms **on the 3D render** so we can
 check our names and understanding of how the pieces fit. In the
 [learning page](../../learn.html), anchor each proposed label to its actual
 piece with a leader line or another unambiguous visual pointer. Use
-**skids** for the long supports and **notches** for their top cuts. Propose
-**floor joist** for a crosswise
-floor-frame member, **rim joist** for its perimeter member, and **floor
-decking** for a top sheet; those three names remain proposed. Inspect the
+**skids** for the long supports, **notches** for their top cuts, and the now
+confirmed **floor joist** for the regular crosswise member. **Rim joist**,
+**end joist**, **floor frame** and **floor decking** remain proposed.
+Inspect the
 rendered labels before reporting that this visual requirement is complete.
 
-As Alan directs the lesson, manually reveal the frame and then the sheets
+As Alan directs the lesson, manually reveal the regular floor joists first
 to show the confirmed connection: the actual 1 1/2 x 5 1/2 in crosswise
 members seat 1 in down into notches in the actual 3 1/2 x 5 1/2 in skids.
 They are not simply stacked on an uncut skid top. The optional perimeter
 members and sheets remain modeled relationships to examine together. Keep
-the skids-only starting view and no autoplay.
+the skids-only default, the requested joist focus and no autoplay.
 
 | Status | Candidate description | What still needs agreement |
 | --- | --- | --- |
 | Confirmed piece, name, sections, spacing options, skid offset and end cuts | Skids and notches | Repeated-notch first-center placement, cut clearance, skid count and end-member placement still need confirmation. |
-| Member section and notched seating confirmed; names/layout pending | Crosswise 2x6 members and open frame | “Floor joist” and “rim joist,” the crosswise cut length and remaining frame details. |
+| Term, section and notched seating confirmed; current focus | Floor joist: regular crosswise 2x6 member | Cut length, treatment and remaining layout. “Rim joist,” “end joist” and “floor frame” remain proposed names for other pieces or the assembly. |
 | Later; pending | Flat sheets on top | Their name and meaning when Alan is ready to add them. |
 
 The spacing is now confirmed: 16 in on center standard, with extra cuts for
 the 12 in option. Repeated-notch first-center placement and cutting clearance remain
-pending; do not infer them by measuring the photos. The optional
+pending; do not infer them by measuring the photos. The `?step=joists` view
+is the current manual focus. The optional
 `?step=frame` and `?step=deck` views are for later manual additions, not an
 automatic sequence. A learning display choice is not a declaration of the
 shop's build order. Agree on the current meaning and record corrections before
@@ -118,7 +132,7 @@ photos as part of the website or GitHub documentation.
 | Skid section | Nominal 4x6; actual 3 1/2 x 5 1/2 in | Use the actual section for the corrected lesson geometry and dimensions. |
 | Skid material | Treated wood | Explicitly confirmed for the skids; no species, grade, treatment chemistry or frame-member treatment is established. |
 | Skid total length | 16 ft | Replaces the older drawn 16.14 ft extent for this lesson. |
-| Crosswise member section | Nominal 2x6; actual 1 1/2 x 5 1/2 in | Section confirmed; the crosswise cut length and “floor joist” name remain pending. |
+| Floor-joist section | Nominal 2x6; actual 1 1/2 x 5 1/2 in | Name, section and 1 in notched seating confirmed; cut length, treatment and remaining layout are pending. |
 | Notch depth | 1 in down into the skid top | The crosswise member sits in that cut. Cutting clearance remains pending. |
 | Standard member spacing | 16 in on center | Center-to-center along the skid; the repeated-notch first-center placement remains pending. |
 | Optional member spacing | 12 in on center | Extra notches allow this spacing; extra cuts may stay empty with the standard 16 in layout. |
@@ -178,7 +192,7 @@ is unchanged, and the lesson's skid count remains separately provisional.
 
 **Still pending:** repeated-notch first-center placement, cutting clearance,
 skid count, crosswise cut length, end-member placement, and the
-names **floor joist**, **rim joist** and **floor decking**. Any interim
+names **rim joist**, **end joist**, **floor frame** and **floor decking**. Any interim
 layout retained to draw the example must remain identified as a model
 assumption. A modeled notch width of 1 1/2 in only matches the stated member
 width provisionally; Alan has not confirmed cut clearance. The nominal
@@ -322,8 +336,10 @@ step**, beginning with **the long supports underneath**; and Alan calls the whol
 two-slope-per-side shape **lofted roof** (`gambrel` in code). **Ridge cap**
 means the highest long metal strip covering where its sides meet. **Skids**
 and **notches**, their listed dimensions and the crosswise member seating
-are now confirmed too. “Floor joist,” “rim joist” and “floor decking,” plus
-the remaining layout and cut details, remain pending.
+are now confirmed too. Alan accepted the skid render, asked for the next
+part and confirmed **floor joist** for the regular crosswise 2x6. “Rim
+joist,” “end joist,” “floor frame” and “floor decking,” plus the remaining
+layout, treatment and cut details, remain pending.
 
 **Verified in the code:** the dimension order, roof profile, long-side
 entrance, standard door/window layout and opening rules above. This proves

@@ -37,7 +37,12 @@ centers**; the count of two is still provisional. Repeated-notch first-center
 placement, cut clearance, skid count and crosswise cut length remain pending.
 A 1 1/2 in drawn slot width is only a
 provisional fit to the stated member width. **Runners** remains a draft
-alternate name, while “floor joist” and other frame names await agreement.
+alternate name. Alan has since accepted the skid render and confirmed
+**floor joist** for the regular crosswise 2x6 seated in the notches. The
+manual lesson now focuses on that member at `?step=joists`; rim/end-member
+names, floor-frame assembly name, member treatment, cut length and remaining
+layout still await agreement. Skid visual acceptance does not confirm those
+other assumptions.
 
 Alan confirmed the end details on September 27, 2026: one notch runs
 **3 in inward from its skid tip**, the other **1 1/2 in inward**, and
