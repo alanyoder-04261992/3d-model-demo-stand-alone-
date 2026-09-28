@@ -19,13 +19,19 @@ agreement before adding the next stage. The earlier
 finished-building starting preference is superseded; the agreed roof names
 below remain valid.
 
-**Current piece:** Alan accepted the skid render (“Ok looks good now the
+**Current stage: Flooring.** Alan has requested the sheets over the frame:
+4x8 tongue and groove, 5/8 in thick, with staggered end seams and the last
+row trimmed. He confirmed row two as 4 ft + 8 ft + 4 ft. Use
+`learn.html?company=learning-side-loft&step=deck` to show skids, frame and
+flooring together; keep manual control with no walls or roof.
+
+Earlier, Alan accepted the skid render (“Ok looks good now the
 next part”) and then confirmed **floor joist** for the crosswise 2x6 seated
 1 in down in the skid notches. He has now confirmed a 10 ft outside floor
 width, a 1 1/2 in **outer board** on each side, joists 3 in shorter (a
 **calculated 117 in / 9 ft 9 in**), and
-two boards at one end with one at the other. Continue manually at
-`learn.html?company=learning-side-loft&step=frame` to show those pieces on
+two boards at one end with one at the other. The earlier
+`learn.html?company=learning-side-loft&step=frame` shows those pieces on
 the skids together. The earlier `?step=joists` view remains available.
 The floor-framing boards are also confirmed treated wood. Alan has added a
 **flat treated 2x4** behind the two end boards, toward the inside, resting
@@ -40,10 +46,12 @@ on the rendered part using a leader line or another clear visual anchor;
 a written glossary alone does not satisfy that request. Start with supports
 only, then reveal the floor layers manually to discuss what rests on what.
 Use confirmed labels **skids**, **notches**, **floor joist** and Alan's
-wording **outer board** on those
-pieces. **Rim joist**, **end joist**, **floor frame**, **floor decking** and
+wording **outer board**, plus **Flooring**, on those
+pieces. **Rim joist**, **end joist**, **floor frame** and
 the alternate word **runners** remain proposed. Verify the labels against the actual render before
 claiming they are shown.
+`floor-deck` and “floor decking” are reference labels for the confirmed
+Flooring; use Alan's preferred word in the lesson.
 
 Alan also requested measurements on the render to check the lengths. Anchor
 dimension lines to the actual visible endpoints or faces and identify what
@@ -69,6 +77,8 @@ physical cut list.
 | Confirmed connection term and depth | **Notches** | Cuts 1 in down into the skid tops, where crosswise nominal 2x6 members, actual 1 1/2 x 5 1/2 in, sit. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
 | Confirmed part term, section and length rule | **Floor joist** | The crosswise nominal 2x6, actual 1 1/2 x 5 1/2 in, seated 1 in down in the skid notches. Alan's rule makes it 3 in shorter than the confirmed 10 ft width: a derived 117 in (9 ft 9 in). The floor joists are treated wood; remaining layout is pending. | Alan's term confirmation, later width correction and material confirmation, September 27, 2026 |
 | Confirmed wording and thickness | **Outer board** | Alan's words for the board along each long side, 1 1/2 in thick across the floor width. Its height and length are not confirmed; “rim joist” remains a proposed technical name. | Alan's correction, September 27, 2026 |
+| Confirmed preferred term and sheet facts | **Flooring** | The sheets over the floor frame: stated 4 ft by 8 ft, 5/8 in thick, tongue and groove. Material type, treatment and exact tongue/groove profile are not supplied. | Alan's flooring request, September 27, 2026 |
+| Confirmed layout; last-row width derived | **Staggered seams** | Row one is 8+8 ft, row two is the explicitly agreed 4+8+4 ft, and row three repeats 8+8 ft with sheets trimmed across the width. The last row is 2 ft wide from `10 - 4 - 4`. | Alan's confirmed row-two sequence and trim request, September 27, 2026 |
 | Confirmed end-board counts | **Two boards at one end; one at the other** | The end arrangement is explicitly confirmed. The model fits two 1 1/2 in boards in the 3 in end notch and one in the 1 1/2 in notch. That fit determines display coordinates only, not a confirmed front/back shop assignment. | Alan's later correction, September 27, 2026; notch mapping derived from the fit |
 | Confirmed piece, section, treatment, length and purpose; descriptive label | **Board the mule hooks onto** | A flat treated 2x4 behind the two end boards toward the inside, resting on top of the skids. It is 93 in long; the flat actual section is 3 1/2 in horizontal by 1 1/2 in vertical using the agreed conversion. Alan says the mule hooks onto it to drag the barn. Sideways placement and a formal shop name are not confirmed. | Alan's description and 93 in length reply, September 27, 2026 |
 | Confirmed material and visual request | **Treated boards; varied texture and knots** | The discussed floor joists, outer boards and end boards are treated wood. Alan requested different grain and knot patterns between boards. This does not confirm deck treatment, species, grade or treatment chemistry. | Alan's later reply, September 27, 2026 |
@@ -83,7 +93,7 @@ physical cut list.
 ## What remains to agree on
 
 The agreed terms are **side loft**, **lofted roof**, **ridge cap**, **skids**,
-**notches**, **floor joist** and Alan's wording **outer board**. For the
+**notches**, **floor joist**, **Flooring** and Alan's wording **outer board**. For the
 new piece, use **Board the mule hooks onto**, with **flat treated 2x4** as
 its physical description; do not promote
 “cleat” or “blocking” to an agreed name.
@@ -147,10 +157,12 @@ camera does not rearrange the knots. This does not establish deck treatment,
 species, grade or treatment chemistry. The finish does not change geometry.
 
 The default learning page still begins with skids only. Alan has now moved
-the discussion to the full floor frame on the skids using `?step=frame`,
-including outer boards, the confirmed end-board arrangement and the flat
-treated 2x4 behind the doubled end. The
-joists-only view is still available; sheets, walls and roof come later.
+to **Flooring** at `?step=deck`, with the skids and completed frame still
+underneath. Earlier frame and joists-only views remain available; walls and
+roof come later. The 10 x 16 ft flooring coverage follows the current frame's
+outer bounds without changing its timbers. Manufacturer-specific net sheet
+coverage and joint profile are pending; do not infer OSB, plywood or treated
+sheet material from the confirmed treatment of the timbers.
 Later views can add other pieces manually as Alan directs. There is no
 autoplay. This learning order is not a confirmed shop
 construction sequence.
@@ -210,7 +222,6 @@ can wait until Alan wants to add them.
 | --- | --- | --- |
 | **Runners** | A possible alternate name for the confirmed skids; Alan has confirmed “skids,” not this alias. | [Skids](../.claude/skills/part-skids/SKILL.md) |
 | **Rim joist / end joist / floor frame** | Proposed names for the perimeter boards, the end boards and the complete floor-support assembly. **Floor joist** is already confirmed for the regular crosswise member; these additional names remain separate questions. | [Floor frame](../.claude/skills/part-floor-frame/SKILL.md) |
-| **Floor decking** | The sheet material laid over the joists. | [Floor deck](../.claude/skills/part-floor-deck/SKILL.md) |
 | **Stud / top plate / bottom plate** | Upright wall member / horizontal board at the top / horizontal board at the bottom. | [Wall frame](../.claude/skills/part-wall-frame/SKILL.md) |
 | **Header / king stud / jack stud** | The member spanning an opening / the full-height stud beside it / the shorter stud supporting the header. | [Wall frame](../.claude/skills/part-wall-frame/SKILL.md) |
 | **Truss / chord / gusset** | Roof-supporting assembly / a principal member of that assembly / a plate joining members. | [Roof frame](../.claude/skills/part-roof-frame/SKILL.md) |

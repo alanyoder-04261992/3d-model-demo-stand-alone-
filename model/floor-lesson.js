@@ -7,9 +7,9 @@ export const FLOOR_PIECES = Object.freeze([
   Object.freeze({ key: "frame", part: "floor-frame", label: "Wooden floor frame",
     description: "The crosswise 2×6s sit one inch down in the skid notches. Standard spacing is 16 inches on center; extra notches allow 12 inches on center.",
     draft: "Proposed name: floor frame. We will confirm what your shop calls it." }),
-  Object.freeze({ key: "deck", part: "floor-deck", label: "Flat sheets on top",
-    description: "The flat sheets that cover the wooden frame and make the floor surface.",
-    draft: "Possible shop terms: floor sheets or decking. We will confirm the name together." }),
+  Object.freeze({ key: "deck", part: "floor-deck", label: "Flooring",
+    description: "4-by-8-foot tongue-and-groove sheets, 5/8 inch thick, cover the floor frame. The middle row runs 4 feet, 8 feet, then 4 feet, moving its end seams away from the neighboring rows. That offset is called staggered. The last row is trimmed to the remaining width.",
+    draft: "Flooring is our confirmed term. The last row is 2 feet wide: 10 feet minus two 4-foot rows. The tongue-and-groove joint is specified; its detailed profile is not modeled." }),
 ]);
 
 export function initialFloorSelection(step) {

@@ -45,8 +45,9 @@ A 1 1/2 in drawn slot width is only a
 provisional fit to the stated member width. **Runners** remains a draft
 alternate name. Alan has since accepted the skid render and confirmed
 **floor joist** for the regular crosswise 2x6 seated in the notches. The
-manual lesson now shows the full frame on the skids at `?step=frame`;
-the earlier `?step=joists` remains available. Alan confirmed a 120 in outside
+frame-inspection view shows those pieces at `?step=frame`; the current
+flooring lesson adds the sheets at `?step=deck` without changing the skids.
+The earlier `?step=joists` remains available. Alan confirmed a 120 in outside
 floor width with 1 1/2 in outer boards each side and joists 3 in shorter,
 giving a **derived 117 in / 9 ft 9 in** cut length. “Outer board” is Alan's
 wording; rim/end-member names and the floor-frame assembly name remain

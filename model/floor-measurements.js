@@ -3,7 +3,7 @@
    preserved drawing does not always have the lumber's physical section. */
 import skids, { skidStudyMembers } from "../parts/skids.js";
 import { floorFrameMembers, lumberSize } from "../parts/floor-frame.js";
-import { floorDeckMembers } from "../parts/floor-deck.js";
+import { floorDeckMembers, sheetSize } from "../parts/floor-deck.js";
 
 function boundsOf(boxes) {
   if (!boxes.length) return null;
@@ -31,13 +31,18 @@ function beamRecord(member) {
     widthFt: member.w, depthFt: member.d, nominalLumber: member.meta.size };
 }
 
-function sheetRecord(member) {
+function sheetRecord(member,stock) {
   const xs = member.poly.map((p) => p[0]), zs = member.poly.map((p) => p[1]);
   const x0Ft = Math.min(...xs), x1Ft = Math.max(...xs);
   const z0Ft = Math.min(...zs), z1Ft = Math.max(...zs);
   const uv = member.poly.reduce((sum, p) => sum.map((v, i) => v + p[i] / member.poly.length), [0, 0]);
   const topPoint = member.origin.map((v, i) => v + member.e1[i] * uv[0] + member.e2[i] * uv[1] + member.e3[i] * member.t);
   return { member, x0Ft, x1Ft, z0Ft, z1Ft, topPoint,
+    bounds:{x0Ft,x1Ft,z0Ft,z1Ft,y0Ft:member.origin[1],y1Ft:member.origin[1]+member.t},
+    row:member.meta.row ?? member.meta.col,pieceInRow:member.meta.pieceInRow ?? null,
+    stockAcrossFt:member.meta.stockAcrossFt ?? stock.across,stockAlongFt:member.meta.stockAlongFt ?? stock.along,
+    cutAcrossFt:member.meta.cutAcrossFt ?? null,cutAlongFt:member.meta.cutAlongFt ?? null,
+    tongueAndGroove:member.meta.tongueAndGroove ?? null,
     acrossFt: x1Ft - x0Ft, alongFt: z1Ft - z0Ft,
     thicknessFt: member.t, layer: member.meta.layer };
 }
@@ -98,10 +103,40 @@ export function floorMeasurements(plan) {
     from: joists[index].center.slice(), to: record.center.slice(),
     spacingFt: record.center[2] - joists[index].center[2],
   }));
-  const sheets = floorDeckMembers(plan).map(sheetRecord);
+  const deckSpec=plan.floorStudy?.deck;
+  const sheetStock=deckSpec ? {across:deckSpec.sheetWidthFt,along:deckSpec.sheetLengthFt}
+    : sheetSize(plan.construction?.floor?.deck?.sheet || "4x8");
+  const sheets = floorDeckMembers(plan).map((member)=>sheetRecord(member,sheetStock));
   const highestLayer = sheets.length ? Math.max(...sheets.map((sheet) => sheet.layer)) : 0;
-  const representative = sheets.filter((sheet) => sheet.layer === highestLayer)
+  const topSheets=sheets.filter((sheet)=>sheet.layer===highestLayer);
+  const fullSheets=deckSpec ? topSheets.filter((sheet)=>Math.abs(sheet.acrossFt-sheet.stockAcrossFt)<1e-9 &&
+    Math.abs(sheet.alongFt-sheet.stockAlongFt)<1e-9) : [];
+  const representative = (fullSheets.length ? fullSheets : topSheets)
     .sort((a, b) => Math.hypot(a.topPoint[0], a.topPoint[2]) - Math.hypot(b.topPoint[0], b.topPoint[2]))[0] || null;
+  const rows=[...new Set(topSheets.map((sheet)=>sheet.row))].sort((a,b)=>a-b).map((row)=>{
+    const rowSheets=topSheets.filter((sheet)=>sheet.row===row).sort((a,b)=>a.z0Ft-b.z0Ft);
+    const x0Ft=Math.min(...rowSheets.map((sheet)=>sheet.x0Ft)),x1Ft=Math.max(...rowSheets.map((sheet)=>sheet.x1Ft));
+    return {row,x0Ft,x1Ft,widthFt:x1Ft-x0Ft,staggerFt:rowSheets[0]?.member.meta.staggerFt ?? null,
+      sheets:rowSheets,trimmed:x1Ft-x0Ft<sheetStock.across-1e-9};
+  });
+  const endJoints=[];
+  for(const row of rows) for(let i=1;i<row.sheets.length;i++) {
+    const before=row.sheets[i-1],after=row.sheets[i];
+    if(Math.abs(before.z1Ft-after.z0Ft)>1e-9) continue;
+    const zFt=after.z0Ft;
+    const supportMembers=frameMembers.filter((record)=>Math.abs(record.bounds.y1Ft-after.bounds.y0Ft)<1e-9 &&
+      record.bounds.z0Ft<=zFt+1e-9 && record.bounds.z1Ft>=zFt-1e-9 &&
+      record.bounds.x1Ft>row.x0Ft && record.bounds.x0Ft<row.x1Ft);
+    const intervals=supportMembers.map((record)=>[Math.max(row.x0Ft,record.bounds.x0Ft),Math.min(row.x1Ft,record.bounds.x1Ft)])
+      .sort((a,b)=>a[0]-b[0]);
+    let coveredTo=row.x0Ft;
+    for(const [lo,hi] of intervals) { if(lo>coveredTo+1e-9) break; coveredTo=Math.max(coveredTo,hi); }
+    const supportingJoist=supportMembers.find((record)=>record.member.kind==="joist") || null;
+    endJoints.push({row:row.row,zFt,x0Ft:row.x0Ft,x1Ft:row.x1Ft,
+      p0:[row.x0Ft,after.bounds.y1Ft,zFt],p1:[row.x1Ft,after.bounds.y1Ft,zFt],supportMembers,
+      supported:coveredTo>=row.x1Ft-1e-9,supportingJoist,
+      joistCenterOffsetFt:supportingJoist ? zFt-supportingJoist.center[2] : null});
+  }
   const construction = plan.construction || {}, floor = construction.floor || {}, deck = floor.deck || {};
   const skidLumber = construction.skids?.size || null;
   return {
@@ -109,7 +144,7 @@ export function floorMeasurements(plan) {
       joistSeatHeightFt:plan.floorStudy.joistBottomFt,joistTopFt:plan.floorStudy.joistTopFt,
       skidTopFt:plan.floorStudy.skids.heightFt,notchPlacement:plan.floorStudy.notches.placement,
       endRebates:plan.floorStudy.notches.endRebates,bottomCuts:plan.floorStudy.skids.bottomCuts,
-      frame:plan.floorStudy.frame } : null,
+      frame:plan.floorStudy.frame,deck:deckSpec } : null,
     nominal: { widthFt: plan.W, lengthFt: plan.L },
     supports: { ...supportBounds, xsFt, runs, count: runs.length,
       lengthFt: supportBounds ? supportBounds.z1Ft - supportBounds.z0Ft : 0,
@@ -133,8 +168,12 @@ export function floorMeasurements(plan) {
       nominalJoist: plan.floorStudy?.joists.nominal || floor.joist, nominalRim: floor.rim,
       settingsJoistSection: settingsSection(plan.floorStudy?.joists.nominal || floor.joist), settingsRimSection: settingsSection(floor.rim),
       nominalSpacingIn: plan.floorStudy?.joists.spacingIn ?? floor.spacingIn },
-    deck: { sheets, representative, thicknessFt: representative?.thicknessFt || 0,
-      nominalSheet: deck.sheet, nominalThicknessIn: deck.thicknessIn, layers: highestLayer },
+    deck: { sheets, representative, rows,endJoints,bounds:boundsOf(sheets.map((sheet)=>sheet.bounds)),
+      stockAcrossFt:sheetStock.across,stockAlongFt:sheetStock.along,
+      tongueAndGroove:deckSpec?.tongueAndGroove ?? null,edgeProfile:deckSpec ? "unspecified" : null,
+      thicknessFt: representative?.thicknessFt || 0,
+      nominalSheet: deckSpec ? `${deckSpec.sheetWidthFt}x${deckSpec.sheetLengthFt}${deckSpec.tongueAndGroove ? " T&G" : ""}` : deck.sheet,
+      nominalThicknessIn: deckSpec?.thicknessIn ?? deck.thicknessIn, layers: highestLayer },
   };
 }
 

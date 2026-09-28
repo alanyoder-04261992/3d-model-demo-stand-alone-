@@ -36,8 +36,9 @@ current pair 63 1/2 in apart across the nominal 10 ft width. The pair's
 count is still provisional. Do not infer the remaining details from the
 nominal footprint. **Skids**, **notches** and **floor joist** are confirmed
 terms; **outer board** is Alan's confirmed wording for each long side
-board. **Rim joist**, **end joist**, **floor frame** and **floor decking**
-remain proposed.
+board. **Rim joist**, **end joist** and **floor frame** remain proposed.
+Alan has since confirmed **Flooring** for the sheets; “floor decking” is
+a reference label for that part.
 
 Alan accepted the skid render (“Ok looks good now the next part”), then
 explicitly answered **“Yes—floor joist”** on September 27, 2026 for the
@@ -45,7 +46,7 @@ regular crosswise 2x6 seated 1 in down in the skid notches. He later
 confirmed the outside floor width as 10 ft, with a 1 1/2 in outer board on
 each side and joists 3 in shorter than the width. Their **117 in / 9 ft 9 in
 length is derived** as `120 - 1.5 - 1.5`, not a separate field measurement.
-The current manual lesson is `learn.html?company=learning-side-loft&step=frame`,
+The frame-inspection view is `learn.html?company=learning-side-loft&step=frame`,
 showing the complete floor frame on the skids, including outer/end boards.
 Alan has also confirmed a **flat treated 2x4** behind the doubled end
 boards toward the inside, resting on the skid tops. Alan confirmed it is
@@ -53,7 +54,9 @@ boards toward the inside, resting on the skid tops. Alan confirmed it is
 descriptive label **Board the mule hooks onto**; its current lateral
 centering is not confirmed.
 It starts with an angled overview; the connection button opens the close-up.
-Keep sheets, walls and roof out of the current view. The earlier
+Keep sheets, walls and roof out of that frame-inspection view. The current
+flooring lesson uses `?step=deck` to add sheets over the same unchanged
+frame. The earlier
 `?step=joists` view still isolates regular joists. Continue only as Alan
 directs; the render acceptance does not settle
 unrelated assumptions or authorize autoplay.
@@ -123,8 +126,11 @@ first offset remain unchanged and provisional. The outer boards retain
 their previous height and length assumptions: currently 15.94 ft long,
 while the fitted end-board packages reach the 16 ft skid tips. These are
 model extents, not a newly confirmed full-frame length. Optional decking
-follows the shared 10 ft frame width, with its other specifications still
-provisional. `frameFootprint`, `rimSection` and `deck` remain provisional.
+now covers the actual 10x16 ft frame envelope with the confirmed 4x8 T&G,
+5/8 in layout described in the [flooring skill](../part-floor-deck/SKILL.md).
+Sheet material/profile details remain unspecified. `frameFootprint` and
+`rimSection` remain provisional. Aggregate `deck` also stays provisional;
+its granular sheet/layout statuses identify the confirmed facts.
 The normal designer is unchanged.
 
 The flat treated 2x4 is an `end-backing` member in the full-frame lesson.

@@ -71,7 +71,7 @@ export function createFloorLabels(viewport, renderer, plan, {joistsOnly=false}={
     const notch=detailNotch || supports.notches.filter(n=>n.xFt===nearX && n.sources.includes("alternate") && !n.sources.includes("standard"))
       .sort((a,b)=>Math.abs(a.centerZFt)-Math.abs(b.centerZFt))[0];
     const bottomCut=detailNotch?.end ? supports.bottomCuts?.find(c=>c.xFt===notch.xFt && c.end===notch.end) : null;
-    if(!detail) {
+    if(!detail && !selected.has("deck")) {
       // The dashed footprint is nominal; member measurements use the mesh.
       const corners=[[-plan.W/2,0,-plan.L/2],[plan.W/2,0,-plan.L/2],[plan.W/2,0,plan.L/2],[-plan.W/2,0,plan.L/2]];
       for(let i=0;i<4;i++) line(project(corners[i]),project(corners[(i+1)%4]),"#8198a8","5 5");
@@ -120,12 +120,31 @@ export function createFloorLabels(viewport, renderer, plan, {joistsOnly=false}={
       }
     }
     if(selected.has("deck") && sheet) {
-      labels.push({text:"Floor decking",detail:`${formatFeetInches(sheet.acrossFt)} × ${formatFeetInches(sheet.alongFt)}`,x:width-(small?190:210)-14,y:16,w:small?190:210,points:[sheetPoint(sheet.member)]});
-      const p=sheet.member, xs=p.poly.map(v=>v[0]),zs=p.poly.map(v=>v[1]);
-      const y=sheetPoint(p)[1],x0=Math.min(...xs),x1=Math.max(...xs),z0=Math.min(...zs),z1=Math.max(...zs);
-      if(!detail) {
-        dimension(project,[x1,y,z0],[x1,y,z1],formatFeetInches(sheet.alongFt),17,"#135872",width,height);
-        dimension(project,[x0,y,z1],[x1,y,z1],formatFeetInches(sheet.acrossFt),17,"#135872",width,height);
+      const deck=measures.deck, topSheets=deck.sheets.filter(s=>s.layer===sheet.layer);
+      // These are the sheet polygons' own top edges, not a decorative grid.
+      // The panels butt together; a line indicates the joint, not a gap.
+      for(const panel of topSheets) {
+        const p=panel.member;
+        const points=p.poly.map(uv=>p.origin.map((v,i)=>v+p.e1[i]*uv[0]+p.e2[i]*uv[1]+p.e3[i]*p.t));
+        for(let i=0;i<points.length;i++) line(project(points[i]),project(points[(i+1)%points.length]),"#675641");
+      }
+      labels.push({text:"Flooring",detail:`${formatFeetInches(sheet.acrossFt)} × ${formatFeetInches(sheet.alongFt)} sheet`,
+        footer:"tongue-and-groove",x:14,y:16,w:cardWidth,points:[sheetPoint(sheet.member)]});
+      const middle=deck.rows?.find(row=>row.row===1), last=deck.rows?.find(row=>row.trimmed);
+      if(middle) labels.push({text:"Staggered row",detail:middle.sheets.map(s=>formatFeetInches(s.alongFt)).join(" + "),
+        footer:"end seams do not line up",x:width-cardWidth-14,y:16,w:cardWidth,points:middle.sheets.map(s=>sheetPoint(s.member))});
+      if(last) {
+        const panel=last.sheets.slice().sort((a,b)=>nearEnd*(b.topPoint[2]-a.topPoint[2]))[0];
+        labels.push({text:"Last row trimmed",detail:`${formatFeetInches(last.widthFt)} wide`,footer:"width calculated",
+          x:14,y:height-72,w:cardWidth,points:[sheetPoint(panel.member)]});
+      }
+      if(renderer.cam.pitch<1.4) {
+        const x=side>0?Math.max(...topSheets.map(s=>s.x1Ft)):Math.min(...topSheets.map(s=>s.x0Ft));
+        const z=nearEnd>0?Math.max(...topSheets.map(s=>s.z1Ft)):Math.min(...topSheets.map(s=>s.z0Ft));
+        const edge=topSheets.find(s=>x>=s.x0Ft-1e-9&&x<=s.x1Ft+1e-9&&z>=s.z0Ft-1e-9&&z<=s.z1Ft+1e-9);
+        if(edge) labels.push({text:Math.abs(edge.thicknessFt*12-.625)<1e-8?"5/8″ thick":`${formatInches(edge.thicknessFt)} thick`,
+          detail:"Flooring edge",footer:"confirmed thickness",x:width-cardWidth-14,y:height-72,w:cardWidth,
+          points:[[x,edge.topPoint[1]-edge.thicknessFt/2,z]]});
       }
     } else if(selected.has("frame")) {
       const crossMembers=measures.frame.members.filter(m=>joistsOnly?m.member.kind==="joist":["joist","end-joist","wall-joist"].includes(m.member.kind));

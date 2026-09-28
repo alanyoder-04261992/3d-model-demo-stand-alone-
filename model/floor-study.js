@@ -91,12 +91,25 @@ export function floorStudyPlan(plan) {
       throw new Error("floorStudy.skids.bottomCuts must leave a flat bottom and wood beneath the notch seat at both tips.");
     bottomCuts = { reachIn,angleDeg,riseIn,reachFt:reachIn/12,riseFt:riseIn/12 };
   }
+  let deck = null;
+  if (raw.deck != null) {
+    const sheetWidthFt = positive(raw.deck.sheetWidthFt,"deck.sheetWidthFt");
+    const sheetLengthFt = positive(raw.deck.sheetLengthFt,"deck.sheetLengthFt");
+    const thicknessIn = positive(raw.deck.thicknessIn,"deck.thicknessIn");
+    const staggerFt = positive(raw.deck.staggerFt,"deck.staggerFt");
+    if (staggerFt >= sheetLengthFt || raw.deck.layers !== 1 || raw.deck.orientation !== "lengthwise" || raw.deck.coverage !== "frame")
+      throw new Error("floorStudy.deck needs one lengthwise layer over the frame and a stagger shorter than a full sheet.");
+    deck = { sheetWidthFt,sheetLengthFt,thicknessIn,thicknessFt:thicknessIn/12,
+      staggerFt,layers:1,orientation:"lengthwise",coverage:"frame",tongueAndGroove:raw.deck.tongueAndGroove===true };
+  }
   const status = {};
   for (const key of ["skidSection", "skidLength", "skidTreatment", "joistSection", "standardSpacing", "alternateSpacing",
     "notchDepth", "notchWidth", "notchPositions", "endRebates", "endMemberPlacement", "bottomCuts",
     "supportOffset", "supportLayout", "frameFootprint", "frameWidth", "sideBoardWidth", "joistLength",
     "endBoardCounts", "endBoardMapping", "frameTreatment", "backingSection", "backingOrientation",
-    "backingTreatment", "backingLocation", "backingLength", "backingLateralPosition", "backingPurpose", "rimSection", "deck"]) {
+    "backingTreatment", "backingLocation", "backingLength", "backingLateralPosition", "backingPurpose", "rimSection", "deck",
+    "deckSheetSize", "deckThickness", "deckTongueAndGroove", "deckStagger", "deckStaggerOffset", "deckOrientation",
+    "deckTrimLastRow", "deckFootprint", "deckLayers", "deckEdgeProfile"]) {
     status[key] = ["confirmed","derived"].includes(raw.status?.[key]) ? raw.status[key] : "provisional";
   }
   const study = {
@@ -107,7 +120,7 @@ export function floorStudyPlan(plan) {
     notches: { widthIn:notchWidthIn,depthIn,widthFt:notchWidthIn/12,depthFt:depthIn/12,
       alternateSpacingIn, alternateSpacingFt:alternateSpacingIn == null ? null : alternateSpacingIn/12,endRebates,
       placement:alternateSpacingIn == null ? "cross-members" : "cross-members-and-alternate-grid" },
-    frame,
+    frame,deck,
     joistBottomFt:(heightIn-depthIn)/12,
     joistTopFt:(heightIn-depthIn+joistHeightIn)/12,
     status,

@@ -4,19 +4,22 @@
 # Development-only dependencies: python -m pip install Pillow numpy
 # Reads test/out/joist-render-data.json; writes images/floor-joists.png and
 # images/floor-joist-connection.png and images/floor-end-backing.png.
+# Pass --deck to both the Node exporter and this script to write only
+# images/flooring.png and images/flooring-layout.png from flooring-render-data.json.
 # Windows Segoe UI preserves the original
 # layout; other fonts can change text metrics. No website runtime dependencies.
-import argparse, json, math
+import argparse, json, math, sys
 from pathlib import Path
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 ROOT=Path(__file__).resolve().parents[1]
-parser=argparse.ArgumentParser(description='Render the exported floor-joist lesson mesh as two annotated PNGs.')
+parser=argparse.ArgumentParser(description='Render exact floor-lesson meshes as annotated PNGs.')
+parser.add_argument('--deck',action='store_true',help='Read flooring-render-data.json and render flooring overview and layout only.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
-data=json.loads((ROOT/'test/out/joist-render-data.json').read_text(encoding='utf-8'))
+data=json.loads((ROOT/('test/out/flooring-render-data.json' if args.deck else 'test/out/joist-render-data.json')).read_text(encoding='utf-8'))
 W,H=1200,940
 NAVY='#173b56'
 textures={name:np.frombuffer((ROOT/'test/out'/spec['file']).read_bytes(),dtype=np.uint8).reshape(spec['height'],spec['width'],4)
@@ -112,6 +115,79 @@ def dimension(d,project,p,q,label,offset=(0,0)):
     width=box[2]-box[0]+22
     d.rounded_rectangle((middle[0]-width/2,middle[1]-19,middle[0]+width/2,middle[1]+23),radius=5,fill='white')
     d.text((middle[0]-width/2+11,middle[1]-15),label,font=f,fill=NAVY)
+
+def render_flooring():
+    deck=data['metadata']['deck'];b=deck['bounds'];rows=deck['rows']
+    assert len(deck['sheets'])==7 and len(rows)==3
+    assert abs(deck['thicknessFt']*12-.625)<1e-9
+    assert abs(b['x1Ft']-b['x0Ft']-10)<1e-9 and abs(b['z1Ft']-b['z0Ft']-16)<1e-9
+    assert [[round(s['alongFt'],6) for s in row['sheets']] for row in rows]==[[8,8],[4,8,4],[8,8]]
+    assert [round(row['widthFt'],6) for row in rows]==[4,4,2]
+    (ROOT/'images').mkdir(exist_ok=True)
+    im,project=scene()
+    d=ImageDraw.Draw(im)
+    title(d,'Flooring · 10 × 16','4 × 8 ft sheets · ⅝ in thick · tongue and groove')
+    for s in deck['sheets']:
+        y=s['bounds']['y1Ft']
+        points=[project([x,y,z]) for x,z in [(s['x0Ft'],s['z0Ft']),(s['x1Ft'],s['z0Ft']),
+                 (s['x1Ft'],s['z1Ft']),(s['x0Ft'],s['z1Ft'])]]
+        d.line([tuple(p) for p in points+[points[0]]],fill='#65513a',width=2)
+    yt=b['y1Ft']
+    dimension(d,project,[b['x0Ft'],yt,b['z0Ft']],[b['x0Ft'],yt,b['z1Ft']],'16 ft',(-20,-30))
+    dimension(d,project,[b['x0Ft'],yt,b['z1Ft']],[b['x1Ft'],yt,b['z1Ft']],'10 ft',(0,38))
+    dimension(d,project,[b['x1Ft'],b['y0Ft'],b['z0Ft']],[b['x1Ft'],yt,b['z0Ft']],'⅝ in',(35,0))
+    for i,row in enumerate(rows):
+        x=(row['x0Ft']+row['x1Ft'])/2
+        point=project([x,yt,0 if i!=1 else 2])
+        texts=[('Row 1 · 4 ft wide',['8 ft + 8 ft']),('Row 2 · staggered',['4 ft + 8 ft + 4 ft']),
+               ('Row 3 · trimmed',['2 ft wide · 8 ft + 8 ft'])]
+        label,lines=texts[i]
+        leader(d,point,(40+i*390,748,355,110),label,lines)
+    d.text((40,890),'Final row: 10 − 4 − 4 = 2 ft wide · sheet surface is illustrative',font=font(23),fill='#526879')
+    im.save(ROOT/'images/flooring.png')
+
+    # Orthographic plan drawn directly from the same seven measured sheet rectangles.
+    plan=Image.new('RGB',(1200,1080),'#edf2f6');d=ImageDraw.Draw(plan)
+    title(d,'Flooring · staggered seams','Top view · each rectangle is one laid piece · dimensions in feet')
+    left,top,scale=125,260,59
+    def point(x,z):
+        return (left+(z-b['z0Ft'])*scale,top+(x-b['x0Ft'])*scale)
+    colors=['#d9bd89','#e5cca3','#cae0df']
+    def centered(text,x,y,size=29,bold=True,color=NAVY):
+        d.text((x,y),text,font=font(size,bold),fill=color,anchor='mm')
+    for row in rows:
+        i=row['row']
+        for s in row['sheets']:
+            a=point(s['x0Ft'],s['z0Ft']);c=point(s['x1Ft'],s['z1Ft'])
+            d.rectangle((*a,*c),fill=colors[i],outline='#23495c',width=3)
+            cx=(a[0]+c[0])/2;cy=(a[1]+c[1])/2
+            centered(f"{s['acrossFt']:g} × {s['alongFt']:g} ft",cx,cy-14,31)
+            centered('Trimmed width' if row['trimmed'] else ('Half sheet' if s['alongFt']==4 else 'Full sheet'),cx,cy+24,23,False)
+        y=(point(row['x0Ft'],b['z0Ft'])[1]+point(row['x1Ft'],b['z0Ft'])[1])/2
+        centered(f"Row {i+1}",64,y-20,22)
+        centered(f"{row['widthFt']:g} ft",64,y+13,25)
+    # Highlight only the sheet end joints, so their alternating positions read clearly.
+    for joint in deck['endJoints']:
+        a=point(joint['x0Ft'],joint['zFt']);c=point(joint['x1Ft'],joint['zFt'])
+        d.line([a,c],fill='#214d65',width=6)
+    d.line([(left,218),(left+16*scale,218)],fill=NAVY,width=2)
+    for ft in [0,4,8,12,16]:
+        x=left+ft*scale
+        d.line([(x,207),(x,230)],fill=NAVY,width=3)
+        centered(f'{ft} ft',x,186,25)
+    d.line([(left+16*scale+37,top),(left+16*scale+37,top+10*scale)],fill=NAVY,width=2)
+    for y in [top,top+10*scale]:d.line([(left+16*scale+27,y),(left+16*scale+47,y)],fill=NAVY,width=3)
+    centered('10 ft',1122,top+5*scale,23)
+    d.rounded_rectangle((40,885,1160,1000),radius=12,fill='white',outline='#bdccd8',width=2)
+    d.text((62,902),'Staggered = the next row’s end seams move over.',font=font(29,True),fill=NAVY)
+    d.text((62,948),'Row 2: 4 + 8 + 4 ft. Final row width: 10 − 4 − 4 = 2 ft.',font=font(27),fill=NAVY)
+    d.text((40,1030),'⅝ in tongue-and-groove flooring · 7 laid pieces · colors distinguish the rows',font=font(23),fill='#526879')
+    plan.save(ROOT/'images/flooring-layout.png')
+
+if args.deck:
+    render_flooring()
+    print('Saved exact-mesh flooring overview and measured sheet-layout PNGs.')
+    sys.exit(0)
 
 joint=data['metadata']['joint']; j=joint['joist']; skid=joint['skid']; notch=joint['notch']
 frame=data['metadata']['frame']; bounds=frame['bounds']

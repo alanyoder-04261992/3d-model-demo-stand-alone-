@@ -1,7 +1,9 @@
 /* Export the current lesson mesh for a deterministic static illustration.
-   Run: node tools/export-joist-render-data.mjs
+   Run: node tools/export-joist-render-data.mjs [--deck]
    Writes test/out/joist-render-data.json (ignored intermediate).
    Then: python tools/render-joist-picture.py
+   With --deck: writes flooring-render-data.json instead; render with
+   python tools/render-joist-picture.py --deck for the two flooring PNGs.
    Python needs Pillow and NumPy as development-only rendering dependencies;
    the website itself still has no runtime dependencies or build step. */
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -15,10 +17,12 @@ import { assemble, onlyParts } from "../engine/assemble.js";
 import { woodFinish, floorWoodTexture } from "../ui/learn-wood.js";
 
 const cat=loadCatalogue("learning-side-loft");
+const withDeck=process.argv.includes("--deck");
+const selectedParts=["skids","floor-frame",...(withDeck ? ["floor-deck"] : [])];
 const plan=floorStudyPlan(makePlan(defaults(cat),cat));
 const measurements=floorMeasurements(plan);
 const original=assemble(plan,{frames:true,scene:"studio",trueColour:true}).build;
-const isolated=onlyParts(original,["skids","floor-frame"]);
+const isolated=onlyParts(original,selectedParts);
 const build=woodFinish(isolated,measurements);
 function geometrySignature(drawing) {
   const triangles=[];
@@ -56,7 +60,7 @@ for(const key of build.ORDER) {
     }
   }
   for(const tag of build.tags[key] || []) for(let t=tag.from;t<tag.from+tag.count;t++) {
-    assert.ok(["skids","floor-frame"].includes(tag.part));
+    assert.ok(selectedParts.includes(tag.part));
     const offset=t*27,positions=[],normals=[],uv=[];
     for(let vertex=0;vertex<3;vertex++) {
       const i=offset+vertex*9;
@@ -81,11 +85,12 @@ assert.ok(Math.abs(joist.bounds.y0Ft-notch.seatYFt)<1e-9,"the joint must touch a
 assert.equal(partCounts["floor-frame"],measurements.frame.members.length*12);
 const output={
   schemaVersion:1,units:"feet",coordinateAxes:{x:"across building width",y:"up",z:"along skid length"},
-  source:"Current learning-side-loft plan: skids, floor joists, outer boards and end boards; exact assembly vertices.",
+  source:`Current learning-side-loft plan: ${selectedParts.join(", ")}; exact assembly vertices.`,
   renderingNote:"woodFinish material tint, UVs and seeded texture pixels retained. This is mesh data, not a browser capture.",
   modelBounds,partCounts,groups,textures,
   metadata:{nominal:measurements.nominal,status:plan.floorStudy.status,
     supports:measurements.supports,regularJoists:measurements.frame.joists,
+    ...(withDeck ? {deck:measurements.deck} : {}),
     frame:{count:measurements.frame.joists.length,nominalJoist:measurements.frame.nominalJoist,
       members:measurements.frame.members,bounds:measurements.frame.bounds,
       outerBoards:measurements.frame.rims,
@@ -100,7 +105,7 @@ const output={
     }},
   },
 };
-const file=new URL("../test/out/joist-render-data.json",import.meta.url);
+const file=new URL(`../test/out/${withDeck ? "flooring" : "joist"}-render-data.json`,import.meta.url);
 mkdirSync(new URL("../test/out/",import.meta.url),{recursive:true});
 writeFileSync(file,JSON.stringify(output,null,2)+"\n");
 console.log(JSON.stringify({file:file.pathname,groups:groups.length,partCounts,modelBounds,

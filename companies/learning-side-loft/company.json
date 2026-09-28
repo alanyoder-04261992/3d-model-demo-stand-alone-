@@ -79,6 +79,10 @@
         "widthFt": 10, "sideBoardWidthIn": 1.5, "endCounts": { "negative": 2, "positive": 1 }, "treated": true,
         "backing": { "nominal": "2x4", "widthIn": 3.5, "heightIn": 1.5, "lengthIn": 93, "end": "negative", "treated": true, "purpose": "mule-attachment" }
       },
+      "deck": {
+        "sheetWidthFt": 4, "sheetLengthFt": 8, "thicknessIn": 0.625, "layers": 1,
+        "tongueAndGroove": true, "staggerFt": 4, "orientation": "lengthwise", "coverage": "frame"
+      },
       "notches": {
         "depthIn": 1, "widthIn": 1.5, "alternateSpacingIn": 12,
         "endRebates": {
@@ -98,7 +102,10 @@
         "endBoardCounts": "confirmed", "endBoardMapping": "derived", "frameTreatment": "confirmed",
         "backingSection": "confirmed", "backingOrientation": "confirmed", "backingTreatment": "confirmed",
         "backingLocation": "confirmed", "backingLength": "confirmed",
-        "backingLateralPosition": "provisional", "backingPurpose": "confirmed"
+        "backingLateralPosition": "provisional", "backingPurpose": "confirmed",
+        "deckSheetSize": "confirmed", "deckThickness": "confirmed", "deckTongueAndGroove": "confirmed",
+        "deckStagger": "confirmed", "deckStaggerOffset": "confirmed", "deckOrientation": "confirmed",
+        "deckTrimLastRow": "confirmed", "deckFootprint": "derived", "deckLayers": "provisional", "deckEdgeProfile": "provisional"
       }
     }
   },

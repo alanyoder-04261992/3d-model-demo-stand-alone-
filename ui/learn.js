@@ -44,7 +44,7 @@ export async function startFloorLesson() {
   const boxes=[...document.querySelectorAll('input[name="piece"]')];
   const cameraButtons=[...document.querySelectorAll("[data-camera]")];
   const step=new URLSearchParams(location.search).get("step");
-  const joistsOnly=step==="joists", fullFrame=step==="frame";
+  const joistsOnly=step==="joists", fullFrame=step==="frame", flooring=step==="deck";
   $("lesson-reload").addEventListener("click",()=>location.reload());
   function fail(error) {
     api.error=error instanceof Error ? error.message : String(error);
@@ -57,25 +57,32 @@ export async function startFloorLesson() {
     for(const button of cameraButtons) button.disabled=true;
   }
   try {
-    if(joistsOnly || fullFrame) {
+    if(flooring) {
+      const pictureLink=$("lesson-picture-link") || $("lesson-error")?.querySelector("a");
+      if(pictureLink) { pictureLink.href="flooring.html"; pictureLink.textContent="Open the flooring pictures"; }
+    }
+    if(joistsOnly || fullFrame || flooring) {
       const frameControl=boxes.find(input=>input.value==="frame");
-      const deckLabel=boxes.find(input=>input.value==="deck")?.closest("label");
+      const deckControl=boxes.find(input=>input.value==="deck");
+      const deckLabel=deckControl?.closest("label");
       if(!frameControl?.nextElementSibling || !deckLabel)
         throw new Error("This page is missing the floor controls. Reload it to load the current lesson.");
       for(const button of cameraButtons) {
         if(button.dataset.camera==="connection") button.hidden=false;
         if(joistsOnly && ["notch","end-negative","end-positive"].includes(button.dataset.camera)) button.hidden=true;
-        if(fullFrame && button.dataset.camera==="end-negative") button.textContent="Two-board end";
-        if(fullFrame && button.dataset.camera==="end-positive") button.textContent="One-board end";
-        if(fullFrame && button.dataset.camera==="mule-board") button.hidden=false;
+        if((fullFrame || flooring) && button.dataset.camera==="end-negative") button.textContent="Two-board end";
+        if((fullFrame || flooring) && button.dataset.camera==="end-positive") button.textContent="One-board end";
+        if((fullFrame || flooring) && button.dataset.camera==="mule-board") button.hidden=false;
+        if(flooring && button.dataset.camera==="top") button.textContent="See seams";
       }
       frameControl.nextElementSibling.textContent=joistsOnly?"Floor joists":"Joists and outer boards";
-      deckLabel.hidden=true;
+      if(deckControl.nextElementSibling) deckControl.nextElementSibling.textContent="Flooring";
+      deckLabel.hidden=!flooring;
       // Older cached lesson pages predate this navigation link.
       const stepLink=$("lesson-step-link");
       if(stepLink) {
-        stepLink.href=fullFrame?"learn.html?step=joists":"learn.html?step=frame";
-        stepLink.textContent=fullFrame?"Earlier: joists only":"Next: outer and end boards";
+        stepLink.href=fullFrame?"learn.html?step=deck":"learn.html?step=frame";
+        stepLink.textContent=fullFrame?"Next: flooring":flooring?"Earlier: floor frame":"Next: outer and end boards";
       }
     }
     const cat=await loadCatalogue(COMPANY);
@@ -128,13 +135,18 @@ export async function startFloorLesson() {
       api.parts=floorParts(api.selection);
       if(muleBoardView && !api.selection.includes("frame")) setCamera("angle");
       for(const button of cameraButtons) if(button.dataset.camera==="mule-board") button.disabled=!api.selection.includes("frame");
+      if(flooring) {
+        const covered=api.selection.includes("deck");
+        for(const button of cameraButtons) if(["notch","connection","end-negative","end-positive","mule-board"].includes(button.dataset.camera)) button.hidden=covered;
+        if(covered && detail) setCamera("angle");
+      }
       if(nextFocus) focus=nextFocus;
       for(const input of boxes) input.checked=api.selection.includes(input.value);
       const visible=onlyParts(full.build,api.parts);
       const build=woodFinish(joistsOnly?onlyFloorJoists(visible,measures):visible,measures);
       renderer.show({build,bounds,gr:full.gr,fitDist:distToFit(box,renderer.cam.yaw,renderer.cam.pitch,size())});
       renderer.setStages(null);
-      const piece=floorPiece(api.selection,focus);
+      const piece=floorPiece(api.selection,api.selection.includes("deck")?"deck":flooring&&api.selection.includes("frame")?"frame":focus);
       $("piece-title").textContent=piece ? (piece.key==="supports" ? "Skids — the long supports underneath" : piece.label) : "Choose a floor piece";
       $("piece-description").textContent=piece ? piece.description : "Use the boxes to add a piece back into the view.";
       $("piece-draft").textContent=piece ? piece.draft : "We will work through the pieces together.";
@@ -154,6 +166,7 @@ export async function startFloorLesson() {
       return api.parts.slice();
     }
     function setCamera(name) {
+      if(api.selection.includes("deck") && ["notch","connection","end-negative","end-positive","mule-board"].includes(name)) name="angle";
       if(!["in","out"].includes(name)) muleBoardView=false;
       if(name==="in") zoom=clamp(zoom/1.15,.5,2.1);
       else if(name==="out") zoom=clamp(zoom*1.15,.5,2.1);
@@ -225,8 +238,8 @@ export async function startFloorLesson() {
     canvas.addEventListener("webglcontextlost",(event)=>{event.preventDefault();fail("The 3D view was interrupted. Reload this page to restore the floor view.");});
     const observer=new ResizeObserver(requestDraw); observer.observe(viewport);
     window.addEventListener("pagehide",()=>{observer.disconnect();if(raf)cancelAnimationFrame(raf);},{once:true});
-    const selection=fullFrame?["supports","frame"]:initialFloorSelection(step);
-    select(selection,joistsOnly||fullFrame?"frame":selection[0]);
+    const selection=flooring?["supports","frame","deck"]:fullFrame?["supports","frame"]:initialFloorSelection(step);
+    select(selection,flooring?"deck":joistsOnly||fullFrame?"frame":selection[0]);
     setCamera("angle");
     draw();
     $("lesson-loading").hidden=true;

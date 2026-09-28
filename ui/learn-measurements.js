@@ -7,7 +7,7 @@ export function createMeasurementReadout(list,note,plan,{joistsOnly=false}={}) {
   function update(selection) {
     list.replaceChildren();
     const selected=new Set(selection),rows=[],notes=[];
-    if(selected.has("supports")) {
+    if(selected.has("supports") && !selected.has("deck")) {
       rows.push(["Each skid · confirmed length",length(m.supports.lengthFt)],
         ["Skid material · confirmed",plan.floorStudy.skids.treated?"Treated wood":"To confirm"],
         ["Skid · nominal → actual",`${m.supports.nominalLumber} → ${inches(m.supports.widthFt)} × ${inches(m.supports.depthFt)}`],
@@ -30,7 +30,7 @@ export function createMeasurementReadout(list,note,plan,{joistsOnly=false}={}) {
         notes.push(`The ${bottomCut.angleDeg}° cuts remove the bottom corners. The ${inches(bottomCut.reachFt)} reach gives a ${inches(bottomCut.riseFt)} rise toward each tip.`);
       }
     }
-    if(selected.has("frame")) {
+    if(selected.has("frame") && !selected.has("deck")) {
       rows.push(["Floor joist · nominal → actual",`${m.frame.nominalJoist} → ${inches(m.frame.joist.widthFt)} × ${inches(m.frame.joist.depthFt)}`],
         ["Seated below the skid top · confirmed",inches(m.supports.notchDepthFt)],
         ["Floor joist length · from outside width",`${inches(m.frame.joist.lengthFt)} (${length(m.frame.joist.lengthFt)})`],
@@ -54,11 +54,13 @@ export function createMeasurementReadout(list,note,plan,{joistsOnly=false}={}) {
     }
     if(selected.has("deck")) {
       const sheet=m.deck.representative;
-      rows.push(["Labeled sheet · drawn size",`${length(sheet.acrossFt)} × ${length(sheet.alongFt)}`],
-        ["Sheet thickness",Math.abs(sheet.thicknessFt*12-.625)<1e-8?"5/8 in":inches(sheet.thicknessFt)],
-        ["Sheet stock in settings",m.deck.nominalSheet],
-        ["Visible sheet pieces",`${m.deck.sheets.length} pieces · ${m.deck.layers} layer`]);
-      notes.push("Sheet specification and layout are model defaults to check later. Edge pieces are trimmed; narrow display gaps make drawn sheets slightly smaller than the stock size.");
+      rows.push(["Flooring · confirmed stock",`${length(sheet.stockAcrossFt)} × ${length(sheet.stockAlongFt)} tongue-and-groove`],
+        ["Flooring · confirmed thickness",Math.abs(sheet.thicknessFt*12-.625)<1e-8?"5/8 in":inches(sheet.thicknessFt)],
+        ["Flooring in this drawing",`${m.deck.sheets.length} pieces · ${m.deck.layers} layer`]);
+      for(const row of m.deck.rows || []) rows.push([
+        `Row ${row.row+1} · ${row.trimmed?"trimmed width, calculated":"stock width"}: ${length(row.widthFt)}`,
+        row.sheets.map(s=>length(s.alongFt)).join(" + ")]);
+      notes.push("Staggered means the middle row's end seams are offset from those in the neighboring rows. Its lengths are 4 ft + 8 ft + 4 ft. The last row's 2 ft width is calculated: 10 ft − 4 ft − 4 ft. Lines show the sheet joints; no installation gap or tongue-and-groove profile dimensions are implied. Remove Flooring above to see the frame beneath.");
     }
     for(const [title,value] of rows) {
       const item=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");

@@ -28,7 +28,7 @@ company that only wants the designer.
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
-[open the model picture saved in GitHub](https://github.com/alanyoder-04261992/3d-model-demo-stand-alone-/blob/codex/side-loft-terminology/images/floor-joists.png).
+[open the flooring model picture saved in GitHub](https://github.com/alanyoder-04261992/3d-model-demo-stand-alone-/blob/codex/side-loft-terminology/images/flooring.png).
 Netlify hosting is currently unavailable because its account credit limit
 blocks service and deployment; use the GitHub picture or local pages.
 For local development,
@@ -48,16 +48,20 @@ Alan accepted the skid view and confirmed **floor joist** for the crosswise
 1½ in **outer boards** each side, and joists 3 in shorter: a calculated
 117 in / 9 ft 9 in. One end has two boards and the other one. Those floor
 joists, outer boards and end boards are confirmed treated wood, with varied
-grain and knots that stay stable when the view changes. Continue manually
-at `learn.html?company=learning-side-loft&step=frame` to see them together
-on the skids; `?step=joists` still isolates the regular joists.
+grain and knots that stay stable when the view changes. The frame remains
+available at `learn.html?company=learning-side-loft&step=frame`;
+`?step=joists` isolates the regular joists.
 The frame also includes the **Board the mule hooks onto**: a treated 2x4
 lying flat behind the double end boards, on top of the skids. Alan confirmed
 93 in length (7 ft 9 in); its sideways centering is still provisional.
 The picture page includes a [close-up](images/floor-end-backing.png).
-First position, notch clearance, outer-board height/length, full-frame
-length and deck details remain pending. Rim/end-joist and decking names
-are still proposed.
+The current view is **Flooring** at `learn.html?company=learning-side-loft&step=deck`:
+stated 4x8 ft tongue-and-groove sheets, 5/8 in thick, over the unchanged frame.
+Rows run 8+8 ft, the confirmed 4+8+4 ft stagger, then 8+8 ft trimmed to a
+calculated 2 ft width. The [picture page](flooring.html) shows the flooring
+and its layout. Sheet material, treatment, net coverage and exact joint
+profile remain unspecified. First joist position, notch clearance and
+outer-board dimensions still need agreement; rim/end-joist names remain proposed.
 Nothing advances automatically.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the
@@ -175,6 +179,7 @@ Chromium's software graphics, each on its own port.
 | `check-design.mjs` | no | a design saved, shared and opened again is the same building at the same price; nothing missing is dropped silently |
 | `check-floor-lesson.mjs` | no | the lesson starts with supports; all eight selections preserve original floor geometry, and measurements match drawn pieces |
 | `check-floor-joist-lesson.mjs` | no | the joist lesson retains only regular crosswise joists, preserving their geometry, materials and stages while keeping the full frame unchanged |
+| `check-floor-deck-lesson.mjs` | no | the seven flooring pieces cover the 10x16 frame at 5/8 in thick, with staggered seams and a trimmed last row, without changing the frame, skids or ordinary designer |
 | `check-model-live.mjs` | yes | the rules (sizes, walls, roof line, standard doors and windows, clamping, prices) are Barnwright's, number for number, against its live page |
 | `check-ui.mjs` | yes | the designer page works: every style, size, colour, door and window, drag, "Add here", layouts on phone and desktop, escaping |
 | `check-views.mjs` | yes | Outside, Inside, Framing and Watch it build on seven buildings, from real clicks and real pixels |

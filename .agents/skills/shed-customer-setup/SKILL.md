@@ -52,11 +52,11 @@ Use **floor joist** as confirmed. Alan subsequently confirmed a 10 ft
 outside floor width, 1 1/2 in **outer boards** on both sides, and joists
 3 in shorter than that width. The resulting **117 in / 9 ft 9 in** joist
 length is calculated from his rule. He also explicitly confirmed two
-boards at one end and one at the other. The current manual view is
-`learn.html?company=learning-side-loft&step=frame`, showing those boards on
-the skids together. The earlier `?step=joists` view remains available;
-`?step=deck` is for a later addition. Keep sheets, walls and roof out of the
-current view. This is a learning order, not an approved
+boards at one end and one at the other. Alan has now requested **Flooring**,
+so the current manual view is
+`learn.html?company=learning-side-loft&step=deck`: skids, frame and sheets
+together. The earlier `?step=frame` and `?step=joists` views remain available.
+Keep walls, roof and autoplay out of the current view. This is a learning order, not an approved
 shop sequence. Do not impose the software's `buildOrder` as the order the shop
 uses. Agree on the current part's meaning before moving on, and follow Alan's
 direction and pace in the conversation. Preserve already confirmed terms even
@@ -66,13 +66,28 @@ Alan has explicitly requested a **3D render with the terms** to check names
 and how pieces fit together. Provide labels anchored to actual rendered
 parts using leader lines or another clear visual pointer; text in a glossary
 or a detached list is not sufficient. For the floor lesson, **skids**,
-**notches**, **floor joist** and Alan's **outer board** are confirmed labels; **rim joist**, **end
-joist**, **floor frame**, **floor decking** and **runners** remain proposed.
+**notches**, **floor joist**, **Flooring** and Alan's **outer board** are
+confirmed labels; **rim joist**, **end joist**, **floor frame** and **runners**
+remain proposed. Use Flooring as the preferred term; “floor decking” is a
+reference alias for the `floor-deck` part.
 Start with the selected supports, then reveal floor layers manually as Alan
 directs so he can see the crosswise members seated in the skids' notches,
 perimeter members around them, and sheets on top. Distinguish that confirmed
 seating from the remaining model assumptions. Inspect the
 actual 3D result before saying that labels or connections are visible.
+
+For the flooring request, update the existing
+[part-floor-deck skill](../../../.claude/skills/part-floor-deck/SKILL.md)
+rather than create another skill. Alan confirmed stated **4x8 ft tongue-and-
+groove sheets, 5/8 in thick**, staggered end seams and trimming the last row.
+Row one is 8+8 ft; he explicitly confirmed row two as **4+8+4 ft**; row three
+is 8+8 ft trimmed to a **derived 2 ft width** (`10 - 4 - 4`). Seven laid
+pieces are not a confirmed stock-sheet count or reuse plan. Cover the actual
+10x16 ft frame envelope without changing the frame. Keep stated sheet size
+separate from manufacturer net coverage and exact tongue/groove profile,
+which have not been supplied. OSB/plywood, species, grade, sheet treatment,
+fasteners and exact clearance are also unspecified. The one modeled layer
+stays provisional. See the example for the confirmed and derived statuses.
 
 Alan also requested **measurements on the render** so he can check the
 lengths. Anchor dimension lines to the measured geometry and name the span
@@ -130,7 +145,7 @@ lesson offset in `construction.floorStudy.skids.insetToInsideIn: 30` with
 `construction.floorStudy.status.supportOffset: "confirmed"`; do not alter
 the normal model's legacy skid table. Keep repeated-notch first-center
 placement, notch cut clearance, skid count, outer-board height and length,
-full-frame length and deck details pending.
+remaining long-board dimensions and unspecified flooring product details pending.
 A provisional 1 1/2 in notch width is a
 modeling fit to the member, not a confirmed clearance. Use the opt-in
 `floorStudy` plan only for the learning page to show the corrected sections
@@ -151,8 +166,10 @@ Use the lesson-only `floorStudy.frame` settings
 Record `frameWidth`, `sideBoardWidth`, `frameTreatment` and `endBoardCounts` as **confirmed**;
 record `joistLength`, `endBoardMapping` and `endMemberPlacement` as **derived**.
 Only the X width changes; preserve the current Z footprint and repeated-notch
-grid until their dimensions are agreed. `frameFootprint`, `rimSection` and
-`deck` remain provisional. A confirmed 10 ft floor width does not establish
+grid until their dimensions are agreed. `frameFootprint` and `rimSection`
+remain provisional. The aggregate `deck` status remains provisional, while
+the granular flooring sheet/layout fields record Alan's confirmations.
+A confirmed 10 ft floor width does not establish
 the outer-board length or complete floor-frame length.
 
 Alan also identified a flat treated 2x4 behind the double end boards,

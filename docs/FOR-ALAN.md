@@ -216,7 +216,7 @@ confirmed 3 1/2 in width puts the center 28 1/4 in from that wall. For the
 current pair across a nominal 10 ft width, that gives 63 1/2 in between
 centers; the skid count itself is still provisional. Repeated-notch
 first-center placement, cut clearance, outer-board height and length,
-full floor-frame length and deck details also remain open.
+remaining long-board dimensions and unspecified flooring product details also remain open.
 Your nominal/actual examples are now recorded as 2x4 =
 1 1/2 x 3 1/2 in, 2x6 = 1 1/2 x 5 1/2 in and 4x6 = 3 1/2 x 5 1/2 in;
 other lumber sections have not been confirmed by these examples.
@@ -236,10 +236,19 @@ section is 3 1/2 in horizontal by 1 1/2 in vertical, putting its top at a
 calculated 7 in above the skid bottoms. The model centers it sideways for
 now; you have not confirmed that placement. No formal shop name, hardware
 details or load rating has been supplied.
-The current manual view is `learn.html?company=learning-side-loft&step=frame`,
-showing those pieces on the skids together; `?step=joists` remains available.
-“Outer board” is your recorded wording. “Rim joist,” “end joist,” “floor frame” and “floor decking” are
-still proposed in this terminology lesson. The
+You now confirmed **Flooring** as the sheet layer: **4x8 ft tongue and
+groove, 5/8 in thick**, with staggered seams and the last row trimmed.
+The first row is 8+8 ft, and you explicitly confirmed the second row as
+**4+8+4 ft**. The third row repeats 8+8 ft with a calculated **2 ft width**
+remaining (`10 - 4 - 4`). The seven laid pieces cover the model's actual
+10x16 ft frame outline without changing its timbers. The one modeled layer,
+manufacturer net coverage/profile, sheet material and treatment are not
+additional confirmed facts; no stock-sheet purchase count is implied.
+The current manual view is `learn.html?company=learning-side-loft&step=deck`,
+showing skids, frame and flooring together. Earlier frame and joist views
+remain available. “Outer board” and “Flooring” are your recorded wording.
+“Rim joist,” “end joist” and “floor frame” remain proposed technical names.
+The
 opt-in learning model uses the corrected sections and notched seating; the
 normal finished reference keeps its earlier drawing dimensions. See the
 [example's current record](examples/10x16-side-loft.md#floor-measurements-to-show).
