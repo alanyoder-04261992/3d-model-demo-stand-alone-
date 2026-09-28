@@ -30,10 +30,25 @@ Alan confirmed **16 in on center** stud spacing and **a double stud every
 1 1/2 in-wide studs, their centers are derived as 3/4 in either side of
 that mark (47 1/4 and 48 3/4 in around a 48 in mark). The starting datum
 from a particular wall end remains unconfirmed. Do not infer plate cut
-lengths, corner joints, door/window
-openings, wall material treatment, species or grade. The floor timbers'
+lengths beyond the confirmed runs below, extra corner studs, fastening,
+door/window openings, wall material treatment, species or grade. The floor timbers'
 treated-wood confirmation does not apply to the walls. Photos identify the
 discussed parts; do not measure them from pixels or publish the originals.
+
+Alan subsequently confirmed the plate overlap at **both ends** of each wall:
+
+| Wall and members | Confirmed end rule | Length derived from that rule |
+| --- | --- | --- |
+| Side wall bottom plate, top plate and end-stud outside faces | Stop 3 1/2 in short at both ends of the 16 ft span. | Each plate is `192 - 3.5 - 3.5 = 185 in` (15 ft 5 in); studs remain 75 in tall. |
+| Side wall upper plate | Runs the full 16 ft. | 192 in (16 ft). |
+| End wall bottom plate, top plate and end-stud outside faces | Run to the ends of the full 10 ft span. | Each plate is 120 in (10 ft); studs remain 75 in tall. |
+| End wall upper plate | Stops 3 1/2 in short at each end. | `120 - 3.5 - 3.5 = 113 in` (9 ft 5 in). |
+
+The end wall's lower plates fill the side wall's 3 1/2 in end spaces;
+the side wall's upper plate overlaps that corner at the upper layer. This
+fit follows the confirmed offsets and actual board depth. It supersedes
+the earlier full-length-plate assumption. It does not establish extra
+corner studs, a fastening schedule or the layout datum for regular studs.
 
 Use the manual wall stage, `learn.html?company=learning-side-loft&step=walls`,
 to select one plain 16 ft side wall or one plain 10 ft end wall independently
@@ -49,16 +64,26 @@ depth 3.5 in and length 75 in; `plates` has nominal `2x4`, thickness 1.5 in
 and depth 3.5 in; `spacingIn` is 16 and `doubleEveryIn` is 48.
 Use `pairReference: 'joint'` with `status.pairPlacement: 'confirmed'`;
 keep `layoutOriginIn: 0` and `status.layoutDatum` provisional.
+The end rules use
+`endSetbacksIn: { side: { frame: 3.5, upperPlate: 0 }, end: { frame: 0, upperPlate: 3.5 } }`.
+Each value applies at both ends; `frame` controls bottom/top plates and
+end-stud outside faces. Mark `frameSetbacks`, `upperPlateSetbacks` and
+`cornerLap` confirmed, and `plateLengths` derived. Keep regular layout
+marks in the original coordinate system; changing the end-stud positions
+does not confirm or silently shift the still-provisional starting datum.
 The wall height of 79 1/2 in plus
 the flooring's current 10 5/8 in top gives a **derived 90 1/8 in upper-plate
 top above skid bottom**. These are different dimension datums.
-Full plate lengths and a single wall's placement are still drawing assumptions;
-do not infer a corner connection from this isolated view.
+The plate lengths above are now derived from Alan's confirmed end rules.
+The lesson still shows walls separately; the displayed wall choice and
+remaining layout datum do not establish additional corner details.
 
 The [wall picture page](../../../walls.html) uses model renders:
 [side wall overview](../../../images/wall-framing.png),
-[detail](../../../images/wall-framing-detail.png) and
-[end wall](../../../images/end-wall-framing.png). Keep those images in sync
+[detail](../../../images/wall-framing-detail.png),
+[end wall](../../../images/end-wall-framing.png),
+[side wall end](../../../images/wall-end-detail.png) and
+[end wall plate ends](../../../images/end-wall-plate-detail.png). Keep those images in sync
 with the lesson geometry and label anchors; do not substitute the private photos.
 Refresh the side wall overview and detail with
 `node tools/export-joist-render-data.mjs --wall`, then
@@ -69,7 +94,8 @@ then `python tools/render-joist-picture.py --end-wall` (Pillow and NumPy require
 ## What it is in real life
 
 **Normal-model background.** The existing rules below describe the ordinary
-designer; they do not newly confirm this lesson's corners, openings or datum.
+designer; they do not newly confirm this lesson's additional corner members,
+openings or datum.
 
 Every wall is studs standing on a bottom plate nailed to the floor, with two
 top plates on them, the studs `walls.spacingIn` on centre measured from the
@@ -222,9 +248,10 @@ The older shop notes below remain background for other dimensions and rules.
 
 * `node tools/check-wall-lesson.mjs` -- separate side/end wall lessons,
   confirmed sections and 75 in studs, derived wall height, the 16 in layout
-  with touching pairs at 4 ft marks, plate contact and unchanged floor and
+  with touching pairs at 4 ft marks, confirmed end offsets, derived plate
+  lengths, plate contact and unchanged floor and
   ordinary designer geometry. This checks the model, not unconfirmed shop
-  plate lengths, layout datum, corners or openings.
+  layout datum, additional corner studs, fastening or openings.
 * `node tools/check-framing.mjs` -- on every golden building, every style at
   every size of three catalogues, five hand-made crowded walls, the hardest
   walls a customer can make (openings wider than their wall, a window under

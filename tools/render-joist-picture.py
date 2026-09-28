@@ -16,8 +16,8 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description='Render exact floor-lesson meshes as annotated PNGs.')
 parser.add_argument('--deck',action='store_true',help='Read flooring-render-data.json and render flooring overview and layout only.')
-parser.add_argument('--wall',action='store_true',help='Render the side wall study and its plate/double-stud detail.')
-parser.add_argument('--end-wall',action='store_true',help='Render the end wall study.')
+parser.add_argument('--wall',action='store_true',help='Render the side wall study, plate/double-stud detail and wall-end setback close-up.')
+parser.add_argument('--end-wall',action='store_true',help='Render the end wall study and upper-plate setback close-up.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
@@ -155,6 +155,14 @@ def render_wall():
     bottom=plates['bottom-plate'];top=plates['top-plate'];upper=plates['upper-plate']
     assert abs((bounds['y1Ft']-bounds['y0Ft'])*12-79.5)<1e-8
     assert all(abs(s['lengthFt']*12-75)<1e-8 for s in studs)
+    assert abs(bottom['lengthFt']*12-(120 if end else 185))<1e-8
+    assert abs(top['lengthFt']-bottom['lengthFt'])<1e-8
+    assert abs(upper['lengthFt']*12-(113 if end else 192))<1e-8
+    def cut_label(record):
+        inches=round(record['lengthFt']*12,8);feet=int(inches//12);remaining=inches-feet*12
+        return f'{feet} ft'+(f' {remaining:g} in' if remaining else '')
+    def low(record):return record['bounds']['x0Ft'] if end else record['bounds']['z0Ft']
+    def high(record):return record['bounds']['x1Ft'] if end else record['bounds']['z1Ft']
     inside=bounds['z1Ft'] if end else bounds['x0Ft']
     def front(record,height=None,along_value=None):
         p=record['center'].copy();p[face]=inside
@@ -174,17 +182,46 @@ def render_wall():
     name='End wall' if end else 'Side wall';span=10 if end else 16
     title(d,f'{name} · {span} ft','2×4 framing · 75 in studs · 16 in on center · doubled every 4 ft')
     stud=sorted(studs,key=lambda m:abs(m['center'][along]+1.25))[0]
-    leader(d,project(front(upper,along_value=-2)),(35,150,335,106),'Upper plate',['Above the top plate'])
-    leader(d,project(front(top,along_value=2)),(840,150,325,106),'Top plate',['Directly on the studs'])
+    leader(d,project(front(upper,along_value=-2)),(35,150,335,106),'Upper plate',[cut_label(upper)+(' · cut back' if end else ' · full length')])
+    leader(d,project(front(top,along_value=2)),(840,150,325,106),'Top plate',[cut_label(top)+(' · full length' if end else ' · cut back')])
     leader(d,project(front(stud)),(35,748,530,111),'Stud · 75 in cut length',['2×4 nominal · 1½ × 3½ in actual'])
-    leader(d,project(front(bottom,along_value=2)),(620,748,545,111),'Bottom plate',['Rests on the flooring'])
-    start=front(bottom,bottom['bounds']['y0Ft'],-span/2);finish=front(bottom,bottom['bounds']['y0Ft'],span/2)
-    dimension(d,project,start,finish,f'{span} ft wall span',(0,35))
-    outer=front(studs[0],bounds['y0Ft'],-span/2);outer_top=outer.copy();outer_top[1]=bounds['y1Ft']
+    leader(d,project(front(bottom,along_value=2)),(620,748,545,111),'Bottom plate',[cut_label(bottom)+' · rests on the flooring'])
+    start=front(bottom,bottom['bounds']['y0Ft'],low(bottom));finish=front(bottom,bottom['bounds']['y0Ft'],high(bottom))
+    dimension(d,project,start,finish,cut_label(bottom)+' frame',(0,35))
+    height_at=max(low(bottom),low(upper))
+    outer=front(bottom,bounds['y0Ft'],height_at);outer_top=front(upper,bounds['y1Ft'],height_at)
     dimension(d,project,outer,outer_top,'79½ in overall',(-38,0))
-    d.text((35,895),'Wall span shown for learning · plate cut lengths and corner joints still to confirm',font=font(22),fill='#526879')
+    end_rule='Upper plate back 3½ in at each end; bottom and top plates stay 10 ft.' if end else 'Frame back 3½ in at each end; the upper plate stays the full 16 ft.'
+    d.text((35,895),end_rule,font=font(22),fill='#526879')
     (ROOT/'images').mkdir(exist_ok=True)
     im.save(ROOT/('images/end-wall-framing.png' if end else 'images/wall-framing.png'))
+
+    # Exact end geometry: side frame stops short under the full upper plate;
+    # end-wall upper plate stops short above the full top plate.
+    near_stud=min(studs,key=low)
+    assert abs(low(near_stud)-low(bottom))<1e-8
+    assert abs(abs(low(upper)-low(top))*12-3.5)<1e-8
+    assert abs(abs(high(upper)-high(top))*12-3.5)<1e-8
+    target=front(top,top['bounds']['y1Ft']-.17,min(low(top),low(upper))+.5)
+    im,project=scene(target,2.35,yaw=-.6 if end else -2.17,pitch=.33)
+    board_edges(im,project,detail=True);d=ImageDraw.Draw(im)
+    title(d,f'{name} · 3½-inch end detail',
+          'Upper plate shortened at both ends · wall frame stays full width' if end else
+          'Frame shortened at both ends · upper plate stays full length')
+    leader(d,project(front(upper,along_value=low(upper)+.62)),(35,150,440,110),'Upper plate',
+           [cut_label(upper)+(' · 3½ in back each end' if end else ' · uncut length')])
+    leader(d,project(front(top,along_value=low(top)+.77)),(740,150,425,110),'Top plate',
+           [cut_label(top)+(' · full width' if end else ' · frame length')])
+    y=top['bounds']['y1Ft']
+    p=front(top,y,low(top));q=front(upper,y,low(upper))
+    dimension(d,project,p,q,'3½ in',(-25,-72))
+    leader(d,project(front(near_stud,near_stud['bounds']['y1Ft']-.48)),(35,748,535,111),'End stud',
+           ['At the full-width frame end' if end else 'Set back 3½ in with the frame'])
+    d.rounded_rectangle((620,748,1165,859),radius=12,fill='white',outline='#bdccd8',width=2)
+    d.text((640,760),'Same cut at the other end',font=font(28,True),fill=NAVY)
+    d.text((640,801),('Upper plate: 120 − 3½ − 3½ = 113 in' if end else 'Frame plates: 192 − 3½ − 3½ = 185 in'),font=font(24),fill=NAVY)
+    d.text((35,895),'Bottom plate follows the top plate’s length; all studs remain 75 in tall.',font=font(22),fill='#526879')
+    im.save(ROOT/('images/end-wall-plate-detail.png' if end else 'images/wall-end-detail.png'))
     if end:return
 
     ordered=sorted(studs,key=lambda m:m['center'][along]);pair=None

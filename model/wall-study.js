@@ -1,11 +1,18 @@
 /* A separate plain wall for the manual lesson. Company data alone never
-   changes the normal designer. No joined corners or opening layout is implied. */
+   changes the normal designer. Plate laps are dimensioned without adding
+   an unconfirmed corner-stud pack or opening layout. */
 import { deepFreeze } from "./company.js";
 import { floorDeckMembers } from "../parts/floor-deck.js";
 
 function positive(value, name) {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0)
     throw new Error(`wallStudy.${name} must be a positive measurement.`);
+  return value;
+}
+
+function setback(value, name) {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0)
+    throw new Error(`wallStudy.endSetbacksIn.${name} must be a nonnegative measurement.`);
   return value;
 }
 
@@ -44,21 +51,37 @@ export function wallStudyPlan(plan, { wall = "side" } = {}) {
   const wallLengthFt = wall === "side" ? floorBounds.z1Ft - floorBounds.z0Ft : floorBounds.x1Ft - floorBounds.x0Ft;
   if (wallLengthFt * 12 <= widthIn * 4 || lengthIn <= thicknessIn || depthIn >= Math.min(plan.W, plan.L) * 12)
     throw new Error("The wall study dimensions must leave separate studs and fit on the floor.");
+  const allSetbacks = {};
+  for (const name of ["side", "end"]) {
+    const entry = raw.endSetbacksIn?.[name] || {};
+    const frameIn = setback(entry.frame ?? 0, name + ".frame");
+    const upperPlateIn = setback(entry.upperPlate ?? 0, name + ".upperPlate");
+    const spanFt = name === "side" ? floorBounds.z1Ft - floorBounds.z0Ft : floorBounds.x1Ft - floorBounds.x0Ft;
+    if (spanFt * 12 - frameIn * 2 <= widthIn * 4 || spanFt * 12 - upperPlateIn * 2 <= 1e-4)
+      throw new Error("wallStudy end setbacks must leave a positive upper plate and space for separate end studs.");
+    allSetbacks[name] = { frameIn, frameFt: frameIn / 12, upperPlateIn, upperPlateFt: upperPlateIn / 12 };
+  }
+  const setbacks = allSetbacks[wall];
+  const frameRange = { u0: -wallLengthFt / 2 + setbacks.frameFt, u1: wallLengthFt / 2 - setbacks.frameFt,
+    lengthFt: wallLengthFt - setbacks.frameFt * 2 };
+  const upperPlateRange = { u0: -wallLengthFt / 2 + setbacks.upperPlateFt, u1: wallLengthFt / 2 - setbacks.upperPlateFt,
+    lengthFt: wallLengthFt - setbacks.upperPlateFt * 2 };
   const plateThicknessFt = thicknessIn / 12, studLengthFt = lengthIn / 12;
   const heightFt = studLengthFt + plateThicknessFt * 3;
   const status = {};
   for (const key of ["studSection", "plateSection", "studLength", "spacing", "doubleInterval", "wallNames",
-    "layoutDatum", "pairPlacement", "plateLengths", "wallPlacement", "treatment"])
+    "layoutDatum", "pairPlacement", "plateLengths", "wallPlacement", "treatment",
+    "frameSetbacks", "upperPlateSetbacks", "cornerLap"])
     status[key] = ["confirmed", "derived"].includes(raw.status?.[key]) ? raw.status[key] : "provisional";
   status.height = "derived"; status.baseHeight = "derived";
   const study = {
-    enabled: true, wall, name: wall === "side" ? "Sidewall" : "Endwall", lengthFt: wallLengthFt,
+    enabled: true, wall, name: wall === "side" ? "Side wall" : "End wall", lengthFt: wallLengthFt,
     stud: { nominal: stud.nominal || "2x4", widthIn, depthIn, lengthIn,
       widthFt: widthIn / 12, depthFt: depthIn / 12, lengthFt: studLengthFt },
     plates: { nominal: plates.nominal || "2x4", thicknessIn, depthIn: plateDepthIn,
       thicknessFt: plateThicknessFt, depthFt: plateDepthIn / 12, bottomCount: 1, topCount: 1, upperCount: 1 },
     spacingIn, spacingFt: spacingIn / 12, doubleEveryIn, doubleEveryFt: doubleEveryIn / 12,
-    layoutOriginIn, layoutOriginFt: layoutOriginIn / 12, pairReference: "joint",
+    layoutOriginIn, layoutOriginFt: layoutOriginIn / 12, pairReference: "joint", setbacks, frameRange, upperPlateRange,
     floorBounds, baseYFt: top, heightFt, topYFt: top + heightFt,
     bottomPlateTopYFt: top + plateThicknessFt,
     studTopYFt: top + plateThicknessFt + studLengthFt,

@@ -70,8 +70,14 @@ with the mark **between the two touching studs**. The bottom plate, top plate
 and upper plate add a calculated 4½ in, giving 79½ in total wall height above
 the flooring. The [wall picture page](walls.html) includes both wall views
 and a [close-up of the plates and double stud](images/wall-framing-detail.png).
-The starting layout datum, final plate cuts, corner connections, openings
-and wall treatment remain unconfirmed. Nothing advances automatically.
+The side wall's bottom/top plates and end studs stop 3½ in short at each end;
+its upper plate stays 16 ft. The end wall frame stays 10 ft, and its upper
+plate stops 3½ in short at each end. Calculated cuts are **15 ft 5 in** for
+the side wall bottom/top plates and **9 ft 5 in** for the end wall upper plate.
+The [side wall end detail](images/wall-end-detail.png) and
+[end wall upper-plate detail](images/end-wall-plate-detail.png) show the fit.
+The starting layout datum, extra corner studs, fasteners, openings and wall
+treatment remain unconfirmed. Nothing advances automatically.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the
 [building terms](docs/BUILDING-TERMS.md), then use

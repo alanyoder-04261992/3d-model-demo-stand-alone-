@@ -41,6 +41,7 @@ to point to; they are not yet agreed shop language.
 | Confirmed part names and sections | **Stud / bottom plate / top plate / upper plate** | Upright member / board below the studs / lower board above them / upper board above them. All are nominal 2x4, actual 1 1/2 x 3 1/2 in. | Alan's labeled-photo discussion and dimension reply, September 28, 2026 |
 | Confirmed stud cut length; overall wall height derived | **75 in studs** | With three flat plates, bottom-plate underside to upper-plate top is a derived 79 1/2 in (`75 + 3 x 1.5`). | Alan's dimension reply, September 28, 2026 |
 | Confirmed wall spacing and pair alignment | **16 in on center; double stud every 4 ft** | The 4 ft mark falls between the touching pair. The starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
+| Confirmed end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; side upper is full 16 ft. End bottom/top plates and studs run full 10 ft; end upper stops 3 1/2 in short at each end. | Alan's corrections and explicit both-ends reply, September 28, 2026 |
 
 The whole shape is **lofted roof**, and its highest long metal meeting strip
 is **ridge cap** in our conversation. We have agreed on those specific
@@ -71,14 +72,33 @@ Stud spacing is **16 in on center**, with **a double stud every 4 ft**.
 Alan confirmed that the 4 ft mark lies between the touching pair. Their
 centers are therefore 3/4 in either side of that mark; for example,
 47 1/4 and 48 3/4 in around a 48 in mark. The starting layout datum from a
-specific wall end remains unconfirmed. Plate cut lengths, wall placement,
-corner joints, openings and wall treatment/species/grade remain pending.
+specific wall end remains unconfirmed. Extra corner studs, fastening,
+further wall placement, openings and wall treatment/species/grade remain pending.
 The floor timbers' treatment does not establish wall treatment.
+
+Alan confirmed the end rules below on September 28. The offsets are stated
+facts; the resulting plate lengths are calculated:
+
+| Wall members | At each end | Derived plate length |
+| --- | --- | --- |
+| Side wall bottom plate, top plate and end-stud outside faces | Stop 3 1/2 in short of the 16 ft span's end, at both ends. | 185 in / 15 ft 5 in (`192 - 3.5 - 3.5`). |
+| Side wall upper plate | Runs to the full 16 ft span's ends. | 192 in / 16 ft. |
+| End wall bottom plate, top plate and end-stud outside faces | Run to the full 10 ft span's ends. | 120 in / 10 ft. |
+| End wall upper plate | Stops 3 1/2 in short at each end. | 113 in / 9 ft 5 in (`120 - 3.5 - 3.5`). |
+
+Studs stay 75 in tall; the end offsets change their positions along the
+wall. The end wall fills the side wall's lower end space, and the side
+wall's upper plate overlaps the corner above it. This fit follows the
+confirmed offsets and 3 1/2 in board depth. The earlier full-length-plate
+assumption is superseded; additional corner studs and fastening remain
+separate questions.
 
 The [wall picture page](../../walls.html) provides an
 [overview](../../images/wall-framing.png),
-[detail](../../images/wall-framing-detail.png) and
-[end wall](../../images/end-wall-framing.png) as model renders. Refresh
+[detail](../../images/wall-framing-detail.png),
+[end wall](../../images/end-wall-framing.png),
+[side wall end](../../images/wall-end-detail.png) and
+[end wall plate ends](../../images/end-wall-plate-detail.png) as model renders. Refresh
 them after wall geometry or label changes. Alan's reference photographs
 remain private and supply no pixel-derived dimensions. The opt-in wall
 settings and implementation are recorded in the

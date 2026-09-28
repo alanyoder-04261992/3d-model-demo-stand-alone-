@@ -21,6 +21,8 @@
     img { display: block; width: 100%; height: auto; border-radius: 10px; background: white; }
     figcaption { margin: 8px 0 0; font-size: 14px; color: #4e6570; }
     .note { padding: 15px 18px; border-left: 4px solid #b96a30; background: white; }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; background: white; }
+    th, td { padding: 12px; border-bottom: 1px solid #d4dee3; text-align: left; }
     dt { font-weight: 700; }
     dd { margin: 0 0 12px; }
   </style>
@@ -31,14 +33,27 @@
     <h1>Wall framing</h1>
     <p>The <strong>16-foot wall is the side wall</strong>. The <strong>10-foot wall is the end wall</strong>. These views show one wall at a time resting on the completed floor.</p>
     <p>The studs and all three plates are <strong>2×4s: 1½ × 3½ inches actual</strong>. The loft-wall studs are cut to <strong>75 inches</strong>. Add the three flat plates and the framing is <strong>79½ inches high above the flooring</strong>.</p>
+    <p>The <strong>side wall frame stops 3½ inches short at each end</strong>, including the bottom plate, top plate and end studs. Its upper plate stays the full 16 feet. The <strong>end wall frame stays the full 10 feet</strong>, while its upper plate stops 3½ inches short at each end.</p>
+    <table aria-label="Calculated plate cut lengths">
+      <thead><tr><th scope="col">Wall</th><th scope="col">Bottom and top plates</th><th scope="col">Upper plate</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">Side wall</th><td>15 ft 5 in</td><td>16 ft</td></tr>
+        <tr><th scope="row">End wall</th><td>10 ft</td><td>9 ft 5 in</td></tr>
+      </tbody>
+    </table>
     <nav aria-label="Lesson views">
-      <a href="learn.html?step=walls&amp;v=walls-1">Rotate the wall model</a>
+      <a href="learn.html?step=walls&amp;v=wall-ends-2">Rotate the wall model</a>
       <a href="flooring.html">Back to flooring</a>
     </nav>
     <h2>Side wall · 16 feet</h2>
     <figure>
       <a href="images/wall-framing.png"><img src="images/wall-framing.png" width="1200" height="940" alt="A 16-foot side wall on the finished floor, with separate labels for the bottom plate, 75-inch stud, top plate and upper plate. The overall framing height is 79 and a half inches."></a>
       <figcaption>Tap any picture to open it full size on your phone.</figcaption>
+    </figure>
+    <h2>Side wall ends</h2>
+    <figure>
+      <a href="images/wall-end-detail.png"><img src="images/wall-end-detail.png" width="1200" height="940" alt="Side wall end close-up. The 16-foot upper plate extends 3 and a half inches past the shortened top plate and end stud. Bottom and top plates are 15 feet 5 inches long."></a>
+      <figcaption>The upper plate stays full length. The frame stops 3½ inches short at both ends: 192 − 3½ − 3½ = 185 inches.</figcaption>
     </figure>
     <h2>Top plates and a double stud</h2>
     <figure>
@@ -50,6 +65,11 @@
       <a href="images/end-wall-framing.png"><img src="images/end-wall-framing.png" width="1200" height="940" alt="A separate 10-foot end wall on the completed floor, with 75-inch studs, a bottom plate, a top plate and an upper plate."></a>
       <figcaption>The same confirmed stud length, plates and spacing apply to this end-wall study.</figcaption>
     </figure>
+    <h2>End wall upper plate</h2>
+    <figure>
+      <a href="images/end-wall-plate-detail.png"><img src="images/end-wall-plate-detail.png" width="1200" height="940" alt="End wall close-up. The upper plate stops 3 and a half inches short of the full-width top plate and end stud. The upper plate is 9 feet 5 inches long; bottom and top plates remain 10 feet."></a>
+      <figcaption>The end wall frame stays full width. Only its upper plate is shortened at both ends: 120 − 3½ − 3½ = 113 inches.</figcaption>
+    </figure>
     <h2>Your names for the parts</h2>
     <dl>
       <dt>Bottom plate</dt><dd>The horizontal board under the studs, resting on the flooring.</dd>
@@ -58,7 +78,7 @@
       <dt>Upper plate</dt><dd>The second horizontal board above the top plate.</dd>
       <dt>Double stud</dt><dd>Two touching studs, with the 4-foot mark between them.</dd>
     </dl>
-    <p class="note">The layout starting point, plate cut lengths, corner connections and openings are still to confirm. These pictures show separate plain walls; the wall wood's color and grain are illustrative.</p>
+    <p class="note">The end setbacks and resulting plate lengths are recorded. The first stud-layout datum, any extra corner studs, fasteners and openings are still to confirm. These pictures show separate walls; the wall wood's color and grain are illustrative.</p>
   </main>
 </body>
 </html>

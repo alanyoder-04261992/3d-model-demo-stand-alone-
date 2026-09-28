@@ -14,7 +14,7 @@ import { installFlooringTexture, flooringFinish } from "./learn-flooring.js";
 import { createWallLabels, wallFocusPair } from "./learn-wall-labels.js";
 
 const PARTS=["skids","floor-frame","floor-deck","wall-frame"];
-const VIEWS=["angle","wall-front","wall-plates"];
+const VIEWS=["angle","wall-front","wall-plates","wall-end"];
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
 const $=id=>document.getElementById(id);
 function drawingBox(build) {
@@ -50,7 +50,7 @@ export async function startWallLesson() {
     $("lesson-pieces").hidden=true;controls.hidden=false;
     if($("lesson-pieces-section")) $("lesson-pieces-section").setAttribute("aria-label","Wall study");
     if($("lesson-heading")) $("lesson-heading").textContent="Walls";
-    if($("measurement-explanation")) $("measurement-explanation").textContent="Measurements and names follow the single wall shown. Use Plates close-up to see the two top boards.";
+    if($("measurement-explanation")) $("measurement-explanation").textContent="Measurements follow the actual boards. Plates close-up shows their names; Wall end close-up shows the 3½-inch step.";
     if($("lesson-reference")) $("lesson-reference").textContent="Side wall, end wall, stud, bottom plate, top plate and upper plate are confirmed names. This view studies one plain wall on the completed floor.";
     const stepLink=$("lesson-step-link");if(stepLink) {stepLink.href="learn.html?step=deck";stepLink.textContent="Earlier: flooring";}
     for(const button of buttons) button.hidden=![...VIEWS,"in","out","reset"].includes(button.dataset.camera);
@@ -66,16 +66,17 @@ export async function startWallLesson() {
     const size=()=>({w:Math.max(1,canvas.clientWidth),h:Math.max(1,canvas.clientHeight)});
     function cameraBox() {
       if(view==="wall-front") return plainBounds(current.measures.wall.bounds);
-      if(view!=="wall-plates") return current.box;
+      if(!["wall-plates","wall-end"].includes(view)) return current.box;
       const target=renderer.cam.target,along=current.measures.wall.wall==="side"?2:0;
-      return {x0:target[0]-(along===0?1.3:.45),x1:target[0]+(along===0?1.3:.45),
-        y0:target[1]-.65,y1:target[1]+.65,z0:target[2]-(along===2?1.3:.45),z1:target[2]+(along===2?1.3:.45)};
+      const radius=view==="wall-end"?.9:1.3;
+      return {x0:target[0]-(along===0?radius:.45),x1:target[0]+(along===0?radius:.45),
+        y0:target[1]-.65,y1:target[1]+.65,z0:target[2]-(along===2?radius:.45),z1:target[2]+(along===2?radius:.45)};
     }
     function draw() {
       raf=0;if(api.error || !current || !renderer.mesh) return;
       const fit=distToFit(cameraBox(),renderer.cam.yaw,renderer.cam.pitch,size());
       renderer.cam.fitDist=fit;renderer.cam.dist=Math.max(2.5,fit*zoom);renderer.draw();
-      labels.update(current.measures.wall,{detail:view==="wall-plates"});
+      labels.update(current.measures.wall,{detail:view==="wall-plates",endDetail:view==="wall-end"});
     }
     function requestDraw() {if(!raf) raf=requestAnimationFrame(draw);}
     function markManual() {for(const button of buttons) if(VIEWS.includes(button.dataset.camera)) button.setAttribute("aria-pressed","false");}
@@ -93,6 +94,10 @@ export async function startWallLesson() {
           const pair=wallFocusPair(m),u=pair?.markFt ?? m.lengthFt/2;
           renderer.cam.target=side?[(b.x0Ft+b.x1Ft)/2,m.plates.top.center[1]-.2,b.z0Ft+u]:[b.x0Ft+u,m.plates.top.center[1]-.2,(b.z0Ft+b.z1Ft)/2];
           renderer.cam.yaw=side?Math.PI/2-.25:Math.PI-.25;renderer.cam.pitch=.25;
+        } else if(view==="wall-end") {
+          const axis=side?"z":"x",start=Math.min(m.plates.top.bounds[axis+"0Ft"],m.plates.upper.bounds[axis+"0Ft"]);
+          renderer.cam.target=side?[(b.x0Ft+b.x1Ft)/2,m.plates.top.center[1]-.25,start+.45]:[start+.45,m.plates.top.center[1]-.25,(b.z0Ft+b.z1Ft)/2];
+          renderer.cam.yaw=side?Math.PI/2+.4:Math.PI+.4;renderer.cam.pitch=.22;
         } else {
           renderer.cam.target=null;renderer.cam.yaw=side?1.2:Math.PI-.55;renderer.cam.pitch=.32;
         }
@@ -102,18 +107,27 @@ export async function startWallLesson() {
     }
     function caption(m) {
       const wallName=m.wall==="side"?"Side wall":"End wall";
-      $("piece-title").textContent=`${wallName} — ${formatFeetInches(m.lengthFt)}`;
-      $("piece-description").textContent="Studs stand on the bottom plate. The lower board across their tops is the top plate; the board above it is the upper plate. Two studs touch at each 4-foot mark.";
-      $("piece-draft").textContent="First layout datum and final corner connections are still to confirm. One plain wall is shown at a time.";
+      $("piece-title").textContent=`${wallName} — ${formatFeetInches(m.lengthFt)} overall span`;
+      $("piece-description").textContent=m.wall==="side"
+        ? "The bottom plate, top plate and end studs sit 3½ inches back at both ends. The upper plate spans the full 16 feet, extending beyond the shorter frame."
+        : "The bottom plate, top plate and end studs span the full 10 feet. The upper plate stops 3½ inches short at both ends.";
+      $("piece-draft").textContent="The first stud-layout datum is still to confirm. One separate wall is shown at a time.";
       const list=$("piece-measurements");list.replaceChildren();
-      const rows=[[`${wallName} span`,formatFeetInches(m.lengthFt)],
+      const rows=[[`${wallName} · nominal overall span`,formatFeetInches(m.lengthFt)],
+        ["Bottom plate cut · calculated",`${formatInches(m.plates.bottom.lengthFt)} (${formatFeetInches(m.plates.bottom.lengthFt)})`],
+        ["Top plate cut · calculated",`${formatInches(m.plates.top.lengthFt)} (${formatFeetInches(m.plates.top.lengthFt)})`],
+        ["Upper plate cut · calculated",`${formatInches(m.plates.upper.lengthFt)} (${formatFeetInches(m.plates.upper.lengthFt)})`],
+        ["Both ends · confirmed offset",m.wall==="side"?"Frame 3½ in back; upper plate full span":"Frame full span; upper plate 3½ in back"],
         ["Stud cut length · confirmed",`${formatInches(m.studLengthFt)} (${formatFeetInches(m.studLengthFt)})`],
         ["Studs and all three plates · confirmed","2×4 nominal · 1½ × 3½ in actual"],
         ["Regular layout · confirmed",`${formatInches(m.spacingFt)} on center`],
         ["Doubled studs · confirmed",`Every ${formatFeetInches(m.doubleEveryFt)} · mark at their joint`],
         ["Wall height · calculated",`${formatInches(m.heightFt)} (${formatFeetInches(m.heightFt)})`]];
       for(const [title,value] of rows) {const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=title;dd.textContent=value;row.append(dt,dd);list.appendChild(row);}
-      $("measurement-note").textContent="The bottom plate rests on the flooring. Total wall height adds the 75-inch stud to three 1½-inch plate thicknesses. Plate cut lengths and corner fit will be checked when the walls are joined.";
+      $("measurement-note").textContent=(m.wall==="side"
+        ? "Side-wall frame cuts: 192 − 3½ − 3½ = 185 inches. The upper plate remains 192 inches. "
+        : "End-wall upper-plate cut: 120 − 3½ − 3½ = 113 inches. The bottom and top plates remain 120 inches. ")
+        +"These lengths follow the confirmed end-offset rule. The bottom plate rests on the flooring; wall height adds the 75-inch stud to three 1½-inch plate thicknesses.";
       canvas.setAttribute("aria-label",`Rotatable 3D ${wallName.toLowerCase()} on the completed floor. Stud, bottom plate, top plate and upper plate.`);
     }
     function setWall(kind) {

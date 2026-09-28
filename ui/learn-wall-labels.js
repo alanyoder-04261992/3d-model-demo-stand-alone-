@@ -17,7 +17,7 @@ export function createWallLabels(viewport,renderer) {
   const svg=node("svg",{role:"img","aria-label":"Wall names and measurements"});
   svg.style.cssText="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden";
   viewport.appendChild(svg);
-  function update(m,{detail=false}={}) {
+  function update(m,{detail=false,endDetail=false}={}) {
     svg.replaceChildren();
     const width=viewport.clientWidth,height=viewport.clientHeight,project=renderer.projCache?.proj;
     svg.setAttribute("viewBox",`0 0 ${width} ${height}`);
@@ -25,11 +25,14 @@ export function createWallLabels(viewport,renderer) {
     const small=width<500,cardWidth=small?Math.min(157,(width-42)/2):174;
     const wallName=m.wall==="side"?"Side wall":"End wall";
     const along=m.wall==="side"?2:0;
+    const axis=m.wall==="side"?"z":"x",origin=m.nominalStart?.[along] ?? m.bounds[axis+"0Ft"];
+    const begin=record=>record.bounds[axis+"0Ft"]-origin;
+    const end=record=>record.bounds[axis+"1Ft"]-origin;
     const front=m.wall==="side"?Math.sin(renderer.cam.yaw)>=0:Math.cos(renderer.cam.yaw)<=0;
     function face(record,y=record.center[1],u=null) {
       const p=record.center.slice(),b=record.bounds;
       p[1]=y;
-      if(u!==null) p[along]=(m.wall==="side"?m.bounds.z0Ft:m.bounds.x0Ft)+u;
+      if(u!==null) p[along]=Math.max(b[axis+"0Ft"],Math.min(b[axis+"1Ft"],origin+u));
       if(m.wall==="side") p[0]=front?b.x1Ft:b.x0Ft;
       else p[2]=front?b.z0Ft:b.z1Ft;
       return p;
@@ -52,7 +55,18 @@ export function createWallLabels(viewport,renderer) {
     const pair=wallFocusPair(m),mark=pair?.markFt ?? m.lengthFt/2;
     const regular=m.gridStuds.slice().sort((a,b)=>Math.abs(a.center[along]-(m.wall==="side"?m.bounds.z0Ft:m.bounds.x0Ft)-m.lengthFt*.3)-Math.abs(b.center[along]-(m.wall==="side"?m.bounds.z0Ft:m.bounds.x0Ft)-m.lengthFt*.3))[0] || m.studs[0];
     const cards=[];
-    if(detail) {
+    if(endDetail) {
+      const top=m.plates.top,upper=m.plates.upper,topStart=begin(top),upperStart=begin(upper);
+      const firstStud=m.studs.slice().sort((a,b)=>a.center[along]-b.center[along])[0];
+      cards.push({title:"Top plate",detail:`${feet(top.lengthFt)} cut`,footer:"lower top board",x:14,y:16,
+        points:[face(top,top.center[1],Math.max(topStart+.15,upperStart+.45))]},
+      {title:"Upper plate",detail:`${feet(upper.lengthFt)} cut`,footer:"upper top board",x:width-cardWidth-14,y:16,
+        points:[face(upper,upper.center[1],upperStart+.1)]},
+      {title:"Stud",detail:m.wall==="side"?"3½″ back at this end":"at this wall end",footer:"same rule at both ends",x:14,y:height-72,
+        points:[face(firstStud,firstStud.bounds.y1Ft-.55)]});
+      dimension(face(top,top.bounds.y1Ft,topStart),face(upper,upper.bounds.y0Ft,upperStart),
+        `${inches(Math.abs(topStart-upperStart))} ${m.wall==="side"?"overhang":"setback"}`,-24);
+    } else if(detail) {
       const screenDirection=Math.sign(m.wall==="side"?-Math.sin(renderer.cam.yaw):Math.cos(renderer.cam.yaw)) || 1;
       cards.push({title:"Top plate",detail:"lower top board",footer:"2×4 · confirmed",x:14,y:16,
         points:[face(m.plates.top,m.plates.top.center[1],Math.max(.25,Math.min(m.lengthFt-.25,mark-screenDirection*.65)))]},
@@ -64,11 +78,11 @@ export function createWallLabels(viewport,renderer) {
       dimension(face(top,top.bounds.y0Ft,u),face(top,top.bounds.y1Ft,u),`${inches(top.bounds.y1Ft-top.bounds.y0Ft)} thick`,20);
     } else {
       cards.push({title:"Stud",detail:`${inches(m.studLengthFt)} long`,footer:"2×4 · confirmed",x:14,y:16,points:[face(regular)]},
-        {title:"Bottom plate",detail:"rests on flooring",footer:"2×4 · confirmed",x:14,y:height-72,
+        {title:"Bottom plate",detail:`${feet(m.plates.bottom.lengthFt)} cut`,footer:"top plate same length",x:14,y:height-72,
           points:[face(m.plates.bottom,m.plates.bottom.center[1],m.lengthFt*.35)]});
       if(pair) cards.push({title:"Doubled studs",detail:`every ${feet(m.doubleEveryFt)}`,footer:"mark between the pair",x:width-cardWidth-14,y:16,
         points:pair.members.map(s=>face(s,s.bounds.y0Ft+(s.bounds.y1Ft-s.bounds.y0Ft)*.6))});
-      dimension(face(m.plates.bottom,m.plates.bottom.center[1],0),face(m.plates.bottom,m.plates.bottom.center[1],m.lengthFt),`${wallName} · ${feet(m.lengthFt)}`,20);
+      dimension(face(m.plates.bottom,m.plates.bottom.center[1],begin(m.plates.bottom)),face(m.plates.bottom,m.plates.bottom.center[1],end(m.plates.bottom)),`Plate cut · ${feet(m.plates.bottom.lengthFt)}`,20);
     }
     svg.setAttribute("aria-label",`${wallName}. `+cards.map(c=>`${c.title}: ${c.detail}. ${c.footer}`).join(" "));
     for(const c of cards) {

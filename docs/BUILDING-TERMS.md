@@ -95,6 +95,7 @@ physical cut list.
 | Confirmed term and section | **Top plate** | The lower of the two horizontal 2x4 boards above the studs; actual 1 1/2 x 3 1/2 in. | Alan's labeled-photo discussion and dimension reply, September 28, 2026 |
 | Confirmed term and section | **Upper plate** | The upper of the two horizontal 2x4 boards above the studs; actual 1 1/2 x 3 1/2 in. | Alan's labeled-photo discussion and dimension reply, September 28, 2026 |
 | Confirmed wall spacing and repeated pair | **16 in on center; double stud every 4 ft** | Each 4 ft mark falls between the touching pair. The centers of 1 1/2 in-wide studs are a derived 3/4 in either side of that mark; the starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
+| Confirmed wall-end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; its upper plate is full 16 ft. End bottom/top plates and studs run full 10 ft; its upper plate stops 3 1/2 in short at each end. Derived plate lengths: side bottom/top 185 in (15 ft 5 in), side upper 192 in (16 ft), end bottom/top 120 in (10 ft), end upper 113 in (9 ft 5 in). | Alan's corrections and explicit both-ends reply, September 28, 2026 |
 
 ## What remains to agree on
 
@@ -168,8 +169,10 @@ to **Walls** at `?step=walls`, over the existing floor. Earlier flooring,
 frame and joists-only views remain available; the roof comes later.
 The confirmed 75 in studs plus three flat 1 1/2 in plates give a **derived
 79 1/2 in wall height**, from bottom plate underside to upper plate top.
-Wall treatment, plate cut lengths, corners, openings and the doubled-stud
-layout datum remain unconfirmed. The 10 x 16 ft flooring coverage follows the current frame's
+The confirmed 3 1/2 in end rules determine the plate lengths and their
+alternating overlap recorded above. Extra corner studs, fastening, openings,
+wall treatment and the doubled-stud starting datum remain unconfirmed.
+The 10 x 16 ft flooring coverage follows the current frame's
 outer bounds without changing its timbers. Manufacturer-specific net sheet
 coverage and joint profile are pending; do not infer OSB, plywood or treated
 sheet material from the confirmed treatment of the timbers.

@@ -62,8 +62,16 @@ for (const [wall, lengthFt, studs, pairMarks] of [["side", 16, 16, [4, 8, 12]], 
   near(m.topYFt * 12, 90.125, "derived upper plate top from skid bottom");
   near(m.plates.bottom.bounds.y0Ft, floorMeasures.deck.bounds.y1Ft, "flooring-to-bottom-plate contact");
   near(m.plates.top.bounds.y1Ft, m.plates.upper.bounds.y0Ft, "top-to-upper-plate contact");
-  for (const plate of Object.values(m.plates)) {
-    near(plate.lengthFt, lengthFt, "full provisional plain-wall plate length");
+  const frameSetbackIn = wall === "side" ? 3.5 : 0;
+  const upperSetbackIn = wall === "end" ? 3.5 : 0;
+  near(m.nominalLengthFt, lengthFt, "nominal wall span is separate from plate cuts");
+  assert.deepEqual(m.start, m.nominalStart); assert.deepEqual(m.end, m.nominalEnd);
+  near(m.setbacks.frameIn, frameSetbackIn, "frame setback at each end");
+  near(m.setbacks.upperPlateIn, upperSetbackIn, "upper plate setback at each end");
+  near(m.frameLengthFt * 12, wall === "side" ? 185 : 120, "actual bottom/top plate length");
+  near(m.upperPlateLengthFt * 12, wall === "side" ? 192 : 113, "actual upper plate length");
+  for (const [name, plate] of Object.entries(m.plates)) {
+    near(plate.lengthFt, lengthFt - (name === "upper" ? upperSetbackIn : frameSetbackIn) / 6, "actual plate length excludes both setbacks");
     near(plate.widthFt * 12, 3.5, "plate lies flat"); near(plate.depthFt * 12, 1.5, "plate height");
   }
   assert.equal(m.studs.length, studs); assert.equal(m.members.length, studs + 3);
@@ -79,7 +87,21 @@ for (const [wall, lengthFt, studs, pairMarks] of [["side", 16, 16, [4, 8, 12]], 
       "wall members touch without overlapping solids");
   }
   assert.deepEqual(m.doubles.map(pair => pair.markFt), pairMarks);
-  const axis = wall === "side" ? "z" : "x", start = m.bounds[axis + "0Ft"];
+  const axis = wall === "side" ? "z" : "x", axisIndex = wall === "side" ? 2 : 0;
+  const start = m.nominalStart[axisIndex], end = m.nominalEnd[axisIndex];
+  near(end - start, lengthFt, "explicit nominal endpoints preserve the full span");
+  for (const [name, plate] of Object.entries(m.plates)) {
+    const setbackFt = (name === "upper" ? upperSetbackIn : frameSetbackIn) / 12;
+    near(plate.bounds[axis + "0Ft"], start + setbackFt, "actual negative-end plate tip");
+    near(plate.bounds[axis + "1Ft"], end - setbackFt, "actual positive-end plate tip");
+  }
+  const endStuds = m.studs.filter(record => record.member.meta.role === "end");
+  near(endStuds[0].bounds[axis + "0Ft"], start + frameSetbackIn / 12, "start stud follows shortened frame");
+  near(endStuds[1].bounds[axis + "1Ft"], end - frameSetbackIn / 12, "finish stud follows shortened frame");
+  near(m.frameStart[axisIndex], m.plates.bottom.bounds[axis + "0Ft"], "frame start anchor is its physical tip");
+  near(m.frameEnd[axisIndex], m.plates.bottom.bounds[axis + "1Ft"], "frame end anchor is its physical tip");
+  near(m.upperPlateStart[axisIndex], m.plates.upper.bounds[axis + "0Ft"], "upper start anchor is its physical tip");
+  near(m.upperPlateEnd[axisIndex], m.plates.upper.bounds[axis + "1Ft"], "upper end anchor is its physical tip");
   for (const pair of m.doubles) {
     assert.equal(pair.members.length, 2);
     const [left, right] = pair.members;
@@ -90,11 +112,19 @@ for (const [wall, lengthFt, studs, pairMarks] of [["side", 16, 16, [4, 8, 12]], 
     assert.equal(pair.status, "confirmed");
   }
   for (let i = 1; i < m.layoutMarks.length; i++) near(m.layoutMarks[i].markFt - m.layoutMarks[i - 1].markFt, 16 / 12, "16-inch layout mark spacing");
-  assert.equal(m.status.layoutDatum, "provisional"); assert.equal(m.status.plateLengths, "provisional");
+  assert.equal(m.status.layoutDatum, "provisional"); assert.equal(m.status.plateLengths, "derived");
+  for (const key of ["frameSetbacks", "upperPlateSetbacks", "cornerLap"]) assert.equal(m.status[key], "confirmed");
   assert.equal(m.openings, "omitted-for-lesson"); assert.equal(m.corners, "separate-wall-study");
   const frame = wallFrame(plan);
   assert.equal(frame.runs.length, 1); assert.equal(frame.framed[0].frames.length, 0, "no fabricated door/window layout");
   assert.equal(frame.members.length, wallFrameMembers(plan).length);
+  const uncutInput = structuredClone(floor);
+  delete uncutInput.construction.wallStudy.endSetbacksIn;
+  const uncut = wallStudyMeasurements(wallStudyPlan(uncutInput, { wall }));
+  assert.deepEqual(m.layoutMarks, uncut.layoutMarks, "shortening board ends never shifts the global layout marks");
+  assert.deepEqual(m.studs.filter(record => record.member.meta.role !== "end"),
+    uncut.studs.filter(record => record.member.meta.role !== "end"), "regular and doubled studs keep all existing coordinates");
+  for (const plate of Object.values(uncut.plates)) near(plate.lengthFt, lengthFt, "absent setbacks retain earlier full-length geometry");
 
   // Independently assign actual mesh faces, using outward normals to disambiguate
   // the shared faces of two touching pieces, and check signed solid volume.
@@ -121,11 +151,27 @@ for (const [wall, lengthFt, studs, pairMarks] of [["side", 16, 16, [4, 8, 12]], 
   for (const part of ["skids", "floor-frame", "floor-deck", "wall-frame"])
     assert.deepEqual(geometry(finished, part), geometry(drawing, part), "surface finish preserves positions, normals and stages");
 }
+// Check the physical lap between the separately modeled side and end walls.
+// This proves their supplied cuts fit; it does not add a corner-stud pack.
+const side = wallStudyMeasurements(wallStudyPlan(floor, { wall: "side" }));
+const end = wallStudyMeasurements(wallStudyPlan(floor, { wall: "end" }));
+for (const a of side.members) for (const b of end.members)
+  assert.ok(["x", "y", "z"].some(axis => Math.min(a.bounds[axis + "1Ft"], b.bounds[axis + "1Ft"]) - Math.max(a.bounds[axis + "0Ft"], b.bounds[axis + "0Ft"]) <= 1e-9),
+    "separate wall records fit together without inter-wall solid overlap");
+near(side.plates.bottom.bounds.z0Ft, end.plates.bottom.bounds.z1Ft, "side body butts against the full end body");
+near(side.plates.top.bounds.z0Ft, end.plates.top.bounds.z1Ft, "lower top-plate layer has the same butt");
+near(side.plates.upper.bounds.y0Ft, end.plates.top.bounds.y1Ft, "side upper plate rests on end top plate at the corner");
+const contactX = Math.min(side.plates.upper.bounds.x1Ft, end.plates.top.bounds.x1Ft) - Math.max(side.plates.upper.bounds.x0Ft, end.plates.top.bounds.x0Ft);
+const contactZ = Math.min(side.plates.upper.bounds.z1Ft, end.plates.top.bounds.z1Ft) - Math.max(side.plates.upper.bounds.z0Ft, end.plates.top.bounds.z0Ft);
+near(contactX * 12, 3.5, "corner lap contact width"); near(contactZ * 12, 3.5, "corner lap contact depth");
+near(end.plates.upper.bounds.x1Ft, side.plates.upper.bounds.x0Ft, "end upper plate stops at side upper plate inside face");
 assert.equal(JSON.stringify(floor), floorSnapshot, "both wall choices leave the source floor plan unchanged");
 for (const change of [spec => spec.stud.lengthIn = null, spec => spec.spacingIn = 0,
-  spec => spec.layoutOriginIn = -1, spec => spec.doubleEveryIn = 47, spec => spec.pairReference = "center"])
+  spec => spec.layoutOriginIn = -1, spec => spec.doubleEveryIn = 47, spec => spec.pairReference = "center",
+  spec => spec.endSetbacksIn.side.frame = -1, spec => spec.endSetbacksIn.side.frame = 96,
+  spec => spec.endSetbacksIn.end.upperPlate = 60])
   { const plan = structuredClone(floor); change(plan.construction.wallStudy); assert.throws(() => wallStudyPlan(plan)); }
 assert.throws(() => wallStudyPlan(floor, { wall: "both" }), /sidewall or endwall/);
 const taller = structuredClone(floor); taller.construction.wallStudy.stud.lengthIn = 89;
 near(wallStudyMeasurements(wallStudyPlan(taller)).heightFt * 12, 93.5, "wall height is parameterized by cut length");
-console.log("PROVED: side/end walls use75in studs and3plates, sit on unchanged flooring, have touching double studs with joints at4ft marks, separate provisional end layout, 12 outward triangles per board, immutable normal geometry and material-only finishes.");
+console.log("PROVED: confirmed wall setbacks give 185/192 in side plates and 120/113 in end plates; corner lap contacts without solid overlap; 75 in studs, unchanged global marks/floor/normal geometry, 12 outward triangles per board and material-only finishes.");

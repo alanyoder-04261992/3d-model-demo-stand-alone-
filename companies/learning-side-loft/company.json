@@ -73,10 +73,12 @@
       "stud": { "nominal": "2x4", "widthIn": 1.5, "depthIn": 3.5, "lengthIn": 75 },
       "plates": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5 },
       "spacingIn": 16, "doubleEveryIn": 48, "layoutOriginIn": 0, "pairReference": "joint",
+      "endSetbacksIn": { "side": { "frame": 3.5, "upperPlate": 0 }, "end": { "frame": 0, "upperPlate": 3.5 } },
       "status": {
         "studSection": "confirmed", "plateSection": "confirmed", "studLength": "confirmed",
         "spacing": "confirmed", "doubleInterval": "confirmed", "pairPlacement": "confirmed", "wallNames": "confirmed",
-        "layoutDatum": "provisional", "plateLengths": "provisional", "wallPlacement": "provisional", "treatment": "provisional"
+        "layoutDatum": "provisional", "plateLengths": "derived", "wallPlacement": "provisional", "treatment": "provisional",
+        "frameSetbacks": "confirmed", "upperPlateSetbacks": "confirmed", "cornerLap": "confirmed"
       }
     },
     "floorStudy": {

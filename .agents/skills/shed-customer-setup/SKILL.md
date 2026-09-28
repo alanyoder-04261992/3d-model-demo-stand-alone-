@@ -99,9 +99,16 @@ board above them and **upper plate** for the board above that. Studs and all
 three plates are confirmed nominal 2x4, actual 1 1/2 x 3 1/2 in; stud cut
 length is 75 in. The three flat plates give a **derived 79 1/2 in overall
 wall height**. Alan confirmed 16 in on center and a double stud every 4 ft,
-with each 4 ft mark between the touching pair. Keep the starting datum,
-plate cut lengths, wall placement, corners, openings and wall treatment
-unconfirmed. Do not copy floor-timber treatment onto walls or publish the
+with each 4 ft mark between the touching pair. Alan subsequently confirmed
+the side wall's bottom plate, top plate and end studs stop 3 1/2 in short
+at **both ends**, while its upper plate runs the full 16 ft. The end wall's
+bottom plate, top plate and studs span the full 10 ft, while its upper plate
+stops 3 1/2 in short at each end. Derived plate lengths are **185 in
+(15 ft 5 in)** for the side bottom/top, **192 in (16 ft)** for its upper,
+**120 in (10 ft)** for the end bottom/top and **113 in (9 ft 5 in)** for
+its upper. This confirms the alternating plate overlap, not extra corner
+studs or fastening. Keep the starting layout datum, further wall placement,
+openings and wall treatment unconfirmed. Do not copy floor-timber treatment onto walls or publish the
 private reference photographs. The wall lesson is opt-in and must leave
 the existing floor and ordinary finished designer unchanged.
 

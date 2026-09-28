@@ -33,8 +33,18 @@ export function wallStudyMeasurements(plan) {
       jointPoint: framePt(run.w, mark.u, (study.bottomPlateTopYFt + study.studTopYFt) / 2, 0),
       status: study.status.pairPlacement };
   });
+  const nominalStart = framePt(run.w, run.a, study.baseYFt, 0);
+  const nominalEnd = framePt(run.w, run.b, study.baseYFt, 0);
   return {
     wall: study.wall, name: study.name, lengthFt: study.lengthFt, heightFt: study.heightFt,
+    nominalLengthFt: study.lengthFt, nominalStart, nominalEnd,
+    frameLengthFt: study.frameRange.lengthFt,
+    frameStart: framePt(run.w, study.frameRange.u0, study.baseYFt, 0),
+    frameEnd: framePt(run.w, study.frameRange.u1, study.baseYFt, 0),
+    upperPlateLengthFt: study.upperPlateRange.lengthFt,
+    upperPlateStart: framePt(run.w, study.upperPlateRange.u0, study.topPlateTopYFt, 0),
+    upperPlateEnd: framePt(run.w, study.upperPlateRange.u1, study.topPlateTopYFt, 0),
+    setbacks: study.setbacks,
     baseYFt: study.baseYFt, topYFt: study.topYFt, studLengthFt: study.stud.lengthFt,
     widthFt: study.stud.widthFt, depthFt: study.stud.depthFt,
     plateThicknessFt: study.plates.thicknessFt, spacingFt: study.spacingFt, doubleEveryFt: study.doubleEveryFt,
@@ -45,7 +55,7 @@ export function wallStudyMeasurements(plan) {
     layoutMarks: frame.layoutMarks.map(mark => ({ ...mark,
       point: framePt(run.w, mark.u, study.bottomPlateTopYFt, 0) })),
     alongAxis: run.w.ax.slice(), outwardNormal: run.w.n.slice(),
-    start: framePt(run.w, run.a, study.baseYFt, 0), end: framePt(run.w, run.b, study.baseYFt, 0),
+    start: nominalStart, end: nominalEnd,
     status: study.status, openings: study.openings, corners: study.corners,
   };
 }
