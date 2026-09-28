@@ -69,6 +69,16 @@
     }
   },
   "construction": {
+    "wallStudy": {
+      "stud": { "nominal": "2x4", "widthIn": 1.5, "depthIn": 3.5, "lengthIn": 75 },
+      "plates": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5 },
+      "spacingIn": 16, "doubleEveryIn": 48, "layoutOriginIn": 0, "pairReference": "joint",
+      "status": {
+        "studSection": "confirmed", "plateSection": "confirmed", "studLength": "confirmed",
+        "spacing": "confirmed", "doubleInterval": "confirmed", "pairPlacement": "confirmed", "wallNames": "confirmed",
+        "layoutDatum": "provisional", "plateLengths": "provisional", "wallPlacement": "provisional", "treatment": "provisional"
+      }
+    },
     "floorStudy": {
       "skids": {
         "nominal": "4x6", "widthIn": 3.5, "heightIn": 5.5, "lengthFt": 16, "insetToInsideIn": 30, "treated": true,

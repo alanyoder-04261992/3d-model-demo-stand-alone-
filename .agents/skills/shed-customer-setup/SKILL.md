@@ -52,11 +52,12 @@ Use **floor joist** as confirmed. Alan subsequently confirmed a 10 ft
 outside floor width, 1 1/2 in **outer boards** on both sides, and joists
 3 in shorter than that width. The resulting **117 in / 9 ft 9 in** joist
 length is calculated from his rule. He also explicitly confirmed two
-boards at one end and one at the other. Alan has now requested **Flooring**,
-so the current manual view is
-`learn.html?company=learning-side-loft&step=deck`: skids, frame and sheets
-together. The earlier `?step=frame` and `?step=joists` views remain available.
-Keep walls, roof and autoplay out of the current view. This is a learning order, not an approved
+boards at one end and one at the other. He subsequently added **Flooring**
+and has now moved to the walls. The current manual view is
+`learn.html?company=learning-side-loft&step=walls`: select one plain 16 ft
+side wall or one plain 10 ft end wall independently over the existing floor.
+The earlier `?step=deck`, `?step=frame` and `?step=joists` views remain available.
+Keep joined corners, openings, roof and autoplay out of this step. This is a learning order, not an approved
 shop sequence. Do not impose the software's `buildOrder` as the order the shop
 uses. Agree on the current part's meaning before moving on, and follow Alan's
 direction and pace in the conversation. Preserve already confirmed terms even
@@ -88,6 +89,21 @@ separate from manufacturer net coverage and exact tongue/groove profile,
 which have not been supplied. OSB/plywood, species, grade, sheet treatment,
 fasteners and exact clearance are also unspecified. The one modeled layer
 stays provisional. See the example for the confirmed and derived statuses.
+
+For walls, use the existing
+[part-wall-frame skill](../../../.claude/skills/part-wall-frame/SKILL.md).
+On September 28, 2026 Alan confirmed **end wall** for the 10 ft walls
+(`F`/`B` internally), **side wall** for the 16 ft walls (`R`/`L`), **stud**
+for an upright, **bottom plate** below the studs, **top plate** for the lower
+board above them and **upper plate** for the board above that. Studs and all
+three plates are confirmed nominal 2x4, actual 1 1/2 x 3 1/2 in; stud cut
+length is 75 in. The three flat plates give a **derived 79 1/2 in overall
+wall height**. Alan confirmed 16 in on center and a double stud every 4 ft,
+with each 4 ft mark between the touching pair. Keep the starting datum,
+plate cut lengths, wall placement, corners, openings and wall treatment
+unconfirmed. Do not copy floor-timber treatment onto walls or publish the
+private reference photographs. The wall lesson is opt-in and must leave
+the existing floor and ordinary finished designer unchanged.
 
 Alan also requested **measurements on the render** so he can check the
 lengths. Anchor dimension lines to the measured geometry and name the span

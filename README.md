@@ -180,6 +180,7 @@ Chromium's software graphics, each on its own port.
 | `check-floor-lesson.mjs` | no | the lesson starts with supports; all eight selections preserve original floor geometry, and measurements match drawn pieces |
 | `check-floor-joist-lesson.mjs` | no | the joist lesson retains only regular crosswise joists, preserving their geometry, materials and stages while keeping the full frame unchanged |
 | `check-floor-deck-lesson.mjs` | no | the seven flooring pieces cover the 10x16 frame at 5/8 in thick, with staggered seams and a trimmed last row, without changing the frame, skids or ordinary designer |
+| `check-wall-lesson.mjs` | no | separate side and end walls use 75 in studs, three flat plates and touching pairs at 4 ft marks; exact mesh contacts, volume, floor and ordinary designer are preserved |
 | `check-model-live.mjs` | yes | the rules (sizes, walls, roof line, standard doors and windows, clamping, prices) are Barnwright's, number for number, against its live page |
 | `check-ui.mjs` | yes | the designer page works: every style, size, colour, door and window, drag, "Add here", layouts on phone and desktop, escaping |
 | `check-views.mjs` | yes | Outside, Inside, Framing and Watch it build on seven buildings, from real clicks and real pixels |

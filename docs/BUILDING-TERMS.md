@@ -19,11 +19,11 @@ agreement before adding the next stage. The earlier
 finished-building starting preference is superseded; the agreed roof names
 below remain valid.
 
-**Current stage: Flooring.** Alan has requested the sheets over the frame:
-4x8 tongue and groove, 5/8 in thick, with staggered end seams and the last
-row trimmed. He confirmed row two as 4 ft + 8 ft + 4 ft. Use
-`learn.html?company=learning-side-loft&step=deck` to show skids, frame and
-flooring together; keep manual control with no walls or roof.
+**Current stage: Walls.** Use
+`learn.html?company=learning-side-loft&step=walls` to select one plain side wall
+or one plain end wall over the existing floor, with manual control and no roof
+or autoplay. Joined corners and openings are not part of this step.
+The earlier Flooring view at `?step=deck` remains available.
 
 Earlier, Alan accepted the skid render (“Ok looks good now the
 next part”) and then confirmed **floor joist** for the crosswise 2x6 seated
@@ -89,11 +89,18 @@ physical cut list.
 | Confirmed size-language examples | **Nominal / actual lumber size** | In this conversation subtract 1/2 in from each nominal dimension for the named examples: 2x4 → 1 1/2 x 3 1/2 in; 2x6 → 1 1/2 x 5 1/2 in; 4x6 → 3 1/2 x 5 1/2 in. Other sections are not established by these examples. | Alan's explanation, September 27, 2026 |
 | Confirmed preferred term | **“Lofted roof”** | The whole roof shape with a gentle upper slope and a steep lower slope on each side. The code calls this `gambrel`; use **lofted roof** with Alan. This confirms the name and intended shape, not dimensions or individual roof-part names. | Alan's reply, September 27, 2026 |
 | Confirmed part term | **Ridge cap** | The highest long metal strip covering the meeting line of the two roof sides. This identifies that piece; it does not confirm its dimensions or installation details. | Alan's reply, September 27, 2026 |
+| Confirmed wall names | **End wall / side wall** | The 10 ft walls are end walls (`F`/`B` in code); the 16 ft walls are side walls (`R`/`L`). This does not assign a shop front/back end. | Alan's replies, September 28, 2026 |
+| Confirmed term and section | **Stud** | An upright wall member: nominal 2x4, actual 1 1/2 x 3 1/2 in, with a confirmed 75 in loft-wall cut length. | Alan's labeled-photo discussion and dimension reply, September 28, 2026 |
+| Confirmed term and section | **Bottom plate** | The horizontal 2x4 underneath the studs; actual 1 1/2 x 3 1/2 in. | Alan's labeled-photo discussion and dimension reply, September 28, 2026 |
+| Confirmed term and section | **Top plate** | The lower of the two horizontal 2x4 boards above the studs; actual 1 1/2 x 3 1/2 in. | Alan's labeled-photo discussion and dimension reply, September 28, 2026 |
+| Confirmed term and section | **Upper plate** | The upper of the two horizontal 2x4 boards above the studs; actual 1 1/2 x 3 1/2 in. | Alan's labeled-photo discussion and dimension reply, September 28, 2026 |
+| Confirmed wall spacing and repeated pair | **16 in on center; double stud every 4 ft** | Each 4 ft mark falls between the touching pair. The centers of 1 1/2 in-wide studs are a derived 3/4 in either side of that mark; the starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
 
 ## What remains to agree on
 
 The agreed terms are **side loft**, **lofted roof**, **ridge cap**, **skids**,
-**notches**, **floor joist**, **Flooring** and Alan's wording **outer board**. For the
+**notches**, **floor joist**, **Flooring**, **end wall**, **side wall**, **stud**,
+**bottom plate**, **top plate**, **upper plate** and Alan's wording **outer board**. For the
 new piece, use **Board the mule hooks onto**, with **flat treated 2x4** as
 its physical description; do not promote
 “cleat” or “blocking” to an agreed name.
@@ -157,9 +164,12 @@ camera does not rearrange the knots. This does not establish deck treatment,
 species, grade or treatment chemistry. The finish does not change geometry.
 
 The default learning page still begins with skids only. Alan has now moved
-to **Flooring** at `?step=deck`, with the skids and completed frame still
-underneath. Earlier frame and joists-only views remain available; walls and
-roof come later. The 10 x 16 ft flooring coverage follows the current frame's
+to **Walls** at `?step=walls`, over the existing floor. Earlier flooring,
+frame and joists-only views remain available; the roof comes later.
+The confirmed 75 in studs plus three flat 1 1/2 in plates give a **derived
+79 1/2 in wall height**, from bottom plate underside to upper plate top.
+Wall treatment, plate cut lengths, corners, openings and the doubled-stud
+layout datum remain unconfirmed. The 10 x 16 ft flooring coverage follows the current frame's
 outer bounds without changing its timbers. Manufacturer-specific net sheet
 coverage and joint profile are pending; do not infer OSB, plywood or treated
 sheet material from the confirmed treatment of the timbers.
@@ -176,8 +186,7 @@ preferred wording have not yet been confirmed.**
 | --- | --- |
 | **Side Lofted Barn** | A barn with the agreed lofted roof shape (`gambrel` in code) and its standard entrance on a long side. In this model it has centered wooden double doors with one wall window on each side; those detailed labels and layout still need discussion. |
 | **10 x 16** | Width first, length second, in feet: a 10 ft wide building, 16 ft long. Its nominal footprint is 160 square feet. |
-| **Gable end / end wall** | Either short end under the roof profile. On this example the end walls are 10 ft wide. The software calls them `F` and `B`. |
-| **Long side / sidewall** | Either wall running along the 16 ft length. The software calls them `R` and `L`. |
+| **Gable end** | A proposed roof-related alias for a short end. **End wall** is already confirmed for the 10 ft walls, internally `F` and `B`; the alias is not separately agreed. |
 | **Entrance side** | The wall with the main doors. On the standard Side Lofted Barn it is `R`, a long side. A person may call this the front; that does not change the software's `F` end-wall code. |
 | **Centered** | The center of the opening is at the middle of its wall. Positions run left/right as seen by someone standing outside and facing that wall. |
 
@@ -222,11 +231,10 @@ can wait until Alan wants to add them.
 | --- | --- | --- |
 | **Runners** | A possible alternate name for the confirmed skids; Alan has confirmed “skids,” not this alias. | [Skids](../.claude/skills/part-skids/SKILL.md) |
 | **Rim joist / end joist / floor frame** | Proposed names for the perimeter boards, the end boards and the complete floor-support assembly. **Floor joist** is already confirmed for the regular crosswise member; these additional names remain separate questions. | [Floor frame](../.claude/skills/part-floor-frame/SKILL.md) |
-| **Stud / top plate / bottom plate** | Upright wall member / horizontal board at the top / horizontal board at the bottom. | [Wall frame](../.claude/skills/part-wall-frame/SKILL.md) |
 | **Header / king stud / jack stud** | The member spanning an opening / the full-height stud beside it / the shorter stud supporting the header. | [Wall frame](../.claude/skills/part-wall-frame/SKILL.md) |
 | **Truss / chord / gusset** | Roof-supporting assembly / a principal member of that assembly / a plate joining members. | [Roof frame](../.claude/skills/part-roof-frame/SKILL.md) |
 | **Roof deck / sheathing** | The layer under the roof covering. Keep this distinct from the steel roofing above it. | [Roof deck](../.claude/skills/part-roof-deck/SKILL.md) |
-| **Loft / loft joists / loft deck** | A raised storage floor near an end of the building / its supporting members / its sheet floor. “Side loft” does not mean the loft projects from a sidewall. | [Loft](../.claude/skills/part-loft/SKILL.md) |
+| **Loft / loft joists / loft deck** | A raised storage floor near an end of the building / its supporting members / its sheet floor. “Side loft” does not mean the loft projects from a side wall. | [Loft](../.claude/skills/part-loft/SKILL.md) |
 
 The current loft geometry belongs to the `loft` framing stage. It is absent
 from our floor-first starting assembly. In the regular designer it is also

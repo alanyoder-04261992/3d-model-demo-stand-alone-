@@ -5,7 +5,71 @@ description: The wall framing -- studs, plates, 3-stud corners and the king/jack
 
 # Wall framing (`parts/wall-frame.js`)
 
+## Scope of the current wall lesson
+
+On September 28, 2026 Alan confirmed these labels on the pictured parts:
+
+| Alan's term | What it points to |
+| --- | --- |
+| **End wall** | Either 10 ft wall; internal model coordinates `F` and `B`. |
+| **Side wall** | Either 16 ft wall; internal model coordinates `R` and `L`. |
+| **Stud** | An upright wall member. |
+| **Bottom plate** | The horizontal board underneath the studs. |
+| **Top plate** | The lower of the two horizontal boards above the studs. |
+| **Upper plate** | The upper of those two boards. |
+
+Studs and all three plates are confirmed nominal **2x4**, actual
+**1 1/2 x 3 1/2 in**. The loft-wall stud cut length is **75 in**.
+With one bottom plate, one top plate and one upper plate lying flat, the
+overall height is a **derived 79 1/2 in** (`75 + 3 x 1.5`), measured from
+the bottom plate's underside to the upper plate's top; it is not the stud
+cut length or a height from the skid bottom.
+
+Alan confirmed **16 in on center** stud spacing and **a double stud every
+4 ft**, with the 4 ft mark falling **between the touching pair**. For
+1 1/2 in-wide studs, their centers are derived as 3/4 in either side of
+that mark (47 1/4 and 48 3/4 in around a 48 in mark). The starting datum
+from a particular wall end remains unconfirmed. Do not infer plate cut
+lengths, corner joints, door/window
+openings, wall material treatment, species or grade. The floor timbers'
+treated-wood confirmation does not apply to the walls. Photos identify the
+discussed parts; do not measure them from pixels or publish the originals.
+
+Use the manual wall stage, `learn.html?company=learning-side-loft&step=walls`,
+to select one plain 16 ft side wall or one plain 10 ft end wall independently
+over the existing floor. Keep the floor geometry
+unchanged, leave the roof out, and do not autoplay or add unconfirmed
+openings. Preserve the ordinary designer's geometry. In Alan's labels,
+do not collapse **top plate** and **upper plate** into one ambiguous name.
+See [the example](../../../docs/examples/10x16-side-loft.md).
+
+The lesson-only `wallStudyPlan(floorStudyPlan(plan), { wall: 'side' | 'end' })`
+reads `construction.wallStudy`: `stud` has nominal `2x4`, width 1.5 in,
+depth 3.5 in and length 75 in; `plates` has nominal `2x4`, thickness 1.5 in
+and depth 3.5 in; `spacingIn` is 16 and `doubleEveryIn` is 48.
+Use `pairReference: 'joint'` with `status.pairPlacement: 'confirmed'`;
+keep `layoutOriginIn: 0` and `status.layoutDatum` provisional.
+The wall height of 79 1/2 in plus
+the flooring's current 10 5/8 in top gives a **derived 90 1/8 in upper-plate
+top above skid bottom**. These are different dimension datums.
+Full plate lengths and a single wall's placement are still drawing assumptions;
+do not infer a corner connection from this isolated view.
+
+The [wall picture page](../../../walls.html) uses model renders:
+[side wall overview](../../../images/wall-framing.png),
+[detail](../../../images/wall-framing-detail.png) and
+[end wall](../../../images/end-wall-framing.png). Keep those images in sync
+with the lesson geometry and label anchors; do not substitute the private photos.
+Refresh the side wall overview and detail with
+`node tools/export-joist-render-data.mjs --wall`, then
+`python tools/render-joist-picture.py --wall`.
+Refresh the end wall with `node tools/export-joist-render-data.mjs --end-wall`,
+then `python tools/render-joist-picture.py --end-wall` (Pillow and NumPy required).
+
 ## What it is in real life
+
+**Normal-model background.** The existing rules below describe the ordinary
+designer; they do not newly confirm this lesson's corners, openings or datum.
 
 Every wall is studs standing on a bottom plate nailed to the floor, with two
 top plates on them, the studs `walls.spacingIn` on centre measured from the
@@ -112,6 +176,10 @@ Helpers other parts use: `wallRuns` (every framed run with its corner ends),
 
 ## The owner's facts
 
+The September 28, 2026 agreement above confirms the lesson's vocabulary,
+2x4 sections, 75 in stud cut length, spacing and repeated double studs.
+The older shop notes below remain background for other dimensions and rules.
+
 * The shop (Barnwright 2150-2152, kept word for word in the code): "Walls:
   studs on a bottom plate with two top plates; loft ("short wall") studs are
   75" for about a 6.63 ft wall, tall-wall (UTX) studs are 89" for about
@@ -152,6 +220,11 @@ Helpers other parts use: `wallRuns` (every framed run with its corner ends),
 
 ## Checks that guard it
 
+* `node tools/check-wall-lesson.mjs` -- separate side/end wall lessons,
+  confirmed sections and 75 in studs, derived wall height, the 16 in layout
+  with touching pairs at 4 ft marks, plate contact and unchanged floor and
+  ordinary designer geometry. This checks the model, not unconfirmed shop
+  plate lengths, layout datum, corners or openings.
 * `node tools/check-framing.mjs` -- on every golden building, every style at
   every size of three catalogues, five hand-made crowded walls, the hardest
   walls a customer can make (openings wider than their wall, a window under

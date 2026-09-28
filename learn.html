@@ -11,7 +11,7 @@
 </head>
 <body class="lesson-page">
   <header class="lesson-header">
-    <div><h1>Floor first</h1><p>10 × 16 side loft</p></div>
+    <div><h1 id="lesson-heading">Floor first</h1><p>10 × 16 side loft</p></div>
     <a href="index.html?company=learning-side-loft">Finished example</a>
   </header>
   <main class="lesson-main">
@@ -25,6 +25,8 @@
           <button type="button" data-camera="end-negative" disabled>3-inch end</button>
           <button type="button" data-camera="end-positive" disabled>1½-inch end</button>
           <button type="button" data-camera="mule-board" disabled hidden>Mule board</button>
+          <button type="button" data-camera="wall-front" disabled hidden>Straight on</button>
+          <button type="button" data-camera="wall-plates" disabled hidden>Plates close-up</button>
         </div>
         <div class="lesson-view-buttons">
           <button type="button" data-camera="out" aria-label="Zoom out" disabled>−</button>
@@ -40,7 +42,7 @@
         </canvas>
         <p class="lesson-loading" id="lesson-loading" role="status">Loading the first piece…</p>
         <div class="lesson-error" id="lesson-error" role="alert" hidden>
-          <h2>The floor view could not load</h2>
+          <h2>The 3D view could not load</h2>
           <p id="lesson-error-text"></p>
           <button type="button" id="lesson-reload">Try again</button>
           <p><a id="lesson-picture-link" href="joists.html">Open the floor joist pictures</a></p>
@@ -50,7 +52,7 @@
       <p class="lesson-gestures" id="lesson-gestures">Drag to turn. Scroll or pinch to zoom.</p>
       <p class="lesson-sr-only" id="lesson-keyboard">Keyboard: focus the drawing, then use arrow keys to turn, plus and minus to zoom, and Home to reset the view.</p>
     </section>
-    <section class="lesson-bottom" aria-label="Floor pieces">
+    <section class="lesson-bottom" id="lesson-pieces-section" aria-label="Floor pieces">
       <div class="lesson-caption" aria-live="polite" aria-atomic="true">
         <h2 id="piece-title">The long supports underneath</h2>
         <p id="piece-description">The long wooden pieces that run underneath the floor.</p>
@@ -63,16 +65,21 @@
         <label><input type="checkbox" name="piece" value="frame"><span>Wooden floor frame</span></label>
         <label><input type="checkbox" name="piece" value="deck"><span>Flooring</span></label>
       </fieldset>
+      <fieldset class="lesson-pieces" id="lesson-wall-controls" hidden disabled>
+        <legend>One wall at a time</legend>
+        <label><input type="radio" name="wall-kind" value="side" checked><span>Side wall · 16 ft</span></label>
+        <label><input type="radio" name="wall-kind" value="end"><span>End wall · 10 ft</span></label>
+      </fieldset>
     </section>
     <section class="lesson-measurements" aria-labelledby="measurements-title">
       <h2 id="measurements-title">Measurements in this drawing</h2>
-      <p>Dashed outline = the nominal 10′ × 16′ building. Solid dimension lines measure the visible pieces.</p>
+      <p id="measurement-explanation">Dashed outline = the nominal 10′ × 16′ building. Solid dimension lines measure the visible pieces.</p>
       <dl id="piece-measurements"></dl>
       <p class="lesson-measurement-note" id="measurement-note"></p>
     </section>
-    <p class="lesson-reference">Skids, notches, floor joists and flooring are confirmed names. Flooring is 4×8-foot tongue-and-groove stock, 5/8 inch thick, with staggered end seams. The 120-inch outside width, 1½-inch outer-board thickness, two/one end-board counts and treated framing wood are confirmed. The 117-inch joist length follows from that width. Remaining details are still being checked together.</p>
+    <p class="lesson-reference" id="lesson-reference">Skids, notches, floor joists and flooring are confirmed names. Flooring is 4×8-foot tongue-and-groove stock, 5/8 inch thick, with staggered end seams. The 120-inch outside width, 1½-inch outer-board thickness, two/one end-board counts and treated framing wood are confirmed. The 117-inch joist length follows from that width. Remaining details are still being checked together.</p>
   </main>
-  <noscript><p class="lesson-noscript">Turn on JavaScript to rotate the floor and add pieces, or open the <a href="joists.html">floor joist pictures</a> or <a href="flooring.html">flooring pictures</a>.</p></noscript>
+  <noscript><p class="lesson-noscript">Turn on JavaScript to rotate the model and add pieces, or open the <a href="joists.html">floor joist pictures</a>, <a href="flooring.html">flooring pictures</a> or <a href="walls.html">wall pictures</a>.</p></noscript>
   <script type="module" src="ui/learn.js"></script>
 </body>
 </html>

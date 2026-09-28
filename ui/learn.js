@@ -16,6 +16,7 @@ import { createFloorLabels } from "./learn-labels.js";
 import { createMeasurementReadout } from "./learn-measurements.js";
 import { installFloorWood, woodFinish } from "./learn-wood.js";
 import { installFlooringTexture, flooringFinish } from "./learn-flooring.js";
+import { startWallLesson } from "./learn-wall.js";
 
 const COMPANY = "learning-side-loft";
 const ANGLE = { yaw:0.7, pitch:0.65 };
@@ -39,6 +40,7 @@ function drawingBox(build) {
 }
 
 export async function startFloorLesson() {
+  if(new URLSearchParams(location.search).get("step")==="walls") return startWallLesson();
   const api = { ready:false,error:null,selection:[],parts:[],renderer:null,plan:null,select:null,setCamera:null };
   window.floorLesson=api;
   const canvas=$("lesson-canvas"), viewport=$("lesson-viewport");
@@ -82,8 +84,8 @@ export async function startFloorLesson() {
       // Older cached lesson pages predate this navigation link.
       const stepLink=$("lesson-step-link");
       if(stepLink) {
-        stepLink.href=fullFrame?"learn.html?step=deck":"learn.html?step=frame";
-        stepLink.textContent=fullFrame?"Next: flooring":flooring?"Earlier: floor frame":"Next: outer and end boards";
+        stepLink.href=fullFrame?"learn.html?step=deck":flooring?"learn.html?step=walls":"learn.html?step=frame";
+        stepLink.textContent=fullFrame?"Next: flooring":flooring?"Next: walls":"Next: outer and end boards";
       }
     }
     const cat=await loadCatalogue(COMPANY);

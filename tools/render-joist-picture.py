@@ -16,10 +16,13 @@ from PIL import Image, ImageDraw, ImageFont
 ROOT=Path(__file__).resolve().parents[1]
 parser=argparse.ArgumentParser(description='Render exact floor-lesson meshes as annotated PNGs.')
 parser.add_argument('--deck',action='store_true',help='Read flooring-render-data.json and render flooring overview and layout only.')
+parser.add_argument('--wall',action='store_true',help='Render the side wall study and its plate/double-stud detail.')
+parser.add_argument('--end-wall',action='store_true',help='Render the end wall study.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
-data=json.loads((ROOT/('test/out/flooring-render-data.json' if args.deck else 'test/out/joist-render-data.json')).read_text(encoding='utf-8'))
+source='end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
+data=json.loads((ROOT/f'test/out/{source}-render-data.json').read_text(encoding='utf-8'))
 W,H=1200,940
 NAVY='#173b56'
 textures={name:np.frombuffer((ROOT/'test/out'/spec['file']).read_bytes(),dtype=np.uint8).reshape(spec['height'],spec['width'],4)
@@ -144,6 +147,64 @@ def dimension(d,project,p,q,label,offset=(0,0)):
     d.rounded_rectangle((middle[0]-width/2,middle[1]-19,middle[0]+width/2,middle[1]+23),radius=5,fill='white')
     d.text((middle[0]-width/2+11,middle[1]-15),label,font=f,fill=NAVY)
 
+def render_wall():
+    wall=data['metadata']['wall'];members=wall['members'];bounds=wall['bounds']
+    end=args.end_wall;along=0 if end else 2;face=2 if end else 0
+    studs=[m for m in members if m['member']['kind']=='stud']
+    plates={m['member']['kind']:m for m in members if 'plate' in m['member']['kind']}
+    bottom=plates['bottom-plate'];top=plates['top-plate'];upper=plates['upper-plate']
+    assert abs((bounds['y1Ft']-bounds['y0Ft'])*12-79.5)<1e-8
+    assert all(abs(s['lengthFt']*12-75)<1e-8 for s in studs)
+    inside=bounds['z1Ft'] if end else bounds['x0Ft']
+    def front(record,height=None,along_value=None):
+        p=record['center'].copy();p[face]=inside
+        if height is not None:p[1]=height
+        if along_value is not None:p[along]=along_value
+        return p
+    def board_edges(im,project,detail=False):
+        overlay=Image.new('RGBA',im.size);od=ImageDraw.Draw(overlay)
+        for record in members:
+            b=record['bounds'];a0=b['x0Ft'] if end else b['z0Ft'];a1=b['x1Ft'] if end else b['z1Ft']
+            points=[front(record,y,a) for a,y in [(a0,b['y0Ft']),(a1,b['y0Ft']),(a1,b['y1Ft']),(a0,b['y1Ft'])]]
+            od.line([tuple(project(p)) for p in points+[points[0]]],fill=(113,94,65,165 if detail else 100),width=2 if detail else 1)
+        crop=overlay.crop((25,145,W-25,706));im.paste(crop,(25,145),crop)
+    yaw=.42 if end else -1.02
+    im,project=scene(yaw=yaw,pitch=.4)
+    board_edges(im,project);d=ImageDraw.Draw(im)
+    name='End wall' if end else 'Side wall';span=10 if end else 16
+    title(d,f'{name} · {span} ft','2×4 framing · 75 in studs · 16 in on center · doubled every 4 ft')
+    stud=sorted(studs,key=lambda m:abs(m['center'][along]+1.25))[0]
+    leader(d,project(front(upper,along_value=-2)),(35,150,335,106),'Upper plate',['Above the top plate'])
+    leader(d,project(front(top,along_value=2)),(840,150,325,106),'Top plate',['Directly on the studs'])
+    leader(d,project(front(stud)),(35,748,530,111),'Stud · 75 in cut length',['2×4 nominal · 1½ × 3½ in actual'])
+    leader(d,project(front(bottom,along_value=2)),(620,748,545,111),'Bottom plate',['Rests on the flooring'])
+    start=front(bottom,bottom['bounds']['y0Ft'],-span/2);finish=front(bottom,bottom['bounds']['y0Ft'],span/2)
+    dimension(d,project,start,finish,f'{span} ft wall span',(0,35))
+    outer=front(studs[0],bounds['y0Ft'],-span/2);outer_top=outer.copy();outer_top[1]=bounds['y1Ft']
+    dimension(d,project,outer,outer_top,'79½ in overall',(-38,0))
+    d.text((35,895),'Wall span shown for learning · plate cut lengths and corner joints still to confirm',font=font(22),fill='#526879')
+    (ROOT/'images').mkdir(exist_ok=True)
+    im.save(ROOT/('images/end-wall-framing.png' if end else 'images/wall-framing.png'))
+    if end:return
+
+    ordered=sorted(studs,key=lambda m:m['center'][along]);pair=None
+    for a,c in zip(ordered,ordered[1:]):
+        if abs(c['center'][along]-a['center'][along]-.125)<1e-8:
+            pair=[a,c];break
+    assert pair is not None
+    joint=(pair[0]['center'][along]+pair[1]['center'][along])/2
+    target=front(top,top['bounds']['y0Ft']-.25,joint)
+    im,project=scene(target,2.35,yaw=-1.3,pitch=.24)
+    board_edges(im,project,detail=True);d=ImageDraw.Draw(im)
+    title(d,'Top plates + double stud','The 4-foot mark falls between the two touching studs')
+    leader(d,project(front(upper,along_value=joint-.18)),(35,150,335,106),'Upper plate',['Second board on top'])
+    leader(d,project(front(top,along_value=joint+.2)),(840,150,325,106),'Top plate',['Board touching the studs'])
+    y=top['bounds']['y0Ft']-.65
+    leader(d,project(front(pair[0],y)),(35,748,530,111),'Double stud',['Two touching 2×4 studs'])
+    leader(d,project(front(pair[0],y,joint)),(620,748,545,111),'4-foot mark',['Between the two studs'])
+    d.text((35,895),'Each board: 1½ × 3½ in actual · 75 + 1½ + 1½ + 1½ = 79½ in wall height',font=font(22),fill='#526879')
+    im.save(ROOT/'images/wall-framing-detail.png')
+
 def render_flooring():
     deck=data['metadata']['deck'];b=deck['bounds'];rows=deck['rows']
     assert len(deck['sheets'])==7 and len(rows)==3
@@ -238,6 +299,10 @@ def render_flooring():
     d.text((40,1030),'⅝ in tongue-and-groove flooring · 7 laid pieces · colors distinguish the rows',font=font(23),fill='#526879')
     plan.save(ROOT/'images/flooring-layout.png')
 
+if args.wall or args.end_wall:
+    render_wall()
+    print('Saved exact-mesh wall study PNGs.')
+    sys.exit(0)
 if args.deck:
     render_flooring()
     print('Saved exact-mesh flooring overview, surface close-up and measured sheet-layout PNGs.')

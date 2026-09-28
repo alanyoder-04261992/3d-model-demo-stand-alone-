@@ -578,6 +578,7 @@ export function kennelRunMembers(plan, spec) {
 
 /* Every member of the wall framing, and what was framed where. */
 export function wallFrame(plan) {
+  if (plan.wallStudy) return wallStudyFrame(plan);
   var spec = wallSpec(plan);
   var runs = wallRuns(plan);
   var framed = runs.map(function (r) { return frameRun(plan, r, spec); });
@@ -587,6 +588,55 @@ export function wallFrame(plan) {
   return { spec: spec, runs: runs, framed: framed, members: members };
 }
 export function wallFrameMembers(plan) { return wallFrame(plan).members; }
+
+/* One plain, separately displayed wall on the existing study flooring.
+   Plate cut lengths and first-layout datum remain provisional. A confirmed
+   four-foot mark is the joint BETWEEN the two touching studs, not a center. */
+export function wallStudyFrame(plan) {
+  const study = plan.wallStudy;
+  if (!study) throw new Error("wallStudyFrame needs an explicitly selected wall study.");
+  const floor = study.floorBounds, side = study.wall === "side";
+  const w = side
+    ? { ax: [0, 0, 1], n: [1, 0, 0], at: floor.x1Ft, cx: (floor.z0Ft + floor.z1Ft) / 2, len: study.lengthFt, top: study.topYFt }
+    : { ax: [1, 0, 0], n: [0, 0, -1], at: floor.z0Ft, cx: (floor.x0Ft + floor.x1Ft) / 2, len: study.lengthFt, top: study.topYFt };
+  const a = -study.lengthFt / 2, b = study.lengthFt / 2, sw = study.stud.widthFt;
+  const o0 = -study.stud.depthFt, o1 = 0;
+  const run = { key: side ? "R" : "B", w, a, b, fu0: a, fu1: b, index: 0, inset: 0,
+    D: study.stud.depthFt, ends: [], lesson: true };
+  const members = [], marks = [];
+  const meta = (extra) => ({ wall: run.key, run: 0, lesson: true, support: "bear", ...extra });
+  function member(kind, u0, u1, ya, yb, extra = {}) {
+    const item = wallMember(kind, "lumber", w, u0, u1, ya, yb, o0, o1,
+      meta({ size: kind === "stud" ? study.stud.nominal : study.plates.nominal, ...extra }));
+    item.stage = "wall-frame"; members.push(item); return item;
+  }
+  member("bottom-plate", a, b, study.baseYFt, study.bottomPlateTopYFt, { layer: 1 });
+  member("top-plate", a, b, study.studTopYFt, study.topPlateTopYFt, { layer: 1 });
+  member("upper-plate", a, b, study.topPlateTopYFt, study.topYFt, { layer: 2 });
+  const stud = (lo, hi, extra) => member("stud", lo, hi, study.bottomPlateTopYFt, study.studTopYFt, extra);
+  stud(a, a + sw, { role: "end", end: "start", layoutStatus: "provisional" });
+  for (let index = 1; ; index++) {
+    const markFt = study.layoutOriginFt + index * study.spacingFt;
+    const u = a + markFt;
+    if (u >= b - sw * 1.5 - 1e-9) break;
+    if (u <= a + sw * 1.5 + 1e-9) continue;
+    const multiple = (markFt - study.layoutOriginFt) / study.doubleEveryFt;
+    const doubled = Math.abs(multiple - Math.round(multiple)) < 1e-9;
+    if (doubled) {
+      if (u - sw < a + sw - 1e-9 || u + sw > b - sw + 1e-9)
+        throw new Error("The selected doubled-stud mark runs into an end stud.");
+      stud(u - sw, u, { role: "double", markFt, pairIndex: 0, pairReference: "joint" });
+      stud(u, u + sw, { role: "double", markFt, pairIndex: 1, pairReference: "joint" });
+    } else stud(u - sw / 2, u + sw / 2, { role: "grid", markFt });
+    marks.push({ markFt, u, doubled });
+  }
+  stud(b - sw, b, { role: "end", end: "finish", layoutStatus: "provisional" });
+  const spec = { sw, D: study.stud.depthFt, spacing: study.spacingFt,
+    plateT: study.plates.thicknessFt, nb: 1, nt: 2, study: true };
+  const framed = [{ run, members, frames: [], yPT: study.bottomPlateTopYFt,
+    yTB: study.studTopYFt, topPlate: study.topYFt, o0, o1 }];
+  return { spec, runs: [run], framed, members, layoutMarks: marks, study: true };
+}
 
 /* For the gable framing and the checks: every opening's framing box on its
    wall (u, y) -- kings' outer faces, bottom of the zone to the top of the

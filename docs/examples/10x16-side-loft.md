@@ -37,6 +37,10 @@ to point to; they are not yet agreed shop language.
 | Confirmed size-language examples | **Nominal / actual** | 2x4 → 1 1/2 x 3 1/2 in; 2x6 → 1 1/2 x 5 1/2 in; 4x6 → 3 1/2 x 5 1/2 in. Alan's half-inch subtraction applies to these discussed examples; other sections need their own evidence. | Alan's explanation, September 27, 2026 |
 | Confirmed | Alan: **“Lofted roof”** | The whole roof with a gentle upper slope and a steep lower slope on each side. `gambrel` is its code reference, not Alan's preferred term. | Alan's reply, September 27, 2026 |
 | Confirmed | **Ridge cap** | The highest long metal strip covering the meeting line of the two roof sides. | Alan's reply, September 27, 2026 |
+| Confirmed wall names | **End wall / side wall** | The 10 ft wall is an end wall (`F`/`B` in code); the 16 ft wall is a side wall (`R`/`L`). | Alan's replies, September 28, 2026 |
+| Confirmed part names and sections | **Stud / bottom plate / top plate / upper plate** | Upright member / board below the studs / lower board above them / upper board above them. All are nominal 2x4, actual 1 1/2 x 3 1/2 in. | Alan's labeled-photo discussion and dimension reply, September 28, 2026 |
+| Confirmed stud cut length; overall wall height derived | **75 in studs** | With three flat plates, bottom-plate underside to upper-plate top is a derived 79 1/2 in (`75 + 3 x 1.5`). | Alan's dimension reply, September 28, 2026 |
+| Confirmed wall spacing and pair alignment | **16 in on center; double stud every 4 ft** | The 4 ft mark falls between the touching pair. The starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
 
 The whole shape is **lofted roof**, and its highest long metal meeting strip
 is **ridge cap** in our conversation. We have agreed on those specific
@@ -44,12 +48,41 @@ meanings. The later skid/notch description confirms the specific dimensions
 and seating recorded above. Other names, dimensions and installation
 details remain pending.
 
-**Current view: Flooring over the frame and skids.** Use
-`learn.html?company=learning-side-loft&step=deck`, keeping all three parts
-visible and manually controlled, with no walls, roof or autoplay. Alan's
+**Current view: One plain wall over the floor.** Use
+`learn.html?company=learning-side-loft&step=walls` to select a 16 ft side wall
+or a 10 ft end wall independently. Keep the existing floor, manual control and
+no roof or autoplay; joined corners and openings come later. Alan's
 preferred word is **Flooring**; `floor-deck` and “floor decking” are code
-or reference labels. The earlier `?step=frame` and `?step=joists` views
+or reference labels. The earlier `?step=deck`, `?step=frame` and `?step=joists` views
 remain available.
+
+### Wall discussion — September 28, 2026
+
+Use Alan's confirmed names **stud**, **bottom plate**, **top plate** and
+**upper plate** on the actual members. The top plate is the lower of the two
+boards above the studs; the upper plate is the board above it. Studs and all
+three plates are nominal 2x4, actual 1 1/2 x 3 1/2 in. Stud cut length is
+75 in, and the three flat plates make overall wall height **79 1/2 in,
+derived**. Adding the current flooring-top height gives a derived
+**90 1/8 in upper-plate top above skid bottom**; do not confuse that datum
+with stud cut length.
+
+Stud spacing is **16 in on center**, with **a double stud every 4 ft**.
+Alan confirmed that the 4 ft mark lies between the touching pair. Their
+centers are therefore 3/4 in either side of that mark; for example,
+47 1/4 and 48 3/4 in around a 48 in mark. The starting layout datum from a
+specific wall end remains unconfirmed. Plate cut lengths, wall placement,
+corner joints, openings and wall treatment/species/grade remain pending.
+The floor timbers' treatment does not establish wall treatment.
+
+The [wall picture page](../../walls.html) provides an
+[overview](../../images/wall-framing.png),
+[detail](../../images/wall-framing-detail.png) and
+[end wall](../../images/end-wall-framing.png) as model renders. Refresh
+them after wall geometry or label changes. Alan's reference photographs
+remain private and supply no pixel-derived dimensions. The opt-in wall
+settings and implementation are recorded in the
+[wall-frame skill](../../.claude/skills/part-wall-frame/SKILL.md).
 
 Alan previously confirmed a 10 ft floor
 width with 1 1/2 in outer boards each side and joists 3 in shorter. The
@@ -112,15 +145,15 @@ confirm first-joist position or remaining dimensions, and they
 do not include Alan's private reference photos.
 
 Open the [floor learning page](../../learn.html), for example
-`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=deck` after
+`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=walls` after
 `npm run serve`.
 For Alan's iOS phone, use the
 [flooring picture saved in GitHub](https://github.com/alanyoder-04261992/3d-model-demo-stand-alone-/blob/codex/side-loft-terminology/images/flooring.png)
-or, when hosting is restored, the [interactive floor lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=deck).
+or, when hosting is restored, the [interactive lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=walls).
 The new picture page and startup fix are ready locally, but the deploy was
 blocked by Netlify with “Account credit usage exceeded - new deploys are
 blocked until credits are added.” Do not present the hosted `joists.html`
-address or `flooring.html` as live until a later deploy succeeds.
+address, `flooring.html` or `walls.html` as live until a later deploy succeeds.
 The existing hosted lesson also returned HTTP 503 with `usage_exceeded`;
 use the GitHub pictures while hosting is unavailable.
 The localhost address only works on the computer running the server.
@@ -171,7 +204,7 @@ They are not simply stacked on an uncut skid top. The current view includes
 the confirmed two-board/one-board end arrangement. Sheet details and
 remaining frame dimensions stay pending. The sheets now follow the
 confirmed flooring layout below. Keep the skids-only default, the requested
-flooring view and no autoplay.
+wall view over the floor and no autoplay.
 
 | Status | Candidate description | What still needs agreement |
 | --- | --- | --- |
@@ -179,12 +212,12 @@ flooring view and no autoplay.
 | Term, section, treatment, length rule and seating confirmed; 117 in length derived | Floor joist: regular crosswise 2x6 member | Remaining layout. “Rim joist,” “end joist” and “floor frame” remain proposed technical names for other pieces or the assembly. |
 | Alan's wording, thickness and end counts confirmed | Outer boards; two boards at one end, one at the other | Outer-board height and length, full-frame length and shop front/back assignment. |
 | Section, flat orientation, treatment, location, 93 in length and purpose confirmed | Board the mule hooks onto: flat treated 2x4 behind the double end boards | Sideways placement and any formal name such as “cleat” or “blocking.” |
-| Current; term, sheet size, thickness, joint type and stagger confirmed | Flooring: 4x8 T&G sheets, 5/8 in thick | Manufacturer net coverage/profile, material, treatment and fastening details. Last-row width is derived. |
+| Term, sheet size, thickness, joint type and stagger confirmed | Flooring: 4x8 T&G sheets, 5/8 in thick | Manufacturer net coverage/profile, material, treatment and fastening details. Last-row width is derived. |
 
 The spacing is now confirmed: 16 in on center standard, with extra cuts for
 the 12 in option. Repeated-notch first-center placement and cutting clearance remain
-pending; do not infer them by measuring the photos. The `?step=deck` view
-is the current manual focus; earlier frame and joists views remain
+pending; do not infer them by measuring the photos. The `?step=walls` view
+is the current manual focus; earlier flooring, frame and joists views remain
 available. A learning display choice is not a declaration of the
 shop's build order. Agree on the current meaning and record corrections before
 advancing, following Alan's direction and pace in the conversation.
@@ -359,10 +392,9 @@ list; the remaining layout and cut details still need Alan's answers.
 
 This table records the complete model behind the floor lesson. The walls,
 openings and roof listed here are absent from the initial floor display.
-Except for the
-confirmed side-entrance style choice, lofted roof term and ridge cap term
-above, its labels and details still need checking against Alan's meaning
-and his building.
+Only the terms and specifications explicitly confirmed in the discussion
+record above are agreed. Other labels and details still need checking
+against Alan's meaning and his building.
 
 | Feature | This example | Source |
 | --- | --- | --- |
@@ -401,8 +433,9 @@ Top view: entrance side at the bottom (not to scale)
 ```
 
 For discussion we can point to **entrance side**, **opposite long side**,
-**F end**, or **B end**. Alan's preferred names are still to be recorded;
-plain “front” could mean two things. The source is
+**F end**, or **B end**. Alan has confirmed **end wall** for the 10 ft walls
+and **side wall** for the 16 ft walls. A shop front/back assignment remains
+unconfirmed; plain “front” could mean two things. The source is
 [the wall coordinate rule](../../model/frame.js): positions increase to your
 right as you face a wall from outside.
 
@@ -430,7 +463,9 @@ different measures: the catalogue draws the pair 6.333 ft wide (about 76 in).
 The recorded shop opening height for this gambrel building is 71 1/2 in,
 drawn as 5.9583 ft. The **2 x 3 window** is stored as 2.1 x 2.9 ft; its top
 sits 5 in below the wall top. The style's wall drawing height is 6.67 ft
-above the floor, separate from the recorded 75 in loft-wall stud length.
+above the floor, separate from the now-confirmed 75 in loft-wall stud cut
+length. This legacy drawing height is not the corrected lesson's derived
+79 1/2 in overall wall height.
 See [the item catalogue](../../library/manufacturers/standard.json),
 [opening geometry](../../model/layout.js),
 [door skill](../../.claude/skills/part-door-wood/SKILL.md), and
@@ -488,7 +523,8 @@ this width, 16 in standard floor-joist spacing, 5/8 in floor decking,
 75 in loft-wall studs and 71 1/2 in barn shop-door openings. Their current
 record is [Building facts we had to choose](../FOR-ALAN.md#building-facts-we-had-to-choose).
 These are background references, not fresh confirmation of the terms or
-specifications in this example.
+specifications in this example. Alan separately confirmed the 75 in stud
+cut length on September 28; that new agreement is recorded above.
 
 **Still assumptions:** the 4 ft loft depth at each end, loft-joist size and
 spacing, loft-deck thickness, anchor count, and several wall/roof framing
