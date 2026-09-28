@@ -1,0 +1,874 @@
+{
+ "_about": "Barnwright's exact tables, read live from its 3ddesign.html by tools/extract-barnwright-catalogue.mjs. Real prices: used only by the checks, never by a company.",
+ "source": "boisterous-lokum-a737e0/public/3ddesign.html",
+ "sha256": "0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c",
+ "P": {
+  "UT": {
+   "8x12": 3435,
+   "8x16": 4530,
+   "10x12": 4365,
+   "10x16": 4965,
+   "10x20": 6095,
+   "12x16": 6040,
+   "12x20": 7055,
+   "12x24": 8025,
+   "12x32": 10235,
+   "14x20": 8835,
+   "14x24": 9895,
+   "14x28": 11255,
+   "14x32": 12395,
+   "14x40": 15445
+  },
+  "SU": {
+   "8x12": 3635,
+   "8x16": 4730,
+   "10x12": 4565,
+   "10x14": 4915,
+   "10x16": 5165,
+   "10x20": 6295,
+   "12x16": 6240,
+   "12x20": 7255,
+   "12x24": 8225,
+   "12x30": 9985,
+   "12x32": 10435
+  },
+  "DS": {
+   "8x12": 3635,
+   "8x16": 4730,
+   "10x12": 4565,
+   "10x14": 4915,
+   "10x16": 5165,
+   "10x20": 6295,
+   "12x16": 6240,
+   "12x20": 7255,
+   "12x24": 8225,
+   "12x30": 9985,
+   "12x32": 10435
+  },
+  "BU": {
+   "6x8": 3035,
+   "6x10": 3135,
+   "6x12": 3165
+  },
+  "GU": {
+   "6x8": 2815,
+   "6x10": 2960,
+   "6x12": 3115
+  },
+  "SB": {
+   "8x12": 2835,
+   "10x12": 3780
+  },
+  "LB": {
+   "8x12": 3690,
+   "8x16": 4885,
+   "10x12": 4715,
+   "10x16": 5375,
+   "10x20": 6675,
+   "12x16": 6565,
+   "12x20": 8035,
+   "12x24": 9390,
+   "12x32": 11465,
+   "14x20": 9705,
+   "14x24": 11115,
+   "14x28": 12775,
+   "14x32": 14295,
+   "14x40": 16895
+  },
+  "SLB": {
+   "8x12": 3890,
+   "8x16": 5085,
+   "10x12": 4915,
+   "10x16": 5575,
+   "10x20": 6875,
+   "12x16": 6765,
+   "12x20": 8235,
+   "12x24": 9590,
+   "12x32": 11665
+  },
+  "CS": {
+   "8x12": 3570,
+   "10x12": 4505,
+   "10x16": 5645,
+   "10x20": 6625,
+   "12x16": 6045,
+   "12x20": 7535,
+   "12x24": 8475,
+   "12x32": 10285
+  },
+  "SS": {
+   "8x12": 4290,
+   "8x16": 5485,
+   "10x12": 5315,
+   "10x16": 5975,
+   "10x20": 7275,
+   "12x16": 7165,
+   "12x20": 8635,
+   "12x24": 9990,
+   "12x32": 12065
+  },
+  "C": {
+   "8x12": 4260,
+   "8x16": 4995,
+   "10x16": 6285,
+   "10x20": 7690,
+   "12x16": 6765,
+   "12x20": 8035,
+   "12x24": 9440,
+   "12x32": 11570
+  },
+  "LBC": {
+   "8x16": 5940,
+   "10x16": 6565,
+   "10x20": 7965,
+   "12x18": 8605,
+   "12x20": 9105,
+   "12x24": 10345,
+   "12x30": 11995,
+   "12x32": 12645
+  },
+  "SC": {
+   "10x20": 7895,
+   "12x20": 8385,
+   "12x24": 9510,
+   "12x30": 11375,
+   "12x32": 11955
+  },
+  "LSC": {
+   "10x20": 8475,
+   "12x20": 9365,
+   "12x24": 10875,
+   "12x30": 12675,
+   "12x32": 13185
+  },
+  "DSC": {
+   "12x20": 8740,
+   "12x24": 9845,
+   "12x30": 11355,
+   "12x32": 12070
+  },
+  "SLC": {
+   "12x20": 9520,
+   "12x24": 11010,
+   "12x30": 12455,
+   "12x32": 13100
+  },
+  "G": {
+   "12x20": 7905,
+   "12x24": 9565,
+   "12x30": 11375,
+   "12x32": 11765,
+   "14x20": 11025,
+   "14x24": 12395,
+   "14x28": 13845,
+   "14x32": 15455,
+   "14x40": 18355
+  },
+  "LBG": {
+   "12x20": 8735,
+   "12x24": 10595,
+   "12x30": 11965,
+   "12x32": 12445
+  },
+  "MU": {
+   "8x12": 3950,
+   "10x12": 5020,
+   "10x16": 5710,
+   "10x20": 7015,
+   "12x16": 6945,
+   "12x20": 8110,
+   "12x24": 9225,
+   "12x32": 11770
+  },
+  "MLB": {
+   "8x12": 4245,
+   "10x12": 5425,
+   "10x16": 6185,
+   "10x20": 7675,
+   "12x16": 7550,
+   "12x20": 9235,
+   "12x24": 10805,
+   "12x32": 13185
+  },
+  "MG": {
+   "12x20": 9090,
+   "12x24": 10995,
+   "12x30": 13090,
+   "12x32": 13535
+  },
+  "MCS": {
+   "8x12": 4105,
+   "10x12": 5180,
+   "10x16": 6495,
+   "10x20": 7625,
+   "12x16": 6960,
+   "12x20": 8665,
+   "12x24": 9755,
+   "12x32": 11825
+  },
+  "DK": {
+   "8x12": 6065,
+   "8x16": 7075
+  }
+ },
+ "TYPES": {
+  "UT": {
+   "name": "Utility Shed",
+   "roof": "gable",
+   "wallH": 7.75
+  },
+  "SU": {
+   "name": "Side Utility",
+   "roof": "gable",
+   "wallH": 7.75,
+   "side": true
+  },
+  "DS": {
+   "name": "Dormer Shed",
+   "roof": "gable",
+   "wallH": 7.75,
+   "side": true,
+   "dormer": true
+  },
+  "BU": {
+   "name": "Backyard Utility",
+   "roof": "lean",
+   "wallH": 6.9,
+   "side": true
+  },
+  "GU": {
+   "name": "Garden Utility",
+   "roof": "gable",
+   "wallH": 6.9
+  },
+  "SB": {
+   "name": "Standard Barn",
+   "roof": "gambrel",
+   "wallH": 4.2
+  },
+  "LB": {
+   "name": "Lofted Barn",
+   "roof": "gambrel",
+   "wallH": 6.67
+  },
+  "SLB": {
+   "name": "Side Lofted Barn",
+   "roof": "gambrel",
+   "wallH": 6.67,
+   "side": true
+  },
+  "CS": {
+   "name": "Cottage Shed",
+   "roof": "salt",
+   "wallH": 7.75,
+   "side": true
+  },
+  "SS": {
+   "name": "Single Slope",
+   "roof": "slope",
+   "wallH": 7,
+   "side": true
+  },
+  "C": {
+   "name": "Cabin",
+   "roof": "gable",
+   "wallH": 7.4,
+   "porch": "F"
+  },
+  "LBC": {
+   "name": "Lofted Barn Cabin",
+   "roof": "gambrel",
+   "wallH": 6.9,
+   "porch": "F"
+  },
+  "SC": {
+   "name": "Side Cabin",
+   "roof": "gable",
+   "wallH": 7.4,
+   "porch": "S",
+   "side": true
+  },
+  "LSC": {
+   "name": "Loft Side Cabin",
+   "roof": "gambrel",
+   "wallH": 6.9,
+   "porch": "S",
+   "side": true
+  },
+  "DSC": {
+   "name": "Deluxe Side Cabin",
+   "roof": "gable",
+   "wallH": 7.4,
+   "porch": "C"
+  },
+  "SLC": {
+   "name": "Deluxe Loft Side Cabin",
+   "roof": "gambrel",
+   "wallH": 6.9,
+   "porch": "C"
+  },
+  "G": {
+   "name": "Garage",
+   "roof": "gable",
+   "wallH": 7.75
+  },
+  "LBG": {
+   "name": "Lofted Barn Garage",
+   "roof": "gambrel",
+   "wallH": 6.9
+  },
+  "MU": {
+   "name": "Metal Utility",
+   "roof": "gable",
+   "wallH": 7.75,
+   "metal": true
+  },
+  "MLB": {
+   "name": "Metal Lofted Barn",
+   "roof": "gambrel",
+   "wallH": 6.67,
+   "metal": true
+  },
+  "MG": {
+   "name": "Metal Garage",
+   "roof": "gable",
+   "wallH": 7.75,
+   "metal": true
+  },
+  "MCS": {
+   "name": "Metal Cottage",
+   "roof": "salt",
+   "wallH": 7.75,
+   "metal": true,
+   "side": true
+  },
+  "DK": {
+   "name": "Dog Kennel",
+   "roof": "gable",
+   "wallH": 7.4,
+   "side": true
+  }
+ },
+ "CATS": [
+  [
+   "Utility & Storage",
+   "UT,SU,DS,BU,GU"
+  ],
+  [
+   "Barns",
+   "SB,LB,SLB,CS,SS"
+  ],
+  [
+   "Cabins",
+   "C,LBC,SC,LSC,DSC,SLC"
+  ],
+  [
+   "Garages",
+   "G,LBG"
+  ],
+  [
+   "Metal Buildings",
+   "MU,MLB,MG,MCS"
+  ],
+  [
+   "Dog Kennels",
+   "DK"
+  ]
+ ],
+ "CAT": {
+  "w48": {
+   "k": "door",
+   "n": "48″ Wooden Door",
+   "w": 4.021,
+   "h": 6.5,
+   "p": 150
+  },
+  "w72": {
+   "k": "door",
+   "n": "72″ Wooden Double Doors",
+   "w": 6.333,
+   "h": 6.5,
+   "p": 300
+  },
+  "w36": {
+   "k": "door",
+   "n": "36″ Wooden Door",
+   "w": 3.104,
+   "h": 6.5,
+   "p": 125
+  },
+  "light": {
+   "k": "light",
+   "n": "Outside Light",
+   "w": 0.7,
+   "h": 1.2,
+   "p": 85
+  },
+  "d36in": {
+   "k": "door",
+   "n": "36″ In-Swing Door",
+   "w": 3,
+   "h": 6.3,
+   "p": 500
+  },
+  "d36lite": {
+   "k": "door",
+   "n": "36″ 11-Lite Door",
+   "w": 3,
+   "h": 6.3,
+   "p": 550
+  },
+  "dfr": {
+   "k": "door",
+   "n": "11-Lite French Doors",
+   "w": 5.6,
+   "h": 6.3,
+   "p": 750
+  },
+  "ru6": {
+   "k": "ru",
+   "n": "6′ Roll-up Door",
+   "w": 6,
+   "h": 6.2,
+   "p": 625
+  },
+  "ru8": {
+   "k": "ru",
+   "n": "8′ Roll-up Door",
+   "w": 8,
+   "h": 6.4,
+   "p": 650
+  },
+  "w23": {
+   "k": "win",
+   "n": "2×3 Window",
+   "w": 2.1,
+   "h": 2.9,
+   "p": 200,
+   "sill": 2.9
+  },
+  "w33": {
+   "k": "win",
+   "n": "3×3 Window",
+   "w": 3,
+   "h": 2.9,
+   "p": 250,
+   "sill": 2.9
+  },
+  "tr": {
+   "k": "win",
+   "n": "36×12 Transom Window",
+   "w": 3,
+   "h": 1,
+   "p": 150,
+   "sill": 4.1
+  },
+  "bench": {
+   "k": "bench",
+   "int": true,
+   "stretch": true,
+   "dep": 2,
+   "n": "Work Bench",
+   "w": 2,
+   "h": 3,
+   "p": 20,
+   "perFt": true
+  },
+  "shelf": {
+   "k": "shelf",
+   "int": true,
+   "stretch": true,
+   "dep": 1,
+   "n": "Shelf",
+   "w": 2,
+   "h": 1,
+   "p": 12,
+   "perFt": true
+  },
+  "outlet": {
+   "k": "out",
+   "int": true,
+   "n": "Duplex Outlet",
+   "w": 0.6,
+   "h": 1,
+   "p": 75,
+   "sill": 1.2
+  },
+  "gfci": {
+   "k": "out",
+   "int": true,
+   "n": "Switch + GFCI Outlet",
+   "w": 0.7,
+   "h": 1,
+   "p": 0,
+   "sill": 1.2
+  },
+  "ilight": {
+   "k": "ilt",
+   "int": true,
+   "free": true,
+   "n": "Overhead Light",
+   "w": 1,
+   "h": 1,
+   "p": 100
+  },
+  "fake": {
+   "k": "win",
+   "n": "Faux Loft Window",
+   "w": 2.6,
+   "h": 1.9,
+   "p": 0,
+   "gable": true
+  },
+  "g1824": {
+   "k": "win",
+   "n": "18×24 Gable Window",
+   "w": 1.5,
+   "h": 2,
+   "p": 200,
+   "gable": true
+  },
+  "oct": {
+   "k": "win",
+   "n": "Octagon Gable Window",
+   "w": 2.3,
+   "h": 2.3,
+   "p": 200,
+   "gable": true
+  },
+  "ppost": {
+   "k": "post",
+   "n": "Porch Post",
+   "w": 0.6,
+   "h": 8,
+   "p": 0
+  }
+ },
+ "COLORS": {
+  "paint": [
+   [
+    "White",
+    "#FAF9F3"
+   ],
+   [
+    "Navajo",
+    "#E8DCC0"
+   ],
+   [
+    "Beige",
+    "#D8C7A5"
+   ],
+   [
+    "Buckskin",
+    "#C9AE86"
+   ],
+   [
+    "Clay",
+    "#B8A48A"
+   ],
+   [
+    "Light Gray",
+    "#C6CBCE"
+   ],
+   [
+    "Gray",
+    "#9AA2A6"
+   ],
+   [
+    "Charcoal",
+    "#4A4F54"
+   ],
+   [
+    "Barn Red",
+    "#8E3B30"
+   ],
+   [
+    "Hunter Green",
+    "#3E5F48"
+   ],
+   [
+    "Pequea Green",
+    "#6E7D5D"
+   ],
+   [
+    "Avocado",
+    "#8A8B5C"
+   ],
+   [
+    "Navy",
+    "#33506B"
+   ],
+   [
+    "Chocolate",
+    "#5B4634"
+   ]
+  ],
+  "trim": [
+   [
+    "White",
+    "#FAF9F3"
+   ],
+   [
+    "Beige",
+    "#D8C7A5"
+   ],
+   [
+    "Black",
+    "#2E3134"
+   ],
+   [
+    "Charcoal",
+    "#4A4F54"
+   ],
+   [
+    "Barn Red",
+    "#8E3B30"
+   ],
+   [
+    "Hunter Green",
+    "#3E5F48"
+   ],
+   [
+    "Navy",
+    "#33506B"
+   ],
+   [
+    "Chocolate",
+    "#5B4634"
+   ]
+  ],
+  "metal": [
+   [
+    "Galvalume",
+    "#C9CDCF"
+   ],
+   [
+    "White",
+    "#F6F6F2"
+   ],
+   [
+    "Light Gray",
+    "#B9BFC3"
+   ],
+   [
+    "Gray",
+    "#8E969B"
+   ],
+   [
+    "Charcoal",
+    "#4A4F54"
+   ],
+   [
+    "Black",
+    "#2E3134"
+   ],
+   [
+    "Barn Red",
+    "#8E3B30"
+   ],
+   [
+    "Rustic Red",
+    "#B04A3A"
+   ],
+   [
+    "Burgundy",
+    "#6E3038"
+   ],
+   [
+    "Hunter Green",
+    "#3E5F48"
+   ],
+   [
+    "Forest",
+    "#2F4A3B"
+   ],
+   [
+    "Burnished Slate",
+    "#55483C"
+   ],
+   [
+    "Brown",
+    "#6B5138"
+   ],
+   [
+    "Clay",
+    "#C7B79B"
+   ],
+   [
+    "Tan",
+    "#C2A87F"
+   ],
+   [
+    "Blue",
+    "#4A6B8A"
+   ],
+   [
+    "Gallery Blue",
+    "#3E5C8C"
+   ],
+   [
+    "Copper",
+    "#B87333"
+   ]
+  ]
+ },
+ "DORMERS": [
+  [
+   "none",
+   "No dormer",
+   0
+  ],
+  [
+   "6",
+   "6 ft dormer",
+   1300
+  ],
+  [
+   "9",
+   "9 ft dormer",
+   1600
+  ],
+  [
+   "12",
+   "12 ft dormer",
+   1900
+  ]
+ ],
+ "RAMPS": [
+  [
+   "none",
+   "No ramp",
+   0
+  ],
+  [
+   "r4",
+   "4′ ramp",
+   250
+  ],
+  [
+   "r6",
+   "6′ ramp",
+   300
+  ],
+  [
+   "kit",
+   "DIY kit (no wood)",
+   175,
+   "Ramp DIY kit (no wood)"
+  ]
+ ],
+ "ELECPK": [
+  [
+   "0",
+   "No electric",
+   0
+  ],
+  [
+   "1",
+   "Option 1",
+   700
+  ],
+  [
+   "2",
+   "Option 2",
+   800
+  ],
+  [
+   "3",
+   "Option 3",
+   900
+  ]
+ ],
+ "MISC": {
+  "shutter": 75,
+  "lite": 40,
+  "ext": 100
+ },
+ "RATES": {
+  "dbl": 2,
+  "jo12": 0.75,
+  "mbF": 0.6,
+  "mbW": 0.6,
+  "rbS": 0.7,
+  "rbR": 0.9
+ },
+ "OPTX": {
+  "extras": [],
+  "hide": []
+ },
+ "ELECDESC": {
+  "0": "",
+  "1": "1 overhead light · switch with GFCI outlet",
+  "2": "1 overhead light · switch with GFCI outlet · 3 more outlets (4 total)",
+  "3": "2 overhead lights · switch with GFCI outlet · 5 more outlets (6 total)"
+ },
+ "defaultState": {
+  "type": "LB",
+  "size": "10x20",
+  "body": "#FAF9F3",
+  "trim": "#2E3134",
+  "roof": "#2E3134",
+  "items": [
+   {
+    "id": "i0",
+    "cat": "w72",
+    "wall": "F",
+    "pos": 0,
+    "inc": true,
+    "origCat": "w72",
+    "shut": false,
+    "dbl": false
+   },
+   {
+    "id": "i1",
+    "cat": "fake",
+    "wall": "F",
+    "pos": 0,
+    "inc": true,
+    "origCat": "fake",
+    "shut": false,
+    "dbl": false,
+    "vy": 0
+   }
+  ],
+  "dormer": "9",
+  "pLen": 12,
+  "pFlip": false,
+  "pMid": false,
+  "doorC": "",
+  "shutC": "",
+  "sel": null,
+  "seq": 2,
+  "opts": {
+   "dbl": false,
+   "jo12": false,
+   "mbF": false,
+   "mbW": false,
+   "rbS": false,
+   "rbR": false
+  },
+  "xopt": {},
+  "elec": {
+   "pkg": 0,
+   "ext": false
+  },
+  "ramp": "none"
+ },
+ "constants": {
+  "GROOVE": 0.667,
+  "RIB": 0.75,
+  "y0": 0.92,
+  "SKIRT": 0.29,
+  "CASING": 0.27,
+  "OCT_WIN": 1.5,
+  "OCT_TRIM": 0.4,
+  "ROOF_TH": 0.26,
+  "RAKE_STEP": 0.135
+ },
+ "brand": {
+  "name": "Portable Buildings",
+  "short": "Portable Buildings",
+  "initials": "PB",
+  "tagline": "Portable Storage Buildings"
+ }
+}

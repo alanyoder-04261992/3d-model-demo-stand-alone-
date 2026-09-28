@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact sheet</title>
+<meta name="description" content="Every building a company offers, with its standard doors and windows and its price, for sign-off.">
+<meta name="robots" content="noindex">
+<!-- THE CONTACT SHEET, for setting up a new company. setup.html?company=<id>
+     shows every style and size in that company's settings, drawn with its
+     standard doors and windows, with the price and the size notes, so it can
+     be screenshotted or printed and sent to the company to check before
+     their designer goes live. Everything is filled in by ui/setup.js; the
+     look is the designer's (ui/styles.css) plus the rules below, and it
+     prints three buildings to a row. -->
+<link rel="stylesheet" href="ui/styles.css">
+<style>
+  html,body{height:auto;touch-action:auto}
+  .hdr.cs-hdr{position:relative;top:auto}
+  .pg-offscreen{position:absolute;left:-10000px;top:0;width:2px;height:2px;pointer-events:none}
+  .cs-wrap{max-width:1200px;margin:0 auto;padding:16px 14px 60px}
+  .cs-title{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:22px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--navy)}
+  .cs-intro{font-size:14px;line-height:1.55;color:var(--sub);max-width:780px;margin-top:4px}
+  .cs-facts{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:4px 18px;margin:12px 0;font-size:13px;color:var(--ink);background:#fff;border:1px solid var(--card-line);border-radius:11px;padding:12px 14px}
+  .cs-facts b{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-weight:600;letter-spacing:.08em;text-transform:uppercase;font-size:11px;color:var(--navy);margin-right:4px}
+  .cs-code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11px;color:var(--sub);background:var(--paper);border-radius:4px;padding:1px 5px;letter-spacing:0;text-transform:none;font-weight:400}
+  .cs-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:6px 0 4px}
+  .cs-bar button{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;border-radius:8px;padding:9px 14px;border:1.5px solid var(--navy);background:#fff;color:var(--navy)}
+  .cs-bar button.cs-go{background:var(--navy);color:var(--cream)}
+  .cs-bar button:disabled{opacity:.5}
+  .cs-status{font-size:12px;color:var(--sub)}
+  .cs-cat{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:15px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--kraft-ink);border-bottom:2px solid var(--kraft);padding-bottom:4px;margin:26px 0 4px}
+  .cs-style h3{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--navy);margin:14px 0 8px}
+  .cs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+  .cs-tile{background:#fff;border:1px solid var(--card-line);border-radius:10px;overflow:hidden;break-inside:avoid;page-break-inside:avoid;display:flex;flex-direction:column}
+  .cs-pic{aspect-ratio:36/25;background:#E9E9E5;display:flex;align-items:center;justify-content:center;font-size:12px;color:var(--sub);text-align:center;padding:6px}
+  .cs-pic img{width:100%;height:100%;object-fit:contain;display:block}
+  .cs-pic img:not([src]){visibility:hidden}
+  .cs-body{padding:9px 11px 11px}
+  .cs-row{display:flex;align-items:baseline;gap:8px}
+  .cs-row h4{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:16px;font-weight:600;letter-spacing:.06em;color:var(--ink)}
+  .cs-price{margin-left:auto;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:16px;font-weight:600;color:var(--green)}
+  .cs-std,.cs-note{font-size:12px;line-height:1.45;color:var(--ink);margin-top:5px}
+  .cs-note{color:#7a4b12}
+  .cs-failed .cs-pic{color:var(--red)}
+  .cs-sign{margin-top:30px;display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px;font-size:13px;color:var(--ink)}
+  .cs-sign div{border-top:1.5px solid var(--ink);padding-top:5px}
+  .pg-msg{background:#fff;border:1.5px solid var(--red);border-radius:11px;padding:16px;margin:20px auto;max-width:760px}
+  .pg-msg h2{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--navy);margin-bottom:6px}
+  .pg-msg li{margin:6px 0 0 18px;font-size:14px;line-height:1.5}
+  .cs-hdr .t2 a{color:var(--hdr-sub)}
+  @page{margin:10mm}
+  @media print{
+    body{background:#fff}
+    .hdr{background:#fff!important;color:#000;background-image:none!important;padding:0 0 8px}
+    .hdr .t2,.cs-bar button,.cs-intro{display:none}
+    .cs-grid{grid-template-columns:repeat(3,1fr);gap:8px}
+    .cs-tile{border-color:#bbb}
+    .cs-style{break-inside:auto}
+    .cs-style h3{break-after:avoid}
+    *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  }
+</style>
+</head>
+<body>
+<header class="hdr cs-hdr">
+  <div class="wkbadge" id="cs-badge"></div>
+  <div>
+    <div class="t1" id="cs-company">Contact sheet</div>
+    <div class="t2">Contact sheet for sign-off · <a href="index.html">the designer</a></div>
+  </div>
+</header>
+<main class="cs-wrap" id="cs-main">
+  <h1 class="cs-title">Every building we offer — please check</h1>
+  <p class="cs-intro">Each building below is drawn the way a customer first sees it in the 3D designer: its standard doors and windows, the price the designer will show and any note that goes with that width. Please check every style, size, price and note, then sign at the bottom.</p>
+  <div class="cs-facts" id="cs-facts"></div>
+  <div class="cs-bar">
+    <button type="button" id="cs-drawall">Draw every picture</button>
+    <button type="button" id="cs-print" class="cs-go">Print or save as PDF</button>
+    <span class="cs-status" id="cs-count"></span> · <span class="cs-status" id="cs-status" aria-live="polite">Loading…</span>
+  </div>
+  <div id="cs-sheet"></div>
+  <div class="cs-sign">
+    <div>Checked by (name)</div>
+    <div>Signature</div>
+    <div>Date</div>
+  </div>
+</main>
+<noscript><p style="padding:20px">This page needs JavaScript switched on.</p></noscript>
+<script type="module">
+  import { startSetup } from "./ui/setup.js";
+  startSetup().catch(function (e) { console.error("The contact sheet failed:", e); });
+</script>
+</body>
+</html>

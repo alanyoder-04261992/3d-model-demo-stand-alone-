@@ -1,0 +1,31 @@
+/* THE LOOK OF "SHARE MY DESIGN" AND OF A SHARED DESIGN'S CARD (ui/share.js
+   adds this file to the page). It leans on the designer's own classes in
+   ui/styles.css (.bigbtn .copybtn .vcard .sumline) so it looks like the rest
+   of the page; only what is new is here. */
+
+.sharebox{margin-top:10px}
+.sharebox .sharebtn{margin-top:0}
+.sharepanel{margin-top:8px;border:1.5px solid var(--card-line);border-radius:9px;padding:10px;background:#fff}
+.sharepanel[hidden]{display:none}
+.sharehow{font-size:12.5px;color:var(--sub);margin:0 0 6px}
+.sharelink{width:100%;border:1.5px solid var(--card-line);border-radius:7px;padding:9px 10px;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:13px;color:var(--ink);background:#f7f9fa;min-width:0}
+.sharerow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.sharerow .copybtn{margin-top:8px}
+.sharemsg{font-size:12.5px;color:#1c6b3c;margin-top:8px;flex:1 1 180px;min-width:0}
+.sharemsg:empty{display:none}
+
+/* the card at the top of the side column when a link was opened */
+.vcard.shview .shsum{margin-top:2px}
+.vcard.shview .bigbtn{margin-top:12px}
+.vcard .shprice{background:#fff8e6;border:1.5px solid #d9a441;border-radius:8px;padding:9px 11px;color:#6b4a0f}
+.vcard.shbad{border-color:var(--red)}
+.vcard.shbad h3{color:#7c2a22}
+.shwarn{margin-top:10px;font-size:12.5px;color:var(--ink);line-height:1.5}
+.shwarn ul{margin:4px 0 0 18px}
+.shwarn li{margin:2px 0}
+.shcontact{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.shcontact a{flex:1 1 130px;min-width:0;text-align:center;text-decoration:none;border:1.5px solid var(--navy);color:var(--navy);border-radius:8px;padding:8px 10px}
+.shcontact a b{display:block;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase}
+.shcontact a span{display:block;margin-top:1px;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.shcontact a.shmail span{white-space:normal;overflow-wrap:anywhere}
+.shcontact a.shcall{background:var(--navy);color:#fff}

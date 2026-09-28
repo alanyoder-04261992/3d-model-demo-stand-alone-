@@ -1,0 +1,107 @@
+{
+  "_help": [
+    "A SMALL MADE-UP COMPANY, to show what a real customer's file looks like: three styles, its own name, colours and prices, and quote requests sent to a form service.",
+    "Cedar Ridge Sheds is invented. Its phone number is a 555 number and its web addresses use example domains, so nothing here reaches anybody real. The form address is a placeholder: a real company pastes in the address its form service gives it."
+  ],
+  "id": "starter",
+  "status": "active",
+  "manufacturer": "standard",
+  "brand": {
+    "name": "Cedar Ridge Sheds",
+    "short": "Cedar Ridge",
+    "initials": "CR",
+    "tagline": "Hand-built storage, delivered and set up",
+    "phone": "(555) 010-0142",
+    "email": "sales@cedarridge.example",
+    "website": "https://cedarridge.example",
+    "colors": {"header": "#2F4A3B", "accent": "#C98B3E"},
+    "logo": "",
+    "credit": {"text": "3D designer by Barnwright", "url": "", "show": true}
+  },
+  "offer": {
+    "UT": {"sizes": {"8x12": 3490, "10x12": 4290, "10x16": 5190, "12x16": 6190, "12x20": 7290, "12x24": 8390}},
+    "LB": {
+      "sizes": {"8x12": 3890, "10x16": 5690, "10x20": 6890, "12x20": 8290, "12x24": 9590, "14x32": 14490},
+      "name": "Loft Barn"
+    },
+    "G": {"sizes": {"12x20": 8190, "12x24": 9690, "14x28": 13990}}
+  },
+  "categories": [["Sheds", ["UT", "LB"]], ["Garages", ["G"]]],
+  "items": {
+    "w48": 160,
+    "w72": 310,
+    "w36": 135,
+    "d36in": 510,
+    "d36lite": 560,
+    "ru6": 640,
+    "ru8": 690,
+    "w23": 210,
+    "w33": 260,
+    "tr": 160,
+    "fake": 0,
+    "g1824": 210,
+    "bench": 21,
+    "shelf": 13,
+    "outlet": 80,
+    "gfci": 0,
+    "ilight": 105,
+    "light": 95,
+    "ppost": 0
+  },
+  "options": {
+    "ramps": {"r4": 260, "r6": 310},
+    "elec": {"1": 720, "2": 820},
+    "misc": {"shutter": 80, "lite": 45, "ext": 100},
+    "rates": {"dbl": 2.1, "jo12": 0.8},
+    "extras": [
+      {"key": "ridge-vent", "name": "Ridge vent", "input": "check", "price": 120},
+      {"key": "anchors", "name": "Extra ground anchors", "input": "qty", "price": 45}
+    ]
+  },
+  "palettes": {
+    "paint": [
+      ["Cream", "#EFE7D2"],
+      ["Sage", "#9CAF88"],
+      ["Harbor Gray", "#6B7B8C"],
+      ["Cedar", "#8B5A3C"],
+      "Barn Red",
+      "White",
+      "Charcoal"
+    ],
+    "trim": ["White", "Black", ["Forest", "#2F4A3B"], ["Cedar", "#8B5A3C"]],
+    "metal": ["Galvalume", "Black", "Charcoal", "Barn Red", ["Evergreen", "#2E4A3A"], "Burnished Slate"]
+  },
+  "defaults": {"style": "LB", "size": "10x20", "colors": {"body": "Cream", "trim": "Forest", "roof": "Evergreen"}},
+  "construction": {},
+  "pricing": {
+    "show": "price",
+    "roundTo": 5,
+    "minCharge": 5,
+    "roofAreaFactor": 1.15,
+    "rto": {"factors": {"36": 0.6, "48": 0.53, "60": 0.45}, "showTerm": 60}
+  },
+  "notes": {
+    "finePrint": "Free delivery and setup within 40 miles. Prices plus tax.",
+    "sizeNotes": {"14": "14 ft wide buildings need a permit for the road; we arrange it."}
+  },
+  "leads": {
+    "mode": "form",
+    "url": "https://formspree.io/f/your-form-id",
+    "fields": {
+      "name": "required",
+      "phone": "required",
+      "email": "optional",
+      "zip": "required",
+      "address": "optional",
+      "note": "optional"
+    },
+    "smsConsent": "Yes, you may text me about this quote. Message and data rates may apply. Reply STOP to stop.",
+    "images": false
+  },
+  "embed": {"origins": ["https://cedarridge.example"], "shareUrl": "https://cedarridge.example/design"},
+  "look": {"trueColour": true, "scene": "studio"},
+  "features": {"framingView": true, "buildPlayback": true, "floorPlan": true},
+  "license": {"plan": "hosted", "renews": "2027-09-01"},
+  "renames": {"items": {}, "sizes": {}, "colors": {}},
+  "cfg": 1
+}

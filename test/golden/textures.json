@@ -1,0 +1,102 @@
+{
+ "about": "One SHA-256 per procedural texture Barnwright paints when its page opens, with its random numbers seeded. See test/golden/README.md.",
+ "barnwright": {
+  "file": "boisterous-lokum-a737e0/public/3ddesign.html",
+  "sha256": "0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c"
+ },
+ "seeding": "Math.random is replaced before Barnwright's scripts run. When mkTex creates its first canvas (line 1717, the entry of one mkTex call) it is restarted as mulberry32(textureSeed(i)) from engine/seeded.js, i = 0 for the first texture made. mkTex's painter and height painter draw from that one stream.",
+ "read": "The bytes hashed are the ImageData mkTex hands to gl.texImage2D: width x height x RGBA, rows top to bottom, after its brightness normalising and height-in-alpha packing.",
+ "mathRandomCallsInsideTextures": 207240,
+ "mathRandomCallsOutsideTextures": 0,
+ "textures": [
+  {
+   "index": 0,
+   "global": "texSiding",
+   "name": "siding",
+   "seed": 1000,
+   "size": [1024,1024],
+   "sha256": "0b9ba5961f48802451b3fb9dcd87d74b0110afd857c997dca5b0eebcf6531710"
+  },
+  {
+   "index": 1,
+   "global": "texMetal",
+   "name": "metal",
+   "seed": 1001,
+   "size": [512,512],
+   "sha256": "8e83cb89fd5baf7a8635ceccbd954711da472cb27e15e48b8f0f7ece85cee34c"
+  },
+  {
+   "index": 2,
+   "global": "texTrim",
+   "name": "trim",
+   "seed": 1002,
+   "size": [256,256],
+   "sha256": "119775219d5e6004927a6f3999452f0abffceddabcf414edf933352ddc4205cb"
+  },
+  {
+   "index": 3,
+   "global": "texFlat",
+   "name": "flat",
+   "seed": 1003,
+   "size": [128,128],
+   "sha256": "1e532adb2b085d30078c66e05e26c09196e5f6217cf9cd22a8ed8e55334d9314"
+  },
+  {
+   "index": 4,
+   "global": "texGrass",
+   "name": "grass",
+   "seed": 1004,
+   "size": [512,512],
+   "sha256": "c3e9ae49d075d8601f998af2cbce4d51f2d763068d19528de51c0e85022ef0ff"
+  },
+  {
+   "index": 5,
+   "global": "texGlass",
+   "name": "glass",
+   "seed": 1005,
+   "size": [256,256],
+   "sha256": "193fc63475ca8cc5fbde1a74cee3873eb57e87ed6d93a673ce2d6e95f1f8e24e"
+  },
+  {
+   "index": 6,
+   "global": "texRoofMetal",
+   "name": "roofMetal",
+   "seed": 1006,
+   "size": [512,512],
+   "sha256": "78f2900b3553f9e845031fef574a2778c15a84ef03b6113b5009f9babf6f36da"
+  },
+  {
+   "index": 7,
+   "global": "texRoofCap",
+   "name": "roofCap",
+   "seed": 1007,
+   "size": [256,256],
+   "sha256": "9c09511ee6e6baff7fa4f75d647737895221770f6d9267ec225978d61f952102"
+  },
+  {
+   "index": 8,
+   "global": "texAO",
+   "name": "ao",
+   "seed": 1008,
+   "size": [256,256],
+   "sha256": "30ab5ba9437d66c9aa8f0235afdad2d6051259b30e20e988fa30a953481e2375"
+  },
+  {
+   "index": 9,
+   "global": "texAOv",
+   "name": "aoV",
+   "seed": 1009,
+   "size": [64,64],
+   "sha256": "c9aaff6b5a47c20e3e914199500066487945798c8dd0cfeae4a9d4d1b8e2c5cc"
+  },
+  {
+   "index": 10,
+   "global": "texAOcorner",
+   "name": "aoCorner",
+   "seed": 1010,
+   "size": [64,64],
+   "sha256": "375b039a90f0c811acb194aac6bbfe607e0883cdb0e92159d2e8880c5b41a72e"
+  }
+ ],
+ "proof": "Identical on every one of the 148 page loads of a full capture (one fresh page per case)."
+}

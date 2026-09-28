@@ -1,0 +1,186 @@
+{
+  "id": "learning-side-loft",
+  "status": "active",
+  "manufacturer": "standard",
+  "brand": {
+    "name": "Side Loft Learning Example",
+    "short": "10 x 16 Side Loft",
+    "initials": "SL",
+    "tagline": "Learn the building terms",
+    "phone": "",
+    "email": "",
+    "website": "",
+    "colors": {
+      "header": "#1F2A24",
+      "accent": "#B8893A"
+    },
+    "logo": "",
+    "credit": {
+      "text": "3D designer by Barnwright",
+      "url": "",
+      "show": true
+    }
+  },
+  "offer": {
+    "SLB": {
+      "sizes": {
+        "10x16": 1
+      }
+    }
+  },
+  "categories": [
+    [
+      "Learning example",
+      [
+        "SLB"
+      ]
+    ]
+  ],
+  "items": {
+    "w72": 1,
+    "w23": 1
+  },
+  "options": {},
+  "palettes": {
+    "paint": [
+      "White",
+      "Beige",
+      "Gray",
+      "Barn Red",
+      "Navy"
+    ],
+    "trim": [
+      "White",
+      "Black"
+    ],
+    "metal": [
+      "Galvalume",
+      "Black",
+      "Barn Red"
+    ]
+  },
+  "defaults": {
+    "style": "SLB",
+    "size": "10x16",
+    "colors": {
+      "body": "White",
+      "trim": "Black",
+      "roof": "Black"
+    }
+  },
+  "construction": {
+    "wallStudy": {
+      "stud": { "nominal": "2x4", "widthIn": 1.5, "depthIn": 3.5, "lengthIn": 75 },
+      "plates": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5 },
+      "spacingIn": 16, "doubleEveryIn": 48, "layoutOriginIn": 0, "pairReference": "joint",
+      "endSetbacksIn": { "side": { "frame": 3.5, "upperPlate": 0 }, "end": { "frame": 0, "upperPlate": 3.5 } },
+      "status": {
+        "studSection": "confirmed", "plateSection": "confirmed", "studLength": "confirmed",
+        "spacing": "confirmed", "doubleInterval": "confirmed", "pairPlacement": "confirmed", "wallNames": "confirmed",
+        "layoutDatum": "provisional", "plateLengths": "derived", "wallPlacement": "provisional", "treatment": "provisional",
+        "frameSetbacks": "confirmed", "upperPlateSetbacks": "confirmed", "cornerLap": "confirmed"
+      }
+    },
+    "floorStudy": {
+      "skids": {
+        "nominal": "4x6", "widthIn": 3.5, "heightIn": 5.5, "lengthFt": 16, "insetToInsideIn": 30, "treated": true,
+        "bottomCuts": { "reachIn": 3, "angleDeg": 45 }
+      },
+      "joists": { "nominal": "2x6", "widthIn": 1.5, "heightIn": 5.5, "spacingIn": 16 },
+      "frame": {
+        "widthFt": 10, "sideBoardWidthIn": 1.5, "endCounts": { "negative": 2, "positive": 1 }, "treated": true,
+        "backing": { "nominal": "2x4", "widthIn": 3.5, "heightIn": 1.5, "lengthIn": 93, "end": "negative", "treated": true, "purpose": "mule-attachment" }
+      },
+      "deck": {
+        "sheetWidthFt": 4, "sheetLengthFt": 8, "thicknessIn": 0.625, "layers": 1,
+        "tongueAndGroove": true, "staggerFt": 4, "orientation": "lengthwise", "coverage": "frame"
+      },
+      "notches": {
+        "depthIn": 1, "widthIn": 1.5, "alternateSpacingIn": 12,
+        "endRebates": {
+          "negative": { "lengthIn": 3, "depthIn": 1 },
+          "positive": { "lengthIn": 1.5, "depthIn": 1 }
+        }
+      },
+      "status": {
+        "skidSection": "confirmed", "skidLength": "confirmed", "skidTreatment": "confirmed",
+        "joistSection": "confirmed", "standardSpacing": "confirmed",
+        "alternateSpacing": "confirmed", "notchDepth": "confirmed",
+        "notchWidth": "provisional", "notchPositions": "provisional",
+        "supportOffset": "confirmed", "supportLayout": "provisional", "frameFootprint": "provisional",
+        "rimSection": "provisional", "deck": "provisional",
+        "endRebates": "confirmed", "endMemberPlacement": "derived", "bottomCuts": "confirmed",
+        "frameWidth": "confirmed", "sideBoardWidth": "confirmed", "joistLength": "derived",
+        "endBoardCounts": "confirmed", "endBoardMapping": "derived", "frameTreatment": "confirmed",
+        "backingSection": "confirmed", "backingOrientation": "confirmed", "backingTreatment": "confirmed",
+        "backingLocation": "confirmed", "backingLength": "confirmed",
+        "backingLateralPosition": "provisional", "backingPurpose": "confirmed",
+        "deckSheetSize": "confirmed", "deckThickness": "confirmed", "deckTongueAndGroove": "confirmed",
+        "deckStagger": "confirmed", "deckStaggerOffset": "confirmed", "deckOrientation": "confirmed",
+        "deckTrimLastRow": "confirmed", "deckFootprint": "derived", "deckLayers": "provisional", "deckEdgeProfile": "provisional"
+      }
+    }
+  },
+  "pricing": {
+    "show": "none",
+    "roundTo": 5,
+    "minCharge": 5,
+    "roofAreaFactor": 1.15,
+    "rto": {
+      "factors": {
+        "36": 0.6,
+        "48": 0.53,
+        "60": 0.45
+      },
+      "showTerm": null
+    }
+  },
+  "notes": {
+    "finePrint": "Learning example only. Prices are not configured.",
+    "sizeNotes": {}
+  },
+  "leads": {
+    "mode": "none",
+    "url": "",
+    "fields": {
+      "name": "required",
+      "phone": "required",
+      "email": "optional",
+      "zip": "required",
+      "address": "optional",
+      "note": "optional"
+    },
+    "smsConsent": null,
+    "images": false
+  },
+  "embed": {
+    "origins": [],
+    "shareUrl": ""
+  },
+  "look": {
+    "trueColour": true,
+    "scene": "studio"
+  },
+  "features": {
+    "framingView": false,
+    "buildPlayback": false,
+    "floorPlan": true
+  },
+  "license": {
+    "plan": "hosted",
+    "renews": ""
+  },
+  "renames": {
+    "items": {},
+    "sizes": {},
+    "colors": {}
+  },
+  "cfg": 1,
+  "_help": [
+    "LEARNING EXAMPLE, not a customer price list. The numeric prices are $1 placeholders required by the model; do not copy them into a customer quote.",
+    "Alan confirmed: side loft means Side Lofted Barn (SLB), with the entrance on the long wall. See docs/BUILDING-TERMS.md and docs/examples/10x16-side-loft.md.",
+    "The floor lesson uses Alan's confirmed skid and crosswise member sizes, 1 inch seating, 16/12 inch spacing and 30 inches from outside wall to inside skid face. Cut clearance, first notch offsets and remaining layout details are pending.",
+    "The finished reference retains existing standard geometry and unconfirmed assumptions, including 4 ft lofts at both ends.",
+    "Alan's current lesson starts with the floor at learn.html?company=learning-side-loft and proceeds manually. The regular designer remains a finished-building reference."
+  ]
+}

@@ -1,0 +1,72 @@
+import { floorMeasurements, formatFeetInches as length, formatInches as inches } from "../model/floor-measurements.js";
+
+/* Readouts follow visibility and the same member data as the drawing.
+   Confirmed shop facts are separate from remaining layout assumptions. */
+export function createMeasurementReadout(list,note,plan,{joistsOnly=false}={}) {
+  const m=floorMeasurements(plan);
+  function update(selection) {
+    list.replaceChildren();
+    const selected=new Set(selection),rows=[],notes=[];
+    if(selected.has("supports") && !selected.has("deck")) {
+      rows.push(["Each skid · confirmed length",length(m.supports.lengthFt)],
+        ["Skid material · confirmed",plan.floorStudy.skids.treated?"Treated wood":"To confirm"],
+        ["Skid · nominal → actual",`${m.supports.nominalLumber} → ${inches(m.supports.widthFt)} × ${inches(m.supports.depthFt)}`],
+        ["Notch depth · confirmed",inches(m.supports.notchDepthFt)],
+        ["Spacing · confirmed options",`${m.frame.nominalSpacingIn} in on center standard / ${plan.floorStudy.notches.alternateSpacingIn} in option`],
+        ["Skids shown · count still to confirm",`${m.supports.count} pieces`],
+        ["Outside wall → inside skid face · confirmed",inches(m.supports.insetCentersFt[0].nearestInsideFaceFt)],
+        ["Outside wall → skid center · calculated",inches(m.supports.insetCentersFt[0].nearestSideFt)]);
+      notes.push("Inside face means the side of the skid facing the middle of the floor. Notch width is drawn to fit the 1½-inch member; cutting clearance and the first notch position still need confirmation.");
+      const ends=plan.floorStudy.notches.endRebates;
+      if(ends) {
+        rows.push(["Open end notches · confirmed",`${inches(ends.negative.lengthFt)} / ${inches(ends.positive.lengthFt)} long`],
+          ["Both end notches · confirmed depth",inches(ends.negative.depthFt)]);
+        notes.push("The end notches remain at seat height all the way to the tips, with no raised lip.");
+      }
+      const bottomCut=m.supports.bottomCuts?.[0];
+      if(bottomCut) {
+        rows.push(["Both bottom end cuts · confirmed",`${bottomCut.angleDeg}° · ${inches(bottomCut.reachFt)} back from each tip`],
+          ["Bottom cut rise · calculated",inches(bottomCut.riseFt)]);
+        notes.push(`The ${bottomCut.angleDeg}° cuts remove the bottom corners. The ${inches(bottomCut.reachFt)} reach gives a ${inches(bottomCut.riseFt)} rise toward each tip.`);
+      }
+    }
+    if(selected.has("frame") && !selected.has("deck")) {
+      rows.push(["Floor joist · nominal → actual",`${m.frame.nominalJoist} → ${inches(m.frame.joist.widthFt)} × ${inches(m.frame.joist.depthFt)}`],
+        ["Seated below the skid top · confirmed",inches(m.supports.notchDepthFt)],
+        ["Floor joist length · from outside width",`${inches(m.frame.joist.lengthFt)} (${length(m.frame.joist.lengthFt)})`],
+        ["Floor boards · confirmed material",plan.floorStudy.frame?.treated?"Treated wood":"To confirm"],
+        ["Regular centers · confirmed",`${m.frame.nominalSpacingIn} in on center`]);
+      if(!joistsOnly) {
+        rows.push(["Outside floor width · confirmed",inches(m.frame.widthFt)],
+          ["Each outer board · confirmed thickness",inches(m.frame.sideBoardWidthFt)]);
+        for(const group of Object.values(m.frame.endGroups || {})) rows.push([
+          group.count===2?"One end · confirmed arrangement":"Other end · confirmed arrangement",
+          group.count===2?"2 boards, touching":`${group.count} board`]);
+        if(m.frame.backing) {
+          rows.push(["Flat treated 2×4 · confirmed section",`${inches(m.frame.backing.widthFt)} wide × ${inches(m.frame.backing.depthFt)} tall`],
+            ["Flat 2×4 · confirmed position","Behind the two end boards, resting on skid tops"],
+            ["Board the mule hooks onto · confirmed length",`${inches(m.frame.backing.lengthFt)} (${length(m.frame.backing.lengthFt)})`]);
+          notes.push("This is the board the mule hooks onto to drag the barn. Its centered position across the floor is shown for illustration and still needs confirmation.");
+        }
+      }
+      notes.push("Joist length is the outside width minus the two outer-board thicknesses: 120 − 1½ − 1½ = 117 inches. The first regular joist position still needs confirmation.");
+      if(!joistsOnly) notes.push("Outer board and end board describe positions. Their technical names, outer-board height and length, and remaining end placement are not separate confirmed measurements.");
+    }
+    if(selected.has("deck")) {
+      const sheet=m.deck.representative;
+      rows.push(["Flooring · confirmed stock",`${length(sheet.stockAcrossFt)} × ${length(sheet.stockAlongFt)} tongue-and-groove`],
+        ["Flooring · confirmed thickness",Math.abs(sheet.thicknessFt*12-.625)<1e-8?"5/8 in":inches(sheet.thicknessFt)],
+        ["Flooring in this drawing",`${m.deck.sheets.length} pieces · ${m.deck.layers} layer`]);
+      for(const row of m.deck.rows || []) rows.push([
+        `Row ${row.row+1} · ${row.trimmed?"trimmed width, calculated":"stock width"}: ${length(row.widthFt)}`,
+        row.sheets.map(s=>length(s.alongFt)).join(" + ")]);
+      notes.push("Staggered means the middle row's end seams are offset from those in the neighboring rows. Its lengths are 4 ft + 8 ft + 4 ft. The last row's 2 ft width is calculated: 10 ft − 4 ft − 4 ft. Lines show the sheet joints; no installation gap or tongue-and-groove profile dimensions are implied. Remove Flooring above to see the frame beneath.");
+    }
+    for(const [title,value] of rows) {
+      const item=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");
+      dt.textContent=title; dd.textContent=value; item.append(dt,dd); list.appendChild(item);
+    }
+    note.textContent=selection.length?notes.join(" "):"Select a piece to see its measurements.";
+  }
+  return {update};
+}

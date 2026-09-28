@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Look check harness</title>
+<link rel="icon" href="data:,">
+<!-- THE PAGE THE PICTURE CHECK DRAWS ON (tools/check-look.mjs).
+
+     What it is for, in plain words: Barnwright's 3D designer drew 24
+     buildings, and those pictures are kept in test/golden/look/. This page
+     draws the same buildings with OUR engine, exactly the way Barnwright's
+     page drew them, so the check can lay the two pictures on top of each
+     other and count the pixels that differ (the goal is none at all).
+
+     "Exactly the way" means (test/golden/README.md, "The look pictures"):
+       * a 3D picture 742 x 803 CSS pixels (Barnwright's canvas on a
+         1440 x 900 window), drawn 1.5 times bigger (1113 x 1204) and read
+         back at that size;
+       * Barnwright's camera fit ("barnwright"), its opening angle
+         (yaw 0.62, pitch 0.215) at exactly the fitted distance;
+       * shadows forced on, the sharpness capped at 2, the two "is this
+         device too slow?" watchdogs frozen, no opening spin;
+       * the studio scene, the warm Barnwright shader (true colour off);
+       * the eleven surface pictures painted with the same repeatable
+         "random" numbers Barnwright's were painted with for the recording
+         (engine/seeded.js);
+       * the picture read with canvas.toDataURL("image/png") in the same
+         step as the draw -- the canvas forgets its picture as soon as the
+         browser shows it.
+     Our engine's FIRST draw after showing a building is compared, because
+     that is what a customer sees (Barnwright needed two, see
+     docs/DIFFERENCES.md #1); the check also asks for a second draw and
+     proves it is the same picture.
+
+     The check hands this page the buildings to draw. The Barnwright company
+     (Barnwright's exact tables, tools/lib/barnwright-company.mjs) is served
+     to it as JSON at tools/look-data/barnwright.json by the check itself;
+     that file does not exist on disk. The demo company is loaded the way the
+     real designer loads it (ui/load.js).
+
+     window.look (all used by tools/lib/look-page.mjs):
+       ready                     resolves once the page is set up
+       loadServed(name, url)     fetch {company, manufacturer, library} as
+                                 JSON and keep the resolved catalogue as `name`
+       loadCompany(id)           a company from companies/<id>/ (ui/load.js)
+       defaultState(name)        that company's opening building (model/design.js)
+       draw(opts)                draw one building and read the picture back
+       rebuildTime(opts)         how long a Finished-view rebuild takes
+       textures()             the SHA-256 of every surface picture our
+                                 renderers sent to the graphics card
+     Opening this page by hand shows an empty box: it waits to be driven. -->
+<style>
+  html,body{margin:0;background:#E9E9E5;font:13px system-ui,sans-serif;color:#333}
+  #box{position:absolute;left:0;top:0;width:742px;height:803px}
+  #box canvas{position:absolute;left:0;top:0;width:100%;height:100%;display:block}
+  #status{position:absolute;left:760px;top:10px;max-width:600px}
+</style>
+</head>
+<body>
+<div id="box"></div>
+<p id="status">Setting up...</p>
+<script type="module">
+import { createRenderer, stageTableFor } from "../engine/renderer.js";
+import { assemble } from "../engine/assemble.js";
+import { makePlan } from "../model/plan.js";
+import { resolve } from "../model/company.js";
+import { defaults, normalize } from "../model/design.js";
+import { frameOf } from "../model/frame.js";
+import { loadCompany as loadCompanyFiles } from "../ui/load.js";
+import { esc } from "../ui/esc.js";
+
+const box = document.getElementById("box");
+const statusEl = document.getElementById("status");
+function say(text) { statusEl.innerHTML = esc(text); }
+
+/* Every surface picture any of our renderers uploads (the 6-argument
+   texImage2D with an ImageData is the one mkTex uses), kept so the check can
+   prove they are the exact bytes Barnwright painted (test/golden/textures.json).
+   Hooked before any renderer exists. Each upload remembers WHICH graphics
+   context it went to, and textures() names it afterwards by matching that
+   context to a renderer. (This page must never ask for the context itself
+   before the renderer does: the browser keeps the settings of the FIRST
+   request, so asking first would hide any change to engine/gl.js's settings
+   -- antialiasing, see-through -- from this check.) */
+const uploads = [];
+const origTexImage2D = WebGLRenderingContext.prototype.texImage2D;
+WebGLRenderingContext.prototype.texImage2D = function texImage2D() {
+  const src = arguments[arguments.length - 1];
+  if (arguments.length === 6 && src instanceof ImageData) {
+    uploads.push({ gl: this, w: src.width, h: src.height, data: new Uint8Array(src.data) });
+  }
+  return origTexImage2D.apply(this, arguments);
+};
+
+const catalogues = {};
+
+/* One renderer per shader: the warm Barnwright one, and the true-colour one.
+   Each has its own canvas in the box, both the box's size. */
+const renderers = {};
+function rendererFor(trueColour) {
+  const key = trueColour ? "true" : "warm";
+  if (renderers[key]) return renderers[key];
+  const cv = document.createElement("canvas");
+  cv.setAttribute("data-shader", key);
+  box.appendChild(cv);
+  /* the renderer asks for its own graphics context, with the product's own settings (engine/gl.js) */
+  const r = createRenderer(cv, { trueColour, scene: "studio", seededTextures: true });
+  r.test.freezeWatchdog = true;
+  r.test.forceShadow = true;
+  r.test.dprCap = 2;
+  r.cam.autoSpin = false;
+  r.cam.interacted = true;
+  renderers[key] = { r, canvas: cv };
+  return renderers[key];
+}
+
+function glErrors(gl) {
+  const out = [];
+  for (let e = gl.getError(), n = 0; e && n < 16; e = gl.getError(), n++) out.push(e);
+  return out;
+}
+
+async function loadServed(name, url) {
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("Could not load " + url + " (the server said " + res.status + ").");
+  const d = await res.json();
+  catalogues[name] = resolve(d.company, d.manufacturer, d.library);
+  say("Loaded " + name + ".");
+  return Object.keys(catalogues[name].TYPES).length;
+}
+
+async function loadCompany(id) {
+  const r = await loadCompanyFiles(id);
+  if (r.problems.length) throw new Error("The settings for " + id + " have problems: " + r.problems.join("; "));
+  catalogues[id] = r.catalogue;
+  say("Loaded " + id + ".");
+  return { look: r.catalogue.look, styles: Object.keys(r.catalogue.TYPES).length };
+}
+
+/* The company's opening building, as the designer page starts it
+   (ui/app.js: defaults, then the rules). */
+function defaultState(name) {
+  const cat = catalogues[name];
+  const s = defaults(cat);
+  normalize(s, frameOf(s, cat), cat);
+  return JSON.parse(JSON.stringify(s));
+}
+
+/* Draw one building and read the picture back, all in one step.
+   opts: { company, state, size: {w, h}, fit, scene, trueColour,
+           camera: {yaw, pitch, distOverFit}, stages: "finished" | null,
+           again: true (draw a second time and say whether it is the same) } */
+function draw(o) {
+  const cat = catalogues[o.company];
+  if (!cat) throw new Error("No company called " + o.company + " is loaded.");
+  box.style.width = o.size.w + "px";
+  box.style.height = o.size.h + "px";
+  const t0 = performance.now();
+  const plan = makePlan(o.state, cat);
+  const result = assemble(plan, { viewport: { w: o.size.w, h: o.size.h }, fit: o.fit, scene: o.scene, trueColour: !!o.trueColour, frames: false });
+  const tBuilt = performance.now();
+  const { r, canvas } = rendererFor(!!o.trueColour);
+  for (const k of Object.keys(renderers)) renderers[k].canvas.style.visibility = renderers[k].r === r ? "visible" : "hidden";
+  r.setScene(o.scene);
+  r.setStages(o.stages === "finished" ? stageTableFor("finished") : null);
+  r.show(result);
+  r.cam.yaw = o.camera.yaw;
+  r.cam.pitch = o.camera.pitch;
+  r.cam.dist = r.cam.fitDist * o.camera.distOverFit;
+  const before = glErrors(r.gl);
+  const drew = r.draw();
+  const png = canvas.toDataURL("image/png");
+  const first = glErrors(r.gl);
+  const tDrawn = performance.now();
+  let againSame = null, second = [];
+  if (o.again) {
+    r.draw();
+    againSame = canvas.toDataURL("image/png") === png;
+    second = glErrors(r.gl);
+  }
+  let tris = 0;
+  for (const k of result.build.ORDER) tris += result.build.buckets[k].n / 3;
+  say("Drew " + o.state.type + " " + o.state.size + ".");
+  return {
+    png, drew, againSame,
+    glErrors: { before, first, second },
+    canvas: { width: canvas.width, height: canvas.height, clientWidth: canvas.clientWidth, clientHeight: canvas.clientHeight },
+    fitDist: result.fitDist, gr: result.gr, camera: { yaw: r.cam.yaw, pitch: r.cam.pitch, dist: r.cam.dist, fitDist: r.cam.fitDist },
+    hasShadow: r.hasShadow, materials: result.build.ORDER.length, triangles: tris,
+    contextAttributes: r.gl.getContextAttributes ? r.gl.getContextAttributes() : null,
+    ms: { build: Math.round(tBuilt - t0), draw: Math.round(tDrawn - tBuilt) },
+  };
+}
+
+/* How long a Finished-view REBUILD takes (what every colour tap and drag tick
+   costs): the plan, every part drawn (assemble) and the result sent to the
+   graphics card (show) -- Barnwright's buildShed. Not the draw itself.
+   opts as draw(); runs = how many to time after one warm-up. -> ms, each run. */
+function rebuildTime(o) {
+  const cat = catalogues[o.company];
+  const { r } = rendererFor(!!o.trueColour);
+  const times = [];
+  for (let i = 0; i <= (o.runs || 7); i++) {
+    const t0 = performance.now();
+    const plan = makePlan(o.state, cat);
+    const result = assemble(plan, { viewport: { w: o.size.w, h: o.size.h }, fit: o.fit, scene: o.scene, trueColour: !!o.trueColour, frames: false });
+    r.show(result);
+    const dt = performance.now() - t0;
+    if (i > 0) times.push(dt);
+  }
+  return times;
+}
+
+async function textures() {
+  const hex = (buf) => Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, "0")).join("");
+  const out = [];
+  const whose = (gl) => Object.keys(renderers).find((k) => renderers[k].r.gl === gl) || "?";
+  for (const u of uploads) out.push({ context: whose(u.gl), w: u.w, h: u.h, sha256: hex(await crypto.subtle.digest("SHA-256", u.data)) });
+  return out;
+}
+
+window.look = { loadServed, loadCompany, defaultState, draw, rebuildTime, textures, ready: Promise.resolve(true) };
+say("Ready: waiting for the look check to hand over a building.");
+</script>
+</body>
+</html>

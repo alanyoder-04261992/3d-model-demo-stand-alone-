@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!-- UNDER /c/<company>/ (the address embed.js opens -- a rewrite to this page)
+     every file of the designer would be looked for inside /c/<company>/ and
+     not found. This puts the page's base back at the folder above /c/, and
+     only THEN writes in the stylesheet (and, at the end of the page, the
+     designer's script): the browser reads ahead for addresses the moment the
+     page arrives, before any script runs, so a relative address written
+     plainly in this file would be fetched from the wrong folder first. At the
+     site's root the base is left alone. -->
+<script>(function(){var m=/^(.*\/)c\/[a-z0-9-]{2,40}\/?$/.exec(location.pathname);if(m){var b=document.createElement("base");b.href=m[1];document.head.appendChild(b);}document.write('<link rel="stylesheet" href="ui/styles.css">');})();</script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>3D Shed Designer</title>
+<meta name="description" content="Design your shed in 3D: pick a style and size, choose colours, place doors and windows, and see the price as you go.">
+<meta name="theme-color" content="#0A2C49">
+<!-- THE DESIGNER. What is on this page, top to bottom (Barnwright's
+     3ddesign.html layout, lines 400-598):
+       the header        the company's badge (initials or logo), name and tagline
+       the stage         the 3D building (canvas#c3d), the floor plan (canvas#bp,
+                         drawn by ui/blueprint.js), the hint, the "Add here"
+                         menu, the camera views, the price plate
+       the Inside button calls window.shedUI.onInside (ui/blueprint.js)
+       the sheet         the selected door or window
+       the cards         1 building, 2 size, 3 colours, 4 doors & windows,
+                         5 inside & upgrades, 6 your quote
+     MOUNT POINTS for the pieces other files add (see ui/app.js, "PLUGINS"):
+       #view-mount   Outside / Inside / Framing / Build switcher (ui/views.js)
+       #bp           the floor-plan canvas (ui/blueprint.js)
+       #quote-mount  the quote form and sending it (ui/quote.js)
+       #share-mount  the share-my-design link (ui/share.js)
+     Nothing on this page is filled in by hand: ui/app.js loads the company's
+     settings first (?company=<id>, or /c/<id>/, default "demo") and then
+     draws every card from them. Without JavaScript nothing works; the note
+     below says so. -->
+</head>
+<body>
+<noscript><div class="bootmsg"><div class="card"><h3>3D Shed Designer</h3><p>This designer needs JavaScript switched on.</p></div></div></noscript>
+<header class="hdr" id="hdr">
+  <div class="wkbadge" id="brand-badge"></div>
+  <div>
+    <div class="t1" id="brand-name"></div>
+    <div class="t2" id="brand-tagline">3D Shed Designer — build it your way</div>
+  </div>
+</header>
+
+<div class="layout" id="layout">
+  <div class="stagewrap">
+    <div class="stage" id="stage">
+      <canvas id="c3d" aria-label="The building in 3D"></canvas>
+      <canvas id="bp" aria-label="Floor plan"></canvas>
+      <div class="viewmount" id="view-mount"></div>
+      <div class="hint" id="hint">Drag to spin · tap an item, then drag it to move it</div>
+      <div class="stagenote" id="stagenote" hidden></div>
+      <div class="addpop" id="addpop"></div>
+      <div class="views" id="views" aria-label="Camera views">
+        <button class="vtog" id="viewtoggle" type="button">View ▾</button>
+        <div class="vmenu" id="viewmenu">
+          <button type="button" data-v="34">¾ View</button>
+          <button type="button" data-v="F">Front</button>
+          <button type="button" data-v="R">Right</button>
+          <button type="button" data-v="B">Back</button>
+          <button type="button" data-v="L">Left</button>
+        </div>
+      </div>
+      <div class="plate" id="plate"><span class="rv"></span>
+        <div class="l1"><span id="plate-brand"></span> · Spec</div>
+        <div class="l2" id="platename"></div>
+        <div class="l3"><span class="price" id="plateprice"></span><span class="sample"><span id="platesample">plus tax</span><span class="rto" id="platerto"></span></span></div>
+      </div>
+    </div>
+    <button class="modebar" id="modebar" type="button"><b>Inside</b> &mdash; floor plan &#9656;</button>
+    <div class="sheet" id="sheet">
+      <div class="srow"><span class="stitle" id="sh-title">Door</span><span class="sprice" id="sh-price"></span></div>
+      <select id="sh-type" aria-label="Type"></select>
+      <div class="tglrow" id="sh-wallrow" style="display:none">
+        <span>Wall</span>
+        <div class="wallchips" id="sh-walls"></div>
+      </div>
+      <div class="tglrow" id="sh-rotrow" style="display:none">
+        <span>Turn 90&#176;</span>
+        <button class="tgl" id="sh-rot" type="button" role="switch" aria-label="Turn 90 degrees"></button>
+      </div>
+      <div class="tglrow" id="sh-lenrow" style="display:none">
+        <span>Length</span>
+        <div class="lenctl">
+          <button id="sh-len-m" type="button" aria-label="Shorter">&#8722;</button>
+          <b id="sh-lenv">4 ft</b>
+          <button id="sh-len-p" type="button" aria-label="Longer">+</button>
+        </div>
+      </div>
+      <div class="tglrow" id="sh-shutrow" style="display:none">
+        <span>Shutters</span><span class="pr" id="sh-shutpr"></span>
+        <button class="tgl" id="sh-shut" type="button" role="switch" aria-label="Shutters"></button>
+      </div>
+      <div class="swrow" id="sh-shutcrow" style="display:none">
+        <span class="lbl">Shutter color</span>
+        <div class="swcol"><div class="swname" id="nm-sh-shutc"></div><div class="sws" id="sh-shutc"></div></div>
+      </div>
+      <div class="tglrow" id="sh-dblrow" style="display:none">
+        <span>Double window</span><span class="pr" id="sh-dblpr"></span>
+        <button class="tgl" id="sh-dbl" type="button" role="switch" aria-label="Double window"></button>
+      </div>
+      <div class="tglrow" id="sh-literow" style="display:none">
+        <span>Window in door</span><span class="pr" id="sh-litepr"></span>
+        <button class="tgl" id="sh-lite" type="button" role="switch" aria-label="Window in door"></button>
+      </div>
+      <div class="swrow" id="sh-doorcrow" style="display:none">
+        <span class="lbl">Door color</span>
+        <div class="swcol"><div class="swname" id="nm-sh-doorc"></div><div class="sws" id="sh-doorc"></div></div>
+      </div>
+      <div class="shint">Selected — drag it on the building to slide it, or jump it to another wall above.</div>
+      <div class="sbtns">
+        <button id="sh-dup" type="button">Duplicate</button>
+        <button id="sh-del" type="button" class="warn">Remove</button>
+        <button id="sh-done" type="button" class="done">Done</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="wrap" id="wrap">
+    <section class="card" id="card-building">
+      <h3><span class="no">1</span>Pick your building</h3>
+      <select class="catsel" id="catsel" aria-label="Building category"></select>
+      <div class="chips" id="typechips"></div>
+      <div class="dormerrow" id="dormerrow" style="display:none">
+        <div class="lbl">Dormer</div>
+        <div class="chips" id="dormerchips"></div>
+      </div>
+    </section>
+
+    <section class="card" id="card-size">
+      <h3><span class="no">2</span>Size</h3>
+      <div class="chips" id="sizechips"></div>
+      <div class="sizenote" id="sizenote"></div>
+      <div class="dormerrow" id="porchrow" style="display:none">
+        <div class="lbl">Porch</div>
+        <div class="chips" id="porchchips"></div>
+        <div class="sizenote" id="porchnote"></div>
+      </div>
+    </section>
+
+    <section class="card" id="card-colors">
+      <h3><span class="no">3</span>Colors</h3>
+      <div class="swrow"><span class="lbl" id="sidlbl">Siding</span>
+        <div class="swcol"><div class="swname" id="nm-body"></div><div class="sws" id="sw-body"></div></div></div>
+      <div class="swrow"><span class="lbl">Trim</span>
+        <div class="swcol"><div class="swname" id="nm-trim"></div><div class="sws" id="sw-trim"></div></div></div>
+      <div class="swrow"><span class="lbl">Doors</span>
+        <div class="swcol"><div class="swname" id="nm-doorC"></div><div class="sws" id="sw-door"></div></div></div>
+      <div class="swrow"><span class="lbl">Shutters</span>
+        <div class="swcol"><div class="swname" id="nm-shutC"></div><div class="sws" id="sw-shut"></div></div></div>
+      <div class="swrow"><span class="lbl">Roof</span>
+        <div class="swcol"><div class="swname" id="nm-roof"></div><div class="sws" id="sw-roof"></div></div></div>
+    </section>
+
+    <section class="card" id="card-items">
+      <h3><span class="no">4</span>Doors &amp; windows</h3>
+      <div class="addbtns">
+        <button class="addbtn" id="add-door" type="button">+ Add door</button>
+        <button class="addbtn" id="add-win" type="button">+ Add window</button>
+        <button class="addbtn" id="add-ru" type="button">+ Add roll-up</button>
+        <button class="addbtn" id="add-post" type="button" style="display:none">+ Add post</button>
+        <button class="addbtn" id="add-light" type="button">+ Add light</button>
+      </div>
+      <p class="itemhint">Tap any door or window to select it — the camera turns to face it. Then drag it to move it, or use the wall buttons to jump it to another side.</p>
+      <div id="itemlist"></div>
+    </section>
+
+    <section class="card" id="insidecard">
+      <h3><span class="no">5</span>Inside &amp; upgrades</h3>
+      <div class="addbtns" id="insidebtns">
+        <button class="addbtn" id="add-bench" type="button">+ Work bench</button>
+        <button class="addbtn" id="add-shelf" type="button">+ Shelf</button>
+      </div>
+      <p class="itemhint" id="insidehint">Tap Inside under the 3D view for the floor plan — press &amp; hold on it to add things right where you want them. Work benches are 2 ft deep, shelves 1 ft.</p>
+      <div class="dormerrow" id="elecrow">
+        <div class="lbl">Electric package</div>
+        <div class="chips" id="elecchips"></div>
+        <div class="optrow" id="extlrow" style="display:none"><span>Exterior light + dual switch</span><span class="opr" id="opr-ext"></span><button class="tgl" id="opt-ext" type="button" role="switch" aria-label="Exterior light"></button></div>
+        <div class="sizenote" id="elecnote"></div>
+      </div>
+      <div class="dormerrow" id="ramprow">
+        <div class="lbl">Ramp</div>
+        <div class="chips" id="rampchips"></div>
+      </div>
+      <div id="optrows"></div>
+      <div id="xoptrows"></div>
+    </section>
+
+    <section class="card" id="quotecard">
+      <h3><span class="no">6</span>Your quote</h3>
+      <div id="sum"></div>
+      <!-- ui/quote.js fills this with the quote form and sends it. -->
+      <div id="quote-mount"></div>
+      <!-- ui/share.js puts the "share my design" link here. -->
+      <div id="share-mount"></div>
+      <p class="qnote" id="fineprint"></p>
+    </section>
+    <p class="credit" id="credit"></p>
+  </main>
+</div>
+
+<script>document.write('<script type="module" src="ui/app.js"><\/script>');</script>
+</body>
+</html>

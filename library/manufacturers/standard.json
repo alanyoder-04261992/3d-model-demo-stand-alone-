@@ -1,0 +1,415 @@
+{
+  "_help": [
+    "THE STANDARD PORTABLE-BUILDING LINE, as Barnwright's 3D designer draws it. What a builder MAKES, shared by every dealer that sells it. NO PRICES live here: every price is in a company's own file.",
+    "styles: each style's name, category, roof shape (gable gambrel salt lean slope), wall height in feet, flags (metal, dormer, porch F/S/C, side), traits (kennel, cottage, gambrel shoulders, gableVent, gableBand, rakeOverhang, loft) and loadout (which standard doors and windows it comes with).",
+    "loft {ends, depthFt}: which gable ends carry a loft and how deep it is. depthFt 4 at both ends is an ASSUMPTION the owner must confirm (Barnwright never drew a loft).",
+    "items: every door, window and fixture: name, kind (door ru win light bench shelf out ilt post), draw (which drawing module draws it), w and h in feet (door widths are the shop's rough openings), leaves, and flags. 'sill' is recorded only because Barnwright's table has it; nothing reads it (a window's height comes from the window-top rule).",
+    "palettes: colours as [name, hex]. 'metal' is both the roof colours for every building and the siding colours for metal styles, exactly as in Barnwright.",
+    "options: which dormers, ramps, electrical packages, odds and ends and per-square-foot upgrades exist, what they are called, and what they change in the construction. No prices.",
+    "Numbers and names here were read live from Barnwright's page (test/golden/barnwright-catalogue.json)."
+  ],
+  "id": "standard",
+  "name": "Standard portable-building line (as drawn by Barnwright)",
+  "styles": {
+    "UT": {
+      "name": "Utility Shed",
+      "category": "Utility & Storage",
+      "roof": "gable",
+      "wallH": 7.75,
+      "loadout": "barnwright:UT"
+    },
+    "SU": {
+      "name": "Side Utility",
+      "category": "Utility & Storage",
+      "roof": "gable",
+      "wallH": 7.75,
+      "side": true,
+      "loadout": "barnwright:SU"
+    },
+    "DS": {
+      "name": "Dormer Shed",
+      "category": "Utility & Storage",
+      "roof": "gable",
+      "wallH": 7.75,
+      "dormer": true,
+      "side": true,
+      "loadout": "barnwright:DS"
+    },
+    "BU": {
+      "name": "Backyard Utility",
+      "category": "Utility & Storage",
+      "roof": "lean",
+      "wallH": 6.9,
+      "side": true,
+      "loadout": "barnwright:BU"
+    },
+    "GU": {
+      "name": "Garden Utility",
+      "category": "Utility & Storage",
+      "roof": "gable",
+      "wallH": 6.9,
+      "gableBand": false,
+      "rakeOverhang": 0.03,
+      "loadout": "barnwright:GU"
+    },
+    "SB": {
+      "name": "Standard Barn",
+      "category": "Barns",
+      "roof": "gambrel",
+      "wallH": 4.2,
+      "gambrel": {"lowerRise": {"ft": 2.43}, "upperRise": {"ft": 1}, "knee": {"w": 0.3}},
+      "gableVent": false,
+      "gableBand": false,
+      "loadout": "barnwright:SB"
+    },
+    "LB": {
+      "name": "Lofted Barn",
+      "category": "Barns",
+      "roof": "gambrel",
+      "wallH": 6.67,
+      "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
+      "loadout": "barnwright:LB"
+    },
+    "SLB": {
+      "name": "Side Lofted Barn",
+      "category": "Barns",
+      "roof": "gambrel",
+      "wallH": 6.67,
+      "side": true,
+      "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
+      "loadout": "barnwright:SLB"
+    },
+    "CS": {
+      "name": "Cottage Shed",
+      "category": "Barns",
+      "roof": "salt",
+      "wallH": 7.75,
+      "side": true,
+      "cottage": true,
+      "rakeOverhang": 0.03,
+      "loadout": "barnwright:CS"
+    },
+    "SS": {
+      "name": "Single Slope",
+      "category": "Barns",
+      "roof": "slope",
+      "wallH": 7,
+      "side": true,
+      "loadout": "barnwright:SS"
+    },
+    "C": {"name": "Cabin", "category": "Cabins", "roof": "gable", "wallH": 7.4, "porch": "F", "loadout": "barnwright:C"},
+    "LBC": {
+      "name": "Lofted Barn Cabin",
+      "category": "Cabins",
+      "roof": "gambrel",
+      "wallH": 6.9,
+      "porch": "F",
+      "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
+      "loadout": "barnwright:LBC"
+    },
+    "SC": {
+      "name": "Side Cabin",
+      "category": "Cabins",
+      "roof": "gable",
+      "wallH": 7.4,
+      "porch": "S",
+      "side": true,
+      "loadout": "barnwright:SC"
+    },
+    "LSC": {
+      "name": "Loft Side Cabin",
+      "category": "Cabins",
+      "roof": "gambrel",
+      "wallH": 6.9,
+      "porch": "S",
+      "side": true,
+      "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
+      "loadout": "barnwright:LSC"
+    },
+    "DSC": {
+      "name": "Deluxe Side Cabin",
+      "category": "Cabins",
+      "roof": "gable",
+      "wallH": 7.4,
+      "porch": "C",
+      "loadout": "barnwright:DSC"
+    },
+    "SLC": {
+      "name": "Deluxe Loft Side Cabin",
+      "category": "Cabins",
+      "roof": "gambrel",
+      "wallH": 6.9,
+      "porch": "C",
+      "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
+      "loadout": "barnwright:SLC"
+    },
+    "G": {"name": "Garage", "category": "Garages", "roof": "gable", "wallH": 7.75, "loadout": "barnwright:G"},
+    "LBG": {
+      "name": "Lofted Barn Garage",
+      "category": "Garages",
+      "roof": "gambrel",
+      "wallH": 6.9,
+      "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
+      "loadout": "barnwright:LBG"
+    },
+    "MU": {
+      "name": "Metal Utility",
+      "category": "Metal Buildings",
+      "roof": "gable",
+      "wallH": 7.75,
+      "metal": true,
+      "loadout": "barnwright:MU"
+    },
+    "MLB": {
+      "name": "Metal Lofted Barn",
+      "category": "Metal Buildings",
+      "roof": "gambrel",
+      "wallH": 6.67,
+      "metal": true,
+      "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
+      "loadout": "barnwright:MLB"
+    },
+    "MG": {
+      "name": "Metal Garage",
+      "category": "Metal Buildings",
+      "roof": "gable",
+      "wallH": 7.75,
+      "metal": true,
+      "loadout": "barnwright:MG"
+    },
+    "MCS": {
+      "name": "Metal Cottage",
+      "category": "Metal Buildings",
+      "roof": "salt",
+      "wallH": 7.75,
+      "metal": true,
+      "side": true,
+      "cottage": true,
+      "rakeOverhang": 0.03,
+      "loadout": "barnwright:MCS"
+    },
+    "DK": {
+      "name": "Dog Kennel",
+      "category": "Dog Kennels",
+      "roof": "gable",
+      "wallH": 7.4,
+      "side": true,
+      "kennel": true,
+      "loadout": "barnwright:DK"
+    }
+  },
+  "items": {
+    "w48": {"name": "48″ Wooden Door", "kind": "door", "draw": "shop-door", "w": 4.021, "h": 6.5, "leaves": 1},
+    "w72": {"name": "72″ Wooden Double Doors", "kind": "door", "draw": "shop-door", "w": 6.333, "h": 6.5, "leaves": 2},
+    "w36": {"name": "36″ Wooden Door", "kind": "door", "draw": "shop-door", "w": 3.104, "h": 6.5, "leaves": 1},
+    "light": {"name": "Outside Light", "kind": "light", "draw": "light", "w": 0.7, "h": 1.2},
+    "d36in": {
+      "name": "36″ In-Swing Door",
+      "kind": "door",
+      "draw": "steel-6panel",
+      "w": 3,
+      "h": 6.3,
+      "leaves": 1,
+      "liteSwap": "d36lite"
+    },
+    "d36lite": {
+      "name": "36″ 11-Lite Door",
+      "kind": "door",
+      "draw": "lite-door",
+      "w": 3,
+      "h": 6.3,
+      "leaves": 1,
+      "liteSwap": "d36in"
+    },
+    "dfr": {"name": "11-Lite French Doors", "kind": "door", "draw": "lite-door", "w": 5.6, "h": 6.3, "leaves": 2},
+    "ru6": {"name": "6′ Roll-up Door", "kind": "ru", "draw": "roll-up", "w": 6, "h": 6.2, "leaves": 1},
+    "ru8": {"name": "8′ Roll-up Door", "kind": "ru", "draw": "roll-up", "w": 8, "h": 6.4, "leaves": 1},
+    "w23": {"name": "2×3 Window", "kind": "win", "draw": "window", "w": 2.1, "h": 2.9, "sill": 2.9},
+    "w33": {"name": "3×3 Window", "kind": "win", "draw": "window", "w": 3, "h": 2.9, "sill": 2.9},
+    "tr": {
+      "name": "36×12 Transom Window",
+      "kind": "win",
+      "draw": "transom",
+      "w": 3,
+      "h": 1,
+      "rotatable": true,
+      "sill": 4.1
+    },
+    "bench": {
+      "name": "Work Bench",
+      "kind": "bench",
+      "draw": "bench",
+      "w": 2,
+      "h": 3,
+      "int": true,
+      "stretch": true,
+      "perFt": true,
+      "dep": 2,
+      "rotatable": true
+    },
+    "shelf": {
+      "name": "Shelf",
+      "kind": "shelf",
+      "draw": "shelf",
+      "w": 2,
+      "h": 1,
+      "int": true,
+      "stretch": true,
+      "perFt": true,
+      "dep": 1,
+      "rotatable": true
+    },
+    "outlet": {"name": "Duplex Outlet", "kind": "out", "draw": "outlet", "w": 0.6, "h": 1, "int": true, "sill": 1.2},
+    "gfci": {
+      "name": "Switch + GFCI Outlet",
+      "kind": "out",
+      "draw": "outlet",
+      "w": 0.7,
+      "h": 1,
+      "int": true,
+      "switch": true,
+      "sill": 1.2
+    },
+    "ilight": {
+      "name": "Overhead Light",
+      "kind": "ilt",
+      "draw": "overhead-light",
+      "w": 1,
+      "h": 1,
+      "int": true,
+      "free": true
+    },
+    "fake": {"name": "Faux Loft Window", "kind": "win", "draw": "faux-loft", "w": 2.6, "h": 1.9, "gable": true},
+    "g1824": {"name": "18×24 Gable Window", "kind": "win", "draw": "gable-1824", "w": 1.5, "h": 2, "gable": true},
+    "oct": {"name": "Octagon Gable Window", "kind": "win", "draw": "octagon", "w": 2.3, "h": 2.3, "gable": true},
+    "ppost": {"name": "Porch Post", "kind": "post", "draw": "porch-post", "w": 0.6, "h": 8}
+  },
+  "palettes": {
+    "paint": [
+      ["White", "#FAF9F3"],
+      ["Navajo", "#E8DCC0"],
+      ["Beige", "#D8C7A5"],
+      ["Buckskin", "#C9AE86"],
+      ["Clay", "#B8A48A"],
+      ["Light Gray", "#C6CBCE"],
+      ["Gray", "#9AA2A6"],
+      ["Charcoal", "#4A4F54"],
+      ["Barn Red", "#8E3B30"],
+      ["Hunter Green", "#3E5F48"],
+      ["Pequea Green", "#6E7D5D"],
+      ["Avocado", "#8A8B5C"],
+      ["Navy", "#33506B"],
+      ["Chocolate", "#5B4634"]
+    ],
+    "trim": [
+      ["White", "#FAF9F3"],
+      ["Beige", "#D8C7A5"],
+      ["Black", "#2E3134"],
+      ["Charcoal", "#4A4F54"],
+      ["Barn Red", "#8E3B30"],
+      ["Hunter Green", "#3E5F48"],
+      ["Navy", "#33506B"],
+      ["Chocolate", "#5B4634"]
+    ],
+    "metal": [
+      ["Galvalume", "#C9CDCF"],
+      ["White", "#F6F6F2"],
+      ["Light Gray", "#B9BFC3"],
+      ["Gray", "#8E969B"],
+      ["Charcoal", "#4A4F54"],
+      ["Black", "#2E3134"],
+      ["Barn Red", "#8E3B30"],
+      ["Rustic Red", "#B04A3A"],
+      ["Burgundy", "#6E3038"],
+      ["Hunter Green", "#3E5F48"],
+      ["Forest", "#2F4A3B"],
+      ["Burnished Slate", "#55483C"],
+      ["Brown", "#6B5138"],
+      ["Clay", "#C7B79B"],
+      ["Tan", "#C2A87F"],
+      ["Blue", "#4A6B8A"],
+      ["Gallery Blue", "#3E5C8C"],
+      ["Copper", "#B87333"]
+    ]
+  },
+  "options": {
+    "none": {"dormer": "No dormer", "ramp": "No ramp", "elec": "No electric"},
+    "dormers": {
+      "6": {"name": "6 ft dormer", "widthFt": 6},
+      "9": {"name": "9 ft dormer", "widthFt": 9},
+      "12": {"name": "12 ft dormer", "widthFt": 12}
+    },
+    "ramps": {
+      "r4": {"name": "4′ ramp", "lengthFt": 4},
+      "r6": {"name": "6′ ramp", "lengthFt": 6},
+      "kit": {"name": "DIY kit (no wood)", "quoteName": "Ramp DIY kit (no wood)", "lengthFt": 0}
+    },
+    "elec": {
+      "1": {
+        "name": "Option 1",
+        "desc": "1 overhead light · switch with GFCI outlet",
+        "fixtures": [{"cat": "gfci", "at": "besideBiggestDoor"},{"cat": "ilight", "px": "0", "pz": "0"}]
+      },
+      "2": {
+        "name": "Option 2",
+        "desc": "1 overhead light · switch with GFCI outlet · 3 more outlets (4 total)",
+        "fixtures": [
+          {"cat": "gfci", "at": "besideBiggestDoor"},
+          {"cat": "ilight", "px": "0", "pz": "0"},
+          {"cat": "outlet", "wall": "L", "pos": "0"},
+          {"cat": "outlet", "wall": "R", "pos": "0"},
+          {"cat": "outlet", "wall": "B", "pos": "0"}
+        ]
+      },
+      "3": {
+        "name": "Option 3",
+        "desc": "2 overhead lights · switch with GFCI outlet · 5 more outlets (6 total)",
+        "fixtures": [
+          {"cat": "gfci", "at": "besideBiggestDoor"},
+          {"cat": "ilight", "px": "0", "pz": "-L/4"},
+          {"cat": "ilight", "px": "0", "pz": "L/4"},
+          {"cat": "outlet", "wall": "L", "pos": "-L/4"},
+          {"cat": "outlet", "wall": "L", "pos": "L/4"},
+          {"cat": "outlet", "wall": "R", "pos": "-L/4"},
+          {"cat": "outlet", "wall": "R", "pos": "L/4"},
+          {"cat": "outlet", "wall": "B", "pos": "0"}
+        ]
+      }
+    },
+    "misc": {
+      "shutter": {"name": "Shutters", "per": "set", "note": "a pair of board-and-batten shutters for one window"},
+      "lite": {"name": "Door window", "note": "a window put into a wooden shop door"},
+      "ext": {
+        "name": "Exterior light + dual switch",
+        "note": "only with an electrical package; the light goes beside the switch"
+      }
+    },
+    "rates": {
+      "dbl": {
+        "name": "Double floor",
+        "quoteName": "Double floor",
+        "basis": "floor",
+        "construction": {"floor.deck.layers": 2}
+      },
+      "jo12": {
+        "name": "Floor joists 12\" on center (16\" standard)",
+        "quoteName": "Floor joists 12\" on center",
+        "basis": "floor",
+        "construction": {"floor.spacingIn": 12}
+      },
+      "mbF": {"name": "Moisture barrier — floor", "quoteName": "Moisture barrier — floor", "basis": "floor"},
+      "mbW": {"name": "Moisture barrier — walls", "quoteName": "Moisture barrier — walls", "basis": "wall"},
+      "rbS": {"name": "Radiant barrier siding", "quoteName": "Radiant barrier siding", "basis": "wall"},
+      "rbR": {"name": "Radiant barrier roof", "quoteName": "Radiant barrier roof", "basis": "roof"}
+    }
+  },
+  "lists": {
+    "_help": "Which item the add buttons and the item sheet offer, in order (Barnwright 5065-5067 and 4900). A company that does not price an item simply does not see it.",
+    "addDoor": ["w48", "w72", "w36", "d36in", "d36lite", "dfr"],
+    "addWindow": ["w23", "w33", "tr", "g1824", "oct", "fake"],
+    "addRollup": ["ru6", "ru8"],
+    "sheetWindow": ["fake", "w23", "w33", "tr", "g1824", "oct"],
+    "sheetDoor": ["w48", "w72", "w36", "d36in", "d36lite", "dfr", "ru6", "ru8"]
+  },
+  "construction": {}
+}

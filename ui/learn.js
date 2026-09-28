@@ -1,0 +1,257 @@
+/* A manual, one-piece-at-a-time floor study. The lesson opts in to confirmed
+   floor sections and notched seating. Only floor parts are uploaded; no playback or spin.
+   Browser verification API: window.floorLesson.{ready,error,selection,parts,
+   renderer,plan,select(keys,focus),setCamera(name)}. */
+import { loadCatalogue } from "./load.js";
+import { defaults } from "../model/design.js";
+import { makePlan } from "../model/plan.js";
+import { floorStudyPlan } from "../model/floor-study.js";
+import { floorMeasurements } from "../model/floor-measurements.js";
+import { FLOOR_PIECES, initialFloorSelection, floorParts, floorPiece } from "../model/floor-lesson.js";
+import { onlyFloorJoists } from "../model/floor-joist-lesson.js";
+import { assemble, onlyParts } from "../engine/assemble.js";
+import { createRenderer } from "../engine/renderer.js";
+import { distToFit } from "./parts-gallery.js";
+import { createFloorLabels } from "./learn-labels.js";
+import { createMeasurementReadout } from "./learn-measurements.js";
+import { installFloorWood, woodFinish } from "./learn-wood.js";
+import { installFlooringTexture, flooringFinish } from "./learn-flooring.js";
+import { startWallLesson } from "./learn-wall.js";
+
+const COMPANY = "learning-side-loft";
+const ANGLE = { yaw:0.7, pitch:0.65 };
+const BASE_ZOOM = 1.15; // Leave room for dimension lines beyond the footprint.
+const CAMERA_VIEWS = ["angle","top","notch","connection","end-negative","end-positive","mule-board"];
+const clamp = (x,a,b) => Math.max(a,Math.min(b,x));
+const $ = (id) => document.getElementById(id);
+
+function drawingBox(build) {
+  const b = { x0:Infinity,y0:Infinity,z0:Infinity,x1:-Infinity,y1:-Infinity,z1:-Infinity };
+  for (const key of build.ORDER) {
+    const v = build.buckets[key].v;
+    for (let i=0;i<v.length;i+=9) {
+      b.x0=Math.min(b.x0,v[i]); b.x1=Math.max(b.x1,v[i]);
+      b.y0=Math.min(b.y0,v[i+1]); b.y1=Math.max(b.y1,v[i+1]);
+      b.z0=Math.min(b.z0,v[i+2]); b.z1=Math.max(b.z1,v[i+2]);
+    }
+  }
+  if (!Number.isFinite(b.x0)) throw new Error("The selected floor has no pieces to show.");
+  return b;
+}
+
+export async function startFloorLesson() {
+  if(new URLSearchParams(location.search).get("step")==="walls") return startWallLesson();
+  const api = { ready:false,error:null,selection:[],parts:[],renderer:null,plan:null,select:null,setCamera:null };
+  window.floorLesson=api;
+  const canvas=$("lesson-canvas"), viewport=$("lesson-viewport");
+  const boxes=[...document.querySelectorAll('input[name="piece"]')];
+  const cameraButtons=[...document.querySelectorAll("[data-camera]")];
+  const step=new URLSearchParams(location.search).get("step");
+  const joistsOnly=step==="joists", fullFrame=step==="frame", flooring=step==="deck";
+  $("lesson-reload").addEventListener("click",()=>location.reload());
+  function fail(error) {
+    api.error=error instanceof Error ? error.message : String(error);
+    api.ready=true;
+    $("lesson-loading").hidden=true;
+    $("lesson-error").hidden=false;
+    $("lesson-error-text").textContent=api.error;
+    viewport.setAttribute("aria-busy","false");
+    $("lesson-pieces").disabled=true;
+    for(const button of cameraButtons) button.disabled=true;
+  }
+  try {
+    if(flooring) {
+      const pictureLink=$("lesson-picture-link") || $("lesson-error")?.querySelector("a");
+      if(pictureLink) { pictureLink.href="flooring.html"; pictureLink.textContent="Open the flooring pictures"; }
+    }
+    if(joistsOnly || fullFrame || flooring) {
+      const frameControl=boxes.find(input=>input.value==="frame");
+      const deckControl=boxes.find(input=>input.value==="deck");
+      const deckLabel=deckControl?.closest("label");
+      if(!frameControl?.nextElementSibling || !deckLabel)
+        throw new Error("This page is missing the floor controls. Reload it to load the current lesson.");
+      for(const button of cameraButtons) {
+        if(button.dataset.camera==="connection") button.hidden=false;
+        if(joistsOnly && ["notch","end-negative","end-positive"].includes(button.dataset.camera)) button.hidden=true;
+        if((fullFrame || flooring) && button.dataset.camera==="end-negative") button.textContent="Two-board end";
+        if((fullFrame || flooring) && button.dataset.camera==="end-positive") button.textContent="One-board end";
+        if((fullFrame || flooring) && button.dataset.camera==="mule-board") button.hidden=false;
+        if(flooring && button.dataset.camera==="top") button.textContent="See seams";
+      }
+      frameControl.nextElementSibling.textContent=joistsOnly?"Floor joists":"Joists and outer boards";
+      if(deckControl.nextElementSibling) deckControl.nextElementSibling.textContent="Flooring";
+      deckLabel.hidden=!flooring;
+      // Older cached lesson pages predate this navigation link.
+      const stepLink=$("lesson-step-link");
+      if(stepLink) {
+        stepLink.href=fullFrame?"learn.html?step=deck":flooring?"learn.html?step=walls":"learn.html?step=frame";
+        stepLink.textContent=fullFrame?"Next: flooring":flooring?"Next: walls":"Next: outer and end boards";
+      }
+    }
+    const cat=await loadCatalogue(COMPANY);
+    const state=defaults(cat);
+    if(state.type!=="SLB" || state.size!=="10x16") throw new Error("This lesson needs the 10 × 16 side loft example. Check its starting building settings, then reload.");
+    const plan=floorStudyPlan(makePlan(state,cat));
+    const full=assemble(plan,{frames:true,scene:"studio",trueColour:true});
+    // Fit the complete floor footprint once so adding a piece does not move
+    // the camera. No wall, roof, ground or finished-floor slab can be shown.
+    const allFloor=onlyParts(full.build,FLOOR_PIECES.map((p)=>p.part));
+    const box=drawingBox(allFloor);
+    const bounds={ W:box.x1-box.x0,L:box.z1-box.z0,H:Math.max(.25,(box.y0+box.y1)/2)/.42 };
+    const renderer=createRenderer(canvas,{trueColour:true,scene:"studio",note:" "});
+    api.renderer=renderer; api.plan=plan;
+    if(renderer.off) throw new Error("3D is not available in this browser. Try another browser or enable graphics acceleration, then reload. The first piece is described below.");
+    installFloorWood(renderer);
+    installFlooringTexture(renderer);
+    renderer.cam.autoSpin=false; renderer.cam.interacted=true;
+    renderer.setStages(null); // Frame and deck stages must be visible here.
+    Object.assign(renderer.cam,ANGLE);
+    const labels=createFloorLabels(viewport,renderer,plan,{joistsOnly});
+    const measurements=createMeasurementReadout($("piece-measurements"),$("measurement-note"),plan,{joistsOnly});
+    const measures=floorMeasurements(plan);
+    const joistNotch=measures.supports.notches.find(n=>n.xFt>0 && measures.frame.joist.bounds.z0Ft>=n.z0Ft-1e-9 && measures.frame.joist.bounds.z1Ft<=n.z1Ft+1e-9);
+    const middleNotch=measures.supports.notches.filter(n=>n.xFt>0 && n.sources.includes("alternate"))
+      .filter(n=>!measures.frame.members.some(m=>m.member.kind!=="rim" && m.bounds.z0Ft<n.z1Ft && m.bounds.z1Ft>n.z0Ft))
+      .sort((a,b)=>Math.abs(a.centerZFt)-Math.abs(b.centerZFt))[0] || measures.supports.notches[0];
+    const endNotches=Object.fromEntries(["negative","positive"].map(end=>[end,measures.supports.notches.find(n=>n.xFt>0 && n.end===end)]));
+    let zoom=BASE_ZOOM, raf=0, focus="supports", detail=false, detailNotch=middleNotch, muleBoardView=false;
+    function detailBox() {
+      const p=renderer.cam.target;
+      const rx=detailNotch?.end ? .7 : 1.2, rz=detailNotch?.end ? .9 : 1.4;
+      return p?{x0:p[0]-rx,x1:p[0]+rx,y0:p[1]-.45,y1:p[1]+.45,z0:p[2]-rz,z1:p[2]+rz}:box;
+    }
+    const size=()=>({w:Math.max(1,canvas.clientWidth),h:Math.max(1,canvas.clientHeight)});
+    const markManual=()=>{
+      for(const button of cameraButtons) if(CAMERA_VIEWS.includes(button.dataset.camera)) button.setAttribute("aria-pressed","false");
+    };
+    function draw() {
+      raf=0;
+      if(api.error || !renderer.mesh) return;
+      const fitted=distToFit(detail?detailBox():box,renderer.cam.yaw,renderer.cam.pitch,size());
+      renderer.cam.fitDist=fitted;
+      renderer.cam.dist=Math.max(2.5,fitted*zoom);
+      renderer.draw();
+      labels.update(api.selection,detail?detailNotch:null,{muleBoard:muleBoardView});
+    }
+    function requestDraw() { if(!raf) raf=requestAnimationFrame(draw); }
+    function select(keys,nextFocus) {
+      api.selection=FLOOR_PIECES.filter((p)=>Array.isArray(keys)&&keys.includes(p.key)&&(!(joistsOnly||fullFrame)||p.key!=="deck")).map((p)=>p.key);
+      api.parts=floorParts(api.selection);
+      if(muleBoardView && !api.selection.includes("frame")) setCamera("angle");
+      for(const button of cameraButtons) if(button.dataset.camera==="mule-board") button.disabled=!api.selection.includes("frame");
+      if(flooring) {
+        const covered=api.selection.includes("deck");
+        for(const button of cameraButtons) if(["notch","connection","end-negative","end-positive","mule-board"].includes(button.dataset.camera)) button.hidden=covered;
+        if(covered && detail) setCamera("angle");
+      }
+      if(nextFocus) focus=nextFocus;
+      for(const input of boxes) input.checked=api.selection.includes(input.value);
+      const visible=onlyParts(full.build,api.parts);
+      const timber=woodFinish(joistsOnly?onlyFloorJoists(visible,measures):visible,measures);
+      const build=flooringFinish(timber,measures);
+      renderer.show({build,bounds,gr:full.gr,fitDist:distToFit(box,renderer.cam.yaw,renderer.cam.pitch,size())});
+      renderer.setStages(null);
+      const piece=floorPiece(api.selection,api.selection.includes("deck")?"deck":flooring&&api.selection.includes("frame")?"frame":focus);
+      $("piece-title").textContent=piece ? (piece.key==="supports" ? "Skids — the long supports underneath" : piece.label) : "Choose a floor piece";
+      $("piece-description").textContent=piece ? piece.description : "Use the boxes to add a piece back into the view.";
+      $("piece-draft").textContent=piece ? piece.draft : "We will work through the pieces together.";
+      if(piece?.key==="frame") {
+        $("piece-title").textContent=joistsOnly?"Floor joists — the crosswise 2×6s":"Floor joists and outer boards";
+        $("piece-description").textContent=joistsOnly
+          ? "The floor joists are 117 inches (9 feet 9 inches) long: 120 inches outside width minus a 1½-inch outer board on each side. Each 2×6 sits 1 inch down in the skid notches, at 16 inches on center."
+          : "The 117-inch floor joists fit between two 1½-inch outer boards, making a 120-inch outside width. Two end boards touch at one end; the other end has one board. The 93-inch treated 2×4 behind the pair lies flat on the skids. It is the board the mule hooks onto to drag the barn.";
+        $("piece-draft").textContent=joistsOnly
+          ? "Floor joist is our confirmed name, and these boards are treated wood. The first joist's position still needs confirmation."
+          : "These boards are treated wood. Outer board and end board describe their positions; their technical names, outer-board height and length, and remaining layout details are still to confirm.";
+      }
+      canvas.setAttribute("aria-label",piece ? "Rotatable 3D floor view. Showing: "+FLOOR_PIECES.filter((p)=>api.selection.includes(p.key)).map((p)=>joistsOnly&&p.key==="frame"?"Floor joists":p.label).join(", ")+"." : "3D floor view with all pieces hidden.");
+      $("lesson-empty").hidden=api.parts.length>0;
+      measurements.update(api.selection);
+      requestDraw();
+      return api.parts.slice();
+    }
+    function setCamera(name) {
+      if(api.selection.includes("deck") && ["notch","connection","end-negative","end-positive","mule-board"].includes(name)) name="angle";
+      if(!["in","out"].includes(name)) muleBoardView=false;
+      if(name==="in") zoom=clamp(zoom/1.15,.5,2.1);
+      else if(name==="out") zoom=clamp(zoom*1.15,.5,2.1);
+      else if(name==="mule-board" && measures.frame.backing && api.selection.includes("frame")) {
+        const backing=measures.frame.backing;
+        detailNotch=endNotches[backing.member.meta.end]; detail=true; muleBoardView=true;
+        renderer.cam.target=[detailNotch.xFt,backing.bounds.y1Ft,backing.center[2]];
+        renderer.cam.yaw=.9; renderer.cam.pitch=.7; zoom=1;
+      }
+      else if((name==="notch" && middleNotch) || (name==="connection" && joistNotch) || (name.startsWith("end-") && endNotches[name.slice(4)])) {
+        detailNotch=name==="connection"?joistNotch:name==="notch"?middleNotch:endNotches[name.slice(4)];
+        detail=true;
+        renderer.cam.target=[detailNotch.xFt,detailNotch.seatYFt+(detailNotch.end ? -.03 : .12),detailNotch.centerZFt];
+        renderer.cam.yaw=detailNotch.end==="negative"?Math.PI-.9:.9;
+        renderer.cam.pitch=detailNotch.end ? .32 : .55; zoom=1;
+      }
+      else if(name==="top") { detail=false; renderer.cam.target=null; renderer.cam.yaw=0; renderer.cam.pitch=Math.PI/2-.01; zoom=BASE_ZOOM; }
+      else { detail=false; renderer.cam.target=null; Object.assign(renderer.cam,ANGLE); zoom=BASE_ZOOM; }
+      if(!["in","out"].includes(name)) {
+        for(const button of cameraButtons) if(CAMERA_VIEWS.includes(button.dataset.camera)) button.setAttribute("aria-pressed",String(button.dataset.camera===(detail?name:name==="top"?"top":"angle")));
+      }
+      requestDraw();
+    }
+    api.select=select; api.setCamera=setCamera;
+    for(const button of cameraButtons) {
+      button.disabled=false;
+      button.addEventListener("click",()=>setCamera(button.dataset.camera));
+    }
+    for(const input of boxes) input.addEventListener("change",()=>select(boxes.filter((b)=>b.checked).map((b)=>b.value),input.checked?input.value:null));
+    $("lesson-pieces").disabled=false;
+    const pointers=new Map();
+    const pinchDistance=()=>{const points=[...pointers.values()];return points.length===2?Math.hypot(points[0].x-points[1].x,points[0].y-points[1].y):0;};
+    canvas.addEventListener("pointerdown",(event)=>{
+      if(event.pointerType==="mouse" && event.button!==0) return;
+      canvas.focus({preventScroll:true});
+      canvas.setPointerCapture(event.pointerId);
+      pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+    });
+    canvas.addEventListener("pointermove",(event)=>{
+      const previous=pointers.get(event.pointerId); if(!previous) return;
+      const before=pinchDistance();
+      pointers.set(event.pointerId,{x:event.clientX,y:event.clientY});
+      if(pointers.size===1) {
+        renderer.cam.yaw+=(event.clientX-previous.x)*.008;
+        renderer.cam.pitch=clamp(renderer.cam.pitch+(event.clientY-previous.y)*.006,.08,Math.PI/2-.01);
+        markManual();
+      } else if(pointers.size===2) {
+        const after=pinchDistance(); if(before>0 && after>0) zoom=clamp(zoom*before/after,.5,2.1);
+      }
+      requestDraw();
+    });
+    for(const name of ["pointerup","pointercancel","lostpointercapture"]) canvas.addEventListener(name,(event)=>pointers.delete(event.pointerId));
+    canvas.addEventListener("wheel",(event)=>{
+      event.preventDefault();
+      zoom=clamp(zoom*Math.exp(clamp(event.deltaY,-200,200)*.0015),.5,2.1);
+      requestDraw();
+    },{passive:false});
+    canvas.addEventListener("keydown",(event)=>{
+      const key=event.key;
+      if(["+","=","-","Home"].includes(key)) {event.preventDefault();setCamera(key==="Home"?"reset":key==="-"?"out":"in");return;}
+      if(!["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(key)) return;
+      event.preventDefault();
+      if(key==="ArrowLeft") renderer.cam.yaw-=.12;
+      if(key==="ArrowRight") renderer.cam.yaw+=.12;
+      if(key==="ArrowUp") renderer.cam.pitch=clamp(renderer.cam.pitch+.08,.08,Math.PI/2-.01);
+      if(key==="ArrowDown") renderer.cam.pitch=clamp(renderer.cam.pitch-.08,.08,Math.PI/2-.01);
+      markManual();requestDraw();
+    });
+    canvas.addEventListener("webglcontextlost",(event)=>{event.preventDefault();fail("The 3D view was interrupted. Reload this page to restore the floor view.");});
+    const observer=new ResizeObserver(requestDraw); observer.observe(viewport);
+    window.addEventListener("pagehide",()=>{observer.disconnect();if(raf)cancelAnimationFrame(raf);},{once:true});
+    const selection=flooring?["supports","frame","deck"]:fullFrame?["supports","frame"]:initialFloorSelection(step);
+    select(selection,flooring?"deck":joistsOnly||fullFrame?"frame":selection[0]);
+    setCamera("angle");
+    draw();
+    $("lesson-loading").hidden=true;
+    viewport.setAttribute("aria-busy","false");
+    api.ready=true;
+    return api;
+  } catch(error) { fail(error); return api; }
+}
+
+startFloorLesson();
