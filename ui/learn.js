@@ -44,16 +44,6 @@ export async function startFloorLesson() {
   const boxes=[...document.querySelectorAll('input[name="piece"]')];
   const cameraButtons=[...document.querySelectorAll("[data-camera]")];
   const joistsOnly=new URLSearchParams(location.search).get("step")==="joists";
-  if(joistsOnly) {
-    for(const button of cameraButtons) {
-      if(button.dataset.camera==="connection") button.hidden=false;
-      if(["notch","end-negative","end-positive"].includes(button.dataset.camera)) button.hidden=true;
-    }
-    boxes.find(input=>input.value==="frame").nextElementSibling.textContent="Floor joists";
-    boxes.find(input=>input.value==="deck").closest("label").hidden=true;
-    $("lesson-step-link").href="learn.html";
-    $("lesson-step-link").textContent="Back to skids";
-  }
   $("lesson-reload").addEventListener("click",()=>location.reload());
   function fail(error) {
     api.error=error instanceof Error ? error.message : String(error);
@@ -66,6 +56,21 @@ export async function startFloorLesson() {
     for(const button of cameraButtons) button.disabled=true;
   }
   try {
+    if(joistsOnly) {
+      const frameControl=boxes.find(input=>input.value==="frame");
+      const deckLabel=boxes.find(input=>input.value==="deck")?.closest("label");
+      if(!frameControl?.nextElementSibling || !deckLabel)
+        throw new Error("This page is missing the floor controls. Reload it to load the current lesson.");
+      for(const button of cameraButtons) {
+        if(button.dataset.camera==="connection") button.hidden=false;
+        if(["notch","end-negative","end-positive"].includes(button.dataset.camera)) button.hidden=true;
+      }
+      frameControl.nextElementSibling.textContent="Floor joists";
+      deckLabel.hidden=true;
+      // Older cached lesson pages predate this navigation link.
+      const stepLink=$("lesson-step-link");
+      if(stepLink) { stepLink.href="learn.html"; stepLink.textContent="Back to skids"; }
+    }
     const cat=await loadCatalogue(COMPANY);
     const state=defaults(cat);
     if(state.type!=="SLB" || state.size!=="10x16") throw new Error("This lesson needs the 10 × 16 side loft example. Check its starting building settings, then reload.");
@@ -202,7 +207,7 @@ export async function startFloorLesson() {
     window.addEventListener("pagehide",()=>{observer.disconnect();if(raf)cancelAnimationFrame(raf);},{once:true});
     const selection=initialFloorSelection(new URLSearchParams(location.search).get("step"));
     select(selection,joistsOnly?"frame":selection[0]);
-    setCamera(joistsOnly?"connection":"angle");
+    setCamera("angle");
     draw();
     $("lesson-loading").hidden=true;
     viewport.setAttribute("aria-busy","false");

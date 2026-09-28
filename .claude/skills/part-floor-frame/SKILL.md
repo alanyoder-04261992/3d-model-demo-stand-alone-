@@ -38,9 +38,23 @@ regular crosswise 2x6 seated 1 in down in the skid notches. This confirms
 that part's name, not its cut length, treatment or remaining layout. The
 current manual lesson is `learn.html?company=learning-side-loft&step=joists`,
 showing skids with the regular crosswise joists and their joint close-up.
+It starts with an angled overview; the connection button opens the close-up.
 Keep perimeter and end members, sheets, walls and roof out of this focused
 view. Continue only as Alan directs; the render acceptance does not settle
 unrelated assumptions or authorize autoplay.
+
+The [joist picture page](../../../joists.html) addresses the visibility
+report with labeled model renders:
+[overview](../../../images/floor-joists.png) and
+[connection](../../../images/floor-joist-connection.png). The page needs no
+JavaScript. These images are generated from the current model geometry;
+refresh both after geometry edits with `node tools/export-joist-render-data.mjs`
+then `python tools/render-joist-picture.py` (Pillow and NumPy are development
+dependencies only). The renderer accepts font overrides; inspect labels after
+changing fonts. They do not publish Alan's reference
+photos or confirm cut length, treatment or first-joist position. Browser
+tooling was unavailable for this visibility fix, so do not describe it as
+browser-verified.
 
 The focused view calls `onlyFloorJoists` in
 [floor-joist-lesson](../../../model/floor-joist-lesson.js). It retains the

@@ -41,20 +41,38 @@ details remain pending.
 **Current piece: floor joist.** Alan accepted the skid view and explicitly
 confirmed this name for the crosswise member. The next manual view is
 `learn.html?company=learning-side-loft&step=joists`: skids plus regular
-crosswise floor joists, with their notched connection available close up.
+crosswise floor joists, starting with an angled overview. The connection
+close-up is available through its button.
 Keep rim boards, end boards, sheets, walls and roof out of this focused
 view. No automatic progression is requested.
+
+For Alan's “Can't see it” report, use the
+[joist picture page](../../joists.html). It displays labeled
+[floor-joist overview](../../images/floor-joists.png) and
+[connection detail](../../images/floor-joist-connection.png) images without
+JavaScript. These are model renders generated from the current geometry.
+Refresh both images whenever that geometry changes. The pictures do not
+confirm the joists' cut length, wood treatment or first position, and they
+do not include Alan's private reference photos.
 
 Open the [floor learning page](../../learn.html), for example
 `http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=joists` after
 `npm run serve`.
 For Alan's iOS phone, use the
-[hosted floor-joist lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=joists).
+[pictures saved in GitHub](https://github.com/alanyoder-04261992/3d-model-demo-stand-alone-/blob/codex/side-loft-terminology/images/floor-joists.png)
+or the existing [interactive floor-joist lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=joists).
+The new picture page and startup fix are ready locally, but the deploy was
+blocked by Netlify with “Account credit usage exceeded - new deploys are
+blocked until credits are added.” Do not present the hosted `joists.html`
+address as live until a later deploy succeeds.
+The existing hosted lesson also returned HTTP 503 with `usage_exceeded`;
+use the GitHub pictures while hosting is unavailable.
 The localhost address only works on the computer running the server.
 Alan approved this separate Netlify preview site on September 27, 2026.
 The earlier skid and full-frame phone layouts were checked in the available
 browser. For the new joists-only view, model and projected-label checks ran;
-browser preview was unavailable in that session. Physical iOS Safari
+browser preview was unavailable in that session and during this picture-page
+visibility fix. The new page has not been browser-verified. Physical iOS Safari
 validation remains for Alan's device.
 The [example's settings](../../companies/learning-side-loft/company.json)
 offer only this style and size.
