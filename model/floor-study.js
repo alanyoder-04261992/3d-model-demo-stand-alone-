@@ -45,6 +45,42 @@ export function floorStudyPlan(plan) {
   }
   if ((endRebates.negative?.lengthFt || 0)+(endRebates.positive?.lengthFt || 0) >= lengthFt)
     throw new Error("floorStudy end rebates must leave timber between the two ends.");
+  let frame = null;
+  if (raw.frame != null) {
+    const frameWidthFt = raw.frame.widthFt == null ? null : positive(raw.frame.widthFt,"frame.widthFt");
+    const sideBoardWidthIn = raw.frame.sideBoardWidthIn == null ? null
+      : positive(raw.frame.sideBoardWidthIn,"frame.sideBoardWidthIn");
+    if (frameWidthFt != null && (frameWidthFt > plan.W ||
+      (sideBoardWidthIn != null && frameWidthFt*12 <= 2*sideBoardWidthIn)))
+      throw new Error("floorStudy.frame.widthFt must fit the building width and leave space between its side boards.");
+    const endCounts = {};
+    for (const end of ["negative","positive"]) {
+      const count = raw.frame.endCounts?.[end];
+      if (count == null) continue;
+      if (!Number.isInteger(count) || count < 1 || !endRebates[end] || count*joistWidthIn > endRebates[end].lengthIn+1e-9)
+        throw new Error(`floorStudy.frame.endCounts.${end} must be a positive whole board count that fits its explicit end rebate.`);
+      endCounts[end] = count;
+    }
+    let backing = null;
+    if (raw.frame.backing != null) {
+      const rawBacking = raw.frame.backing;
+      const backingWidthIn = positive(rawBacking.widthIn,"frame.backing.widthIn");
+      const backingHeightIn = positive(rawBacking.heightIn,"frame.backing.heightIn");
+      const backingLengthIn = rawBacking.lengthIn == null ? null : positive(rawBacking.lengthIn,"frame.backing.lengthIn");
+      if (backingWidthIn <= backingHeightIn || !["negative","positive"].includes(rawBacking.end) ||
+        !(endCounts[rawBacking.end] >= 2))
+        throw new Error("floorStudy.frame.backing must lie flat behind an explicitly doubled end package.");
+      if (backingLengthIn != null && frameWidthFt != null && sideBoardWidthIn != null &&
+        backingLengthIn > frameWidthFt*12-2*sideBoardWidthIn+1e-9)
+        throw new Error("floorStudy.frame.backing.lengthIn must fit between the outer boards.");
+      backing = { nominal:rawBacking.nominal || "2x4",widthIn:backingWidthIn,heightIn:backingHeightIn,
+        widthFt:backingWidthIn/12,heightFt:backingHeightIn/12,lengthIn:backingLengthIn,
+        lengthFt:backingLengthIn == null ? null : backingLengthIn/12,end:rawBacking.end,treated:rawBacking.treated===true,
+        purpose:typeof rawBacking.purpose === "string" ? rawBacking.purpose : null };
+    }
+    frame = { widthFt:frameWidthFt,sideBoardWidthIn,treated:raw.frame.treated===true,
+      sideBoardWidthFt:sideBoardWidthIn == null ? null : sideBoardWidthIn/12,endCounts,backing };
+  }
   let bottomCuts = null;
   if (skid.bottomCuts != null) {
     const reachIn = positive(skid.bottomCuts.reachIn,"skids.bottomCuts.reachIn");
@@ -58,8 +94,10 @@ export function floorStudyPlan(plan) {
   const status = {};
   for (const key of ["skidSection", "skidLength", "skidTreatment", "joistSection", "standardSpacing", "alternateSpacing",
     "notchDepth", "notchWidth", "notchPositions", "endRebates", "endMemberPlacement", "bottomCuts",
-    "supportOffset", "supportLayout", "frameFootprint", "rimSection", "deck"]) {
-    status[key] = raw.status?.[key] === "confirmed" ? "confirmed" : "provisional";
+    "supportOffset", "supportLayout", "frameFootprint", "frameWidth", "sideBoardWidth", "joistLength",
+    "endBoardCounts", "endBoardMapping", "frameTreatment", "backingSection", "backingOrientation",
+    "backingTreatment", "backingLocation", "backingLength", "backingLateralPosition", "backingPurpose", "rimSection", "deck"]) {
+    status[key] = ["confirmed","derived"].includes(raw.status?.[key]) ? raw.status[key] : "provisional";
   }
   const study = {
     skids: { nominal:skid.nominal || "4x6", widthIn,heightIn,lengthFt,insetToInsideIn,
@@ -69,6 +107,7 @@ export function floorStudyPlan(plan) {
     notches: { widthIn:notchWidthIn,depthIn,widthFt:notchWidthIn/12,depthFt:depthIn/12,
       alternateSpacingIn, alternateSpacingFt:alternateSpacingIn == null ? null : alternateSpacingIn/12,endRebates,
       placement:alternateSpacingIn == null ? "cross-members" : "cross-members-and-alternate-grid" },
+    frame,
     joistBottomFt:(heightIn-depthIn)/12,
     joistTopFt:(heightIn-depthIn+joistHeightIn)/12,
     status,

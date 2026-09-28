@@ -24,6 +24,7 @@ const members=floorFrameMembers(plan),regular=members.filter((member)=>member.ki
 assert.ok(regular.length>0);
 assert.ok(members.some((member)=>member.kind==="rim"));
 assert.ok(members.some((member)=>member.kind==="end-joist"));
+assert.ok(members.some((member)=>member.kind==="end-backing"),"the full frame includes the flat reinforcement");
 
 // An independent build from the actual member list is the reference. The
 // production helper uses bounds, not this redraw or triangle-count guesses.
@@ -48,7 +49,7 @@ for(let mask=0;mask<8;mask++) {
   const selected=onlyParts(source,floorParts(selection)),before=JSON.stringify(selected);
   const filtered=onlyFloorJoists(selected,measurements);
   assert.deepEqual(partTriangles(filtered,"floor-frame"),selection.includes("frame")?expectedJoists:{},
-    `${selection.join("+") || "empty"}: every regular joist triangle is retained exactly, with no rim or end triangles`);
+    `${selection.join("+") || "empty"}: every regular joist triangle is retained exactly, with no rim, end or flat-backing triangles`);
   for(const part of ["skids","floor-deck"]) assert.deepEqual(partTriangles(filtered,part),partTriangles(selected,part),
     `${part} coordinates, normals, UVs and stages remain unchanged`);
   assert.deepEqual(filtered.ORDER,selected.ORDER,"material order stays unchanged");
@@ -84,7 +85,10 @@ for(const vertices of Object.values(expectedJoists)) for(let i=0;i<vertices.leng
 for(const record of measurements.frame.joists) {
   assert.ok(Math.abs(record.depthFt*12-5.5)<1e-9);
   assert.ok(Math.abs(record.widthFt*12-1.5)<1e-9);
+  assert.ok(Math.abs(record.lengthFt*12-117)<1e-9,"each regular floor joist is 9ft9in between the confirmed outer boards");
 }
+assert.equal(measurements.frame.endGroups.negative.count,2,"the source full frame keeps its confirmed double end");
+assert.equal(measurements.frame.endGroups.positive.count,1,"the source full frame keeps its confirmed single end");
 assert.equal(JSON.stringify(source),sourceBefore,"the original full frame stays available for its checkbox");
 assert.equal(JSON.stringify(measurements),measuresBefore,"measurement/member data remains untouched");
-console.log(`PROVED: ${regular.length} regular floor joists isolated exactly across all 8 manual selections; no rims, end boards or wall joists; skids, deck, materials, normals, UVs, stages and original full frame unchanged.`);
+console.log(`PROVED: ${regular.length} regular floor joists isolated exactly across all 8 manual selections; no rims, end boards, flat backing or wall joists; skids, deck, materials, normals, UVs, stages and original full frame unchanged.`);

@@ -22,8 +22,17 @@ Do not compress the frame or force the lesson deck top to the legacy `y0`.
 The normal finished reference retains its older envelope below. Start the
 lesson with skids only; Alan has since accepted that render and confirmed
 **floor joist** for the regular crosswise member. The current manual
-`?step=joists` focus still excludes sheets. Reveal them when Alan directs it;
-the joist term does not confirm decking or perimeter-member names.
+`?step=frame` view now includes the outer/end boards and still excludes
+sheets. Reveal them when Alan directs it; the joist term and Alan's
+“outer board” wording do not confirm decking or the technical perimeter names.
+
+Alan confirmed the 10 ft outside floor width and 1 1/2 in outer boards on
+both sides; his 3 in subtraction gives a derived 117 in joist length. He
+also confirmed two end boards at one end, one at the other, and treated
+wood for those floor-framing boards. These facts do not confirm sheet
+dimensions, layout or treatment. The frame's X width changes, while its
+Z footprint stays provisional; do not treat the 16 ft skid length as an
+approved complete floor-frame or sheet extent.
 
 The opt-in is [floorStudyPlan](../../../model/floor-study.js), reading
 `construction.floorStudy`. `floorDeckMembers(plan)` already reads the frame
@@ -35,8 +44,8 @@ measured from pixels. Do not publish the photos. Alan's 30 in skid offset is
 confirmed from the outside wall to the inside skid face, toward the floor's
 middle. The lesson uses `floorStudy.skids.insetToInsideIn: 30` and a confirmed
 `supportOffset` status; the legacy skid table is unchanged. Keep
-repeated-notch first-center placement, cut clearance, skid count and crosswise cut
-length pending.
+repeated-notch first-center placement, cut clearance, skid count,
+outer-board height/length, full-frame length and deck details pending.
 See [the example](../../../docs/examples/10x16-side-loft.md).
 
 ## What it is in real life

@@ -28,7 +28,9 @@ company that only wants the designer.
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
-[open the hosted floor-joist lesson on a phone or computer](https://yoder-3d-floor-preview.netlify.app/learn.html?step=joists).
+[open the model picture saved in GitHub](https://github.com/alanyoder-04261992/3d-model-demo-stand-alone-/blob/codex/side-loft-terminology/images/floor-joists.png).
+Netlify hosting is currently unavailable because its account credit limit
+blocks service and deployment; use the GitHub picture or local pages.
 For local development,
 run the designer and open `learn.html?company=learning-side-loft` to start
 with the long floor supports and reveal pieces by hand. Labels and dimensions
@@ -42,10 +44,20 @@ show the lumber. Alan confirmed that the 45° bottom corner cuts reach 3 in
 back from **each** skid tip. That gives a calculated 3 in rise and leaves
 a 1½ in vertical end face below the notch seat.
 Alan accepted the skid view and confirmed **floor joist** for the crosswise
-2x6 seated in its notches. Continue manually at
-`learn.html?company=learning-side-loft&step=joists` to focus on skids and
-regular crosswise joists; the member's cut length, treatment and remaining
-layout stay unconfirmed. Perimeter-member and decking names are still proposed.
+2x6 seated in its notches. He then confirmed a 10 ft outside floor width,
+1½ in **outer boards** each side, and joists 3 in shorter: a calculated
+117 in / 9 ft 9 in. One end has two boards and the other one. Those floor
+joists, outer boards and end boards are confirmed treated wood, with varied
+grain and knots that stay stable when the view changes. Continue manually
+at `learn.html?company=learning-side-loft&step=frame` to see them together
+on the skids; `?step=joists` still isolates the regular joists.
+The frame also includes the **Board the mule hooks onto**: a treated 2x4
+lying flat behind the double end boards, on top of the skids. Alan confirmed
+93 in length (7 ft 9 in); its sideways centering is still provisional.
+The picture page includes a [close-up](images/floor-end-backing.png).
+First position, notch clearance, outer-board height/length, full-frame
+length and deck details remain pending. Rim/end-joist and decking names
+are still proposed.
 Nothing advances automatically.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the

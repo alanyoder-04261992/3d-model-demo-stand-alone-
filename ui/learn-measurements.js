@@ -33,10 +33,24 @@ export function createMeasurementReadout(list,note,plan,{joistsOnly=false}={}) {
     if(selected.has("frame")) {
       rows.push(["Floor joist · nominal → actual",`${m.frame.nominalJoist} → ${inches(m.frame.joist.widthFt)} × ${inches(m.frame.joist.depthFt)}`],
         ["Seated below the skid top · confirmed",inches(m.supports.notchDepthFt)],
-        ["Floor joist · cut length to confirm",length(m.frame.joist.lengthFt)],
+        ["Floor joist length · from outside width",`${inches(m.frame.joist.lengthFt)} (${length(m.frame.joist.lengthFt)})`],
+        ["Floor boards · confirmed material",plan.floorStudy.frame?.treated?"Treated wood":"To confirm"],
         ["Regular centers · confirmed",`${m.frame.nominalSpacingIn} in on center`]);
-      if(!joistsOnly) rows.push(["Long rim · provisional length",length(m.frame.rim.lengthFt)]);
-      notes.push(joistsOnly?"Floor joist is the confirmed name. Cut length, wood treatment and the first joist's position still need confirmation.":"Floor joist is the confirmed name. Cut lengths, end offsets and rim details are still model assumptions. “Rim joist” remains a proposed name.");
+      if(!joistsOnly) {
+        rows.push(["Outside floor width · confirmed",inches(m.frame.widthFt)],
+          ["Each outer board · confirmed thickness",inches(m.frame.sideBoardWidthFt)]);
+        for(const group of Object.values(m.frame.endGroups || {})) rows.push([
+          group.count===2?"One end · confirmed arrangement":"Other end · confirmed arrangement",
+          group.count===2?"2 boards, touching":`${group.count} board`]);
+        if(m.frame.backing) {
+          rows.push(["Flat treated 2×4 · confirmed section",`${inches(m.frame.backing.widthFt)} wide × ${inches(m.frame.backing.depthFt)} tall`],
+            ["Flat 2×4 · confirmed position","Behind the two end boards, resting on skid tops"],
+            ["Board the mule hooks onto · confirmed length",`${inches(m.frame.backing.lengthFt)} (${length(m.frame.backing.lengthFt)})`]);
+          notes.push("This is the board the mule hooks onto to drag the barn. Its centered position across the floor is shown for illustration and still needs confirmation.");
+        }
+      }
+      notes.push("Joist length is the outside width minus the two outer-board thicknesses: 120 − 1½ − 1½ = 117 inches. The first regular joist position still needs confirmation.");
+      if(!joistsOnly) notes.push("Outer board and end board describe positions. Their technical names, outer-board height and length, and remaining end placement are not separate confirmed measurements.");
     }
     if(selected.has("deck")) {
       const sheet=m.deck.representative;

@@ -3,7 +3,8 @@
 # Then: python tools/render-joist-picture.py [--font FONT.ttf] [--font-bold BOLD.ttf]
 # Development-only dependencies: python -m pip install Pillow numpy
 # Reads test/out/joist-render-data.json; writes images/floor-joists.png and
-# images/floor-joist-connection.png. Windows Segoe UI preserves the original
+# images/floor-joist-connection.png and images/floor-end-backing.png.
+# Windows Segoe UI preserves the original
 # layout; other fonts can change text metrics. No website runtime dependencies.
 import argparse, json, math
 from pathlib import Path
@@ -18,6 +19,8 @@ args=parser.parse_args()
 data=json.loads((ROOT/'test/out/joist-render-data.json').read_text(encoding='utf-8'))
 W,H=1200,940
 NAVY='#173b56'
+textures={name:np.frombuffer((ROOT/'test/out'/spec['file']).read_bytes(),dtype=np.uint8).reshape(spec['height'],spec['width'],4)
+          for name,spec in data.get('textures',{}).items()}
 def font(size,bold=False):
     override=(args.font_bold or args.font) if bold else args.font
     if override:
@@ -70,12 +73,16 @@ def scene(target=None,extent=None,yaw=.78,pitch=.70):
             sl=depth[y0:y1+1,x0:x1+1]
             mask=(u>=-1e-7)&(v>=-1e-7)&(w>=-1e-7)&(zz>sl)
             if not mask.any():continue
-            world=u[...,None]*p[0]+v[...,None]*p[1]+w[...,None]*p[2]
-            axis=0 if t['part']=='floor-frame' else 2
-            across=world[...,1] if abs(normal[1])<.6 else world[...,2 if axis==0 else 0]
-            grain=1+.034*np.sin(across*310+3*np.sin(world[...,axis]*2))+.017*np.sin(across*790+world[...,axis]*5)
+            tex=textures.get(g['material']['texture'])
+            grain=np.ones((*u.shape,3))
+            if tex is not None:
+                uv=np.array(t['uv'])
+                mapped=u[...,None]*uv[0]+v[...,None]*uv[1]+w[...,None]*uv[2]
+                tx=np.floor((mapped[...,0]%1)*tex.shape[1]).astype(int)
+                ty=np.floor((mapped[...,1]%1)*tex.shape[0]).astype(int)
+                grain=tex[ty,tx,:3]/255.0
             shade=.64+.43*max(0,float(np.dot(normal,light)))
-            color=np.clip(rgb[None,None,:]*shade*grain[...,None],0,255).astype(np.uint8)
+            color=np.clip(rgb[None,None,:]*shade*grain,0,255).astype(np.uint8)
             bg[y0:y1+1,x0:x1+1][mask]=color[mask];sl[mask]=zz[mask]
     return Image.fromarray(bg),project
 
@@ -94,20 +101,51 @@ def title(d,main,sub):
     d.text((38,22),main,font=font(44,True),fill='white')
     d.text((40,80),sub,font=font(25),fill='#d5e5f0')
 
+def dimension(d,project,p,q,label,offset=(0,0)):
+    p=project(p);q=project(q);off=np.array(offset);a=p+off;b=q+off
+    for start,end in [(p,a),(q,b),(a,b)]:
+        d.line([tuple(start),tuple(end)],fill='white',width=7)
+        d.line([tuple(start),tuple(end)],fill=NAVY,width=2)
+    along=(b-a)/np.linalg.norm(b-a);cross=np.array([-along[1],along[0]])*7
+    for point in [a,b]:d.line([tuple(point-cross),tuple(point+cross)],fill=NAVY,width=3)
+    middle=(a+b)/2;f=font(23,True);box=d.textbbox((0,0),label,font=f)
+    width=box[2]-box[0]+22
+    d.rounded_rectangle((middle[0]-width/2,middle[1]-19,middle[0]+width/2,middle[1]+23),radius=5,fill='white')
+    d.text((middle[0]-width/2+11,middle[1]-15),label,font=f,fill=NAVY)
+
 joint=data['metadata']['joint']; j=joint['joist']; skid=joint['skid']; notch=joint['notch']
+frame=data['metadata']['frame']; bounds=frame['bounds']
+ends=frame['endBoards'];outer=frame['outerBoards']
+double=[m for m in ends if m['member']['meta']['endRebate']=='negative']
+single=[m for m in ends if m['member']['meta']['endRebate']=='positive']
+assert len(double)==2 and len(single)==1
+assert abs(j['lengthFt']*12-117)<1e-8
+assert abs((bounds['x1Ft']-bounds['x0Ft'])*12-120)<1e-8
 im,project=scene()
 d=ImageDraw.Draw(im)
-title(d,'Floor joists','10 × 16 lesson · confirmed name')
-leader(d,project([3,j['bounds']['y1Ft'],j['center'][2]]),(620,730,540,124),'Floor joist',['2×6 nominal · 1½ × 5½ in actual','16 in on center · cut length to confirm'])
-leader(d,project([skid['xFt'],.20,7.5]),(40,730,540,124),'Skids',['Treated 4×6 · 3½ × 5½ in actual','16 ft long'])
-d.text((40,884),'Exact model geometry · joist cut length and first position still to confirm',font=font(23),fill='#526879')
+title(d,'Floor joists + outer boards','10 ft overall width · treated wood · different grain and knots on each board')
+# Exact top-face seams show the two touching end boards as separate pieces.
+for m in frame['members']:
+    b=m['bounds'];y=b['y1Ft']
+    polygon=[project([x,y,z]) for x,z in [(b['x0Ft'],b['z0Ft']),(b['x1Ft'],b['z0Ft']),(b['x1Ft'],b['z1Ft']),(b['x0Ft'],b['z1Ft'])]]
+    d.line([tuple(p) for p in polygon+[polygon[0]]],fill='#78694f',width=1)
+leader(d,project([0,double[0]['bounds']['y1Ft'],double[0]['center'][2]]),(790,150,370,100),'Two end boards',['Together: 3 in thick'])
+leader(d,project([0,single[0]['bounds']['y1Ft'],single[0]['center'][2]]),(40,152,325,100),'One end board',['1½ in thick'])
+near=next(m for m in outer if m['center'][0]>0)
+leader(d,project([near['center'][0],near['bounds']['y1Ft'],1.7]),(790,580,370,100),'Outer board',['1½ in thick each side'])
+leader(d,project([1,j['bounds']['y1Ft'],j['center'][2]]),(40,730,515,124),'Floor joist · 9 ft 9 in',['2×6 nominal · 1½ × 5½ in actual','16 in on center'])
+dimension(d,project,[bounds['x0Ft'],j['bounds']['y1Ft'],bounds['z1Ft']],[bounds['x1Ft'],j['bounds']['y1Ft'],bounds['z1Ft']],'10 ft outside to outside',(0,42))
+d.rounded_rectangle((590,730,1160,854),radius=12,fill='white',outline='#bdccd8',width=2)
+d.text((610,742),'Why the joist is 3 inches shorter',font=font(27,True),fill=NAVY)
+d.text((610,786),'120 in − 1½ in − 1½ in = 117 in',font=font(26),fill=NAVY)
+d.text((40,884),'First joist position and skid count still to confirm · end names not assigned',font=font(23),fill='#526879')
 (ROOT/'images').mkdir(exist_ok=True)
 im.save(ROOT/'images/floor-joists.png')
 
 target=[skid['xFt'],.48,j['center'][2]]
 im,project=scene(target,3.35,yaw=.9,pitch=.52)
 d=ImageDraw.Draw(im)
-title(d,'Joist in the skid notch','The floor joist sits 1 inch down into the skid')
+title(d,'Joist in the skid notch','Treated floor joist · 9 ft 9 in long · seated 1 inch into the skid')
 leader(d,project([skid['xFt']+.55,j['bounds']['y1Ft'],j['center'][2]]),(40,152,385,115),'Floor joist',['1½ in thick × 5½ in tall'])
 edge=[skid['x1Ft'],notch['seatYFt'],notch['z1Ft']]
 leader(d,project(edge),(670,736,490,115),'Notch · 1 in deep',['The joist rests on this seat'])
@@ -121,4 +159,26 @@ d.rounded_rectangle((a[0]+10,(a[1]+b[1])/2-20,a[0]+77,(a[1]+b[1])/2+20),radius=5
 d.text((a[0]+18,(a[1]+b[1])/2-18),'1 in',font=font(24,True),fill=NAVY)
 d.text((40,884),'Exact model geometry · adjoining joists remain at 16 in on center',font=font(23),fill='#526879')
 im.save(ROOT/'images/floor-joist-connection.png')
-print('Saved exact-mesh overview and connection PNGs.')
+
+backing=frame.get('backing')
+if backing:
+    bb=backing['bounds'];z=backing['center'][2]
+    im,project=scene([skid['xFt'],.48,z],3.4,yaw=.82,pitch=.70)
+    d=ImageDraw.Draw(im)
+    title(d,'Board the mule hooks onto','Flat treated 2×4 · 93 in (7 ft 9 in) long · rests on the skids')
+    edge_layer=Image.new('RGBA',(W,H),(0,0,0,0));edge_draw=ImageDraw.Draw(edge_layer)
+    for m in double:
+        b=m['bounds'];yt=b['y1Ft']
+        pts=[project([x,yt,zz]) for x,zz in [(b['x0Ft'],b['z0Ft']),(b['x1Ft'],b['z0Ft']),(b['x1Ft'],b['z1Ft']),(b['x0Ft'],b['z1Ft'])]]
+        edge_draw.line([tuple(p) for p in pts+[pts[0]]],fill='#78694f',width=2)
+    edge_crop=edge_layer.crop((25,145,W-25,706));im.paste(edge_crop,(25,145),edge_crop)
+    d=ImageDraw.Draw(im)
+    leader(d,project([skid['xFt']+.35,double[-1]['bounds']['y1Ft'],double[-1]['center'][2]]),(790,152,370,115),'Two end boards',['Standing on edge'])
+    leader(d,project([skid['xFt']+.35,bb['y1Ft'],z]),(600,736,560,115),'Board the mule hooks onto',['Treated 2×4 · 3½ in wide × 1½ in tall'])
+    leader(d,project([skid['x1Ft'],bb['y0Ft']-.09,bb['z1Ft']+.22]),(40,736,510,115),'Skid',['The flat 2×4 rests on its top'])
+    edgeX=skid['xFt']+.7
+    dimension(d,project,[edgeX,bb['y0Ft'],bb['z1Ft']],[edgeX,bb['y1Ft'],bb['z1Ft']],'1½ in',(45,10))
+    assert abs(backing['lengthFt']*12-93)<1e-8
+    d.text((40,884),'93 in cut length confirmed · shown centered; side-to-side position still to confirm',font=font(23),fill='#526879')
+    im.save(ROOT/'images/floor-end-backing.png')
+print('Saved exact-mesh floor overview and connection PNGs.')

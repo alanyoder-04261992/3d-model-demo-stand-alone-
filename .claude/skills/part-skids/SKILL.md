@@ -5,9 +5,13 @@ description: The skids (treated runners) under a portable building -- read befor
 
 # Skids (`parts/skids.js`)
 
-The lesson's surface finish is in `ui/learn-wood.js`: subtle lengthwise grain,
-small knots and end grain, with a muted treated-wood tint. It changes only
-the lesson's surface material and texture coordinates. Keep dimensions,
+The lesson's surface finish is in `ui/learn-wood.js`. Its shared
+`floorWoodTexture` generator produces seeded RGBA pixels for eight grain
+and end-grain variants, with differing knot counts and positions. A stable
+board hash selects the variant and varies texture scale, offset and tint.
+The browser and static renders use those same pixels and texture coordinates;
+camera changes and checkbox toggles must not rearrange a board's finish.
+This changes surface material and texture coordinates only. Keep dimensions,
 normals and stages unchanged. `floorStudy.skids.treated: true` and
 `status.skidTreatment: "confirmed"` record Alan's material confirmation;
 colour and knot placement are illustrative, not a species or grade claim.
@@ -25,7 +29,9 @@ Alan explicitly confirmed **the skids are treated wood** on September 27,
 default. His request for **a little texture and knots in the wood** is a
 visual finish request; use subtle detail in the lesson without changing
 the dimensions or obscuring the cuts. It does not establish species, grade,
-treatment chemistry, or whether the crosswise frame members are treated.
+treatment chemistry. Alan later separately confirmed treated wood for the
+floor joists, outer boards and end boards, with varied grain and knots per
+board. This does not establish deck treatment.
 
 He also confirmed **16 in on center standard**, with extra notches for the
 **12 in on center option**; the extra positions can be unused at standard
@@ -34,15 +40,18 @@ wall to the inside face of the skid**, toward the middle of the floor.
 With a 3 1/2 in-wide skid, this gives **28 1/4 in to its center**. Across the
 nominal 10 ft width, the current two-skid lesson gives **63 1/2 in between
 centers**; the count of two is still provisional. Repeated-notch first-center
-placement, cut clearance, skid count and crosswise cut length remain pending.
+placement, cut clearance and skid count remain pending.
 A 1 1/2 in drawn slot width is only a
 provisional fit to the stated member width. **Runners** remains a draft
 alternate name. Alan has since accepted the skid render and confirmed
 **floor joist** for the regular crosswise 2x6 seated in the notches. The
-manual lesson now focuses on that member at `?step=joists`; rim/end-member
-names, floor-frame assembly name, member treatment, cut length and remaining
-layout still await agreement. Skid visual acceptance does not confirm those
-other assumptions.
+manual lesson now shows the full frame on the skids at `?step=frame`;
+the earlier `?step=joists` remains available. Alan confirmed a 120 in outside
+floor width with 1 1/2 in outer boards each side and joists 3 in shorter,
+giving a **derived 117 in / 9 ft 9 in** cut length. “Outer board” is Alan's
+wording; rim/end-member names and the floor-frame assembly name remain
+proposed. Outer-board height/length, full-frame length and remaining layout
+are not established by skid visual acceptance.
 
 Alan confirmed the end details on September 27, 2026: one notch runs
 **3 in inward from its skid tip**, the other **1 1/2 in inward**, and
@@ -56,15 +65,33 @@ seat is `5.5 - 1 = 4.5 in` above the bottom, so the remaining vertical end
 face between cut and seat is **calculated as 1 1/2 in**. Record the confirmed
 reach and angle separately from those derived heights. Do not assign the
 unequal top notches to front/back. Keep repeated-notch first-center
-placement and cutting clearance separately provisional. The 3 in notch
-does not establish an extra board, and end-member placement remains
-provisional. Check the visible end shape before claiming it is corrected.
+placement and cutting clearance separately provisional. Alan later explicitly
+confirmed two boards at one end and one at the other. The pair fits the 3 in
+notch, the single fits the 1 1/2 in notch; this is a derived display mapping,
+not a shop front/back assignment. Check the visible end shape before
+claiming it is corrected.
+
+Alan has also confirmed a **flat treated 2x4** behind the double end
+boards toward the inside. It rests **on top of the skids**, at their
+5 1/2 in top elevation; it does not use the 4 1/2 in notch seat or require
+a new skid notch. From the agreed size conversion, it is 3 1/2 in horizontal
+by 1 1/2 in vertical, with a calculated 7 in top elevation. Alan confirmed
+**93 in length**, converting to **7 ft 9 in**, replacing the earlier 117 in
+draft. Its current sideways centering remains provisional. Alan says the
+mule hooks onto this board to drag the barn; use the descriptive label
+**Board the mule hooks onto**, without inferring hardware or load ratings.
+Show it in the full-frame view; see the
+[floor-frame skill](../part-floor-frame/SKILL.md) for its `end-backing`
+record. **Flat treated 2x4** describes the piece; a formal shop part name
+has not been supplied.
 
 The opt-in setting is `floorStudy.notches.endRebates`, with
 `negative: { lengthIn: 3, depthIn: 1 }` and
 `positive: { lengthIn: 1.5, depthIn: 1 }`. Negative/positive are display
 coordinates only. Use `status.endRebates: "confirmed"` for those dimensions
-and keep `status.endMemberPlacement: "provisional"`. This does not confirm
+and record `status.endBoardCounts: "confirmed"`, with
+`status.endBoardMapping` and `status.endMemberPlacement` as `"derived"`.
+This does not confirm
 the repeated-notch layout datum.
 
 Use `floorStudy.skids.bottomCuts: { reachIn: 3, angleDeg: 45 }` and
@@ -192,7 +219,7 @@ These quirks belong to the normal finished model, not the opt-in lesson.
 * For the opt-in lesson, verify actual skid extents, visible notch depth,
   the two spacing provisions, and that the crosswise members seat in the
   cuts. Retain pending labels for repeated-notch first-center placement,
-  clearance, end-member placement and other layout
+  clearance and other unconfirmed layout
   defaults. Run the ordinary golden check too, to prove its path is unchanged.
 * A company's skid positions: change `skids.table` in its company file (or
   the manufacturer file), never the code.

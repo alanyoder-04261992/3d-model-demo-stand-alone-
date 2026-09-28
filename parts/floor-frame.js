@@ -352,6 +352,13 @@ export function floorPlanOf(plan) {
   if (study) {
     joist = Object.assign({}, joist, { nominal:study.joists.nominal, t:study.joists.widthFt, d:study.joists.heightFt });
     spacing = study.joists.spacingFt;
+    if (study.frame && study.frame.widthFt != null) {
+      // Width is confirmed separately from the still-provisional length
+      // inset. Never move the Z datum that lays out joists and skid notches.
+      fp.x0 = -study.frame.widthFt/2; fp.x1 = study.frame.widthFt/2;
+    }
+    if (study.frame && study.frame.sideBoardWidthFt != null)
+      rim = Object.assign({}, rim, { t:study.frame.sideBoardWidthFt });
   }
   var front = (t.porch === "F" || t.porch === "C");
   var zP = front ? plan.ws.F.at : null;
@@ -427,24 +434,49 @@ export function floorFrameMembers(plan) {
       { frame: "room", wall: wp.key, size: F.joist.nominal, zc: c, support: "bear" });
     out.push(m); joists.push(m);
   });
-  /* The lesson's explicit open end rebates replace the old inset end cuts.
-     Keep a single board at each end, moving it only enough to fit its seat.
-     This placement is provisional; the rim/deck footprint stays unchanged. */
+  /* Fit each lesson end package into its explicit seat. A rebate by itself
+     never implies an extra board: counts must be configured separately.
+     Negative/positive are display coordinates, not agreed shop end names. */
   var endRebates = plan.floorStudy && plan.floorStudy.notches.endRebates;
-  if (endRebates) out.forEach(function(m) {
-    if (m.kind !== "end-joist") return;
+  if (endRebates) out = out.flatMap(function(m) {
+    if (m.kind !== "end-joist") return [m];
     var end = m.meta.end === "back" ? "negative" : "positive";
     var rebate = endRebates[end];
-    if (!rebate) return;
+    if (!rebate) return [m];
+    var count = plan.floorStudy.frame && plan.floorStudy.frame.endCounts[end] || 1;
     var tip = plan.floorStudy.skids.lengthFt/2;
     var a = end === "negative" ? -tip : tip-rebate.lengthFt;
     var b = end === "negative" ? -tip+rebate.lengthFt : tip;
-    var centre = (m.p0[2]+m.p1[2])/2;
-    var next = Math.max(a+m.w/2,Math.min(b-m.w/2,centre));
-    m.p0[2] += next-centre; m.p1[2] += next-centre;
-    m.meta.zc = next; m.meta.endRebate = end;
-    m.meta.placementStatus = plan.floorStudy.status.endMemberPlacement;
+    var inward = end === "negative" ? 1 : -1;
+    var centre = (m.p0[2]+m.p1[2])/2, halfPackage = count*m.w/2;
+    var packageCentre = centre+inward*(count-1)*m.w/2;
+    var next = Math.max(a+halfPackage,Math.min(b-halfPackage,packageCentre));
+    return Array.from({length:count},function(_,index) {
+      var z = next+inward*(index-(count-1)/2)*m.w;
+      return Object.assign({},m,{p0:[m.p0[0],m.p0[1],z],p1:[m.p1[0],m.p1[1],z],
+        meta:Object.assign({},m.meta,{zc:z,endRebate:end,boardIndex:index+1,boardCount:count,
+          countStatus:plan.floorStudy.status.endBoardCounts,mappingStatus:plan.floorStudy.status.endBoardMapping,
+          placementStatus:plan.floorStudy.status.endMemberPlacement})});
+    });
   });
+  var backing = plan.floorStudy && plan.floorStudy.frame && plan.floorStudy.frame.backing;
+  if (backing) {
+    var endMembers = out.filter(function(m) { return m.kind === "end-joist" && m.meta.endRebate === backing.end; });
+    var negative = backing.end === "negative";
+    var shoulder = negative ? Math.max.apply(null,endMembers.map(function(m) { return m.p0[2]+m.w/2; }))
+      : Math.min.apply(null,endMembers.map(function(m) { return m.p0[2]-m.w/2; }));
+    var span = F.roomRect.x1-F.roomRect.x0-2*rw;
+    var length = backing.lengthFt == null ? span : backing.lengthFt;
+    if (length > span+1e-9) throw new Error("floorStudy.frame.backing must fit between the outer boards.");
+    var xc = (F.roomRect.x0+F.roomRect.x1)/2;
+    var bottom = plan.floorStudy.skids.heightFt;
+    out.push(boxMember("end-backing",backing.treated ? "treated" : "lumber",
+      xc-length/2,xc+length/2,bottom,bottom+backing.heightFt,
+      negative ? shoulder : shoulder-backing.widthFt,negative ? shoulder+backing.widthFt : shoulder,
+      {frame:"room",end:backing.end,size:backing.nominal,orientation:"flat",support:"skid-top",
+        treated:backing.treated,purpose:backing.purpose,lengthStatus:plan.floorStudy.status.backingLength,
+        lateralPositionStatus:plan.floorStudy.status.backingLateralPosition}));
+  }
   out.forEach(function (m) { m.stage = "floor-frame"; });
   return out;
 }

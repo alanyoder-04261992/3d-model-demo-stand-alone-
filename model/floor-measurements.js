@@ -82,6 +82,16 @@ export function floorMeasurements(plan) {
   const joists = frameMembers.filter((record) => record.member.kind === "joist")
     .sort((a, b) => a.center[2] - b.center[2]);
   const rims = frameMembers.filter((record) => record.member.kind === "rim");
+  const backing = frameMembers.find((record) => record.member.kind === "end-backing") || null;
+  const frameBounds = boundsOf(frameMembers.map((record) => record.bounds));
+  const endGroups = Object.fromEntries(["negative","positive"].map((end) => {
+    const members = frameMembers.filter((record) => record.member.kind === "end-joist" &&
+      (record.member.meta.endRebate || (record.member.meta.end === "back" ? "negative" : "positive")) === end);
+    return [end,{end,count:members.length,members,bounds:boundsOf(members.map((record)=>record.bounds)),
+      status:{count:plan.floorStudy?.status.endBoardCounts || "provisional",
+        mapping:plan.floorStudy?.status.endBoardMapping || "provisional",
+        placement:plan.floorStudy?.status.endMemberPlacement || "provisional"}}];
+  }));
   const joist = joists.slice().sort((a, b) => Math.abs(a.center[2]) - Math.abs(b.center[2]))[0] || null;
   const rim = rims.find((record) => record.member.meta.side === "R") || rims[0] || null;
   const spacingPairs = joists.slice(1).map((record, index) => ({
@@ -98,7 +108,8 @@ export function floorMeasurements(plan) {
     study: plan.floorStudy ? { enabled:true,status:plan.floorStudy.status,
       joistSeatHeightFt:plan.floorStudy.joistBottomFt,joistTopFt:plan.floorStudy.joistTopFt,
       skidTopFt:plan.floorStudy.skids.heightFt,notchPlacement:plan.floorStudy.notches.placement,
-      endRebates:plan.floorStudy.notches.endRebates,bottomCuts:plan.floorStudy.skids.bottomCuts } : null,
+      endRebates:plan.floorStudy.notches.endRebates,bottomCuts:plan.floorStudy.skids.bottomCuts,
+      frame:plan.floorStudy.frame } : null,
     nominal: { widthFt: plan.W, lengthFt: plan.L },
     supports: { ...supportBounds, xsFt, runs, count: runs.length,
       lengthFt: supportBounds ? supportBounds.z1Ft - supportBounds.z0Ft : 0,
@@ -114,8 +125,11 @@ export function floorMeasurements(plan) {
       notchWidthFt:plan.floorStudy?.notches.widthFt || 0,
       notchDepthFt:plan.floorStudy?.notches.depthFt || 0,
       notchSeatYFt:plan.floorStudy?.joistBottomFt ?? null },
-    frame: { members: frameMembers, joists, rims, joist, rim, spacingPairs,
-      spacingFt: spacingPairs[0]?.spacingFt ?? null, bounds: boundsOf(frameMembers.map((record) => record.bounds)),
+    frame: { members: frameMembers, joists, rims, joist, rim, backing, spacingPairs,endGroups,
+      treated:plan.floorStudy?.frame?.treated ?? null,
+      widthFt:frameBounds ? frameBounds.x1Ft-frameBounds.x0Ft : 0,
+      sideBoardWidthFt:rim?.widthFt || 0,joistLengthFt:joist?.lengthFt || 0,
+      spacingFt: spacingPairs[0]?.spacingFt ?? null, bounds: frameBounds,
       nominalJoist: plan.floorStudy?.joists.nominal || floor.joist, nominalRim: floor.rim,
       settingsJoistSection: settingsSection(plan.floorStudy?.joists.nominal || floor.joist), settingsRimSection: settingsSection(floor.rim),
       nominalSpacingIn: plan.floorStudy?.joists.spacingIn ?? floor.spacingIn },

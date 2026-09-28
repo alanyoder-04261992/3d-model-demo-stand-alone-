@@ -11,15 +11,14 @@ import { defaults } from "../model/design.js";
 import { makePlan } from "../model/plan.js";
 import { floorStudyPlan } from "../model/floor-study.js";
 import { floorMeasurements } from "../model/floor-measurements.js";
-import { onlyFloorJoists } from "../model/floor-joist-lesson.js";
 import { assemble, onlyParts } from "../engine/assemble.js";
-import { woodFinish } from "../ui/learn-wood.js";
+import { woodFinish, floorWoodTexture } from "../ui/learn-wood.js";
 
 const cat=loadCatalogue("learning-side-loft");
 const plan=floorStudyPlan(makePlan(defaults(cat),cat));
 const measurements=floorMeasurements(plan);
 const original=assemble(plan,{frames:true,scene:"studio",trueColour:true}).build;
-const isolated=onlyFloorJoists(onlyParts(original,["skids","floor-frame"]),measurements);
+const isolated=onlyParts(original,["skids","floor-frame"]);
 const build=woodFinish(isolated,measurements);
 function geometrySignature(drawing) {
   const triangles=[];
@@ -41,11 +40,21 @@ assert.deepEqual(geometrySignature(build),geometrySignature(isolated),
 const modelBounds={x0:Infinity,y0:Infinity,z0:Infinity,x1:-Infinity,y1:-Infinity,z1:-Infinity};
 const partCounts={};
 const groups=[];
+const textures={};
+mkdirSync(new URL("../test/out/",import.meta.url),{recursive:true});
 for(const key of build.ORDER) {
   const bucket=build.buckets[key];
   if(!bucket.n) continue;
   const group={key,material:{tint:bucket.tint,tintSpace:"linear",texture:bucket.tex,
     spec:bucket.spec,gloss:bucket.gloss,bump:bucket.bump,glow:bucket.glow},triangles:[]};
+  if(!textures[bucket.tex]) {
+    const texture=floorWoodTexture(bucket.tex);
+    if(texture) {
+      const filename=bucket.tex+".rgba";
+      writeFileSync(new URL("../test/out/"+filename,import.meta.url),texture.pixels);
+      textures[bucket.tex]={width:texture.width,height:texture.height,file:filename};
+    }
+  }
   for(const tag of build.tags[key] || []) for(let t=tag.from;t<tag.from+tag.count;t++) {
     assert.ok(["skids","floor-frame"].includes(tag.part));
     const offset=t*27,positions=[],normals=[],uv=[];
@@ -69,15 +78,19 @@ const support=measurements.supports.runs.find((run)=>run.xFt>0);
 const notch=support.notches.find((cut)=>cut.z0Ft<=joist.bounds.z0Ft+1e-9 && cut.z1Ft>=joist.bounds.z1Ft-1e-9);
 assert.ok(notch,"the representative floor joist must have a supporting notch");
 assert.ok(Math.abs(joist.bounds.y0Ft-notch.seatYFt)<1e-9,"the joint must touch at the notch seat");
-assert.equal(partCounts["floor-frame"],measurements.frame.joists.length*12);
+assert.equal(partCounts["floor-frame"],measurements.frame.members.length*12);
 const output={
   schemaVersion:1,units:"feet",coordinateAxes:{x:"across building width",y:"up",z:"along skid length"},
-  source:"Current learning-side-loft plan, only skids and regular floor joists; exact assembly vertices.",
-  renderingNote:"woodFinish material tint and UVs retained; procedural texture images are not included. This is mesh data, not a browser capture.",
-  modelBounds,partCounts,groups,
+  source:"Current learning-side-loft plan: skids, floor joists, outer boards and end boards; exact assembly vertices.",
+  renderingNote:"woodFinish material tint, UVs and seeded texture pixels retained. This is mesh data, not a browser capture.",
+  modelBounds,partCounts,groups,textures,
   metadata:{nominal:measurements.nominal,status:plan.floorStudy.status,
     supports:measurements.supports,regularJoists:measurements.frame.joists,
     frame:{count:measurements.frame.joists.length,nominalJoist:measurements.frame.nominalJoist,
+      members:measurements.frame.members,bounds:measurements.frame.bounds,
+      outerBoards:measurements.frame.rims,
+      endBoards:measurements.frame.members.filter(record=>record.member.kind==="end-joist"),
+      backing:measurements.frame.members.find(record=>record.member.kind==="end-backing") || null,
       spacingFt:measurements.frame.spacingFt,spacingPairs:measurements.frame.spacingPairs},
     joint:{joist,skid:support,notch,anchors:{
       joistTop:[joist.center[0],joist.bounds.y1Ft,joist.center[2]],

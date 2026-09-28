@@ -75,6 +75,10 @@
         "bottomCuts": { "reachIn": 3, "angleDeg": 45 }
       },
       "joists": { "nominal": "2x6", "widthIn": 1.5, "heightIn": 5.5, "spacingIn": 16 },
+      "frame": {
+        "widthFt": 10, "sideBoardWidthIn": 1.5, "endCounts": { "negative": 2, "positive": 1 }, "treated": true,
+        "backing": { "nominal": "2x4", "widthIn": 3.5, "heightIn": 1.5, "lengthIn": 93, "end": "negative", "treated": true, "purpose": "mule-attachment" }
+      },
       "notches": {
         "depthIn": 1, "widthIn": 1.5, "alternateSpacingIn": 12,
         "endRebates": {
@@ -89,7 +93,12 @@
         "notchWidth": "provisional", "notchPositions": "provisional",
         "supportOffset": "confirmed", "supportLayout": "provisional", "frameFootprint": "provisional",
         "rimSection": "provisional", "deck": "provisional",
-        "endRebates": "confirmed", "endMemberPlacement": "provisional", "bottomCuts": "confirmed"
+        "endRebates": "confirmed", "endMemberPlacement": "derived", "bottomCuts": "confirmed",
+        "frameWidth": "confirmed", "sideBoardWidth": "confirmed", "joistLength": "derived",
+        "endBoardCounts": "confirmed", "endBoardMapping": "derived", "frameTreatment": "confirmed",
+        "backingSection": "confirmed", "backingOrientation": "confirmed", "backingTreatment": "confirmed",
+        "backingLocation": "confirmed", "backingLength": "confirmed",
+        "backingLateralPosition": "provisional", "backingPurpose": "confirmed"
       }
     }
   },

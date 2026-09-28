@@ -23,7 +23,11 @@ to point to; they are not yet agreed shop language.
 | Current direction | “Build a floor first and we build it step by step” | Begin with the floor, discuss one visible piece at a time, and wait for agreement before adding the next stage. | Later request, September 27, 2026 |
 | Confirmed term, material and dimensions | **Skids** | Long supports underneath, made of treated wood: nominal 4x6, actual 3 1/2 x 5 1/2 in, total length 16 ft. Start with these alone. | Alan's descriptions and explicit treated-wood confirmation, September 27, 2026; dimensions from his words |
 | Confirmed term and connection | **Notches** | Cuts 1 in down into the skid tops. Crosswise nominal 2x6 members, actual 1 1/2 x 5 1/2 in, sit in them. | Alan's description and supplied photos, September 27, 2026; dimensions from his words |
-| Confirmed part term; current focus | **Floor joist** | The crosswise nominal 2x6, actual 1 1/2 x 5 1/2 in, seated 1 in down in the skid notches. Cut length, treatment and remaining layout remain unconfirmed. | Alan: “Yes—floor joist,” September 27, 2026 |
+| Confirmed term, section and length rule | **Floor joist** | Crosswise nominal 2x6, actual 1 1/2 x 5 1/2 in, seated 1 in down in the skid notches. The confirmed 3 in subtraction from the 10 ft width gives a derived 117 in (9 ft 9 in) length. Treated wood is confirmed; remaining layout stays pending. | Alan's term confirmation, width correction and material confirmation, September 27, 2026 |
+| Confirmed wording, thickness and overall width | **Outer board** | A 1 1/2 in board on each long side within the confirmed 10 ft outside floor width. Its height and length are not confirmed; “rim joist” remains proposed. | Alan's correction, September 27, 2026 |
+| Confirmed end-board counts | **Two at one end; one at the other** | Explicitly confirmed counts. Two 1 1/2 in boards fit the 3 in notch and one fits the 1 1/2 in notch; that fit supplies display coordinates, not a shop front/back assignment. | Alan's later correction, September 27, 2026; notch mapping derived from fit |
+| Confirmed piece, section, material, length and purpose; descriptive label | **Board the mule hooks onto** | Flat treated 2x4 behind the double end boards toward the inside, resting on the skid tops. Alan confirmed 93 in long and said the mule hooks onto it to drag the barn. The flat section is 3 1/2 in horizontal by 1 1/2 in vertical using the agreed conversion. Sideways placement and a formal shop name remain pending. | Alan's description and length reply, September 27, 2026 |
+| Confirmed material and visual request | **Treated boards; varied texture and knots** | The discussed floor joists, outer boards and end boards are treated wood. Grain and knots should vary between boards. Deck treatment, species, grade and treatment chemistry remain unconfirmed. | Alan's later reply, September 27, 2026 |
 | Accepted view; manual progression | Skids look good; next part | Alan accepted the skid render and asked for the next part. Move the discussion to the regular crosswise floor joists; this is not blanket approval of unresolved assumptions. | Alan: “Ok looks good now the next part,” September 27, 2026 |
 | Confirmed end cuts | **Skid ends and end notches** | One end notch runs 3 in inward from its tip, the other 1 1/2 in; both are 1 in deep. The piece beyond the end notch stays at notch height. Each 45-degree bottom-corner cut reaches 3 in back from its skid tip and slopes upward toward that tip. | Alan's description and clarifications, September 27, 2026 |
 | Confirmed spacing and option | **16 in on center standard; 12 in on center option** | Extra notches provide the 12 in positions and can remain unused in the standard layout. Alan clarified 12 inches, not feet. | Alan's follow-up replies, September 27, 2026 |
@@ -38,29 +42,39 @@ meanings. The later skid/notch description confirms the specific dimensions
 and seating recorded above. Other names, dimensions and installation
 details remain pending.
 
-**Current piece: floor joist.** Alan accepted the skid view and explicitly
-confirmed this name for the crosswise member. The next manual view is
-`learn.html?company=learning-side-loft&step=joists`: skids plus regular
-crosswise floor joists, starting with an angled overview. The connection
-close-up is available through its button.
-Keep rim boards, end boards, sheets, walls and roof out of this focused
-view. No automatic progression is requested.
+**Current view: the floor frame on the skids.** Alan confirmed a 10 ft floor
+width with 1 1/2 in outer boards each side and joists 3 in shorter. The
+resulting joist length is **117 in / 9 ft 9 in**, derived from his rule. He
+also confirmed two boards at one end and one at the other, plus a **flat
+treated 2x4** immediately behind the double end boards on top of the skids.
+Alan confirmed that 2x4 is **93 in long (7 ft 9 in)** and is the board the
+mule hooks onto to drag the barn. Its currently centered sideways placement
+is still provisional. Use
+`learn.html?company=learning-side-loft&step=frame` to show those pieces
+together, starting with an angled overview. The earlier `?step=joists`
+view remains available for isolating the regular joists. Sheets, walls and
+roof come later. Nothing advances automatically.
 
 For Alan's “Can't see it” report, use the
 [joist picture page](../../joists.html). It displays labeled
-[floor-joist overview](../../images/floor-joists.png) and
-[connection detail](../../images/floor-joist-connection.png) images without
+[floor-frame overview](../../images/floor-joists.png),
+[joist connection](../../images/floor-joist-connection.png) and
+[board the mule hooks onto](../../images/floor-end-backing.png) images without
 JavaScript. These are model renders generated from the current geometry.
-Refresh both images whenever that geometry changes. The pictures do not
-confirm the joists' cut length, wood treatment or first position, and they
+Refresh the model renders whenever that geometry changes, including this
+wider view with outer and end boards. The separate flat treated 2x4 close-up
+should show its position on top of the skids, the 3 1/2 in horizontal and
+1 1/2 in vertical section, and confirmed 93 in length. Its centered sideways
+placement must remain marked provisional. The pictures do not
+confirm first-joist position or remaining dimensions, and they
 do not include Alan's private reference photos.
 
 Open the [floor learning page](../../learn.html), for example
-`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=joists` after
+`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=frame` after
 `npm run serve`.
 For Alan's iOS phone, use the
 [pictures saved in GitHub](https://github.com/alanyoder-04261992/3d-model-demo-stand-alone-/blob/codex/side-loft-terminology/images/floor-joists.png)
-or the existing [interactive floor-joist lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=joists).
+or, when hosting is restored, the [interactive floor lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=frame).
 The new picture page and startup fix are ready locally, but the deploy was
 blocked by Netlify with “Account credit usage exceeded - new deploys are
 blocked until credits are added.” Do not present the hosted `joists.html`
@@ -85,43 +99,49 @@ top sheets, walls or roof, and no autoplay. Alan has now named them **skids**
 and identified their **notches**. Use those confirmed words, while retaining
 **runners** only as an unconfirmed alternate label.
 That remains the page's default starting view; Alan has now accepted the
-skid render and moved the current discussion to **floor joist**.
+skid render, confirmed **floor joist**, and moved the current discussion to
+the joists together with the outer boards, end-board arrangement and flat
+treated 2x4 behind the double end boards.
 
-He explicitly confirmed **the skids are treated wood** and requested **a
-little texture and knots in the wood**. Use subtle surface detail to help
-read the parts without obscuring the notches or measurements. A wood
-finish on the later frame is only a visual treatment: Alan has not yet
-confirmed whether those crosswise members are treated. Species, grade and
-treatment chemistry also remain unconfirmed.
+He explicitly confirmed **the skids are treated wood**, then confirmed
+treated wood for the discussed **floor joists, outer boards and end boards**.
+He requested varied grain and knots so boards do not all look the same.
+Use deterministic per-board variation that stays stable when the view
+changes. Keep the detail subtle enough to read notches and measurements.
+Deck treatment, species, grade and treatment chemistry remain unconfirmed.
 
 Alan's latest request is to put the terms **on the 3D render** so we can
 check our names and understanding of how the pieces fit. In the
 [learning page](../../learn.html), anchor each proposed label to its actual
 piece with a leader line or another unambiguous visual pointer. Use
 **skids** for the long supports, **notches** for their top cuts, and the now
-confirmed **floor joist** for the regular crosswise member. **Rim joist**,
+confirmed **floor joist** for the regular crosswise member. Use Alan's
+wording **outer board** for each long side board. **Rim joist**,
 **end joist**, **floor frame** and **floor decking** remain proposed.
 Inspect the
 rendered labels before reporting that this visual requirement is complete.
 
-As Alan directs the lesson, manually reveal the regular floor joists first
+As Alan directs the lesson, show the floor joists and outer/end boards
 to show the confirmed connection: the actual 1 1/2 x 5 1/2 in crosswise
 members seat 1 in down into notches in the actual 3 1/2 x 5 1/2 in skids.
-They are not simply stacked on an uncut skid top. The optional perimeter
-members and sheets remain modeled relationships to examine together. Keep
-the skids-only default, the requested joist focus and no autoplay.
+They are not simply stacked on an uncut skid top. The current view includes
+the confirmed two-board/one-board end arrangement. Sheet details and
+remaining frame dimensions stay pending. Keep the skids-only default, the
+requested full-frame view and no autoplay.
 
 | Status | Candidate description | What still needs agreement |
 | --- | --- | --- |
-| Confirmed piece, name, sections, spacing options, skid offset and end cuts | Skids and notches | Repeated-notch first-center placement, cut clearance, skid count and end-member placement still need confirmation. |
-| Term, section and notched seating confirmed; current focus | Floor joist: regular crosswise 2x6 member | Cut length, treatment and remaining layout. “Rim joist,” “end joist” and “floor frame” remain proposed names for other pieces or the assembly. |
+| Confirmed piece, name, sections, spacing options, skid offset and end cuts | Skids and notches | Repeated-notch first-center placement, cut clearance and skid count still need confirmation. End-board mapping and placement are derived from fit. |
+| Term, section, treatment, length rule and seating confirmed; 117 in length derived | Floor joist: regular crosswise 2x6 member | Remaining layout. “Rim joist,” “end joist” and “floor frame” remain proposed technical names for other pieces or the assembly. |
+| Alan's wording, thickness and end counts confirmed | Outer boards; two boards at one end, one at the other | Outer-board height and length, full-frame length and shop front/back assignment. |
+| Section, flat orientation, treatment, location, 93 in length and purpose confirmed | Board the mule hooks onto: flat treated 2x4 behind the double end boards | Sideways placement and any formal name such as “cleat” or “blocking.” |
 | Later; pending | Flat sheets on top | Their name and meaning when Alan is ready to add them. |
 
 The spacing is now confirmed: 16 in on center standard, with extra cuts for
 the 12 in option. Repeated-notch first-center placement and cutting clearance remain
-pending; do not infer them by measuring the photos. The `?step=joists` view
-is the current manual focus. The optional
-`?step=frame` and `?step=deck` views are for later manual additions, not an
+pending; do not infer them by measuring the photos. The `?step=frame` view
+is the current manual focus; `?step=joists` remains available. The optional
+`?step=deck` view is for a later manual addition, not an
 automatic sequence. A learning display choice is not a declaration of the
 shop's build order. Agree on the current meaning and record corrections before
 advancing, following Alan's direction and pace in the conversation.
@@ -148,9 +168,16 @@ photos as part of the website or GitHub documentation.
 | Measurement | Value | Confirmation or calculation |
 | --- | --- | --- |
 | Skid section | Nominal 4x6; actual 3 1/2 x 5 1/2 in | Use the actual section for the corrected lesson geometry and dimensions. |
-| Skid material | Treated wood | Explicitly confirmed for the skids; no species, grade, treatment chemistry or frame-member treatment is established. |
+| Skid and discussed floor-frame material | Treated wood | Explicitly confirmed for skids, floor joists, outer boards and end boards. Deck treatment, species, grade and treatment chemistry are not established. |
 | Skid total length | 16 ft | Replaces the older drawn 16.14 ft extent for this lesson. |
-| Floor-joist section | Nominal 2x6; actual 1 1/2 x 5 1/2 in | Name, section and 1 in notched seating confirmed; cut length, treatment and remaining layout are pending. |
+| Floor-joist section | Nominal 2x6; actual 1 1/2 x 5 1/2 in | Name, section, treatment and 1 in notched seating confirmed; remaining layout is pending. |
+| Outside floor width | 10 ft / 120 in | Confirmed by Alan's width correction; full floor-frame length is not confirmed. |
+| Outer-board thickness | 1 1/2 in on each side | Alan's wording and dimension; the technical name, height and length remain pending. |
+| Derived floor-joist cut length | 117 in / 9 ft 9 in | Calculated from Alan's confirmed rule, 3 in shorter than the 10 ft width: `120 - 1.5 - 1.5 = 117`; not a separate field measurement. |
+| End-board counts | Two at one end; one at the other | Explicitly confirmed. Mapping the pair to the 3 in notch and single to the 1 1/2 in notch is derived from their fit; no shop front/back assignment. |
+| Flat treated 2x4 section | 3 1/2 in horizontal by 1 1/2 in vertical | Derived from the agreed nominal/actual conversion and Alan's confirmed flat orientation; treatment and location behind the double end are confirmed. |
+| Flat treated 2x4 elevation | Bottom 5 1/2 in; top 7 in above skid bottom | Rests on the skid top. The 7 in top is calculated as `5.5 + 1.5`; it is not seated at the 4 1/2 in notch floor. |
+| Board the mule hooks onto: length | 93 in; 7 ft 9 in by conversion | Confirmed by Alan; replaces the earlier 117 in draft fit. Its lateral centering remains provisional. |
 | Notch depth | 1 in down into the skid top | The crosswise member sits in that cut. Cutting clearance remains pending. |
 | Standard member spacing | 16 in on center | Center-to-center along the skid; the repeated-notch first-center placement remains pending. |
 | Optional member spacing | 12 in on center | Extra notches allow this spacing; extra cuts may stay empty with the standard 16 in layout. |
@@ -185,14 +212,37 @@ distinct from Alan's directly stated measurements in labels and readouts.
 The lesson setting is `floorStudy.notches.endRebates`, with
 `negative: { lengthIn: 3, depthIn: 1 }` and
 `positive: { lengthIn: 1.5, depthIn: 1 }`. Negative and positive identify
-display coordinates only. Mark end-rebate dimensions confirmed while
-keeping `endMemberPlacement` provisional. Fitting the existing single
-1 1/2 in member into the narrow cut moves it outward by 0.36 in from the
-legacy inset position; this is a provisional model fit, not a confirmed
-shop position. The 3 in notch retains one board and does not imply another.
+display coordinates only. Alan later explicitly confirmed two end boards
+at one end and one at the other, superseding the earlier one-board model
+at both ends. Fit the pair to the 3 in cut and the single to the 1 1/2 in
+cut; this follows their combined thickness rather than a confirmed shop
+front/back assignment. Record that end mapping and placement as derived.
 Keep repeated-notch
 first-center placement and cutting clearance separately provisional, and
 inspect the actual end render before claiming the correction is shown.
+
+The lesson's `floorStudy.frame` settings are
+`{ widthFt: 10, sideBoardWidthIn: 1.5, treated: true, endCounts: { negative: 2, positive: 1 } }`.
+`frameWidth`, `sideBoardWidth`, `frameTreatment` and `endBoardCounts` are
+confirmed; `joistLength`, `endBoardMapping` and `endMemberPlacement` are
+derived. The frame expands only across X. Its long-board Z extent remains
+the earlier modeled 15.94 ft while the fitted end-board packages reach the
+16 ft skid tips; these are model extents, not an agreed overall floor-frame
+length. The regular notch grid and first offset stay unchanged and
+provisional. `frameFootprint`, `rimSection` and `deck` remain provisional.
+
+The additional flat treated 2x4 uses `floorStudy.frame.backing` with
+`{ nominal: "2x4", widthIn: 3.5, heightIn: 1.5, lengthIn: 93, end: "negative", treated: true, purpose: "mule-attachment" }`.
+Its section, flat orientation, treatment, length and location behind the
+double end are confirmed. Negative is the display end already mapped to the
+doubled boards, not a shop front/back name. The current model centers the
+93 in piece between the outer boards; that sideways position is provisional.
+It rests on the skid top without a new notch. Use the descriptive label
+**Board the mule hooks onto** for Alan's stated purpose when dragging the
+barn. `backingLength` and `backingPurpose` are confirmed;
+`backingLateralPosition` stays provisional. No hardware or load rating is
+established. Do not rename it “cleat”
+or “blocking” without agreeing that wording with Alan.
 
 The lesson's opt-in `floorStudy` plan uses these actual sections and the
 notched seating. It is enabled only for the learning page. The normal
@@ -209,7 +259,10 @@ to the inside face, not to the center. The normal model's legacy skid table
 is unchanged, and the lesson's skid count remains separately provisional.
 
 **Still pending:** repeated-notch first-center placement, cutting clearance,
-skid count, crosswise cut length, end-member placement, and the
+skid count, outer-board height and length, sideways placement of the board
+the mule hooks onto,
+full-frame length, deck details,
+shop front/back assignment, and the
 names **rim joist**, **end joist**, **floor frame** and **floor decking**. Any interim
 layout retained to draw the example must remain identified as a model
 assumption. A modeled notch width of 1 1/2 in only matches the stated member
@@ -355,9 +408,12 @@ two-slope-per-side shape **lofted roof** (`gambrel` in code). **Ridge cap**
 means the highest long metal strip covering where its sides meet. **Skids**
 and **notches**, their listed dimensions and the crosswise member seating
 are now confirmed too. Alan accepted the skid render, asked for the next
-part and confirmed **floor joist** for the regular crosswise 2x6. “Rim
+part and confirmed **floor joist** for the regular crosswise 2x6. He then
+confirmed the subtraction rule deriving its 117 in length within a 120 in
+outside width, 1 1/2 in outer boards on each side, two boards at one end
+with one at the other, and treated wood for those framing boards. “Rim
 joist,” “end joist,” “floor frame” and “floor decking,” plus the remaining
-layout, treatment and cut details, remain pending.
+layout, other material specifications and cut details, remain pending.
 
 **Verified in the code:** the dimension order, roof profile, long-side
 entrance, standard door/window layout and opening rules above. This proves

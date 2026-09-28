@@ -154,10 +154,16 @@ const confirmedSpec = {
   skids:{nominal:"4x6",widthIn:3.5,heightIn:5.5,lengthFt:16,insetToInsideIn:30,
     bottomCuts:{reachIn:3,angleDeg:45}},
   joists:{nominal:"2x6",widthIn:1.5,heightIn:5.5,spacingIn:16},
+  frame:{widthFt:10,sideBoardWidthIn:1.5,endCounts:{negative:2,positive:1},treated:true,
+    backing:{nominal:"2x4",widthIn:3.5,heightIn:1.5,lengthIn:93,end:"negative",treated:true,purpose:"mule-attachment"}},
   notches:{widthIn:1.5,depthIn:1,alternateSpacingIn:12,
     endRebates:{negative:{lengthIn:3,depthIn:1},positive:{lengthIn:1.5,depthIn:1}}},
   status:{skidSection:"confirmed",skidLength:"confirmed",joistSection:"confirmed",
     standardSpacing:"confirmed",alternateSpacing:"confirmed",notchDepth:"confirmed",supportOffset:"confirmed",endRebates:"confirmed",bottomCuts:"confirmed",
+    frameWidth:"confirmed",sideBoardWidth:"confirmed",joistLength:"derived",endBoardCounts:"confirmed",
+    endBoardMapping:"derived",endMemberPlacement:"derived",frameTreatment:"confirmed",
+    backingSection:"confirmed",backingOrientation:"confirmed",backingTreatment:"confirmed",backingLocation:"confirmed",backingLength:"confirmed",
+    backingLateralPosition:"provisional",backingPurpose:"confirmed",
     notchWidth:"provisional",notchPositions:"provisional"},
 };
 const noStudy = structuredClone(plan);
@@ -174,6 +180,28 @@ assert.ok(Object.isFrozen(studyPlan)&&Object.isFrozen(studyPlan.floorStudy.skids
 const studyDrawing=assemble(studyPlan,{frames:true}).build;
 const study=floorMeasurements(studyPlan);
 const members=skidStudyMembers(studyPlan);
+assert.deepEqual(plan.construction.floorStudy.frame,confirmedSpec.frame,"the company enables the confirmed width, board counts and treatment explicitly");
+const withoutBacking=structuredClone(configured);
+delete withoutBacking.construction.floorStudy.frame.backing;
+const withoutBackingPlan=floorStudyPlan(withoutBacking),withoutBackingMeasures=floorMeasurements(withoutBackingPlan);
+assert.deepEqual(study.frame.members.filter((record)=>record.member.kind!=="end-backing"),withoutBackingMeasures.frame.members,
+  "adding the flat backing board changes none of the existing floor boards");
+assert.equal(withoutBackingMeasures.frame.backing,null,"the added board is opt-in only");
+assert.deepEqual(onlyParts(studyDrawing,"skids"),onlyParts(assemble(withoutBackingPlan,{frames:true}).build,"skids"),
+  "the flat backing board adds no notch and changes no skid triangle");
+const priorFrame=structuredClone(configured);
+delete priorFrame.construction.floorStudy.frame;
+const priorPlan=floorStudyPlan(priorFrame),priorMeasures=floorMeasurements(priorPlan);
+const priorDrawing=assemble(priorPlan,{frames:true}).build;
+assert.deepEqual(onlyParts(studyDrawing,"skids"),onlyParts(priorDrawing,"skids"),
+  "changing frame width and end counts preserves every skid triangle, notch, material and stage");
+assert.deepEqual(study.supports.notches,priorMeasures.supports.notches,
+  "the complete repeated-notch grid and first offset are unchanged");
+assert.deepEqual(study.frame.joists.map((record)=>record.center[2]),priorMeasures.frame.joists.map((record)=>record.center[2]),
+  "widening the frame cannot move the regular joist Z centers");
+near(study.frame.rim.lengthFt,priorMeasures.frame.rim.lengthFt,"existing long-board length is still provisional and unchanged");
+assert.equal(priorMeasures.frame.endGroups.negative.count,1,"a 3in cut never creates an extra board without an explicit count");
+assert.equal(priorMeasures.frame.endGroups.positive.count,1);
 assert.deepEqual(plan.construction.floorStudy.skids.bottomCuts,{reachIn:3,angleDeg:45},"the learning company opts in to both confirmed bottom cuts");
 assert.equal(study.supports.bottomCuts.length,4,"two bottom cuts per skid are available to the annotation layer");
 const withoutBottomCuts=structuredClone(configured);
@@ -235,21 +263,69 @@ for(const run of study.supports.runs) {
   assert.deepEqual(positive.sources,["end-positive"],"narrow cut cannot silently grow to fit the old inset board");
 }
 const endMembers=study.frame.members.filter((record)=>record.member.kind==="end-joist");
-assert.equal(endMembers.length,2,"a 3in end rebate does not invent a doubled end board");
+assert.equal(endMembers.length,3,"explicit counts give two touching boards at one end and one at the other");
 const positiveEnd=endMembers.find((record)=>record.member.meta.endRebate==="positive");
-near(positiveEnd.bounds.z1Ft,8,"narrow-end board is provisionally flush with the tip");
+near(positiveEnd.bounds.z1Ft,8,"single-end board is fit-derived flush with the tip");
 near(positiveEnd.bounds.z0Ft,8-1.5/12,"narrow-end board fits the exact 1.5in open seat");
-assert.equal(positiveEnd.member.meta.placementStatus,"provisional");
-const negativeEnd=endMembers.find((record)=>record.member.meta.endRebate==="negative");
-near(negativeEnd.bounds.z0Ft,-7.97,"3in-end board keeps its provisional existing location when it already fits");
-for(const record of study.frame.members) {
+assert.equal(positiveEnd.member.meta.placementStatus,"derived");
+const negativeEnds=endMembers.filter((record)=>record.member.meta.endRebate==="negative").sort((a,b)=>a.center[2]-b.center[2]);
+assert.equal(negativeEnds.length,2);
+near(negativeEnds[0].bounds.z0Ft,-8,"double package begins at the 3in rebate's tip");
+near(negativeEnds[1].bounds.z1Ft,-8+3/12,"double package ends at the 3in rebate's shoulder");
+near(negativeEnds[0].bounds.z1Ft,negativeEnds[1].bounds.z0Ft,"the two boards touch with neither a gap nor solid overlap");
+assert.equal(study.frame.endGroups.negative.count,2);
+assert.equal(study.frame.endGroups.positive.count,1);
+for(const group of Object.values(study.frame.endGroups)) {
+  assert.deepEqual(group.status,{count:"confirmed",mapping:"derived",placement:"derived"});
+  near(group.bounds.z1Ft-group.bounds.z0Ft,group.count*1.5/12,"group bounds measure the actual touching board package");
+}
+near(study.frame.widthFt*12,120,"confirmed overall frame width");
+near((geometryBounds(studyDrawing,"floor-frame").x1Ft-geometryBounds(studyDrawing,"floor-frame").x0Ft)*12,120,
+  "actual outer frame vertices span exactly 120in");
+near(study.frame.sideBoardWidthFt*12,1.5,"each outer long board has its confirmed 1.5in thickness");
+near(study.frame.joistLengthFt*12,117,"derived joist cut length is 120 minus both 1.5in outer boards");
+assert.equal(study.frame.treated,true,"floor framing treatment is explicitly confirmed");
+for(const record of study.frame.members.filter((record)=>!["rim","end-backing"].includes(record.member.kind))) {
+  near(record.lengthFt*12,117,"every crosswise board fits the exact inside width");
+  near(record.bounds.x0Ft,study.frame.rims.find((rim)=>rim.member.meta.side==="L").bounds.x1Ft,"crosswise board touches the left outer board");
+  near(record.bounds.x1Ft,study.frame.rims.find((rim)=>rim.member.meta.side==="R").bounds.x0Ft,"crosswise board touches the right outer board");
+}
+const backing=study.frame.backing;
+assert.ok(backing,"the flat reinforcement has its own measured member");
+assert.equal(backing.member.kind,"end-backing");
+assert.equal(backing.nominalLumber,"2x4");
+assert.equal(backing.member.meta.orientation,"flat");
+assert.equal(backing.member.meta.support,"skid-top");
+assert.equal(backing.member.meta.treated,true);
+near(backing.widthFt*12,3.5,"flat 2x4 is 3.5in wide horizontally along the skid");
+near(backing.depthFt*12,1.5,"flat 2x4 is 1.5in tall");
+near(backing.bounds.y0Ft*12,5.5,"backing rests on the skid top, not the 4.5in notch seat");
+near(backing.bounds.y1Ft*12,7,"backing top is 7in above the original skid bottom");
+near(backing.bounds.z0Ft,study.frame.endGroups.negative.bounds.z1Ft,"backing touches the inside face of the doubled end package");
+near(backing.lengthFt*12,93,"confirmed mule-attachment board cut length is 93in");
+near(backing.bounds.x0Ft,-3.875,"93in board is provisionally centered");
+near(backing.bounds.x1Ft,3.875,"93in board is provisionally centered");
+near(backing.bounds.x0Ft-study.frame.rims.find((rim)=>rim.member.meta.side==="L").bounds.x1Ft,1,"centering currently gives a derived 12in left gap");
+near(study.frame.rims.find((rim)=>rim.member.meta.side==="R").bounds.x0Ft-backing.bounds.x1Ft,1,"centering currently gives a derived 12in right gap");
+assert.equal(backing.member.meta.lengthStatus,"confirmed");
+assert.equal(backing.member.meta.lateralPositionStatus,"provisional");
+assert.equal(backing.member.meta.purpose,"mule-attachment");
+assert.equal(studyPlan.floorStudy.frame.backing.lengthIn,93,"the explicit backing length comes from Alan's reply");
+for(const run of study.supports.runs) assert.ok(backing.bounds.x0Ft<=run.x0Ft && backing.bounds.x1Ft>=run.x1Ft,
+  "the 93in board spans and bears over both existing skids");
+for(let a=0;a<study.frame.members.length;a++) for(let b=a+1;b<study.frame.members.length;b++) {
+  const A=study.frame.members[a].bounds,B=study.frame.members[b].bounds;
+  const overlaps=["x","y","z"].every((axis)=>Math.min(A[axis+"1Ft"],B[axis+"1Ft"])-Math.max(A[axis+"0Ft"],B[axis+"0Ft"])>1e-9);
+  assert.equal(overlaps,false,"no pair of floor boards occupies the same solid space");
+}
+for(const record of study.frame.members.filter((record)=>record.member.kind!=="end-backing")) {
   near(record.bounds.y0Ft*12,4.5,"cross members and rims begin at the seated floor height");
   near(record.bounds.y1Ft*12,10,"full-depth joist tops are 10in above skid bottoms");
   near(record.depthFt*12,5.5,"joists are not squashed to the old finished datum");
 }
 near(study.frame.joist.widthFt*12,1.5,"cross-member thickness");
 near(study.frame.spacingFt*12,16,"standard joist pitch from lesson data");
-near(study.frame.joist.lengthFt,measurements.frame.joist.lengthFt,"provisional frame width stays unchanged");
+near(study.frame.joist.lengthFt,9.75,"117in is 9ft9in");
 near(study.deck.representative.topPoint[1]*12,10.625,"deck rests on actual joist tops");
 for(const sheet of study.deck.sheets) near(sheet.member.origin[1],study.frame.bounds.y1Ft,"first deck layer touches joists");
 assert.equal(study.study.status.notchDepth,"confirmed");
@@ -258,7 +334,19 @@ assert.equal(study.study.status.notchPositions,"provisional");
 assert.equal(study.study.status.supportOffset,"confirmed");
 assert.equal(study.study.status.endRebates,"confirmed");
 assert.equal(study.study.status.bottomCuts,"confirmed");
-assert.equal(study.study.status.endMemberPlacement,"provisional");
+assert.equal(study.study.status.endMemberPlacement,"derived");
+assert.equal(study.study.status.frameWidth,"confirmed");
+assert.equal(study.study.status.sideBoardWidth,"confirmed");
+assert.equal(study.study.status.joistLength,"derived");
+assert.equal(study.study.status.endBoardCounts,"confirmed");
+assert.equal(study.study.status.endBoardMapping,"derived");
+assert.equal(study.study.status.frameTreatment,"confirmed");
+for(const key of ["backingSection","backingOrientation","backingTreatment","backingLocation"])
+  assert.equal(study.study.status[key],"confirmed");
+assert.equal(study.study.status.backingLength,"confirmed");
+assert.equal(study.study.status.backingLateralPosition,"provisional");
+assert.equal(study.study.status.backingPurpose,"confirmed");
+assert.equal(study.study.status.rimSection,"provisional","outer-board height/other section claims are not promoted by confirmed thickness");
 assert.equal(study.study.status.supportLayout,"provisional","omitted status is never promoted to confirmed");
 
 function trianglesFor(build,part) {
@@ -316,6 +404,10 @@ for(const run of study.supports.runs) {
   near(meshTopAt(run.xFt,run.z0Ft),4.5/12,"negative tip top is the seat, with no raised lip");
   near(meshTopAt(run.xFt,run.z1Ft),4.5/12,"positive tip top is the seat, with no raised lip");
   near(meshYAt(run.xFt,0).bottom,0,"the middle of the skid keeps its flat bottom");
+  for(const fraction of [.2,.5,.8]) {
+    const z=backing.bounds.z0Ft+(backing.bounds.z1Ft-backing.bounds.z0Ft)*fraction;
+    near(meshTopAt(run.xFt,z),backing.bounds.y0Ft,"actual unnotched skid top contacts the flat backing board underside");
+  }
   for(const cut of run.bottomCuts) {
     for(const across of [-.3,0,.3]) for(const fraction of [0,.2,.5,.8,1]) {
       const z=cut.tipZFt+(cut.startZFt-cut.tipZFt)*fraction;
@@ -380,5 +472,16 @@ for(const bottomCuts of [{reachIn:0,angleDeg:45},{reachIn:3,angleDeg:0},
   const invalid=structuredClone(configured);invalid.construction.floorStudy.skids.bottomCuts=bottomCuts;
   assert.throws(()=>floorStudyPlan(invalid),/floorStudy/,"invalid cuts cannot erase the tip face or the flat skid bottom");
 }
+for(const frame of [{widthFt:0},{widthFt:11},{widthFt:10,sideBoardWidthIn:60},
+  {endCounts:{negative:0}},{endCounts:{negative:1.5}},{endCounts:{negative:3}},
+  {endCounts:{positive:2}}]) {
+  const invalid=structuredClone(configured);invalid.construction.floorStudy.frame=frame;
+  assert.throws(()=>floorStudyPlan(invalid),/floorStudy/,"invalid widths or end packages cannot erase the span or overrun a seat");
+}
+for(const backingChange of [{widthIn:0},{heightIn:3.5},{end:"front"},{end:"positive"},{lengthIn:118},{lengthIn:0}]) {
+  const invalid=structuredClone(configured);
+  Object.assign(invalid.construction.floorStudy.frame.backing,backingChange);
+  assert.throws(()=>floorStudyPlan(invalid),/floorStudy/,"backing must lie flat behind the double package and fit within the outer boards");
+}
 
-console.log(`PROVED: supports-only start, all 8 manual floor selections, ${triangleChecks} legacy triangles preserved, measured notched skids and full-depth seated joists, exact 3in/1.5in open end rebates with no lip, both 3in/45-degree bottom cuts with outward normals and intact tip faces, board contact/no intersections, deck fit, 16in/12in patterns, provisional end placement, and ordinary geometry unchanged.`);
+console.log(`PROVED: supports-only start, all 8 manual floor selections, ${triangleChecks} legacy triangles preserved, 120in overall width with exact 117in joists, touching 2/1 end-board packages, flat treated 2x4 backing on the unnotched skid tops, no overlaps, unchanged prior members/skid mesh/notch grid, open rebates and bottom cuts, deck fit, and ordinary geometry unchanged.`);

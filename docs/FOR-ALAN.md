@@ -205,23 +205,40 @@ other, both 1 in deep, without a raised lip beyond the cut. You confirmed
 **3 in back from each end**. The resulting 3 in rise is calculated from
 that reach and angle. With the notch seat 4 1/2 in above the bottom, the
 remaining vertical end face is a calculated 1 1/2 in high. The unequal
-top notches have no agreed front/back assignment; fitting an end board
-into them remains provisional.
+top notches have no agreed front/back assignment. You later confirmed
+**two boards at one end and one at the other**. The pair fits the 3 in cut,
+and the single fits the 1 1/2 in cut; that mapping and placement are derived
+from fit, not an agreed shop front/back name.
 
 You clarified that the 30 in skid offset is from the **outside of the wall
 to the inside face of the skid**, toward the middle of the floor. The
 confirmed 3 1/2 in width puts the center 28 1/4 in from that wall. For the
 current pair across a nominal 10 ft width, that gives 63 1/2 in between
 centers; the skid count itself is still provisional. Repeated-notch
-first-center placement, cut clearance and crosswise cut length also remain open.
+first-center placement, cut clearance, outer-board height and length,
+full floor-frame length and deck details also remain open.
 Your nominal/actual examples are now recorded as 2x4 =
 1 1/2 x 3 1/2 in, 2x6 = 1 1/2 x 5 1/2 in and 4x6 = 3 1/2 x 5 1/2 in;
 other lumber sections have not been confirmed by these examples.
 You accepted the skid render and asked for the next part, then confirmed
 **floor joist** for the crosswise 2x6 seated 1 in down in the skid notches.
-The current manual view is `learn.html?company=learning-side-loft&step=joists`.
-That agrees on the piece and name, not its cut length, treatment or remaining
-layout. “Rim joist,” “end joist,” “floor frame” and “floor decking” are
+You then confirmed a **10 ft outside floor width** with a **1 1/2 in outer
+board on each side**, making the joists 3 in shorter. That rule gives a
+calculated **117 in / 9 ft 9 in** joist length. We have not treated it as a
+separate field measurement. You also confirmed that these floor joists,
+outer boards and end boards are **treated wood**, and asked for grain and
+knots that differ between boards. Their patterns stay stable while you
+move the view. This does not confirm deck treatment, species or grade.
+You also described the **Board the mule hooks onto** when dragging the
+barn: a **flat treated 2x4**, **93 in long**, behind the double end boards,
+resting on the skid tops. That length converts to **7 ft 9 in**. The
+section is 3 1/2 in horizontal by 1 1/2 in vertical, putting its top at a
+calculated 7 in above the skid bottoms. The model centers it sideways for
+now; you have not confirmed that placement. No formal shop name, hardware
+details or load rating has been supplied.
+The current manual view is `learn.html?company=learning-side-loft&step=frame`,
+showing those pieces on the skids together; `?step=joists` remains available.
+“Outer board” is your recorded wording. “Rim joist,” “end joist,” “floor frame” and “floor decking” are
 still proposed in this terminology lesson. The
 opt-in learning model uses the corrected sections and notched seating; the
 normal finished reference keeps its earlier drawing dimensions. See the

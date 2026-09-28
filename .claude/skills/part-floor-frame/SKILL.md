@@ -5,11 +5,17 @@ description: The floor frame (joists, rims and end joists on the skids) of a por
 
 # Floor frame (`parts/floor-frame.js`)
 
-The lesson-only `ui/learn-wood.js` finish adds subtle grain and knots by
-changing material and texture coordinates after assembly; its vertices,
-normals and stages remain unchanged. Alan explicitly confirmed treatment
-for skids; the frame's illustration does not establish its treatment,
-species or grade.
+The lesson-only `ui/learn-wood.js` finish uses the shared `floorWoodTexture`
+RGBA generator: eight seeded grain/end-grain variants with different knot
+counts and positions. A stable per-board hash varies the texture scale,
+offset and tint. Browser and static model renders use the same pixels and
+texture coordinates, so camera changes and checkbox toggles do not
+re-randomize a board. This changes material and texture coordinates after
+assembly; vertices, normals and stages remain unchanged. Alan confirmed treated wood for the
+skids and later for the discussed floor joists, outer boards and end boards.
+His later finish request is for varied grain and knots so boards do not all
+look alike; use deterministic per-board variation. This does not confirm
+deck treatment, wood species, grade or treatment chemistry.
 
 ## Confirmed connection for the opt-in floor lesson
 
@@ -23,40 +29,54 @@ Do not publish the photos.
 He confirmed **16 in on center standard** and extra skid notches for the
 **12 in on center option**. The purpose of unused cuts is settled; the
 repeated-notch first-center placement and notch cut clearance remain pending, as
-do skid count and crosswise member cut length. Alan clarified skid placement
+do skid count, outer-board height and length, and full-frame length. Alan clarified skid placement
 as 30 in from the outside wall to the inside skid face, toward the floor's
 middle. A 3 1/2 in skid puts its center 28 1/4 in from that wall and the
 current pair 63 1/2 in apart across the nominal 10 ft width. The pair's
 count is still provisional. Do not infer the remaining details from the
 nominal footprint. **Skids**, **notches** and **floor joist** are confirmed
-terms. **Rim joist**, **end joist**, **floor frame** and **floor decking**
+terms; **outer board** is Alan's confirmed wording for each long side
+board. **Rim joist**, **end joist**, **floor frame** and **floor decking**
 remain proposed.
 
 Alan accepted the skid render (“Ok looks good now the next part”), then
 explicitly answered **“Yes—floor joist”** on September 27, 2026 for the
-regular crosswise 2x6 seated 1 in down in the skid notches. This confirms
-that part's name, not its cut length, treatment or remaining layout. The
-current manual lesson is `learn.html?company=learning-side-loft&step=joists`,
-showing skids with the regular crosswise joists and their joint close-up.
+regular crosswise 2x6 seated 1 in down in the skid notches. He later
+confirmed the outside floor width as 10 ft, with a 1 1/2 in outer board on
+each side and joists 3 in shorter than the width. Their **117 in / 9 ft 9 in
+length is derived** as `120 - 1.5 - 1.5`, not a separate field measurement.
+The current manual lesson is `learn.html?company=learning-side-loft&step=frame`,
+showing the complete floor frame on the skids, including outer/end boards.
+Alan has also confirmed a **flat treated 2x4** behind the doubled end
+boards toward the inside, resting on the skid tops. Alan confirmed it is
+**93 in long**, and says the mule hooks onto it to drag the barn. Use the
+descriptive label **Board the mule hooks onto**; its current lateral
+centering is not confirmed.
 It starts with an angled overview; the connection button opens the close-up.
-Keep perimeter and end members, sheets, walls and roof out of this focused
-view. Continue only as Alan directs; the render acceptance does not settle
+Keep sheets, walls and roof out of the current view. The earlier
+`?step=joists` view still isolates regular joists. Continue only as Alan
+directs; the render acceptance does not settle
 unrelated assumptions or authorize autoplay.
 
 The [joist picture page](../../../joists.html) addresses the visibility
 report with labeled model renders:
-[overview](../../../images/floor-joists.png) and
-[connection](../../../images/floor-joist-connection.png). The page needs no
+[overview](../../../images/floor-joists.png),
+[connection](../../../images/floor-joist-connection.png) and
+[board the mule hooks onto](../../../images/floor-end-backing.png). The page needs no
 JavaScript. These images are generated from the current model geometry;
-refresh both after geometry edits with `node tools/export-joist-render-data.mjs`
+refresh all three after geometry edits with `node tools/export-joist-render-data.mjs`
 then `python tools/render-joist-picture.py` (Pillow and NumPy are development
 dependencies only). The renderer accepts font overrides; inspect labels after
 changing fonts. They do not publish Alan's reference
-photos or confirm cut length, treatment or first-joist position. Browser
+photos or confirm first-joist position, outer-board height/length or
+full-frame length. Browser
 tooling was unavailable for this visibility fix, so do not describe it as
 browser-verified.
+The flat treated 2x4 close-up should show its top-of-skid seating, 3 1/2 in
+horizontal by 1 1/2 in vertical section and confirmed 93 in length, with
+sideways centering still marked provisional.
 
-The focused view calls `onlyFloorJoists` in
+The optional joists-only view calls `onlyFloorJoists` in
 [floor-joist-lesson](../../../model/floor-joist-lesson.js). It retains the
 existing triangles belonging to regular `kind: "joist"` members; it does
 not rebuild their dimensions or change the shared full-frame part. Rims,
@@ -85,17 +105,50 @@ and **1 1/2 in inward from the other**, **both 1 in deep**, with the piece
 beyond each cut kept at notch height. The lesson's
 `floorStudy.notches.endRebates` uses `negative` for 3 in and `positive` for
 1 1/2 in; these are display coordinates, not agreed front/back names.
-`floorFrameMembers(plan)` keeps a single end member at each end and moves
-it only enough to fit the corresponding seat. In the current 10x16 lesson,
-the narrow-end member moves outward by **0.36 in**; the wider end retains
-one board. Its `meta.placementStatus` comes from
-`floorStudy.status.endMemberPlacement`, which remains **provisional**.
-The confirmed 3 in cut does not imply another board or confirm this shop
-placement. The rim and deck footprints and the ordinary designer are
-unchanged by that fitting adjustment. See the
+Alan later explicitly confirmed **two boards at one end and one at the
+other**, superseding the earlier one-board-at-each-end model. Fit the pair
+of 1 1/2 in boards into the 3 in seat and the single into the 1 1/2 in seat.
+The fit supplies display-coordinate mapping and touching-board placement;
+it does not establish shop front/back names. `endBoardCounts` is confirmed,
+while `endBoardMapping` and `endMemberPlacement` are derived. See the
 [skid skill](../part-skids/SKILL.md) for the confirmed 45-degree bottom cuts,
-each reaching 3 in back from its tip. This does not confirm end-member
-placement.
+each reaching 3 in back from its tip.
+
+The opt-in schema is `floorStudy.frame` with
+`{ widthFt: 10, sideBoardWidthIn: 1.5, treated: true, endCounts: { negative: 2, positive: 1 } }`.
+Statuses `frameWidth`, `sideBoardWidth`, `frameTreatment` and `endBoardCounts` are confirmed;
+`joistLength`, `endBoardMapping` and `endMemberPlacement` are derived.
+Expand the frame's X width only; its Z footprint, repeated-notch grid and
+first offset remain unchanged and provisional. The outer boards retain
+their previous height and length assumptions: currently 15.94 ft long,
+while the fitted end-board packages reach the 16 ft skid tips. These are
+model extents, not a newly confirmed full-frame length. Optional decking
+follows the shared 10 ft frame width, with its other specifications still
+provisional. `frameFootprint`, `rimSection` and `deck` remain provisional.
+The normal designer is unchanged.
+
+The flat treated 2x4 is an `end-backing` member in the full-frame lesson.
+Its schema is `floorStudy.frame.backing`:
+`{ nominal: "2x4", widthIn: 3.5, heightIn: 1.5, lengthIn: 93, end: "negative", treated: true, purpose: "mule-attachment" }`.
+The 3 1/2 in dimension lies horizontally along Z, while 1 1/2 in is
+vertical. It sits against the inside of the doubled end package, with
+bottom at skid-top elevation **5 1/2 in** and a **calculated 7 in top**.
+Do not lower it to the 4 1/2 in notch seat or add another notch.
+`backingSection`, `backingOrientation`, `backingTreatment` and
+`backingLocation` are confirmed, as is `backingLength` with Alan's **93 in**
+reply. **7 ft 9 in** is the conversion; the former 117 in draft is superseded.
+`backingPurpose` is confirmed; `backingLateralPosition` is provisional.
+The model centers it laterally, leaving calculated 12 in gaps to the inside
+faces of the outer boards, but those gaps are not approved shop dimensions.
+Member metadata retains `lengthStatus`, `lateralPositionStatus` and `purpose`.
+Negative
+identifies the model's doubled end, not a confirmed shop front/back
+direction. Use **Board the mule hooks onto** with Alan and describe it as
+the flat treated 2x4 he identified. His stated purpose is attachment while
+the mule drags the barn; do not infer hardware or a load rating.
+`end-backing` is a code identifier, and “cleat” or “blocking” has not
+been agreed. Keep this extra piece out of the optional regular-joists-only
+view, and retain the normal designer's geometry.
 
 Alan also confirmed the discussed nominal/actual examples by subtracting
 1/2 in from each dimension: 2x4 → 1 1/2 x 3 1/2 in, 2x6 → 1 1/2 x 5 1/2 in,
@@ -210,6 +263,10 @@ These quirks belong to the normal model, not the opt-in floor lesson.
 
 ## Checks that guard it
 
+* `node tools/check-floor-lesson.mjs` -- the opt-in frame spans 120 in,
+  crosswise boards are exactly 117 in, and touching two/one end-board
+  packages fit their seats. Skid geometry, notch grid and normal geometry
+  stay unchanged; confirmed and derived statuses stay distinct.
 * `node tools/check-floor-joist-lesson.mjs` -- regular joists match an
   independent member build across all eight manual selections; no rim,
   end or wall-support members leak into the focused view, and the source
