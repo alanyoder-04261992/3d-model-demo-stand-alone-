@@ -29,8 +29,9 @@ company that only wants the designer.
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
 [open the latest end-wall gable board picture saved in GitHub](images/gable-framing.png).
-Netlify hosting is currently unavailable because its account credit limit
-blocks service and deployment; use the GitHub picture or local pages.
+For a phone, open the [hosted gable-board picture page](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/gable.html)
+or [rotate the new model](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/learn.html?step=gable).
+This preview is serving successfully after the earlier Netlify credit-limit interruption.
 For local development,
 run the designer and open `learn.html?company=learning-side-loft` to start
 with the long floor supports and reveal pieces by hand. Labels and dimensions

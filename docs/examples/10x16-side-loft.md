@@ -201,17 +201,17 @@ confirm first-joist position or remaining dimensions, and they
 do not include Alan's private reference photos.
 
 Open the [floor learning page](../../learn.html), for example
-`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=walls` after
+`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=gable` after
 `npm run serve`.
 For Alan's iOS phone, use the
-[flooring picture saved in GitHub](https://github.com/alanyoder-04261992/3d-model-demo-stand-alone-/blob/codex/side-loft-terminology/images/flooring.png)
-or, when hosting is restored, the [interactive lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=walls).
-The new picture page and startup fix are ready locally, but the deploy was
-blocked by Netlify with “Account credit usage exceeded - new deploys are
-blocked until credits are added.” Do not present the hosted `joists.html`
-address, `flooring.html` or `walls.html` as live until a later deploy succeeds.
-The existing hosted lesson also returned HTTP 503 with `usage_exceeded`;
-use the GitHub pictures while hosting is unavailable.
+[gable-board picture page](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/gable.html)
+or the [interactive gable lesson](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/learn.html?step=gable).
+Earlier Netlify deployment and hosting failed because of the account credit
+limit. On September 28, the gable-board pull request produced a successful
+deploy preview: the picture page returned HTTP 200 with the new content.
+This restores a phone link; HTTP and asset checks do not prove WebGL or
+physical iOS Safari behavior. The [connection picture saved in GitHub](../../images/gable-board-detail.png)
+remains available independently of hosting.
 The localhost address only works on the computer running the server.
 Alan approved this separate Netlify preview site on September 27, 2026.
 The earlier skid and full-frame phone layouts were checked in the available
