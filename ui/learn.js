@@ -40,7 +40,8 @@ function drawingBox(build) {
 }
 
 export async function startFloorLesson() {
-  if(new URLSearchParams(location.search).get("step")==="walls") return startWallLesson();
+  const wallStep=new URLSearchParams(location.search).get("step");
+  if(["walls","gable"].includes(wallStep)) return startWallLesson({gable:wallStep==="gable"});
   const api = { ready:false,error:null,selection:[],parts:[],renderer:null,plan:null,select:null,setCamera:null };
   window.floorLesson=api;
   const canvas=$("lesson-canvas"), viewport=$("lesson-viewport");

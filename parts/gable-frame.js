@@ -41,7 +41,8 @@
    among the framing entries, before "roof-frame". */
 
 import { gableClip } from "../model/roof-shapes.js";
-import { wallRuns } from "./wall-frame.js";
+import { wallRuns, wallStudyFrame } from "./wall-frame.js";
+import { wallMember, drawMembers as drawStudyMembers } from "./floor-frame.js";
 import {
   trussLayout, gableOpenings, offsetPolyline, ridgeBoard, cleanPoly, clipHalf, rectPoly, drawMembers,
 } from "./roof-frame.js";
@@ -49,6 +50,7 @@ import {
 /* Every stud and opening member of both gable ends, as members (see
    parts/roof-frame.js): x-y outline pushed along z through the gable wall. */
 export function gableFrameMembers(plan) {
+  if (plan.gableStudy) return gableStudyMembers(plan);
   var lay = trussLayout(plan), sec = lay.sec;
   var W = plan.W, L = plan.L, topY = plan.topY;
   var st = sec.stud.t, sd = sec.stud.d, cd = sec.chord.d, dT = sec.deckT;
@@ -150,6 +152,23 @@ export function gableFrameMembers(plan) {
   return out;
 }
 
+/* The explicitly selected lesson starts with just the horizontal 2x6 on
+   edge, on the end wall's upper plate. No roof shape or gable studs are
+   implied by this board. Its inner ledge and both end projections are
+   measured from the existing plate, not the full wall's outside ends. */
+export function gableStudyMembers(plan) {
+  if (!plan.gableStudy) return [];
+  if (plan.wallStudy?.wall !== "end") throw new Error("The gable board needs the selected end wall.");
+  const study = plan.gableStudy, run = wallStudyFrame(plan).runs[0];
+  const member = wallMember("gable-board", "lumber", run.w,
+    study.range.u0, study.range.u1, study.baseYFt, study.topYFt,
+    study.innerFaceOffsetFt, study.outerFaceOffsetFt,
+    { wall: run.key, run: 0, lesson: true, size: study.board.nominal,
+      support: "bear", bearingOn: "upper-plate", orientation: "on-edge" });
+  member.stage = "roof-frame";
+  return [member];
+}
+
 export default {
   id: "gable-frame",
   name: "Gable-end framing",
@@ -158,6 +177,7 @@ export default {
   appliesTo() { return true; },
   members(plan) { return gableFrameMembers(plan); },
   build(plan, kit) {
+    if (plan.gableStudy) { drawStudyMembers(kit, gableStudyMembers(plan), "roof-frame"); return; }
     kit.setStage("roof-frame");
     drawMembers(kit, gableFrameMembers(plan));
   },

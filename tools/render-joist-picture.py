@@ -18,10 +18,11 @@ parser=argparse.ArgumentParser(description='Render exact floor-lesson meshes as 
 parser.add_argument('--deck',action='store_true',help='Read flooring-render-data.json and render flooring overview and layout only.')
 parser.add_argument('--wall',action='store_true',help='Render the side wall study, plate/double-stud detail and wall-end setback close-up.')
 parser.add_argument('--end-wall',action='store_true',help='Render the end wall study and upper-plate setback close-up.')
+parser.add_argument('--gable',action='store_true',help='Render the 2x6 along the end-wall upper plate and its measured connection.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
-source='end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
+source='gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
 data=json.loads((ROOT/f'test/out/{source}-render-data.json').read_text(encoding='utf-8'))
 W,H=1200,940
 NAVY='#173b56'
@@ -146,6 +147,57 @@ def dimension(d,project,p,q,label,offset=(0,0)):
     width=box[2]-box[0]+22
     d.rounded_rectangle((middle[0]-width/2,middle[1]-19,middle[0]+width/2,middle[1]+23),radius=5,fill='white')
     d.text((middle[0]-width/2+11,middle[1]-15),label,font=f,fill=NAVY)
+
+def render_gable():
+    wall=data['metadata']['wall'];gable=data['metadata']['gable']
+    board=gable['board'];b=board['bounds'];upper=wall['plates']['upper'];p=upper['bounds']
+    top=wall['plates']['top'];t=top['bounds']
+    # Actual mesh bounds establish each datum, including the inside (+z) faces.
+    near=(p['x0Ft']-b['x0Ft'])*12;far=(b['x1Ft']-p['x1Ft'])*12
+    ledge=(p['z1Ft']-b['z1Ft'])*12;length=(b['x1Ft']-b['x0Ft'])*12
+    assert abs(near-2.5)<1e-8 and abs(far-2.5)<1e-8
+    assert abs(ledge-.5)<1e-8 and abs(length-118)<1e-8
+    assert abs(b['y0Ft']-p['y1Ft'])<1e-8
+    assert abs((b['y1Ft']-b['y0Ft'])*12-5.5)<1e-8
+    assert abs((b['z1Ft']-b['z0Ft'])*12-1.5)<1e-8
+    def face(box,x,y):return [x,y,box['z1Ft']]
+    im,project=scene(yaw=.32,pitch=.35);d=ImageDraw.Draw(im)
+    title(d,'End wall · first gable board','2×6 standing on edge, along the upper plate')
+    leader(d,project(face(b,-1.8,(b['y0Ft']+b['y1Ft'])/2)),(35,150,480,110),
+           '2×6 along upper plate',['1½ × 5½ in actual · on edge'])
+    leader(d,project(face(p,2.2,(p['y0Ft']+p['y1Ft'])/2)),(840,300,325,110),
+           'Upper plate',['9 ft 5 in · underneath'])
+    dimension(d,project,face(b,b['x0Ft'],b['y1Ft']),face(b,b['x1Ft'],b['y1Ft']),
+              '118 in · 9 ft 10 in',(0,-43))
+    leader(d,project(face(b,b['x0Ft']+.05,b['y0Ft']+.06)),(35,748,545,111),
+           '2½ in past each cut end',['Measured from the upper plate’s end'])
+    leader(d,project([1.5,p['y1Ft'],(p['z1Ft']+b['z1Ft'])/2]),(620,748,545,111),
+           '½ in inside ledge',['Upper plate edge to 2×6 inner face'])
+    d.text((35,895),'Calculated length: 113 + 2½ + 2½ = 118 in. The end wall remains 120 in.',font=font(22),fill='#526879')
+    (ROOT/'images').mkdir(exist_ok=True)
+    im.save(ROOT/'images/gable-framing.png')
+
+    target=[p['x0Ft']+.48,p['y1Ft']+.10,p['z1Ft']]
+    im,project=scene(target,1.7,yaw=-.62,pitch=.62);d=ImageDraw.Draw(im)
+    title(d,'2×6 connection · inside view','½ in inside ledge · 2½ in past the upper plate’s cut end')
+    leader(d,project(face(b,p['x0Ft']+.78,b['y1Ft']-.19)),(675,150,490,110),
+           '2×6 on edge',['Bottom rests on the upper plate'])
+    leader(d,project(face(p,p['x0Ft']+.52,p['y0Ft']+.055)),(35,748,540,111),
+           'Upper plate',['2×4 · 1½ × 3½ in actual'])
+    # The extension is lengthwise. Both endpoints use the board's lower inside edge.
+    dimension(d,project,face(b,b['x0Ft'],b['y0Ft']),face(b,p['x0Ft'],b['y0Ft']),
+              '2½ in past cut',(-38,45))
+    x=p['x0Ft']+.86
+    dimension(d,project,[x,p['y1Ft'],b['z1Ft']],[x,p['y1Ft'],p['z1Ft']],
+              '½ in ledge',(95,80))
+    # Place the section-height dimension at the visible cut end of the 2x6.
+    dimension(d,project,face(b,b['x0Ft'],b['y0Ft']),face(b,b['x0Ft'],b['y1Ft']),
+              '5½ in',(-50,-8))
+    d.rounded_rectangle((620,748,1165,859),radius=12,fill='white',outline='#bdccd8',width=2)
+    d.text((640,760),'Same projection at both ends',font=font(27,True),fill=NAVY)
+    d.text((640,801),'2×6 length: 9 ft 5 in + 5 in = 9 ft 10 in',font=font(23),fill=NAVY)
+    d.text((35,895),'The 2½ in is measured lengthwise past the upper plate’s cut end.',font=font(22),fill='#526879')
+    im.save(ROOT/'images/gable-board-detail.png')
 
 def render_wall():
     wall=data['metadata']['wall'];members=wall['members'];bounds=wall['bounds']
@@ -336,6 +388,10 @@ def render_flooring():
     d.text((40,1030),'⅝ in tongue-and-groove flooring · 7 laid pieces · colors distinguish the rows',font=font(23),fill='#526879')
     plan.save(ROOT/'images/flooring-layout.png')
 
+if args.gable:
+    render_gable()
+    print('Saved exact-mesh gable board overview and connection PNGs.')
+    sys.exit(0)
 if args.wall or args.end_wall:
     render_wall()
     print('Saved exact-mesh wall study PNGs.')

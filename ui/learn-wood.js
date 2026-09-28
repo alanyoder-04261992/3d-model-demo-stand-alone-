@@ -70,7 +70,7 @@ export function woodFinish(build,measurements) {
   const wallTint=hexRGB("#d6c4a2").map(srgbLin); // Appearance only; wall treatment is unspecified.
   for(const key of build.ORDER) {
     const bucket=build.buckets[key], tags=build.tags[key] || [];
-    if(!tags.some(tag=>["skids","floor-frame"].includes(tag.part) || (tag.part==="wall-frame" && measurements.wall))) {
+    if(!tags.some(tag=>["skids","floor-frame"].includes(tag.part) || (tag.part==="wall-frame" && measurements.wall) || (tag.part==="gable-frame" && measurements.gable))) {
       out.buckets[key]=bucket; out.ORDER.push(key); out.tags[key]=tags; continue;
     }
     for(const tag of tags) for(let t=tag.from;t<tag.from+tag.count;t++) {
@@ -79,7 +79,8 @@ export function woodFinish(build,measurements) {
       // At a butt joint both boards contain the shared face. Its outward
       // normal identifies which board owns it, so end grain stays correct.
       const normal=vertices.slice(3,6),center=points[0].map((_,i)=>points.reduce((sum,p)=>sum+p[i]/3,0));
-      const records=tag.part==="floor-frame"?measurements.frame.members:tag.part==="wall-frame"?measurements.wall?.members:null;
+      const records=tag.part==="floor-frame"?measurements.frame.members:tag.part==="wall-frame"?measurements.wall?.members
+        :tag.part==="gable-frame" && measurements.gable?[measurements.gable.board]:null;
       const member=records?.find(record=>
         points.every(p=>inside(p,record.bounds)) && ["x","y","z"].some((axis,i)=>
           Math.abs(normal[i])>.9 && Math.abs(center[i]-record.bounds[axis+(normal[i]>0?"1Ft":"0Ft")])<1e-7)) || null;
@@ -88,7 +89,7 @@ export function woodFinish(build,measurements) {
       const crossAxis=axis===0?2:0;
       const end=Math.abs(vertices[3+axis])>.65;
       const run=tag.part==="skids"?measurements.supports.runs.find(run=>points.every(p=>p[0]>=run.x0Ft-1e-7 && p[0]<=run.x1Ft+1e-7)):null;
-      const identity=member?(tag.part==="wall-frame"?"wall:":"")+member.member.kind+":"+member.center.map(v=>v.toFixed(6)).join(":")
+      const identity=member?(tag.part==="wall-frame"?"wall:":tag.part==="gable-frame"?"gable:":"")+member.member.kind+":"+member.center.map(v=>v.toFixed(6)).join(":")
         :"skid:"+(run?.xFt ?? points[0][0]).toFixed(6);
       const hash=boardHash(identity),random=mulberry32(hash);
       const variant=hash%VARIANTS,seed=random(),crossSeed=random();
@@ -108,7 +109,7 @@ export function woodFinish(build,measurements) {
       const nextKey=key+"-"+texture+"-"+hash;
       if(!out.buckets[nextKey]) {
         const treated=tag.part==="skids" || (tag.part==="floor-frame" && measurements.frame.treated===true);
-        const tint=tag.part==="wall-frame"?wallTint:treated?treatedTint:bucket.tint;
+        const tint=["wall-frame","gable-frame"].includes(tag.part)?wallTint:treated?treatedTint:bucket.tint;
         const tone=.95+random()*.1;
         out.buckets[nextKey]={...bucket,tex:texture,tint:tint.map(v=>Math.min(1,v*tone)),bump:0,v:[],n:0};
         out.ORDER.push(nextKey); out.tags[nextKey]=[];

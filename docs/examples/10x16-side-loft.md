@@ -42,6 +42,7 @@ to point to; they are not yet agreed shop language.
 | Confirmed stud cut length; overall wall height derived | **75 in studs** | With three flat plates, bottom-plate underside to upper-plate top is a derived 79 1/2 in (`75 + 3 x 1.5`). | Alan's dimension reply, September 28, 2026 |
 | Confirmed wall spacing and pair alignment | **16 in on center; double stud every 4 ft** | The 4 ft mark falls between the touching pair. The starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
 | Confirmed end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; side upper is full 16 ft. End bottom/top plates and studs run full 10 ft; end upper stops 3 1/2 in short at each end. | Alan's corrections and explicit both-ends reply, September 28, 2026 |
+| Confirmed piece and fit; descriptive label and derived length | **2x6 along upper plate** | On edge on top of the end wall's upper plate, leaving a 1/2 in inside ledge and projecting 2 1/2 in past each cut end. Actual section is 1 1/2 in thick by 5 1/2 in high. Derived length is 118 in (9 ft 10 in). Formal shop name and treatment are not confirmed. | Alan's photo, clarification and explicit top-seating/both-ends reply, September 28, 2026 |
 
 The whole shape is **lofted roof**, and its highest long metal meeting strip
 is **ridge cap** in our conversation. We have agreed on those specific
@@ -49,10 +50,12 @@ meanings. The later skid/notch description confirms the specific dimensions
 and seating recorded above. Other names, dimensions and installation
 details remain pending.
 
-**Current view: One plain wall over the floor.** Use
-`learn.html?company=learning-side-loft&step=walls` to select a 16 ft side wall
-or a 10 ft end wall independently. Keep the existing floor, manual control and
-no roof or autoplay; joined corners and openings come later. Alan's
+**Current view: The end wall with one 2x6 along its upper plate.** Use
+`learn.html?company=learning-side-loft&step=gable` for this next piece, keeping
+the existing floor and manual control. More gable framing, joined corners,
+openings and autoplay are not included. The earlier
+`learn.html?company=learning-side-loft&step=walls` still selects a plain 16 ft
+side wall or 10 ft end wall independently. Alan's
 preferred word is **Flooring**; `floor-deck` and “floor decking” are code
 or reference labels. The earlier `?step=deck`, `?step=frame` and `?step=joists` views
 remain available.
@@ -103,6 +106,39 @@ them after wall geometry or label changes. Alan's reference photographs
 remain private and supply no pixel-derived dimensions. The opt-in wall
 settings and implementation are recorded in the
 [wall-frame skill](../../.claude/skills/part-wall-frame/SKILL.md).
+
+### First gable piece — September 28, 2026
+
+Alan described a **2x6 along upper plate** while beginning the end wall's
+gable framing. This is a descriptive label; no formal shop term such as
+“chord,” “header” or “rafter” has been agreed. He clarified that it runs
+along the upper plate on edge, and explicitly confirmed that it rests on
+top, leaves a **1/2 in ledge on the inside**, and projects **2 1/2 in past
+both cut ends** of the plate. The projection runs along the end wall; it is
+not a 2 1/2 in vertical rise. Inside means toward the room: the plate's
+inside face is 1/2 in farther inward than the new board's inside face.
+
+| Measurement | Value and source |
+| --- | --- |
+| Section and orientation | Nominal 2x6, actual 1 1/2 in through the wall depth by 5 1/2 in vertically; section conversion and on-edge orientation confirmed. |
+| Supporting end upper plate | 113 in (9 ft 5 in), from the previously confirmed `120 - 3.5 - 3.5` rule. |
+| New board length | **118 in / 9 ft 10 in**, derived as `113 + 2.5 + 2.5`. |
+| Remaining distance to each end-wall endpoint | **1 in**, derived as `3.5 - 2.5`; do not extend the board past the 10 ft wall. |
+| Inside ledge | **1/2 in**, confirmed between the plate's room-facing edge and the new board's room-facing face. |
+| Outside ledge | **1 1/2 in**, derived as `3.5 - 0.5 - 1.5`; this is across the depth, not along the board. |
+| Board bottom elevation | Upper-plate top: **79 1/2 in above flooring**, derived. |
+| Board top elevation | **85 in above flooring**, derived as `79.5 + 5.5`; with current floor elevation, **95 5/8 in above skid bottom**. |
+
+Use the [gable picture page](../../gable.html), its
+[overview](../../images/gable-framing.png) and
+[connection detail](../../images/gable-board-detail.png) to show the board,
+supporting upper plate, end projection and inside ledge. Read the
+[gable-frame skill](../../.claude/skills/part-gable-frame/SKILL.md) for this
+opt-in lesson's implementation. Keep the ordinary finished designer and
+existing floor/wall member dimensions unchanged. Alan's reference photograph
+stays private; these dimensions come from his words, not pixel measurements.
+Treatment, species, grade, fastening, the rest of the gable and a full roof
+construction sequence remain unconfirmed.
 
 Alan previously confirmed a 10 ft floor
 width with 1 1/2 in outer boards each side and joists 3 in shorter. The
@@ -165,17 +201,17 @@ confirm first-joist position or remaining dimensions, and they
 do not include Alan's private reference photos.
 
 Open the [floor learning page](../../learn.html), for example
-`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=walls` after
+`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=gable` after
 `npm run serve`.
 For Alan's iOS phone, use the
-[flooring picture saved in GitHub](https://github.com/alanyoder-04261992/3d-model-demo-stand-alone-/blob/codex/side-loft-terminology/images/flooring.png)
-or, when hosting is restored, the [interactive lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=walls).
-The new picture page and startup fix are ready locally, but the deploy was
-blocked by Netlify with “Account credit usage exceeded - new deploys are
-blocked until credits are added.” Do not present the hosted `joists.html`
-address, `flooring.html` or `walls.html` as live until a later deploy succeeds.
-The existing hosted lesson also returned HTTP 503 with `usage_exceeded`;
-use the GitHub pictures while hosting is unavailable.
+[gable-board picture page](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/gable.html)
+or the [interactive gable lesson](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/learn.html?step=gable).
+Earlier Netlify deployment and hosting failed because of the account credit
+limit. On September 28, the gable-board pull request produced a successful
+deploy preview: the picture page returned HTTP 200 with the new content.
+This restores a phone link; HTTP and asset checks do not prove WebGL or
+physical iOS Safari behavior. The [connection picture saved in GitHub](../../images/gable-board-detail.png)
+remains available independently of hosting.
 The localhost address only works on the computer running the server.
 Alan approved this separate Netlify preview site on September 27, 2026.
 The earlier skid and full-frame phone layouts were checked in the available

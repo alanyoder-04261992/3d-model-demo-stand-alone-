@@ -28,9 +28,10 @@ company that only wants the designer.
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
-[open the latest wall model picture saved in GitHub](images/wall-framing.png).
-Netlify hosting is currently unavailable because its account credit limit
-blocks service and deployment; use the GitHub picture or local pages.
+[open the latest end-wall gable board picture saved in GitHub](images/gable-framing.png).
+For a phone, open the [hosted gable-board picture page](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/gable.html)
+or [rotate the new model](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/learn.html?step=gable).
+This preview is serving successfully after the earlier Netlify credit-limit interruption.
 For local development,
 run the designer and open `learn.html?company=learning-side-loft` to start
 with the long floor supports and reveal pieces by hand. Labels and dimensions
@@ -62,7 +63,7 @@ calculated 2 ft width. The [picture page](flooring.html) shows the flooring
 and its layout. Sheet material, treatment, net coverage and exact joint
 profile remain unspecified. First joist position, notch clearance and
 outer-board dimensions still need agreement; rim/end-joist names remain proposed.
-The current view is **Walls** at `learn.html?company=learning-side-loft&step=walls`.
+The **Walls** view remains at `learn.html?company=learning-side-loft&step=walls`.
 Choose one 16 ft **side wall** or one 10 ft **end wall** on the completed floor.
 The studs and all three plates are 2x4, actual 1½ × 3½ in. Alan confirmed
 75 in stud cut lengths, 16 in layout spacing and a double stud every 4 ft,
@@ -78,6 +79,15 @@ The [side wall end detail](images/wall-end-detail.png) and
 [end wall upper-plate detail](images/end-wall-plate-detail.png) show the fit.
 The starting layout datum, extra corner studs, fasteners, openings and wall
 treatment remain unconfirmed. Nothing advances automatically.
+The current step begins the **gable framing** at
+`learn.html?company=learning-side-loft&step=gable`. A 2x6 stands on edge
+on the end wall's upper plate, leaving a confirmed 1/2 in inside ledge and
+projecting 2 1/2 in past each cut end. The calculated board length is
+`113 + 2.5 + 2.5 = 118 in` (9 ft 10 in). Its actual section is 1 1/2 in
+thick and 5 1/2 in high. The [gable picture page](gable.html) includes a
+[measured connection close-up](images/gable-board-detail.png).
+The description **2x6 along upper plate** identifies the piece; a formal
+shop name, treatment and fastening remain unconfirmed.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the
 [building terms](docs/BUILDING-TERMS.md), then use
@@ -100,6 +110,7 @@ same terms and construction details.
 | --- | --- |
 | [Customer setup](.agents/skills/shed-customer-setup/SKILL.md) | Set up a company or buyer's design and continue the manual building lesson. |
 | [Measurements for other sizes](.agents/skills/shed-measurements/SKILL.md) | Recalculate lengths from the building width, length, actual lumber and end setbacks, with worked examples. |
+| [Gable framing](.claude/skills/part-gable-frame/SKILL.md) | The 2x6 along the end-wall upper plate, its inside ledge and end projections. |
 | [Skids](.claude/skills/part-skids/SKILL.md) | Treated supports, notches, end cuts and their measurements. |
 | [Floor frame](.claude/skills/part-floor-frame/SKILL.md) | Floor joists, outer/end boards and the board the mule hooks onto. |
 | [Flooring](.claude/skills/part-floor-deck/SKILL.md) | Tongue-and-groove sheets, thickness, staggered seams and appearance. |
@@ -216,6 +227,7 @@ Chromium's software graphics, each on its own port.
 | `check-floor-joist-lesson.mjs` | no | the joist lesson retains only regular crosswise joists, preserving their geometry, materials and stages while keeping the full frame unchanged |
 | `check-floor-deck-lesson.mjs` | no | the seven flooring pieces cover the 10x16 frame at 5/8 in thick, with staggered seams and a trimmed last row, without changing the frame, skids or ordinary designer |
 | `check-wall-lesson.mjs` | no | separate side and end walls use 75 in studs, three flat plates and touching pairs at 4 ft marks; exact mesh contacts, volume, floor and ordinary designer are preserved |
+| `check-gable-lesson.mjs` | no | the 2x6 rests on the end upper plate with a 1/2 in inside ledge and 2 1/2 in projections; actual mesh, contact and resizing formulas agree, and existing floor/wall/ordinary geometry stays unchanged |
 | `check-model-live.mjs` | yes | the rules (sizes, walls, roof line, standard doors and windows, clamping, prices) are Barnwright's, number for number, against its live page |
 | `check-ui.mjs` | yes | the designer page works: every style, size, colour, door and window, drag, "Add here", layouts on phone and desktop, escaping |
 | `check-views.mjs` | yes | Outside, Inside, Framing and Watch it build on seven buildings, from real clicks and real pixels |

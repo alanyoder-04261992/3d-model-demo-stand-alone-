@@ -1,5 +1,5 @@
 /* Export the current lesson mesh for a deterministic static illustration.
-   Run: node tools/export-joist-render-data.mjs [--deck | --wall | --end-wall]
+   Run: node tools/export-joist-render-data.mjs [--deck | --wall | --end-wall | --gable]
    Writes test/out/joist-render-data.json (ignored intermediate).
    Then: python tools/render-joist-picture.py
    With --deck: writes flooring-render-data.json instead; render with
@@ -15,18 +15,22 @@ import { floorStudyPlan } from "../model/floor-study.js";
 import { floorMeasurements } from "../model/floor-measurements.js";
 import { wallStudyPlan } from "../model/wall-study.js";
 import { wallStudyMeasurements } from "../model/wall-measurements.js";
+import { gableStudyPlan } from "../model/gable-study.js";
+import { gableStudyMeasurements } from "../model/gable-measurements.js";
 import { assemble, onlyParts } from "../engine/assemble.js";
 import { woodFinish, floorWoodTexture } from "../ui/learn-wood.js";
 import { flooringFinish, flooringTexture } from "../ui/learn-flooring.js";
 
 const cat=loadCatalogue("learning-side-loft");
-const withWall=process.argv.includes("--wall") || process.argv.includes("--end-wall");
-const wallType=process.argv.includes("--end-wall")?"end":"side";
+const withGable=process.argv.includes("--gable");
+const withWall=process.argv.includes("--wall") || process.argv.includes("--end-wall") || withGable;
+const wallType=process.argv.includes("--end-wall") || withGable?"end":"side";
 const withDeck=process.argv.includes("--deck") || withWall;
-const selectedParts=["skids","floor-frame",...(withDeck ? ["floor-deck"] : []),...(withWall?["wall-frame"]:[])];
+const selectedParts=["skids","floor-frame",...(withDeck ? ["floor-deck"] : []),...(withWall?["wall-frame"]:[]),...(withGable?["gable-frame"]:[])];
 const floorPlan=floorStudyPlan(makePlan(defaults(cat),cat));
-const plan=withWall?wallStudyPlan(floorPlan,{wall:wallType}):floorPlan;
-const measurements={...floorMeasurements(plan),...(withWall?{wall:wallStudyMeasurements(plan)}:{})};
+const wallPlan=withWall?wallStudyPlan(floorPlan,{wall:wallType}):floorPlan;
+const plan=withGable?gableStudyPlan(wallPlan,{gable:true}):wallPlan;
+const measurements={...floorMeasurements(plan),...(withWall?{wall:wallStudyMeasurements(plan)}:{}),...(withGable?{gable:gableStudyMeasurements(plan)}:{})};
 const original=assemble(plan,{frames:true,scene:"studio",trueColour:true}).build;
 const isolated=onlyParts(original,selectedParts);
 const build=flooringFinish(woodFinish(isolated,measurements),measurements);
@@ -98,6 +102,7 @@ const output={
     supports:measurements.supports,regularJoists:measurements.frame.joists,
     ...(withDeck ? {deck:measurements.deck} : {}),
     ...(withWall ? {wall:measurements.wall} : {}),
+    ...(withGable ? {gable:measurements.gable} : {}),
     frame:{count:measurements.frame.joists.length,nominalJoist:measurements.frame.nominalJoist,
       members:measurements.frame.members,bounds:measurements.frame.bounds,
       outerBoards:measurements.frame.rims,
@@ -112,7 +117,7 @@ const output={
     }},
   },
 };
-const file=new URL(`../test/out/${withWall ? wallType+"-wall" : withDeck ? "flooring" : "joist"}-render-data.json`,import.meta.url);
+const file=new URL(`../test/out/${withGable ? "gable" : withWall ? wallType+"-wall" : withDeck ? "flooring" : "joist"}-render-data.json`,import.meta.url);
 mkdirSync(new URL("../test/out/",import.meta.url),{recursive:true});
 writeFileSync(file,JSON.stringify(output,null,2)+"\n");
 console.log(JSON.stringify({file:file.pathname,groups:groups.length,partCounts,modelBounds,

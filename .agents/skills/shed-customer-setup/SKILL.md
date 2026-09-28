@@ -57,11 +57,13 @@ outside floor width, 1 1/2 in **outer boards** on both sides, and joists
 3 in shorter than that width. The resulting **117 in / 9 ft 9 in** joist
 length is calculated from his rule. He also explicitly confirmed two
 boards at one end and one at the other. He subsequently added **Flooring**
-and has now moved to the walls. The current manual view is
-`learn.html?company=learning-side-loft&step=walls`: select one plain 16 ft
-side wall or one plain 10 ft end wall independently over the existing floor.
+and has progressed through the walls to the first gable piece. The current
+manual view is `learn.html?company=learning-side-loft&step=gable`: the end wall
+with a single 2x6 along its upper plate, over the existing floor. The earlier
+`learn.html?company=learning-side-loft&step=walls` selects one plain 16 ft
+side wall or one plain 10 ft end wall independently.
 The earlier `?step=deck`, `?step=frame` and `?step=joists` views remain available.
-Keep joined corners, openings, roof and autoplay out of this step. This is a learning order, not an approved
+Keep joined corners, openings, further roof pieces and autoplay out of this step. This is a learning order, not an approved
 shop sequence. Do not impose the software's `buildOrder` as the order the shop
 uses. Agree on the current part's meaning before moving on, and follow Alan's
 direction and pace in the conversation. Preserve already confirmed terms even
@@ -115,6 +117,22 @@ studs or fastening. Keep the starting layout datum, further wall placement,
 openings and wall treatment unconfirmed. Do not copy floor-timber treatment onto walls or publish the
 private reference photographs. The wall lesson is opt-in and must leave
 the existing floor and ordinary finished designer unchanged.
+
+For the first gable piece, read the existing
+[part-gable-frame skill](../../../.claude/skills/part-gable-frame/SKILL.md).
+Use **2x6 along upper plate** as a descriptive label, not a formal shop name.
+Alan confirmed a nominal 2x6, actual 1 1/2 x 5 1/2 in, on edge along and on
+top of the end wall's upper plate. It leaves a **1/2 in inside ledge** and
+extends **2 1/2 in past both cut ends** of the plate. The ledge is measured
+between the plate's and board's room-facing faces; the end projection is
+along the wall, not vertical. For this 10 ft end wall, derive the new length
+from the 113 in upper plate: `113 + 2.5 + 2.5 = 118 in` (9 ft 10 in).
+This leaves 1 in to each full-wall endpoint. The on-edge height raises its
+top 5 1/2 in above the plate. Show the single new board at `?step=gable`
+and in [the gable picture page](../../../gable.html), leaving further gable
+members for Alan's next instruction. Treatment, species, grade, fastening
+and names such as “chord,” “rafter” or “header” remain unconfirmed. Keep
+the supplied photo private and preserve the earlier floor and wall lessons.
 
 Alan also requested **measurements on the render** so he can check the
 lengths. Anchor dimension lines to the measured geometry and name the span

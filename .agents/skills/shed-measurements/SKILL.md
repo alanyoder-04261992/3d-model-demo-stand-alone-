@@ -1,6 +1,6 @@
 ---
 name: shed-measurements
-description: Calculate shed floor and wall measurements for a different building size using actual lumber, plate end offsets, stud layout and staggered flooring. Use when Alan asks how dimensions were calculated or wants to reuse the learned assembly at another size; keep builder-confirmed rules separate from illustrative arithmetic.
+description: Calculate shed floor, wall and learned gable-board measurements for a different building size using actual lumber, plate end offsets, stud layout and staggered flooring. Use when Alan asks how dimensions were calculated or wants to reuse the learned assembly at another size; keep builder-confirmed rules separate from illustrative arithmetic.
 ---
 
 # Shed measurements
@@ -9,7 +9,8 @@ Use this workflow to explain and apply the measurement relationships learned
 in [the 10x16 example](../../../docs/examples/10x16-side-loft.md). It does not
 replace the individual [wall](../../../.claude/skills/part-wall-frame/SKILL.md),
 [floor-frame](../../../.claude/skills/part-floor-frame/SKILL.md),
-[flooring](../../../.claude/skills/part-floor-deck/SKILL.md) or
+[flooring](../../../.claude/skills/part-floor-deck/SKILL.md),
+[gable-frame](../../../.claude/skills/part-gable-frame/SKILL.md) or
 [skid](../../../.claude/skills/part-skids/SKILL.md) skills; read the affected
 part's skill before changing it. Use Alan's agreed names in the
 [shared glossary](../../../docs/BUILDING-TERMS.md).
@@ -46,6 +47,7 @@ For Alan's learned wall assembly, use:
 | Side wall upper plate | `L_in` |
 | End wall bottom plate and top plate | `W_in` |
 | End wall upper plate | `W_in - a_e - b_e` |
+| 2x6 along the end upper plate | `upper plate cut length + start projection + end projection` |
 | Wall height above the flooring | `stud cut + 3 x plate thickness` |
 | Floor joist between equal outer boards | `actual outside frame width in inches - 2 x outer-board thickness` |
 
@@ -65,6 +67,25 @@ With 1.5 in outer boards and actual frame width matching `W`, floor joist
 length is `12W - 2(1.5)`. The 75 in studs plus three 1.5 in plates give
 79.5 in wall height. Add actual flooring-top elevation only when measuring
 from skid bottom; do not label that combined height as stud length.
+
+For the learned **2x6 along upper plate**, Alan confirmed on-edge seating
+on top of the end upper plate, a 1/2 in inside ledge and 2 1/2 in projection
+past each cut end. Use the actual plate endpoints: the new start is the
+plate start minus its start projection, and the new end is the plate end
+plus its end projection. Its distance to each full-wall endpoint is that
+end's upper-plate setback minus its projection. Do not subtract 2 1/2 in
+from the full wall or treat it as a vertical rise. With the example's
+3.5 in setbacks, the board stays 1 in short at each wall end.
+
+The on-edge 2x6 is 1.5 in thick through the wall depth and 5.5 in tall.
+Its inside face is 0.5 in back toward the outside from the upper plate's
+inside face; the remaining outside ledge is `plate depth - inside ledge -
+board thickness`, or 1.5 in for this example. Bottom elevation equals upper
+plate top; board top is `upper plate top + board height`, giving 85 in above
+the flooring here. Keep lengths, ledges and elevations as separate axes.
+Before reusing this fit for a new builder or changed wall section, confirm
+its applicability; a longer building alone does not lengthen an end-wall
+board. Its treatment and formal shop name remain unspecified.
 
 ## Keep the layout datum when the ends change
 
@@ -106,7 +127,8 @@ Laid pieces are not a stock-sheet purchase count or a cutting/reuse plan.
 
 The first column applies the recorded 10x16 assembly. The **12x20 column is
 illustrative only**, assuming the same sections, 3.5 in offsets, 75 in
-studs, three plates, 1.5 in outer boards and 4x8 flooring with a 4 ft stagger.
+studs, three plates, 2.5 in gable-board end projections, 1.5 in outer boards
+and 4x8 flooring with a 4 ft stagger.
 It is not confirmation that those rules suit a new building.
 
 | Measurement | 10x16 example | Illustrative 12x20 |
@@ -116,6 +138,7 @@ It is not confirmation that those rules suit a new building.
 | Side upper plate | 192 = 16 ft | 240 = 20 ft |
 | End bottom/top plate | 120 = 10 ft | 144 = 12 ft |
 | End upper plate | `120 - 7 = 113` = 9 ft 5 in | `144 - 7 = 137` = 11 ft 5 in |
+| 2x6 along end upper plate, with 2.5 in projection at each end | `113 + 5 = 118` = 9 ft 10 in | `137 + 5 = 142` = 11 ft 10 in |
 | Floor joist | `120 - 3 = 117` = 9 ft 9 in | `144 - 3 = 141` = 11 ft 9 in |
 | Wall height above flooring | `75 + 4.5 = 79.5` in | `75 + 4.5 = 79.5` in |
 | Flooring row widths | 4 + 4 + 2 ft | 4 + 4 + 4 ft |
@@ -156,6 +179,14 @@ It is not confirmation that those rules suit a new building.
   applied equally at both ends. The formulas above allow unequal `a,b`,
   but implementing asymmetric ends needs a deliberate schema/geometry
   change, not an invented existing field.
+- [gableStudyPlan](../../../model/gable-study.js) adds the single on-edge
+  board only with `{ gable: true }` on an end-wall study. Its
+  `construction.gableStudy.endProjectionIn.start` and `.end` are separate
+  projections from that upper plate's cuts, while `innerLedgeIn` controls
+  depth placement. A new end-wall width therefore changes board length
+  through the actual upper-plate range; changing building length alone
+  does not. Check both endpoint clearance and ledge fit with
+  [gable measurements](../../../model/gable-measurements.js).
 - The study helpers are opt-in; company settings alone must not change the
   ordinary designer. [The learning UI](../../../ui/learn.js) currently
   requires `SLB` and `10x16`; its labels/cameras and static-render tooling
