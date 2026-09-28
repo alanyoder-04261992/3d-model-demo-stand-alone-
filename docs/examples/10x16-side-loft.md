@@ -42,7 +42,9 @@ to point to; they are not yet agreed shop language.
 | Confirmed stud cut length; overall wall height derived | **75 in studs** | With three flat plates, bottom-plate underside to upper-plate top is a derived 79 1/2 in (`75 + 3 x 1.5`). | Alan's dimension reply, September 28, 2026 |
 | Confirmed wall spacing and pair alignment | **16 in on center; double stud every 4 ft** | The 4 ft mark falls between the touching pair. The starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
 | Confirmed end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; side upper is full 16 ft. End bottom/top plates and studs run full 10 ft; end upper stops 3 1/2 in short at each end. | Alan's corrections and explicit both-ends reply, September 28, 2026 |
-| Confirmed piece and fit; descriptive label and derived length | **2x6 along upper plate** | On edge on top of the end wall's upper plate, leaving a 1/2 in inside ledge and projecting 2 1/2 in past each cut end. Actual section is 1 1/2 in thick by 5 1/2 in high. Derived length is 118 in (9 ft 10 in). Formal shop name and treatment are not confirmed. | Alan's photo, clarification and explicit top-seating/both-ends reply, September 28, 2026 |
+| Confirmed name, fit and fastening method; length derived | **Gable board** | On edge on top of, and nailed to, the end wall's upper plate, leaving a 1/2 in inside ledge and projecting 2 1/2 in past each cut end. Actual section is 1 1/2 in thick by 5 1/2 in high. Derived length is 118 in (9 ft 10 in). It supports the truss. Treatment and nail size/count/spacing are not confirmed. Earlier descriptive label: “2x6 along upper plate.” | Alan's photos, fit clarifications and explicit name/connection statement, September 28, 2026 |
+| Confirmed term, lumber and support; profile pending | **Truss** | Sits on the gable board; nominal 2x4, actual 1 1/2 x 3 1/2 in. Alan supplied far-point-to-point member lengths of 46 1/2 in and 37 3/4 in, without yet assigning them to the upper/lower slopes. | Alan's photos, measurements and “The truss is 2x4” reply, September 28, 2026 |
+| Confirmed description, support and spacing; layout pending | **Studs in the gable end** | “Turned outward,” seated on the gable board, 2 ft (24 in) on center. Exact lumber face, section, starting datum and cut lengths remain pending. | Alan's gable-frame photo and description, September 28, 2026 |
 
 The whole shape is **lofted roof**, and its highest long metal meeting strip
 is **ridge cap** in our conversation. We have agreed on those specific
@@ -50,10 +52,11 @@ meanings. The later skid/notch description confirms the specific dimensions
 and seating recorded above. Other names, dimensions and installation
 details remain pending.
 
-**Current view: The end wall with one 2x6 along its upper plate.** Use
+**Current rendered view: The end wall with its gable board.** Use
 `learn.html?company=learning-side-loft&step=gable` for this next piece, keeping
 the existing floor and manual control. More gable framing, joined corners,
-openings and autoplay are not included. The earlier
+openings and autoplay are not included. The newly described truss and
+gable studs are recorded below but are not yet drawn. The earlier
 `learn.html?company=learning-side-loft&step=walls` still selects a plain 16 ft
 side wall or 10 ft end wall independently. Alan's
 preferred word is **Flooring**; `floor-deck` and “floor decking” are code
@@ -109,9 +112,10 @@ settings and implementation are recorded in the
 
 ### First gable piece — September 28, 2026
 
-Alan described a **2x6 along upper plate** while beginning the end wall's
-gable framing. This is a descriptive label; no formal shop term such as
-“chord,” “header” or “rafter” has been agreed. He clarified that it runs
+Alan named the **gable board**, previously described as the “2x6 along
+upper plate,” while beginning the end wall's gable framing. Use his name;
+“chord,” “header” and “rafter” are not agreed alternatives. It is nailed to
+the upper plate and supports the truss. He clarified that it runs
 along the upper plate on edge, and explicitly confirmed that it rests on
 top, leaves a **1/2 in ledge on the inside**, and projects **2 1/2 in past
 both cut ends** of the plate. The projection runs along the end wall; it is
@@ -137,8 +141,33 @@ supporting upper plate, end projection and inside ledge. Read the
 opt-in lesson's implementation. Keep the ordinary finished designer and
 existing floor/wall member dimensions unchanged. Alan's reference photograph
 stays private; these dimensions come from his words, not pixel measurements.
-Treatment, species, grade, fastening, the rest of the gable and a full roof
-construction sequence remain unconfirmed.
+Treatment, species, grade and nail size/count/spacing remain unconfirmed.
+
+### Truss and gable studs — September 28, 2026
+
+Alan confirmed that the **truss sits on top of the gable board** and is
+made from **2x4 lumber**, actual **1 1/2 x 3 1/2 in** using the agreed
+conversion. He supplied two member lengths, measured from far point to
+point: **46 1/2 in** and **37 3/4 in**. The values are recorded, but their
+assignment to the upper and lower slopes, the slope angles and the end-cut
+geometry are not yet established. These are member measurements, not a
+confirmed roof span or peak height.
+
+He also supplied **6 1/4 in from the farthest truss point to the upper
+plate**. Keep the measurement wording and value while confirming its
+direction, exact reference on the upper plate and whether it applies at
+both ends. Do not replace the gable board's confirmed 2 1/2 in projection
+with this separate truss dimension or calculate an overall span from it yet.
+
+The **studs in the gable end** are “turned outward,” sit on the gable
+board and are **2 ft (24 in) on center**. The exact outward-facing lumber
+face, gable-stud section, layout origin and cut lengths remain pending.
+This is gable-stud spacing, not a new wall-stud or lengthwise truss-spacing
+rule. Do not copy the regular model's gable-stud orientation or 16 in grid
+into the learned assembly. The current lesson still renders the gable
+board alone above the end wall. Use the photo to identify parts, not to
+recover undocumented angles, lumber sizes or dimensions. A full roof
+construction sequence and connector details remain unconfirmed.
 
 Alan previously confirmed a 10 ft floor
 width with 1 1/2 in outer boards each side and joists 3 in shorter. The
@@ -204,8 +233,8 @@ Open the [floor learning page](../../learn.html), for example
 `http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=gable` after
 `npm run serve`.
 For Alan's iOS phone, use the
-[gable-board picture page](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/gable.html)
-or the [interactive gable lesson](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/learn.html?step=gable).
+[gable-board picture page](https://yoder-3d-floor-preview.netlify.app/gable.html)
+or the [interactive gable lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=gable).
 Earlier Netlify deployment and hosting failed because of the account credit
 limit. On September 28, the gable-board pull request produced a successful
 deploy preview: the picture page returned HTTP 200 with the new content.
@@ -456,7 +485,7 @@ against Alan's meaning and his building.
 | --- | --- | --- |
 | Building size | 10 ft wide x 16 ft long; 160 sq ft nominal footprint | [Dimension rule](../../model/frame.js) |
 | Style | Side Lofted Barn, `SLB` | [Standard building line](../../library/manufacturers/standard.json) |
-| Roof | **Lofted roof**, Alan's confirmed term for the whole shape; gentle upper slope and steep lower slope on each side. Code reference: `gambrel`. Dimensions and other part names beyond ridge cap remain unconfirmed. | [Roof profile](../../model/roof-shapes.js), [roofing skill](../../.claude/skills/part-roofing/SKILL.md) |
+| Roof | **Lofted roof**, Alan's confirmed term for the whole shape; gentle upper slope and steep lower slope on each side. Code reference: `gambrel`. The learned gable-board and truss facts above are separate from this finished model's roof dimensions. | [Roof profile](../../model/roof-shapes.js), [roofing skill](../../.claude/skills/part-roofing/SKILL.md) |
 | Highest metal cap | **Ridge cap**, confirmed to mean the highest long metal strip covering where the roof sides meet. Its measurements remain unconfirmed. | [Roofing skill](../../.claude/skills/part-roofing/SKILL.md) |
 | Main entrance | One pair of wooden double doors, centered on the 16 ft entrance side (`R`) | [Standard layout](../../model/loadouts.js) |
 | Wall windows | Two separate 2 x 3 windows, one on each side of the doors | [Standard layout](../../model/loadouts.js) |

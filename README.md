@@ -29,8 +29,8 @@ company that only wants the designer.
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
 [open the latest end-wall gable board picture saved in GitHub](images/gable-framing.png).
-For a phone, open the [hosted gable-board picture page](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/gable.html)
-or [rotate the new model](https://deploy-preview-3--yoder-3d-floor-preview.netlify.app/learn.html?step=gable).
+For a phone, open the [hosted gable-board picture page](https://yoder-3d-floor-preview.netlify.app/gable.html)
+or [rotate the new model](https://yoder-3d-floor-preview.netlify.app/learn.html?step=gable).
 This preview is serving successfully after the earlier Netlify credit-limit interruption.
 For local development,
 run the designer and open `learn.html?company=learning-side-loft` to start
@@ -86,8 +86,15 @@ projecting 2 1/2 in past each cut end. The calculated board length is
 `113 + 2.5 + 2.5 = 118 in` (9 ft 10 in). Its actual section is 1 1/2 in
 thick and 5 1/2 in high. The [gable picture page](gable.html) includes a
 [measured connection close-up](images/gable-board-detail.png).
-The description **2x6 along upper plate** identifies the piece; a formal
-shop name, treatment and fastening remain unconfirmed.
+Alan's confirmed name for this piece is **gable board**. It is nailed to
+the upper plate and supports the truss; treatment and nail size/count/spacing
+remain unconfirmed. He confirmed **2x4 truss lumber** and supplied
+46 1/2 in and 37 3/4 in far-point-to-point member lengths. Their assignment
+to the roof slopes and the cut geometry remain pending, as does the exact
+datum of his separate 6 1/4 in truss measurement. The gable-end
+studs sit on the gable board, are “turned outward” and are 24 in on center;
+their precise orientation and layout still need agreement. These new facts
+are saved in the skills; the truss and gable studs are not yet drawn.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the
 [building terms](docs/BUILDING-TERMS.md), then use
@@ -110,7 +117,8 @@ same terms and construction details.
 | --- | --- |
 | [Customer setup](.agents/skills/shed-customer-setup/SKILL.md) | Set up a company or buyer's design and continue the manual building lesson. |
 | [Measurements for other sizes](.agents/skills/shed-measurements/SKILL.md) | Recalculate lengths from the building width, length, actual lumber and end setbacks, with worked examples. |
-| [Gable framing](.claude/skills/part-gable-frame/SKILL.md) | The 2x6 along the end-wall upper plate, its inside ledge and end projections. |
+| [Gable framing](.claude/skills/part-gable-frame/SKILL.md) | The gable board, its inside ledge and end projections, plus the learned gable-stud rules. |
+| [Roof framing](.claude/skills/part-roof-frame/SKILL.md) | The confirmed 2x4 truss lumber and supplied member lengths, with unresolved roof geometry kept separate from ordinary model rules. |
 | [Skids](.claude/skills/part-skids/SKILL.md) | Treated supports, notches, end cuts and their measurements. |
 | [Floor frame](.claude/skills/part-floor-frame/SKILL.md) | Floor joists, outer/end boards and the board the mule hooks onto. |
 | [Flooring](.claude/skills/part-floor-deck/SKILL.md) | Tongue-and-groove sheets, thickness, staggered seams and appearance. |

@@ -40,7 +40,7 @@ export function gableStudyPlan(plan, { gable = false } = {}) {
   status.length = "derived"; status.elevation = "derived";
   const copy = structuredClone(plan);
   copy.gableStudy = {
-    enabled: true, wall: "end", name: "Gable 2x6",
+    enabled: true, wall: "end", name: "Gable board",
     board: { nominal: board.nominal || "2x6", thicknessIn, thicknessFt, heightIn, heightFt },
     placement: "on-upper-plate", orientation: "on-edge", innerLedgeIn, innerLedgeFt,
     endProjectionIn, endProjectionFt, range: { u0, u1, lengthFt: u1 - u0 },

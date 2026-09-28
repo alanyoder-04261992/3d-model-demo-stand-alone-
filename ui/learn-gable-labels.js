@@ -11,7 +11,7 @@ function node(tag,attrs={},text) {
   return el;
 }
 export function createGableLabels(viewport,renderer) {
-  const svg=node("svg",{role:"img","aria-label":"End-wall 2×6 and upper plate measurements"});
+  const svg=node("svg",{role:"img","aria-label":"Gable board and upper plate measurements"});
   svg.style.cssText="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden";
   viewport.appendChild(svg);
   function update(m,{detail=false}={}) {
@@ -56,18 +56,18 @@ export function createGableLabels(viewport,renderer) {
       dimension([ledgeX,plate.y1Ft,plate.z1Ft],[ledgeX,plate.y1Ft,board.z1Ft],`${inches(m.innerLedgeFt)} inside ledge`,29);
       const sectionX=board.x0Ft+.07;
       dimension([sectionX,board.y0Ft,faceZ],[sectionX,board.y1Ft,faceZ],`${inches(m.heightFt)} high`,-26);
-      cards.push({title:"2×6 on edge",detail:`${inches(m.thicknessFt)} × ${inches(m.heightFt)} actual`,footer:"on the upper plate",x:width-cardWidth-14,y:16,
+      cards.push({title:m.name,detail:`${inches(m.thicknessFt)} × ${inches(m.heightFt)} actual`,footer:"2×6 on the upper plate",x:width-cardWidth-14,y:16,
         point:[plate.x0Ft+.46,(board.y0Ft+board.y1Ft)/2,faceZ]},
       {title:"Upper plate",detail:`${feet(m.upperPlate.lengthFt)} long`,footer:"same fit at both ends",x:14,y:height-72,
         point:[plate.x0Ft+.12,(plate.y0Ft+plate.y1Ft)/2,plateFaceZ]});
     } else {
       dimension([board.x0Ft,board.y1Ft,faceZ],[board.x1Ft,board.y1Ft,faceZ],`${inches(m.lengthFt)} · ${feet(m.lengthFt)}`,-23);
-      cards.push({title:"2×6 on edge",detail:`${inches(m.thicknessFt)} × ${inches(m.heightFt)} actual`,footer:"length calculated",x:14,y:16,
+      cards.push({title:m.name,detail:`${inches(m.thicknessFt)} × ${inches(m.heightFt)} actual`,footer:"2×6 · length calculated",x:14,y:16,
         point:[board.x0Ft+(board.x1Ft-board.x0Ft)*.3,(board.y0Ft+board.y1Ft)/2,faceZ]},
       {title:"Upper plate",detail:`${inches(m.upperPlate.lengthFt)} long`,footer:"2½″ past each cut end",x:width-cardWidth-14,y:height-72,
         point:[plate.x0Ft+(plate.x1Ft-plate.x0Ft)*.7,(plate.y0Ft+plate.y1Ft)/2,plateFaceZ]});
     }
-    svg.setAttribute("aria-label",`2×6 on edge, ${inches(m.lengthFt)} long, ${inches(m.thicknessFt)} thick and ${inches(m.heightFt)} high. Inside ledge ${inches(m.innerLedgeFt)}. Projection past each upper-plate end ${inches(m.endProjectionFt.start)} and ${inches(m.endProjectionFt.end)}.`);
+    svg.setAttribute("aria-label",`${m.name}: 2×6 on edge, ${inches(m.lengthFt)} long, ${inches(m.thicknessFt)} thick and ${inches(m.heightFt)} high. Inside ledge ${inches(m.innerLedgeFt)}. Projection past each upper-plate end ${inches(m.endProjectionFt.start)} and ${inches(m.endProjectionFt.end)}.`);
     for(const c of cards) {
       const p=project(c.point);if(!p || p[0]<0 || p[0]>width || p[1]<0 || p[1]>height) continue;
       const a=[c.x+cardWidth/2,p[1]>c.y+28?c.y+56:c.y];
