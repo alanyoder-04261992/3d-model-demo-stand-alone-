@@ -177,23 +177,24 @@ def render_truss():
     # Backing close-up uses the same solid members and exact plate-top datum.
     backing=m['backingMembers']
     if backing:
-        assert len(backing)==3
+        assert len(backing)==5
         piece=backing[len(backing)//2];b=piece['bounds'];z=piece['z1Ft']
         assert abs((b['y0Ft']-plate['y1Ft'])*12-11)<1e-8
         assert abs(piece['lengthFt']*12-20.5)<1e-8
         target=[piece['center'][0],plate['y1Ft']+.83,z]
-        im,project=scene(target,8.4,yaw=.04,pitch=.10);d=ImageDraw.Draw(im)
+        im,project=scene(target,12.8,yaw=.04,pitch=.10);d=ImageDraw.Draw(im)
         title(d,'Gable backing','Horizontal 2×4 · bottom 11 in above the top of the upper plate')
-        dimx=max(r['bounds']['x1Ft'] for r in backing)+.65
+        dimx=2.55
         dimension(d,project,[dimx,plate['y1Ft'],z],[dimx,b['y0Ft'],z],'11 in · to bottom',(0,0))
         dimension(d,project,[b['x0Ft'],b['y1Ft'],z],[b['x1Ft'],b['y1Ft'],z],'20½ in clear length',(0,-37))
         leader(d,project([backing[0]['center'][0],backing[0]['center'][1],z]),(35,150,475,110),
-               'Gable backing · 2×4',['3½ in face outward · between studs'])
+               'Gable backing · 2×4',['Supports the siding at its seams'])
         leader(d,project([2.65,plate['y1Ft'],plate['z1Ft']]),(620,748,545,111),
                'Upper plate',['Measure from its TOP to backing bottom'])
-        leader(d,project([-1.8,board['y1Ft']-.2,board['z1Ft']]),(35,748,545,111),
-               'Gable board · 2×6',['5½ in clear gap above this board'])
-        d.text((35,895),'Use when this gable has no window or fake window · 24 − 3½ = 20½ in per piece',font=font(23),fill='#526879')
+        outer=backing[0]
+        leader(d,project([outer['bounds']['x0Ft']+.12,outer['bounds']['y0Ft']+.10,z]),(35,748,545,111),
+               'Backing reaches the outer truss',['Both outer bays included · five pieces'])
+        d.text((35,895),'No window or fake window · three internal cuts: 20½ in · outer cuts follow truss',font=font(23),fill='#526879')
         im.save(ROOT/'images/gable-backing.png')
 
     # A straight-on view makes the end-wall datum and stud center marks clear.

@@ -66,8 +66,9 @@ export function createTrussLabels(viewport,renderer) {
       const right=t.backingMembers.at(-1).bounds.x1Ft+.5;
       dimension([right,g.upperPlate.bounds.y1Ft,z],[right,b.y0Ft,z],"11″ · to backing bottom",16);
       dimension([b.x0Ft,b.y1Ft,z],[b.x1Ft,b.y1Ft,z],`${inches(piece.lengthFt)} clear length`,-26);
-      card("Gable backing","2×4 · wide face outward","between neighboring studs",[piece.center[0],piece.center[1],z],14,16);
-      card("Upper plate","11″ starts at its top","no window or fake window",[0,g.upperPlate.bounds.y1Ft,z],w-cardW-14,h-72);
+      const outer=t.backingMembers[0];
+      card("Gable backing","2×4 · supports siding seams","all the way to outer truss",[outer.center[0],outer.center[1],z],14,16);
+      card("Upper plate","11″ starts at its top","backing face points outward",[0,g.upperPlate.bounds.y1Ft,z],w-cardW-14,h-72);
     } else if(detail) {
       // The extension lines retain the differing endpoint heights. The span
       // itself is horizontal: it is not the sloping distance between points.
@@ -102,7 +103,7 @@ export function createTrussLabels(viewport,renderer) {
     svg.setAttribute("aria-label",opening?.kind==="window" && !detail
       ? `Window box: ${inches(opening.widthIn/12)} clear width by ${inches(opening.heightIn/12)} clear height. Gable studs at both sides, horizontal 2x4s at top and bottom, wide faces outward. Dimensions follow the selected opening.`
       : backing && t.backingMembers.length
-      ? "Gable backing: horizontal 2x4 pieces between gable studs, wide face outward. Bottom 11 inches above upper-plate top. Used only with no gable window or fake window."
+      ? "Gable backing: horizontal 2x4 pieces across all stud bays to the outer truss support siding seams, wide face outward. Bottom 11 inches above upper-plate top. Used only with no gable window or fake window."
       : detail
       ? `Truss connection: ${inches(t.projectionFt.start)} measured horizontally from the farthest truss tip to the cut end of the upper plate.`
       : `Truss fit preview: upper pieces ${inches(t.upperLengthFt)}, lower pieces ${inches(t.lowerLengthFt)}, peak ${inches(t.peakRiseFt)} above the top of the upper plate. Outward 2x4 gable studs at 24-inch centers from the outside wall edge. First center ${inches(t.studFirstCenterFt)} is the preview interpretation; mirrored ends and top joints remain provisional.`);

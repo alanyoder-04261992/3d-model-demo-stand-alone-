@@ -19,7 +19,7 @@ const lesson=input=>trussStudyPlan(base,{truss:true,windowOpening:input});
 const plain=lesson(null),snapshot=JSON.stringify(base),plainStuds=trussGableStudMembers(plain);
 assert.deepEqual(gableWindowFrameMembers(ordinary),[]);
 assert.deepEqual(gableWindowFrameMembers(plain),[]);
-assert.equal(gableBackingMembers(plain).length,3);
+assert.equal(gableBackingMembers(plain).length,5);
 for(const [widthIn,heightIn,centerIn] of [[18,24,0],[30,18,0],[22,14,12],[12,16,-28],[48,10,0],[5,20,0]]) {
   const plan=lesson({kind:"window",widthIn,heightIn,centerIn});
   const t=plan.trussStudy,o=t.windowOpening,m=trussStudyMeasurements(plan);
