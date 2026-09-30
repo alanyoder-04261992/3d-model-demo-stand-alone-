@@ -4,6 +4,22 @@ import { hexRGB, srgbLin } from "../engine/math.js";
 import { mulberry32 } from "../engine/seeded.js";
 
 const GRAIN="lessonWoodGrain", END="lessonWoodEnd", VARIANTS=8;
+const dot=(a,b)=>a.reduce((sum,value,i)=>sum+value*b[i],0);
+
+// A truss's axis-aligned box includes empty space. Test its real prism,
+// including the inward side of a shared cut face, to keep each board's grain.
+function inPrism(point,record,epsilon=1e-7) {
+  if(point[2]<record.bounds.z0Ft-epsilon || point[2]>record.bounds.z1Ft+epsilon) return false;
+  let sign=0;
+  for(let i=0;i<record.poly.length;i++) {
+    const a=record.poly[i],b=record.poly[(i+1)%record.poly.length];
+    const cross=(b[0]-a[0])*(point[1]-a[1])-(b[1]-a[1])*(point[0]-a[0]);
+    if(Math.abs(cross)<=epsilon) continue;
+    if(sign && Math.sign(cross)!==sign) return false;
+    sign=Math.sign(cross);
+  }
+  return true;
+}
 
 function boardHash(value) {
   let hash=2166136261;
@@ -70,7 +86,7 @@ export function woodFinish(build,measurements) {
   const wallTint=hexRGB("#d6c4a2").map(srgbLin); // Appearance only; wall treatment is unspecified.
   for(const key of build.ORDER) {
     const bucket=build.buckets[key], tags=build.tags[key] || [];
-    if(!tags.some(tag=>["skids","floor-frame"].includes(tag.part) || (tag.part==="wall-frame" && measurements.wall) || (tag.part==="gable-frame" && measurements.gable))) {
+    if(!tags.some(tag=>["skids","floor-frame"].includes(tag.part) || (tag.part==="wall-frame" && measurements.wall) || (tag.part==="gable-frame" && measurements.gable) || (tag.part==="roof-frame" && measurements.truss))) {
       out.buckets[key]=bucket; out.ORDER.push(key); out.tags[key]=tags; continue;
     }
     for(const tag of tags) for(let t=tag.from;t<tag.from+tag.count;t++) {
@@ -81,15 +97,19 @@ export function woodFinish(build,measurements) {
       const normal=vertices.slice(3,6),center=points[0].map((_,i)=>points.reduce((sum,p)=>sum+p[i]/3,0));
       const records=tag.part==="floor-frame"?measurements.frame.members:tag.part==="wall-frame"?measurements.wall?.members
         :tag.part==="gable-frame" && measurements.gable?[measurements.gable.board]:null;
-      const member=records?.find(record=>
+      const prismRecords=tag.part==="roof-frame"?measurements.truss?.trussMembers:tag.part==="gable-frame"?measurements.truss?.studMembers:null;
+      const prism=prismRecords?.find(record=>record.poly && points.every(p=>inside(p,record.bounds) && inPrism(p,record))
+        && inPrism(center.map((v,i)=>v-normal[i]*1e-5),record)
+        && !inPrism(center.map((v,i)=>v+normal[i]*1e-5),record)) || null;
+      const member=prism || records?.find(record=>
         points.every(p=>inside(p,record.bounds)) && ["x","y","z"].some((axis,i)=>
           Math.abs(normal[i])>.9 && Math.abs(center[i]-record.bounds[axis+(normal[i]>0?"1Ft":"0Ft")])<1e-7)) || null;
       const vertical=tag.part==="wall-frame" && member && Math.abs(member.p1[1]-member.p0[1])>Math.max(Math.abs(member.p1[0]-member.p0[0]),Math.abs(member.p1[2]-member.p0[2]));
       const axis=vertical?1:member && Math.abs(member.p1[0]-member.p0[0])>Math.abs(member.p1[2]-member.p0[2])?0:2;
       const crossAxis=axis===0?2:0;
-      const end=Math.abs(vertices[3+axis])>.65;
+      const end=prism?Math.abs(dot(normal,prism.grainAxis))>.65:Math.abs(vertices[3+axis])>.65;
       const run=tag.part==="skids"?measurements.supports.runs.find(run=>points.every(p=>p[0]>=run.x0Ft-1e-7 && p[0]<=run.x1Ft+1e-7)):null;
-      const identity=member?(tag.part==="wall-frame"?"wall:":tag.part==="gable-frame"?"gable:":"")+member.member.kind+":"+member.center.map(v=>v.toFixed(6)).join(":")
+      const identity=member?(tag.part==="wall-frame"?"wall:":tag.part==="gable-frame"?"gable:":tag.part==="roof-frame"?"truss:":"")+member.member.kind+":"+member.center.map(v=>v.toFixed(6)).join(":")
         :"skid:"+(run?.xFt ?? points[0][0]).toFixed(6);
       const hash=boardHash(identity),random=mulberry32(hash);
       const variant=hash%VARIANTS,seed=random(),crossSeed=random();
@@ -97,7 +117,11 @@ export function woodFinish(build,measurements) {
       const texture=(end?END:GRAIN)+"-"+variant;
       const length=member?.lengthFt || run?.lengthFt || 4;
       for(let i=0;i<27;i+=9) {
-        if(end) {
+        if(prism) {
+          const point=vertices.slice(i,i+3),grain=prism.grainAxis,across=[-grain[1],grain[0],0];
+          vertices[i+6]=end?dot(point,across)/.65+seed:dot(point,grain)/length*lengthScale+seed;
+          vertices[i+7]=(end || Math.abs(normal[2])<.65 ? point[2] : dot(point,across))/.65*crossScale+crossSeed;
+        } else if(end) {
           vertices[i+6]=vertices[i+crossAxis]/.65+seed;
           vertices[i+7]=vertices[i+(vertical?2:1)]/.65+crossSeed;
         } else {
@@ -109,7 +133,7 @@ export function woodFinish(build,measurements) {
       const nextKey=key+"-"+texture+"-"+hash;
       if(!out.buckets[nextKey]) {
         const treated=tag.part==="skids" || (tag.part==="floor-frame" && measurements.frame.treated===true);
-        const tint=["wall-frame","gable-frame"].includes(tag.part)?wallTint:treated?treatedTint:bucket.tint;
+        const tint=["wall-frame","gable-frame"].includes(tag.part) || (tag.part==="roof-frame" && measurements.truss)?wallTint:treated?treatedTint:bucket.tint;
         const tone=.95+random()*.1;
         out.buckets[nextKey]={...bucket,tex:texture,tint:tint.map(v=>Math.min(1,v*tone)),bump:0,v:[],n:0};
         out.ORDER.push(nextKey); out.tags[nextKey]=[];

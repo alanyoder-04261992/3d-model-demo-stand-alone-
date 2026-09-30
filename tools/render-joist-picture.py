@@ -19,10 +19,11 @@ parser.add_argument('--deck',action='store_true',help='Read flooring-render-data
 parser.add_argument('--wall',action='store_true',help='Render the side wall study, plate/double-stud detail and wall-end setback close-up.')
 parser.add_argument('--end-wall',action='store_true',help='Render the end wall study and upper-plate setback close-up.')
 parser.add_argument('--gable',action='store_true',help='Render the 2x6 along the end-wall upper plate and its measured connection.')
+parser.add_argument('--truss',action='store_true',help='Render the measured truss fit preview and upper-plate projection detail.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
-source='gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
+source='truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
 data=json.loads((ROOT/f'test/out/{source}-render-data.json').read_text(encoding='utf-8'))
 W,H=1200,940
 NAVY='#173b56'
@@ -147,6 +148,46 @@ def dimension(d,project,p,q,label,offset=(0,0)):
     width=box[2]-box[0]+22
     d.rounded_rectangle((middle[0]-width/2,middle[1]-19,middle[0]+width/2,middle[1]+23),radius=5,fill='white')
     d.text((middle[0]-width/2+11,middle[1]-15),label,font=f,fill=NAVY)
+
+def render_truss():
+    m=data['metadata']['truss'];g=data['metadata']['gable'];a=m['anchors']
+    board=g['board']['bounds'];plate=g['upperPlate']['bounds']
+    assert abs(m['upperLengthFt']*12-54)<1e-7
+    assert abs(m['lowerLengthFt']*12-37.75)<1e-7
+    assert abs(m['peakRiseFt']*12-48)<1e-7
+    assert abs(abs(a['leftTip'][0]-a['leftPlateCut'][0])*12-6.25)<1e-7
+    target=[a['peak'][0],a['gableTop'][1]+1.55,a['gableTop'][2]]
+    im,project=scene(target,12.8,yaw=.12,pitch=.05);d=ImageDraw.Draw(im)
+    title(d,'Truss and gable studs','2×4 truss · measured lengths · 4 ft from gable board to peak')
+    dimension(d,project,a['upperLeftStart'],a['upperLeftEnd'],'54 in · upper piece',(-10,-30))
+    dimension(d,project,a['lowerLeftStart'],a['lowerLeftEnd'],'37¾ in · lower piece',(-65,0))
+    dimension(d,project,a['gableTop'],a['peak'],'48 in · 4 ft',(455,0))
+    centers=a['studCenters']
+    if len(centers)>1:
+        pair=sorted(centers,key=lambda p:abs(p[0]))[:2]
+        dimension(d,project,pair[0],pair[1],'24 in on center',(0,55))
+    stud=min(m['studMembers'],key=lambda r:r['center'][0])
+    leader(d,project(stud['center']),(35,748,545,111),'Gable studs',['Wide face outward · on the gable board'])
+    leader(d,project([2,board['y0Ft']+.22,board['z1Ft']]),(620,748,545,111),'Gable board · 2×6',['118 in · nailed to the upper plate'])
+    d.text((35,895),'Fit preview · mirrored ends, stud layout and end cuts still to check.',font=font(23),fill='#526879')
+    im.save(ROOT/'images/truss-framing.png')
+
+    tip=a['leftTip'];cut=a['leftPlateCut']
+    target=[(tip[0]+cut[0])/2+.10,board['y1Ft']+.08,board['z1Ft']]
+    im,project=scene(target,2.5,yaw=-.48,pitch=.32);d=ImageDraw.Draw(im)
+    title(d,'Truss tip to upper plate','Your marked measurement · 6¼ in outward from the plate’s cut end')
+    # Horizontal witness points retain the different elevations of the actual anchors.
+    projection_y=tip[1]-.22;z=board['z1Ft']
+    tip_witness=[tip[0],projection_y,z];cut_witness=[cut[0],projection_y,z]
+    for actual,witness in [(tip,tip_witness),(cut,cut_witness)]:
+        d.line([tuple(project(actual)),tuple(project(witness))],fill=NAVY,width=2)
+    dimension(d,project,tip_witness,cut_witness,'6¼ in · from upper plate',(0,62))
+    lower_point=[.85*p+.15*q for p,q in zip(a['lowerLeftStart'],a['lowerLeftEnd'])]
+    leader(d,project(lower_point),(35,150,420,110),'Truss · 2×4',['1½ × 3½ in actual'])
+    leader(d,project([plate['x0Ft'],(plate['y0Ft']+plate['y1Ft'])/2,plate['z1Ft']]),(630,748,535,111),'Upper plate cut end',['Start of the 6¼-inch measurement'])
+    leader(d,project([board['x0Ft']+.5,board['y1Ft']-.22,z]),(730,150,435,142),'Gable board',['Extends 2½ in past','this same plate cut'])
+    d.text((35,895),'The two projections use the same upper-plate cut: truss 6¼ in; gable board 2½ in.',font=font(22),fill='#526879')
+    im.save(ROOT/'images/truss-connection.png')
 
 def render_gable():
     wall=data['metadata']['wall'];gable=data['metadata']['gable']
@@ -388,6 +429,10 @@ def render_flooring():
     d.text((40,1030),'⅝ in tongue-and-groove flooring · 7 laid pieces · colors distinguish the rows',font=font(23),fill='#526879')
     plan.save(ROOT/'images/flooring-layout.png')
 
+if args.truss:
+    render_truss()
+    print('Saved exact-mesh truss fit preview and connection PNGs.')
+    sys.exit(0)
 if args.gable:
     render_gable()
     print('Saved exact-mesh gable board overview and connection PNGs.')

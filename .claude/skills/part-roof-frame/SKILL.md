@@ -5,7 +5,7 @@ description: The roof trusses (or rafters) of a portable building, for every roo
 
 # Roof framing (`parts/roof-frame.js`)
 
-## Alan's learned truss: recorded, not yet drawn
+## Alan's learned truss: opt-in fit preview
 
 For the manual 10x16 lesson, Alan confirmed on September 28, 2026 that the
 **truss sits on top of the gable board**. The gable board is the nominal
@@ -16,33 +16,66 @@ projections beyond the upper-plate cuts remain unchanged.
 Alan confirmed **2x4 truss lumber**, actual **1 1/2 x 3 1/2 in** using the
 agreed conversion. His current member lengths are **54 in for the upper
 piece leading to the peak** and **37 3/4 in for the lower, steeper piece**,
-measured from the longest points. Slope angles and end-cut geometry remain
-unresolved. Record
-these as supplied member measurements, not horizontal runs or a complete
-roof profile. His **6 1/4 in from the farthest truss point to the upper
-plate** also needs its direction, exact plate datum and both-end
-applicability before deriving a span or an overhang. Do not infer any of
-these from pixels in the private reference photos.
+measured from the longest points, not centerlines or horizontal runs.
 
 The confirmed peak height is **4 ft (48 in)** from the **top of the gable
 board to the highest point of the peak**. Derive its elevation by adding
 48 in to the actual gable-board top; for this example, `85 + 48 = 133 in`
-above the flooring. Keep the vertical rise separate from the sloping member
-lengths and from the 6 1/4 in measurement. It does not establish the missing
-overhang datum or cuts, and is not a height to scale
-automatically with a different building width.
+above the flooring. Keep this vertical rise separate from the sloping
+member lengths; neither is a universal scaling rule for another width.
+
+Alan's annotated photo confirms **6 1/4 in outward along the end wall,
+from the upper plate's cut end to the farthest truss tip**. The datum and
+direction are resolved. The preview mirrors this at both ends, giving
+`113 + 6.25 + 6.25 = 125.5 in` tip-to-tip, `6.25 - 2.5 = 3.75 in` beyond
+each gable-board end and `6.25 - 3.5 = 2.75 in` beyond each full-wall end.
+Those derived spans depend on the provisional symmetry. Preserve the
+gable board's 118 in length, 1/2 in inside ledge and 2 1/2 in projections.
+The photo identifies endpoints; do not infer dimensions from pixels or
+publish the original photo.
 
 The gable-end studs are confirmed to sit on the gable board, be “turned
 outward” and be **24 in on center**. Their section, exact lumber face,
-layout origin and lengths are still pending. Their spacing does not
-confirm spacing between trusses along the building. Connector dimensions,
-nail schedule, treatment, species, grade and a full roof construction
-sequence are also pending. The lesson at `?step=gable` currently shows the
-gable board alone above the end wall; the roof rules below belong to the
-ordinary finished-model reference and must not fill in these missing inputs.
+layout origin and cuts remain unconfirmed; their spacing does not establish
+spacing between trusses along the building.
+
+The preview makes these visible assumptions:
+
+- Mirror the truss about the end-wall center.
+- Seat the plain, unnotched lower underside on the gable board's outer top
+  corner. Alan's agreement on that bearing is still pending.
+- Cut tails square across the stock and share miters at knees and peak.
+- Use 2x4 gable studs with the 3 1/2 in face outward, 1 1/2 in through the
+  depth, centered on the board depth, with centers under the peak and at
+  24 and 48 in either side. Clip their tops to the actual truss underside.
+
+Derived slopes and stud cuts remain **provisional preview results, not a
+shop cut list**. Connector dimensions, nail schedule, treatment, species,
+grade and the full roof construction sequence also remain unconfirmed.
+Do not fill these gaps with the ordinary model's defaults below.
 Use [the measurement workflow](../../../.agents/skills/shed-measurements/SKILL.md)
-when a different width is requested; these two lengths are not a universal
-scale rule.
+when a different width is requested.
+
+### Lesson implementation and checks
+
+`trussStudyPlan(gablePlan, { truss: true })` in
+[model/truss-study.js](../../../model/truss-study.js) explicitly enables
+`construction.trussStudy` after the floor, end wall and gable-board studies.
+Settings alone cannot enable it. `trussStudyMembers` supplies the four roof
+pieces to this part; `trussGableStudMembers` supplies the studs to gable-frame.
+`trussStudyMeasurements` in
+[model/truss-measurements.js](../../../model/truss-measurements.js) reads the
+same member polygons for lengths and dimension anchors.
+
+Review `learn.html?company=learning-side-loft&step=truss` and the static
+[truss picture page](../../../truss.html). Preserve `?step=gable` as the
+board-only lesson, all earlier assemblies and the ordinary finished model.
+Run `node tools/check-truss-lesson.mjs` for measured geometry, assumptions,
+opt-in behavior and unchanged earlier assemblies. Refresh pictures with
+`node tools/export-joist-render-data.mjs --truss` followed by
+`python tools/render-joist-picture.py --truss`; inspect the overview and
+connection detail for readable labels and endpoints on the measured pieces.
+Report browser and physical iOS checks separately from geometry checks.
 
 ## What it is in real life
 

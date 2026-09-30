@@ -89,15 +89,14 @@ board. **Gable board** is now the confirmed name, and nailing it to the
 upper plate is confirmed; treatment and nail size/count/spacing remain
 unspecified.
 
-## Resolve the truss before calculating its profile
+## Fit the measured truss and keep the remaining assumptions explicit
 
 Alan confirmed the truss sits on top of the gable board and uses nominal
 2x4 lumber, actual 1.5 x 3.5 in. His current longest-point member
 lengths are **54 in for the upper piece leading to the peak** and
 **37.75 in for the lower, steeper piece** in this 10 ft-wide example. Record
 those values separately from centerline lengths, horizontal runs and the
-overall truss span. Slope angles and end-cut geometry remain pending.
-Two member lengths alone do not
+overall truss span. Two member lengths alone do not
 determine a unique lofted-roof profile. Do not scale them in proportion to
 building width or use the finished model's roof angles as shop inputs.
 
@@ -105,24 +104,48 @@ The confirmed peak height is **4 ft = 48 in**, measured vertically from
 the **top of the gable board to the highest point of the peak**. Thus
 `peak elevation = gable-board top elevation + 48 in`; the current example
 gives `85 + 48 = 133 in` above flooring. Do not measure this rise from the
-upper plate or substitute it for a sloping member length. These inputs
-still need the horizontal extent and end-cut geometry
-before resolving the complete profile. Neither the member lengths nor
+upper plate or substitute it for a sloping member length. Neither the member lengths nor
 the peak height is a universal scaling rule for wider buildings.
 
-His **6.25 in** measurement is from the farthest truss point to the upper
-plate. Confirm the direction, exact upper-plate reference and whether both
-ends share it before deriving a truss span or overhang. It is a separate
-measurement from the gable board's **2.5 in** projection past the plate cuts.
-Do not add either distance to a sloping member length.
+Alan's annotated photo resolves his **6.25 in** measurement: **along the
+end wall from the upper plate's cut end to the outermost truss tip**.
+The direction and plate datum are confirmed. Whether both ends share this
+projection remains to be checked; the preview mirrors it to make a
+reviewable profile. Keep each end's input separate:
+
+- `tip span = upper plate length + start tip projection + end tip projection`.
+- `tip past gable board = tip projection - gable-board projection` at that end.
+- `tip past full wall = tip projection - upper-plate setback` at that end.
+
+For this preview's mirrored 6.25 in assumption, these give **125.5 in**
+tip-to-tip (`113 + 12.5`), **3.75 in** past the gable board (`6.25 - 2.5`)
+and **2.75 in** past the full wall (`6.25 - 3.5`) at each end. These are
+conditional results, not an additional confirmation of symmetry. Neither
+the 6.25 in tip projection nor the gable board's 2.5 in projection is a
+sloping member length.
+
+Build the profile from the actual member section and the stated
+longest-point lengths, not from centerlines treated as cut lengths. The
+preview uses shared knee/peak miters, tails cut perpendicular to the stock,
+and a straight unnotched lower-piece underside touching the gable-board
+top at its end. These cuts and the seating fit are provisional. Solve
+the upper and lower slopes with these constraints, preserving the 48 in
+highest-point rise, and check the resulting outline's extrema and actual
+3.5 in perpendicular depth. Calculated slope angles are derived within
+this fit; they are not builder-specified saw angles. If a stated input
+cannot fit this construction, expose the conflict instead of changing
+measurements, carving an invented seat notch or inheriting the ordinary
+designer's roof profile.
 
 The gable-end studs sit on the gable board and are **24 in on center**,
 “turned outward.” Their section, precise outward-facing lumber face,
-starting layout datum and cut lengths are unresolved. Once those and the
-truss profile are agreed, lay centers at `gable layout origin + n x 24 in`
-within the supported run and derive each top cut from the actual truss
-underside. Check the full rotated section against that cut, not just the
-center point. Do not reuse the wall's 16 in grid or its doubled-stud rule
+starting layout datum and cut lengths remain unconfirmed. The review
+model uses 2x4s with 3.5 in across the gable and 1.5 in through its depth,
+and places centers at the peak center plus `n x 24 in` (here 0, +/-24,
++/-48 in). Record this section, face interpretation and origin as preview
+assumptions. Derive each top cut from the actual truss underside and check
+the full rotated section against that cut, not just the center point.
+Do not reuse the wall's 16 in grid or its doubled-stud rule
 for these members. Confirm any reuse at a different building size with
 the builder, and keep lengthwise spacing between trusses a separate input.
 

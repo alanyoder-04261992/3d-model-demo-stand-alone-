@@ -92,6 +92,8 @@ import { openingRect } from "../model/layout.js";
 import { pickRule } from "../model/construction.js";
 import { eaveOverhangs, rakeOverhangOf } from "./roofing.js";
 import { ventSpot } from "./gable-vent.js";
+import { trussStudyMembers } from "../model/truss-study.js";
+import { drawMembers as drawStudyMembers } from "./floor-frame.js";
 
 /* Plywood gusset plates are half an inch thick (the construction settings say
    only "plywood"; half inch is the usual truss plate). */
@@ -804,6 +806,7 @@ export function ridgeBoard(plan, lay) {
 }
 
 export function roofFrameMembers(plan) {
+  if (plan.trussStudy) return trussStudyMembers(plan);
   var lay = trussLayout(plan), out = [];
   lay.trusses.forEach(function (tr) { trussMembers(plan, lay, tr).forEach(function (m) { out.push(m); }); });
   var rb = ridgeBoard(plan, lay);
@@ -874,6 +877,7 @@ export default {
   appliesTo() { return true; },
   members(plan) { return roofFrameMembers(plan); },
   build(plan, kit) {
+    if (plan.trussStudy) { drawStudyMembers(kit, trussStudyMembers(plan), "roof-frame"); return; }
     kit.setStage("roof-frame");
     drawMembers(kit, roofFrameMembers(plan));
   },

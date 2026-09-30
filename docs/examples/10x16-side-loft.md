@@ -43,7 +43,7 @@ to point to; they are not yet agreed shop language.
 | Confirmed wall spacing and pair alignment | **16 in on center; double stud every 4 ft** | The 4 ft mark falls between the touching pair. The starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
 | Confirmed end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; side upper is full 16 ft. End bottom/top plates and studs run full 10 ft; end upper stops 3 1/2 in short at each end. | Alan's corrections and explicit both-ends reply, September 28, 2026 |
 | Confirmed name, fit and fastening method; length derived | **Gable board** | On edge on top of, and nailed to, the end wall's upper plate, leaving a 1/2 in inside ledge and projecting 2 1/2 in past each cut end. Actual section is 1 1/2 in thick by 5 1/2 in high. Derived length is 118 in (9 ft 10 in). It supports the truss. Treatment and nail size/count/spacing are not confirmed. Earlier descriptive label: “2x6 along upper plate.” | Alan's photos, fit clarifications and explicit name/connection statement, September 28, 2026 |
-| Confirmed term, lumber, support, member lengths and peak height; profile pending | **Truss** | Sits on the gable board; nominal 2x4, actual 1 1/2 x 3 1/2 in. The upper piece leading to the peak measures 54 in at its longest points; the lower, steeper piece is 37 3/4 in. The peak is 4 ft (48 in) above the top of the gable board. | Alan's photos, “The truss is 2x4” reply, corrected measurements and upper-piece clarification, September 28, 2026 |
+| Confirmed term, lumber, support, member lengths, peak height and tip datum; profile fit provisional | **Truss** | Sits on the gable board; nominal 2x4, actual 1 1/2 x 3 1/2 in. The upper piece leading to the peak measures 54 in at its longest points; the lower, steeper piece is 37 3/4 in. The peak is 4 ft (48 in) above the top of the gable board. The marked 6 1/4 in dimension runs along the wall from the upper plate's cut end to the outermost truss tip. | Alan's photos, corrected measurements, upper-piece clarification and annotated photo, September 28, 2026 |
 | Confirmed description, support and spacing; layout pending | **Studs in the gable end** | “Turned outward,” seated on the gable board, 2 ft (24 in) on center. Exact lumber face, section, starting datum and cut lengths remain pending. | Alan's gable-frame photo and description, September 28, 2026 |
 
 The whole shape is **lofted roof**, and its highest long metal meeting strip
@@ -52,11 +52,12 @@ meanings. The later skid/notch description confirms the specific dimensions
 and seating recorded above. Other names, dimensions and installation
 details remain pending.
 
-**Current rendered view: The end wall with its gable board.** Use
-`learn.html?company=learning-side-loft&step=gable` for this next piece, keeping
-the existing floor and manual control. More gable framing, joined corners,
-openings and autoplay are not included. The newly described truss and
-gable studs are recorded below but are not yet drawn. The earlier
+**Current rendered view: The end-wall truss and gable-stud preview.** Use
+`learn.html?company=learning-side-loft&step=truss`, keeping the existing
+floor, wall, gable board and manual control. Four sloping truss pieces and
+the turned gable studs are visible with their remaining fit assumptions
+identified below. Joined corners, openings and autoplay are not included.
+The earlier single-board view remains at `?step=gable`. The earlier
 `learn.html?company=learning-side-loft&step=walls` still selects a plain 16 ft
 side wall or 10 ft end wall independently. Alan's
 preferred word is **Flooring**; `floor-deck` and “floor decking” are code
@@ -151,32 +152,52 @@ conversion. His current two member lengths, measured from the longest
 points, are **54 in** and **37 3/4 in**. The 54 in correction replaces his
 earlier 46 1/2 in value; 37 3/4 in is unchanged. Alan confirmed that the
 **54 in piece is the upper piece leading to the peak**, assigning the
-**37 3/4 in piece to the lower, steeper slope**. The slope angles and
-end-cut geometry are not yet established. These are member measurements,
-not a confirmed horizontal roof span.
+**37 3/4 in piece to the lower, steeper slope**. These are member
+measurements, not horizontal runs. The preview calculates the slope angles
+from these dimensions, the peak height, tip datum and actual 2x4 section;
+its cut shapes and seating still need Alan's agreement.
 
 Alan confirmed a **4 ft (48 in) peak height**, measured from the **top of
 the gable board to the highest point of the peak**. With the gable-board
 top already 85 in above the flooring, the peak elevation is a derived
 **133 in above flooring** (`85 + 48`). Keep this vertical measurement
-separate from the sloping member lengths; it does not supply their cuts
-or the unresolved overhang datum.
+separate from the sloping member lengths; it does not supply their cuts.
 
-He also supplied **6 1/4 in from the farthest truss point to the upper
-plate**. Keep the measurement wording and value while confirming its
-direction, exact reference on the upper plate and whether it applies at
-both ends. Do not replace the gable board's confirmed 2 1/2 in projection
-with this separate truss dimension or calculate an overall span from it yet.
+His annotated photograph resolves the **6 1/4 in** measurement as running
+**along the end wall, from the upper plate's cut end to the outermost truss
+tip**. The plate datum and direction are confirmed. This is separate from
+the gable board's **2 1/2 in** projection from the same plate cut.
+The preview mirrors the new dimension at both ends; that remains a display
+assumption until Alan checks both-end applicability. With that assumption:
+
+| Preview dimension | Derivation |
+| --- | --- |
+| Truss tip-to-tip span | `113 + 6.25 + 6.25 = 125.5 in` (10 ft 5 1/2 in). |
+| Truss tip beyond each gable-board end | `6.25 - 2.5 = 3.75 in`. |
+| Truss tip beyond each full end-wall endpoint | `6.25 - 3.5 = 2.75 in`. |
+
+The preview uses square tail cuts perpendicular to the stock and shared
+miters at the knees and peak. A straight, unnotched lower-piece underside
+touches the gable-board top at its end. These are visible fit assumptions,
+not confirmed saw settings or a fabricated seat-notch specification.
 
 The **studs in the gable end** are “turned outward,” sit on the gable
 board and are **2 ft (24 in) on center**. The exact outward-facing lumber
 face, gable-stud section, layout origin and cut lengths remain pending.
 This is gable-stud spacing, not a new wall-stud or lengthwise truss-spacing
-rule. Do not copy the regular model's gable-stud orientation or 16 in grid
-into the learned assembly. The current lesson still renders the gable
-board alone above the end wall. Use the photo to identify parts, not to
-recover undocumented angles, lumber sizes or dimensions. A full roof
-construction sequence and connector details remain unconfirmed.
+rule. The preview uses actual 1 1/2 x 3 1/2 in studs with the 3 1/2 in
+face across the gable and the 1 1/2 in thickness through its depth. It
+places one beneath the peak and others at 24 and 48 in on either side,
+with top cuts following the drawn truss underside. The section, exact
+face interpretation, centered origin and resulting cuts are provisional;
+do not copy the regular model's orientation or 16 in grid into this lesson.
+
+Use [the truss picture page](../../truss.html),
+[overview](../../images/truss-framing.png) and
+[connection detail](../../images/truss-connection.png) to review this fit.
+The private photo identifies the dimension endpoints; it supplies no
+pixel-derived angles or lengths. A full roof construction sequence,
+lengthwise truss spacing, connector details and treatment remain unconfirmed.
 
 Alan previously confirmed a 10 ft floor
 width with 1 1/2 in outer boards each side and joists 3 in shorter. The
@@ -239,16 +260,16 @@ confirm first-joist position or remaining dimensions, and they
 do not include Alan's private reference photos.
 
 Open the [floor learning page](../../learn.html), for example
-`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=gable` after
+`http://127.0.0.1:8282/learn.html?company=learning-side-loft&step=truss` after
 `npm run serve`.
 For Alan's iOS phone, use the
-[gable-board picture page](https://yoder-3d-floor-preview.netlify.app/gable.html)
-or the [interactive gable lesson](https://yoder-3d-floor-preview.netlify.app/learn.html?step=gable).
+[truss picture page](https://yoder-3d-floor-preview.netlify.app/truss.html)
+or the [interactive truss preview](https://yoder-3d-floor-preview.netlify.app/learn.html?step=truss).
 Earlier Netlify deployment and hosting failed because of the account credit
 limit. On September 28, the gable-board pull request produced a successful
 deploy preview: the picture page returned HTTP 200 with the new content.
 This restores a phone link; HTTP and asset checks do not prove WebGL or
-physical iOS Safari behavior. The [connection picture saved in GitHub](../../images/gable-board-detail.png)
+physical iOS Safari behavior. The [connection picture saved in GitHub](../../images/truss-connection.png)
 remains available independently of hosting.
 The localhost address only works on the computer running the server.
 Alan approved this separate Netlify preview site on September 27, 2026.

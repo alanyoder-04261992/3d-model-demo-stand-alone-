@@ -41,6 +41,7 @@
    among the framing entries, before "roof-frame". */
 
 import { gableClip } from "../model/roof-shapes.js";
+import { trussGableStudMembers } from "../model/truss-study.js";
 import { wallRuns, wallStudyFrame } from "./wall-frame.js";
 import { wallMember, drawMembers as drawStudyMembers } from "./floor-frame.js";
 import {
@@ -50,7 +51,7 @@ import {
 /* Every stud and opening member of both gable ends, as members (see
    parts/roof-frame.js): x-y outline pushed along z through the gable wall. */
 export function gableFrameMembers(plan) {
-  if (plan.gableStudy) return gableStudyMembers(plan);
+  if (plan.gableStudy) return [...gableStudyMembers(plan), ...trussGableStudMembers(plan)];
   var lay = trussLayout(plan), sec = lay.sec;
   var W = plan.W, L = plan.L, topY = plan.topY;
   var st = sec.stud.t, sd = sec.stud.d, cd = sec.chord.d, dT = sec.deckT;
@@ -177,7 +178,7 @@ export default {
   appliesTo() { return true; },
   members(plan) { return gableFrameMembers(plan); },
   build(plan, kit) {
-    if (plan.gableStudy) { drawStudyMembers(kit, gableStudyMembers(plan), "roof-frame"); return; }
+    if (plan.gableStudy) { drawStudyMembers(kit, gableFrameMembers(plan), "roof-frame"); return; }
     kit.setStage("roof-frame");
     drawMembers(kit, gableFrameMembers(plan));
   },

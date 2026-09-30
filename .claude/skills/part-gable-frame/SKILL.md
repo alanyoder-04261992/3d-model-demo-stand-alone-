@@ -98,15 +98,20 @@ end projection. Retain the earlier plain-wall and floor views. If browser
 checks cannot run, report that limitation separately from static-picture
 and geometry checks.
 
-## Next learned members: recorded, not yet drawn
+## Truss and gable studs: opt-in fit preview
 
 On September 28, Alan described the **studs in the gable end** as “turned
-outward,” seated on the gable board and **2 ft (24 in) on center**. Retain
-that wording while resolving which lumber face points outward, the member
-section, the starting layout datum and the cut lengths. Do not copy the
-ordinary model's orientation or wall-stud grid below into this lesson.
-The 24 in value applies to these gable studs, not to wall studs or to the
-spacing of trusses along the building.
+outward,” seated on the gable board and **2 ft (24 in) on center**. The
+preview at `learn.html?company=learning-side-loft&step=truss` adds them and
+the truss to the existing board. It assumes actual 1 1/2 x 3 1/2 in studs,
+with the broad face outward and their depth centered on the gable board.
+One center is under the peak; the others are at +/-24 and +/-48 in.
+Their section, exact face interpretation and centered layout remain
+provisional. Derive top cuts from the actual truss underside, checking the
+full stud width. These derived cuts are provisional, not a shop cut list.
+Do not copy the ordinary model's orientation, 16 in grid or doubled-stud
+rule. The confirmed 24 in applies only to the gable studs, not to spacing
+between trusses along the building.
 
 He confirmed nominal **2x4 truss lumber**, actual **1 1/2 x 3 1/2 in**,
 with current longest-point member lengths of **54 in for the upper piece
@@ -114,15 +119,26 @@ leading to the peak** and **37 3/4 in for the lower, steeper piece**.
 He confirmed the peak is **4 ft (48 in) above the top of the gable board**,
 measured to the peak's highest point. With the board top at 85 in above
 flooring, this gives a derived peak elevation of **133 in above flooring**.
-Slope angles and end-cut geometry remain unresolved.
-The separate **6 1/4 in from the farthest truss point
-to the upper plate** still needs its direction, exact plate datum and
-both-end applicability. Do not alter the gable board's confirmed 2 1/2 in
-end projection or create a roof profile from these partial inputs. Keep
-the current board-only geometry until the next members can be positioned
-from agreed inputs. See [roof framing](../part-roof-frame/SKILL.md) for
-the companion record; its ordinary model rules are not confirmations for
-Alan's learned assembly.
+His annotated photo resolves the **6 1/4 in** as outward **along the end
+wall from the upper plate's cut end to the farthest truss tip**. Mirroring
+it at both ends is a preview assumption. The gable board's confirmed
+118 in length, 1/2 in inside ledge and 2 1/2 in end projections stay intact.
+
+The preview assumes a plain lower underside touching the gable board's
+outer top corner, square tail cuts and shared knee/peak miters. Bearing
+agreement is still pending, and the derived slopes and cuts remain
+provisional. See [roof framing](../part-roof-frame/SKILL.md) for the fit
+rules, inputs and picture workflow; its ordinary model defaults do not
+confirm this learned assembly.
+
+`trussStudyPlan(gablePlan, { truss: true })` in
+[model/truss-study.js](../../../model/truss-study.js) explicitly enables
+the preview; this part adds `trussGableStudMembers(plan)` to its existing
+gable board. `trussStudyMeasurements` supplies matching member dimensions
+and anchors. Run `node tools/check-truss-lesson.mjs` and inspect
+[the truss picture page](../../../truss.html). Keep `?step=gable` board-only,
+the earlier lessons and the ordinary finished geometry unchanged. Keep
+the original photos private.
 
 ## What it is in real life
 
