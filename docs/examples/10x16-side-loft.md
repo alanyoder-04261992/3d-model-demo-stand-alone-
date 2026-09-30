@@ -44,7 +44,7 @@ to point to; they are not yet agreed shop language.
 | Confirmed end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; side upper is full 16 ft. End bottom/top plates and studs run full 10 ft; end upper stops 3 1/2 in short at each end. | Alan's corrections and explicit both-ends reply, September 28, 2026 |
 | Confirmed name, fit and fastening method; length derived | **Gable board** | On edge on top of, and nailed to, the end wall's upper plate, leaving a 1/2 in inside ledge and projecting 2 1/2 in past each cut end. Actual section is 1 1/2 in thick by 5 1/2 in high. Derived length is 118 in (9 ft 10 in). It supports the truss. Treatment and nail size/count/spacing are not confirmed. Earlier descriptive label: “2x6 along upper plate.” | Alan's photos, fit clarifications and explicit name/connection statement, September 28, 2026 |
 | Confirmed term, lumber, support, member lengths, peak height and tip datum; profile fit provisional | **Truss** | Goes against the gable board’s shown front face, with its lowest tips level with the upper plate’s top; nominal 2x4, actual 1 1/2 x 3 1/2 in. The upper piece leading to the peak measures 54 in at its longest points; the lower, steeper piece is 37 3/4 in. The peak is 4 ft (48 in) above the top of the upper plate (corrected September 29). The marked 6 1/4 in dimension runs along the wall from the upper plate's cut end to the outermost truss tip. | Alan's photos, corrected measurements, upper-piece clarification and annotated photo, September 28, 2026 |
-| Confirmed description, support and spacing; layout pending | **Studs in the gable end** | “Turned outward,” seated on the gable board, 2 ft (24 in) on center. Exact lumber face, section, starting datum and cut lengths remain pending. | Alan's gable-frame photo and description, September 28, 2026 |
+| Confirmed description, support and spacing; layout pending | **Studs in the gable end** | Nominal 2x4, actual 1 1/2 x 3 1/2 in, with the 3 1/2 in face outward; seated on the gable board, 24 in on center. Layout is measured from the outside edge of the end wall. First stud-center offset and top cuts remain pending. | Alan's gable-frame photo and description, September 28, 2026 |
 
 The whole shape is **lofted roof**, and its highest long metal meeting strip
 is **ridge cap** in our conversation. We have agreed on those specific
@@ -172,12 +172,34 @@ do not impose the superseded gable-board top-corner bearing constraint.
 Place the truss's back face against the board's shown face, with no solid
 overlap. Do not add a notch or infer a fastening schedule.
 
-Gable studs remain **on the gable board**, turned outward, **24 in on
-center**. Their 2x4 section, centered layout and exact top fit remain
-provisional. The preview puts their fronts against the truss backs and
-clips their tops to the outer roof outline, giving a face joint behind
-the truss. This replaces the earlier coplanar underside joint; it is not
-a confirmed stud cut list. Show this fit choice for Alan to check.
+Gable studs remain **on the gable board**, **24 in on center**. Alan
+confirmed nominal **2x4**, actual **1.5 x 3.5 in**, with the **3.5 in face
+outward**. Hook the tape at the **outside edge of the end wall**. The
+current preview reads his reply “centered” as centering the first stud on
+the **24 in mark**. That first-center interpretation remains provisional;
+the wall-end datum, section, outward face and spacing are confirmed.
+On the 120 in end wall this produces four centers at **24, 48, 72 and
+96 in from that wall edge**, not a forced stud under the peak.
+
+For another size, use inches consistently and calculate
+`centerX = wallEndX + direction * (firstCenterIn + n * spacingIn)` for
+integer `n >= 0`. `direction` is +1 from the starting end or -1 from the
+opposite end; store the chosen end and first-center offset separately.
+Use `spacingIn = 24` and preview `firstCenterIn = 24` for this example.
+Keep the outside-wall datum: the upper plate starts 3.5 in inward and
+the gable board starts `3.5 - 2.5 = 1 in` inward, so the first stud is
+**23 in from the gable-board end**. Include only whole-width studs that
+fit the gable board and roof. Do not center the pattern on the peak or
+scale the first offset when changing wall width. In this model use
+`studs.layoutOrigin = "outside-end-wall"`, `layoutFrom = "start" | "end"`,
+`firstCenterIn` and `spacingIn`; anchors and measurements come from the
+same member layout.
+
+The exact top fit remains provisional. The preview puts their fronts
+against the truss backs and clips their tops to the outer roof outline,
+giving a face joint behind the truss. This replaces the earlier coplanar
+underside joint; it is not a confirmed stud cut list. Show this fit choice
+and the first-center interpretation for Alan to check.
 
 Preserve the earlier lessons and ordinary finished model. Keep original
 photos private; do not derive lengths or angles from pixels. Treatment,

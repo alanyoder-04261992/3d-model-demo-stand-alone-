@@ -77,9 +77,11 @@ export function trussStudyPlan(plan, { truss = false } = {}) {
   const widthIn = positive(raw.studs?.widthIn, "studs.widthIn");
   const studThicknessIn = positive(raw.studs?.thicknessIn, "studs.thicknessIn");
   const spacingIn = positive(raw.studs?.spacingIn, "studs.spacingIn");
-  if (raw.studs?.layoutOrigin !== "center" || raw.studs?.orientation !== "broad-face-outward" ||
+  const firstCenterIn = positive(raw.studs?.firstCenterIn, "studs.firstCenterIn");
+  if (raw.studs?.layoutOrigin !== "outside-end-wall" || !["start", "end"].includes(raw.studs?.layoutFrom) ||
+      raw.studs?.orientation !== "broad-face-outward" ||
       raw.studs?.topFit !== "behind-truss-face")
-    throw new Error("The gable-stud preview needs its declared center layout and outward face assumptions.");
+    throw new Error("The gable studs need the outside-wall datum, starting end, first center and outward face.");
   const gable = plan.gableStudy, plate = plan.wallStudy.upperPlateRange;
   if (thicknessIn >= depthIn ||
       studThicknessIn > gable.board.thicknessIn + 1e-9 || spacingIn <= widthIn || widthIn <= studThicknessIn)
@@ -97,10 +99,19 @@ export function trussStudyPlan(plan, { truss = false } = {}) {
   const boardFrontZFt = floor.z0Ft - gable.innerFaceOffsetFt;
   const centerZFt = boardFrontZFt + thicknessIn / 24;
   const studCenterZFt = boardFrontZFt - studThicknessIn / 24;
+  const layoutDirection = raw.studs.layoutFrom === "start" ? 1 : -1;
+  const layoutOriginXFt = layoutDirection > 0 ? floor.x0Ft : floor.x1Ft;
+  const firstRelativeIn = (layoutOriginXFt - centerXFt) * 12 + layoutDirection * firstCenterIn;
+  if (firstRelativeIn - widthIn / 2 < -bearingIn - 1e-9 || firstRelativeIn + widthIn / 2 > bearingIn + 1e-9)
+    throw new Error("The first gable stud must fit fully on the gable board; check its center offset.");
+  const remainingIn = bearingIn - layoutDirection * firstRelativeIn - widthIn / 2;
+  const studCount = Math.floor(remainingIn / spacingIn + 1e-9) + 1;
+  const centersIn = Array.from({ length: studCount }, (_, n) => firstRelativeIn + layoutDirection * n * spacingIn);
+  const wallDistancesIn = centersIn.map((_, n) => firstCenterIn + n * spacingIn);
   const status = {};
   for (const key of ["section", "upperLength", "lowerLength", "peakRise", "projection", "projectionDatum",
     "peakDatum", "lowestTipDatum", "trussPlacement", "studPlacement", "studSpacing", "studTurnedOutward", "mirror", "tailCut",
-    "mitres", "depthAlignment", "studSection", "studFace", "studLayoutOrigin", "studTopFit", "treatment"])
+    "mitres", "depthAlignment", "studSection", "studFace", "studLayoutOrigin", "studFirstCenter", "studTopFit", "treatment"])
     status[key] = ["confirmed", "derived"].includes(raw.status?.[key]) ? raw.status[key] : "provisional";
   status.slopes = "derived-from-preview-assumptions";
   status.studLengths = "derived-from-preview-assumptions";
@@ -118,13 +129,16 @@ export function trussStudyPlan(plan, { truss = false } = {}) {
     tailCut: raw.tailCut, layout: raw.layout,
     studs: { nominal: raw.studs.nominal || "2x4", widthIn, widthFt: widthIn / 12,
       thicknessIn: studThicknessIn, thicknessFt: studThicknessIn / 12, spacingIn, spacingFt: spacingIn / 12,
-      layoutOrigin: "center", orientation: "broad-face-outward", topFit: raw.studs.topFit },
+      layoutOrigin: raw.studs.layoutOrigin, layoutFrom: raw.studs.layoutFrom,
+      layoutOriginXFt, layoutDirection, firstCenterIn, firstCenterFt: firstCenterIn / 12,
+      centersIn, wallDistancesIn, orientation: "broad-face-outward", topFit: raw.studs.topFit },
     profile, status,
     assumptionNotes: [
       `Preview mirrors the marked ${projectionIn}-inch projection at both ends.`,
       `The truss is against the shown face of the gable board; its lowest tips and ${peakRiseIn}-inch peak rise use the upper-plate top.`,
       "The whole bottom cut is level with the gable-board bottom, at the upper-plate top. Knee and peak mitres remain provisional.",
-      `Preview gable studs are ${raw.studs.nominal || "2x4"}s on the board, starting under the peak, with their tops behind the truss face. This top fit is provisional.`,
+      `Gable-stud centers start ${firstCenterIn} inches from the outside end-wall edge, then repeat at ${spacingIn} inches. The first-center offset is the preview interpretation of Alan's "centered" reply.`,
+      `Gable studs are ${raw.studs.nominal || "2x4"}s, wide face outward, on the board with their tops behind the truss face. This top fit is provisional.`,
       "Derived slopes and stud cuts are a preview fit, not an approved shop cut list.",
     ],
   };
@@ -162,9 +176,9 @@ export function trussStudyMembers(plan) {
 export function trussGableStudMembers(plan) {
   if (!plan.trussStudy) return [];
   const study = plan.trussStudy, p = study.profile, out = [];
-  const width = study.studs.widthIn, spacing = study.studs.spacingIn, bearing = study.bearingHalfSpanFt * 12;
-  for (let index = -Math.floor((bearing - width / 2) / spacing); index <= Math.floor((bearing - width / 2) / spacing); index++) {
-    const center = index * spacing, x0 = center - width / 2, x1 = center + width / 2;
+  const width = study.studs.widthIn;
+  for (const [index, center] of study.studs.centersIn.entries()) {
+    const x0 = center - width / 2, x1 = center + width / 2;
     let poly = [[x0, study.studBaseIn], [x1, study.studBaseIn], [x1, study.peakRiseIn], [x0, study.peakRiseIn]];
     // Studs remain on the board, behind the truss. Provisional face joint:
     // tops follow the outer roof outline, giving contact area on its back face.
@@ -175,6 +189,7 @@ export function trussGableStudMembers(plan) {
       throw new Error("A preview gable stud does not fit below the truss.");
     out.push(member(plan, "gable-stud", poly, study.studs.thicknessFt,
       { name: "Gable stud", size: study.studs.nominal, centerIn: center, layoutIndex: index,
+        wallDistanceIn: study.studs.wallDistancesIn[index],
         support: "bear", bearingOn: "gable-board", orientation: "broad-face-outward" }));
   }
   return out;

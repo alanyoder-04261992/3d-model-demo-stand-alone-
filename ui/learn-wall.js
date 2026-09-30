@@ -198,7 +198,7 @@ export async function startWallLesson({gable=false,truss=false}={}) {
     function trussCaption(t) {
       $("piece-title").textContent="Truss and gable studs — fit preview";
       $("piece-description").textContent="The 2×4 truss goes against the front face of the gable board, with the whole bottom cut level with the gable board’s bottom and the upper plate’s top. Its upper pieces lead to the peak; the lower pieces form the steeper sides. The gable studs remain on the board; their top fit behind the truss is a preview choice.";
-      $("piece-draft").textContent="Fit preview: mirrored ends and center-stud layout to check. The studs use 2×4s with their broad faces outward; the knee/peak cuts and stud-top connection remain to check.";
+      $("piece-draft").textContent="The 2×4 gable studs have their 3½-inch faces outward. Their layout is measured from the outside end-wall edge. This preview reads ‘centered’ as the first stud center at 24 inches; the knee/peak cuts and stud-top connection remain to check.";
       const rows=[
         ["Upper truss piece · longest edge",formatInches(t.upperLengthFt)],
         ["Lower truss piece · longest edge",formatInches(t.lowerLengthFt)],
@@ -206,13 +206,16 @@ export async function startWallLesson({gable=false,truss=false}={}) {
         ["Truss tip to upper-plate cut",formatInches(t.projectionFt.start)],
         ["Truss lumber · confirmed","2×4 nominal · 1½ × 3½ in actual"],
         ["Gable studs · confirmed spacing","24 in on center"],
+        ["Gable stud lumber · confirmed","2×4 · 1½ × 3½ in actual · wide face outward"],
+        ["Gable-stud layout datum · confirmed","Outside edge of the end wall"],
+        ["First center · preview interpretation",`${formatInches(t.studFirstCenterFt)} from the wall edge`],
+        ["Centers from that wall edge",t.studWallDistancesFt.map(value=>formatInches(value)).join(" · ")],
         ["Opposite-end fit · preview","Same projection; mirror of the shown end"],
-        ["Stud layout · preview","Center stud, then 24 in each way"]
       ];
       const list=$("piece-measurements");list.replaceChildren();
       for(const [title,value] of rows) {const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=title;dd.textContent=value;row.append(dt,dd);list.appendChild(row);}
       $("measurement-note").textContent="The 6¼-inch measurement ends at the upper plate's cut, not at the end of the gable board. Sloping lengths and the vertical peak rise are separate dimensions. This preview lets us check the fit before agreeing on the remaining cuts and stud details.";
-      canvas.setAttribute("aria-label","Rotatable truss fit preview. Upper truss pieces 54 inches, lower pieces 37¾ inches, peak 48 inches above the top of the upper plate. Gable studs 24 inches on center. Connection view measures 6¼ inches from the truss tip to the upper plate's cut end.");
+      canvas.setAttribute("aria-label","Rotatable truss fit preview. Upper truss pieces 54 inches, lower pieces 37¾ inches, peak 48 inches above the top of the upper plate. Outward-facing 2×4 gable studs are 24 inches on center, measured from the outside end-wall edge; this preview puts the first center at 24 inches. Connection view measures 6¼ inches from the truss tip to the upper plate's cut end.");
     }
     function setWall(kind) {
       if(!["side","end"].includes(kind) || (gable && kind!=="end")) return;

@@ -122,11 +122,12 @@ def scene(target=None,extent=None,yaw=.78,pitch=.70):
             bg[y0:y1+1,x0:x1+1][mask]=color[mask];sl[mask]=zz[mask]
     return Image.fromarray(bg),project
 
-def leader(d,point,box,title,lines):
+def leader(d,point,box,title,lines,via=None):
     x,y,width,height=box
     endpoint=(x+width/2,y if point[1]<y else y+height)
-    d.line([tuple(point),endpoint],fill='white',width=8)
-    d.line([tuple(point),endpoint],fill=NAVY,width=3)
+    path=[tuple(point)]+(via or [])+[endpoint]
+    d.line(path,fill='white',width=8)
+    d.line(path,fill=NAVY,width=3)
     d.ellipse((point[0]-6,point[1]-6,point[0]+6,point[1]+6),fill=NAVY,outline='white',width=2)
     d.rounded_rectangle((x,y,x+width,y+height),radius=12,fill='white',outline='#bdccd8',width=2)
     d.text((x+20,y+12),title,font=font(28,True),fill=NAVY)
@@ -169,8 +170,32 @@ def render_truss():
     stud=min(m['studMembers'],key=lambda r:r['center'][0])
     leader(d,project(stud['center']),(35,748,545,111),'Gable studs',['Wide face outward · on the gable board'])
     leader(d,project([2,board['y0Ft']+.22,board['z1Ft']]),(620,748,545,111),'Gable board · 2×6',['118 in · nailed to the upper plate'])
-    d.text((35,895),'Fit preview · mirrored ends, stud layout and knee/peak joints still to check.',font=font(23),fill='#526879')
+    d.text((35,895),'Fit preview · first-center interpretation, mirrored ends and top joints to check.',font=font(23),fill='#526879')
     im.save(ROOT/'images/truss-framing.png')
+
+    # A straight-on view makes the end-wall datum and stud center marks clear.
+    im,project=scene(target,12.8,yaw=0,pitch=0);d=ImageDraw.Draw(im)
+    title(d,'Gable studs · end-wall layout','2×4 · 3½ in face outward · centers measured from outside wall edge')
+    layout_y=a['gableTop'][1];layout_z=centers[0][2]
+    origin=a['wallLayoutOrigin'];origin_witness=[origin[0],layout_y,layout_z]
+    d.line([tuple(project(origin)),tuple(project(origin_witness))],fill=NAVY,width=2)
+    marks=[origin_witness]+centers
+    for i in range(len(marks)-1):
+        label=f'{abs(marks[i+1][0]-marks[i][0])*12:g} in'
+        dimension(d,project,marks[i],marks[i+1],label,(0,83))
+    for center,distance in zip(centers,m['studWallDistancesFt']):
+        point=project([center[0],layout_y+.3,center[2]])
+        label=f'{distance*12:g} in'
+        f=font(22,True);bbox=d.textbbox((0,0),label,font=f);width=bbox[2]-bbox[0]+18
+        d.rounded_rectangle((point[0]-width/2,point[1]-16,point[0]+width/2,point[1]+19),radius=4,fill='white')
+        d.text((point[0]-width/2+9,point[1]-13),label,font=f,fill=NAVY)
+    leader(d,project(origin),(35,748,545,111),'Outside end-wall edge',['Hook tape here · measurements locate centers'])
+    outer_stud=max(m['studMembers'],key=lambda member:member['center'][0])
+    outer_point=project(outer_stud['center'])
+    leader(d,outer_point,(620,748,545,111),'Gable studs · 2×4',
+           ['Wide face outward · seated on gable board'],via=[(1100,outer_point[1]),(1100,730)])
+    d.text((35,895),'First center shown at 24 in: interpretation of “centered” · top joints remain a preview.',font=font(22),fill='#526879')
+    im.save(ROOT/'images/gable-stud-layout.png')
 
     tip=a['leftTip'];cut=a['leftPlateCut']
     target=[(tip[0]+cut[0])/2+.10,board['y0Ft']+.22,board['z1Ft']+.10]
