@@ -1,5 +1,30 @@
 # First example: 10 x 16 Side Lofted Barn
 
+## Latest lesson: windows in a lofted wall
+
+Alan supplied the header end-view photo, named the **window plate** below
+the opening and **window header** above it, and confirmed these as
+**lofted-wall** rules. The loft header has two touching 2x4s on edge on a
+flat 2x4. Actual section is 1.5 x 3.5 in; total height is a derived 5 in.
+The flat board leaves a confirmed **0.5 in outside ledge**, with inside
+faces flush. Header top touches the underside of the **top plate**.
+
+The separate window plate lays flat, 1.5 in tall and 3.5 in deep, with
+studs underneath. Side supports, exact under-window stud layout and seating,
+opening allowances and plate/header cut relationships remain to learn.
+Keep them distinct from the ordinary designer's existing opening defaults.
+
+[Open the header lesson](../../window-framing.html) or its
+[phone end view](../../images/window-header-section.png).
+The displayed 36 in length is an adjustable illustration. No fixed window
+size is adopted. Plate portions above it are context, not new wall cuts.
+The [part skill](../../.claude/skills/part-window-header/SKILL.md) preserves
+the facts and formulas. With this example's 75 in studs and 1.5 in bottom
+plate, top-plate underside is 76.5 in above flooring; subtract the 5 in
+header to obtain 71.5 in for header underside.
+
+## Starting scope
+
 Alan confirmed on September 27, 2026 that “10 x 16 side loft” means a
 **Side Lofted Barn (`SLB`)**: a lofted barn with a side entrance. He also
 initially chose the finished building, then changed the starting approach:

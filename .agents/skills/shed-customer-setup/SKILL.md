@@ -39,6 +39,16 @@ company intake. Preserve the user's selected scope and view choices.
 
 ## Learn the terms together
 
+For the latest **lofted-wall window** lesson, use
+[the header skill](../../../.claude/skills/part-window-header/SKILL.md) and
+[phone-friendly detail](../../../window-framing.html). Alan confirmed
+**window plate** (flat 2x4 below the opening), studs underneath it, and
+**window header / loft header** (two touching 2x4s on edge on a flat 2x4,
+outside half-inch ledge, against the top-plate underside). These are
+lofted-wall rules, not assumptions for every new company or wall type.
+Continue learning side supports and under-window layout without demanding
+one fixed window size.
+
 Follow the user's latest learning direction and show the relevant view,
 including an incomplete assembly when requested. During terminology learning,
 discuss one physical part at a time. Locate it in plain visual words before

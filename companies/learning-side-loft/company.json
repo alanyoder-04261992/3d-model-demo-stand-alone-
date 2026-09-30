@@ -90,6 +90,21 @@
         "studLayoutOrigin": "confirmed", "studFirstCenter": "provisional", "treatment": "provisional"
       }
     },
+    "windowHeader": {
+      "scope": "lofted-wall",
+      "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5, "plies": 2,
+      "base": "flat-same-stock", "ledgeSide": "outside", "topDatum": "top-plate-underside",
+      "exampleLengthIn": 36,
+      "status": { "name": "confirmed", "assembly": "confirmed", "section": "confirmed",
+        "ledgeSide": "confirmed", "topDatum": "confirmed", "length": "illustrative",
+        "supportDetails": "unconfirmed", "endAlignment": "provisional" }
+    },
+    "windowPlateLesson": {
+      "scope": "lofted-wall", "nominal": "2x4", "orientation": "flat",
+      "thicknessIn": 1.5, "depthIn": 3.5, "studsBelow": true,
+      "status": { "name": "confirmed", "section": "confirmed", "orientation": "confirmed",
+        "studsBelow": "confirmed", "studLayout": "unconfirmed", "plateCutLength": "unconfirmed" }
+    },
     "gableBacking": {
       "nominal": "2x4", "thicknessIn": 1.5, "heightIn": 3.5, "bottomOffsetIn": 11,
       "datum": "upper-plate-top", "orientation": "broad-face-outward", "when": "no-window-or-fake-window",

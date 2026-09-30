@@ -1,5 +1,25 @@
 # Our building terms — working discussion list
 
+## Lofted-wall window framing — newly confirmed
+
+Alan's rule applies to **lofted walls**:
+
+| Confirmed term | Agreed piece and fit |
+| --- | --- |
+| **Window header / loft header** | Two touching 2x4s on edge on one flat 2x4, across the top of the window. The whole header meets the underside of the **top plate**. |
+| **Outside ledge** | The flat header board is 3.5 in deep; the edge boards total 3 in. The remaining 0.5 in ledge is **outside**. Inside faces are flush. |
+| **Window plate** | The separate 2x4 across the bottom of the window opening, laying flat: 1.5 in tall by 3.5 in deep. |
+| **Studs under the window plate** | Confirmed uprights below that plate. Exact layout, seating and cut lengths remain to learn. |
+
+Actual 2x4 section is 1.5 x 3.5 in, giving a derived **5 in** header height.
+Do not call the flat header board the window plate. See the
+[header lesson](../window-framing.html) and
+[reusable skill](../.claude/skills/part-window-header/SKILL.md).
+The detail's adjustable 36 in sample length does not establish an opening
+width or header support allowance.
+
+## How we record the terms
+
 We are learning the names together by pointing to one part at a time on the
 [10 x 16 Side Lofted Barn](examples/10x16-side-loft.md). Alan asked us to
 confirm that we mean the same physical part. A name found in the code or an

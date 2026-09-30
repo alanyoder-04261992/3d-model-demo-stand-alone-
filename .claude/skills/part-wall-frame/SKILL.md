@@ -12,6 +12,15 @@ of carrying this example's rules into a new building.
 
 ## Scope of the current wall lesson
 
+For Alan's subsequently learned **lofted-wall window** rule, read
+[window header](../part-window-header/SKILL.md). Two touching 2x4s on edge
+sit on a flat 2x4, with the half-inch ledge outside, and the assembly
+touches the underside of the top plate. Total height is a derived 5 in.
+The separate **window plate** below the opening is a flat 2x4, and Alan
+confirmed **studs under the window plate**. Their exact layout, seating
+and cuts, side supports and opening allowances remain to learn.
+The new isolated header lesson does not change ordinary wall framing.
+
 On September 28, 2026 Alan confirmed these labels on the pictured parts:
 
 | Alan's term | What it points to |

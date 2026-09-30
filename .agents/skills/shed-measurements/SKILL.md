@@ -17,6 +17,17 @@ part's skill before changing it. Use Alan's agreed names in the
 
 ## Establish the inputs and their scope
 
+For the learned **lofted-wall window** header, read
+[its skill](../../../.claude/skills/part-window-header/SKILL.md).
+Actual stock thickness `t=1.5` and depth `D=3.5` give header height
+`D+t=5` in, edge-ply thickness `2t=3` in, and outside ledge
+`D-2t=0.5` in. Top datum is the top-plate underside. Do not scale this
+section with footprint or assume a fixed window width.
+Header cut length remains an independent input until support allowances
+are confirmed. The separate window plate is flat with studs underneath;
+their layout and seating remain to learn. A changed opening height changes
+window-plate elevation and under-window stud lengths, not header height.
+
 Record width `W` and length `L` in feet; calculate in inches with
 `W_in = 12W` and `L_in = 12L`. Keep nominal footprint, actual frame bounds,
 member cut length and dimension datum separate. A side wall follows `L`;
