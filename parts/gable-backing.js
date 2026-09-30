@@ -21,7 +21,7 @@ export function gableBackingRule(plan) {
       raw.bottomOffsetIn < plan.gableStudy.board.heightIn - 1e-9)
     throw new Error("The backing section must fit the gable studs and clear the gable board.");
   const end = plan.trussStudy.end;
-  const windowPresent = (plan.state.items || []).some(item => {
+  const windowPresent = Boolean(plan.trussStudy.windowOpening) || (plan.state.items || []).some(item => {
     const entry = plan.CAT[item.cat];
     return item.wall === end && entry && !entry.int &&
       (entry.gable || entry.draw === "faux-loft");

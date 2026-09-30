@@ -20,10 +20,11 @@ parser.add_argument('--wall',action='store_true',help='Render the side wall stud
 parser.add_argument('--end-wall',action='store_true',help='Render the end wall study and upper-plate setback close-up.')
 parser.add_argument('--gable',action='store_true',help='Render the 2x6 along the end-wall upper plate and its measured connection.')
 parser.add_argument('--truss',action='store_true',help='Render the measured truss fit preview and upper-plate projection detail.')
+parser.add_argument('--window',help='Render an adjustable window example exported as WIDTHxHEIGHT.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
-source='truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
+source='window-'+args.window if args.window else 'truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
 data=json.loads((ROOT/f'test/out/{source}-render-data.json').read_text(encoding='utf-8'))
 W,H=1200,940
 NAVY='#173b56'
@@ -482,6 +483,23 @@ def render_flooring():
     d.text((40,1030),'⅝ in tongue-and-groove flooring · 7 laid pieces · colors distinguish the rows',font=font(23),fill='#526879')
     plan.save(ROOT/'images/flooring-layout.png')
 
+if args.window:
+    m=data['metadata']['truss'];o=m['windowOpening'];a=m['anchors']
+    bottom=next(b for b in m['windowMembers'] if b['side']=='bottom')
+    top=next(b for b in m['windowMembers'] if b['side']=='top')
+    x0=bottom['bounds']['x0Ft'];x1=bottom['bounds']['x1Ft'];y0=bottom['bounds']['y1Ft'];y1=top['bounds']['y0Ft'];z=bottom['z1Ft']
+    im,project=scene([(x0+x1)/2,(y0+y1)/2,z],max(6,(o['widthIn']+35)/12),yaw=.08,pitch=.04);d=ImageDraw.Draw(im)
+    title(d,'Gable window box',f'Changeable example · {o["widthIn"]:g} × {o["heightIn"]:g} in clear opening')
+    dimension(d,project,[x0,y0,z],[x1,y0,z],f'{o["widthIn"]:g} in clear width',(0,30))
+    dimension(d,project,[x1,y0,z],[x1,y1,z],f'{o["heightIn"]:g} in clear height',(60,0))
+    side=next(s for s in m['studMembers'] if abs(s['bounds']['x1Ft']-x0)<1e-7)
+    leader(d,project([x0-.14,(y0+y1)/2,z]),(35,150,440,110),'Gable stud',['Moves to the window side'])
+    leader(d,project(top['center']),(640,150,525,110),'Top and bottom · 2×4',['3½ in wide faces outward'])
+    leader(d,project([x0+.12,bottom['center'][1],z]),(35,748,540,110),'Horizontal pieces resize',[f'{o["widthIn"]:g} in each · between-stud preview joint'])
+    d.text((35,895),'Size and auto-fit height are examples. The same rule follows each selected opening.',font=font(22),fill='#526879')
+    im.save(ROOT/f'images/gable-window-{args.window}.png')
+    print('Saved adjustable gable-window example.')
+    sys.exit(0)
 if args.truss:
     render_truss()
     print('Saved exact-mesh truss fit preview and connection PNGs.')

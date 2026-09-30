@@ -350,8 +350,9 @@ studs (actual stock 1.5 x 3.5 in). Keep his wording; separate names for
 the horizontal pieces have not been agreed.
 
 The window opening determines these stud positions instead of regular
-24 in marks. This gable has no ordinary 11 in gable backing. Clear opening
-dimensions, placement and board-end joints are pending; this rule is
-recorded in the [gable-frame skill](../.claude/skills/part-gable-frame/SKILL.md#learned-rule-when-there-is-a-real-gable-window),
-but the current picture still shows the no-window assembly. Framing for a
-fake window is not established by this real-window rule.
+24 in marks. This gable has no ordinary 11 in gable backing. Alan clarified
+that window sizes differ: the [adjustable window box](../learn.html) (`?step=truss&window=1`)
+uses each selected opening's dimensions. Starting size and auto-fit height
+are examples; the between-side-studs joint is a preview choice. See the
+[window-box skill](../.claude/skills/part-gable-window-frame/SKILL.md).
+Framing for a fake window is not established by this real-window rule.

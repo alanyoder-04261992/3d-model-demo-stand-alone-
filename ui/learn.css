@@ -60,3 +60,13 @@ html:has(.lesson-page), body.lesson-page { height:auto; min-height:100%; }
   .lesson-pieces label { min-height:42px; }
   .lesson-caption h2 { font-size:23px; }
 }
+/* Optional gable-window example: compact, readable inputs on a phone. */
+.gable-window-controls { padding: 14px; border-bottom: 1px solid #d3dde3; color: #173b56; }
+.gable-window-controls[hidden], .gable-window-controls [hidden] { display: none; }
+.gable-window-controls fieldset { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin: 12px 0 0; padding: 12px; border: 1px solid #c5d3dd; }
+.gable-window-controls label { display: flex; flex-direction: column; gap: 5px; font-size: 14px; }
+.gable-window-controls input { width: 100%; min-width: 0; }
+.gable-window-controls input, .gable-window-controls select, .gable-window-controls button { min-height: 42px; padding: 8px; border: 1px solid #bacbd7; border-radius: 4px; font: inherit; background: white; color: #173b56; box-sizing: border-box; }
+.gable-window-controls button { background: #173b56; color: white; cursor: pointer; }
+.gable-window-controls p { flex-basis: 100%; font-size: 13px; margin: 6px 0 0; }
+.gable-window-controls fieldset p { grid-column: 1 / -1; }

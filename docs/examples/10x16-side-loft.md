@@ -709,8 +709,11 @@ The opening takes priority over the normal 24 in stud marks, and this end
 does not get the ordinary 11 in gable backing.
 
 The rule is saved in [gable framing](../../.claude/skills/part-gable-frame/SKILL.md#learned-rule-when-there-is-a-real-gable-window).
-No measured window example has been drawn yet: clear opening width/height,
-position and bottom elevation are pending, as is the exact board-end joint.
-The catalogue's 18x24 entry is not confirmation of this example's opening.
+Alan clarified that the rule must work for different windows without
+waiting for one fixed set of measurements. The [adjustable lesson](../../learn.html) (`?step=truss&window=1`)
+now accepts opening width/height, center offset and bottom height. The
+18x24 and 30x18 pictures are changeable examples, not approved product
+openings. The top and bottom pieces fit between the side studs as a
+preview joint; auto-fit height centers the box in available space.
 Do not carry the backing's 11 in height into the window box. Fake-window
-framing remains to learn. The existing no-window lesson is unchanged.
+framing remains to learn. Selecting no window restores the earlier layout.

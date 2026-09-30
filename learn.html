@@ -7,7 +7,7 @@
   <meta name="description" content="Start with the floor of a 10 by 16 side loft, adding one piece at a time.">
   <title>Floor first — 10 × 16 side loft</title>
   <link rel="stylesheet" href="ui/styles.css">
-  <link rel="stylesheet" href="ui/learn.css">
+  <link rel="stylesheet" href="ui/learn.css?v=window-box-1">
 </head>
 <body class="lesson-page">
   <header class="lesson-header">
@@ -16,6 +16,7 @@
   </header>
   <main class="lesson-main">
     <section class="lesson-view" aria-labelledby="piece-title">
+
       <div class="lesson-toolbar" aria-label="View controls">
         <div class="lesson-view-buttons">
           <button type="button" data-camera="angle" disabled>Angled view</button>
@@ -51,6 +52,19 @@
         <div class="lesson-empty" id="lesson-empty" hidden>Select a piece below to put it back in the view.</div>
       </div>
       <p class="lesson-gestures" id="lesson-gestures">Drag to turn. Scroll or pinch to zoom.</p>
+      <form id="gable-window-controls" class="gable-window-controls" hidden>
+        <label>Gable option <select id="gable-window-kind"><option value="none">No window</option><option value="window">Window opening</option><option value="fake">Fake window</option></select></label>
+        <fieldset id="gable-window-dimensions" hidden>
+          <legend>Selected window’s clear framing opening · inches</legend>
+          <label>Width <input id="gable-window-width" type="number" min="0.125" step="any" required></label>
+          <label>Height <input id="gable-window-height" type="number" min="0.125" step="any" required></label>
+          <label>Offset from center <input id="gable-window-center" type="number" step="any" value="0" required></label>
+          <label>Bottom above upper plate <input id="gable-window-bottom" type="number" step="any" placeholder="Auto fit"></label>
+          <button type="submit">Update window box</button>
+          <p>Change these example dimensions to match any selected window. Blank bottom height centers the box in the available space.</p>
+        </fieldset>
+        <p id="gable-window-message" role="status"></p>
+      </form>
       <p class="lesson-sr-only" id="lesson-keyboard">Keyboard: focus the drawing, then use arrow keys to turn, plus and minus to zoom, and Home to reset the view.</p>
     </section>
     <section class="lesson-bottom" id="lesson-pieces-section" aria-label="Floor pieces">
