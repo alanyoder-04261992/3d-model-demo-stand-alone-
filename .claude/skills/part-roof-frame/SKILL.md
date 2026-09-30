@@ -29,8 +29,10 @@ All sloping lengths use longest points. Read the measurement skill's
 `trussSizeRule(plan)` reads `construction.trussStudy.byNominalWidthFt`
 using the sales width in `state.size`. Missing actual width, peak height
 or projection blocks a full fit rather than borrowing the 10-wide inputs.
-8/12-wide heights and projections remain unspecified. The following fit
-and 48-inch rise describe the existing **10-wide** lesson.
+Confirmed peak heights from the **top of the upper plate to the peak** are
+43.75 in for 8-wide, 48 in for 10-wide and 51 in for 12-wide. The 8/12-wide
+tip projections and actual 8-wide width remain unspecified. The following
+fit and 48-inch rise describe the existing **10-wide** lesson.
 
 Alan's September 29 correction supersedes the earlier top-bearing fit:
 **the truss goes against the broad face of the gable board facing the

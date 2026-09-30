@@ -61,8 +61,7 @@ for(const [widthIn,heightIn,centerIn] of [[18,24,0],[30,18,0],[22,14,12],[12,16,
 const fake=lesson({kind:"fake"});
 const wider=structuredClone(makePlan({...defaults(cat),size:"12x20"},cat));
 wider.construction.floorStudy.frame.widthFt=134/12;wider.construction.floorStudy.skids.lengthFt=20;
-// Explicit hypothetical fit inputs exercise window reuse, not shop roof heights.
-wider.construction.trussStudy.byNominalWidthFt["12"].peakRiseIn=48;
+// Only the tip projection is hypothetical; use the confirmed 51-inch peak height.
 wider.construction.trussStudy.byNominalWidthFt["12"].projectionIn=6.25;
 const widerBase=gableStudyPlan(wallStudyPlan(floorStudyPlan(wider),{wall:"end"}),{gable:true});
 const widerPlan=trussStudyPlan(widerBase,{truss:true,windowOpening:{kind:"window",widthIn:30,heightIn:18}});

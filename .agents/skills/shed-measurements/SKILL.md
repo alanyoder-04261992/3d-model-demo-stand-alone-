@@ -57,18 +57,20 @@ an end wall follows `W`. Retain fractions until formatting the result.
 Alan confirmed these sizes on September 30, 2026. Select by the **nominal
 width label**, then use actual width for geometry and cuts.
 
-| Nominal width label | Actual building width | Upper piece | Lower piece |
-| --- | --- | --- | --- |
-| 8-wide | Not yet confirmed | 34 in | 37.75 in |
-| 10-wide | 120 in (existing lesson) | 54 in | 37.75 in |
-| 12-wide | 134 in = 11 ft 2 in | 54 in | 37.75 in |
+| Nominal width label | Actual building width | Upper piece | Lower piece | Peak height |
+| --- | --- | --- | --- | --- |
+| 8-wide | Not yet confirmed | 34 in | 37.75 in | 43.75 in |
+| 10-wide | 120 in (existing lesson) | 54 in | 37.75 in | 48 in |
+| 12-wide | 134 in = 11 ft 2 in | 54 in | 37.75 in | 51 in |
 
 Sloping lengths use the previously learned longest-point measurement, not
 a centerline or horizontal run. These are discrete shop sizes: do not scale
 or interpolate them. The common lower length applies to these three sizes,
-not every possible width or another builder. The 48-inch peak rise and
-6.25-inch projection belong to the 10-wide lesson; 8/12-wide heights and
-projections remain unspecified. Do not fabricate full trusses from old angles.
+not every possible width or another builder. Measure all peak heights from
+the **top of the upper plate to the peak**, not from the gable-board top.
+The 6.25-inch projection belongs to the 10-wide lesson; 8/12-wide projections
+and the actual 8-wide width remain unspecified. Do not fabricate full
+trusses from old angles.
 
 Store `construction.trussStudy.byNominalWidthFt`, with
 `referenceNominalWidthFt: 10`. `trussSizeRule(plan)` selects from nominal
@@ -79,7 +81,7 @@ width. For 12-wide use `134/12` ft, not 12 ft or rounded 11.2 ft.
 With the same learned joint allowances, end bottom/top plates are 134 in,
 upper plate is `134-7=127` in, gable board is `127+5=132` in, and floor
 joists are `134-3=131` in. These conditional cuts do not establish new skid
-lengths, mule-hook board lengths or roof heights.
+lengths, mule-hook board lengths or tip projections.
 
 Use actual lumber dimensions: the discussed 2x4 is 1.5 x 3.5 in and the
 2x6 is 1.5 x 5.5 in. Do not generalize Alan's half-inch subtraction to

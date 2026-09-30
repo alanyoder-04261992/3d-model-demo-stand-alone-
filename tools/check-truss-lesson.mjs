@@ -180,13 +180,13 @@ assert.throws(() => trussStudyPlan(missing, { truss: true }), /measurements/);
 const asymmetric = structuredClone(wall); asymmetric.construction.gableStudy.endProjectionIn.end = 2;
 assert.throws(() => trussStudyPlan(gableStudyPlan(asymmetric, { gable: true }), { truss: true }), /centered/);
 // Sales labels choose cut lengths; actual widths choose frame geometry.
-for (const [nominal, upper, actual] of [[8, 34, null], [12, 54, 134]]) {
+for (const [nominal, upper, actual, rise] of [[8, 34, null, 43.75], [12, 54, 134, 51]]) {
   const resized = structuredClone(gable); resized.state.size = `${nominal}x16`;
   const rule = trussSizeRule(resized);
   near(rule.upperLengthIn, upper, `${nominal}-wide upper longest-point cut`);
   near(rule.lowerLengthIn, 37.75, `${nominal}-wide lower cut remains unchanged`);
   assert.equal(rule.actualWidthIn, actual);
-  assert.equal(rule.peakRiseIn, null, "new size does not inherit 10-wide peak height");
+  near(rule.peakRiseIn, rise, `${nominal}-wide confirmed peak height from upper-plate top`);
   assert.equal(rule.projectionIn, null, "new size does not inherit 10-wide projection");
   assert.throws(() => trussStudyPlan(resized, { truss: true }), /confirm its actual width, peak height and tip projection/);
 }
@@ -201,4 +201,4 @@ const wrongFrame = structuredClone(gable); wrongFrame.construction.trussStudy.by
 assert.throws(() => trussStudyPlan(wrongFrame, { truss: true }), /actual width before fitting/);
 const legacyRules = structuredClone(gable); delete legacyRules.construction.trussStudy.byNominalWidthFt;
 assert.deepEqual(trussStudyMembers(trussStudyPlan(legacyRules, { truss: true })), trussStudyMembers(plan), "legacy explicit measurements remain supported");
-console.log("PROVED: unchanged ordinary model and 10-wide truss fit; 8-wide upper 34 in, 12-wide upper 54 in, both lower 37.75 in; 12-wide actual width 134 in; no inherited heights or interpolated cuts; outward gable studs, full board support, datum and opposite-end recalculation remain correct.");
+console.log("PROVED: unchanged ordinary model and 10-wide truss fit; 8-wide upper 34 in and peak 43.75 in, 12-wide upper 54 in and peak 51 in, both lower 37.75 in; 12-wide actual width 134 in; no inherited projections or interpolated cuts; outward gable studs, full board support, datum and opposite-end recalculation remain correct.");

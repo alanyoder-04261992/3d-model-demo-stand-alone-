@@ -102,8 +102,7 @@ const lowWindow=structuredClone(plan);lowWindow.state.items.push({cat:"w23",wall
 assert.equal(gableBackingMembers(lowWindow).length,5,"a wall window below the gable is not a gable window");
 const wider=structuredClone(makePlan({...defaults(cat),size:"12x20"},cat));
 wider.construction.floorStudy.frame.widthFt=134/12;wider.construction.floorStudy.skids.lengthFt=20;
-// Explicit hypothetical fit inputs exercise backing reuse, not shop roof heights.
-wider.construction.trussStudy.byNominalWidthFt["12"].peakRiseIn=48;
+// Only the tip projection is hypothetical; use the confirmed 51-inch peak height.
 wider.construction.trussStudy.byNominalWidthFt["12"].projectionIn=6.25;
 const widerPlan=lesson(wider),widerM=trussStudyMeasurements(widerPlan);
 assert.equal(widerM.backingMembers.length,6,"wider gable derives four internal and two outer bays");
