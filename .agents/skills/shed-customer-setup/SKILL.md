@@ -415,3 +415,12 @@ for the horizontal 2x4 pieces between gable studs: broad faces outward,
 bottom 11 in above upper-plate top. Include it only on a gable without a
 window or fake window. Recalculate the clear stud-to-stud lengths and bay
 count for the customer's size. Do not infer this rule for unrelated builders.
+
+For a **real gable window**, Alan confirmed a different layout: move the
+gable studs to the two sides of the opening and add horizontal 2x4s above
+and below to form a box, all 3.5 in wide faces outward. Read the
+[gable-frame rule](../../../.claude/skills/part-gable-frame/SKILL.md#learned-rule-when-there-is-a-real-gable-window).
+Collect the clear framing opening size, location and height before a
+measured preview; catalogue window dimensions are not confirmation. The
+current lesson still shows the no-window case. Do not apply this new box
+rule to a fake window without Alan's confirmation.

@@ -36,6 +36,35 @@ not universal size rules. Confirm their applicability before using them
 for another building. Do not copy all `confirmed` statuses into a new design;
 carry the provenance of a reusable rule and mark new results as derived.
 
+## Gable window box measurements
+
+For a real window in Alan's learned gable, studs move to its two sides and
+horizontal 2x4s form the top and bottom of the box. All four wide faces
+point outward: 3.5 in in the wall plane and 1.5 in through it. Read the
+[gable-frame rule](../../../.claude/skills/part-gable-frame/SKILL.md#learned-rule-when-there-is-a-real-gable-window).
+
+Collect clear opening width `Rw`, clear height `Rh`, horizontal position
+and clear-opening bottom `B` above the upper-plate top. Catalogue size and
+trim bounds do not establish those framing dimensions. Then:
+
+- `opening top = upperPlate.top + B + Rh`.
+- For opening left/right edges `xL,xR`, `xR - xL = Rw`.
+- Adjacent full-width side-stud centers are `xL - 3.5/2` and
+  `xR + 3.5/2`; their center distance is `Rw + 3.5`, not necessarily 24 in.
+- The bottom horizontal's top face and top horizontal's bottom face bound
+  the clear opening. Their outside faces are another 3.5 in beyond it.
+- Horizontal cut lengths depend on the board-end joint: a piece fitted
+  between the side studs cuts to `Rw`. Confirm that joint before treating
+  this conditional formula as the shop's cut list.
+
+These are reusable relationships, not confirmed window dimensions. Do not
+inherit the 11 in backing offset, force a window onto the 24 in stud marks,
+or scale a fixed window with the shed width. Check the complete box fits
+between the gable board and truss. The measured window example and its
+geometry are pending the opening dimensions/placement. The fake-window
+box rule remains unconfirmed; both real and fake windows already exclude
+ordinary gable backing on the same end.
+
 ## Calculate plates, studs and floor joists
 
 For any straight member, `cut = full span - start offset - end offset`.

@@ -5,6 +5,38 @@ description: The gable-end framing and the opt-in lesson's gable board on the en
 
 # Gable-end framing (`parts/gable-frame.js`)
 
+## Learned rule when there is a real gable window
+
+Alan added this rule after the gable-backing lesson: **move the gable studs
+to the two sides of the window, then add horizontal 2x4s above and below
+the opening to form a box**. He confirmed all four members have their
+**3.5 in wide faces outward**, in line with the existing gable studs;
+actual through-wall thickness is 1.5 in. The window's framing opening
+controls the neighboring stud positions instead of the regular 24 in
+marks. Do not leave a regular-layout stud crossing the clear opening.
+
+Keep this learned assembly separate from the ordinary model's generic
+king/jack/header rules below. Alan has not specified doubled members,
+larger headers, fasteners, or a new name for the horizontal pieces.
+The existing gable-backing rule omits the 11 in backing on this same end.
+A fake window also omits backing, but its framing has not yet been
+confirmed; do not infer a real opening or this box around it.
+
+**Recorded rule, not yet drawn in the lesson:** clear opening width and
+height, its position and bottom elevation, and the board-end joint detail
+remain to establish for a measured example. Ask for clear dimensions
+between the framing boards, not the catalogue window name or outside trim.
+Use the upper-plate top as the requested elevation datum; the 11 in
+backing height is not a window-placement rule. Do not assume a centered
+window or scale its opening with the building width.
+
+Read [Shed measurements](../../../.agents/skills/shed-measurements/SKILL.md#gable-window-box-measurements)
+for the parameter relationships. Preserve the current no-window preview
+until the window example has the needed measurements. When implemented,
+verify the clear opening stays empty, the four outward faces align, moved
+studs still fit the gable board and truss, and backing remains omitted only
+on the affected end.
+
 ## Gable backing added to the learned assembly
 
 Read [the gable-backing skill](../part-gable-backing/SKILL.md) before changing
