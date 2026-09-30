@@ -126,9 +126,11 @@ For the first gable piece, read the existing
 Use Alan's confirmed name **gable board**; the earlier “2x6 along upper
 plate” label remains a useful physical description.
 Alan confirmed a nominal 2x6, actual 1 1/2 x 5 1/2 in, on edge along and on
-top of the end wall's upper plate. It leaves a **1/2 in inside ledge** and
-extends **2 1/2 in past both cut ends** of the plate. The ledge is measured
-between the plate's and board's room-facing faces; the end projection is
+top of the end wall's upper plate. His later correction keeps
+the new board position but fixes the names: **1/2 in inside ledge** and
+a calculated **1 1/2 in outside ledge**. It extends **2 1/2 in past both cut ends** of the
+plate. The half-inch gap is at the selected wall-line edge; store its physical
+`ledgeEdge` separately from the inside/outside name; the end projection is
 along the wall, not vertical. For this 10 ft end wall, derive the new length
 from the 113 in upper plate: `113 + 2.5 + 2.5 = 118 in` (9 ft 10 in).
 This leaves 1 in to each full-wall endpoint. The on-edge height raises its
@@ -155,7 +157,9 @@ runs along the wall from the **upper-plate cut end to the farthest truss
 tip**. It is a separate horizontal dimension, not the height or a sloping
 length. Mirroring it at both ends remains provisional; this gives
 `113 + 6.25 + 6.25 = 125.5 in` tip-to-tip. The gable board remains 118 in
-long, on edge above the upper plate, with its 0.5 in inside ledge and
+long, on edge above the upper plate. After the other-side correction it
+keeps the new physical position, with Alan’s corrected labels: a 0.5 in
+inside ledge and a derived 1.5 in outside ledge, with
 2.5 in projections unchanged.
 
 Alan’s later blue line confirms that the **whole bottom cut of the truss

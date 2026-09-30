@@ -163,7 +163,7 @@ export function gableStudyMembers(plan) {
   const study = plan.gableStudy, run = wallStudyFrame(plan).runs[0];
   const member = wallMember("gable-board", "lumber", run.w,
     study.range.u0, study.range.u1, study.baseYFt, study.topYFt,
-    study.innerFaceOffsetFt, study.outerFaceOffsetFt,
+    study.faceOffsetMinFt, study.faceOffsetMaxFt,
     { wall: run.key, run: 0, lesson: true, size: study.board.nominal,
       support: "bear", bearingOn: "upper-plate", orientation: "on-edge" });
   member.stage = "roof-frame";

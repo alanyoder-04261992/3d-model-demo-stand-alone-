@@ -21,19 +21,32 @@ export function gableStudyMeasurements(plan) {
     center: p0.map((value, i) => (value + p1[i]) / 2),
     lengthFt: Math.hypot(...p0.map((value, i) => p1[i] - value)),
     widthFt: member.w, depthFt: member.d, nominalLumber: member.meta.size };
-  const projectionY = study.baseYFt, boardO = study.innerFaceOffsetFt;
+  const projectionY = study.baseYFt, boardO = study.faceOffsetMinFt;
   const atPoint = (u, y, o) => framePt(run.w, u, y, o);
+  const wallLineStart = atPoint(0, projectionY, 0);
+  const wallLineEnd = atPoint(0, projectionY, study.faceOffsetMaxFt);
+  const oppositeStart = atPoint(0, projectionY, -plan.wallStudy.plates.depthFt);
+  const oppositeEnd = atPoint(0, projectionY, study.faceOffsetMinFt);
+  const ledgeStart = study.ledgeEdge === "wall-line" ? wallLineStart : oppositeStart;
+  const ledgeEnd = study.ledgeEdge === "wall-line" ? wallLineEnd : oppositeEnd;
+  const otherStart = study.ledgeEdge === "wall-line" ? oppositeStart : wallLineStart;
+  const otherEnd = study.ledgeEdge === "wall-line" ? oppositeEnd : wallLineEnd;
+  const innerLedgeStart = study.ledgeSide === "inside" ? ledgeStart : otherStart;
+  const innerLedgeEnd = study.ledgeSide === "inside" ? ledgeEnd : otherEnd;
+  const outerLedgeStart = study.ledgeSide === "outside" ? ledgeStart : otherStart;
+  const outerLedgeEnd = study.ledgeSide === "outside" ? ledgeEnd : otherEnd;
   return {
     wall: "end", name: study.name, board, members: [board], upperPlate,
     bounds, lengthFt: board.lengthFt, heightFt: study.board.heightFt,
     thicknessFt: study.board.thicknessFt, innerLedgeFt: study.innerLedgeFt,
+    outerLedgeFt: study.outerLedgeFt, ledgeSide: study.ledgeSide, ledgeEdge: study.ledgeEdge, ledgeFt: study.ledgeFt,
     endProjectionFt: { ...study.endProjectionFt },
     baseYFt: bounds.y0Ft, topYFt: bounds.y1Ft,
     boardStart: atPoint(at.u0, projectionY, boardO), boardEnd: atPoint(at.u1, projectionY, boardO),
     plateStart: atPoint(plan.wallStudy.upperPlateRange.u0, projectionY, boardO),
     plateEnd: atPoint(plan.wallStudy.upperPlateRange.u1, projectionY, boardO),
-    innerLedgeStart: atPoint(0, projectionY, -plan.wallStudy.plates.depthFt),
-    innerLedgeEnd: atPoint(0, projectionY, boardO),
+    innerLedgeStart, innerLedgeEnd, outerLedgeStart, outerLedgeEnd,
+    ledgeStart, ledgeEnd,
     alongAxis: run.w.ax.slice(), outwardNormal: run.w.n.slice(), status: study.status,
   };
 }

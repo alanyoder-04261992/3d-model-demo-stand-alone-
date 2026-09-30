@@ -50,10 +50,11 @@ export function createGableLabels(viewport,renderer) {
     if(detail) {
       const projectionY=board.y0Ft;
       dimension([board.x0Ft,projectionY,faceZ],[plate.x0Ft,projectionY,faceZ],`${inches(m.endProjectionFt.start)} past cut`,-29);
-      // Both endpoints are the actual inside faces at the plate's upper surface.
-      // Put the depth dimension just behind the cut so its half-inch ledge is visible.
+      // Measure the configured ledge between the matching plate and board faces.
       const ledgeX=plate.x0Ft+.28;
-      dimension([ledgeX,plate.y1Ft,plate.z1Ft],[ledgeX,plate.y1Ft,board.z1Ft],`${inches(m.innerLedgeFt)} inside ledge`,29);
+      const ledgeStart=m.ledgeStart.slice(),ledgeEnd=m.ledgeEnd.slice();
+      ledgeStart[0]=ledgeEnd[0]=ledgeX;
+      dimension(ledgeStart,ledgeEnd,`${inches(m.ledgeFt)} ${m.ledgeSide} ledge`,29);
       const sectionX=board.x0Ft+.07;
       dimension([sectionX,board.y0Ft,faceZ],[sectionX,board.y1Ft,faceZ],`${inches(m.heightFt)} high`,-26);
       cards.push({title:m.name,detail:`${inches(m.thicknessFt)} × ${inches(m.heightFt)} actual`,footer:"2×6 on the upper plate",x:width-cardWidth-14,y:16,
@@ -67,7 +68,7 @@ export function createGableLabels(viewport,renderer) {
       {title:"Upper plate",detail:`${inches(m.upperPlate.lengthFt)} long`,footer:"2½″ past each cut end",x:width-cardWidth-14,y:height-72,
         point:[plate.x0Ft+(plate.x1Ft-plate.x0Ft)*.7,(plate.y0Ft+plate.y1Ft)/2,plateFaceZ]});
     }
-    svg.setAttribute("aria-label",`${m.name}: 2×6 on edge, ${inches(m.lengthFt)} long, ${inches(m.thicknessFt)} thick and ${inches(m.heightFt)} high. Inside ledge ${inches(m.innerLedgeFt)}. Projection past each upper-plate end ${inches(m.endProjectionFt.start)} and ${inches(m.endProjectionFt.end)}.`);
+    svg.setAttribute("aria-label",`${m.name}: 2×6 on edge, ${inches(m.lengthFt)} long, ${inches(m.thicknessFt)} thick and ${inches(m.heightFt)} high. Outside ledge ${inches(m.outerLedgeFt)}; inside ledge ${inches(m.innerLedgeFt)}. Projection past each upper-plate end ${inches(m.endProjectionFt.start)} and ${inches(m.endProjectionFt.end)}.`);
     for(const c of cards) {
       const p=project(c.point);if(!p || p[0]<0 || p[0]>width || p[1]<0 || p[1]>height) continue;
       const a=[c.x+cardWidth/2,p[1]>c.y+28?c.y+56:c.y];

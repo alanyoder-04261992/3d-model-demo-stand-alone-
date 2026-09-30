@@ -96,7 +96,7 @@ export function trussStudyPlan(plan, { truss = false } = {}) {
     throw new Error("The truss peak must clear the gable board and leave room for gable studs.");
   const floor = plan.wallStudy.floorBounds;
   const centerXFt = (floor.x0Ft + floor.x1Ft) / 2 + centerU;
-  const boardFrontZFt = floor.z0Ft - gable.innerFaceOffsetFt;
+  const boardFrontZFt = floor.z0Ft - gable.faceOffsetMinFt;
   const centerZFt = boardFrontZFt + thicknessIn / 24;
   const studCenterZFt = boardFrontZFt - studThicknessIn / 24;
   const layoutDirection = raw.studs.layoutFrom === "start" ? 1 : -1;

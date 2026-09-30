@@ -42,7 +42,7 @@ to point to; they are not yet agreed shop language.
 | Confirmed stud cut length; overall wall height derived | **75 in studs** | With three flat plates, bottom-plate underside to upper-plate top is a derived 79 1/2 in (`75 + 3 x 1.5`). | Alan's dimension reply, September 28, 2026 |
 | Confirmed wall spacing and pair alignment | **16 in on center; double stud every 4 ft** | The 4 ft mark falls between the touching pair. The starting datum from a particular wall end remains unconfirmed. | Alan's replies, September 28, 2026 |
 | Confirmed end rules; plate lengths derived | **Side wall and end wall plate overlap** | Side bottom/top plates and end studs stop 3 1/2 in short at both ends; side upper is full 16 ft. End bottom/top plates and studs run full 10 ft; end upper stops 3 1/2 in short at each end. | Alan's corrections and explicit both-ends reply, September 28, 2026 |
-| Confirmed name, fit and fastening method; length derived | **Gable board** | On edge on top of, and nailed to, the end wall's upper plate, leaving a 1/2 in inside ledge and projecting 2 1/2 in past each cut end. Actual section is 1 1/2 in thick by 5 1/2 in high. Derived length is 118 in (9 ft 10 in). It supports the truss. Treatment and nail size/count/spacing are not confirmed. Earlier descriptive label: “2x6 along upper plate.” | Alan's photos, fit clarifications and explicit name/connection statement, September 28, 2026 |
+| Confirmed name, fit and fastening method; length derived | **Gable board** | On edge on top of, and nailed to, the end wall's upper plate, after the later placement and naming corrections leaving a 1/2 in inside ledge and a calculated 1 1/2 in outside ledge, and projecting 2 1/2 in past each cut end. Actual section is 1 1/2 in thick by 5 1/2 in high. Derived length is 118 in (9 ft 10 in). The truss goes against its front face. Treatment and nail size/count/spacing are not confirmed. Earlier descriptive label: “2x6 along upper plate.” | Alan's photos, fit clarifications and explicit name/connection statement, September 28, 2026 |
 | Confirmed term, lumber, support, member lengths, peak height and tip datum; profile fit provisional | **Truss** | Goes against the gable board’s shown front face, with its lowest tips level with the upper plate’s top; nominal 2x4, actual 1 1/2 x 3 1/2 in. The upper piece leading to the peak measures 54 in at its longest points; the lower, steeper piece is 37 3/4 in. The peak is 4 ft (48 in) above the top of the upper plate (corrected September 29). The marked 6 1/4 in dimension runs along the wall from the upper plate's cut end to the outermost truss tip. | Alan's photos, corrected measurements, upper-piece clarification and annotated photo, September 28, 2026 |
 | Confirmed description, support and spacing; layout pending | **Studs in the gable end** | Nominal 2x4, actual 1 1/2 x 3 1/2 in, with the 3 1/2 in face outward; seated on the gable board, 24 in on center. Layout is measured from the outside edge of the end wall. First stud-center offset and top cuts remain pending. | Alan's gable-frame photo and description, September 28, 2026 |
 
@@ -118,10 +118,12 @@ upper plate,” while beginning the end wall's gable framing. Use his name;
 “chord,” “header” and “rafter” are not agreed alternatives. It is nailed to
 the upper plate; the truss goes against its shown front face. He clarified that it runs
 along the upper plate on edge, and explicitly confirmed that it rests on
-top, leaves a **1/2 in ledge on the inside**, and projects **2 1/2 in past
-both cut ends** of the plate. The projection runs along the end wall; it is
-not a 2 1/2 in vertical rise. Inside means toward the room: the plate's
-inside face is 1/2 in farther inward than the new board's inside face.
+top and projects **2 1/2 in past both cut ends** of the plate. His later
+correction keeps the new position across the plate and fixes the names:
+**1/2 in inside ledge**, **1 1/2 in outside ledge**. Physical placement is
+stored as `ledgeEdge = "wall-line"` and the selected gap is named
+`ledgeSide = "inside"`; a naming correction cannot move the board. The
+projection runs along the end wall, not vertically.
 
 | Measurement | Value and source |
 | --- | --- |
@@ -129,15 +131,15 @@ inside face is 1/2 in farther inward than the new board's inside face.
 | Supporting end upper plate | 113 in (9 ft 5 in), from the previously confirmed `120 - 3.5 - 3.5` rule. |
 | New board length | **118 in / 9 ft 10 in**, derived as `113 + 2.5 + 2.5`. |
 | Remaining distance to each end-wall endpoint | **1 in**, derived as `3.5 - 2.5`; do not extend the board past the 10 ft wall. |
-| Inside ledge | **1/2 in**, confirmed between the plate's room-facing edge and the new board's room-facing face. |
-| Outside ledge | **1 1/2 in**, derived as `3.5 - 0.5 - 1.5`; this is across the depth, not along the board. |
+| Inside ledge | **1/2 in**, at the selected wall-line edge, using Alan’s corrected name. |
+| Outside ledge | **1 1/2 in**, derived as `3.5 - 0.5 - 1.5`, across plate depth. |
 | Board bottom elevation | Upper-plate top: **79 1/2 in above flooring**, derived. |
 | Board top elevation | **85 in above flooring**, derived as `79.5 + 5.5`; with current floor elevation, **95 5/8 in above skid bottom**. |
 
 Use the [gable picture page](../../gable.html), its
 [overview](../../images/gable-framing.png) and
 [connection detail](../../images/gable-board-detail.png) to show the board,
-supporting upper plate, end projection and inside ledge. Read the
+supporting upper plate, end projection and corrected inside ledge. Read the
 [gable-frame skill](../../.claude/skills/part-gable-frame/SKILL.md) for this
 opt-in lesson's implementation. Keep the ordinary finished designer and
 existing floor/wall member dimensions unchanged. Alan's reference photograph
@@ -160,7 +162,9 @@ runs along the wall from the **upper-plate cut end to the farthest truss
 tip**. It is a separate horizontal dimension, not the height or a sloping
 length. Mirroring it at both ends remains provisional; this gives
 `113 + 6.25 + 6.25 = 125.5 in` tip-to-tip. The gable board remains 118 in
-long, on edge above the upper plate, with its 0.5 in inside ledge and
+long, on edge above the upper plate. After the other-side correction it
+keeps the new physical position, with Alan’s corrected labels: a 0.5 in
+inside ledge and a derived 1.5 in outside ledge, with
 2.5 in projections unchanged.
 
 Alan’s later blue line confirms that the **whole bottom cut of the truss

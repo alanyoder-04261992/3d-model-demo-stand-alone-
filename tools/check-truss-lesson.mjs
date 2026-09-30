@@ -157,6 +157,16 @@ for (const change of [raw => raw.upperLengthIn = 0, raw => raw.lowerLengthIn = N
 }
 // The reusable rule follows the chosen end and measured offset, rather than
 // hardcoding this example's stud count or centering every layout at the peak.
+const oppositeGableInput = structuredClone(wall); oppositeGableInput.construction.gableStudy.ledgeEdge = "opposite";
+const oppositeTruss = trussStudyPlan(gableStudyPlan(oppositeGableInput, { gable: true }), { truss: true });
+const oppositeMembers = [...trussStudyMembers(oppositeTruss), ...trussGableStudMembers(oppositeTruss)];
+for (const [index, moved] of members.entries()) {
+  const previous = oppositeMembers[index];
+  assert.deepEqual(moved.poly, previous.poly, "changing ledge side preserves every roof/stud profile and cut");
+  near(moved.origin[0], previous.origin[0], "changing board side preserves roof/stud width position");
+  near(moved.origin[1], previous.origin[1], "changing board side preserves roof/stud elevation");
+  near((moved.origin[2] - previous.origin[2]) * 12, -1, "truss and studs follow the board one inch across to the new position");
+}
 const reversed = structuredClone(gable); reversed.construction.trussStudy.studs.layoutFrom = "end";
 const reversedPlan = trussStudyPlan(reversed, { truss: true });
 assert.deepEqual(trussGableStudMembers(reversedPlan).map(s => s.meta.centerIn), [36, 12, -12, -36]);

@@ -69,7 +69,7 @@ length is `12W - 2(1.5)`. The 75 in studs plus three 1.5 in plates give
 from skid bottom; do not label that combined height as stud length.
 
 For the learned **gable board**, Alan confirmed on-edge seating
-on top of the end upper plate, a 1/2 in inside ledge and 2 1/2 in projection
+on top of the end upper plate and 2 1/2 in projection
 past each cut end. Use the actual plate endpoints: the new start is the
 plate start minus its start projection, and the new end is the plate end
 plus its end projection. Its distance to each full-wall endpoint is that
@@ -78,9 +78,16 @@ from the full wall or treat it as a vertical rise. With the example's
 3.5 in setbacks, the board stays 1 in short at each wall end.
 
 The on-edge 2x6 is 1.5 in thick through the wall depth and 5.5 in tall.
-Its inside face is 0.5 in back toward the outside from the upper plate's
-inside face; the remaining outside ledge is `plate depth - inside ledge -
-board thickness`, or 1.5 in for this example. Bottom elevation equals upper
+Alan's later request moves it to the other side of the upper plate. He
+then corrected the ledge names and explicitly kept the new position:
+**inside ledge 0.5 in**, **outside ledge 1.5 in**. The latter is
+`plate depth - inside ledge - board thickness`. Store `ledgeEdge` separately
+from `ledgeSide` and `ledgeIn`: wall-line means local wall offset zero,
+while opposite means `-plate depth`. Changing names must not move the
+board. The current half-inch gap is at wall-line, named inside for this
+gable connection. This convention does not change skid or ordinary-wall
+coordinates. For another section, recalculate the other gap and validate
+full-width bearing on the plate. Bottom elevation equals upper
 plate top; board top is `upper plate top + board height`, giving 85 in above
 the flooring here. Keep lengths, ledges and elevations as separate axes.
 Before reusing this fit for a new builder or changed wall section, confirm
@@ -105,7 +112,9 @@ runs along the wall from the **upper-plate cut end to the farthest truss
 tip**. It is a separate horizontal dimension, not the height or a sloping
 length. Mirroring it at both ends remains provisional; this gives
 `113 + 6.25 + 6.25 = 125.5 in` tip-to-tip. The gable board remains 118 in
-long, on edge above the upper plate, with its 0.5 in inside ledge and
+long, on edge above the upper plate. After the other-side correction it
+keeps the new physical position, with Alan’s corrected labels: a 0.5 in
+inside ledge and a derived 1.5 in outside ledge, with
 2.5 in projections unchanged.
 
 Alan’s later blue line confirms that the **whole bottom cut of the truss
@@ -258,8 +267,9 @@ It is not confirmation that those rules suit a new building.
 - [gableStudyPlan](../../../model/gable-study.js) adds the single on-edge
   board only with `{ gable: true }` on an end-wall study. Its
   `construction.gableStudy.endProjectionIn.start` and `.end` are separate
-  projections from that upper plate's cuts, while `innerLedgeIn` controls
-  depth placement. A new end-wall width therefore changes board length
+  projections from that upper plate's cuts, while `ledgeEdge` and `ledgeIn`
+  control physical depth placement and `ledgeSide` names the selected gap. The other ledge is calculated from actual plate
+  depth minus board thickness minus the selected ledge. A new end-wall width therefore changes board length
   through the actual upper-plate range; changing building length alone
   does not. Check both endpoint clearance and ledge fit with
   [gable measurements](../../../model/gable-measurements.js).

@@ -81,7 +81,9 @@ The starting layout datum, extra corner studs, fasteners, openings and wall
 treatment remain unconfirmed. Nothing advances automatically.
 The earlier **gable board** step remains at
 `learn.html?company=learning-side-loft&step=gable`. A 2x6 stands on edge
-on the end wall's upper plate, leaving a confirmed 1/2 in inside ledge and
+on the end wall's upper plate. Alan's later correction keeps its new
+position across the plate and uses his corrected labels: 1/2 in inside
+ledge and a calculated 1 1/2 in outside ledge, while
 projecting 2 1/2 in past each cut end. The calculated board length is
 `113 + 2.5 + 2.5 = 118 in` (9 ft 10 in). Its actual section is 1 1/2 in
 thick and 5 1/2 in high. The [gable picture page](gable.html) includes a
@@ -135,7 +137,7 @@ same terms and construction details.
 | --- | --- |
 | [Customer setup](.agents/skills/shed-customer-setup/SKILL.md) | Set up a company or buyer's design and continue the manual building lesson. |
 | [Measurements for other sizes](.agents/skills/shed-measurements/SKILL.md) | Recalculate lengths from the building width, length, actual lumber and end setbacks, with worked examples. |
-| [Gable framing](.claude/skills/part-gable-frame/SKILL.md) | The gable board, its inside ledge and end projections, plus the learned gable-stud rules. |
+| [Gable framing](.claude/skills/part-gable-frame/SKILL.md) | The gable board, its ledge side and end projections, plus the learned gable-stud rules. |
 | [Roof framing](.claude/skills/part-roof-frame/SKILL.md) | The measured 2x4 truss preview, its upper-plate datum, derived profile and remaining fit assumptions, separate from ordinary model rules. |
 | [Skids](.claude/skills/part-skids/SKILL.md) | Treated supports, notches, end cuts and their measurements. |
 | [Floor frame](.claude/skills/part-floor-frame/SKILL.md) | Floor joists, outer/end boards and the board the mule hooks onto. |
@@ -253,7 +255,7 @@ Chromium's software graphics, each on its own port.
 | `check-floor-joist-lesson.mjs` | no | the joist lesson retains only regular crosswise joists, preserving their geometry, materials and stages while keeping the full frame unchanged |
 | `check-floor-deck-lesson.mjs` | no | the seven flooring pieces cover the 10x16 frame at 5/8 in thick, with staggered seams and a trimmed last row, without changing the frame, skids or ordinary designer |
 | `check-wall-lesson.mjs` | no | separate side and end walls use 75 in studs, three flat plates and touching pairs at 4 ft marks; exact mesh contacts, volume, floor and ordinary designer are preserved |
-| `check-gable-lesson.mjs` | no | the 2x6 rests on the end upper plate with a 1/2 in inside ledge and 2 1/2 in projections; actual mesh, contact and resizing formulas agree, and existing floor/wall/ordinary geometry stays unchanged |
+| `check-gable-lesson.mjs` | no | the 2x6 rests on the end upper plate with a 1/2 in inside ledge, 1 1/2 in outside ledge and 2 1/2 in projections; actual mesh, contact and resizing formulas agree, and existing floor/wall/ordinary geometry stays unchanged |
 | `check-model-live.mjs` | yes | the rules (sizes, walls, roof line, standard doors and windows, clamping, prices) are Barnwright's, number for number, against its live page |
 | `check-ui.mjs` | yes | the designer page works: every style, size, colour, door and window, drag, "Add here", layouts on phone and desktop, escaping |
 | `check-views.mjs` | yes | Outside, Inside, Framing and Watch it build on seven buildings, from real clicks and real pixels |
