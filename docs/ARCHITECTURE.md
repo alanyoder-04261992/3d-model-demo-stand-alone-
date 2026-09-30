@@ -311,8 +311,13 @@ existing stage. It draws Alan's lofted-wall three-board header only when a
 `model/window-header-study.js` to isolate its members and add clearly
 labeled portions of the top/upper plates as display context. It does not
 put a header over uncut plain-wall studs or alter ordinary opening framing.
-The learning company also stores confirmed flat window-plate orientation
-and presence of studs below it; their geometry awaits the remaining rules.
+The following opt-in `window-plate` entry uses `windowPlateStudy` from
+`model/window-plate-study.js`. It draws a flat plate and supporting studs
+copied from the original wall layout and shortened between bottom-plate
+top and window-plate underside. Window height controls the latter datum.
+The UI has lower-assembly, header and all-learned-pieces views; the combined
+view remains incomplete pending side framing. Contextual bottom-plate
+portions do not change full wall cuts. Original layout datum is retained.
 
 `parts/openings/index.js` walks `plan.state.items` in array order exactly as
 `buildShed` calls `renderItem`: skip interior items (before `setItem`), apply

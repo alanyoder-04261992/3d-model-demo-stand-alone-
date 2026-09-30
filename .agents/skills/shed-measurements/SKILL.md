@@ -24,9 +24,14 @@ Actual stock thickness `t=1.5` and depth `D=3.5` give header height
 `D-2t=0.5` in. Top datum is the top-plate underside. Do not scale this
 section with footprint or assume a fixed window width.
 Header cut length remains an independent input until support allowances
-are confirmed. The separate window plate is flat with studs underneath;
-their layout and seating remain to learn. A changed opening height changes
-window-plate elevation and under-window stud lengths, not header height.
+are confirmed. The separate window plate is flat with studs underneath.
+Alan confirmed they sit on the bottom plate and keep the wall's 16-inch
+layout, including the covered double-stud positions. Use
+[the window-plate skill](../../../.claude/skills/part-window-plate/SKILL.md):
+`stud cut = header underside above floor - clear window height
+- window-plate thickness - bottom-plate thickness`.
+A changed opening height changes these cuts, not header height or stud marks.
+The existing wall-layout starting datum remains provisional.
 
 Record width `W` and length `L` in feet; calculate in inches with
 `W_in = 12W` and `L_in = 12L`. Keep nominal footprint, actual frame bounds,

@@ -9,7 +9,7 @@ Alan's rule applies to **lofted walls**:
 | **Window header / loft header** | Two touching 2x4s on edge on one flat 2x4, across the top of the window. The whole header meets the underside of the **top plate**. |
 | **Outside ledge** | The flat header board is 3.5 in deep; the edge boards total 3 in. The remaining 0.5 in ledge is **outside**. Inside faces are flush. |
 | **Window plate** | The separate 2x4 across the bottom of the window opening, laying flat: 1.5 in tall by 3.5 in deep. |
-| **Studs under the window plate** | Confirmed uprights below that plate. Exact layout, seating and cut lengths remain to learn. |
+| **Studs under the window plate** | Sit on the bottom plate and meet the window plate's underside. Alan confirmed the same 16-inch wall layout. Their cut lengths follow the selected window height. |
 
 Actual 2x4 section is 1.5 x 3.5 in, giving a derived **5 in** header height.
 Do not call the flat header board the window plate. See the
@@ -17,6 +17,12 @@ Do not call the flat header board the window plate. See the
 [reusable skill](../.claude/skills/part-window-header/SKILL.md).
 The detail's adjustable 36 in sample length does not establish an opening
 width or header support allowance.
+
+The [window-plate picture](../images/window-plate-studs.png) shows the
+next learned assembly. With a 36 in clear height, its studs cut to a
+derived 32.5 in: `71.5 - 36 - 1.5 - 1.5`. The layout keeps the existing
+wall marks and covered double studs; its initial datum remains provisional.
+See [the window plate construction guide](../.claude/skills/part-window-plate/SKILL.md).
 
 ## How we record the terms
 

@@ -1,11 +1,12 @@
-/* Isolated, manually rotated header detail. Never creates a fictitious
+/* Isolated, manually rotated lofted-wall window details. Never create a fictitious
    complete window opening or changes the ordinary designer's wall frame. */
 import {loadCatalogue} from "./load.js";
 import {defaults} from "../model/design.js";
 import {makePlan} from "../model/plan.js";
 import {floorStudyPlan} from "../model/floor-study.js";
 import {wallStudyPlan} from "../model/wall-study.js";
-import {windowHeaderStudyPlan,windowHeaderMeasurements,windowHeaderDrawing} from "../model/window-header-study.js";
+import {windowHeaderStudyPlan,windowHeaderMeasurements} from "../model/window-header-study.js";
+import {windowPlateStudyPlan,windowPlateMeasurements,windowFramingDrawing,windowFramingRecords} from "../model/window-plate-study.js";
 import {woodFinish,installFloorWood} from "./learn-wood.js";
 import {createRenderer} from "../engine/renderer.js";
 import {distToFit} from "./parts-gallery.js";
@@ -17,8 +18,8 @@ async function start() {
   const renderer=createRenderer(canvas,{trueColour:true,scene:"studio",note:" "});
   if(renderer.off)throw new Error("3D is unavailable on this device. Use the pictures above.");
   installFloorWood(renderer);
-  let box,zoom=1,plan;
-  const cam=renderer.cam;cam.autoSpin=false;cam.interacted=true;cam.yaw=2.30;cam.pitch=.4;
+  let box,zoom=1,plan,view="plate";
+  const cam=renderer.cam;cam.autoSpin=false;cam.interacted=true;cam.yaw=3.02;cam.pitch=.20;
   const size=()=>({w:canvas.clientWidth,h:canvas.clientHeight});
   function draw() {
     if(!box || !canvas.clientWidth || !canvas.clientHeight)return;
@@ -27,14 +28,16 @@ async function start() {
     cam.dist=Math.max(closestDepth+1.05,distToFit(box,cam.yaw,cam.pitch,size())*zoom);
     cam.fitDist=cam.dist;renderer.draw();
   }
-  function rebuild(length) {
-    const candidate=windowHeaderStudyPlan(wall,{lengthIn:length});
-    const m=windowHeaderMeasurements(candidate),plates=get("plates").checked;
-    const records=plates?m.members:m.headerMembers;
+  function rebuild(length,clearHeight) {
+    const candidate=windowPlateStudyPlan(windowHeaderStudyPlan(wall,{lengthIn:length}),
+      {lengthIn:length,clearHeightIn:clearHeight});
+    const m={header:windowHeaderMeasurements(candidate),windowPlate:windowPlateMeasurements(candidate)};
+    const options={view,plates:get("plates").checked};
+    const records=windowFramingRecords(m,options).flatMap(group=>group.records);
     const next=Object.fromEntries(["x","y","z"].flatMap(a=>[
       [a+"0",Math.min(...records.map(r=>r.bounds[a+"0Ft"]))],
       [a+"1",Math.max(...records.map(r=>r.bounds[a+"1Ft"]))]]));
-    const build=woodFinish(windowHeaderDrawing(candidate,m,{plates}),{header:m});
+    const build=woodFinish(windowFramingDrawing(candidate,m,options),m);
     // This detail stays at its real wall coordinates. Keep scene fog beyond
     // those coordinates rather than treating a small detail as a whole shed.
     const sceneRadius=2*Math.hypot(Math.max(Math.abs(next.x0),Math.abs(next.x1)),next.y1,
@@ -44,21 +47,33 @@ async function start() {
     plan=candidate;box=next;
     cam.target=[(box.x0+box.x1)/2,(box.y0+box.y1)/2,(box.z0+box.z1)/2];
     cam.autoSpin=false;cam.interacted=true;renderer.setStages(null);draw();
-    status.textContent=`${length}-inch sample cut · ${m.heightIn}-inch header height · ½-inch outside ledge.`;
+    const number=value=>Number(value.toFixed(3));
+    status.textContent=`${length}-inch sample board cuts · ${clearHeight}-inch clear window height · ${number(m.windowPlate.studLengthIn)}-inch studs under the plate.`;
+    get("plate-top").textContent=number(m.windowPlate.plateTopAboveFloorIn)+" in above flooring";
+    get("stud-cut").textContent=number(m.windowPlate.studLengthIn)+" in";
+    get("cut-formula").textContent=`${number(m.header.headerBottomAboveFloorIn)} − ${clearHeight} − ${candidate.construction.windowPlateLesson.thicknessIn} − ${wall.wallStudy.plates.thicknessIn} = ${number(m.windowPlate.studLengthIn)} inches`;
+    for(const [id,key] of [["plate-view","plate"],["all-view","all"],["angle","header"],["end","end"]])
+      get(id).setAttribute("aria-pressed",String(key===view));
   }
-  function preset(end) {
-    cam.yaw=end?Math.PI/2:2.30;cam.pitch=end?0:.40;zoom=1;
-    get("plates").checked=!end;rebuild(plan.windowHeaderStudy.lengthIn);
+  function rebuildCurrent(){rebuild(plan.windowHeaderStudy.lengthIn,plan.windowPlateStudy.clearHeightIn);}
+  function preset(next) {
+    view=next;
+    cam.yaw=next==="end"?Math.PI/2:next==="header"?2.30:3.02;
+    cam.pitch=next==="end"?0:next==="header"?.40:.20;zoom=1;
+    get("plates").checked=next!=="end";rebuildCurrent();
   }
   get("length").value=cat.construction.windowHeader.exampleLengthIn;
-  rebuild(cat.construction.windowHeader.exampleLengthIn);
+  get("window-height").value=cat.construction.windowPlateLesson.exampleClearHeightIn;
+  rebuild(cat.construction.windowHeader.exampleLengthIn,cat.construction.windowPlateLesson.exampleClearHeightIn);
   get("header-controls").hidden=false;
   get("length-form").addEventListener("submit",event=>{
     event.preventDefault();
-    try{rebuild(get("length").valueAsNumber);}catch(error){status.textContent=error.message+" Previous drawing retained.";}
+    try{rebuild(get("length").valueAsNumber,get("window-height").valueAsNumber);}catch(error){status.textContent=error.message+" Previous drawing retained.";}
   });
-  get("plates").addEventListener("change",()=>rebuild(plan.windowHeaderStudy.lengthIn));
-  get("angle").addEventListener("click",()=>preset(false));get("end").addEventListener("click",()=>preset(true));
+  get("plates").addEventListener("change",rebuildCurrent);
+  get("plate-view").addEventListener("click",()=>preset("plate"));
+  get("all-view").addEventListener("click",()=>preset("all"));
+  get("angle").addEventListener("click",()=>preset("header"));get("end").addEventListener("click",()=>preset("end"));
   function scale(factor){zoom=Math.max(.25,Math.min(3,zoom*factor));draw();}
   get("zoom-in").addEventListener("click",()=>scale(.8));get("zoom-out").addEventListener("click",()=>scale(1.25));
   const pointers=new Map();

@@ -10,8 +10,10 @@ The flat board leaves a confirmed **0.5 in outside ledge**, with inside
 faces flush. Header top touches the underside of the **top plate**.
 
 The separate window plate lays flat, 1.5 in tall and 3.5 in deep, with
-studs underneath. Side supports, exact under-window stud layout and seating,
-opening allowances and plate/header cut relationships remain to learn.
+studs underneath. Alan confirmed those studs sit on the bottom plate and
+follow the same 16-inch wall layout. The existing double-stud positions
+stay where the sample plate covers them. Side supports, the initial layout
+datum, opening allowances and plate/header cut relationships remain to learn.
 Keep them distinct from the ordinary designer's existing opening defaults.
 
 [Open the header lesson](../../window-framing.html) or its
@@ -22,6 +24,13 @@ The [part skill](../../.claude/skills/part-window-header/SKILL.md) preserves
 the facts and formulas. With this example's 75 in studs and 1.5 in bottom
 plate, top-plate underside is 76.5 in above flooring; subtract the 5 in
 header to obtain 71.5 in for header underside.
+
+The [window-plate view](../../images/window-plate-studs.png) is now drawn,
+with its [own skill](../../.claude/skills/part-window-plate/SKILL.md).
+The adjustable 36 in clear-height example gives plate top 35.5 in above
+flooring, plate underside 34 in and supporting studs 32.5 in long.
+Calculation: `71.5 - 36 - 1.5 - 1.5 = 32.5`. A 48 in clear height
+shortens the supports to 20.5 in without moving their horizontal positions.
 
 ## Starting scope
 

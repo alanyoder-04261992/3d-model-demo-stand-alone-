@@ -22,8 +22,10 @@ the flat board in the header the window plate.
 
 Stage `wall-frame`, framing only. The opt-in `window-header` PIPELINE entry
 follows wall framing. `window-framing.html` is an isolated connection
-lesson: it draws the header and two contextual wall-plate portions, not a
-complete framed window. The wall lesson remains a plain wall.
+lesson: header views retain two contextual wall-plate portions. The next
+[window-plate lesson](../part-window-plate/SKILL.md) adds the flat plate and
+studs below it. The all-pieces view is incomplete until side framing is
+learned. The separate wall lesson remains a plain wall.
 
 ## Construction settings
 
@@ -50,12 +52,14 @@ underside is 76.5 in above the flooring and header underside is a derived
 scale this section or the 75 in stud rule.
 
 `construction.windowPlateLesson` records the confirmed flat section and
-presence of studs below it. Their layout, window-plate cut length and side
-support details remain unconfirmed. Once opening height `Rh` is supplied,
+presence of studs below it. Alan confirmed their seat on the bottom plate
+and the same 16-inch wall layout; its starting datum remains provisional.
+Window-plate cut-to-opening-width and side support details remain unconfirmed.
+Once opening height `Rh` is supplied,
 window-plate top = `header.bottom - Rh`; bottom = `plate.top - t`.
-If its support studs sit on the bottom plate, their cut length =
-`windowPlate.bottom - bottomPlate.top`. That seating relationship
-is conditional until confirmed; do not turn it into a fixed cut list.
+Its support studs sit on the bottom plate, so their cut length =
+`windowPlate.bottom - bottomPlate.top`. The window height is an input,
+not a fixed shop size.
 
 ## Where it came from in Barnwright
 
@@ -69,7 +73,8 @@ Alan supplied an end-view header photograph and described the three-board
 loft header against the top plate. He confirmed **outside of the wall**
 for the remaining half-inch ledge. The inside faces are therefore flush.
 He added studs under the window plate, confirmed that plate lays flat,
-and clarified **this is for a lofted wall**. Preserve those facts when
+and clarified **this is for a lofted wall**. He then confirmed that these
+studs stand on the bottom plate and retain the wall layout. Preserve those facts when
 changing the drawing; do not publish his original photo.
 
 ## Kept quirks

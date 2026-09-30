@@ -6,7 +6,8 @@
    inputs; this detail does not invent the window's side framing.
    This is specifically the LOFTED-WALL rule. The separate window plate
    below the opening is a flat 2x4 with studs underneath; it is not the
-   flat board in this header. That lower assembly is recorded separately. */
+   flat board in this header. That lower assembly lives in window-plate.js;
+   its studs sit on the bottom plate and follow the wall layout. */
 import { prismMember, drawMembers } from "./floor-frame.js";
 
 export function windowHeaderMembers(plan) {

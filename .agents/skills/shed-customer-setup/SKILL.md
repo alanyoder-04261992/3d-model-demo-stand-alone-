@@ -46,8 +46,11 @@ For the latest **lofted-wall window** lesson, use
 **window header / loft header** (two touching 2x4s on edge on a flat 2x4,
 outside half-inch ledge, against the top-plate underside). These are
 lofted-wall rules, not assumptions for every new company or wall type.
-Continue learning side supports and under-window layout without demanding
-one fixed window size.
+The [window-plate skill](../../../.claude/skills/part-window-plate/SKILL.md)
+records his later confirmation: supporting studs stand on the bottom plate
+and keep the wall's 16-inch layout. The lesson now draws that lower assembly
+with an adjustable clear window height. Continue learning side supports
+and opening-width allowances without demanding one fixed window size.
 
 Follow the user's latest learning direction and show the relevant view,
 including an incomplete assembly when requested. During terminology learning,

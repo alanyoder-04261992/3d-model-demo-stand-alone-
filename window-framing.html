@@ -27,26 +27,33 @@
   <h1>Window header and window plate</h1>
   <p>Your <strong>loft header</strong> has two 2×4s on edge, touching side by side, on one flat 2×4. The whole header fits against the underside of the <strong>top plate</strong>.</p>
   <div class="facts"><span><strong>5 in</strong> total header height</span><span><strong>½ in</strong> ledge outside</span><span><strong>Inside faces flush</strong></span></div>
-  <nav aria-label="Lesson navigation"><a href="#rotate">Rotate the header</a><a href="walls.html">Wall framing</a><a href="truss.html">Gable framing</a></nav>
+  <p>The <strong>window plate</strong> below the opening lays flat. Its supporting studs sit on the <strong>bottom plate</strong> and follow the same <strong>16-inch layout</strong> as the wall studs.</p>
+  <nav aria-label="Lesson navigation"><a href="#rotate">Rotate the framing</a><a href="walls.html">Wall framing</a><a href="truss.html">Gable framing</a></nav>
+  <h2>Window plate and the studs underneath</h2>
+  <figure><a href="images/window-plate-studs.png"><img src="images/window-plate-studs.png" width="1200" height="940" alt="Flat window plate supported by short studs standing on the bottom plate. The studs retain the wall layout, including its double stud. The example studs are 32 and a half inches long."></a><figcaption>A 36-inch clear window height gives 32½-inch studs in this example. The board cuts and window height are adjustable examples.</figcaption></figure>
   <h2>Look at the cut end</h2>
   <figure><a href="images/window-header-section.png"><img src="images/window-header-section.png" width="1200" height="940" alt="End view of the loft header: two touching 2 by 4 boards on edge on a flat 2 by 4. The header is 5 inches tall and 3 and a half inches deep. The half-inch ledge faces outside; the inside faces are flush."></a><figcaption>Tap the picture to open it full size on your phone.</figcaption></figure>
   <h2>How it meets the wall plates</h2>
   <figure><a href="images/window-header-fit.png"><img src="images/window-header-fit.png" width="1200" height="940" alt="Three-dimensional loft window header directly touching the underside of the top plate, with the upper plate above it. A half-inch ledge runs along the outside of the flat header board."></a><figcaption>Only portions of the top and upper plates are shown. The 36-inch header length illustrates the connection.</figcaption></figure>
-  <h2 id="rotate">Rotate the header</h2>
+  <h2 id="rotate">Rotate the learned framing</h2>
   <p class="hint">Drag to turn. Pinch or use + / − to zoom. The pictures above remain available if 3D cannot load.</p>
-  <div class="stage"><canvas id="header-canvas" tabindex="0" aria-label="Rotatable loft window header. Arrow keys turn the model; plus and minus zoom."></canvas></div>
+  <div class="stage"><canvas id="header-canvas" tabindex="0" aria-label="Rotatable lofted-wall window plate, supporting studs and header. Arrow keys turn the model; plus and minus zoom."></canvas></div>
   <div id="header-controls" hidden>
-    <div class="controls"><button id="angle" type="button">Angle view</button><button id="end" type="button">End view</button><button id="zoom-in" type="button" aria-label="Zoom in">+</button><button id="zoom-out" type="button" aria-label="Zoom out">−</button><label><input id="plates" type="checkbox" checked> Show wall plates</label></div>
-    <form id="length-form"><label for="length">Sample header cut length (inches)</label><input id="length" type="number" min="4" max="120" step="0.25" value="36" required><button type="submit">Apply length</button><p class="hint">Illustrative board length, not the window's clear opening. Window sizes vary; the end support and cut-length allowances are still to learn.</p></form>
+    <div class="controls"><button id="plate-view" type="button">Window plate + studs</button><button id="all-view" type="button">All learned pieces</button><button id="angle" type="button">Header fit</button><button id="end" type="button">Header end</button><button id="zoom-in" type="button" aria-label="Zoom in">+</button><button id="zoom-out" type="button" aria-label="Zoom out">−</button><label><input id="plates" type="checkbox" checked> Show wall plates</label></div>
+    <form id="length-form"><label for="length">Sample board cut length (inches)</label><input id="length" type="number" min="4" max="120" step="0.25" value="36" required>
+      <label for="window-height">Clear window height (inches)</label><input id="window-height" type="number" min="0.25" step="0.25" value="36" required><button type="submit">Apply dimensions</button>
+      <p class="hint">Clear height is from the window plate's top to the header's bottom. This example gives the plate and header equal sample cut lengths; side joints and width allowances are still to learn.</p></form>
   </div>
-  <p id="header-status" class="status" role="status">Loading the measured header…</p>
+  <p id="header-status" class="status" role="status">Loading the measured framing…</p>
+  <div class="facts"><span>Window-plate top: <strong id="plate-top">35½ in above flooring</strong></span><span>Stud cut: <strong id="stud-cut">32½ in</strong></span></div>
+  <p class="hint">Stud cut = header underside above flooring − clear window height − window-plate thickness − bottom-plate thickness.<br><strong id="cut-formula">71.5 − 36 − 1.5 − 1.5 = 32.5 inches</strong></p>
   <h2>Terms for this lofted wall</h2>
   <dl>
     <dt>Window header / loft header</dt><dd>The three-board assembly across the top of the window. The flat board directly under the two edge boards belongs to the header.</dd>
     <dt>Window plate</dt><dd>The 2×4 across the bottom of the window opening. It lays flat: 1½ inches tall and 3½ inches deep through the wall.</dd>
-    <dt>Studs under the window plate</dt><dd>The uprights below the window plate. Their cut lengths depend on its height above the bottom plate. Their exact layout is the next detail to establish.</dd>
+    <dt>Studs under the window plate</dt><dd>The uprights sit on the bottom plate and meet the window plate's underside. They keep the wall's 16-inch layout and its double studs at 4-foot marks. A taller window leaves shorter studs underneath.</dd>
   </dl>
-  <p class="note">This is the learned <strong>lofted-wall</strong> rule. The 3D detail shows the header and its fit to the wall plates; window side supports, window-plate length and the studs below it are not drawn yet.</p>
+  <p class="note">This is the learned <strong>lofted-wall</strong> rule. The window's side framing and board-end joints are the next pieces to learn. “All learned pieces” shows an incomplete assembly. The layout keeps the wall lesson's provisional starting datum.</p>
 </main>
 <script type="module" src="ui/learn-window-header.js"></script>
 </body>

@@ -22,10 +22,11 @@ parser.add_argument('--gable',action='store_true',help='Render the 2x6 along the
 parser.add_argument('--truss',action='store_true',help='Render the measured truss fit preview and upper-plate projection detail.')
 parser.add_argument('--window',help='Render an adjustable window example exported as WIDTHxHEIGHT.')
 parser.add_argument('--header',action='store_true',help='Render the loft window header and outside ledge from header-render-data.json.')
+parser.add_argument('--window-plate',action='store_true',help='Render the flat window plate and supporting studs from window-plate-render-data.json.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
-source='header' if args.header else 'window-'+args.window if args.window else 'truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
+source='window-plate' if args.window_plate else 'header' if args.header else 'window-'+args.window if args.window else 'truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
 data=json.loads((ROOT/f'test/out/{source}-render-data.json').read_text(encoding='utf-8'))
 W,H=1200,940
 NAVY='#173b56'
@@ -151,6 +152,31 @@ def dimension(d,project,p,q,label,offset=(0,0)):
     width=box[2]-box[0]+22
     d.rounded_rectangle((middle[0]-width/2,middle[1]-19,middle[0]+width/2,middle[1]+23),radius=5,fill='white')
     d.text((middle[0]-width/2+11,middle[1]-15),label,font=f,fill=NAVY)
+
+def render_window_plate():
+    m=data['metadata']['windowPlate'];s=m['study'];b=m['bottomPlate']['bounds']
+    assert abs(m['studLengthIn']-32.5)<1e-8 and s['clearHeightIn']==36, 'Refresh example labels if its inputs change.'
+    target=[(s['x0Ft']+s['x1Ft'])/2,(s['topYFt']+b['y0Ft'])/2+.20,s['outsideZFt']+s['depthFt']/2]
+    im,project=scene(target,8.4,yaw=.20,pitch=.20);d=ImageDraw.Draw(im)
+    title(d,'Window plate and the studs below it','Lofted wall · studs stand on the bottom plate · same wall layout')
+    z=s['outsideZFt']+s['depthFt']
+    p=m['plate']['bounds'];stud=m['studMembers'][-1]['bounds']
+    leader(d,project([s['x0Ft']+.18,s['topYFt'],z]),(30,150,420,110),'Window plate · flat 2×4',['1½ in tall · 3½ in deep'])
+    dimension(d,project,[stud['x1Ft'],s['studBottomYFt'],z],[stud['x1Ft'],s['bottomYFt'],z],
+              '32½ in · stud cut',(190,0))
+    leader(d,project([s['x0Ft']+.12,(b['y0Ft']+b['y1Ft'])/2,z]),(30,737,455,110),
+           'Bottom plate',['The studs sit directly on top'])
+    leader(d,project(m['studMembers'][0]['center']),(665,150,505,110),
+           'Original wall layout',['Double stud at the 4-ft mark'])
+    leader(d,project([stud['x0Ft'],s['bottomYFt'],z]),(590,737,580,110),
+           'Stud tops touch the window plate',['Their lengths change with window height'])
+    # The 48-inch mark is the pair's joint, not either stud's center.
+    marks=sorted(set(r['member']['meta']['markXFt'] for r in m['studMembers']))
+    if len(marks)>1:
+        dimension(d,project,[marks[0],s['studBottomYFt'],z],
+                  [marks[1],s['studBottomYFt'],z],'16 in · layout marks',(0,44))
+    d.text((35,886),'Example: 71½ − 36 − 1½ − 1½ = 32½ in. Window height is adjustable.',font=font(24),fill=NAVY)
+    im.save(ROOT/'images/window-plate-studs.png')
 
 def render_header():
     m=data['metadata']['header'];s=m['study']
@@ -522,6 +548,10 @@ def render_flooring():
     d.text((62,948),'Row 2: 4 + 8 + 4 ft. Final row width: 10 − 4 − 4 = 2 ft.',font=font(27),fill=NAVY)
     d.text((40,1030),'⅝ in tongue-and-groove flooring · 7 laid pieces · colors distinguish the rows',font=font(23),fill='#526879')
     plan.save(ROOT/'images/flooring-layout.png')
+
+if args.window_plate:
+    render_window_plate()
+    sys.exit(0)
 
 if args.header:
     render_header()
