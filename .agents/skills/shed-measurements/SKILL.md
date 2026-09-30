@@ -108,8 +108,11 @@ length. Mirroring it at both ends remains provisional; this gives
 long, on edge above the upper plate, with its 0.5 in inside ledge and
 2.5 in projections unchanged.
 
-Square tail cuts and shared knee/peak miters remain preview assumptions.
-Solve the slopes with the lowest square-cut corner at the plate datum;
+Alan’s later blue line confirms that the **whole bottom cut of the truss
+is level with the gable-board bottom**, which is the upper-plate top.
+Both corners of that cut use the same elevation. This replaces the earlier
+square-to-stock tail assumption; shared knee/peak miters remain provisional.
+Solve the slopes from the farthest tail point on that horizontal datum;
 do not impose the superseded gable-board top-corner bearing constraint.
 Place the truss's back face against the board's shown face, with no solid
 overlap. Do not add a notch or infer a fastening schedule.
@@ -128,10 +131,12 @@ species, grade, fasteners and lengthwise truss spacing remain unspecified.
 For reuse, calculate `peakY = upperPlate.topY + peakRise`,
 `studBaseY = gableBoard.topY`, and each end's `tipX = plateCutX + outwardProjection`.
 Resolve new lengths, rise and tail cut together; do not scale this example's
-54/37.75/48 in inputs automatically. A square tail puts its outer long point
-`chordDepth * cos(lowerSlopeAngle)` above the lowest tip. Fit the two outer
+54/37.75/48 in inputs automatically. Set the outer tail point and inner
+cut corner to `Y = upperPlate.topY = gableBoard.bottomY`. Fit the two outer
 member lengths from that point to the knee and peak, then offset their lines
-by the actual 3.5 in depth for the inner edges. The projected board and truss
+by the actual 3.5 in depth for the inner edges. For the right-hand piece,
+`innerTailX = outerTailX - chordDepth / sin(lowerSlopeAngle)` is the
+intersection with that horizontal bottom cut; mirror it for the left side. The projected board and truss
 outlines overlap because they touch across depth; verify 3D volumes rather
 than rejecting that intended 2D overlap. Stud top cuts and mirrored opposite
 ends remain conditional results until confirmed.

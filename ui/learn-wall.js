@@ -197,8 +197,8 @@ export async function startWallLesson({gable=false,truss=false}={}) {
     }
     function trussCaption(t) {
       $("piece-title").textContent="Truss and gable studs — fit preview";
-      $("piece-description").textContent="The 2×4 truss goes against the front face of the gable board, with its lowest tips level with the upper plate’s top. Its upper pieces lead to the peak; the lower pieces form the steeper sides. The gable studs remain on the board; their top fit behind the truss is a preview choice.";
-      $("piece-draft").textContent="Fit preview: mirrored ends and center-stud layout to check. The studs use 2×4s with their broad faces outward; the tail cuts and stud-top connection remain to check.";
+      $("piece-description").textContent="The 2×4 truss goes against the front face of the gable board, with the whole bottom cut level with the gable board’s bottom and the upper plate’s top. Its upper pieces lead to the peak; the lower pieces form the steeper sides. The gable studs remain on the board; their top fit behind the truss is a preview choice.";
+      $("piece-draft").textContent="Fit preview: mirrored ends and center-stud layout to check. The studs use 2×4s with their broad faces outward; the knee/peak cuts and stud-top connection remain to check.";
       const rows=[
         ["Upper truss piece · longest edge",formatInches(t.upperLengthFt)],
         ["Lower truss piece · longest edge",formatInches(t.lowerLengthFt)],

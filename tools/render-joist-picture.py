@@ -169,7 +169,7 @@ def render_truss():
     stud=min(m['studMembers'],key=lambda r:r['center'][0])
     leader(d,project(stud['center']),(35,748,545,111),'Gable studs',['Wide face outward · on the gable board'])
     leader(d,project([2,board['y0Ft']+.22,board['z1Ft']]),(620,748,545,111),'Gable board · 2×6',['118 in · nailed to the upper plate'])
-    d.text((35,895),'Fit preview · mirrored ends, stud layout and end cuts still to check.',font=font(23),fill='#526879')
+    d.text((35,895),'Fit preview · mirrored ends, stud layout and knee/peak joints still to check.',font=font(23),fill='#526879')
     im.save(ROOT/'images/truss-framing.png')
 
     tip=a['leftTip'];cut=a['leftPlateCut']
@@ -186,7 +186,7 @@ def render_truss():
     leader(d,project(lower_point),(35,150,420,110),'Truss · 2×4',['In front of the gable board'])
     leader(d,project([plate['x0Ft'],(plate['y0Ft']+plate['y1Ft'])/2,plate['z1Ft']]),(630,748,535,111),'Upper plate cut end',['Start of the 6¼-inch measurement'])
     leader(d,project([board['x0Ft']+.5,board['y1Ft']-.22,board['z1Ft']]),(730,150,435,142),'Gable board',['Extends 2½ in past','this same plate cut'])
-    d.text((35,895),'Lowest truss tip level with upper-plate top · peak 48 in above that same top.',font=font(22),fill='#526879')
+    d.text((35,895),'Whole bottom cut level with gable-board bottom · peak 48 in above upper plate.',font=font(22),fill='#526879')
     im.save(ROOT/'images/truss-connection.png')
 
 def render_gable():

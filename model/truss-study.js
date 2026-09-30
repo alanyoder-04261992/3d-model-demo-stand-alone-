@@ -9,14 +9,14 @@ function positive(value, name) {
   return value;
 }
 
-/* Fit the long outer edges between the plate datum and peak. The lowest
-   tail point is level with the upper-plate top. Square tail cuts remain
-   provisional; the truss is in front of the board, not seated on its top.
+/* Fit the long outer edges between the plate datum and peak. The entire
+   tail cut is level with the gable-board bottom / upper-plate top.
+   The truss is against the front face of the board.
    All working lengths here are inches. */
 function solveProfile(upper, lower, rise, tipX, depth) {
   function evaluate(angle) {
     const c = Math.cos(angle), s = Math.sin(angle);
-    const tipY = depth * c;
+    const tipY = 0;
     const kneeX = tipX - lower * c, kneeY = tipY + lower * s;
     const upperAngle = Math.atan2(rise - kneeY, kneeX);
     return { residual: Math.hypot(kneeX, rise - kneeY) - upper,
@@ -47,8 +47,9 @@ function solveProfile(upper, lower, rise, tipX, depth) {
   const lowerInnerIntercept = fit.tipY + lowerSlope * tipX - depth / Math.cos(fit.lowerAngle);
   const innerKneeX = (lowerInnerIntercept - innerPeakY) / (lowerSlope - upperSlope);
   const innerKneeY = innerPeakY - upperSlope * innerKneeX;
-  const innerTipX = tipX - depth * Math.sin(fit.lowerAngle);
-  const innerTipY = fit.tipY - depth * Math.cos(fit.lowerAngle);
+  // Intersect the inward-offset stock edge with the same horizontal datum.
+  const innerTipX = tipX - depth / Math.sin(fit.lowerAngle);
+  const innerTipY = 0;
   if (innerPeakY <= 0 || innerKneeX <= 0 || innerKneeY <= 0 || innerTipX <= 0 ||
       innerKneeX >= innerTipX || innerKneeX >= fit.kneeX || innerKneeY >= fit.kneeY)
     throw new Error("The truss preview cuts do not leave a valid full-depth board.");
@@ -65,7 +66,7 @@ export function trussStudyPlan(plan, { truss = false } = {}) {
   const raw = plan.construction?.trussStudy;
   if (!raw) throw new Error("The truss preview needs construction.trussStudy measurements.");
   if (raw.placement !== "against-gable-inner-face" || raw.peakDatum !== "upper-plate-top" ||
-      raw.lowestTipDatum !== "upper-plate-top" || raw.tailCut !== "square-to-member" || raw.layout !== "mirrored-about-center")
+      raw.lowestTipDatum !== "upper-plate-top" || raw.tailCut !== "level-with-gable-bottom" || raw.layout !== "mirrored-about-center")
     throw new Error("The truss preview needs its face placement, plate datums, tail cut and mirrored layout.");
   const thicknessIn = positive(raw.chord?.thicknessIn, "chord.thicknessIn");
   const depthIn = positive(raw.chord?.depthIn, "chord.depthIn");
@@ -122,7 +123,7 @@ export function trussStudyPlan(plan, { truss = false } = {}) {
     assumptionNotes: [
       `Preview mirrors the marked ${projectionIn}-inch projection at both ends.`,
       `The truss is against the shown face of the gable board; its lowest tips and ${peakRiseIn}-inch peak rise use the upper-plate top.`,
-      "Tail cuts are square across the stock; knee and peak cuts share mitres. These are provisional cuts.",
+      "The whole bottom cut is level with the gable-board bottom, at the upper-plate top. Knee and peak mitres remain provisional.",
       `Preview gable studs are ${raw.studs.nominal || "2x4"}s on the board, starting under the peak, with their tops behind the truss face. This top fit is provisional.`,
       "Derived slopes and stud cuts are a preview fit, not an approved shop cut list.",
     ],

@@ -60,7 +60,7 @@ export function createTrussLabels(viewport,renderer) {
       line(project(a.leftTip),project(tip),{"stroke-dasharray":"3 3"});
       line(project(a.leftPlateCut),project(cut),{"stroke-dasharray":"3 3"});
       dimension(tip,cut,`${inches(t.projectionFt.start)} · tip to plate cut`,26);
-      card("Truss tip","2×4 · 1½″ × 3½″","lowest point at plate top",a.leftLowestTip,14,16);
+      card("Truss tip","2×4 · 1½″ × 3½″","bottom cut level with board",a.leftLowestTip,14,16);
       card("Upper plate","6¼″ ends at this cut","gable board is above it",a.leftPlateCut,w-cardW-14,h-72);
     } else {
       dimension(a.upperLeftStart,a.upperLeftEnd,`${inches(t.upperLengthFt)} upper`,-18);
