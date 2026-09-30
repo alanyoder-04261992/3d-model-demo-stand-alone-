@@ -305,6 +305,15 @@ window omits backing without inventing a real opening.
 
 ### Openings (`parts/openings/`)
 
+The opt-in `window-header` framing entry follows `wall-frame`, using that
+existing stage. It draws Alan's lofted-wall three-board header only when a
+`windowHeaderStudy` exists. The separate `window-framing.html` lesson uses
+`model/window-header-study.js` to isolate its members and add clearly
+labeled portions of the top/upper plates as display context. It does not
+put a header over uncut plain-wall studs or alter ordinary opening framing.
+The learning company also stores confirmed flat window-plate orientation
+and presence of studs below it; their geometry awaits the remaining rules.
+
 `parts/openings/index.js` walks `plan.state.items` in array order exactly as
 `buildShed` calls `renderItem`: skip interior items (before `setItem`), apply
 the rotated-transom and door-height overrides, `setItem(it.id)`, create the

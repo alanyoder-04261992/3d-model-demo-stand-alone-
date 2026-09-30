@@ -21,10 +21,11 @@ parser.add_argument('--end-wall',action='store_true',help='Render the end wall s
 parser.add_argument('--gable',action='store_true',help='Render the 2x6 along the end-wall upper plate and its measured connection.')
 parser.add_argument('--truss',action='store_true',help='Render the measured truss fit preview and upper-plate projection detail.')
 parser.add_argument('--window',help='Render an adjustable window example exported as WIDTHxHEIGHT.')
+parser.add_argument('--header',action='store_true',help='Render the loft window header and outside ledge from header-render-data.json.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
-source='window-'+args.window if args.window else 'truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
+source='header' if args.header else 'window-'+args.window if args.window else 'truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
 data=json.loads((ROOT/f'test/out/{source}-render-data.json').read_text(encoding='utf-8'))
 W,H=1200,940
 NAVY='#173b56'
@@ -150,6 +151,44 @@ def dimension(d,project,p,q,label,offset=(0,0)):
     width=box[2]-box[0]+22
     d.rounded_rectangle((middle[0]-width/2,middle[1]-19,middle[0]+width/2,middle[1]+23),radius=5,fill='white')
     d.text((middle[0]-width/2+11,middle[1]-15),label,font=f,fill=NAVY)
+
+def render_header():
+    m=data['metadata']['header'];s=m['study']
+    x=s['centerXFt']+s['lengthFt']/2;y=s['bottomYFt'];z=s['outsideZFt']
+    t=s['thicknessFt'];dep=s['depthFt'];ledge=s['ledgeFt'];top=s['topYFt']
+    # End view: only the three header boards. Use their exact exported
+    # triangles, omit the two plate portions by height, and face the end.
+    saved=data['groups']
+    data['groups']=[dict(g,triangles=[tri for tri in g['triangles']
+        if max(p[1] for p in tri['positions'])<=top+1e-8
+        and min(p[1] for p in tri['positions'])<top-1e-8]) for g in saved]
+    im,project=scene([x,(y+top)/2,z+dep/2],.94,yaw=math.pi/2,pitch=0)
+    d=ImageDraw.Draw(im)
+    title(d,'Loft window header · end view','Three 2×4s · 1½ × 3½ in actual · ½-in ledge OUTSIDE')
+    # A fine cut boundary distinguishes the touching boards without a gap.
+    for a,b in [([x,y+t,z+ledge],[x,y+t,z+dep]),
+                ([x,y+t,z+ledge+t],[x,top,z+ledge+t])]:
+        d.line([tuple(project(a)),tuple(project(b))],fill='#776951',width=2)
+    dimension(d,project,[x,y,z],[x,top,z],'5 in tall',(210,0))
+    dimension(d,project,[x,y,z],[x,y,z+dep],'3½ in wide',(0,55))
+    leader(d,project([x,y+t,z+ledge/2]),(775,590,385,108),'Outside ledge',['½ in left uncovered'])
+    leader(d,project([x,y+t+0.12,z+ledge+t]),(35,155,400,143),'Two boards on edge',['Touching side by side','Each is 1½ × 3½ in'])
+    leader(d,project([x,y+t/2,z+dep/2]),(35,740,570,110),'Flat board under the header',['1½ in tall · 3½ in deep'])
+    d.text((335,660),'INSIDE',font=font(23,True),fill=NAVY)
+    d.text((635,660),'OUTSIDE',font=font(23,True),fill=NAVY)
+    d.text((40,890),'Inside faces are flush. This flat board is part of the header.',font=font(24),fill=NAVY)
+    im.save(ROOT/'images/window-header-section.png')
+    data['groups']=saved
+    # Along the front/outside and right cut end; include real plate datums.
+    im,project=scene([s['centerXFt'],top-.02,z+dep/2],3.75,yaw=2.30,pitch=.40)
+    d=ImageDraw.Draw(im)
+    title(d,'Window header against the top plate','Loft header · top plate touches the two boards on edge')
+    leader(d,project([.55,top+t*1.5,z]),(30,150,420,110),'Upper plate',['Portion shown above top plate'])
+    leader(d,project([.6,top+t/2,z]),(735,150,435,110),'Top plate',['Header touches its underside'])
+    leader(d,project([-.5,top-.13,z+ledge]),(40,735,540,110),'Window header · 5 in tall',['Two on edge, on one flat 2×4'])
+    leader(d,project([.6,y+t,z+ledge/2]),(640,735,520,110),'Outside of wall',['½-in ledge on the flat board'])
+    d.text((35,883),'36-in sample cut length only; window width and support details vary.',font=font(24),fill=NAVY)
+    im.save(ROOT/'images/window-header-fit.png')
 
 def render_truss():
     m=data['metadata']['truss'];g=data['metadata']['gable'];a=m['anchors']
@@ -483,6 +522,10 @@ def render_flooring():
     d.text((62,948),'Row 2: 4 + 8 + 4 ft. Final row width: 10 − 4 − 4 = 2 ft.',font=font(27),fill=NAVY)
     d.text((40,1030),'⅝ in tongue-and-groove flooring · 7 laid pieces · colors distinguish the rows',font=font(23),fill='#526879')
     plan.save(ROOT/'images/flooring-layout.png')
+
+if args.header:
+    render_header()
+    sys.exit(0)
 
 if args.window:
     m=data['metadata']['truss'];o=m['windowOpening'];a=m['anchors']
