@@ -407,3 +407,11 @@ When GitHub work is requested, follow the repository's branch/PR workflow and
 report the resulting link or the concrete reason publishing was unavailable.
 Company setup alone does not authorize a production deployment or contacting
 the company's customers.
+
+## Gable backing when setting up the learned assembly
+
+Use [gable backing](../../../.claude/skills/part-gable-backing/SKILL.md)
+for the horizontal 2x4 pieces between gable studs: broad faces outward,
+bottom 11 in above upper-plate top. Include it only on a gable without a
+window or fake window. Recalculate the clear stud-to-stud lengths and bay
+count for the customer's size. Do not infer this rule for unrelated builders.

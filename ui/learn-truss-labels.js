@@ -15,7 +15,7 @@ export function createTrussLabels(viewport,renderer) {
   const svg=node("svg",{role:"img","aria-label":"Truss fit preview and gable stud measurements"});
   svg.style.cssText="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:hidden";
   viewport.appendChild(svg);
-  function update(t,g,{detail=false,front=false}={}) {
+  function update(t,g,{detail=false,front=false,backing=false}={}) {
     svg.replaceChildren();
     const w=viewport.clientWidth,h=viewport.clientHeight,project=renderer.projCache?.proj;
     svg.setAttribute("viewBox",`0 0 ${w} ${h}`);
@@ -52,7 +52,14 @@ export function createTrussLabels(viewport,renderer) {
       for(const [text,dy,size,color,weight] of [[title,16,small?11:14,"#173b56",600],[sub,32,small?10:12,"#173b56",400],[footer,47,small?8.5:10,"#526879",400]])
         svg.appendChild(node("text",{x:x+9,y:y+dy,fill:color,"font-family":"IBM Plex Sans, sans-serif","font-size":size,"font-weight":weight},text));
     }
-    if(detail) {
+    if(backing && t.backingMembers.length) {
+      const piece=t.backingMembers[Math.floor(t.backingMembers.length/2)],b=piece.bounds,z=piece.z1Ft;
+      const right=t.backingMembers.at(-1).bounds.x1Ft+.5;
+      dimension([right,g.upperPlate.bounds.y1Ft,z],[right,b.y0Ft,z],"11″ · to backing bottom",16);
+      dimension([b.x0Ft,b.y1Ft,z],[b.x1Ft,b.y1Ft,z],`${inches(piece.lengthFt)} clear length`,-26);
+      card("Gable backing","2×4 · wide face outward","between neighboring studs",[piece.center[0],piece.center[1],z],14,16);
+      card("Upper plate","11″ starts at its top","no window or fake window",[0,g.upperPlate.bounds.y1Ft,z],w-cardW-14,h-72);
+    } else if(detail) {
       // The extension lines retain the differing endpoint heights. The span
       // itself is horizontal: it is not the sloping distance between points.
       const y=g.upperPlate.bounds.y0Ft-.13,z=a.leftTip[2];
@@ -83,7 +90,9 @@ export function createTrussLabels(viewport,renderer) {
       card("Truss","2×4 · 1½″ × 3½″","longest edges measured",mid(a.upperLeftStart,a.upperLeftEnd),14,16);
       card("Gable studs","24″ on center","3½″ face outward",stud?.center||a.gableTop,w-cardW-14,h-72);
     }
-    svg.setAttribute("aria-label",detail
+    svg.setAttribute("aria-label",backing && t.backingMembers.length
+      ? "Gable backing: horizontal 2x4 pieces between gable studs, wide face outward. Bottom 11 inches above upper-plate top. Used only with no gable window or fake window."
+      : detail
       ? `Truss connection: ${inches(t.projectionFt.start)} measured horizontally from the farthest truss tip to the cut end of the upper plate.`
       : `Truss fit preview: upper pieces ${inches(t.upperLengthFt)}, lower pieces ${inches(t.lowerLengthFt)}, peak ${inches(t.peakRiseFt)} above the top of the upper plate. Outward 2x4 gable studs at 24-inch centers from the outside wall edge. First center ${inches(t.studFirstCenterFt)} is the preview interpretation; mirrored ends and top joints remain provisional.`);
   }

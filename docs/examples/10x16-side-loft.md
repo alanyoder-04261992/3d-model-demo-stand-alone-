@@ -685,3 +685,17 @@ confirms or corrects a term or a part, record his wording, what it points to,
 its status and the confirmation source. Update the glossary, this example
 and the matching part skill so the next setup knows what is agreed and
 what still needs discussion.
+
+## Gable backing — September 29, 2026
+
+Alan added **gable backing**, horizontal 2x4s between the gable studs when
+that gable has no window or fake window. The broad 3.5 in face points outward
+and lines up with the studs. The bottom is 11 in above **upper-plate top**.
+For the current layout, three pieces fill the internal stud bays; each cut
+is `24 - 3.5 = 20.5 in`. Bottom elevation above flooring is
+`79.5 + 11 = 90.5 in`, and top is `90.5 + 3.5 = 94 in`. The space above the
+gable board is `11 - 5.5 = 5.5 in`. These are derived dimensions.
+The [backing close-up](../../images/gable-backing.png) shows the actual datum;
+[its skill](../../.claude/skills/part-gable-backing/SKILL.md) explains reuse at
+another size and per-gable window/fake-window exclusion. No fastening or
+treatment specification was added.

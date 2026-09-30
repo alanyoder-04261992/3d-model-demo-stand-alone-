@@ -89,6 +89,12 @@
         "studLayoutOrigin": "confirmed", "studFirstCenter": "provisional", "treatment": "provisional"
       }
     },
+    "gableBacking": {
+      "nominal": "2x4", "thicknessIn": 1.5, "heightIn": 3.5, "bottomOffsetIn": 11,
+      "datum": "upper-plate-top", "orientation": "broad-face-outward", "when": "no-window-or-fake-window",
+      "status": { "name": "confirmed", "section": "confirmed", "placement": "confirmed",
+        "bottomOffset": "confirmed", "condition": "confirmed", "orientation": "confirmed" }
+    },
     "gableStudy": {
       "board": { "nominal": "2x6", "thicknessIn": 1.5, "heightIn": 5.5 },
       "ledgeEdge": "wall-line", "ledgeSide": "inside", "ledgeIn": 0.5,

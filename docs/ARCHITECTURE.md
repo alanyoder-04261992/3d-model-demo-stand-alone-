@@ -289,6 +289,11 @@ export default {
 produce each part's triangles (the golden capture's tagging table), pinned to
 the SHA-256 of Barnwright's file.
 
+The learned `gable-backing` framing entry follows `roof-frame`. It is active
+only with the opt-in truss lesson and the company’s `gableBacking` settings;
+its selected-end window/fake-window condition and actual stud-face gaps
+control the pieces. It shares stage `roof-frame`.
+
 ### Openings (`parts/openings/`)
 
 `parts/openings/index.js` walks `plan.state.items` in array order exactly as

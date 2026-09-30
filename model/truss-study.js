@@ -117,7 +117,7 @@ export function trussStudyPlan(plan, { truss = false } = {}) {
   status.studLengths = "derived-from-preview-assumptions";
   const copy = structuredClone(plan);
   copy.trussStudy = {
-    enabled: true, preview: true, wall: "end", name: "Truss",
+    enabled: true, preview: true, wall: "end", end: "B", name: "Truss",
     chord: { nominal: raw.chord.nominal || "2x4", thicknessIn, thicknessFt: thicknessIn / 12, depthIn, depthFt: depthIn / 12 },
     upperLengthIn, upperLengthFt: upperLengthIn / 12, lowerLengthIn, lowerLengthFt: lowerLengthIn / 12,
     peakRiseIn, peakRiseFt: peakRiseIn / 12, projectionIn, projectionFt: projectionIn / 12,

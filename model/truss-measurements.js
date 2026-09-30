@@ -1,5 +1,6 @@
 /* Visible measurements and anchors read the same polygons the preview draws. */
 import { trussStudyMembers, trussGableStudMembers } from "./truss-study.js";
+import { gableBackingRule, gableBackingMembers } from "../parts/gable-backing.js";
 
 function record(member) {
   const poly = member.poly.map(p => [p[0] + member.origin[0], p[1] + member.origin[1]]);
@@ -7,7 +8,7 @@ function record(member) {
   const bounds = { x0Ft: Math.min(...poly.map(p => p[0])), x1Ft: Math.max(...poly.map(p => p[0])),
     y0Ft: Math.min(...poly.map(p => p[1])), y1Ft: Math.max(...poly.map(p => p[1])), z0Ft, z1Ft };
   const center = [(bounds.x0Ft + bounds.x1Ft) / 2, (bounds.y0Ft + bounds.y1Ft) / 2, (z0Ft + z1Ft) / 2];
-  const edge = member.meta.longEdgeIn;
+  const edge = member.meta.longEdgeIn || member.meta.grainEdgeIn;
   const [p0, p1] = edge ? edge.map(p => [member.origin[0] + p[0] / 12, member.origin[1] + p[1] / 12, center[2]])
     : [[center[0], bounds.y0Ft, center[2]], [center[0], bounds.y1Ft, center[2]]];
   const lengthFt = Math.hypot(...p1.map((value, i) => value - p0[i]));
@@ -23,7 +24,8 @@ export function trussStudyMeasurements(plan) {
   if (!plan.trussStudy) return null;
   const study = plan.trussStudy, p = study.profile;
   const trussMembers = trussStudyMembers(plan).map(record), studMembers = trussGableStudMembers(plan).map(record);
-  const members = [...trussMembers, ...studMembers];
+  const backingRule = gableBackingRule(plan), backingMembers = gableBackingMembers(plan).map(record);
+  const members = [...trussMembers, ...studMembers, ...backingMembers];
   const bounds = Object.fromEntries(["x", "y", "z"].flatMap(axis => [
     [axis + "0Ft", Math.min(...members.map(m => m.bounds[axis + "0Ft"]))],
     [axis + "1Ft", Math.max(...members.map(m => m.bounds[axis + "1Ft"]))],
@@ -33,7 +35,7 @@ export function trussStudyMeasurements(plan) {
     [study.centerXFt + xIn / 12, study.baseYFt + yIn / 12, z];
   const left = point => at(-point[0], point[1]), right = point => at(...point);
   const plateFaceZ = plan.wallStudy.floorBounds.z0Ft + plan.wallStudy.plates.depthFt;
-  return { name: study.name, wall: "end", preview: true, members, trussMembers, studMembers, bounds,
+  return { name: study.name, wall: "end", preview: true, members, trussMembers, studMembers, backingMembers, backingRule, bounds,
     upperLengthFt: study.upperLengthFt, lowerLengthFt: study.lowerLengthFt, peakRiseFt: study.peakRiseFt,
     projectionFt: { start: study.projectionFt, end: study.projectionFt }, outerSpanFt: study.outerSpanFt,
     baseYFt: study.baseYFt, topYFt: study.topYFt, upperAngleDeg: p.upperAngle * 180 / Math.PI,
