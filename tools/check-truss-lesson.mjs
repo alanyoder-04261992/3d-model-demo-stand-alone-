@@ -49,7 +49,12 @@ assert.equal(JSON.stringify(gable), snapshot, "source floor, wall and gable plan
 assert.deepEqual(gableStudyMeasurements(plan), gableStudyMeasurements(gable));
 assert.ok(Object.isFrozen(plan) && Object.isFrozen(plan.trussStudy.profile.peak));
 assert.equal(chords.length, 4, "two upper and two lower pieces");
-assert.deepEqual(studs.map(s => s.meta.centerIn), [-48, -24, 0, 24, 48], "centered 24-inch stud layout");
+assert.deepEqual(studs.map(s => s.meta.centerIn), [-36, -12, 12, 36], "end-wall datum places four studs without forcing a peak stud");
+assert.deepEqual(studs.map(s => s.meta.wallDistanceIn), [24, 48, 72, 96], "24-inch marks refer to stud centers from outside wall edge");
+near(m.anchors.wallLayoutOrigin[0], wall.wallStudy.floorBounds.x0Ft, "tape starts at outside end wall, not shortened upper plate");
+near((m.anchors.studCenters[0][0] - m.anchors.wallLayoutOrigin[0]) * 12, 24, "first center from actual wall end");
+near((m.anchors.studCenters[0][0] - gableStudyMeasurements(plan).board.bounds.x0Ft) * 12, 23,
+  "gable-board end is a different datum, one inch in from the wall end");
 near(gable.gableStudy.range.lengthFt * 12, 118, "confirmed gable board span");
 near(plan.wallStudy.upperPlateRange.lengthFt * 12, 113, "projection datum is the upper plate cut span");
 near((m.anchors.peak[1] - m.anchors.upperPlateTop[1]) * 12, 48, "peak above upper-plate top");
@@ -132,24 +137,36 @@ for (const stud of studs) {
   }
   assert.ok(chords.some(chord => intersectionArea(poly, inches(chord)) > 0), "stud top has back-face contact area");
 }
-assert.equal(inches(studs[2]).length, 5, "center stud receives both peak bevels");
-for (const key of ["mirror", "mitres", "studSection", "studFace", "studLayoutOrigin", "studTopFit"])
+assert.ok(studs.every(stud => Math.abs(stud.meta.centerIn) > 1e-8), "layout does not add an unrequested center stud");
+for (const key of ["mirror", "mitres", "studFirstCenter", "studTopFit"])
   assert.equal(m.status[key], "provisional", `${key} is not presented as a confirmed shop rule`);
 assert.equal(m.status.slopes, "derived-from-preview-assumptions");
 assert.equal(m.status.studLengths, "derived-from-preview-assumptions");
-for (const key of ["peakDatum", "lowestTipDatum", "trussPlacement", "depthAlignment", "tailCut"])
+for (const key of ["peakDatum", "lowestTipDatum", "trussPlacement", "depthAlignment", "tailCut", "studSection", "studFace", "studLayoutOrigin"])
   assert.equal(m.status[key], "confirmed", `${key} was corrected by Alan`);
 for (const change of [raw => raw.upperLengthIn = 0, raw => raw.lowerLengthIn = NaN,
   raw => raw.peakRiseIn = 500, raw => raw.projectionIn = 1, raw => raw.chord.depthIn = 1,
   raw => raw.chord.thicknessIn = 4, raw => raw.studs.spacingIn = 3.5, raw => raw.studs.thicknessIn = 2,
   raw => raw.placement = "on-gable-top", raw => raw.peakDatum = "gable-top", raw => raw.lowestTipDatum = "gable-top",
   raw => raw.tailCut = "square-to-member", raw => raw.layout = "asymmetric",
-  raw => raw.studs.layoutOrigin = "end", raw => raw.studs.orientation = "edge-outward"]) {
+  raw => raw.studs.layoutOrigin = "center", raw => raw.studs.layoutFrom = "unknown",
+  raw => raw.studs.firstCenterIn = 0, raw => raw.studs.firstCenterIn = NaN,
+  raw => raw.studs.firstCenterIn = 500, raw => raw.studs.orientation = "edge-outward"]) {
   const invalid = structuredClone(gable); change(invalid.construction.trussStudy);
   assert.throws(() => trussStudyPlan(invalid, { truss: true }));
 }
+// The reusable rule follows the chosen end and measured offset, rather than
+// hardcoding this example's stud count or centering every layout at the peak.
+const reversed = structuredClone(gable); reversed.construction.trussStudy.studs.layoutFrom = "end";
+const reversedPlan = trussStudyPlan(reversed, { truss: true });
+assert.deepEqual(trussGableStudMembers(reversedPlan).map(s => s.meta.centerIn), [36, 12, -12, -36]);
+near(trussStudyMeasurements(reversedPlan).anchors.wallLayoutOrigin[0], wall.wallStudy.floorBounds.x1Ft, "opposite end datum");
+const offset = structuredClone(gable); offset.construction.trussStudy.studs.firstCenterIn = 20;
+const offsetStuds = trussGableStudMembers(trussStudyPlan(offset, { truss: true }));
+assert.deepEqual(offsetStuds.map(s => s.meta.wallDistanceIn), [20, 44, 68, 92, 116], "changed first-center offset recalculates full supported members");
+assert.deepEqual(offsetStuds.map(s => s.meta.centerIn), [-40, -16, 8, 32, 56]);
 const missing = structuredClone(gable); delete missing.construction.trussStudy;
 assert.throws(() => trussStudyPlan(missing, { truss: true }), /measurements/);
 const asymmetric = structuredClone(wall); asymmetric.construction.gableStudy.endProjectionIn.end = 2;
 assert.throws(() => trussStudyPlan(gableStudyPlan(asymmetric, { gable: true }), { truss: true }), /centered/);
-console.log("PROVED: unchanged ordinary model; 54/37.75-inch pieces at true 3.5-inch depth; truss against the board front face with lowest tips at plate top; peak 48 inches above upper plate and 127.5 above flooring; 6.25-inch projections; studs on the board with provisional face joints and no solid overlap.");
+console.log("PROVED: unchanged ordinary model and truss fit; outward 2x4 gable studs at 24/48/72/96-inch centers from the outside wall edge; full board support; first-offset and opposite-end recalculation; no forced peak stud or solid overlap; first-center interpretation and top joints remain preview inputs.");

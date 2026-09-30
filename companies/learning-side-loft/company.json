@@ -76,7 +76,8 @@
       "tailCut": "level-with-gable-bottom", "layout": "mirrored-about-center",
       "studs": {
         "nominal": "2x4", "widthIn": 3.5, "thicknessIn": 1.5, "spacingIn": 24,
-        "orientation": "broad-face-outward", "layoutOrigin": "center", "topFit": "behind-truss-face"
+        "orientation": "broad-face-outward", "layoutOrigin": "outside-end-wall", "layoutFrom": "start",
+        "firstCenterIn": 24, "topFit": "behind-truss-face"
       },
       "status": {
         "section": "confirmed", "upperLength": "confirmed", "lowerLength": "confirmed", "peakRise": "confirmed",
@@ -84,8 +85,8 @@
         "studPlacement": "confirmed", "studSpacing": "confirmed", "studTurnedOutward": "confirmed",
         "peakDatum": "confirmed", "lowestTipDatum": "confirmed",
         "mirror": "provisional", "tailCut": "confirmed", "mitres": "provisional",
-        "depthAlignment": "confirmed", "studTopFit": "provisional", "studSection": "provisional", "studFace": "provisional",
-        "studLayoutOrigin": "provisional", "treatment": "provisional"
+        "depthAlignment": "confirmed", "studTopFit": "provisional", "studSection": "confirmed", "studFace": "confirmed",
+        "studLayoutOrigin": "confirmed", "studFirstCenter": "provisional", "treatment": "provisional"
       }
     },
     "gableStudy": {

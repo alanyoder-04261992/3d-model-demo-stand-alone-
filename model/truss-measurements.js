@@ -38,6 +38,8 @@ export function trussStudyMeasurements(plan) {
     projectionFt: { start: study.projectionFt, end: study.projectionFt }, outerSpanFt: study.outerSpanFt,
     baseYFt: study.baseYFt, topYFt: study.topYFt, upperAngleDeg: p.upperAngle * 180 / Math.PI,
     lowerAngleDeg: p.lowerAngle * 180 / Math.PI, studSpacingFt: study.studs.spacingFt,
+    studFirstCenterFt: study.studs.firstCenterFt, studLayoutFrom: study.studs.layoutFrom,
+    studWallDistancesFt: study.studs.wallDistancesIn.map(value => value / 12),
     anchors: { peak: at(...p.peak), upperPlateTop: at(0, 0, plateFaceZ),
       gableTop: at(0, study.studBaseIn, study.boardFrontZFt), leftTip: left(p.tip), rightTip: right(p.tip),
       leftLowestTip: left(p.innerTip), rightLowestTip: right(p.innerTip),
@@ -45,6 +47,7 @@ export function trussStudyMeasurements(plan) {
       rightPlateCut: at(study.plateHalfSpanFt * 12, 0, plateFaceZ),
       upperLeftStart: left(p.knee), upperLeftEnd: left(p.peak), lowerLeftStart: left(p.tip), lowerLeftEnd: left(p.knee),
       upperRightStart: right(p.knee), upperRightEnd: right(p.peak), lowerRightStart: right(p.tip), lowerRightEnd: right(p.knee),
+      wallLayoutOrigin: [study.studs.layoutOriginXFt, plan.wallStudy.topPlateTopYFt, plateFaceZ],
       studCenters: studMembers.map(m => [m.center[0], study.studBaseYFt, m.z1Ft]) },
     status: study.status, assumptionNotes: study.assumptionNotes.slice() };
 }

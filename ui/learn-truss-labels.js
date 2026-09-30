@@ -70,17 +70,22 @@ export function createTrussLabels(viewport,renderer) {
       line(project(a.upperPlateTop),project([riseX,a.upperPlateTop[1],z]),{"stroke-dasharray":"3 3"});
       dimension([riseX,a.upperPlateTop[1],z],[riseX,a.peak[1],z],`${inches(t.peakRiseFt)} rise`,20);
       if(front && a.studCenters.length>1) {
+        const first=a.studCenters[0],y=a.gableTop[1]-.4,z=first[2];
+        const start=[a.wallLayoutOrigin[0],y,z],finish=[first[0],y,z];
+        line(project(a.wallLayoutOrigin),project(start),{"stroke-dasharray":"3 3"});
+        line(project(first),project(finish),{"stroke-dasharray":"3 3"});
+        dimension(start,finish,`${inches(t.studFirstCenterFt)} first center`,22);
         const centers=a.studCenters.slice().sort((p,q)=>p[0]-q[0]);
         const i=Math.max(0,Math.floor(centers.length/2)-1),p=centers[i],q=centers[i+1];
         dimension([p[0],a.gableTop[1]+.3,p[2]],[q[0],a.gableTop[1]+.3,q[2]],"24″ on center",20);
       }
       const stud=t.studMembers[Math.floor(t.studMembers.length/2)];
       card("Truss","2×4 · 1½″ × 3½″","longest edges measured",mid(a.upperLeftStart,a.upperLeftEnd),14,16);
-      card("Gable studs","24″ on center","turned outward · fit preview",stud?.center||a.gableTop,w-cardW-14,h-72);
+      card("Gable studs","24″ on center","3½″ face outward",stud?.center||a.gableTop,w-cardW-14,h-72);
     }
     svg.setAttribute("aria-label",detail
       ? `Truss connection: ${inches(t.projectionFt.start)} measured horizontally from the farthest truss tip to the cut end of the upper plate.`
-      : `Truss fit preview: upper pieces ${inches(t.upperLengthFt)}, lower pieces ${inches(t.lowerLengthFt)}, peak ${inches(t.peakRiseFt)} above the top of the upper plate. Gable studs 24 inches on center. Mirrored ends and center-stud layout are preview assumptions.`);
+      : `Truss fit preview: upper pieces ${inches(t.upperLengthFt)}, lower pieces ${inches(t.lowerLengthFt)}, peak ${inches(t.peakRiseFt)} above the top of the upper plate. Outward 2x4 gable studs at 24-inch centers from the outside wall edge. First center ${inches(t.studFirstCenterFt)} is the preview interpretation; mirrored ends and top joints remain provisional.`);
   }
   return {update};
 }

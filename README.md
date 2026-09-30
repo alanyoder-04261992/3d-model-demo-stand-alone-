@@ -101,10 +101,16 @@ sloping pieces and the gable studs for review; the
 [end connection detail](images/truss-connection.png).
 The preview mirrors that projection at both ends, giving a calculated
 125 1/2 in tip-to-tip span. That mirroring, the modeled cuts and stud-top connection,
-and the gable studs' section and layout origin still need Alan's agreement.
+and the gable studs' first-center offset and top fit still need Alan's agreement.
 The studs' confirmed rules are that they sit on the gable board, are
-“turned outward” and are **24 in on center**. The preview uses 2x4 studs
-with the broad face across the gable and a stud under the peak. Its slope
+“turned outward” and are **24 in on center**. The studs are confirmed 2x4s
+with the 3 1/2 in face outward. Their 24 in layout starts at the outside
+edge of the end wall. The current preview reads “centered” as putting the
+first center at 24 in, then 48, 72 and 96 in on this 10 ft end wall. This
+interpretation remains provisional. The [stud layout picture](images/gable-stud-layout.png)
+shows the tape origin and center marks. For another width or starting end,
+the skills record `centerX = wallEndX + direction * (firstCenterIn + n * spacingIn)`.
+Its slope
 angles are calculated to fit the measurements and actual lumber; they are
 not confirmed shop saw settings. These distinctions are saved in the skills.
 The finished reference remains at `/?company=learning-side-loft`, with prices

@@ -167,12 +167,34 @@ do not impose the superseded gable-board top-corner bearing constraint.
 Place the truss's back face against the board's shown face, with no solid
 overlap. Do not add a notch or infer a fastening schedule.
 
-Gable studs remain **on the gable board**, turned outward, **24 in on
-center**. Their 2x4 section, centered layout and exact top fit remain
-provisional. The preview puts their fronts against the truss backs and
-clips their tops to the outer roof outline, giving a face joint behind
-the truss. This replaces the earlier coplanar underside joint; it is not
-a confirmed stud cut list. Show this fit choice for Alan to check.
+Gable studs remain **on the gable board**, **24 in on center**. Alan
+confirmed nominal **2x4**, actual **1.5 x 3.5 in**, with the **3.5 in face
+outward**. Hook the tape at the **outside edge of the end wall**. The
+current preview reads his reply “centered” as centering the first stud on
+the **24 in mark**. That first-center interpretation remains provisional;
+the wall-end datum, section, outward face and spacing are confirmed.
+On the 120 in end wall this produces four centers at **24, 48, 72 and
+96 in from that wall edge**, not a forced stud under the peak.
+
+For another size, use inches consistently and calculate
+`centerX = wallEndX + direction * (firstCenterIn + n * spacingIn)` for
+integer `n >= 0`. `direction` is +1 from the starting end or -1 from the
+opposite end; store the chosen end and first-center offset separately.
+Use `spacingIn = 24` and preview `firstCenterIn = 24` for this example.
+Keep the outside-wall datum: the upper plate starts 3.5 in inward and
+the gable board starts `3.5 - 2.5 = 1 in` inward, so the first stud is
+**23 in from the gable-board end**. Include only whole-width studs that
+fit the gable board and roof. Do not center the pattern on the peak or
+scale the first offset when changing wall width. In this model use
+`studs.layoutOrigin = "outside-end-wall"`, `layoutFrom = "start" | "end"`,
+`firstCenterIn` and `spacingIn`; anchors and measurements come from the
+same member layout.
+
+The exact top fit remains provisional. The preview puts their fronts
+against the truss backs and clips their tops to the outer roof outline,
+giving a face joint behind the truss. This replaces the earlier coplanar
+underside joint; it is not a confirmed stud cut list. Show this fit choice
+and the first-center interpretation for Alan to check.
 
 Preserve the earlier lessons and ordinary finished model. Keep original
 photos private; do not derive lengths or angles from pixels. Treatment,
