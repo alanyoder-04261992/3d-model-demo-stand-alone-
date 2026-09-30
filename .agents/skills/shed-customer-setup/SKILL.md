@@ -16,8 +16,10 @@ It separates reusable formulas from this example's fixed dimensions and
 records the settings that must be reconsidered together when resizing.
 For Alan's loft sizes, 12-wide means an actual 134-inch width (11 ft 2 in).
 Use the measurement skill's discrete truss table: upper 34 in for 8-wide,
-54 in for 10/12-wide, lower 37.75 in for all three. Other widths do not
-inherit the 10-wide peak height.
+54 in for 10/12-wide, lower 37.75 in for all three. Peak heights from the
+upper-plate top are 43.75 in for 8-wide, 48 in for 10-wide and 51 in for
+12-wide. Other widths do not inherit these measurements; confirm missing
+actual widths and tip projections before fitting a full truss.
 
 ## Choose what is being set up
 

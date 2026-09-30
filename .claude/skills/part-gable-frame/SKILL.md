@@ -233,7 +233,9 @@ and anchors. For other widths, use the measurement skill's
 [loft size rules](../../../.agents/skills/shed-measurements/SKILL.md#learned-loft-truss-size-rules):
 12-wide is actually 134 in, its upper pieces are 54 in, and 8-wide upper
 pieces are 34 in; both retain 37.75 in lower pieces. Rebuild walls and board
-from actual width. New heights and projections remain unspecified.
+from actual width. Peak heights from upper-plate top to peak are 43.75 in
+for 8-wide and 51 in for 12-wide (10-wide remains 48 in). The 8/12-wide tip
+projections and actual 8-wide width remain unspecified.
 Run `node tools/check-truss-lesson.mjs` and inspect
 [the truss picture page](../../../truss.html). Keep `?step=gable` board-only,
 the earlier lessons and the ordinary finished geometry unchanged. Keep
