@@ -1,6 +1,27 @@
 # First example: 10 x 16 Side Lofted Barn
 
-## Latest lesson: windows in a lofted wall
+## Latest lesson: doorway framing
+
+Alan confirmed a full-height **stud** beside each **king stud**, his name
+for the shorter support under the header. Both stand on the bottom plate.
+The header extends **1.5 in at each end** to bear on both king studs.
+Its cut is `opening width + 3 in`. The king-stud cut is the selected height
+from bottom-plate top; add 1.5 in to show its top above flooring.
+
+The usual header is the learned 5 in loft header. For a taller doorway,
+two flat 2x4s stack to 3 in. For the garage-door arrangement, king studs
+touch the top-plate underside with no separate header below it.
+The 75 in wall-stud cut gives maximum king cuts of **70, 72 and 75 in**
+for these three arrangements. These are derived here, not fixed door sizes.
+The illustrative 36 in opening gives a **39 in header cut**.
+
+[Open the adjustable doorway lesson](../../doorway-framing.html) and
+[its skill](../../.claude/skills/part-doorway-frame/SKILL.md). Bottom-plate
+portions are shown during framing; the eventual doorway cut and any
+pieces above a lower header remain to learn. Legacy king/jack names do
+not override the shop terms.
+
+## Windows in a lofted wall
 
 Alan supplied the header end-view photo, named the **window plate** below
 the opening and **window header** above it, and confirmed these as

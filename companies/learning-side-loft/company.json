@@ -108,6 +108,18 @@
         "studsBelow": "confirmed", "studLayout": "confirmed", "studSeat": "confirmed",
         "plateCutLength": "illustrative", "clearHeight": "illustrative" }
     },
+    "doorwayLesson": {
+      "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5,
+      "kingStudRole": "under-header", "kingStudSeat": "bottom-plate-top",
+      "bearingEachEndIn": 1.5, "loftHeader": "same-as-loft-window", "ledgeSide": "outside",
+      "flatHeader": "two-stacked", "toPlate": "no-separate-header",
+      "exampleWidthIn": 36, "exampleKingCutIn": 70,
+      "status": { "kingStudTerm": "confirmed", "kingStudSeat": "confirmed",
+        "heightDatum": "derived-from-seat-and-cut", "bearing": "confirmed",
+        "loftHeader": "confirmed", "flatHeader": "confirmed", "toPlate": "confirmed",
+        "exampleWidth": "illustrative", "exampleKingCut": "illustrative",
+        "thresholdCut": "unconfirmed", "aboveHeaderFraming": "unconfirmed" }
+    },
     "gableBacking": {
       "nominal": "2x4", "thicknessIn": 1.5, "heightIn": 3.5, "bottomOffsetIn": 11,
       "datum": "upper-plate-top", "orientation": "broad-face-outward", "when": "no-window-or-fake-window",

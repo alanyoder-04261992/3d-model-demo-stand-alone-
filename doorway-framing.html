@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Doorway framing · Studs and headers</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#eef2f3;color:#203f4d;font:17px/1.55 system-ui,sans-serif}
+    main{max-width:996px;margin:auto;padding:28px 18px 48px}h1{font-size:clamp(28px,5vw,40px);line-height:1.15;margin:0}
+    h2{font-size:23px;margin:30px 0 12px}.eyebrow{font-size:14px;letter-spacing:.08em;text-transform:uppercase;margin:0 0 8px}
+    nav,.controls,.facts{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:18px 0}
+    a{color:#175a74}nav a,button{background:#203f4d;color:white;text-decoration:none;border:0;border-radius:8px;padding:12px 16px;font:inherit;cursor:pointer}
+    a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #b96a30;outline-offset:3px}
+    figure{margin:0}img{width:100%;height:auto;display:block;border-radius:10px}figcaption,.hint{font-size:14px;color:#4e6570;margin-top:8px}
+    .note{background:white;border-left:4px solid #b96a30;padding:15px 18px}dl,form{background:white;padding:18px;border-radius:10px}
+    dt{font-weight:700}dd{margin:0 0 16px}dd:last-child{margin-bottom:0}.stage{height:430px;background:#edf2f6;border-radius:12px;overflow:hidden}
+    canvas{width:100%;height:100%;display:block;touch-action:none}.status{min-height:1.5em}
+    input[type=number]{font:inherit;width:105px;padding:8px;border:1px solid #91a5ad;border-radius:5px}select{font:inherit;max-width:100%;padding:8px}
+    form label{display:block;margin:12px 0 4px}form button{margin-top:16px}.facts span{background:white;border-radius:8px;padding:10px 16px}[hidden]{display:none!important}
+    @media(max-width:480px){main{padding:22px 14px 36px}.stage{height:360px}nav a{flex:1;text-align:center;font-size:15px}}
+  </style>
+</head>
+<body><main>
+  <p class="eyebrow">Learning the doorway framing</p>
+  <h1>Stud, king stud and header</h1>
+  <p>Your <strong>king stud</strong> is the shorter stud under the header, beside a full-height <strong>stud</strong>. Both stand on the <strong>bottom plate</strong>.</p>
+  <p>The header extends <strong>1½ inches at each end</strong> to rest on the king studs. Its cut length is <strong>opening width + 3 inches</strong>.</p>
+  <nav aria-label="Lesson navigation"><a href="#rotate">Rotate the doorway</a><a href="window-framing.html">Window framing</a><a href="walls.html">Wall framing</a></nav>
+  <h2>The usual loft header</h2>
+  <figure><a href="images/doorway-loft.png"><img src="images/doorway-loft.png" width="1200" height="940" alt="Doorway with a full-height stud beside each king stud and a five-inch loft header resting on the king studs. The example opening is 36 inches wide and each header board cuts to 39 inches."></a><figcaption>Adjustable example: 36-inch opening, 39-inch header cut, 70-inch king studs measured from bottom-plate top.</figcaption></figure>
+  <h2>Two flat boards for a taller door</h2>
+  <figure><a href="images/doorway-flat.png"><img src="images/doorway-flat.png" width="1200" height="940" alt="Doorway with two flat 2 by 4 header boards stacked above 72-inch king studs. The header is three inches tall."></a><figcaption>Two flat 2×4s stack to a 3-inch header. In this wall, the illustrative king-stud cut can reach 72 inches.</figcaption></figure>
+  <h2>King studs up to the top plate</h2>
+  <figure><a href="images/doorway-to-plate.png"><img src="images/doorway-to-plate.png" width="1200" height="940" alt="Garage-door framing arrangement with king studs reaching the top-plate underside and no separate header beneath it."></a><figcaption>Your garage-door arrangement: the king studs touch the underside of the top plate. This example uses a 75-inch cut.</figcaption></figure>
+  <h2 id="rotate">Rotate the doorway</h2>
+  <p class="hint">Drag to turn. Pinch or use + / − to zoom. Tap any picture above to open it on your phone.</p>
+  <div class="stage"><canvas id="doorway-canvas" tabindex="0" aria-label="Rotatable doorway framing. Arrow keys turn; plus and minus zoom."></canvas></div>
+  <div id="doorway-controls" hidden>
+    <div class="controls"><button id="front" type="button">Front view</button><button id="angle" type="button">Angle view</button><button id="zoom-in" type="button" aria-label="Zoom in">+</button><button id="zoom-out" type="button" aria-label="Zoom out">−</button><label><input id="plates" type="checkbox" checked> Show wall plates</label></div>
+    <form id="dimensions-form">
+      <label for="width">Opening width (inches)</label><input id="width" type="number" min="1" step="0.25" value="36" required>
+      <label for="height">Door height / king-stud cut (inches)</label><input id="height" type="number" min="0.25" step="0.25" value="70" required>
+      <p class="hint">This height starts at the top of the bottom plate, where the king stud stands. Above the flooring, add the bottom plate's 1½-inch thickness.</p>
+      <label for="header-mode">Header option</label><select id="header-mode"><option value="loft">Loft header · 5 inches tall</option><option value="flat">Two flat boards · 3 inches tall</option><option value="to-plate">King studs to top plate</option></select>
+      <p class="hint">For “King studs to top plate,” the wall determines the cut. For either header, choose a cut that leaves room beneath the top plate.</p>
+      <button type="submit">Apply dimensions</button>
+    </form>
+  </div>
+  <p id="doorway-status" class="status" role="status">Loading the measured doorway…</p>
+  <div class="facts"><span>King-stud cut: <strong id="king-cut">70 in</strong></span><span>Header cut: <strong id="header-cut">39 in</strong></span><span>Opening top above flooring: <strong id="opening-top">71½ in</strong></span></div>
+  <h2>Our terms and measurements</h2>
+  <dl><dt>Stud</dt><dd>The full-height stud beside the king stud.</dd><dt>King stud</dt><dd>Your shop's name for the stud under the header. It sits on the bottom plate and is cut to the selected height. In the garage-door arrangement it reaches the top plate.</dd><dt>Header</dt><dd>The boards across the top of the doorway, extending 1½ inches over each king stud.</dd><dt>Loft header</dt><dd>The same assembly learned for the loft window: two touching 2×4s on edge on a flat 2×4, totaling 5 inches tall, with the ½-inch ledge outside.</dd></dl>
+  <p class="note">These are the learned shop arrangements. The widths and cuts shown are examples. The bottom plate is shown during framing; its later doorway cut and any framing above a lower header are still to learn.</p>
+</main><script type="module" src="ui/learn-doorway.js"></script></body></html>

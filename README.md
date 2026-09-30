@@ -27,7 +27,13 @@ company that only wants the designer.
   service, a webhook, e-mail, or its own web page).
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
-Latest lesson: [lofted-wall window header](window-framing.html), with
+Latest lesson: [doorway framing](doorway-framing.html), with three
+adjustable header arrangements, labeled phone pictures and
+[a reusable skill](.claude/skills/part-doorway-frame/SKILL.md).
+Alan's king stud is the shorter support on the bottom plate; header cuts
+are opening width plus 1.5 in at each end. The selected cut and available
+wall height determine which illustrated arrangement fits.
+The preceding lesson: [lofted-wall window header](window-framing.html), with
 [phone end view](images/window-header-section.png), adjustable 3D cut length
 and [reusable header skill](.claude/skills/part-window-header/SKILL.md).
 The outside half-inch ledge, top-plate contact, flat window plate and studs
@@ -251,6 +257,7 @@ Chromium's software graphics, each on its own port.
 | `check-golden.mjs` | no | every triangle of the 148 recorded Barnwright buildings, part by part, then whole; drawing the framing too changes no finished triangle |
 | `check-window-header.mjs` | no | learned loft header section, outside ledge, top-plate contact, variable cut lengths and unchanged surface geometry |
 | `check-window-plate.mjs` | no | flat plate, support contact at both ends, retained wall layout, variable window-height cuts and vertical grain |
+| `check-doorway.mjs` | no | shop king-stud terms, header bearing, variable opening cuts, three arrangements, wall-height reuse and fit rejection |
 | `check-look.mjs` | yes | the 24 finished pictures recorded from Barnwright, pixel for pixel; true colour changes the colour and nothing else; a rebuild stays inside its time budget |
 | `check-golden-labels.mjs` | yes | the part label on every recorded triangle, proved a second, independent way |
 | `check-engine.mjs` | yes | the drawing kit, the maths, the camera fit, the 11 textures and five whole pictures match Barnwright's own page, byte for byte |

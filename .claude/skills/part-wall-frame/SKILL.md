@@ -12,6 +12,16 @@ of carrying this example's rules into a new building.
 
 ## Scope of the current wall lesson
 
+For Alan's learned **doorway** rule, read
+[doorway framing](../part-doorway-frame/SKILL.md). His **king stud** is the
+shorter support under the header beside a full-height **stud**, seated on
+the bottom plate. The header extends 1.5 in at each end: opening width plus
+3 in total. Use his terms in lessons. This module's legacy names differ
+(`jack` is his king stud); they remain internal reference names.
+He confirmed loft headers, two stacked-flat boards for taller doors, and
+king studs directly to the top plate with no separate header below it.
+The isolated lesson calculates fit from wall height and selected cuts.
+
 For Alan's subsequently learned **lofted-wall window** rule, read
 [window header](../part-window-header/SKILL.md). Two touching 2x4s on edge
 sit on a flat 2x4, with the half-inch ledge outside, and the assembly
@@ -124,6 +134,8 @@ corner is the through wall's last two studs side by side and the butting
 wall's end stud against them. At an inside corner (a porch notch) the
 through wall runs on to the far face of the butting wall's frame.
 
+The following describes the legacy implementation, using its internal
+king/jack names rather than Alan's newly confirmed doorway terms.
 At every door and window (the rectangle `model/layout.js openingRect`
 gives -- its clear opening IS the shop's rough opening): a jack stud each
 side under a header, a full-height king stud outside each jack, cripples
