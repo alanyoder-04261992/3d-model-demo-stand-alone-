@@ -69,6 +69,23 @@
     }
   },
   "construction": {
+    "trussStudy": {
+      "chord": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5 },
+      "upperLengthIn": 54, "lowerLengthIn": 37.75, "peakRiseIn": 48, "projectionIn": 6.25,
+      "bearing": "plain-edge-on-board-corner", "tailCut": "square-to-member", "layout": "mirrored-about-center",
+      "studs": {
+        "nominal": "2x4", "widthIn": 3.5, "thicknessIn": 1.5, "spacingIn": 24,
+        "orientation": "broad-face-outward", "layoutOrigin": "center"
+      },
+      "status": {
+        "section": "confirmed", "upperLength": "confirmed", "lowerLength": "confirmed", "peakRise": "confirmed",
+        "projection": "confirmed", "projectionDatum": "confirmed", "trussPlacement": "confirmed",
+        "studPlacement": "confirmed", "studSpacing": "confirmed", "studTurnedOutward": "confirmed",
+        "mirror": "provisional", "bearing": "provisional", "tailCut": "provisional", "mitres": "provisional",
+        "depthAlignment": "provisional", "studSection": "provisional", "studFace": "provisional",
+        "studLayoutOrigin": "provisional", "treatment": "provisional"
+      }
+    },
     "gableStudy": {
       "board": { "nominal": "2x6", "thicknessIn": 1.5, "heightIn": 5.5 },
       "innerLedgeIn": 0.5,

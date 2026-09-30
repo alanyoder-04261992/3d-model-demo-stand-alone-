@@ -57,13 +57,16 @@ outside floor width, 1 1/2 in **outer boards** on both sides, and joists
 3 in shorter than that width. The resulting **117 in / 9 ft 9 in** joist
 length is calculated from his rule. He also explicitly confirmed two
 boards at one end and one at the other. He subsequently added **Flooring**
-and has progressed through the walls to the first gable piece. The current
-manual view is `learn.html?company=learning-side-loft&step=gable`: the end wall
-with the **gable board**, a single 2x6 along its upper plate, over the existing floor. The earlier
+and has progressed through the walls and gable board to the truss preview.
+The current manual view is `learn.html?company=learning-side-loft&step=truss`:
+the end wall, **gable board**, truss and outward-turned gable studs over the
+existing floor. The earlier `?step=gable` keeps the single gable board above
+the end wall. The earlier
 `learn.html?company=learning-side-loft&step=walls` selects one plain 16 ft
 side wall or one plain 10 ft end wall independently.
 The earlier `?step=deck`, `?step=frame` and `?step=joists` views remain available.
-Keep joined corners, openings, further roof pieces and autoplay out of this step. This is a learning order, not an approved
+Keep joined corners, openings, additional roof assemblies and autoplay out
+of this step. This is a learning order, not an approved
 shop sequence. Do not impose the software's `buildOrder` as the order the shop
 uses. Agree on the current part's meaning before moving on, and follow Alan's
 direction and pace in the conversation. Preserve already confirmed terms even
@@ -130,31 +133,45 @@ along the wall, not vertical. For this 10 ft end wall, derive the new length
 from the 113 in upper plate: `113 + 2.5 + 2.5 = 118 in` (9 ft 10 in).
 This leaves 1 in to each full-wall endpoint. The on-edge height raises its
 top 5 1/2 in above the plate. Show the single new board at `?step=gable`
-and in [the gable picture page](../../../gable.html), leaving further gable
-members out until their geometry is resolved. Alan confirmed that the
+and in [the gable picture page](../../../gable.html); preserve that earlier
+board-only lesson when adding the truss preview. Alan confirmed that the
 gable board is **nailed to the upper plate** and the **truss sits on top
 of it**. Nail size/count/spacing, treatment, species and grade remain
 unconfirmed; names such as “chord,” “rafter” or “header” are not agreed
 alternatives for the gable board. Keep
 the supplied photo private and preserve the earlier floor and wall lessons.
 
-For the next roof-framing step, read
+For the truss preview, read
 [part-roof-frame](../../../.claude/skills/part-roof-frame/SKILL.md) as well.
 Alan confirmed **truss** and nominal **2x4** lumber, actual 1 1/2 x 3 1/2 in.
 His current longest-point member lengths are **54 in for the upper piece
 leading to the peak** and **37 3/4 in for the lower, steeper piece**.
 He confirmed a **4 ft (48 in)** height from the **top of the gable board
-to the highest point of the peak**. Slope angles and end cuts are not yet
-confirmed.
-His separate **6 1/4 in from the farthest truss point to the upper plate**
-needs an exact datum, direction and both-end applicability. Do not turn
-those unresolved inputs into a drawn roof profile. The gable-end studs
-are confirmed to sit on the gable board, be “turned outward” and be
-**24 in on center**. Confirm the exact lumber face, section, starting datum
-and lengths before placing them. This spacing does not change the ordinary
-wall's 16 in grid or establish spacing between trusses along the building.
-The lesson currently draws only the gable board above the wall; record the
-new facts without claiming the truss or gable studs are already visible.
+to the highest point of the peak**. His annotated photo resolves the
+**6 1/4 in** as outward **along the end wall, from the upper plate's cut end
+to the farthest truss tip**; do not ask again for that datum. Mirroring it
+at both ends is provisional. With that assumption, the 113 in upper plate
+gives a 125 1/2 in tip span, 3 3/4 in beyond each gable-board end and
+2 3/4 in beyond each full-wall end. Preserve the gable board's 118 in
+length, 1/2 in inside ledge and 2 1/2 in projections.
+
+The preview assumes a plain lower underside bearing on the gable board's
+outer top corner, square tails and shared knee/peak miters. Alan's agreement
+on that bearing is still pending. Gable studs are confirmed to sit on the
+board, be “turned outward” and be **24 in on center**. The preview assumes
+2x4 studs with the broad face outward, centered on the board depth, and
+centers under the peak and at 24 and 48 in either side. Their section,
+precise face and layout origin remain provisional. This does not change
+the wall's 16 in grid or establish lengthwise truss spacing. Derived slopes
+and stud cuts remain **provisional preview results, not a shop cut list**.
+
+Use the opt-in `trussStudyPlan` and its member-based measurement helper for
+`?step=truss`; review [the truss picture page](../../../truss.html) alongside
+the interactive view. Keep the original photos private: they resolve the
+dimension endpoints without supplying pixel-derived lengths or angles.
+Preserve the earlier lessons and ordinary finished geometry. Use the
+measurement skill to recalculate for another size instead of scaling
+these example-specific member lengths or copying finished-model roof rules.
 
 Alan also requested **measurements on the render** so he can check the
 lengths. Anchor dimension lines to the measured geometry and name the span

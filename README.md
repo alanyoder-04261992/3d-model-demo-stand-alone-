@@ -28,9 +28,9 @@ company that only wants the designer.
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
-[open the latest end-wall gable board picture saved in GitHub](images/gable-framing.png).
-For a phone, open the [hosted gable-board picture page](https://yoder-3d-floor-preview.netlify.app/gable.html)
-or [rotate the new model](https://yoder-3d-floor-preview.netlify.app/learn.html?step=gable).
+[open the truss and gable-stud preview saved in GitHub](images/truss-framing.png).
+For a phone, open the [hosted truss picture page](https://yoder-3d-floor-preview.netlify.app/truss.html)
+or [rotate the preview](https://yoder-3d-floor-preview.netlify.app/learn.html?step=truss).
 This preview is serving successfully after the earlier Netlify credit-limit interruption.
 For local development,
 run the designer and open `learn.html?company=learning-side-loft` to start
@@ -79,7 +79,7 @@ The [side wall end detail](images/wall-end-detail.png) and
 [end wall upper-plate detail](images/end-wall-plate-detail.png) show the fit.
 The starting layout datum, extra corner studs, fasteners, openings and wall
 treatment remain unconfirmed. Nothing advances automatically.
-The current step begins the **gable framing** at
+The earlier **gable board** step remains at
 `learn.html?company=learning-side-loft&step=gable`. A 2x6 stands on edge
 on the end wall's upper plate, leaving a confirmed 1/2 in inside ledge and
 projecting 2 1/2 in past each cut end. The calculated board length is
@@ -91,11 +91,20 @@ the upper plate and supports the truss; treatment and nail size/count/spacing
 remain unconfirmed. He confirmed **2x4 truss lumber** and supplied
 54 in for the upper piece leading to the peak and 37 3/4 in for the lower,
 steeper piece, measured at the longest points. The peak is 4 ft (48 in)
-above the gable-board top. The slope angles and cut geometry remain pending, as does the exact
-datum of his separate 6 1/4 in truss measurement. The gable-end
-studs sit on the gable board, are “turned outward” and are 24 in on center;
-their precise orientation and layout still need agreement. These new facts
-are saved in the skills; the truss and gable studs are not yet drawn.
+above the gable-board top. His annotated photograph resolves the separate
+**6 1/4 in** dimension: along the end wall from the **upper plate's cut end
+to the outermost truss tip**. The current `?step=truss` view adds four
+sloping pieces and the gable studs for review; the
+[truss picture page](truss.html) includes an
+[end connection detail](images/truss-connection.png).
+The preview mirrors that projection at both ends, giving a calculated
+125 1/2 in tip-to-tip span. That mirroring, the modeled cuts and seating,
+and the gable studs' section and layout origin still need Alan's agreement.
+The studs' confirmed rules are that they sit on the gable board, are
+“turned outward” and are **24 in on center**. The preview uses 2x4 studs
+with the broad face across the gable and a stud under the peak. Its slope
+angles are calculated to fit the measurements and actual lumber; they are
+not confirmed shop saw settings. These distinctions are saved in the skills.
 The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the
 [building terms](docs/BUILDING-TERMS.md), then use
@@ -119,7 +128,7 @@ same terms and construction details.
 | [Customer setup](.agents/skills/shed-customer-setup/SKILL.md) | Set up a company or buyer's design and continue the manual building lesson. |
 | [Measurements for other sizes](.agents/skills/shed-measurements/SKILL.md) | Recalculate lengths from the building width, length, actual lumber and end setbacks, with worked examples. |
 | [Gable framing](.claude/skills/part-gable-frame/SKILL.md) | The gable board, its inside ledge and end projections, plus the learned gable-stud rules. |
-| [Roof framing](.claude/skills/part-roof-frame/SKILL.md) | The confirmed 2x4 truss lumber and supplied member lengths, with unresolved roof geometry kept separate from ordinary model rules. |
+| [Roof framing](.claude/skills/part-roof-frame/SKILL.md) | The measured 2x4 truss preview, its upper-plate datum, derived profile and remaining fit assumptions, separate from ordinary model rules. |
 | [Skids](.claude/skills/part-skids/SKILL.md) | Treated supports, notches, end cuts and their measurements. |
 | [Floor frame](.claude/skills/part-floor-frame/SKILL.md) | Floor joists, outer/end boards and the board the mule hooks onto. |
 | [Flooring](.claude/skills/part-floor-deck/SKILL.md) | Tongue-and-groove sheets, thickness, staggered seams and appearance. |

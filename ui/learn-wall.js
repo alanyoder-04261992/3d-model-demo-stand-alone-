@@ -8,6 +8,8 @@ import { wallStudyPlan } from "../model/wall-study.js";
 import { wallStudyMeasurements } from "../model/wall-measurements.js";
 import { gableStudyPlan } from "../model/gable-study.js";
 import { gableStudyMeasurements } from "../model/gable-measurements.js";
+import { trussStudyPlan } from "../model/truss-study.js";
+import { trussStudyMeasurements } from "../model/truss-measurements.js";
 import { assemble, onlyParts } from "../engine/assemble.js";
 import { createRenderer } from "../engine/renderer.js";
 import { distToFit } from "./parts-gallery.js";
@@ -15,6 +17,7 @@ import { installFloorWood, woodFinish } from "./learn-wood.js";
 import { installFlooringTexture, flooringFinish } from "./learn-flooring.js";
 import { createWallLabels, wallFocusPair } from "./learn-wall-labels.js";
 import { createGableLabels } from "./learn-gable-labels.js";
+import { createTrussLabels } from "./learn-truss-labels.js";
 
 const PARTS=["skids","floor-frame","floor-deck","wall-frame"];
 const VIEWS=["angle","wall-front","wall-plates","wall-end"];
@@ -33,12 +36,14 @@ function drawingBox(build) {
 function plainBounds(b) {
   return Object.fromEntries(["x","y","z"].flatMap(a=>[[a+"0",b[a+"0Ft"]],[a+"1",b[a+"1Ft"]]]));
 }
-export async function startWallLesson({gable=false}={}) {
-  const parts=gable?[...PARTS,"gable-frame"]:PARTS.slice();
+export async function startWallLesson({gable=false,truss=false}={}) {
+  gable=gable||truss;
+  const parts=gable?[...PARTS,"gable-frame",...(truss?["roof-frame"]:[])]:PARTS.slice();
   const views=gable?["angle","wall-front","wall-end"]:VIEWS;
   const api={ready:false,error:null,wall:gable?"end":"side",selection:["supports","frame","deck","wall",...(gable?["gable"]:[])],parts,renderer:null,plan:null,setWall:null,setCamera:null};
   window.floorLesson=api;window.wallLesson=api;
   if(gable) window.gableLesson=api;
+  if(truss) window.trussLesson=api;
   const canvas=$("lesson-canvas"),viewport=$("lesson-viewport"),controls=$("lesson-wall-controls");
   const buttons=[...document.querySelectorAll("[data-camera]")],radios=[...document.querySelectorAll('input[name="wall-kind"]')];
   $("lesson-reload").addEventListener("click",()=>location.reload());
@@ -50,19 +55,23 @@ export async function startWallLesson({gable=false}={}) {
   }
   try {
     const pictureLink=$("lesson-picture-link") || $("lesson-error")?.querySelector("a");
-    if(pictureLink) {pictureLink.href=gable?"gable.html":"walls.html";pictureLink.textContent=gable?"Open the gable-board pictures":"Open the wall pictures";}
+    if(pictureLink) {pictureLink.href=truss?"truss.html":gable?"gable.html":"walls.html";pictureLink.textContent=truss?"Open the truss pictures":gable?"Open the gable-board pictures":"Open the wall pictures";}
     if(!controls || radios.length!==2) throw new Error("Reload this page to load the side wall and end wall controls.");
-    document.title=(gable?"Gable framing":"Walls")+" — 10 × 16 side loft";
+    document.title=(truss?"Truss fit preview":gable?"Gable framing":"Walls")+" — 10 × 16 side loft";
     $("lesson-pieces").hidden=true;controls.hidden=gable;
-    if($("lesson-pieces-section")) $("lesson-pieces-section").setAttribute("aria-label",gable?"Gable board study":"Wall study");
-    if($("lesson-heading")) $("lesson-heading").textContent=gable?"Gable framing":"Walls";
-    if($("measurement-explanation")) $("measurement-explanation").textContent=gable
+    if($("lesson-pieces-section")) $("lesson-pieces-section").setAttribute("aria-label",truss?"Truss fit preview":gable?"Gable board study":"Wall study");
+    if($("lesson-heading")) $("lesson-heading").textContent=truss?"Truss fit preview":gable?"Gable framing":"Walls";
+    if($("measurement-explanation")) $("measurement-explanation").textContent=truss
+      ? "The truss lengths follow the longest edges. Front view shows the 4-foot rise; Connection close-up shows 6¼ inches from the truss tip to the upper-plate cut."
+      : gable
       ? "The gable board is a 2×6 on edge along the upper plate. Connection close-up measures the 2½-inch projection and the ½-inch inside ledge."
       : "Measurements follow the actual boards. Plates close-up shows their names; Wall end close-up shows the 3½-inch step.";
-    if($("lesson-reference")) $("lesson-reference").textContent=gable
+    if($("lesson-reference")) $("lesson-reference").textContent=truss
+      ? "Truss: 2×4, with 54-inch upper pieces and 37¾-inch lower pieces. The gable studs stand on the gable board, turned outward, 24 inches on center."
+      : gable
       ? "Gable board is the confirmed name. It is nailed to the upper plate and supports the truss. Its 118-inch length is calculated from the plate and both end projections."
       : "Side wall, end wall, stud, bottom plate, top plate and upper plate are confirmed names. This view studies one plain wall on the completed floor.";
-    const stepLink=$("lesson-step-link");if(stepLink) {stepLink.href=gable?"learn.html?step=walls":"learn.html?step=gable";stepLink.textContent=gable?"Earlier: plain walls":"Next: gable framing";}
+    const stepLink=$("lesson-step-link");if(stepLink) {stepLink.href=truss?"learn.html?step=gable":gable?"learn.html?step=truss":"learn.html?step=gable";stepLink.textContent=truss?"Earlier: gable board":gable?"Next: truss fit preview":"Next: gable framing";}
     for(const button of buttons) {
       button.hidden=![...views,"in","out","reset"].includes(button.dataset.camera);
       if(gable && button.dataset.camera==="wall-end") button.textContent="Connection close-up";
@@ -74,10 +83,15 @@ export async function startWallLesson({gable=false}={}) {
     if(renderer.off) throw new Error(`3D is not available in this browser. Open the ${gable?"gable-board":"wall"} pictures below, or reload in a browser with graphics enabled.`);
     installFloorWood(renderer);installFlooringTexture(renderer);
     renderer.cam.autoSpin=false;renderer.cam.interacted=true;renderer.setStages(null);
-    const labels=gable?createGableLabels(viewport,renderer):createWallLabels(viewport,renderer);
+    const labels=truss?createTrussLabels(viewport,renderer):gable?createGableLabels(viewport,renderer):createWallLabels(viewport,renderer);
     let current=null,view="angle",zoom=1.18,raf=0;
     const size=()=>({w:Math.max(1,canvas.clientWidth),h:Math.max(1,canvas.clientHeight)});
     function cameraBox() {
+      if(truss && view!=="wall-end") {
+        const b=plainBounds(current.measures.truss.bounds);
+        b.y0=current.measures.gable.upperPlate.bounds.y0Ft-.1;
+        return b;
+      }
       if(view==="wall-front") {
         const b=plainBounds(current.measures.wall.bounds);
         if(gable) b.y1=current.measures.gable.board.bounds.y1Ft;
@@ -85,7 +99,7 @@ export async function startWallLesson({gable=false}={}) {
       }
       if(!["wall-plates","wall-end"].includes(view)) return current.box;
       const target=renderer.cam.target,along=current.measures.wall.wall==="side"?2:0;
-      const radius=view==="wall-end"?(gable?.6:.9):1.3;
+      const radius=view==="wall-end"?(truss?1:gable?.6:.9):1.3;
       return {x0:target[0]-(along===0?radius:.45),x1:target[0]+(along===0?radius:.45),
         y0:target[1]-.65,y1:target[1]+.65,z0:target[2]-(along===2?radius:.45),z1:target[2]+(along===2?radius:.45)};
     }
@@ -93,7 +107,8 @@ export async function startWallLesson({gable=false}={}) {
       raf=0;if(api.error || !current || !renderer.mesh) return;
       const fit=distToFit(cameraBox(),renderer.cam.yaw,renderer.cam.pitch,size());
       renderer.cam.fitDist=fit;renderer.cam.dist=Math.max(2.5,fit*zoom);renderer.draw();
-      if(gable) labels.update(current.measures.gable,{detail:view==="wall-end"});
+      if(truss) labels.update(current.measures.truss,current.measures.gable,{detail:view==="wall-end",front:view==="wall-front"});
+      else if(gable) labels.update(current.measures.gable,{detail:view==="wall-end"});
       else labels.update(current.measures.wall,{detail:view==="wall-plates",endDetail:view==="wall-end"});
     }
     function requestDraw() {if(!raf) raf=requestAnimationFrame(draw);}
@@ -108,11 +123,16 @@ export async function startWallLesson({gable=false}={}) {
         if(view==="wall-front") {
           renderer.cam.target=[(b.x0Ft+b.x1Ft)/2,(b.y0Ft+b.y1Ft)/2,(b.z0Ft+b.z1Ft)/2];
           if(gable) renderer.cam.target[1]=(b.y0Ft+current.measures.gable.board.bounds.y1Ft)/2;
+          if(truss) renderer.cam.target[1]=(current.measures.gable.upperPlate.bounds.y0Ft+current.measures.truss.bounds.y1Ft)/2;
           renderer.cam.yaw=side?Math.PI/2:Math.PI;renderer.cam.pitch=0;
         } else if(view==="wall-plates") {
           const pair=wallFocusPair(m),u=pair?.markFt ?? m.lengthFt/2;
           renderer.cam.target=side?[(b.x0Ft+b.x1Ft)/2,m.plates.top.center[1]-.2,b.z0Ft+u]:[b.x0Ft+u,m.plates.top.center[1]-.2,(b.z0Ft+b.z1Ft)/2];
           renderer.cam.yaw=side?Math.PI/2-.25:Math.PI-.25;renderer.cam.pitch=.25;
+        } else if(view==="wall-end" && truss) {
+          const t=current.measures.truss,g=current.measures.gable;
+          renderer.cam.target=[(t.anchors.leftTip[0]+t.anchors.leftPlateCut[0])/2,g.board.bounds.y0Ft+.25,g.board.center[2]];
+          renderer.cam.yaw=-.55;renderer.cam.pitch=.22;zoom=1.16;
         } else if(view==="wall-end" && gable) {
           const g=current.measures.gable,board=g.board.bounds;
           renderer.cam.target=[g.plateStart[0]+.3,g.upperPlate.bounds.y1Ft+.12,(board.z0Ft+board.z1Ft)/2];
@@ -123,12 +143,18 @@ export async function startWallLesson({gable=false}={}) {
           renderer.cam.yaw=side?Math.PI/2+.4:Math.PI+.4;renderer.cam.pitch=.22;
         } else {
           renderer.cam.target=null;renderer.cam.yaw=gable?.55:side?1.2:Math.PI-.55;renderer.cam.pitch=.32;
+          if(truss) {
+            const t=current.measures.truss;
+            renderer.cam.target=[0,(current.measures.gable.upperPlate.bounds.y0Ft+t.bounds.y1Ft)/2,(t.bounds.z0Ft+t.bounds.z1Ft)/2];
+            renderer.cam.yaw=.28;renderer.cam.pitch=.18;
+          }
         }
         for(const button of buttons) if(views.includes(button.dataset.camera)) button.setAttribute("aria-pressed",String(button.dataset.camera===view));
       }
       requestDraw();
     }
     function caption(m) {
+      if(truss) {trussCaption(current.measures.truss);return;}
       if(gable) {gableCaption(current.measures.gable);return;}
       const wallName=m.wall==="side"?"Side wall":"End wall";
       $("piece-title").textContent=`${wallName} — ${formatFeetInches(m.lengthFt)} overall span`;
@@ -157,7 +183,7 @@ export async function startWallLesson({gable=false}={}) {
     function gableCaption(g) {
       $("piece-title").textContent=g.name+" — 2×6 along the end-wall upper plate";
       $("piece-description").textContent="The board stands on its narrow edge on top of the upper plate. Its inside face leaves a ½-inch ledge, and it projects 2½ inches past each cut end of the upper plate.";
-      $("piece-draft").textContent="The gable board is nailed to the upper plate. Wood treatment and nail size or spacing remain unspecified. The truss and gable studs follow once their geometry is established.";
+      $("piece-draft").textContent="The gable board is nailed to the upper plate. Wood treatment and nail size or spacing remain unspecified. The next step shows the truss and gable studs as a fit preview.";
       const rows=[["Gable board length · calculated",`${formatInches(g.lengthFt)} (${formatFeetInches(g.lengthFt)})`],
         ["Actual section · on edge",`${formatInches(g.thicknessFt)} thick × ${formatInches(g.heightFt)} high`],
         ["Upper plate beneath · calculated",`${formatInches(g.upperPlate.lengthFt)} (${formatFeetInches(g.upperPlate.lengthFt)})`],
@@ -169,12 +195,31 @@ export async function startWallLesson({gable=false}={}) {
       $("measurement-note").textContent=`Length: ${formatInches(g.upperPlate.lengthFt)} upper plate + ${formatInches(g.endProjectionFt.start)} at one end + ${formatInches(g.endProjectionFt.end)} at the other = ${formatInches(g.lengthFt)}. The ½-inch ledge is measured from the upper plate's inside face to the 2×6's inside face.`;
       canvas.setAttribute("aria-label","Rotatable 3D end wall and gable board on top of its upper plate. The 2×6 gable board is on edge, with a half-inch inside ledge and two-and-a-half-inch projection past each upper-plate end.");
     }
+    function trussCaption(t) {
+      $("piece-title").textContent="Truss and gable studs — fit preview";
+      $("piece-description").textContent="The 2×4 truss rests on the gable board. Its upper pieces lead to the peak; the lower pieces form the steeper sides. The gable studs sit on the board and meet the underside of the truss.";
+      $("piece-draft").textContent="Fit preview: mirrored ends and center-stud layout to check. The studs use 2×4s with their broad faces outward; the truss seating and cut details remain to check.";
+      const rows=[
+        ["Upper truss piece · longest edge",formatInches(t.upperLengthFt)],
+        ["Lower truss piece · longest edge",formatInches(t.lowerLengthFt)],
+        ["Peak above gable-board top",`${formatInches(t.peakRiseFt)} (${formatFeetInches(t.peakRiseFt)})`],
+        ["Truss tip to upper-plate cut",formatInches(t.projectionFt.start)],
+        ["Truss lumber · confirmed","2×4 nominal · 1½ × 3½ in actual"],
+        ["Gable studs · confirmed spacing","24 in on center"],
+        ["Opposite-end fit · preview","Same projection; mirror of the shown end"],
+        ["Stud layout · preview","Center stud, then 24 in each way"]
+      ];
+      const list=$("piece-measurements");list.replaceChildren();
+      for(const [title,value] of rows) {const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=title;dd.textContent=value;row.append(dt,dd);list.appendChild(row);}
+      $("measurement-note").textContent="The 6¼-inch measurement ends at the upper plate's cut, not at the end of the gable board. Sloping lengths and the vertical peak rise are separate dimensions. This preview lets us check the fit before agreeing on the remaining cuts and stud details.";
+      canvas.setAttribute("aria-label","Rotatable truss fit preview. Upper truss pieces 54 inches, lower pieces 37¾ inches, peak 48 inches above the gable board. Gable studs 24 inches on center. Connection view measures 6¼ inches from the truss tip to the upper plate's cut end.");
+    }
     function setWall(kind) {
       if(!["side","end"].includes(kind) || (gable && kind!=="end")) return;
       if(!cache.has(kind)) {
-        const wallPlan=wallStudyPlan(basePlan,{wall:kind}),plan=gable?gableStudyPlan(wallPlan,{gable:true}):wallPlan,wall=wallStudyMeasurements(plan);
+        const wallPlan=wallStudyPlan(basePlan,{wall:kind}),gablePlan=gable?gableStudyPlan(wallPlan,{gable:true}):wallPlan,plan=truss?trussStudyPlan(gablePlan,{truss:true}):gablePlan,wall=wallStudyMeasurements(plan);
         if(!wall) throw new Error("The confirmed wall measurements are missing. Reload the current lesson.");
-        const measures={...floorMeasurements(plan),wall,...(gable?{gable:gableStudyMeasurements(plan)}:{})},full=assemble(plan,{frames:true,scene:"studio",trueColour:true});
+        const measures={...floorMeasurements(plan),wall,...(gable?{gable:gableStudyMeasurements(plan)}:{}),...(truss?{truss:trussStudyMeasurements(plan)}:{})},full=assemble(plan,{frames:true,scene:"studio",trueColour:true});
         if(gable && !measures.gable) throw new Error("The gable-board measurements are missing. Reload the current lesson.");
         const plain=onlyParts(full.build,parts),build=flooringFinish(woodFinish(plain,measures),measures),box=drawingBox(build);
         const bounds={W:box.x1-box.x0,L:box.z1-box.z0,H:Math.max(.25,(box.y0+box.y1)/2)/.42};
