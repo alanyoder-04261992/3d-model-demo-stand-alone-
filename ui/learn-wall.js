@@ -227,7 +227,7 @@ export async function startWallLesson({gable=false,truss=false}={}) {
         : "The truss lengths follow the longest edges. Gable backing view measures 11 inches from upper-plate top to backing bottom. Front view shows the 4-foot rise; Connection close-up shows 6¼ inches from the truss tip to the upper-plate cut.";
       $("piece-title").textContent=isWindow?"Gable window box — follows the opening":"Truss, gable studs and gable backing";
       $("piece-description").textContent="The 2×4 truss goes against the front face of the gable board, with the whole bottom cut level with the gable board’s bottom and the upper plate’s top. Its upper pieces lead to the peak; the lower pieces form the steeper sides. The gable studs remain on the board; their top fit behind the truss is a preview choice."
-        +(isWindow?" The gable studs move to the two sides of the selected opening. Horizontal 2×4s form the top and bottom, with all four wide faces outward.":t.backingMembers.length?" Gable backing fits horizontally between the studs, wide face outward. Its bottom is 11 inches above the upper-plate top. It is used when this gable has no window or fake window.":" Gable backing is omitted for a fake window; its framing remains to learn.");
+        +(isWindow?" The gable studs move to the two sides of the selected opening. Horizontal 2×4s form the top and bottom, with all four wide faces outward.":t.backingMembers.length?" Gable backing runs across all bays to the outer truss, supporting the siding where its seams meet. Its wide face points outward and its bottom is 11 inches above the upper-plate top. It is used when this gable has no window or fake window.":" Gable backing is omitted for a fake window; its framing remains to learn.");
       $("piece-draft").textContent="The 2×4 gable studs have their 3½-inch faces outward. Their layout is measured from the outside end-wall edge. This preview reads ‘centered’ as the first stud center at 24 inches; the knee/peak cuts and stud-top connection remain to check.";
       const rows=[
         ["Upper truss piece · longest edge",formatInches(t.upperLengthFt)],
@@ -251,7 +251,9 @@ export async function startWallLesson({gable=false,truss=false}={}) {
       if(t.backingMembers.length) rows.push(
         ["Gable backing · bottom above upper plate",formatInches(t.backingRule.bottomOffsetIn/12)],
         ["Gable backing · actual section",`${formatInches(t.backingRule.thicknessIn/12)} × ${formatInches(t.backingRule.heightIn/12)} · wide face outward`],
-        ["Backing pieces · calculated clear lengths",t.backingMembers.map(b=>formatInches(b.lengthFt)).join(" · ")]);
+        ["Internal backing · clear lengths",t.backingMembers.filter(b=>b.member.meta.bay==="internal").map(b=>formatInches(b.lengthFt)).join(" · ")],
+        ["Outer backing · bottom / top edge lengths",t.backingMembers.filter(b=>b.member.meta.bay==="outer").map(b=>`${formatInches(b.lengthFt)} / ${formatInches(b.member.meta.topLengthIn/12)}`).join(" · ")],
+        ["Outer backing fit","Reaches the truss · angled end joint shown as a preview"]);
       const list=$("piece-measurements");list.replaceChildren();
       for(const [title,value] of rows) {const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=title;dd.textContent=value;row.append(dt,dd);list.appendChild(row);}
       $("measurement-note").textContent="The 6¼-inch measurement ends at the upper plate's cut, not at the end of the gable board. Sloping lengths and the vertical peak rise are separate dimensions. This preview lets us check the fit before agreeing on the remaining cuts and stud details.";

@@ -334,10 +334,15 @@ company's setup without changing the meaning of the shared codes.
 studs, used when that gable has no window or fake window. Alan confirmed
 actual 1.5 x 3.5 in stock, with the 3.5 in face outward in line with the studs.
 Its bottom is **11 in above the top of the upper plate**. With current 24 in
-stud centers and 3.5 in outward faces, each clear piece is a calculated
+stud centers and 3.5 in outward faces, each internal clear piece is a calculated
 **20.5 in**, and the four gable studs leave three internal bays. This leaves
 5.5 in above the 5.5 in gable board. The section, height datum, orientation,
 condition and name are confirmed; lengths and count follow the actual layout.
+Alan's September 30 correction: backing continues **all the way to the outer
+truss**, including both outer bays, because **the siding seams meet here**.
+There are now five pieces in this example: three internal and two outer.
+Outer lengths follow the roof outline at backing bottom and top; the exact
+behind-truss end joint remains a preview fit, like the stud-top connection.
 See [the close-up](../images/gable-backing.png) and
 [reusable part skill](../.claude/skills/part-gable-backing/SKILL.md).
 

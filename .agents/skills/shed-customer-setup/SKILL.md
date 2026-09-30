@@ -411,10 +411,12 @@ the company's customers.
 ## Gable backing when setting up the learned assembly
 
 Use [gable backing](../../../.claude/skills/part-gable-backing/SKILL.md)
-for the horizontal 2x4 pieces between gable studs: broad faces outward,
+for the horizontal 2x4 pieces across the gable to the outer truss, including
+both outer bays. They support the siding where its seams meet: broad faces outward,
 bottom 11 in above upper-plate top. Include it only on a gable without a
-window or fake window. Recalculate the clear stud-to-stud lengths and bay
-count for the customer's size. Do not infer this rule for unrelated builders.
+window or fake window. Recalculate the clear stud-to-stud lengths, outer
+stud-to-truss fits and bay count for the customer's size. Do not infer this
+rule for unrelated builders or invent siding sheet dimensions or fasteners.
 
 For a **real gable window**, Alan confirmed a different layout: move the
 gable studs to the two sides of the opening and add horizontal 2x4s above

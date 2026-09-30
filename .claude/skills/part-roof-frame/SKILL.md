@@ -11,7 +11,9 @@ Read [the gable-backing skill](../part-gable-backing/SKILL.md) before changing
 these horizontal 2x4 pieces. They fit between neighboring gable studs,
 wide face outward, only when the selected gable has no window or fake window.
 Their bottom is 11 in above the **upper-plate top**. With 24 in centers and
-3.5 in outward stud faces, each current clear cut is 20.5 in. The backing
+3.5 in outward stud faces, each internal clear cut is 20.5 in. Two outer
+pieces continue to the truss on both sides to support siding seams. Their
+lengths follow the roof profile; the end joint remains a preview fit. The backing
 has its own part; preserve this part's existing members and fit.
 
 ## Alan's learned truss: opt-in fit preview

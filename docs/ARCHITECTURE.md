@@ -291,8 +291,10 @@ the SHA-256 of Barnwright's file.
 
 The learned `gable-backing` framing entry follows `roof-frame`. It is active
 only with the opt-in truss lesson and the company’s `gableBacking` settings;
-its selected-end window/fake-window condition and actual stud-face gaps
-control the pieces. It shares stage `roof-frame`.
+its selected-end window/fake-window condition, actual stud-face gaps and
+outer roof outline control the pieces. Both outer bays extend behind the
+truss face to support siding seams. Outer cuts derive at both backing-edge
+heights; the precise face joint is provisional. It shares stage `roof-frame`.
 
 The opt-in `gable-window-frame` entry follows it, also in `roof-frame`.
 Its two horizontals read the selected clear `trussStudy.windowOpening`;

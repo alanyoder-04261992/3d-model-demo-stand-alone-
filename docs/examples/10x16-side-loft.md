@@ -695,6 +695,11 @@ For the current layout, three pieces fill the internal stud bays; each cut
 is `24 - 3.5 = 20.5 in`. Bottom elevation above flooring is
 `79.5 + 11 = 90.5 in`, and top is `90.5 + 3.5 = 94 in`. The space above the
 gable board is `11 - 5.5 = 5.5 in`. These are derived dimensions.
+Alan corrected the extent on September 30: it goes **all the way to the outer
+truss** and supports the **siding seams**. Add two outer stud-to-truss pieces,
+giving five pieces total. Their tapered ends derive from the actual roof
+outline at 11 in and 14.5 in, using the existing behind-truss face joint as
+a preview fit. Only the three internal pieces have the 20.5 in clear cut.
 The [backing close-up](../../images/gable-backing.png) shows the actual datum;
 [its skill](../../.claude/skills/part-gable-backing/SKILL.md) explains reuse at
 another size and per-gable window/fake-window exclusion. No fastening or

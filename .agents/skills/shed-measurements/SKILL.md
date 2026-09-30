@@ -102,12 +102,17 @@ from skid bottom; do not label that combined height as stud length.
 
 For **gable backing**, use [its part skill](../../../.claude/skills/part-gable-backing/SKILL.md).
 It is horizontal 2x4, actual 1.5 in thick by 3.5 in high, wide face outward,
-between gable studs when that end has no window or fake window.
+across the gable to the outer truss, supporting siding seams, when that end
+has no window or fake window. Include both outer stud-to-truss bays.
 `bottom = actual upper-plate top + 11 in`; `top = bottom + actual backing height`.
 Derive each cut from neighboring stud faces: `center spacing - half the
 left stud face width - half the right stud face width`. Current result:
-three pieces at 20.5 in (`24 - 3.5`), with 5.5 in above the gable board
-(`11 - 5.5`). Recompute bay count and clear lengths for other widths;
+three internal pieces at 20.5 in (`24 - 3.5`) plus two outer pieces. Derive
+each outer piece from the actual roof outline at backing bottom and top to
+the outermost stud face; keep these different edge lengths for the sloped
+end. Follow the part skill's provisional behind-truss face joint. There is
+5.5 in above the gable board (`11 - 5.5`). Recompute bay count, internal gaps
+and outer roof intersections for other widths;
 do not scale the 11 in offset. A window on another end does not remove it here.
 
 For the learned **gable board**, Alan confirmed on-edge seating

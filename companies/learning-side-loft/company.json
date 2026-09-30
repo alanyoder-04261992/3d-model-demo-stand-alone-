@@ -93,8 +93,10 @@
     "gableBacking": {
       "nominal": "2x4", "thicknessIn": 1.5, "heightIn": 3.5, "bottomOffsetIn": 11,
       "datum": "upper-plate-top", "orientation": "broad-face-outward", "when": "no-window-or-fake-window",
+      "extent": "outer-truss", "purpose": "siding-seam-support",
       "status": { "name": "confirmed", "section": "confirmed", "placement": "confirmed",
-        "bottomOffset": "confirmed", "condition": "confirmed", "orientation": "confirmed" }
+        "bottomOffset": "confirmed", "condition": "confirmed", "orientation": "confirmed",
+        "extent": "confirmed", "purpose": "confirmed", "outerEndFit": "provisional" }
     },
     "gableStudy": {
       "board": { "nominal": "2x6", "thicknessIn": 1.5, "heightIn": 5.5 },
