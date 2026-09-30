@@ -17,9 +17,12 @@ For Alan's subsequently learned **lofted-wall window** rule, read
 sit on a flat 2x4, with the half-inch ledge outside, and the assembly
 touches the underside of the top plate. Total height is a derived 5 in.
 The separate **window plate** below the opening is a flat 2x4, and Alan
-confirmed **studs under the window plate**. Their exact layout, seating
-and cuts, side supports and opening allowances remain to learn.
-The new isolated header lesson does not change ordinary wall framing.
+confirmed **studs under the window plate**, sitting on the bottom plate
+and following this wall's existing 16-inch layout. The
+[window-plate skill](../part-window-plate/SKILL.md) derives their cuts from
+the selected window height and retains doubles where covered by the sample.
+The starting layout datum, side supports and opening-width allowances
+remain to learn. The isolated lesson does not change ordinary wall framing.
 
 On September 28, 2026 Alan confirmed these labels on the pictured parts:
 

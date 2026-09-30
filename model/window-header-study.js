@@ -26,14 +26,18 @@ export function windowHeaderStudyPlan(plan,{lengthIn}={}) {
   return deepFreeze(copy);
 }
 
-function record(member) {
+export function windowDetailRecord(member) {
   const poly=member.poly,z0Ft=member.origin[2],z1Ft=z0Ft+member.t;
   const bounds={x0Ft:Math.min(...poly.map(p=>p[0])),x1Ft:Math.max(...poly.map(p=>p[0])),
     y0Ft:Math.min(...poly.map(p=>p[1])),y1Ft:Math.max(...poly.map(p=>p[1])),z0Ft,z1Ft};
   const center=[(bounds.x0Ft+bounds.x1Ft)/2,(bounds.y0Ft+bounds.y1Ft)/2,(z0Ft+z1Ft)/2];
+  const vertical=member.meta.grainAxis==="vertical";
   return {member,kind:member.kind,poly,bounds,center,z0Ft,z1Ft,
-    p0:[bounds.x0Ft,center[1],center[2]],p1:[bounds.x1Ft,center[1],center[2]],
-    lengthFt:bounds.x1Ft-bounds.x0Ft,widthFt:bounds.y1Ft-bounds.y0Ft,depthFt:member.t,grainAxis:[1,0,0]};
+    p0:vertical?[center[0],bounds.y0Ft,center[2]]:[bounds.x0Ft,center[1],center[2]],
+    p1:vertical?[center[0],bounds.y1Ft,center[2]]:[bounds.x1Ft,center[1],center[2]],
+    lengthFt:vertical?bounds.y1Ft-bounds.y0Ft:bounds.x1Ft-bounds.x0Ft,
+    widthFt:vertical?bounds.x1Ft-bounds.x0Ft:bounds.y1Ft-bounds.y0Ft,depthFt:member.t,
+    grainAxis:vertical?[0,1,0]:[1,0,0]};
 }
 
 export function windowHeaderMeasurements(plan) {
@@ -51,7 +55,7 @@ export function windowHeaderMeasurements(plan) {
       {name,size:wall.plates.nominal,displayContext:true});
     item.stage="wall-frame";members.push(item);
   }
-  const records=members.map(record);
+  const records=members.map(windowDetailRecord);
   const bounds=Object.fromEntries(["x","y","z"].flatMap(a=>[
     [a+"0Ft",Math.min(...records.map(r=>r.bounds[a+"0Ft"]))],
     [a+"1Ft",Math.max(...records.map(r=>r.bounds[a+"1Ft"]))]]));

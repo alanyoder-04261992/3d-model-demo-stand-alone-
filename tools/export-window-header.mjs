@@ -1,6 +1,8 @@
 /* Export the exact isolated header mesh and the same wood pixels as the
    browser. Run node tools/export-window-header.mjs, then render with
-   python tools/render-joist-picture.py --header. */
+   python tools/render-joist-picture.py --header.
+   Use --plate here, then --window-plate on the Python renderer for the
+   lower assembly's phone picture. */
 import {mkdirSync,writeFileSync} from "node:fs";
 import {loadCatalogue} from "./lib/load.mjs";
 import {defaults} from "../model/design.js";
@@ -8,13 +10,18 @@ import {makePlan} from "../model/plan.js";
 import {floorStudyPlan} from "../model/floor-study.js";
 import {wallStudyPlan} from "../model/wall-study.js";
 import {windowHeaderStudyPlan,windowHeaderMeasurements,windowHeaderDrawing} from "../model/window-header-study.js";
+import {windowPlateStudyPlan,windowPlateMeasurements,windowFramingDrawing} from "../model/window-plate-study.js";
 import {woodFinish,floorWoodTexture} from "../ui/learn-wood.js";
 
 const cat=loadCatalogue("learning-side-loft");
 const wall=wallStudyPlan(floorStudyPlan(makePlan(defaults(cat),cat)),{wall:"end"});
-const plan=windowHeaderStudyPlan(wall,{lengthIn:cat.construction.windowHeader.exampleLengthIn});
-const header=windowHeaderMeasurements(plan),groups=[],textures={};
-const build=woodFinish(windowHeaderDrawing(plan,header),{header});
+const withPlate=process.argv.includes("--plate");
+const headerPlan=windowHeaderStudyPlan(wall,{lengthIn:cat.construction.windowHeader.exampleLengthIn});
+const plan=withPlate?windowPlateStudyPlan(headerPlan,{lengthIn:cat.construction.windowHeader.exampleLengthIn,
+  clearHeightIn:cat.construction.windowPlateLesson.exampleClearHeightIn}):headerPlan;
+const header=windowHeaderMeasurements(plan),windowPlate=withPlate?windowPlateMeasurements(plan):null;
+const measurements={header,...(windowPlate?{windowPlate}:{})},groups=[],textures={};
+const build=woodFinish(withPlate?windowFramingDrawing(plan,measurements):windowHeaderDrawing(plan,header),measurements);
 mkdirSync(new URL("../test/out/",import.meta.url),{recursive:true});
 for(const key of build.ORDER) {
   const b=build.buckets[key],triangles=[];
@@ -30,6 +37,7 @@ for(const key of build.ORDER) {
     textures[b.tex]={width:tx.width,height:tx.height,file};
   }
 }
-writeFileSync(new URL("../test/out/header-render-data.json",import.meta.url),
-  JSON.stringify({units:"feet",groups,textures,metadata:{header}},null,2)+"\n");
-console.log("Exported header: three boards, two plate portions; 5 in high, half-inch outside ledge.");
+writeFileSync(new URL("../test/out/"+(withPlate?"window-plate":"header")+"-render-data.json",import.meta.url),
+  JSON.stringify({units:"feet",groups,textures,metadata:measurements},null,2)+"\n");
+console.log(withPlate?"Exported flat window plate, wall-layout studs and bottom-plate portion."
+  :"Exported header: three boards, two plate portions; 5 in high, half-inch outside ledge.");

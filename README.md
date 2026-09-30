@@ -31,7 +31,10 @@ Latest lesson: [lofted-wall window header](window-framing.html), with
 [phone end view](images/window-header-section.png), adjustable 3D cut length
 and [reusable header skill](.claude/skills/part-window-header/SKILL.md).
 The outside half-inch ledge, top-plate contact, flat window plate and studs
-beneath it are recorded; the isolated 3D view starts with the header fit.
+beneath it are recorded. The 3D view now starts with the window plate and
+supporting studs; adjustable clear height recalculates the cuts. See their
+[phone picture](images/window-plate-studs.png) and
+[skill](.claude/skills/part-window-plate/SKILL.md).
 Start with the [10x16 Side Lofted Barn](docs/examples/10x16-side-loft.md):
 [open the truss and gable-stud preview saved in GitHub](images/truss-framing.png).
 For a phone, open the [hosted truss picture page](https://yoder-3d-floor-preview.netlify.app/truss.html)
@@ -247,6 +250,7 @@ Chromium's software graphics, each on its own port.
 |---|---|---|
 | `check-golden.mjs` | no | every triangle of the 148 recorded Barnwright buildings, part by part, then whole; drawing the framing too changes no finished triangle |
 | `check-window-header.mjs` | no | learned loft header section, outside ledge, top-plate contact, variable cut lengths and unchanged surface geometry |
+| `check-window-plate.mjs` | no | flat plate, support contact at both ends, retained wall layout, variable window-height cuts and vertical grain |
 | `check-look.mjs` | yes | the 24 finished pictures recorded from Barnwright, pixel for pixel; true colour changes the colour and nothing else; a rebuild stays inside its time budget |
 | `check-golden-labels.mjs` | yes | the part label on every recorded triangle, proved a second, independent way |
 | `check-engine.mjs` | yes | the drawing kit, the maths, the camera fit, the 11 textures and five whole pictures match Barnwright's own page, byte for byte |

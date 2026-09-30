@@ -102,8 +102,11 @@
     "windowPlateLesson": {
       "scope": "lofted-wall", "nominal": "2x4", "orientation": "flat",
       "thicknessIn": 1.5, "depthIn": 3.5, "studsBelow": true,
+      "studLayout": "wall-stud-layout", "studSeat": "bottom-plate-top",
+      "exampleClearHeightIn": 36,
       "status": { "name": "confirmed", "section": "confirmed", "orientation": "confirmed",
-        "studsBelow": "confirmed", "studLayout": "unconfirmed", "plateCutLength": "unconfirmed" }
+        "studsBelow": "confirmed", "studLayout": "confirmed", "studSeat": "confirmed",
+        "plateCutLength": "illustrative", "clearHeight": "illustrative" }
     },
     "gableBacking": {
       "nominal": "2x4", "thicknessIn": 1.5, "heightIn": 3.5, "bottomOffsetIn": 11,
