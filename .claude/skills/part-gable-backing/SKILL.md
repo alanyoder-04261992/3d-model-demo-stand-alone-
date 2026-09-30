@@ -42,7 +42,8 @@ The current lesson models end `B`. Window framing is a separate lesson;
 this rule only controls the backing. Alan's subsequently confirmed
 [real-window framing rule](../part-gable-frame/SKILL.md#learned-rule-when-there-is-a-real-gable-window)
 moves studs to the window sides and adds top/bottom 2x4s, all wide faces
-outward. Its opening dimensions are still pending. Do not reuse the
+outward. The [adjustable box](../part-gable-window-frame/SKILL.md) reads each
+selected opening's dimensions; none is a fixed shop-wide size. Do not reuse the
 11 in backing offset as the window height or extend the box rule to fake
 windows without confirmation.
 

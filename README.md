@@ -138,6 +138,7 @@ same terms and construction details.
 | [Customer setup](.agents/skills/shed-customer-setup/SKILL.md) | Set up a company or buyer's design and continue the manual building lesson. |
 | [Measurements for other sizes](.agents/skills/shed-measurements/SKILL.md) | Recalculate lengths from the building width, length, actual lumber and end setbacks, with worked examples. |
 | [Gable backing](.claude/skills/part-gable-backing/SKILL.md) | Horizontal 2x4 pieces between gable studs, 11 in from upper-plate top to backing bottom, only without a window or fake window. |
+| [Gable window box](.claude/skills/part-gable-window-frame/SKILL.md) | Adjustable opening moves its side studs and resizes top/bottom 2x4s, all wide faces outward. |
 | [Gable framing](.claude/skills/part-gable-frame/SKILL.md) | The gable board, its ledge side and end projections, plus the learned gable-stud rules. |
 | [Roof framing](.claude/skills/part-roof-frame/SKILL.md) | The measured 2x4 truss preview, its upper-plate datum, derived profile and remaining fit assumptions, separate from ordinary model rules. |
 | [Skids](.claude/skills/part-skids/SKILL.md) | Treated supports, notches, end cuts and their measurements. |
@@ -259,6 +260,7 @@ Chromium's software graphics, each on its own port.
 | `check-gable-lesson.mjs` | no | the 2x6 rests on the end upper plate with a 1/2 in inside ledge, 1 1/2 in outside ledge and 2 1/2 in projections; actual mesh, contact and resizing formulas agree, and existing floor/wall/ordinary geometry stays unchanged |
 | `check-truss-lesson.mjs` | no | truss dimensions, plate datum, gable-stud layout and contact agree with the measured fit preview |
 | `check-gable-backing.mjs` | no | backing uses the upper-plate top, fits between stud faces, recalculates at other sizes and is omitted for real or fake gable windows |
+| `check-gable-window.mjs` | no | different opening sizes/positions, clear cavity, box contacts, exact mesh volume, fit rejection and restoration of no-window framing |
 | `check-model-live.mjs` | yes | the rules (sizes, walls, roof line, standard doors and windows, clamping, prices) are Barnwright's, number for number, against its live page |
 | `check-ui.mjs` | yes | the designer page works: every style, size, colour, door and window, drag, "Add here", layouts on phone and desktop, escaping |
 | `check-views.mjs` | yes | Outside, Inside, Framing and Watch it build on seven buildings, from real clicks and real pixels |

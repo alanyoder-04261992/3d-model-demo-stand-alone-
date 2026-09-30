@@ -86,7 +86,7 @@ export function woodFinish(build,measurements) {
   const wallTint=hexRGB("#d6c4a2").map(srgbLin); // Appearance only; wall treatment is unspecified.
   for(const key of build.ORDER) {
     const bucket=build.buckets[key], tags=build.tags[key] || [];
-    if(!tags.some(tag=>["skids","floor-frame"].includes(tag.part) || (tag.part==="wall-frame" && measurements.wall) || (tag.part==="gable-frame" && measurements.gable) || (["roof-frame","gable-backing"].includes(tag.part) && measurements.truss))) {
+    if(!tags.some(tag=>["skids","floor-frame"].includes(tag.part) || (tag.part==="wall-frame" && measurements.wall) || (tag.part==="gable-frame" && measurements.gable) || (["roof-frame","gable-backing","gable-window-frame"].includes(tag.part) && measurements.truss))) {
       out.buckets[key]=bucket; out.ORDER.push(key); out.tags[key]=tags; continue;
     }
     for(const tag of tags) for(let t=tag.from;t<tag.from+tag.count;t++) {
@@ -97,7 +97,7 @@ export function woodFinish(build,measurements) {
       const normal=vertices.slice(3,6),center=points[0].map((_,i)=>points.reduce((sum,p)=>sum+p[i]/3,0));
       const records=tag.part==="floor-frame"?measurements.frame.members:tag.part==="wall-frame"?measurements.wall?.members
         :tag.part==="gable-frame" && measurements.gable?[measurements.gable.board]:null;
-      const prismRecords=tag.part==="gable-backing"?measurements.truss?.backingMembers:tag.part==="roof-frame"?measurements.truss?.trussMembers:tag.part==="gable-frame"?measurements.truss?.studMembers:null;
+      const prismRecords=tag.part==="gable-window-frame"?measurements.truss?.windowMembers:tag.part==="gable-backing"?measurements.truss?.backingMembers:tag.part==="roof-frame"?measurements.truss?.trussMembers:tag.part==="gable-frame"?measurements.truss?.studMembers:null;
       const prism=prismRecords?.find(record=>record.poly && points.every(p=>inside(p,record.bounds) && inPrism(p,record))
         && inPrism(center.map((v,i)=>v-normal[i]*1e-5),record)
         && !inPrism(center.map((v,i)=>v+normal[i]*1e-5),record)) || null;
@@ -133,7 +133,7 @@ export function woodFinish(build,measurements) {
       const nextKey=key+"-"+texture+"-"+hash;
       if(!out.buckets[nextKey]) {
         const treated=tag.part==="skids" || (tag.part==="floor-frame" && measurements.frame.treated===true);
-        const tint=["wall-frame","gable-frame"].includes(tag.part) || (["roof-frame","gable-backing"].includes(tag.part) && measurements.truss)?wallTint:treated?treatedTint:bucket.tint;
+        const tint=["wall-frame","gable-frame"].includes(tag.part) || (["roof-frame","gable-backing","gable-window-frame"].includes(tag.part) && measurements.truss)?wallTint:treated?treatedTint:bucket.tint;
         const tone=.95+random()*.1;
         out.buckets[nextKey]={...bucket,tex:texture,tint:tint.map(v=>Math.min(1,v*tone)),bump:0,v:[],n:0};
         out.ORDER.push(nextKey); out.tags[nextKey]=[];

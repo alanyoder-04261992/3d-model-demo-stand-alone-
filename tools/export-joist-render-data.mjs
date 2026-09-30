@@ -24,16 +24,19 @@ import { woodFinish, floorWoodTexture } from "../ui/learn-wood.js";
 import { flooringFinish, flooringTexture } from "../ui/learn-flooring.js";
 
 const cat=loadCatalogue("learning-side-loft");
-const withTruss=process.argv.includes("--truss");
+const windowArg=process.argv.find(arg=>arg.startsWith("--window="))?.split("=")[1];
+const windowSize=windowArg?.split("x").map(Number);
+if(windowSize && (windowSize.length!==2 || !windowSize.every(n=>Number.isFinite(n)&&n>0))) throw new Error("Use --window=WIDTHxHEIGHT in inches.");
+const withTruss=process.argv.includes("--truss") || Boolean(windowSize);
 const withGable=process.argv.includes("--gable") || withTruss;
 const withWall=process.argv.includes("--wall") || process.argv.includes("--end-wall") || withGable;
 const wallType=process.argv.includes("--end-wall") || withGable?"end":"side";
 const withDeck=process.argv.includes("--deck") || withWall;
-const selectedParts=["skids","floor-frame",...(withDeck ? ["floor-deck"] : []),...(withWall?["wall-frame"]:[]),...(withGable?["gable-frame"]:[]),...(withTruss?["roof-frame","gable-backing"]:[])];
+const selectedParts=["skids","floor-frame",...(withDeck ? ["floor-deck"] : []),...(withWall?["wall-frame"]:[]),...(withGable?["gable-frame"]:[]),...(withTruss?["roof-frame","gable-backing","gable-window-frame"]:[])];
 const floorPlan=floorStudyPlan(makePlan(defaults(cat),cat));
 const wallPlan=withWall?wallStudyPlan(floorPlan,{wall:wallType}):floorPlan;
 const gablePlan=withGable?gableStudyPlan(wallPlan,{gable:true}):wallPlan;
-const plan=withTruss?trussStudyPlan(gablePlan,{truss:true}):gablePlan;
+const plan=withTruss?trussStudyPlan(gablePlan,{truss:true,windowOpening:windowSize?{kind:"window",widthIn:windowSize[0],heightIn:windowSize[1]}:null}):gablePlan;
 const measurements={...floorMeasurements(plan),...(withWall?{wall:wallStudyMeasurements(plan)}:{}),...(withGable?{gable:gableStudyMeasurements(plan)}:{}),...(withTruss?{truss:trussStudyMeasurements(plan)}:{})};
 const original=assemble(plan,{frames:true,scene:"studio",trueColour:true}).build;
 const isolated=onlyParts(original,selectedParts);
@@ -122,7 +125,7 @@ const output={
     }},
   },
 };
-const file=new URL(`../test/out/${withTruss ? "truss" : withGable ? "gable" : withWall ? wallType+"-wall" : withDeck ? "flooring" : "joist"}-render-data.json`,import.meta.url);
+const file=new URL(`../test/out/${windowSize?"window-"+windowArg:withTruss ? "truss" : withGable ? "gable" : withWall ? wallType+"-wall" : withDeck ? "flooring" : "joist"}-render-data.json`,import.meta.url);
 mkdirSync(new URL("../test/out/",import.meta.url),{recursive:true});
 writeFileSync(file,JSON.stringify(output,null,2)+"\n");
 console.log(JSON.stringify({file:file.pathname,groups:groups.length,partCounts,modelBounds,

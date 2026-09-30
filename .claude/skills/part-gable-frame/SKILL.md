@@ -22,20 +22,22 @@ The existing gable-backing rule omits the 11 in backing on this same end.
 A fake window also omits backing, but its framing has not yet been
 confirmed; do not infer a real opening or this box around it.
 
-**Recorded rule, not yet drawn in the lesson:** clear opening width and
-height, its position and bottom elevation, and the board-end joint detail
-remain to establish for a measured example. Ask for clear dimensions
-between the framing boards, not the catalogue window name or outside trim.
-Use the upper-plate top as the requested elevation datum; the 11 in
-backing height is not a window-placement rule. Do not assume a centered
-window or scale its opening with the building width.
+Alan clarified that window sizes vary: this is a parameterized rule, not
+a request to stop for one fixed window measurement. The adjustable lesson
+at `learn.html?step=truss&window=1` now accepts each selected clear opening's
+width, height and position. Its starting dimensions and centered/auto-fit
+placement are labeled examples, not confirmed shop measurements. Read the
+[window-box skill](../part-gable-window-frame/SKILL.md) before editing it.
+Use the upper-plate top as the bottom-height datum; the 11 in backing
+height is not a window-placement rule. Do not scale windows with shed width.
 
 Read [Shed measurements](../../../.agents/skills/shed-measurements/SKILL.md#gable-window-box-measurements)
-for the parameter relationships. Preserve the current no-window preview
-until the window example has the needed measurements. When implemented,
-verify the clear opening stays empty, the four outward faces align, moved
-studs still fit the gable board and truss, and backing remains omitted only
-on the affected end.
+for the parameter relationships. The nearest distinct regular stud pair
+moves to the opening sides; any additional stud crossing the box is
+removed. Unaffected studs retain their marks. Top/bottom pieces fit between
+the side studs as a preview joint. Verify the clear opening stays empty,
+the four outward faces align, moved studs still fit the board and truss,
+and returning to no window restores the regular layout and backing.
 
 ## Gable backing added to the learned assembly
 

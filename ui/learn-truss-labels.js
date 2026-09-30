@@ -52,7 +52,16 @@ export function createTrussLabels(viewport,renderer) {
       for(const [text,dy,size,color,weight] of [[title,16,small?11:14,"#173b56",600],[sub,32,small?10:12,"#173b56",400],[footer,47,small?8.5:10,"#526879",400]])
         svg.appendChild(node("text",{x:x+9,y:y+dy,fill:color,"font-family":"IBM Plex Sans, sans-serif","font-size":size,"font-weight":weight},text));
     }
-    if(backing && t.backingMembers.length) {
+    const opening=t.windowOpening;
+    if(opening?.kind==="window" && !detail) {
+      const bottom=t.windowMembers.find(m=>m.side==="bottom"),top=t.windowMembers.find(m=>m.side==="top"),z=bottom.z1Ft;
+      const x0=bottom.bounds.x0Ft,x1=bottom.bounds.x1Ft,y0=bottom.bounds.y1Ft,y1=top.bounds.y0Ft;
+      dimension([x0,y0,z],[x1,y0,z],`${inches(opening.widthIn/12)} clear width`,-25);
+      dimension([x1,y0,z],[x1,y1,z],`${inches(opening.heightIn/12)} clear height`,-25);
+      card("Window box","2×4 · wide faces outward","sized to this opening",top.center,14,16);
+      const side=t.studMembers.find(m=>Math.abs(m.bounds.x1Ft-x0)<1e-7);
+      card("Gable stud","Moves to window side","crosspieces fit between",side?.center||bottom.center,w-cardW-14,h-72);
+    } else if(backing && t.backingMembers.length) {
       const piece=t.backingMembers[Math.floor(t.backingMembers.length/2)],b=piece.bounds,z=piece.z1Ft;
       const right=t.backingMembers.at(-1).bounds.x1Ft+.5;
       dimension([right,g.upperPlate.bounds.y1Ft,z],[right,b.y0Ft,z],"11″ · to backing bottom",16);
@@ -90,7 +99,9 @@ export function createTrussLabels(viewport,renderer) {
       card("Truss","2×4 · 1½″ × 3½″","longest edges measured",mid(a.upperLeftStart,a.upperLeftEnd),14,16);
       card("Gable studs","24″ on center","3½″ face outward",stud?.center||a.gableTop,w-cardW-14,h-72);
     }
-    svg.setAttribute("aria-label",backing && t.backingMembers.length
+    svg.setAttribute("aria-label",opening?.kind==="window" && !detail
+      ? `Window box: ${inches(opening.widthIn/12)} clear width by ${inches(opening.heightIn/12)} clear height. Gable studs at both sides, horizontal 2x4s at top and bottom, wide faces outward. Dimensions follow the selected opening.`
+      : backing && t.backingMembers.length
       ? "Gable backing: horizontal 2x4 pieces between gable studs, wide face outward. Bottom 11 inches above upper-plate top. Used only with no gable window or fake window."
       : detail
       ? `Truss connection: ${inches(t.projectionFt.start)} measured horizontally from the farthest truss tip to the cut end of the upper plate.`

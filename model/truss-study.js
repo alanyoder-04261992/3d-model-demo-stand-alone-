@@ -2,6 +2,7 @@
    ordinary designer's roof profile, spacing or connector defaults. */
 import { deepFreeze } from "./company.js";
 import { prismMember, polyArea, clipHalf, cleanPoly } from "../parts/floor-frame.js";
+import { trussWindowOpening, windowStudCenters } from "./truss-window.js";
 
 function positive(value, name) {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0)
@@ -58,7 +59,7 @@ function solveProfile(upper, lower, rise, tipX, depth) {
     innerPeak: [0, innerPeakY], innerKnee: [innerKneeX, innerKneeY], innerTip: [innerTipX, innerTipY] };
 }
 
-export function trussStudyPlan(plan, { truss = false } = {}) {
+export function trussStudyPlan(plan, { truss = false, windowOpening = null } = {}) {
   if (typeof truss !== "boolean") throw new Error("The truss preview needs an explicit boolean selection.");
   if (!truss) return plan;
   if (!plan.gableStudy || plan.wallStudy?.wall !== "end")
@@ -142,6 +143,7 @@ export function trussStudyPlan(plan, { truss = false } = {}) {
       "Derived slopes and stud cuts are a preview fit, not an approved shop cut list.",
     ],
   };
+  copy.trussStudy.windowOpening = trussWindowOpening(copy.trussStudy, windowOpening);
   return deepFreeze(copy);
 }
 
@@ -177,7 +179,7 @@ export function trussGableStudMembers(plan) {
   if (!plan.trussStudy) return [];
   const study = plan.trussStudy, p = study.profile, out = [];
   const width = study.studs.widthIn;
-  for (const [index, center] of study.studs.centersIn.entries()) {
+  for (const [index, center] of windowStudCenters(study).entries()) {
     const x0 = center - width / 2, x1 = center + width / 2;
     let poly = [[x0, study.studBaseIn], [x1, study.studBaseIn], [x1, study.peakRiseIn], [x0, study.peakRiseIn]];
     // Studs remain on the board, behind the truss. Provisional face joint:
@@ -189,7 +191,9 @@ export function trussGableStudMembers(plan) {
       throw new Error("A preview gable stud does not fit below the truss.");
     out.push(member(plan, "gable-stud", poly, study.studs.thicknessFt,
       { name: "Gable stud", size: study.studs.nominal, centerIn: center, layoutIndex: index,
-        wallDistanceIn: study.studs.wallDistancesIn[index],
+        wallDistanceIn: study.windowOpening?.kind === "window"
+          ? ((study.centerXFt - study.studs.layoutOriginXFt) * 12 + center) * study.studs.layoutDirection
+          : study.studs.wallDistancesIn[index],
         support: "bear", bearingOn: "gable-board", orientation: "broad-face-outward" }));
   }
   return out;

@@ -294,6 +294,13 @@ only with the opt-in truss lesson and the company’s `gableBacking` settings;
 its selected-end window/fake-window condition and actual stud-face gaps
 control the pieces. It shares stage `roof-frame`.
 
+The opt-in `gable-window-frame` entry follows it, also in `roof-frame`.
+Its two horizontals read the selected clear `trussStudy.windowOpening`;
+`gable-frame` supplies moved full-height side studs. Window dimensions are
+per design, resolved by `model/truss-window.js`, with validated optional
+auto-fit height. No window restores the regular marks and backing; a fake
+window omits backing without inventing a real opening.
+
 ### Openings (`parts/openings/`)
 
 `parts/openings/index.js` walks `plan.state.items` in array order exactly as

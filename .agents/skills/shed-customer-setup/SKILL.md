@@ -420,7 +420,10 @@ For a **real gable window**, Alan confirmed a different layout: move the
 gable studs to the two sides of the opening and add horizontal 2x4s above
 and below to form a box, all 3.5 in wide faces outward. Read the
 [gable-frame rule](../../../.claude/skills/part-gable-frame/SKILL.md#learned-rule-when-there-is-a-real-gable-window).
-Collect the clear framing opening size, location and height before a
-measured preview; catalogue window dimensions are not confirmation. The
-current lesson still shows the no-window case. Do not apply this new box
-rule to a fake window without Alan's confirmation.
+Use each selected window's clear framing opening and location as inputs;
+there is no fixed window size for the skill. Alan explicitly requested
+continuing with this reusable rule. The [adjustable window-box lesson](../../../learn.html) (`?step=truss&window=1`)
+starts with example dimensions and an auto-fit height that can be changed;
+these are not confirmed measurements for a product. Read its
+[part skill](../../../.claude/skills/part-gable-window-frame/SKILL.md).
+Do not apply the real-opening box to a fake window without confirmation.

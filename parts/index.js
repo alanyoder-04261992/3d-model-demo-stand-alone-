@@ -57,6 +57,7 @@ import floorDeck from "./floor-deck.js";
 import wallFrame from "./wall-frame.js";
 import gableFrame from "./gable-frame.js";
 import gableBacking from "./gable-backing.js";
+import gableWindowFrame from "./gable-window-frame.js";
 import roofFrame from "./roof-frame.js";
 import loft from "./loft.js";
 import roofDeck from "./roof-deck.js";
@@ -99,6 +100,7 @@ export const PIPELINE = Object.freeze([
   e("gable-frame",      gableFrame,     "parts/gable-frame.js",      true, "gable-frame",      ["gable-frame"]),
   e("roof-frame",       roofFrame,      "parts/roof-frame.js",       true, "roof-frame",       ["roof-frame"]),
   e("gable-backing",    gableBacking,   "parts/gable-backing.js",    true, "gable-backing",    ["gable-backing"]),
+  e("gable-window-frame", gableWindowFrame, "parts/gable-window-frame.js", true, "gable-window-frame", ["gable-window-frame"]),
   e("loft",             loft,           "parts/loft.js",             true, "loft",             ["loft"]),
   e("roof-deck",        roofDeck,       "parts/roof-deck.js",        true, "roof-deck",        ["roof-deck"]),
   e("dormer-frame",     dormerFrame,    "parts/dormer-frame.js",     true, "dormer-frame",     ["dormer-frame"]),

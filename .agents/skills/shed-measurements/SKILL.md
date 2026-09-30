@@ -60,8 +60,11 @@ trim bounds do not establish those framing dimensions. Then:
 These are reusable relationships, not confirmed window dimensions. Do not
 inherit the 11 in backing offset, force a window onto the 24 in stud marks,
 or scale a fixed window with the shed width. Check the complete box fits
-between the gable board and truss. The measured window example and its
-geometry are pending the opening dimensions/placement. The fake-window
+between the gable board and truss. Alan clarified that dimensions vary per
+window: implement and reuse the formulas without blocking on one fixed
+example. The [window-box skill](../../../.claude/skills/part-gable-window-frame/SKILL.md)
+describes the adjustable lesson, selected height and labeled auto-fit option.
+The fake-window
 box rule remains unconfirmed; both real and fake windows already exclude
 ordinary gable backing on the same end.
 

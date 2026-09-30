@@ -1,6 +1,7 @@
 /* Visible measurements and anchors read the same polygons the preview draws. */
 import { trussStudyMembers, trussGableStudMembers } from "./truss-study.js";
 import { gableBackingRule, gableBackingMembers } from "../parts/gable-backing.js";
+import { gableWindowFrameMembers } from "../parts/gable-window-frame.js";
 
 function record(member) {
   const poly = member.poly.map(p => [p[0] + member.origin[0], p[1] + member.origin[1]]);
@@ -25,7 +26,8 @@ export function trussStudyMeasurements(plan) {
   const study = plan.trussStudy, p = study.profile;
   const trussMembers = trussStudyMembers(plan).map(record), studMembers = trussGableStudMembers(plan).map(record);
   const backingRule = gableBackingRule(plan), backingMembers = gableBackingMembers(plan).map(record);
-  const members = [...trussMembers, ...studMembers, ...backingMembers];
+  const windowMembers = gableWindowFrameMembers(plan).map(record), windowOpening = study.windowOpening;
+  const members = [...trussMembers, ...studMembers, ...backingMembers, ...windowMembers];
   const bounds = Object.fromEntries(["x", "y", "z"].flatMap(axis => [
     [axis + "0Ft", Math.min(...members.map(m => m.bounds[axis + "0Ft"]))],
     [axis + "1Ft", Math.max(...members.map(m => m.bounds[axis + "1Ft"]))],
@@ -35,13 +37,13 @@ export function trussStudyMeasurements(plan) {
     [study.centerXFt + xIn / 12, study.baseYFt + yIn / 12, z];
   const left = point => at(-point[0], point[1]), right = point => at(...point);
   const plateFaceZ = plan.wallStudy.floorBounds.z0Ft + plan.wallStudy.plates.depthFt;
-  return { name: study.name, wall: "end", preview: true, members, trussMembers, studMembers, backingMembers, backingRule, bounds,
+  return { name: study.name, wall: "end", preview: true, members, trussMembers, studMembers, backingMembers, backingRule, windowMembers, windowOpening, bounds,
     upperLengthFt: study.upperLengthFt, lowerLengthFt: study.lowerLengthFt, peakRiseFt: study.peakRiseFt,
     projectionFt: { start: study.projectionFt, end: study.projectionFt }, outerSpanFt: study.outerSpanFt,
     baseYFt: study.baseYFt, topYFt: study.topYFt, upperAngleDeg: p.upperAngle * 180 / Math.PI,
     lowerAngleDeg: p.lowerAngle * 180 / Math.PI, studSpacingFt: study.studs.spacingFt,
     studFirstCenterFt: study.studs.firstCenterFt, studLayoutFrom: study.studs.layoutFrom,
-    studWallDistancesFt: study.studs.wallDistancesIn.map(value => value / 12),
+    studWallDistancesFt: studMembers.map(m => m.member.meta.wallDistanceIn / 12),
     anchors: { peak: at(...p.peak), upperPlateTop: at(0, 0, plateFaceZ),
       gableTop: at(0, study.studBaseIn, study.boardFrontZFt), leftTip: left(p.tip), rightTip: right(p.tip),
       leftLowestTip: left(p.innerTip), rightLowestTip: right(p.innerTip),

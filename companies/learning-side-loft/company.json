@@ -70,6 +70,7 @@
   },
   "construction": {
     "trussStudy": {
+      "windowExample": { "widthIn": 18, "heightIn": 24, "status": "illustrative-adjustable-opening" },
       "chord": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5 },
       "upperLengthIn": 54, "lowerLengthIn": 37.75, "peakRiseIn": 48, "projectionIn": 6.25,
       "placement": "against-gable-inner-face", "peakDatum": "upper-plate-top", "lowestTipDatum": "upper-plate-top",
