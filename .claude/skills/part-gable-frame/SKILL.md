@@ -118,8 +118,11 @@ length. Mirroring it at both ends remains provisional; this gives
 long, on edge above the upper plate, with its 0.5 in inside ledge and
 2.5 in projections unchanged.
 
-Square tail cuts and shared knee/peak miters remain preview assumptions.
-Solve the slopes with the lowest square-cut corner at the plate datum;
+Alan’s later blue line confirms that the **whole bottom cut of the truss
+is level with the gable-board bottom**, which is the upper-plate top.
+Both corners of that cut use the same elevation. This replaces the earlier
+square-to-stock tail assumption; shared knee/peak miters remain provisional.
+Solve the slopes from the farthest tail point on that horizontal datum;
 do not impose the superseded gable-board top-corner bearing constraint.
 Place the truss's back face against the board's shown face, with no solid
 overlap. Do not add a notch or infer a fastening schedule.

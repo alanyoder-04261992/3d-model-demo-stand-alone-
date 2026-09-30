@@ -126,7 +126,8 @@ is still an assumption to check, yielding `113 + 6.25 + 6.25 = 125.5 in`
 overall. Its calculated slope angles are not confirmed shop saw settings.
 The corrected truss is against the board’s shown front face, with its
 lowest tips level with the upper-plate top. The 48 in rise starts at the
-upper-plate top. Square tail cuts and knee/peak miters remain fit assumptions. The preview gable studs use 2x4s
+upper-plate top. Alan’s blue line also confirms a level bottom cut across the
+whole truss end, aligned with the gable-board bottom. Knee/peak miters remain fit assumptions. The preview gable studs use 2x4s
 with their 3 1/2 in faces across the gable and a center stud under the peak,
 then 24 in steps each way; their section and exact origin are not confirmed.
 Their tops are previewed behind the truss face, clipped to the outer roof

@@ -92,7 +92,8 @@ remain unconfirmed. He confirmed **2x4 truss lumber** and supplied
 54 in for the upper piece leading to the peak and 37 3/4 in for the lower,
 steeper piece, measured at the longest points. The peak is 4 ft (48 in)
 above the upper-plate top, and the lowest truss tips are level with that
-same top (Alan’s September 29 correction). His annotated photograph resolves the separate
+same top (Alan’s September 29 correction). His later blue line confirms
+that the entire bottom cut is level with the gable-board bottom. His annotated photograph resolves the separate
 **6 1/4 in** dimension: along the end wall from the **upper plate's cut end
 to the outermost truss tip**. The current `?step=truss` view adds four
 sloping pieces and the gable studs for review; the

@@ -89,9 +89,13 @@ for (const [kind, expected] of [["truss-upper", 54], ["truss-lower", 37.75]]) {
     near(chord.t * 12, 1.5, "board thickness through gable depth");
     if (kind === "truss-lower") {
       const tail = inner.reduce((best, p) => distance(p, a) < distance(best, a) ? p : best);
-      near(distance(a, tail), 3.5, "tail cut spans full stock depth");
-      near((tail[0] - a[0]) * (b[0] - a[0]) + (tail[1] - a[1]) * (b[1] - a[1]), 0,
-        "provisional tail cut is square to the member");
+      for (const point of [a, tail]) {
+        near(point[1] / 12 + chord.origin[1], gm.board.bounds.y0Ft,
+          "both ends of the full bottom cut align with gable-board bottom");
+        near(point[1] / 12 + chord.origin[1], gm.upperPlate.bounds.y1Ft,
+          "entire tail cut is level with upper-plate top");
+      }
+      assert.ok(distance(a, tail) > 3.5, "level cut crosses the sloped stock at an angle");
     }
   }
   for (const p of inches(pair[0])) assert.ok(inches(pair[1]).some(q => pointsMatch([-p[0], p[1]], q)),
@@ -129,17 +133,17 @@ for (const stud of studs) {
   assert.ok(chords.some(chord => intersectionArea(poly, inches(chord)) > 0), "stud top has back-face contact area");
 }
 assert.equal(inches(studs[2]).length, 5, "center stud receives both peak bevels");
-for (const key of ["mirror", "tailCut", "mitres", "studSection", "studFace", "studLayoutOrigin", "studTopFit"])
+for (const key of ["mirror", "mitres", "studSection", "studFace", "studLayoutOrigin", "studTopFit"])
   assert.equal(m.status[key], "provisional", `${key} is not presented as a confirmed shop rule`);
 assert.equal(m.status.slopes, "derived-from-preview-assumptions");
 assert.equal(m.status.studLengths, "derived-from-preview-assumptions");
-for (const key of ["peakDatum", "lowestTipDatum", "trussPlacement", "depthAlignment"])
+for (const key of ["peakDatum", "lowestTipDatum", "trussPlacement", "depthAlignment", "tailCut"])
   assert.equal(m.status[key], "confirmed", `${key} was corrected by Alan`);
 for (const change of [raw => raw.upperLengthIn = 0, raw => raw.lowerLengthIn = NaN,
   raw => raw.peakRiseIn = 500, raw => raw.projectionIn = 1, raw => raw.chord.depthIn = 1,
   raw => raw.chord.thicknessIn = 4, raw => raw.studs.spacingIn = 3.5, raw => raw.studs.thicknessIn = 2,
   raw => raw.placement = "on-gable-top", raw => raw.peakDatum = "gable-top", raw => raw.lowestTipDatum = "gable-top",
-  raw => raw.tailCut = "level", raw => raw.layout = "asymmetric",
+  raw => raw.tailCut = "square-to-member", raw => raw.layout = "asymmetric",
   raw => raw.studs.layoutOrigin = "end", raw => raw.studs.orientation = "edge-outward"]) {
   const invalid = structuredClone(gable); change(invalid.construction.trussStudy);
   assert.throws(() => trussStudyPlan(invalid, { truss: true }));
