@@ -172,7 +172,7 @@ upper-plate top**. The **48 in peak height starts at that same upper-plate
 top**, not the gable-board top. Thus the peak is `79.5 + 48 = 127.5 in`
 above flooring, or `48 - 5.5 = 42.5 in` above the gable board.
 
-The truss is actual **1.5 x 3.5 in** (nominal 2x4). Keep the **54 in upper**
+For the **10-wide example**, the truss is actual **1.5 x 3.5 in** (nominal 2x4). Keep the **54 in upper**
 and **37.75 in lower** longest-point lengths. The **6.25 in** projection
 runs along the wall from the **upper-plate cut end to the farthest truss
 tip**. It is a separate horizontal dimension, not the height or a sloping
@@ -229,7 +229,12 @@ species, grade, fasteners and lengthwise truss spacing remain unspecified.
 [model/truss-study.js](../../../model/truss-study.js) explicitly enables
 the preview; this part adds `trussGableStudMembers(plan)` to its existing
 gable board. `trussStudyMeasurements` supplies matching member dimensions
-and anchors. Run `node tools/check-truss-lesson.mjs` and inspect
+and anchors. For other widths, use the measurement skill's
+[loft size rules](../../../.agents/skills/shed-measurements/SKILL.md#learned-loft-truss-size-rules):
+12-wide is actually 134 in, its upper pieces are 54 in, and 8-wide upper
+pieces are 34 in; both retain 37.75 in lower pieces. Rebuild walls and board
+from actual width. New heights and projections remain unspecified.
+Run `node tools/check-truss-lesson.mjs` and inspect
 [the truss picture page](../../../truss.html). Keep `?step=gable` board-only,
 the earlier lessons and the ordinary finished geometry unchanged. Keep
 the original photos private.

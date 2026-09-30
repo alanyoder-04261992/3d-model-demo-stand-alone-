@@ -10,6 +10,24 @@ function positive(value, name) {
   return value;
 }
 
+/* Select shop measurements by the size's sales label, never by its narrower
+   actual frame width. Missing measurements stay missing rather than being
+   silently copied from the 10-wide lesson. */
+export function trussSizeRule(plan) {
+  const raw = plan.construction?.trussStudy;
+  if (!raw) throw new Error("The truss preview needs construction.trussStudy measurements.");
+  if (!raw.byNominalWidthFt) return raw;
+  const nominalWidthFt = positive(Number(String(plan.state?.size).split("x")[0]), "nominalWidthFt");
+  const rule = raw.byNominalWidthFt[String(nominalWidthFt)];
+  if (!rule) throw new Error(`No learned truss measurements for the ${nominalWidthFt}-wide size; do not interpolate cut lengths.`);
+  const reference = nominalWidthFt === raw.referenceNominalWidthFt;
+  return { nominalWidthFt, actualWidthIn: rule.actualWidthIn,
+    upperLengthIn: reference ? raw.upperLengthIn : rule.upperLengthIn,
+    lowerLengthIn: reference ? raw.lowerLengthIn : rule.lowerLengthIn,
+    peakRiseIn: reference ? raw.peakRiseIn : rule.peakRiseIn,
+    projectionIn: reference ? raw.projectionIn : rule.projectionIn };
+}
+
 /* Fit the long outer edges between the plate datum and peak. The entire
    tail cut is level with the gable-board bottom / upper-plate top.
    The truss is against the front face of the board.
@@ -66,15 +84,23 @@ export function trussStudyPlan(plan, { truss = false, windowOpening = null } = {
     throw new Error("The truss preview needs the measured gable board and end wall first.");
   const raw = plan.construction?.trussStudy;
   if (!raw) throw new Error("The truss preview needs construction.trussStudy measurements.");
+  const size = trussSizeRule(plan);
+  if (raw.byNominalWidthFt) {
+    if (size.actualWidthIn == null || size.peakRiseIn == null || size.projectionIn == null)
+      throw new Error(`The ${size.nominalWidthFt}-wide truss lengths are recorded; confirm its actual width, peak height and tip projection before fitting a complete truss.`);
+    const actualWidthIn = (plan.wallStudy.floorBounds.x1Ft - plan.wallStudy.floorBounds.x0Ft) * 12;
+    if (Math.abs(actualWidthIn - size.actualWidthIn) > 1e-8)
+      throw new Error(`The ${size.nominalWidthFt}-wide frame must use its ${size.actualWidthIn}-inch actual width before fitting the truss.`);
+  }
   if (raw.placement !== "against-gable-inner-face" || raw.peakDatum !== "upper-plate-top" ||
       raw.lowestTipDatum !== "upper-plate-top" || raw.tailCut !== "level-with-gable-bottom" || raw.layout !== "mirrored-about-center")
     throw new Error("The truss preview needs its face placement, plate datums, tail cut and mirrored layout.");
   const thicknessIn = positive(raw.chord?.thicknessIn, "chord.thicknessIn");
   const depthIn = positive(raw.chord?.depthIn, "chord.depthIn");
-  const upperLengthIn = positive(raw.upperLengthIn, "upperLengthIn");
-  const lowerLengthIn = positive(raw.lowerLengthIn, "lowerLengthIn");
-  const peakRiseIn = positive(raw.peakRiseIn, "peakRiseIn");
-  const projectionIn = positive(raw.projectionIn, "projectionIn");
+  const upperLengthIn = positive(size.upperLengthIn, "upperLengthIn");
+  const lowerLengthIn = positive(size.lowerLengthIn, "lowerLengthIn");
+  const peakRiseIn = positive(size.peakRiseIn, "peakRiseIn");
+  const projectionIn = positive(size.projectionIn, "projectionIn");
   const widthIn = positive(raw.studs?.widthIn, "studs.widthIn");
   const studThicknessIn = positive(raw.studs?.thicknessIn, "studs.thicknessIn");
   const spacingIn = positive(raw.studs?.spacingIn, "studs.spacingIn");

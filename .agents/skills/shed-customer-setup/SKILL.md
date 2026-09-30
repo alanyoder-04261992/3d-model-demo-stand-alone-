@@ -14,6 +14,10 @@ For a different building size or an explanation of how the measurements
 were calculated, use [Shed measurements](../shed-measurements/SKILL.md).
 It separates reusable formulas from this example's fixed dimensions and
 records the settings that must be reconsidered together when resizing.
+For Alan's loft sizes, 12-wide means an actual 134-inch width (11 ft 2 in).
+Use the measurement skill's discrete truss table: upper 34 in for 8-wide,
+54 in for 10/12-wide, lower 37.75 in for all three. Other widths do not
+inherit the 10-wide peak height.
 
 ## Choose what is being set up
 
