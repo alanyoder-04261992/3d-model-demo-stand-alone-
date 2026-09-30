@@ -39,7 +39,12 @@ the `faux-loft` draw trait. A fake window still suppresses this backing
 even though it is not a physical opening. A window on the opposite gable
 or an ordinary wall window below this gable does not suppress it here.
 The current lesson models end `B`. Window framing is a separate lesson;
-this rule only controls the backing.
+this rule only controls the backing. Alan's subsequently confirmed
+[real-window framing rule](../part-gable-frame/SKILL.md#learned-rule-when-there-is-a-real-gable-window)
+moves studs to the window sides and adds top/bottom 2x4s, all wide faces
+outward. Its opening dimensions are still pending. Do not reuse the
+11 in backing offset as the window height or extend the box rule to fake
+windows without confirmation.
 
 ## Where it came from in Barnwright
 

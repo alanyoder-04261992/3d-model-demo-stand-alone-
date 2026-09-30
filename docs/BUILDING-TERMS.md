@@ -340,3 +340,18 @@ stud centers and 3.5 in outward faces, each clear piece is a calculated
 condition and name are confirmed; lengths and count follow the actual layout.
 See [the close-up](../images/gable-backing.png) and
 [reusable part skill](../.claude/skills/part-gable-backing/SKILL.md).
+
+## Box around a real gable window — confirmed construction rule
+
+Alan described moving the **gable studs** to the two sides of a window
+and adding horizontal **2x4s** above and below to form a **box**. He then
+confirmed all four 3.5 in wide faces point outward, matching the gable
+studs (actual stock 1.5 x 3.5 in). Keep his wording; separate names for
+the horizontal pieces have not been agreed.
+
+The window opening determines these stud positions instead of regular
+24 in marks. This gable has no ordinary 11 in gable backing. Clear opening
+dimensions, placement and board-end joints are pending; this rule is
+recorded in the [gable-frame skill](../.claude/skills/part-gable-frame/SKILL.md#learned-rule-when-there-is-a-real-gable-window),
+but the current picture still shows the no-window assembly. Framing for a
+fake window is not established by this real-window rule.

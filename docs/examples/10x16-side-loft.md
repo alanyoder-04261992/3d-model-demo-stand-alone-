@@ -699,3 +699,18 @@ The [backing close-up](../../images/gable-backing.png) shows the actual datum;
 [its skill](../../.claude/skills/part-gable-backing/SKILL.md) explains reuse at
 another size and per-gable window/fake-window exclusion. No fastening or
 treatment specification was added.
+
+## Real gable window — next framing rule
+
+Alan confirmed that when a real window is in the gable, the gable studs
+move to its two sides. Horizontal 2x4s above and below form a box. All four
+members have their 3.5 in wide faces outward, with actual thickness 1.5 in.
+The opening takes priority over the normal 24 in stud marks, and this end
+does not get the ordinary 11 in gable backing.
+
+The rule is saved in [gable framing](../../.claude/skills/part-gable-frame/SKILL.md#learned-rule-when-there-is-a-real-gable-window).
+No measured window example has been drawn yet: clear opening width/height,
+position and bottom elevation are pending, as is the exact board-end joint.
+The catalogue's 18x24 entry is not confirmation of this example's opening.
+Do not carry the backing's 11 in height into the window box. Fake-window
+framing remains to learn. The existing no-window lesson is unchanged.
