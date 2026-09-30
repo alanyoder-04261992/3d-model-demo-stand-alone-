@@ -32,17 +32,19 @@ export function trussStudyMeasurements(plan) {
   const at = (xIn, yIn, z = study.centerZFt + study.chord.thicknessFt / 2) =>
     [study.centerXFt + xIn / 12, study.baseYFt + yIn / 12, z];
   const left = point => at(-point[0], point[1]), right = point => at(...point);
+  const plateFaceZ = plan.wallStudy.floorBounds.z0Ft + plan.wallStudy.plates.depthFt;
   return { name: study.name, wall: "end", preview: true, members, trussMembers, studMembers, bounds,
     upperLengthFt: study.upperLengthFt, lowerLengthFt: study.lowerLengthFt, peakRiseFt: study.peakRiseFt,
     projectionFt: { start: study.projectionFt, end: study.projectionFt }, outerSpanFt: study.outerSpanFt,
     baseYFt: study.baseYFt, topYFt: study.topYFt, upperAngleDeg: p.upperAngle * 180 / Math.PI,
     lowerAngleDeg: p.lowerAngle * 180 / Math.PI, studSpacingFt: study.studs.spacingFt,
-    anchors: { peak: at(...p.peak), gableTop: at(0, 0), leftTip: left(p.tip), rightTip: right(p.tip),
-      leftPlateCut: at(-study.plateHalfSpanFt * 12, -plan.gableStudy.board.heightIn),
-      rightPlateCut: at(study.plateHalfSpanFt * 12, -plan.gableStudy.board.heightIn),
+    anchors: { peak: at(...p.peak), upperPlateTop: at(0, 0, plateFaceZ),
+      gableTop: at(0, study.studBaseIn, study.boardFrontZFt), leftTip: left(p.tip), rightTip: right(p.tip),
+      leftLowestTip: left(p.innerTip), rightLowestTip: right(p.innerTip),
+      leftPlateCut: at(-study.plateHalfSpanFt * 12, 0, plateFaceZ),
+      rightPlateCut: at(study.plateHalfSpanFt * 12, 0, plateFaceZ),
       upperLeftStart: left(p.knee), upperLeftEnd: left(p.peak), lowerLeftStart: left(p.tip), lowerLeftEnd: left(p.knee),
       upperRightStart: right(p.knee), upperRightEnd: right(p.peak), lowerRightStart: right(p.tip), lowerRightEnd: right(p.knee),
-      leftBearing: at(-study.bearingHalfSpanFt * 12, 0), rightBearing: at(study.bearingHalfSpanFt * 12, 0),
-      studCenters: studMembers.map(m => [m.center[0], study.baseYFt, m.z1Ft]) },
+      studCenters: studMembers.map(m => [m.center[0], study.studBaseYFt, m.z1Ft]) },
     status: study.status, assumptionNotes: study.assumptionNotes.slice() };
 }

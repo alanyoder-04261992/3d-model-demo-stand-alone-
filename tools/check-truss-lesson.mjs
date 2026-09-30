@@ -52,7 +52,21 @@ assert.equal(chords.length, 4, "two upper and two lower pieces");
 assert.deepEqual(studs.map(s => s.meta.centerIn), [-48, -24, 0, 24, 48], "centered 24-inch stud layout");
 near(gable.gableStudy.range.lengthFt * 12, 118, "confirmed gable board span");
 near(plan.wallStudy.upperPlateRange.lengthFt * 12, 113, "projection datum is the upper plate cut span");
-near((m.anchors.peak[1] - m.anchors.gableTop[1]) * 12, 48, "peak above board top");
+near((m.anchors.peak[1] - m.anchors.upperPlateTop[1]) * 12, 48, "peak above upper-plate top");
+near((m.anchors.peak[1] - m.anchors.gableTop[1]) * 12, 42.5, "peak is only 42.5 inches above board");
+near((m.anchors.peak[1] - wall.wallStudy.floorBounds.y1Ft) * 12, 127.5, "correct peak above flooring");
+const gm = gableStudyMeasurements(plan), boardFront = gm.board.bounds.z1Ft;
+for (const chord of m.trussMembers) near(chord.z0Ft, boardFront, "truss back touches shown board face");
+for (const stud of m.studMembers) {
+  near(stud.z1Ft, boardFront, "stud remains behind the truss");
+  near(stud.bounds.y0Ft, gm.board.bounds.y1Ft, "stud still sits on board top");
+}
+for (const tip of [m.anchors.leftLowestTip, m.anchors.rightLowestTip])
+  near(tip[1], gm.upperPlate.bounds.y1Ft, "lowest tip level with actual plate top");
+for (const cut of [m.anchors.leftPlateCut, m.anchors.rightPlateCut]) {
+  near(cut[1], gm.upperPlate.bounds.y1Ft, "plate anchor uses real top");
+  near(cut[2], gm.upperPlate.bounds.z1Ft, "plate anchor stays on its face");
+}
 near((m.anchors.rightTip[0] - m.anchors.rightPlateCut[0]) * 12, 6.25, "right horizontal projection");
 near((m.anchors.leftPlateCut[0] - m.anchors.leftTip[0]) * 12, 6.25, "provisionally mirrored left projection");
 near((m.bounds.x1Ft - m.bounds.x0Ft) * 12, 125.5, "actual outside tip span");
@@ -60,7 +74,8 @@ near(m.topYFt - m.baseYFt, 4, "visible measurement rise");
 for (const record of m.trussMembers) {
   near(record.widthFt * 12, 3.5, "measurement record keeps actual face width");
   near(record.depthFt * 12, 1.5, "measurement record keeps through-gable thickness");
-  assert.equal(record.member.meta.bearingOn, record.kind === "truss-lower" ? "gable-board" : undefined);
+  assert.equal(record.member.meta.bearingOn, undefined, "truss no longer claims top bearing on board");
+  assert.equal(record.member.meta.againstFaceOf, record.kind === "truss-lower" ? "gable-board" : undefined);
 }
 for (const [kind, expected] of [["truss-upper", 54], ["truss-lower", 37.75]]) {
   const pair = chords.filter(c => c.kind === kind);
@@ -86,21 +101,22 @@ for (const side of ["left", "right"]) {
   const upper = inches(chords.find(c => c.kind === "truss-upper" && c.meta.side === side));
   const lower = inches(chords.find(c => c.kind === "truss-lower" && c.meta.side === side));
   assert.equal(upper.filter(p => lower.some(q => pointsMatch(p, q))).length, 2, "knee cut is a shared full-depth edge");
-  const bearing = [side === "left" ? -59 : 59, 0];
-  assert.ok(lower.some((p, i) => lineDistance(bearing, p, lower[(i + 1) % lower.length]) < 1e-8 &&
-    distance(p, bearing) + distance(bearing, lower[(i + 1) % lower.length]) <= distance(p, lower[(i + 1) % lower.length]) + 1e-8),
-    "plain lower edge touches the actual board corner");
+  assert.ok(intersectionArea(lower, [[-59, 0], [59, 0], [59, 5.5], [-59, 5.5]]) > 0,
+    "lower truss overlaps board in elevation for front-face contact");
 }
-const boardPoly = [[-59, -5.5], [59, -5.5], [59, 0], [-59, 0]];
+const boardPoly = [[-59, 0], [59, 0], [59, 5.5], [-59, 5.5]];
 for (let i = 0; i < members.length; i++) {
   const poly = inches(members[i]);
   assert.ok(polyArea(poly) > 0, "each prism has positive polygon winding");
-  near(intersectionArea(poly, boardPoly), 0, "member does not intersect gable board solid");
-  for (let j = i + 1; j < members.length; j++) near(intersectionArea(poly, inches(members[j])), 0,
-    "studs and chords touch without solid overlap");
+  if (members[i].kind === "gable-stud") near(intersectionArea(poly, boardPoly), 0, "stud stays above board");
+  for (let j = i + 1; j < members.length; j++) {
+    const a=members[i], b=members[j];
+    const sharedDepth=Math.max(0,Math.min(a.origin[2]+a.t,b.origin[2]+b.t)-Math.max(a.origin[2],b.origin[2]));
+    near(intersectionArea(poly, inches(b))*sharedDepth, 0, "members have no 3D solid overlap");
+  }
 }
 for (const stud of studs) {
-  const poly = inches(stud), bottom = poly.filter(p => Math.abs(p[1]) < 1e-8), top = poly.filter(p => p[1] > 1e-8);
+  const poly = inches(stud), bottom = poly.filter(p => Math.abs(p[1]-5.5) < 1e-8), top = poly.filter(p => p[1] > 5.5+1e-8);
   assert.equal(bottom.length, 2, "full-width bottom bears on board top");
   near(distance(...bottom), 3.5, "outward stud face is 3.5 inches wide");
   near(stud.t * 12, 1.5, "turned stud is 1.5 inches deep");
@@ -108,18 +124,22 @@ for (const stud of studs) {
     assert.ok(chords.some(chord => inches(chord).some((a, i, poly) =>
       lineDistance(p, a, poly[(i + 1) % poly.length]) < 1e-8 &&
       distance(a, p) + distance(p, poly[(i + 1) % poly.length]) <= distance(a, poly[(i + 1) % poly.length]) + 1e-8)),
-    "every top cut point meets an actual chord underside");
+    "preview top cuts follow the roof outline behind the truss");
   }
+  assert.ok(chords.some(chord => intersectionArea(poly, inches(chord)) > 0), "stud top has back-face contact area");
 }
 assert.equal(inches(studs[2]).length, 5, "center stud receives both peak bevels");
-for (const key of ["mirror", "bearing", "tailCut", "mitres", "depthAlignment", "studSection", "studFace", "studLayoutOrigin"])
+for (const key of ["mirror", "tailCut", "mitres", "studSection", "studFace", "studLayoutOrigin", "studTopFit"])
   assert.equal(m.status[key], "provisional", `${key} is not presented as a confirmed shop rule`);
 assert.equal(m.status.slopes, "derived-from-preview-assumptions");
 assert.equal(m.status.studLengths, "derived-from-preview-assumptions");
+for (const key of ["peakDatum", "lowestTipDatum", "trussPlacement", "depthAlignment"])
+  assert.equal(m.status[key], "confirmed", `${key} was corrected by Alan`);
 for (const change of [raw => raw.upperLengthIn = 0, raw => raw.lowerLengthIn = NaN,
   raw => raw.peakRiseIn = 500, raw => raw.projectionIn = 1, raw => raw.chord.depthIn = 1,
-  raw => raw.chord.thicknessIn = 2, raw => raw.studs.spacingIn = 3.5, raw => raw.studs.thicknessIn = 2,
-  raw => raw.bearing = "unknown", raw => raw.tailCut = "level", raw => raw.layout = "asymmetric",
+  raw => raw.chord.thicknessIn = 4, raw => raw.studs.spacingIn = 3.5, raw => raw.studs.thicknessIn = 2,
+  raw => raw.placement = "on-gable-top", raw => raw.peakDatum = "gable-top", raw => raw.lowestTipDatum = "gable-top",
+  raw => raw.tailCut = "level", raw => raw.layout = "asymmetric",
   raw => raw.studs.layoutOrigin = "end", raw => raw.studs.orientation = "edge-outward"]) {
   const invalid = structuredClone(gable); change(invalid.construction.trussStudy);
   assert.throws(() => trussStudyPlan(invalid, { truss: true }));
@@ -128,4 +148,4 @@ const missing = structuredClone(gable); delete missing.construction.trussStudy;
 assert.throws(() => trussStudyPlan(missing, { truss: true }), /measurements/);
 const asymmetric = structuredClone(wall); asymmetric.construction.gableStudy.endProjectionIn.end = 2;
 assert.throws(() => trussStudyPlan(gableStudyPlan(asymmetric, { gable: true }), { truss: true }), /centered/);
-console.log("PROVED: explicit preview, unchanged ordinary model, 54/37.75-inch long edges, true 3.5-inch normal depth, 48-inch rise, 6.25-inch plate-cut projections, mirrored mitres and square tails, corner bearing without overlap, and five fitted 24-inch-center gable studs; provisional cuts remain labeled.");
+console.log("PROVED: unchanged ordinary model; 54/37.75-inch pieces at true 3.5-inch depth; truss against the board front face with lowest tips at plate top; peak 48 inches above upper plate and 127.5 above flooring; 6.25-inch projections; studs on the board with provisional face joints and no solid overlap.");

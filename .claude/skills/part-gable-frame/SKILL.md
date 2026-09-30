@@ -35,7 +35,8 @@ Derive dimensions from the actual supporting upper plate, never a second
   The current outer ledge is a derived **1 1/2 in**, from `3.5 - 0.5 - 1.5`.
 
 Alan named it **gable board** and confirmed it is **nailed to the upper
-plate**, with the **truss sitting on top of the gable board**. Nail
+plate**. His September 29 correction places the **truss against the board’s
+front face**, with its lowest tips level with the upper-plate top. Nail
 size/count/spacing, treatment, species and grade remain unconfirmed.
 Do not inherit the floor timber's treatment.
 Show varied wood grain as a visual finish without treating it as a material
@@ -100,36 +101,39 @@ and geometry checks.
 
 ## Truss and gable studs: opt-in fit preview
 
-On September 28, Alan described the **studs in the gable end** as “turned
-outward,” seated on the gable board and **2 ft (24 in) on center**. The
-preview at `learn.html?company=learning-side-loft&step=truss` adds them and
-the truss to the existing board. It assumes actual 1 1/2 x 3 1/2 in studs,
-with the broad face outward and their depth centered on the gable board.
-One center is under the peak; the others are at +/-24 and +/-48 in.
-Their section, exact face interpretation and centered layout remain
-provisional. Derive top cuts from the actual truss underside, checking the
-full stud width. These derived cuts are provisional, not a shop cut list.
-Do not copy the ordinary model's orientation, 16 in grid or doubled-stud
-rule. The confirmed 24 in applies only to the gable studs, not to spacing
-between trusses along the building.
+Alan's September 29 correction supersedes the earlier top-bearing fit:
+**the truss goes against the broad face of the gable board facing the
+viewer in the connection picture** (the room-facing face in this model).
+He explicitly confirmed that the **lowest truss tip is level with the
+upper-plate top**. The **48 in peak height starts at that same upper-plate
+top**, not the gable-board top. Thus the peak is `79.5 + 48 = 127.5 in`
+above flooring, or `48 - 5.5 = 42.5 in` above the gable board.
 
-He confirmed nominal **2x4 truss lumber**, actual **1 1/2 x 3 1/2 in**,
-with current longest-point member lengths of **54 in for the upper piece
-leading to the peak** and **37 3/4 in for the lower, steeper piece**.
-He confirmed the peak is **4 ft (48 in) above the top of the gable board**,
-measured to the peak's highest point. With the board top at 85 in above
-flooring, this gives a derived peak elevation of **133 in above flooring**.
-His annotated photo resolves the **6 1/4 in** as outward **along the end
-wall from the upper plate's cut end to the farthest truss tip**. Mirroring
-it at both ends is a preview assumption. The gable board's confirmed
-118 in length, 1/2 in inside ledge and 2 1/2 in end projections stay intact.
+The truss is actual **1.5 x 3.5 in** (nominal 2x4). Keep the **54 in upper**
+and **37.75 in lower** longest-point lengths. The **6.25 in** projection
+runs along the wall from the **upper-plate cut end to the farthest truss
+tip**. It is a separate horizontal dimension, not the height or a sloping
+length. Mirroring it at both ends remains provisional; this gives
+`113 + 6.25 + 6.25 = 125.5 in` tip-to-tip. The gable board remains 118 in
+long, on edge above the upper plate, with its 0.5 in inside ledge and
+2.5 in projections unchanged.
 
-The preview assumes a plain lower underside touching the gable board's
-outer top corner, square tail cuts and shared knee/peak miters. Bearing
-agreement is still pending, and the derived slopes and cuts remain
-provisional. See [roof framing](../part-roof-frame/SKILL.md) for the fit
-rules, inputs and picture workflow; its ordinary model defaults do not
-confirm this learned assembly.
+Square tail cuts and shared knee/peak miters remain preview assumptions.
+Solve the slopes with the lowest square-cut corner at the plate datum;
+do not impose the superseded gable-board top-corner bearing constraint.
+Place the truss's back face against the board's shown face, with no solid
+overlap. Do not add a notch or infer a fastening schedule.
+
+Gable studs remain **on the gable board**, turned outward, **24 in on
+center**. Their 2x4 section, centered layout and exact top fit remain
+provisional. The preview puts their fronts against the truss backs and
+clips their tops to the outer roof outline, giving a face joint behind
+the truss. This replaces the earlier coplanar underside joint; it is not
+a confirmed stud cut list. Show this fit choice for Alan to check.
+
+Preserve the earlier lessons and ordinary finished model. Keep original
+photos private; do not derive lengths or angles from pixels. Treatment,
+species, grade, fasteners and lengthwise truss spacing remain unspecified.
 
 `trussStudyPlan(gablePlan, { truss: true })` in
 [model/truss-study.js](../../../model/truss-study.js) explicitly enables

@@ -156,12 +156,12 @@ def render_truss():
     assert abs(m['lowerLengthFt']*12-37.75)<1e-7
     assert abs(m['peakRiseFt']*12-48)<1e-7
     assert abs(abs(a['leftTip'][0]-a['leftPlateCut'][0])*12-6.25)<1e-7
-    target=[a['peak'][0],a['gableTop'][1]+1.55,a['gableTop'][2]]
+    target=[a['peak'][0],a['upperPlateTop'][1]+1.8,a['gableTop'][2]]
     im,project=scene(target,12.8,yaw=.12,pitch=.05);d=ImageDraw.Draw(im)
-    title(d,'Truss and gable studs','2×4 truss · measured lengths · 4 ft from gable board to peak')
+    title(d,'Truss and gable studs','2×4 truss · measured lengths · 4 ft from upper plate to peak')
     dimension(d,project,a['upperLeftStart'],a['upperLeftEnd'],'54 in · upper piece',(-10,-30))
     dimension(d,project,a['lowerLeftStart'],a['lowerLeftEnd'],'37¾ in · lower piece',(-65,0))
-    dimension(d,project,a['gableTop'],a['peak'],'48 in · 4 ft',(455,0))
+    dimension(d,project,a['upperPlateTop'],a['peak'],'48 in · 4 ft',(455,0))
     centers=a['studCenters']
     if len(centers)>1:
         pair=sorted(centers,key=lambda p:abs(p[0]))[:2]
@@ -173,20 +173,20 @@ def render_truss():
     im.save(ROOT/'images/truss-framing.png')
 
     tip=a['leftTip'];cut=a['leftPlateCut']
-    target=[(tip[0]+cut[0])/2+.10,board['y1Ft']+.08,board['z1Ft']]
+    target=[(tip[0]+cut[0])/2+.10,board['y0Ft']+.22,board['z1Ft']+.10]
     im,project=scene(target,2.5,yaw=-.48,pitch=.32);d=ImageDraw.Draw(im)
     title(d,'Truss tip to upper plate','Your marked measurement · 6¼ in outward from the plate’s cut end')
     # Horizontal witness points retain the different elevations of the actual anchors.
-    projection_y=tip[1]-.22;z=board['z1Ft']
+    projection_y=a['upperPlateTop'][1]-.25;z=tip[2]
     tip_witness=[tip[0],projection_y,z];cut_witness=[cut[0],projection_y,z]
     for actual,witness in [(tip,tip_witness),(cut,cut_witness)]:
         d.line([tuple(project(actual)),tuple(project(witness))],fill=NAVY,width=2)
     dimension(d,project,tip_witness,cut_witness,'6¼ in · from upper plate',(0,62))
     lower_point=[.85*p+.15*q for p,q in zip(a['lowerLeftStart'],a['lowerLeftEnd'])]
-    leader(d,project(lower_point),(35,150,420,110),'Truss · 2×4',['1½ × 3½ in actual'])
+    leader(d,project(lower_point),(35,150,420,110),'Truss · 2×4',['In front of the gable board'])
     leader(d,project([plate['x0Ft'],(plate['y0Ft']+plate['y1Ft'])/2,plate['z1Ft']]),(630,748,535,111),'Upper plate cut end',['Start of the 6¼-inch measurement'])
-    leader(d,project([board['x0Ft']+.5,board['y1Ft']-.22,z]),(730,150,435,142),'Gable board',['Extends 2½ in past','this same plate cut'])
-    d.text((35,895),'The two projections use the same upper-plate cut: truss 6¼ in; gable board 2½ in.',font=font(22),fill='#526879')
+    leader(d,project([board['x0Ft']+.5,board['y1Ft']-.22,board['z1Ft']]),(730,150,435,142),'Gable board',['Extends 2½ in past','this same plate cut'])
+    d.text((35,895),'Lowest truss tip level with upper-plate top · peak 48 in above that same top.',font=font(22),fill='#526879')
     im.save(ROOT/'images/truss-connection.png')
 
 def render_gable():

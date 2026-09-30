@@ -69,7 +69,7 @@ export async function startWallLesson({gable=false,truss=false}={}) {
     if($("lesson-reference")) $("lesson-reference").textContent=truss
       ? "Truss: 2×4, with 54-inch upper pieces and 37¾-inch lower pieces. The gable studs stand on the gable board, turned outward, 24 inches on center."
       : gable
-      ? "Gable board is the confirmed name. It is nailed to the upper plate and supports the truss. Its 118-inch length is calculated from the plate and both end projections."
+      ? "Gable board is the confirmed name. It is nailed to the upper plate; the truss goes against its front face. Its 118-inch length is calculated from the plate and both end projections."
       : "Side wall, end wall, stud, bottom plate, top plate and upper plate are confirmed names. This view studies one plain wall on the completed floor.";
     const stepLink=$("lesson-step-link");if(stepLink) {stepLink.href=truss?"learn.html?step=gable":gable?"learn.html?step=truss":"learn.html?step=gable";stepLink.textContent=truss?"Earlier: gable board":gable?"Next: truss fit preview":"Next: gable framing";}
     for(const button of buttons) {
@@ -197,12 +197,12 @@ export async function startWallLesson({gable=false,truss=false}={}) {
     }
     function trussCaption(t) {
       $("piece-title").textContent="Truss and gable studs — fit preview";
-      $("piece-description").textContent="The 2×4 truss rests on the gable board. Its upper pieces lead to the peak; the lower pieces form the steeper sides. The gable studs sit on the board and meet the underside of the truss.";
-      $("piece-draft").textContent="Fit preview: mirrored ends and center-stud layout to check. The studs use 2×4s with their broad faces outward; the truss seating and cut details remain to check.";
+      $("piece-description").textContent="The 2×4 truss goes against the front face of the gable board, with its lowest tips level with the upper plate’s top. Its upper pieces lead to the peak; the lower pieces form the steeper sides. The gable studs remain on the board; their top fit behind the truss is a preview choice.";
+      $("piece-draft").textContent="Fit preview: mirrored ends and center-stud layout to check. The studs use 2×4s with their broad faces outward; the tail cuts and stud-top connection remain to check.";
       const rows=[
         ["Upper truss piece · longest edge",formatInches(t.upperLengthFt)],
         ["Lower truss piece · longest edge",formatInches(t.lowerLengthFt)],
-        ["Peak above gable-board top",`${formatInches(t.peakRiseFt)} (${formatFeetInches(t.peakRiseFt)})`],
+        ["Peak above upper-plate top",`${formatInches(t.peakRiseFt)} (${formatFeetInches(t.peakRiseFt)})`],
         ["Truss tip to upper-plate cut",formatInches(t.projectionFt.start)],
         ["Truss lumber · confirmed","2×4 nominal · 1½ × 3½ in actual"],
         ["Gable studs · confirmed spacing","24 in on center"],
@@ -212,7 +212,7 @@ export async function startWallLesson({gable=false,truss=false}={}) {
       const list=$("piece-measurements");list.replaceChildren();
       for(const [title,value] of rows) {const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=title;dd.textContent=value;row.append(dt,dd);list.appendChild(row);}
       $("measurement-note").textContent="The 6¼-inch measurement ends at the upper plate's cut, not at the end of the gable board. Sloping lengths and the vertical peak rise are separate dimensions. This preview lets us check the fit before agreeing on the remaining cuts and stud details.";
-      canvas.setAttribute("aria-label","Rotatable truss fit preview. Upper truss pieces 54 inches, lower pieces 37¾ inches, peak 48 inches above the gable board. Gable studs 24 inches on center. Connection view measures 6¼ inches from the truss tip to the upper plate's cut end.");
+      canvas.setAttribute("aria-label","Rotatable truss fit preview. Upper truss pieces 54 inches, lower pieces 37¾ inches, peak 48 inches above the top of the upper plate. Gable studs 24 inches on center. Connection view measures 6¼ inches from the truss tip to the upper plate's cut end.");
     }
     function setWall(kind) {
       if(!["side","end"].includes(kind) || (gable && kind!=="end")) return;
