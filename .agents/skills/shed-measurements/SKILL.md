@@ -52,6 +52,35 @@ Record width `W` and length `L` in feet; calculate in inches with
 member cut length and dimension datum separate. A side wall follows `L`;
 an end wall follows `W`. Retain fractions until formatting the result.
 
+### Learned loft truss size rules
+
+Alan confirmed these sizes on September 30, 2026. Select by the **nominal
+width label**, then use actual width for geometry and cuts.
+
+| Nominal width label | Actual building width | Upper piece | Lower piece |
+| --- | --- | --- | --- |
+| 8-wide | Not yet confirmed | 34 in | 37.75 in |
+| 10-wide | 120 in (existing lesson) | 54 in | 37.75 in |
+| 12-wide | 134 in = 11 ft 2 in | 54 in | 37.75 in |
+
+Sloping lengths use the previously learned longest-point measurement, not
+a centerline or horizontal run. These are discrete shop sizes: do not scale
+or interpolate them. The common lower length applies to these three sizes,
+not every possible width or another builder. The 48-inch peak rise and
+6.25-inch projection belong to the 10-wide lesson; 8/12-wide heights and
+projections remain unspecified. Do not fabricate full trusses from old angles.
+
+Store `construction.trussStudy.byNominalWidthFt`, with
+`referenceNominalWidthFt: 10`. `trussSizeRule(plan)` selects from nominal
+`state.size`; missing values stay missing. A complete `trussStudyPlan`
+requires actual frame width, rise and projection. Rebuild floor, walls and
+gable board before the truss, setting `floorStudy.frame.widthFt` from actual
+width. For 12-wide use `134/12` ft, not 12 ft or rounded 11.2 ft.
+With the same learned joint allowances, end bottom/top plates are 134 in,
+upper plate is `134-7=127` in, gable board is `127+5=132` in, and floor
+joists are `134-3=131` in. These conditional cuts do not establish new skid
+lengths, mule-hook board lengths or roof heights.
+
 Use actual lumber dimensions: the discussed 2x4 is 1.5 x 3.5 in and the
 2x6 is 1.5 x 5.5 in. Do not generalize Alan's half-inch subtraction to
 unconfirmed sections. Record each end's offset separately, even when both
@@ -183,7 +212,7 @@ upper-plate top**. The **48 in peak height starts at that same upper-plate
 top**, not the gable-board top. Thus the peak is `79.5 + 48 = 127.5 in`
 above flooring, or `48 - 5.5 = 42.5 in` above the gable board.
 
-The truss is actual **1.5 x 3.5 in** (nominal 2x4). Keep the **54 in upper**
+For the **10-wide example**, the truss is actual **1.5 x 3.5 in** (nominal 2x4). Keep the **54 in upper**
 and **37.75 in lower** longest-point lengths. The **6.25 in** projection
 runs along the wall from the **upper-plate cut end to the farthest truss
 tip**. It is a separate horizontal dimension, not the height or a sloping
@@ -287,23 +316,24 @@ Laid pieces are not a stock-sheet purchase count or a cutting/reuse plan.
 
 ## Worked arithmetic
 
-The first column applies the recorded 10x16 assembly. The **12x20 column is
+The first column applies the recorded 10x16 assembly. The **12-wide x 20 ft column is
 illustrative only**, assuming the same sections, 3.5 in offsets, 75 in
 studs, three plates, 2.5 in gable-board end projections, 1.5 in outer boards
 and 4x8 flooring with a 4 ft stagger.
+Its width uses Alan's confirmed 134 inches; the 20 ft length is illustrative.
 It is not confirmation that those rules suit a new building.
 
-| Measurement | 10x16 example | Illustrative 12x20 |
+| Measurement | 10x16 example | Illustrative 12-wide x 20 ft |
 | --- | --- | --- |
-| Width and length in inches | 120; 192 | 144; 240 |
+| Actual width and length in inches | 120; 192 | 134; 240 |
 | Side bottom/top plate | `192 - 7 = 185` = 15 ft 5 in | `240 - 7 = 233` = 19 ft 5 in |
 | Side upper plate | 192 = 16 ft | 240 = 20 ft |
-| End bottom/top plate | 120 = 10 ft | 144 = 12 ft |
-| End upper plate | `120 - 7 = 113` = 9 ft 5 in | `144 - 7 = 137` = 11 ft 5 in |
-| Gable board, with 2.5 in projection at each end | `113 + 5 = 118` = 9 ft 10 in | `137 + 5 = 142` = 11 ft 10 in |
-| Floor joist | `120 - 3 = 117` = 9 ft 9 in | `144 - 3 = 141` = 11 ft 9 in |
+| End bottom/top plate | 120 = 10 ft | 134 = 11 ft 2 in |
+| End upper plate | `120 - 7 = 113` = 9 ft 5 in | `134 - 7 = 127` = 10 ft 7 in |
+| Gable board, with 2.5 in projection at each end | `113 + 5 = 118` = 9 ft 10 in | `127 + 5 = 132` = 11 ft |
+| Floor joist | `120 - 3 = 117` = 9 ft 9 in | `134 - 3 = 131` = 10 ft 11 in |
 | Wall height above flooring | `75 + 4.5 = 79.5` in | `75 + 4.5 = 79.5` in |
-| Flooring row widths | 4 + 4 + 2 ft | 4 + 4 + 4 ft |
+| Flooring row widths | 4 + 4 + 2 ft | 4 + 4 + 3 ft 2 in |
 | First/third row piece lengths | 8 + 8 ft | 8 + 8 + 4 ft |
 | Second row piece lengths | 4 + 8 + 4 ft | 4 + 8 + 8 ft |
 

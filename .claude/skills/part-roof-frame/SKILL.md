@@ -18,6 +18,20 @@ has its own part; preserve this part's existing members and fit.
 
 ## Alan's learned truss: opt-in fit preview
 
+### Size selection for Alan's lofted trusses
+
+Alan's September 30 additions give **34 in upper pieces for 8-wide** and
+**54 in upper pieces for 12-wide**; both keep **37.75 in lower pieces**.
+The existing 10-wide upper is 54 in. A nominal **12-wide is actually
+134 in (11 ft 2 in)**, so never fit its walls or truss to 144 in.
+All sloping lengths use longest points. Read the measurement skill's
+[size table and formulas](../../../.agents/skills/shed-measurements/SKILL.md#learned-loft-truss-size-rules).
+`trussSizeRule(plan)` reads `construction.trussStudy.byNominalWidthFt`
+using the sales width in `state.size`. Missing actual width, peak height
+or projection blocks a full fit rather than borrowing the 10-wide inputs.
+8/12-wide heights and projections remain unspecified. The following fit
+and 48-inch rise describe the existing **10-wide** lesson.
+
 Alan's September 29 correction supersedes the earlier top-bearing fit:
 **the truss goes against the broad face of the gable board facing the
 viewer in the connection picture** (the room-facing face in this model).
@@ -26,7 +40,7 @@ upper-plate top**. The **48 in peak height starts at that same upper-plate
 top**, not the gable-board top. Thus the peak is `79.5 + 48 = 127.5 in`
 above flooring, or `48 - 5.5 = 42.5 in` above the gable board.
 
-The truss is actual **1.5 x 3.5 in** (nominal 2x4). Keep the **54 in upper**
+For the **10-wide example**, the truss is actual **1.5 x 3.5 in** (nominal 2x4). Keep the **54 in upper**
 and **37.75 in lower** longest-point lengths. The **6.25 in** projection
 runs along the wall from the **upper-plate cut end to the farthest truss
 tip**. It is a separate horizontal dimension, not the height or a sloping

@@ -70,6 +70,12 @@
   },
   "construction": {
     "trussStudy": {
+      "referenceNominalWidthFt": 10,
+      "byNominalWidthFt": {
+        "8": { "upperLengthIn": 34, "lowerLengthIn": 37.75, "actualWidthIn": null, "peakRiseIn": null, "projectionIn": null },
+        "10": { "actualWidthIn": 120 },
+        "12": { "upperLengthIn": 54, "lowerLengthIn": 37.75, "actualWidthIn": 134, "peakRiseIn": null, "projectionIn": null }
+      },
       "windowExample": { "widthIn": 18, "heightIn": 24, "status": "illustrative-adjustable-opening" },
       "chord": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5 },
       "upperLengthIn": 54, "lowerLengthIn": 37.75, "peakRiseIn": 48, "projectionIn": 6.25,

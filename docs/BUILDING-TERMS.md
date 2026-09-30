@@ -1,5 +1,16 @@
 # Our building terms — working discussion list
 
+## Lofted truss sizes and actual building width
+
+Alan's sloping 2x4 truss pieces use the longest-point measurement.
+**8-wide:** upper 34 in; **10-wide:** upper 54 in; **12-wide:** upper 54 in.
+The lower piece is **37.75 in** for these three sizes. A nominal **12-wide**
+building is actually **11 ft 2 in (134 in)** wide. Select roof lengths by
+sales width and calculate cuts from actual width. The 48-inch peak rise is
+confirmed for 10-wide; 8/12-wide rises and projections remain unspecified.
+Source: Alan, September 30, 2026. See the measurement skill's
+[size rules](../.agents/skills/shed-measurements/SKILL.md#learned-loft-truss-size-rules).
+
 ## Doorway framing — confirmed shop terms
 
 | Alan's term | Agreed piece and fit |

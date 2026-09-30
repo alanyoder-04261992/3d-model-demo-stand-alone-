@@ -8,7 +8,7 @@ import { floorStudyPlan } from "../model/floor-study.js";
 import { wallStudyPlan } from "../model/wall-study.js";
 import { gableStudyPlan } from "../model/gable-study.js";
 import { gableStudyMeasurements } from "../model/gable-measurements.js";
-import { trussStudyPlan, trussStudyMembers, trussGableStudMembers } from "../model/truss-study.js";
+import { trussStudyPlan, trussStudyMembers, trussGableStudMembers, trussSizeRule } from "../model/truss-study.js";
 import { trussStudyMeasurements } from "../model/truss-measurements.js";
 import { polyArea, clipHalf } from "../parts/floor-frame.js";
 import { assemble } from "../engine/assemble.js";
@@ -179,4 +179,26 @@ const missing = structuredClone(gable); delete missing.construction.trussStudy;
 assert.throws(() => trussStudyPlan(missing, { truss: true }), /measurements/);
 const asymmetric = structuredClone(wall); asymmetric.construction.gableStudy.endProjectionIn.end = 2;
 assert.throws(() => trussStudyPlan(gableStudyPlan(asymmetric, { gable: true }), { truss: true }), /centered/);
-console.log("PROVED: unchanged ordinary model and truss fit; outward 2x4 gable studs at 24/48/72/96-inch centers from the outside wall edge; full board support; first-offset and opposite-end recalculation; no forced peak stud or solid overlap; first-center interpretation and top joints remain preview inputs.");
+// Sales labels choose cut lengths; actual widths choose frame geometry.
+for (const [nominal, upper, actual] of [[8, 34, null], [12, 54, 134]]) {
+  const resized = structuredClone(gable); resized.state.size = `${nominal}x16`;
+  const rule = trussSizeRule(resized);
+  near(rule.upperLengthIn, upper, `${nominal}-wide upper longest-point cut`);
+  near(rule.lowerLengthIn, 37.75, `${nominal}-wide lower cut remains unchanged`);
+  assert.equal(rule.actualWidthIn, actual);
+  assert.equal(rule.peakRiseIn, null, "new size does not inherit 10-wide peak height");
+  assert.equal(rule.projectionIn, null, "new size does not inherit 10-wide projection");
+  assert.throws(() => trussStudyPlan(resized, { truss: true }), /confirm its actual width, peak height and tip projection/);
+}
+const twelve = structuredClone(gable); twelve.state.size = "12x20";
+const twelveRule = trussSizeRule(twelve);
+near(twelveRule.actualWidthIn / 12, 11 + 2 / 12, "12-wide actual width is exactly 11 ft 2 in");
+near(twelveRule.actualWidthIn - 2 * wall.wallStudy.plates.depthIn, 127, "12-wide upper plate using learned setbacks");
+near(twelveRule.actualWidthIn - 2 * floor.floorStudy.frame.sideBoardWidthIn, 131, "12-wide joist uses actual width");
+const unknown = structuredClone(gable); unknown.state.size = "11.1666666667x16";
+assert.throws(() => trussSizeRule(unknown), /No learned truss measurements/, "actual width does not become a nominal roof-size lookup");
+const wrongFrame = structuredClone(gable); wrongFrame.construction.trussStudy.byNominalWidthFt["10"].actualWidthIn = 134;
+assert.throws(() => trussStudyPlan(wrongFrame, { truss: true }), /actual width before fitting/);
+const legacyRules = structuredClone(gable); delete legacyRules.construction.trussStudy.byNominalWidthFt;
+assert.deepEqual(trussStudyMembers(trussStudyPlan(legacyRules, { truss: true })), trussStudyMembers(plan), "legacy explicit measurements remain supported");
+console.log("PROVED: unchanged ordinary model and 10-wide truss fit; 8-wide upper 34 in, 12-wide upper 54 in, both lower 37.75 in; 12-wide actual width 134 in; no inherited heights or interpolated cuts; outward gable studs, full board support, datum and opposite-end recalculation remain correct.");

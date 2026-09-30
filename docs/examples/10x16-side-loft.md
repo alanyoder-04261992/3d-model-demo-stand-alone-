@@ -211,7 +211,7 @@ upper-plate top**. The **48 in peak height starts at that same upper-plate
 top**, not the gable-board top. Thus the peak is `79.5 + 48 = 127.5 in`
 above flooring, or `48 - 5.5 = 42.5 in` above the gable board.
 
-The truss is actual **1.5 x 3.5 in** (nominal 2x4). Keep the **54 in upper**
+For the **10-wide example**, the truss is actual **1.5 x 3.5 in** (nominal 2x4). Keep the **54 in upper**
 and **37.75 in lower** longest-point lengths. The **6.25 in** projection
 runs along the wall from the **upper-plate cut end to the farthest truss
 tip**. It is a separate horizontal dimension, not the height or a sloping
