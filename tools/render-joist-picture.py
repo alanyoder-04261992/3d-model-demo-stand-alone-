@@ -218,11 +218,14 @@ def render_gable():
     wall=data['metadata']['wall'];gable=data['metadata']['gable']
     board=gable['board'];b=board['bounds'];upper=wall['plates']['upper'];p=upper['bounds']
     top=wall['plates']['top'];t=top['bounds']
-    # Actual mesh bounds establish each datum, including the inside (+z) faces.
+    # The physical edge and Alan's corrected ledge names are separate inputs.
     near=(p['x0Ft']-b['x0Ft'])*12;far=(b['x1Ft']-p['x1Ft'])*12
-    ledge=(p['z1Ft']-b['z1Ft'])*12;length=(b['x1Ft']-b['x0Ft'])*12
+    opposite_ledge=(p['z1Ft']-b['z1Ft'])*12
+    wall_line_ledge=(b['z0Ft']-p['z0Ft'])*12;length=(b['x1Ft']-b['x0Ft'])*12
     assert abs(near-2.5)<1e-8 and abs(far-2.5)<1e-8
-    assert abs(ledge-.5)<1e-8 and abs(length-118)<1e-8
+    assert abs(wall_line_ledge-.5)<1e-8 and abs(opposite_ledge-1.5)<1e-8 and abs(length-118)<1e-8
+    assert gable['ledgeEdge']=='wall-line' and gable['ledgeSide']=='inside'
+    assert abs(gable['innerLedgeFt']*12-.5)<1e-8 and abs(gable['outerLedgeFt']*12-1.5)<1e-8
     assert abs(b['y0Ft']-p['y1Ft'])<1e-8
     assert abs((b['y1Ft']-b['y0Ft'])*12-5.5)<1e-8
     assert abs((b['z1Ft']-b['z0Ft'])*12-1.5)<1e-8
@@ -238,26 +241,28 @@ def render_gable():
     leader(d,project(face(b,b['x0Ft']+.05,b['y0Ft']+.06)),(35,748,545,111),
            '2½ in past each cut end',['Measured from the upper plate’s end'])
     leader(d,project([1.5,p['y1Ft'],(p['z1Ft']+b['z1Ft'])/2]),(620,748,545,111),
-           '½ in inside ledge',['Upper plate edge to 2×6 inner face'])
+           '1½ in outside ledge',['½ in inside ledge on the other edge'])
     d.text((35,895),'Calculated length: 113 + 2½ + 2½ = 118 in. The end wall remains 120 in.',font=font(22),fill='#526879')
     (ROOT/'images').mkdir(exist_ok=True)
     im.save(ROOT/'images/gable-framing.png')
 
-    target=[p['x0Ft']+.48,p['y1Ft']+.10,p['z1Ft']]
-    im,project=scene(target,1.7,yaw=-.62,pitch=.62);d=ImageDraw.Draw(im)
-    title(d,'Gable board · inside view','½ in inside ledge · 2½ in past the upper plate’s cut end')
-    leader(d,project(face(b,p['x0Ft']+.78,b['y1Ft']-.19)),(675,150,490,110),
+    # Show the selected physical face to expose the ledge Alan calls inside.
+    def selected_face(box,x,y):return [x,y,box['z0Ft']]
+    target=[p['x1Ft']-.48,p['y1Ft']+.10,p['z0Ft']]
+    im,project=scene(target,1.7,yaw=math.pi-.62,pitch=.62);d=ImageDraw.Draw(im)
+    title(d,'Gable board · new position','½ in inside ledge · 1½ in outside · 2½ in past the plate cut')
+    leader(d,project(selected_face(b,p['x1Ft']-.78,b['y1Ft']-.19)),(675,150,490,110),
            'Gable board · 2×6',['Bottom rests on the upper plate'])
-    leader(d,project(face(p,p['x0Ft']+.52,p['y0Ft']+.055)),(35,748,540,111),
+    leader(d,project(selected_face(p,p['x1Ft']-.52,p['y0Ft']+.055)),(35,748,540,111),
            'Upper plate',['2×4 · 1½ × 3½ in actual'])
-    # The extension is lengthwise. Both endpoints use the board's lower inside edge.
-    dimension(d,project,face(b,b['x0Ft'],b['y0Ft']),face(b,p['x0Ft'],b['y0Ft']),
+    # The extension is lengthwise. Both endpoints use the same selected face.
+    dimension(d,project,selected_face(b,b['x1Ft'],b['y0Ft']),selected_face(b,p['x1Ft'],b['y0Ft']),
               '2½ in past cut',(-38,45))
-    x=p['x0Ft']+.86
-    dimension(d,project,[x,p['y1Ft'],b['z1Ft']],[x,p['y1Ft'],p['z1Ft']],
-              '½ in ledge',(95,80))
+    x=p['x1Ft']-.86
+    dimension(d,project,[x,p['y1Ft'],b['z0Ft']],[x,p['y1Ft'],p['z0Ft']],
+              '½ in inside ledge',(95,80))
     # Place the section-height dimension at the visible cut end of the 2x6.
-    dimension(d,project,face(b,b['x0Ft'],b['y0Ft']),face(b,b['x0Ft'],b['y1Ft']),
+    dimension(d,project,selected_face(b,b['x1Ft'],b['y0Ft']),selected_face(b,b['x1Ft'],b['y1Ft']),
               '5½ in',(-50,-8))
     d.rounded_rectangle((620,748,1165,859),radius=12,fill='white',outline='#bdccd8',width=2)
     d.text((640,760),'Same projection at both ends',font=font(27,True),fill=NAVY)

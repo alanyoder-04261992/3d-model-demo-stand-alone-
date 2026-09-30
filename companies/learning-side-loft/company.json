@@ -91,12 +91,12 @@
     },
     "gableStudy": {
       "board": { "nominal": "2x6", "thicknessIn": 1.5, "heightIn": 5.5 },
-      "innerLedgeIn": 0.5,
+      "ledgeEdge": "wall-line", "ledgeSide": "inside", "ledgeIn": 0.5,
       "endProjectionIn": { "start": 2.5, "end": 2.5 },
       "placement": "on-upper-plate",
       "status": {
         "section": "confirmed", "orientation": "confirmed", "placement": "confirmed",
-        "innerLedge": "confirmed", "endProjection": "confirmed",
+        "ledge": "confirmed", "ledgeSide": "confirmed", "ledgeEdge": "confirmed", "endProjection": "confirmed",
         "name": "confirmed", "treatment": "provisional"
       }
     },

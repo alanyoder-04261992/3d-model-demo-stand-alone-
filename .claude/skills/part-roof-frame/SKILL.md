@@ -21,7 +21,9 @@ runs along the wall from the **upper-plate cut end to the farthest truss
 tip**. It is a separate horizontal dimension, not the height or a sloping
 length. Mirroring it at both ends remains provisional; this gives
 `113 + 6.25 + 6.25 = 125.5 in` tip-to-tip. The gable board remains 118 in
-long, on edge above the upper plate, with its 0.5 in inside ledge and
+long, on edge above the upper plate. After the other-side correction it
+keeps the new physical position, with Alan’s corrected labels: a 0.5 in
+inside ledge and a derived 1.5 in outside ledge, with
 2.5 in projections unchanged.
 
 Alan’s later blue line confirms that the **whole bottom cut of the truss

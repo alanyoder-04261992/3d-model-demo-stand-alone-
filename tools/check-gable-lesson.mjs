@@ -55,14 +55,22 @@ near((board.z1Ft - board.z0Ft) * 12, 1.5, "2x6 has 1.5-inch thickness across pla
 near(board.y0Ft, plate.y1Ft, "board bears on top of upper plate");
 near((plate.x0Ft - board.x0Ft) * 12, 2.5, "start projection is from the plate's actual cut face");
 near((board.x1Ft - plate.x1Ft) * 12, 2.5, "end projection is from the plate's actual cut face");
-near((plate.z1Ft - board.z1Ft) * 12, .5, "half-inch ledge is at the inner face, not the outside face");
-near((board.z0Ft - plate.z0Ft) * 12, 1.5, "remaining outside ledge is a derived 1.5 inches");
+near((plate.z1Ft - board.z1Ft) * 12, 1.5, "opposite physical edge has the 1.5-inch ledge Alan calls outside");
+near((board.z0Ft - plate.z0Ft) * 12, .5, "new position stays half an inch from the physical wall-line edge");
+assert.equal(measures.ledgeSide, "inside");
+assert.equal(measures.ledgeEdge, "wall-line");
+near(measures.ledgeStart[2], plate.z0Ft, "inside label is anchored to the selected plate edge");
+near(measures.ledgeEnd[2], board.z0Ft, "inside label ends on the matching board face");
 near((mBefore.nominalStart[0] - board.x0Ft) * -12, 1, "board stops one inch inside the full wall's start");
 near((mBefore.nominalEnd[0] - board.x1Ft) * 12, 1, "board stops one inch inside the full wall's end");
 near(board.y1Ft * 12, 95.625, "board top is derived from floor, wall and board height");
 near(distance(measures.boardStart, measures.plateStart) * 12, 2.5, "start extension label anchors actual cuts");
 near(distance(measures.boardEnd, measures.plateEnd) * 12, 2.5, "end extension label anchors actual cuts");
-near(distance(measures.innerLedgeStart, measures.innerLedgeEnd) * 12, .5, "ledge anchors span actual inner faces");
+near(distance(measures.innerLedgeStart, measures.innerLedgeEnd) * 12, .5, "inside ledge anchors span actual inner faces");
+near(distance(measures.outerLedgeStart, measures.outerLedgeEnd) * 12, 1.5, "outside ledge anchors span actual outer faces");
+near(distance(measures.ledgeStart, measures.ledgeEnd) * 12, .5, "selected inside ledge anchors span actual inside faces");
+assert.deepEqual(measures.ledgeStart, measures.innerLedgeStart);
+assert.deepEqual(measures.ledgeEnd, measures.innerLedgeEnd);
 for (const member of mBefore.members) assert.ok(["x", "y", "z"].some(axis =>
   Math.min(board[axis + "1Ft"], member.bounds[axis + "1Ft"]) - Math.max(board[axis + "0Ft"], member.bounds[axis + "0Ft"]) <= 1e-9),
 "gable board and every wall member touch without solid overlap");
@@ -70,8 +78,9 @@ const contactLength = Math.min(board.x1Ft, plate.x1Ft) - Math.max(board.x0Ft, pl
 const contactDepth = Math.min(board.z1Ft, plate.z1Ft) - Math.max(board.z0Ft, plate.z0Ft);
 near(contactLength * 12, 113, "bearing length on upper plate");
 near(contactDepth * 12, 1.5, "board's full thickness bears on upper plate");
-for (const key of ["section", "orientation", "placement", "innerLedge", "endProjection"])
+for (const key of ["section", "orientation", "placement", "ledge", "ledgeSide", "ledgeEdge", "innerLedge", "endProjection"])
   assert.equal(measures.status[key], "confirmed");
+assert.equal(measures.status.outerLedge, "derived");
 assert.equal(measures.name, "Gable board");
 assert.equal(measures.status.name, "confirmed");
 assert.equal(measures.status.treatment, "provisional");
@@ -114,7 +123,20 @@ const widerWall = wallStudyPlan(floorStudyPlan(widerInput), { wall: "end" });
 const wider = gableStudyMeasurements(gableStudyPlan(widerWall, { gable: true }));
 near(wider.upperPlate.lengthFt * 12, 137, "12-foot end upper plate follows both wall cutbacks");
 near(wider.lengthFt * 12, 142, "gable board follows the resized upper plate, not a stored 118-inch value");
-near(wider.innerLedgeFt * 12, .5, "ledge does not scale with footprint");
+near(wider.innerLedgeFt * 12, .5, "specified inside ledge does not scale with footprint");
+near(wider.outerLedgeFt * 12, 1.5, "remaining outside ledge follows the actual plate and board sections");
+const oppositeInput = structuredClone(end); oppositeInput.construction.gableStudy.ledgeEdge = "opposite";
+const previous = gableStudyMeasurements(gableStudyPlan(oppositeInput, { gable: true }));
+for (const axis of ["x", "y"]) for (const edge of ["0Ft", "1Ft"])
+  near(board[axis + edge], previous.board.bounds[axis + edge], "changing sides preserves length and height");
+near((board.z0Ft - previous.board.bounds.z0Ft) * 12, -1, "new position stays one inch across from the original position");
+near(previous.innerLedgeFt * 12, .5, "opposite-edge option follows the configured half-inch offset");
+near(distance(previous.ledgeStart, previous.ledgeEnd) * 12, .5, "opposite-edge anchors measure the selected faces");
+const renamedInput = structuredClone(end); renamedInput.construction.gableStudy.ledgeSide = "outside";
+const renamed = gableStudyMeasurements(gableStudyPlan(renamedInput, { gable: true }));
+assert.deepEqual(renamed.board.bounds, board, "correcting names cannot silently move the physical board");
+near(renamed.outerLedgeFt * 12, .5, "selected ledge can be named outside by another shop");
+near(renamed.innerLedgeFt * 12, 1.5, "opposite ledge name follows the corrected convention");
 const differentProjection = structuredClone(end);
 differentProjection.construction.gableStudy.endProjectionIn = { start: 1, end: 2 };
 const asymmetric = gableStudyMeasurements(gableStudyPlan(differentProjection, { gable: true }));
@@ -122,12 +144,12 @@ near(asymmetric.lengthFt * 12, 116, "each end's projection is independent");
 near(distance(asymmetric.boardStart, asymmetric.plateStart) * 12, 1, "start projection retains its own datum");
 near(distance(asymmetric.boardEnd, asymmetric.plateEnd) * 12, 2, "end projection retains its own datum");
 for (const change of [raw => raw.board.heightIn = 0, raw => raw.board.thicknessIn = NaN,
-  raw => raw.board.heightIn = 1, raw => raw.innerLedgeIn = -1, raw => raw.innerLedgeIn = 3,
+  raw => raw.board.heightIn = 1, raw => raw.ledgeIn = -1, raw => raw.ledgeIn = 3,
   raw => raw.endProjectionIn.start = -1, raw => raw.endProjectionIn.end = 4,
-  raw => raw.placement = "beside-plate"]) {
+  raw => raw.placement = "beside-plate", raw => raw.ledgeSide = "unknown", raw => raw.ledgeEdge = "unknown"]) {
   const invalid = structuredClone(end); change(invalid.construction.gableStudy);
   assert.throws(() => gableStudyPlan(invalid, { gable: true }));
 }
 const missing = structuredClone(end); delete missing.construction.gableStudy;
 assert.throws(() => gableStudyPlan(missing, { gable: true }), /measurements/);
-console.log("PROVED: one 118-inch 2x6 on edge, 2.5-inch projections past both upper-plate cuts, 0.5-inch inner ledge, plate contact without overlap, actual closed mesh, unchanged wall/floor/normal model, and formula-based resizing.");
+console.log("PROVED: one 118-inch 2x6 on edge, 2.5-inch projections past both upper-plate cuts, 0.5-inch inside ledge and 1.5-inch outside ledge; explicit face-based placement and anchors; plate contact without overlap; actual closed mesh, unchanged wall/floor/normal model and formula-based resizing.");

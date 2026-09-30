@@ -16,11 +16,14 @@ gable during this step.
 
 Alan confirmed on September 28, 2026 that the nominal 2x6 is **on edge along
 and on top of the end wall's upper plate**. Its actual section is **1 1/2 in
-through the wall depth by 5 1/2 in vertically**. Leave a **1/2 in ledge on
-the inside**: the plate's room-facing edge lies 1/2 in farther inward than
-the board's room-facing face. Extend the board **2 1/2 in past both cut ends
-of the upper plate**, along the wall, not upward. These facts supersede the
-initial ambiguity about an upright stud or a vertical 2 1/2 in extension.
+through the wall depth by 5 1/2 in vertically**. His later request moves
+it across the upper plate. He corrected the inside/outside names and then
+explicitly said to **leave it in the new spot**. Do not move it back when
+correcting labels. The ledge he calls **inside is 1/2 in**; the opposite
+**outside ledge is a derived 1 1/2 in**. Extend it **2 1/2 in past both
+cut ends of the upper plate**, along the wall, not upward. These facts
+supersede the earlier face naming and initial ambiguity about an upright
+stud or a vertical 2 1/2 in extension.
 
 Derive dimensions from the actual supporting upper plate, never a second
 10 ft constant:
@@ -31,8 +34,11 @@ Derive dimensions from the actual supporting upper plate, never a second
 - `board bottom = upper plate top`; `board top = bottom + board height`.
   The top is **85 in above flooring**, from `79.5 + 5.5`, or **95 5/8 in
   above skid bottom** in the current floor model. These are different datums.
-- `outside ledge = plate depth - inside ledge - board thickness`.
-  The current outer ledge is a derived **1 1/2 in**, from `3.5 - 0.5 - 1.5`.
+- `opposite ledge = plate depth - selected ledge - board thickness`.
+  For the corrected names, the outside ledge is a derived
+  **1 1/2 in**, from `3.5 - 0.5 - 1.5`. Specify the ledge side explicitly;
+  do not infer it from the camera. The half-inch offset does not scale
+  when changing building size.
 
 Alan named it **gable board** and confirmed it is **nailed to the upper
 plate**. His September 29 correction places the **truss against the board’s
@@ -53,12 +59,13 @@ The learning company's `construction.gableStudy` record is:
 ```js
 {
   board: { nominal: "2x6", thicknessIn: 1.5, heightIn: 5.5 },
-  innerLedgeIn: 0.5,
+  ledgeEdge: "wall-line", ledgeSide: "inside", ledgeIn: 0.5,
   endProjectionIn: { start: 2.5, end: 2.5 },
   placement: "on-upper-plate",
   status: {
     section: "confirmed", orientation: "confirmed", placement: "confirmed",
-    innerLedge: "confirmed", endProjection: "confirmed",
+    ledge: "confirmed", ledgeSide: "confirmed", ledgeEdge: "confirmed",
+    endProjection: "confirmed",
     name: "confirmed", treatment: "provisional"
   }
 }
@@ -74,6 +81,17 @@ settings alone must not activate this lesson in the normal designer.
 member-based dimensions and anchors. Preserve the existing floor, wall
 members and ordinary finished geometry. For another size, resolve the real
 end upper plate first; do not keep 118 in as a universal board length.
+
+Physical placement and ledge names are separate. `ledgeEdge = "wall-line"`
+means local wall offset zero; `"opposite"` means offset `-plate depth`.
+With the selected edge at wall-line, the board's normal offsets are
+`[-ledge - board thickness, -ledge]`. With the opposite edge selected,
+they are `[-plate depth + ledge, -plate depth + ledge + board thickness]`.
+`ledgeSide` names the selected gap using Alan's terms; renaming it must
+not change geometry. For this corrected gable, wall-line is the half-inch
+gap he calls inside. Derive the other gap from the actual sections. Keep
+this convention scoped to the gable connection; do not relabel the skid
+or ordinary wall coordinate system.
 
 ### Lesson checks and pictures
 
@@ -94,7 +112,7 @@ The [gable picture page](../../../gable.html) uses
 [the overview](../../../images/gable-framing.png) and
 [the close-up](../../../images/gable-board-detail.png). Inspect both:
 dimension endpoints must land on the actual upper-plate cuts, board ends
-and inside faces; the 1/2 in ledge must be distinguishable from the 2 1/2 in
+and the selected plate and board faces; the 1/2 in ledge must be distinguishable from the 2 1/2 in
 end projection. Retain the earlier plain-wall and floor views. If browser
 checks cannot run, report that limitation separately from static-picture
 and geometry checks.
@@ -115,7 +133,9 @@ runs along the wall from the **upper-plate cut end to the farthest truss
 tip**. It is a separate horizontal dimension, not the height or a sloping
 length. Mirroring it at both ends remains provisional; this gives
 `113 + 6.25 + 6.25 = 125.5 in` tip-to-tip. The gable board remains 118 in
-long, on edge above the upper plate, with its 0.5 in inside ledge and
+long, on edge above the upper plate. After the other-side correction it
+keeps the new physical position, with Alan’s corrected labels: a 0.5 in
+inside ledge and a derived 1.5 in outside ledge, with
 2.5 in projections unchanged.
 
 Alan’s later blue line confirms that the **whole bottom cut of the truss

@@ -64,7 +64,7 @@ export async function startWallLesson({gable=false,truss=false}={}) {
     if($("measurement-explanation")) $("measurement-explanation").textContent=truss
       ? "The truss lengths follow the longest edges. Front view shows the 4-foot rise; Connection close-up shows 6¼ inches from the truss tip to the upper-plate cut."
       : gable
-      ? "The gable board is a 2×6 on edge along the upper plate. Connection close-up measures the 2½-inch projection and the ½-inch inside ledge."
+      ? "The gable board is a 2×6 on edge in its new position across the upper plate. Connection close-up measures the 2½-inch projection and the ½-inch inside ledge."
       : "Measurements follow the actual boards. Plates close-up shows their names; Wall end close-up shows the 3½-inch step.";
     if($("lesson-reference")) $("lesson-reference").textContent=truss
       ? "Truss: 2×4, with 54-inch upper pieces and 37¾-inch lower pieces. The gable studs stand on the gable board, turned outward, 24 inches on center."
@@ -136,7 +136,7 @@ export async function startWallLesson({gable=false,truss=false}={}) {
         } else if(view==="wall-end" && gable) {
           const g=current.measures.gable,board=g.board.bounds;
           renderer.cam.target=[g.plateStart[0]+.3,g.upperPlate.bounds.y1Ft+.12,(board.z0Ft+board.z1Ft)/2];
-          renderer.cam.yaw=-.7;renderer.cam.pitch=.42;zoom=1.05;
+          renderer.cam.yaw=g.ledgeEdge==="wall-line"?-Math.PI+.7:-.7;renderer.cam.pitch=.42;zoom=1.05;
         } else if(view==="wall-end") {
           const axis=side?"z":"x",start=Math.min(m.plates.top.bounds[axis+"0Ft"],m.plates.upper.bounds[axis+"0Ft"]);
           renderer.cam.target=side?[(b.x0Ft+b.x1Ft)/2,m.plates.top.center[1]-.25,start+.45]:[start+.45,m.plates.top.center[1]-.25,(b.z0Ft+b.z1Ft)/2];
@@ -182,18 +182,19 @@ export async function startWallLesson({gable=false,truss=false}={}) {
     }
     function gableCaption(g) {
       $("piece-title").textContent=g.name+" — 2×6 along the end-wall upper plate";
-      $("piece-description").textContent="The board stands on its narrow edge on top of the upper plate. Its inside face leaves a ½-inch ledge, and it projects 2½ inches past each cut end of the upper plate.";
+      $("piece-description").textContent="The board stands on its narrow edge on top of the upper plate, in the new position across the plate. The ledge is ½ inch inside and 1½ inches outside. It projects 2½ inches past each cut end of the upper plate.";
       $("piece-draft").textContent="The gable board is nailed to the upper plate. Wood treatment and nail size or spacing remain unspecified. The next step shows the truss and gable studs as a fit preview.";
       const rows=[["Gable board length · calculated",`${formatInches(g.lengthFt)} (${formatFeetInches(g.lengthFt)})`],
         ["Actual section · on edge",`${formatInches(g.thicknessFt)} thick × ${formatInches(g.heightFt)} high`],
         ["Upper plate beneath · calculated",`${formatInches(g.upperPlate.lengthFt)} (${formatFeetInches(g.upperPlate.lengthFt)})`],
         ["Past first cut end · confirmed",formatInches(g.endProjectionFt.start)],
         ["Past opposite cut end · confirmed",formatInches(g.endProjectionFt.end)],
-        ["Inside ledge · confirmed",formatInches(g.innerLedgeFt)]];
+        ["Inside ledge",formatInches(g.innerLedgeFt)],
+        ["Outside ledge · calculated",formatInches(g.outerLedgeFt)]];
       const list=$("piece-measurements");list.replaceChildren();
       for(const [title,value] of rows) {const row=document.createElement("div"),dt=document.createElement("dt"),dd=document.createElement("dd");dt.textContent=title;dd.textContent=value;row.append(dt,dd);list.appendChild(row);}
-      $("measurement-note").textContent=`Length: ${formatInches(g.upperPlate.lengthFt)} upper plate + ${formatInches(g.endProjectionFt.start)} at one end + ${formatInches(g.endProjectionFt.end)} at the other = ${formatInches(g.lengthFt)}. The ½-inch ledge is measured from the upper plate's inside face to the 2×6's inside face.`;
-      canvas.setAttribute("aria-label","Rotatable 3D end wall and gable board on top of its upper plate. The 2×6 gable board is on edge, with a half-inch inside ledge and two-and-a-half-inch projection past each upper-plate end.");
+      $("measurement-note").textContent=`Length: ${formatInches(g.upperPlate.lengthFt)} upper plate + ${formatInches(g.endProjectionFt.start)} at one end + ${formatInches(g.endProjectionFt.end)} at the other = ${formatInches(g.lengthFt)}. The ½-inch inside ledge measures across the plate to the gable-board face. The remaining outside ledge is 3½ − 1½ − ½ = 1½ inches.`;
+      canvas.setAttribute("aria-label","Rotatable 3D end wall and gable board in its new position across the upper plate. The 2×6 gable board is on edge, with a half-inch inside ledge, a one-and-a-half-inch outside ledge, and two-and-a-half-inch projection past each upper-plate end.");
     }
     function trussCaption(t) {
       $("piece-title").textContent="Truss and gable studs — fit preview";
