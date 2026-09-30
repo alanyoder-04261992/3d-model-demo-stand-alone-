@@ -60,15 +60,15 @@ export function createTrussLabels(viewport,renderer) {
       line(project(a.leftTip),project(tip),{"stroke-dasharray":"3 3"});
       line(project(a.leftPlateCut),project(cut),{"stroke-dasharray":"3 3"});
       dimension(tip,cut,`${inches(t.projectionFt.start)} · tip to plate cut`,26);
-      card("Truss tip","2×4 · 1½″ × 3½″","farthest point",a.leftTip,14,16);
+      card("Truss tip","2×4 · 1½″ × 3½″","lowest point at plate top",a.leftLowestTip,14,16);
       card("Upper plate","6¼″ ends at this cut","gable board is above it",a.leftPlateCut,w-cardW-14,h-72);
     } else {
       dimension(a.upperLeftStart,a.upperLeftEnd,`${inches(t.upperLengthFt)} upper`,-18);
       dimension(a.lowerLeftStart,a.lowerLeftEnd,`${inches(t.lowerLengthFt)} lower`,-20);
       const riseX=a.rightTip[0]+.25,z=a.peak[2];
       line(project(a.peak),project([riseX,a.peak[1],z]),{"stroke-dasharray":"3 3"});
-      line(project(a.gableTop),project([riseX,a.gableTop[1],z]),{"stroke-dasharray":"3 3"});
-      dimension([riseX,a.gableTop[1],z],[riseX,a.peak[1],z],`${inches(t.peakRiseFt)} rise`,20);
+      line(project(a.upperPlateTop),project([riseX,a.upperPlateTop[1],z]),{"stroke-dasharray":"3 3"});
+      dimension([riseX,a.upperPlateTop[1],z],[riseX,a.peak[1],z],`${inches(t.peakRiseFt)} rise`,20);
       if(front && a.studCenters.length>1) {
         const centers=a.studCenters.slice().sort((p,q)=>p[0]-q[0]);
         const i=Math.max(0,Math.floor(centers.length/2)-1),p=centers[i],q=centers[i+1];
@@ -80,7 +80,7 @@ export function createTrussLabels(viewport,renderer) {
     }
     svg.setAttribute("aria-label",detail
       ? `Truss connection: ${inches(t.projectionFt.start)} measured horizontally from the farthest truss tip to the cut end of the upper plate.`
-      : `Truss fit preview: upper pieces ${inches(t.upperLengthFt)}, lower pieces ${inches(t.lowerLengthFt)}, peak ${inches(t.peakRiseFt)} above the top of the gable board. Gable studs 24 inches on center. Mirrored ends and center-stud layout are preview assumptions.`);
+      : `Truss fit preview: upper pieces ${inches(t.upperLengthFt)}, lower pieces ${inches(t.lowerLengthFt)}, peak ${inches(t.peakRiseFt)} above the top of the upper plate. Gable studs 24 inches on center. Mirrored ends and center-stud layout are preview assumptions.`);
   }
   return {update};
 }

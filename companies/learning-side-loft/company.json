@@ -72,17 +72,19 @@
     "trussStudy": {
       "chord": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5 },
       "upperLengthIn": 54, "lowerLengthIn": 37.75, "peakRiseIn": 48, "projectionIn": 6.25,
-      "bearing": "plain-edge-on-board-corner", "tailCut": "square-to-member", "layout": "mirrored-about-center",
+      "placement": "against-gable-inner-face", "peakDatum": "upper-plate-top", "lowestTipDatum": "upper-plate-top",
+      "tailCut": "square-to-member", "layout": "mirrored-about-center",
       "studs": {
         "nominal": "2x4", "widthIn": 3.5, "thicknessIn": 1.5, "spacingIn": 24,
-        "orientation": "broad-face-outward", "layoutOrigin": "center"
+        "orientation": "broad-face-outward", "layoutOrigin": "center", "topFit": "behind-truss-face"
       },
       "status": {
         "section": "confirmed", "upperLength": "confirmed", "lowerLength": "confirmed", "peakRise": "confirmed",
         "projection": "confirmed", "projectionDatum": "confirmed", "trussPlacement": "confirmed",
         "studPlacement": "confirmed", "studSpacing": "confirmed", "studTurnedOutward": "confirmed",
-        "mirror": "provisional", "bearing": "provisional", "tailCut": "provisional", "mitres": "provisional",
-        "depthAlignment": "provisional", "studSection": "provisional", "studFace": "provisional",
+        "peakDatum": "confirmed", "lowestTipDatum": "confirmed",
+        "mirror": "provisional", "tailCut": "provisional", "mitres": "provisional",
+        "depthAlignment": "confirmed", "studTopFit": "provisional", "studSection": "provisional", "studFace": "provisional",
         "studLayoutOrigin": "provisional", "treatment": "provisional"
       }
     },

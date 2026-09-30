@@ -87,18 +87,19 @@ projecting 2 1/2 in past each cut end. The calculated board length is
 thick and 5 1/2 in high. The [gable picture page](gable.html) includes a
 [measured connection close-up](images/gable-board-detail.png).
 Alan's confirmed name for this piece is **gable board**. It is nailed to
-the upper plate and supports the truss; treatment and nail size/count/spacing
+the upper plate; the truss goes against its shown front face. Treatment and nail size/count/spacing
 remain unconfirmed. He confirmed **2x4 truss lumber** and supplied
 54 in for the upper piece leading to the peak and 37 3/4 in for the lower,
 steeper piece, measured at the longest points. The peak is 4 ft (48 in)
-above the gable-board top. His annotated photograph resolves the separate
+above the upper-plate top, and the lowest truss tips are level with that
+same top (Alan’s September 29 correction). His annotated photograph resolves the separate
 **6 1/4 in** dimension: along the end wall from the **upper plate's cut end
 to the outermost truss tip**. The current `?step=truss` view adds four
 sloping pieces and the gable studs for review; the
 [truss picture page](truss.html) includes an
 [end connection detail](images/truss-connection.png).
 The preview mirrors that projection at both ends, giving a calculated
-125 1/2 in tip-to-tip span. That mirroring, the modeled cuts and seating,
+125 1/2 in tip-to-tip span. That mirroring, the modeled cuts and stud-top connection,
 and the gable studs' section and layout origin still need Alan's agreement.
 The studs' confirmed rules are that they sit on the gable board, are
 “turned outward” and are **24 in on center**. The preview uses 2x4 studs
