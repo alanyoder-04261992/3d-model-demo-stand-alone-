@@ -68,6 +68,16 @@ length is `12W - 2(1.5)`. The 75 in studs plus three 1.5 in plates give
 79.5 in wall height. Add actual flooring-top elevation only when measuring
 from skid bottom; do not label that combined height as stud length.
 
+For **gable backing**, use [its part skill](../../../.claude/skills/part-gable-backing/SKILL.md).
+It is horizontal 2x4, actual 1.5 in thick by 3.5 in high, wide face outward,
+between gable studs when that end has no window or fake window.
+`bottom = actual upper-plate top + 11 in`; `top = bottom + actual backing height`.
+Derive each cut from neighboring stud faces: `center spacing - half the
+left stud face width - half the right stud face width`. Current result:
+three pieces at 20.5 in (`24 - 3.5`), with 5.5 in above the gable board
+(`11 - 5.5`). Recompute bay count and clear lengths for other widths;
+do not scale the 11 in offset. A window on another end does not remove it here.
+
 For the learned **gable board**, Alan confirmed on-edge seating
 on top of the end upper plate and 2 1/2 in projection
 past each cut end. Use the actual plate endpoints: the new start is the

@@ -173,7 +173,30 @@ def render_truss():
     d.text((35,895),'Fit preview · first-center interpretation, mirrored ends and top joints to check.',font=font(23),fill='#526879')
     im.save(ROOT/'images/truss-framing.png')
 
+    # Backing close-up uses the same solid members and exact plate-top datum.
+    backing=m['backingMembers']
+    if backing:
+        assert len(backing)==3
+        piece=backing[len(backing)//2];b=piece['bounds'];z=piece['z1Ft']
+        assert abs((b['y0Ft']-plate['y1Ft'])*12-11)<1e-8
+        assert abs(piece['lengthFt']*12-20.5)<1e-8
+        target=[piece['center'][0],plate['y1Ft']+.83,z]
+        im,project=scene(target,8.4,yaw=.04,pitch=.10);d=ImageDraw.Draw(im)
+        title(d,'Gable backing','Horizontal 2×4 · bottom 11 in above the top of the upper plate')
+        dimx=max(r['bounds']['x1Ft'] for r in backing)+.65
+        dimension(d,project,[dimx,plate['y1Ft'],z],[dimx,b['y0Ft'],z],'11 in · to bottom',(0,0))
+        dimension(d,project,[b['x0Ft'],b['y1Ft'],z],[b['x1Ft'],b['y1Ft'],z],'20½ in clear length',(0,-37))
+        leader(d,project([backing[0]['center'][0],backing[0]['center'][1],z]),(35,150,475,110),
+               'Gable backing · 2×4',['3½ in face outward · between studs'])
+        leader(d,project([2.65,plate['y1Ft'],plate['z1Ft']]),(620,748,545,111),
+               'Upper plate',['Measure from its TOP to backing bottom'])
+        leader(d,project([-1.8,board['y1Ft']-.2,board['z1Ft']]),(35,748,545,111),
+               'Gable board · 2×6',['5½ in clear gap above this board'])
+        d.text((35,895),'Use when this gable has no window or fake window · 24 − 3½ = 20½ in per piece',font=font(23),fill='#526879')
+        im.save(ROOT/'images/gable-backing.png')
+
     # A straight-on view makes the end-wall datum and stud center marks clear.
+    target=[a['peak'][0],a['upperPlateTop'][1]+1.8,a['gableTop'][2]]
     im,project=scene(target,12.8,yaw=0,pitch=0);d=ImageDraw.Draw(im)
     title(d,'Gable studs · end-wall layout','2×4 · 3½ in face outward · centers measured from outside wall edge')
     layout_y=a['gableTop'][1];layout_z=centers[0][2]

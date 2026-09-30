@@ -19,9 +19,9 @@ agreement before adding the next stage. The earlier
 finished-building starting preference is superseded; the agreed roof names
 below remain valid.
 
-**Current rendered stage: A truss and gable-stud preview.** Use
+**Current rendered stage: Truss, gable studs and gable backing.** Use
 `learn.html?company=learning-side-loft&step=truss` for four sloping truss
-pieces and the gable studs above the end wall, gable board and existing floor.
+pieces, gable studs and horizontal backing above the end wall, gable board and existing floor.
 The [picture page](../truss.html) includes a connection detail showing the
 6 1/4 in measurement from the upper plate's cut end to the farthest tip.
 The profile uses Alan's measurements with the remaining fit assumptions
@@ -327,3 +327,16 @@ The existing [record of shop facts and assumptions](FOR-ALAN.md#building-facts-w
 is background evidence to review. It does not confirm a term for this
 conversation. Customer-specific terminology can be recorded with that
 company's setup without changing the meaning of the shared codes.
+
+## Gable backing — confirmed September 29, 2026
+
+**Gable backing** means the horizontal nominal 2x4 pieces between the gable
+studs, used when that gable has no window or fake window. Alan confirmed
+actual 1.5 x 3.5 in stock, with the 3.5 in face outward in line with the studs.
+Its bottom is **11 in above the top of the upper plate**. With current 24 in
+stud centers and 3.5 in outward faces, each clear piece is a calculated
+**20.5 in**, and the four gable studs leave three internal bays. This leaves
+5.5 in above the 5.5 in gable board. The section, height datum, orientation,
+condition and name are confirmed; lengths and count follow the actual layout.
+See [the close-up](../images/gable-backing.png) and
+[reusable part skill](../.claude/skills/part-gable-backing/SKILL.md).
