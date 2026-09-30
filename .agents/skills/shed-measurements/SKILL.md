@@ -17,6 +17,20 @@ part's skill before changing it. Use Alan's agreed names in the
 
 ## Establish the inputs and their scope
 
+For Alan's learned doorway, read
+[doorway framing](../../../.claude/skills/part-doorway-frame/SKILL.md).
+His king stud is the shorter support under the header, beside a full-height
+stud, standing on the bottom plate. With opening width `R`, actual stock
+thickness `t`, depth `D`, king cut `K`, and wall-stud cut `S`:
+`header cut = R + 2t`; `header bottom above flooring = bottomPlate.thickness + K`.
+Loft-header height is `D+t`; two stacked-flat boards give `2t`.
+Maximum king cut is `S-headerHeight`; the to-plate option uses `K=S`
+with no separate header below that plate. Keep the height input measured
+from bottom-plate top. The 75 in wall gives 70/72/75 in maximum king cuts
+for the three options. These are derived examples, not standard door sizes.
+Threshold cut and above-header framing remain unspecified. Legacy code's
+king/jack labels do not override Alan's shop terms.
+
 For the learned **lofted-wall window** header, read
 [its skill](../../../.claude/skills/part-window-header/SKILL.md).
 Actual stock thickness `t=1.5` and depth `D=3.5` give header height

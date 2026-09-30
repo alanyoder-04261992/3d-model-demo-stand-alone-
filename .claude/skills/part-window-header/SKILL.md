@@ -13,6 +13,11 @@ on top of another 2x4 lying flat. The whole assembly touches the underside
 of the **top plate**. The **upper plate** remains a separate board above it.
 This is Alan's **lofted-wall** rule; do not apply it to other wall types.
 
+Alan subsequently confirmed this same section for the usual doorway
+header. The [doorway lesson](../part-doorway-frame/SKILL.md) adds his king
+studs and derives cuts from opening width plus bearing at each end;
+alternative headers and the height datum are separate doorway rules.
+
 The **window plate** is a different 2x4 across the bottom of the window
 opening. Alan confirmed it lays flat, 1.5 in tall and 3.5 in deep through
 the wall, and that there are **studs under the window plate**. Do not call

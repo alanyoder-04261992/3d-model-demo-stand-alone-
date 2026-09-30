@@ -319,6 +319,15 @@ The UI has lower-assembly, header and all-learned-pieces views; the combined
 view remains incomplete pending side framing. Contextual bottom-plate
 portions do not change full wall cuts. Original layout datum is retained.
 
+The opt-in `doorway-frame` entry follows the window lessons and reads only
+`doorwayStudy`. `model/doorway-study.js` calculates independent opening
+width, king-stud cut and selected header option. Alan's king stud is the
+shorter support; legacy wall-frame member names remain internal. Header
+cuts include full bearing at each end. The isolated `doorway-framing.html`
+lesson shows loft headers, two stacked-flat boards, or king studs directly
+to the top plate. Plate context retains actual elevations and upper end
+setbacks; threshold cuts and above-header framing remain unconfirmed.
+
 `parts/openings/index.js` walks `plan.state.items` in array order exactly as
 `buildShed` calls `renderItem`: skip interior items (before `setItem`), apply
 the rotated-transom and door-height overrides, `setItem(it.id)`, create the

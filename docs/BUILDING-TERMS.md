@@ -1,5 +1,26 @@
 # Our building terms — working discussion list
 
+## Doorway framing — confirmed shop terms
+
+| Alan's term | Agreed piece and fit |
+| --- | --- |
+| **Stud** beside a doorway | The full-height stud beside the king stud, standing on the bottom plate. |
+| **King stud** | The shorter support under the header, standing on the bottom plate and cut to the selected height. In the garage-door arrangement it reaches the top plate. |
+| **Doorway header** | Rests on the king studs. It extends **1.5 in at each end**, giving cut length **opening width + 3 in**. |
+| **Usual loft header** | The three-board assembly learned for loft windows: two touching 2x4s on edge on one flat 2x4, 5 in tall. The half-inch ledge is outside. |
+| **Two flat boards** | Two flat 2x4s stacked for a taller doorway, totaling 3 in tall. |
+| **King studs to top plate** | Alan's garage-door arrangement: king studs touch the top-plate underside, with no separate header below it. |
+
+Height starts at **bottom-plate top**, where the king stud stands. Add its
+thickness when showing height above flooring. Opening width and king cut
+vary by door. See the [doorway lesson](../doorway-framing.html) and
+[construction guide](../.claude/skills/part-doorway-frame/SKILL.md).
+The bottom plate is shown during framing; its later doorway cut and any
+pieces above a lower header remain to learn.
+
+Older code calls the full-height member `king` and the shorter support
+`jack`. Those internal labels do not replace Alan's agreed **king stud**.
+
 ## Lofted-wall window framing — newly confirmed
 
 Alan's rule applies to **lofted walls**:
@@ -302,7 +323,7 @@ can wait until Alan wants to add them.
 | --- | --- | --- |
 | **Runners** | A possible alternate name for the confirmed skids; Alan has confirmed “skids,” not this alias. | [Skids](../.claude/skills/part-skids/SKILL.md) |
 | **Rim joist / end joist / floor frame** | Proposed names for the perimeter boards, the end boards and the complete floor-support assembly. **Floor joist** is already confirmed for the regular crosswise member; these additional names remain separate questions. | [Floor frame](../.claude/skills/part-floor-frame/SKILL.md) |
-| **Header / king stud / jack stud** | The member spanning an opening / the full-height stud beside it / the shorter stud supporting the header. | [Wall frame](../.claude/skills/part-wall-frame/SKILL.md) |
+| **Legacy header / king / jack labels** | Internal labels for the spanning member / full-height stud / shorter support. Alan calls the shorter doorway support **king stud**, as confirmed above. | [Wall frame](../.claude/skills/part-wall-frame/SKILL.md) |
 | **Chord / gusset** | A principal member of a truss / a plate joining members. Alan has confirmed **truss** for the assembly, but these additional terms remain proposed. | [Roof frame](../.claude/skills/part-roof-frame/SKILL.md) |
 | **Roof deck / sheathing** | The layer under the roof covering. Keep this distinct from the steel roofing above it. | [Roof deck](../.claude/skills/part-roof-deck/SKILL.md) |
 | **Loft / loft joists / loft deck** | A raised storage floor near an end of the building / its supporting members / its sheet floor. “Side loft” does not mean the loft projects from a side wall. | [Loft](../.claude/skills/part-loft/SKILL.md) |

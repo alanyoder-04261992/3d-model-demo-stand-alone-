@@ -39,7 +39,17 @@ company intake. Preserve the user's selected scope and view choices.
 
 ## Learn the terms together
 
-For the latest **lofted-wall window** lesson, use
+For Alan's doorway lesson, read
+[its construction guide](../../../.claude/skills/part-doorway-frame/SKILL.md)
+and [adjustable preview](../../../doorway-framing.html). His **king stud**
+means the support under the header beside a full-height **stud**, seated on
+the bottom plate. Preserve these shop terms even though legacy code calls
+that support a jack. Header cut is opening width plus 1.5 in at each end.
+Use the selected king cut and actual wall height for the loft-header,
+stacked-flat-header or to-top-plate arrangement. Carry these rules only
+within the builder's confirmed scope, without fixing a doorway size.
+
+For the **lofted-wall window** lesson, use
 [the header skill](../../../.claude/skills/part-window-header/SKILL.md) and
 [phone-friendly detail](../../../window-framing.html). Alan confirmed
 **window plate** (flat 2x4 below the opening), studs underneath it, and

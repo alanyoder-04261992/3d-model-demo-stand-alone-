@@ -23,10 +23,11 @@ parser.add_argument('--truss',action='store_true',help='Render the measured trus
 parser.add_argument('--window',help='Render an adjustable window example exported as WIDTHxHEIGHT.')
 parser.add_argument('--header',action='store_true',help='Render the loft window header and outside ledge from header-render-data.json.')
 parser.add_argument('--window-plate',action='store_true',help='Render the flat window plate and supporting studs from window-plate-render-data.json.')
+parser.add_argument('--doorway',choices=['loft','flat','to-plate'],help='Render one learned doorway arrangement from its exact mesh.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
-source='window-plate' if args.window_plate else 'header' if args.header else 'window-'+args.window if args.window else 'truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
+source='doorway-'+args.doorway if args.doorway else 'window-plate' if args.window_plate else 'header' if args.header else 'window-'+args.window if args.window else 'truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
 data=json.loads((ROOT/f'test/out/{source}-render-data.json').read_text(encoding='utf-8'))
 W,H=1200,940
 NAVY='#173b56'
@@ -152,6 +153,43 @@ def dimension(d,project,p,q,label,offset=(0,0)):
     width=box[2]-box[0]+22
     d.rounded_rectangle((middle[0]-width/2,middle[1]-19,middle[0]+width/2,middle[1]+23),radius=5,fill='white')
     d.text((middle[0]-width/2+11,middle[1]-15),label,font=f,fill=NAVY)
+
+def render_doorway():
+    m=data['metadata']['doorway'];s=m['study'];bottom=m['plateMembers'][0]['bounds']
+    mode=s['headerMode'];z=s['outsideZFt']
+    target=[(s['x0Ft']+s['x1Ft'])/2,(bottom['y0Ft']+m['plateMembers'][-1]['bounds']['y1Ft'])/2,z+s['depthFt']/2]
+    im,project=scene(target,13.5,yaw=3.02,pitch=.14);d=ImageDraw.Draw(im)
+    names={'loft':'Doorway · loft header','flat':'Doorway · two flat header boards','to-plate':'Doorway · king studs to top plate'}
+    title(d,names[mode],'Your shop terms · nominal 2×4 · actual 1½ × 3½ in')
+    stud=m['studMembers'][1];king=m['kingMembers'][1]
+    leader(d,project(stud['center']),(30,155,360,110),'Stud',['Full-height next to king stud'])
+    if mode=='to-plate':
+        point=[s['x1Ft']+s['thicknessFt']/2,s['studTopYFt'],z]
+        leader(d,project(point),(790,155,380,143),'Top plate',['King studs touch its underside','No separate header below it'])
+    else:
+        header=m['headerMembers'][0]
+        lines=['Two on edge on one flat board','5 in total height'] if mode=='loft' else ['Two flat 2×4s stacked','3 in total height']
+        leader(d,project(header['center']),(790,155,380,143),'Header',lines)
+        dimension(d,project,[s['x0Ft']-s['thicknessFt'],s['headerTopYFt'],z],
+                  [s['x1Ft']+s['thicknessFt'],s['headerTopYFt'],z],f"{s['headerCutIn']:g} in · header cut",(0,-43))
+    leader(d,project(king['center']),(30,737,460,110),'King stud',[f"{s['kingCutIn']:g} in cut · on the bottom plate"])
+    leader(d,project([s['x0Ft']-s['thicknessFt']/2,s['studBottomYFt'],z]),(660,737,510,110),'Bottom plate',['The height starts at its top'])
+    dimension(d,project,[s['x0Ft'],s['studBottomYFt'],z],[s['x1Ft'],s['studBottomYFt'],z],
+              f"{s['widthIn']:g} in · opening",(0,38))
+    # Draw only the butt seams, without inserting physical gaps.
+    for record in m['kingMembers']:
+        p=record['bounds'];edge=p['x1Ft'] if p['x0Ft']>0 else p['x0Ft']
+        d.line([tuple(project([edge,p['y0Ft'],z])),tuple(project([edge,p['y1Ft'],z]))],fill='#78694f',width=1)
+    for record in m['plateMembers'][1:]+m['headerMembers']:
+        p=record['bounds']
+        d.line([tuple(project([p['x0Ft'],p['y0Ft'],p['z0Ft']])),
+                tuple(project([p['x1Ft'],p['y0Ft'],p['z0Ft']]))],fill='#78694f',width=1)
+    if mode=='to-plate':
+        footer=f"Example wall: {s['kingCutIn']:g} in from bottom-plate top to top-plate underside."
+    else:
+        footer=f"Header cut = {s['widthIn']:g} + {s['bearingEachEndIn']:g} + {s['bearingEachEndIn']:g} = {s['headerCutIn']:g} in. Width and height vary."
+    d.text((35,883),footer,font=font(24),fill=NAVY)
+    im.save(ROOT/f"images/doorway-{mode}.png")
 
 def render_window_plate():
     m=data['metadata']['windowPlate'];s=m['study'];b=m['bottomPlate']['bounds']
@@ -548,6 +586,11 @@ def render_flooring():
     d.text((62,948),'Row 2: 4 + 8 + 4 ft. Final row width: 10 − 4 − 4 = 2 ft.',font=font(27),fill=NAVY)
     d.text((40,1030),'⅝ in tongue-and-groove flooring · 7 laid pieces · colors distinguish the rows',font=font(23),fill='#526879')
     plan.save(ROOT/'images/flooring-layout.png')
+
+if args.doorway:
+    render_doorway()
+    print('Saved exact-mesh doorway picture: '+args.doorway)
+    sys.exit(0)
 
 if args.window_plate:
     render_window_plate()
