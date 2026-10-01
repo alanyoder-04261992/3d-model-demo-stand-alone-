@@ -1,7 +1,7 @@
 # Client designer + Owner/Admin portal on Netlify.
 # npm run build uses an explicit shipping list; source, skills and private data
-# are never published. Only Alan's existing learning-preview site sets
-# INCLUDE_LEARNING_PREVIEW=true. New client sites default to customer-only.
+# are never published. tools/site-profiles.mjs recognizes Alan's existing
+# learning-preview site by SITE_ID. New client sites default to customer-only.
 # /c/<id>/ loads a static company; /d/<slug>/ is served by dealer-page with
 # the lot's current allowed embed origins. /api routes enforce account scope.
 # Re-run node tools/build-headers.mjs after inline index script changes.

@@ -14,6 +14,7 @@ import { loadLot } from "../ui/load.js";
 import { submitManagedOrder } from "../ui/managed-order.js";
 import { designLink } from "../ui/share.js";
 import { defaults, fromState, decode } from "../model/design.js";
+import { includeLearningPreview, learningSiteId } from "./site-profiles.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BASE = "https://designer.example/product/";
@@ -45,6 +46,14 @@ function lotFetch(status = 200, override = data) {
 }
 let catalogue;
 try {
+  await check("only the established learning site opts in, and client packaging always overrides it", async () => {
+    assert.equal(includeLearningPreview({ env: {} }), false);
+    assert.equal(includeLearningPreview({ env: { SITE_ID: "new-customer-site" } }), false);
+    assert.equal(includeLearningPreview({ env: { SITE_ID: learningSiteId } }), true);
+    assert.equal(includeLearningPreview({ env: { INCLUDE_LEARNING_PREVIEW: "true" } }), true);
+    assert.equal(includeLearningPreview({ env: { SITE_ID: learningSiteId, INCLUDE_LEARNING_PREVIEW: "false" } }), false);
+    assert.equal(includeLearningPreview({ client: true, env: { SITE_ID: learningSiteId, INCLUDE_LEARNING_PREVIEW: "true" } }), false);
+  });
   await check("lot links load Owner/Admin catalogue with dealer contact details and exact dealer origins", async () => {
     const calls = lotFetch();
     const result = await loadLot("port-charlotte", { base: BASE });
@@ -214,7 +223,8 @@ try {
   if (process.argv.includes("--skip-build")) console.log("SKIPPED: customer artifact checks (--skip-build).");
   else await check("customer build ships required runtime and excludes lessons, skills, source tools and server files", async () => {
     for (const path of ["portal.html", "ui/portal.js", "ui/portal.css"]) assert.ok(existsSync(resolve(ROOT, path)), "Required build input missing: " + path);
-    const result = spawnSync(process.execPath, ["tools/build-site.mjs", "--client"], { cwd: ROOT, encoding: "utf8", timeout: 120000 });
+    const result = spawnSync(process.execPath, ["tools/build-site.mjs", "--client"], { cwd: ROOT, encoding: "utf8", timeout: 120000,
+      env: { ...process.env, SITE_ID: learningSiteId, INCLUDE_LEARNING_PREVIEW: "true" } });
     assert.equal(result.status, 0, result.stdout + result.stderr);
     const out = resolve(ROOT, "dist-client");
     const files = [];

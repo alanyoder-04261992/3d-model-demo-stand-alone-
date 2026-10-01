@@ -16,8 +16,11 @@ origins take effect through the dealer page function without rebuilding.
 The static `/c/<company id>/` workflow below remains supported for older setups.
 
 `npm run build:client` creates client output without lessons, reference photos,
-skills or setup tools. The existing Yoder learning preview opts into those
-lesson pages with a site-specific build setting. Never enable it for clients.
+skills or setup tools. `tools/site-profiles.mjs` recognizes the existing Yoder
+learning-preview site's Netlify ID and preserves its public lesson pages.
+Other sites remain customer-only. `INCLUDE_LEARNING_PREVIEW=true` explicitly
+enables lessons for a local preview; `false` disables them on any site.
+Never enable lessons for clients. The explicit client build always excludes them.
 
 * **Alan hosts one copy of the designer** (the files are ready for Netlify:
   `netlify.toml`). Every company runs on that one copy, at its own address:

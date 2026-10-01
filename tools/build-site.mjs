@@ -6,10 +6,11 @@ import { resolve, dirname, relative, extname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { build } from "esbuild";
 import { buildHeaders, readCompanies, inlineScriptHashes } from "./build-headers.mjs";
+import { includeLearningPreview } from "./site-profiles.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const client = process.argv.includes("--client");
-const learning = !client && process.env.INCLUDE_LEARNING_PREVIEW === "true";
+const learning = includeLearningPreview({ client });
 const out = resolve(root, client ? "dist-client" : "dist");
 if (dirname(out) !== root || !["dist", "dist-client"].includes(relative(root, out))) throw new Error("Unexpected build directory");
 if (existsSync(out)) rmSync(out, { recursive: true });
