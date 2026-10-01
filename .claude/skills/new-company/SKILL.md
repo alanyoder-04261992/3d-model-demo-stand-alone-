@@ -3,6 +3,19 @@ name: new-company
 description: Set up a new shed company (a new customer of the designer) from its prices, colours, logo and where its leads go -- use when Alan asks to add, onboard or set up a company or dealer, or to change a company's settings file.
 ---
 
+## Managed businesses and dealer lots
+
+For the managed product, a business Owner/Admin controls the same validated
+company configuration through `portal.html`. Dealer lots get `/d/<slug>/`
+links and `data-lot` embed snippets; their requests go to scoped order inboxes.
+Read `docs/DEALER-BACKEND.md` for Identity provisioning and membership setup.
+Keep each independent business isolated. Dealer staff must not change prices
+or options. Alan's platform HQ/billing is a separate future feature.
+
+Run `npm run build:client` for a client delivery. Do not include learning pages,
+reference photos, setup tools, `.agents`, `.claude` or these skills. The existing
+learning preview's opt-in setting must not be copied to client deployments.
+
 # Set up a new company
 
 A company is **one settings file**, `companies/<id>/company.json`, on top of
@@ -19,6 +32,12 @@ The [shed-customer-setup skill](../../../.agents/skills/shed-customer-setup/SKIL
 distinguishes a new company from a buyer's design within an existing company.
 Reuse facts already supplied; ask only for information still needed for the
 current setup.
+
+The construction lessons, framing studies and their skills are internal
+tools for faster setup. Do not ship lesson pages, study controls or the
+learning company as customer designer features. Transfer only the rules
+confirmed for the new company's construction; the learning example's
+measurements and unfinished fits are not defaults for every customer.
 
 ## 1. Get what you need (ask the company, through Alan)
 

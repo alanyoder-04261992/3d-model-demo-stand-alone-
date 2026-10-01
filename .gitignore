@@ -5,3 +5,6 @@ test/out/
 
 # Local Netlify folder
 .netlify
+dist/
+dist-client/
+server/generated/

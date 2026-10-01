@@ -67,9 +67,8 @@
                            shows on the floor plan (an electric package, a
                            bench, a shelf, an outlet) with {want: "in",
                            reason}. With no plugin the button does nothing.
-     setBuildOptions({frames, scene}) / getBuildOptions()   what assemble() is
-                           asked for (frames: true also draws the framing, for
-                           the Framing and Build views). Rebuilds.
+     setBuildOptions({scene}) / getBuildOptions()   update the scene and rebuild.
+                           Customer builds always use frames: false.
      setReadOnly(bool)     a look-only page (a shared link): nothing can be
                            selected, dragged or added; body.viewonly hides the
                            cards (ui/styles.css).
@@ -103,7 +102,7 @@
    plugin that throws is reported with console.error and the page carries on.
    ------------------------------------------------------------------------- */
 
-import { loadCompany } from "./load.js";
+import { loadCompany, loadLot } from "./load.js";
 import { esc, safeUrl, telHref } from "./esc.js";
 import { defaults, normalize, toState, fromState, decode } from "../model/design.js";
 import { makePlan } from "../model/plan.js";
@@ -205,13 +204,14 @@ function brandHeader(cat) {
 async function boot() {
   const q = new URLSearchParams(location.search);
   const pm = /\/c\/([a-z0-9-]{2,40})\/?$/.exec(location.pathname);
+  const lotMatch = /\/d\/([a-z0-9-]{2,40})\/?$/.exec(location.pathname);
   const companyId = (pm && pm[1]) || q.get("company") || "demo";
   const embedded = q.get("embed") === "1";
   if (embedded) document.body.classList.add("embedded");
 
   /* 2. the company, before anything is drawn */
   let loaded;
-  try { loaded = await loadCompany(companyId); }
+  try { loaded = lotMatch ? await loadLot(lotMatch[1]) : await loadCompany(companyId); }
   catch (e) {
     console.error("The designer could not load its settings:", e.message);
     bootMessage("This designer could not start", "<p>" + esc(e.message) + "</p>");
@@ -298,7 +298,7 @@ async function boot() {
     try {
       plan = makePlan(state, cat);
       const vp = { w: canvas.clientWidth, h: canvas.clientHeight };
-      const opts = { viewport: vp, fit: "fitref", frames: !!buildOpts.frames };
+      const opts = { viewport: vp, fit: "fitref", frames: false };
       if (buildOpts.scene) opts.scene = buildOpts.scene;
       const res = assemble(plan, opts);
       renderer.show(res);
@@ -384,7 +384,7 @@ async function boot() {
     getMode: () => ctx.mode,
     setMode: setMode,
     onInside: null,
-    setBuildOptions(o) { buildOpts = Object.assign({}, buildOpts, o || {}); return rebuild(); },
+    setBuildOptions(o) { buildOpts = { frames: false, scene: o && o.scene !== undefined ? o.scene : buildOpts.scene }; return rebuild(); },
     getBuildOptions: () => Object.assign({}, buildOpts),
     setReadOnly(v) {
       ctx.readOnly = !!v;

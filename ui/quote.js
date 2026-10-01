@@ -3,8 +3,8 @@
    and calls install(api) with window.shedUI). It fills #quote-mount, under
    the summary in card 6, "Your quote".
 
-   This designer has no server of its own (docs/ARCHITECTURE.md, "Leads"), so
-   a quote request goes wherever the COMPANY'S settings say, company.leads.mode:
+   Managed dealer links save requests through the same-origin backend. Legacy
+   company links use the COMPANY'S settings, company.leads.mode:
      none         a showroom: no form at all.
      form         an ordinary web-form post to a form service the company
                   already uses (Formspree, Basin, Web3Forms, Netlify Forms):
@@ -77,6 +77,7 @@
    (can be changed), summary(contact), link(), images(cap) }. */
 
 import { esc, safeUrl } from "./esc.js";
+import { submitManagedOrder } from "./managed-order.js";
 import { money, priceParts } from "../model/pricing.js";
 import { colorName, sidingPalette } from "../model/company.js";
 import { frameOf } from "../model/frame.js";
@@ -494,7 +495,10 @@ export function install(api) {
     res.innerHTML = '<div class="qerr"><b>We couldn’t send your request just now.</b> Nothing is lost — ' + (canReach ? "reach " + esc(who) + " directly below" : "copy the link to your design below and send it to " + esc(who)) + ", or try again in a minute.</div>" + fallback(link, summary);
     wireFallback(link, summary);
     btn.hidden = false; btn.disabled = false; btn.textContent = "Try again";
-    if (why) res.querySelector(".qerr").setAttribute("data-why", why);
+    if (why) {
+      res.querySelector(".qerr").setAttribute("data-why", why);
+      if (cat.managed) { const detail = document.createElement("p"); detail.textContent = why; res.querySelector(".qerr").appendChild(detail); }
+    }
   }
   function showMailto(href, link, summary) {
     res.innerHTML = '<div class="qok"><b>Your e-mail app should have opened</b> with your design in it — press Send there to reach ' + esc(who) + ". " +
@@ -578,7 +582,9 @@ export function install(api) {
       summary = summaryText(api.getState(), cat, c, link);
       const design = api.getDesign({ priced: true, at: today() });   /* the customer's own day */
       let r;
-      if (mode === "form") {
+      if (mode === "managed" && cat.managed) {
+        r = await submitManagedOrder(cat.managed, design, c, state.timeoutMs);
+      } else if (mode === "form") {
         const pp = api.price();
         const t = cat.TYPES[api.getState().type] || {};
         const fields = {};
@@ -610,6 +616,11 @@ export function install(api) {
       }
       if (r.ok) {
         showSent(c, r.how);
+        if (r.receipt) {
+          const receipt = document.createElement("p");
+          receipt.textContent = `Request ${r.receipt.id} · Saved to your dealer's inbox.`;
+          res.querySelector(".sent").appendChild(receipt);
+        }
         if (mode !== "postMessage") tellParent({ type: "shed:quote-requested", v: 1, mode: mode, sent: true, design: design, link: link }, false);
         out = record(Object.assign({ status: "sent" }, r));
       } else {

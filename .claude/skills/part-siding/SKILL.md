@@ -77,6 +77,34 @@ Porting edits, all from the contract's Porting rules:
 
 ## The owner's facts
 
+### Alan's learned siding rules — October 1, 2026
+
+Alan's word “sliding” in this lesson means **siding**, the outside wall
+covering. Its actual thickness is **1/2 in**. On the **lofted barn** it
+extends **3.5 in below the bottom of the bottom plate**. On the **utility**
+its top is flush with the **upper-plate top** and its bottom extends below
+the wall. The utility bottom overhang differs from the lofted barn's 3.5 in;
+the exact utility amount remains unconfirmed. Do not copy the lofted value
+or derive a confirmed overhang from the legacy 4x8 sheet description.
+
+The utility also has a **2x4 nailed outside the siding**, parallel to the
+upper plate. Its **3.5 in broad face is against the siding** and its **top
+edge is level with the upper-plate top**. Using the already agreed actual
+2x4 section, it projects 1.5 in out from the siding and extends 3.5 in down
+from that datum. Those two extents are derived from the section and
+orientation. Keep the descriptive name “outside 2x4” until Alan supplies
+a shop name; its length, end/corner fit and nail details remain unconfirmed.
+It is separate from the learned 3.5 × 5/8 in trim stock and must not be
+silently mapped to the existing single-slope belt band or gable trim band.
+
+These are internal construction-learning facts, retained in
+`construction.claddingStudy` in the learning company's file. No existing
+renderer reads that record. It does not change the ordinary designer's
+zero-thickness siding or legacy skirt. Apply the rules within the
+confirmed builder/style scope when an actual geometry change is requested.
+The older Barnwright note below is historical context, not a resolution
+of the remaining utility measurement.
+
 The shop's note on the real construction (Barnwright 2147-2156), kept word for
 word in `parts/siding.js`:
 

@@ -7,8 +7,7 @@
 
 A 3D shed designer that a shed company puts on its own website. The customer
 picks a building, a size and colours, moves the doors and windows, looks at the
-floor plan, sees the framing inside the walls, watches the building go up step
-by step, and sends a quote request. It is the 3D designer from **Barnwright**
+dimensioned floor plan, shares the design, and sends a quote request. It is the 3D designer from **Barnwright**
 (Alan Yoder's shed software), taken out on its own so it can be sold to a
 company that only wants the designer.
 
@@ -22,12 +21,21 @@ company that only wants the designer.
 * **A new company is one settings file**, `companies/<id>/company.json`, made
   with `node tools/new-company.mjs` and filled from a price spreadsheet with
   `node tools/import-prices.mjs`.
-* **No server, no database, no build step, no dependencies.** Plain files and
-  plain JavaScript modules. Quote requests go wherever the company says (a form
-  service, a webhook, e-mail, or its own web page).
+* **Owner/Admin portal for each client business.** Netlify Functions, Identity
+  and Blobs store company catalogues, dealer lots and order requests. Owners
+  control prices/options; dealer staff see assigned lots. Each lot gets its own
+  website link. Static company links still support existing lead integrations.
+* **Explicit client build.** `npm run build:client` packages the customer
+  designer and portal without internal lessons, photos, skills or setup tools.
+  See [deployment and account setup](docs/DEALER-BACKEND.md).
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
-Latest lesson: [utility framing](utility-framing.html), with 89-inch wall
+The construction lessons, part skills and setup previews below are internal
+onboarding tools for Alan. They inform how buildings are modeled and new
+companies are set up; they are not customer features or part of the client
+website. The customer designer offers only Outside and Inside.
+
+Latest internal lesson: [utility framing](utility-framing.html), with 89-inch wall
 studs, a flat top window plate 12.5 inches below the wall top plate,
 and studs filling space above openings.
 The [utility skill](.agents/skills/utility-framing/SKILL.md) records those
@@ -141,9 +149,9 @@ The finished reference remains at `/?company=learning-side-loft`, with prices
 and quote requests hidden. Agree on the
 [building terms](docs/BUILDING-TERMS.md), then use
 [shed-customer-setup](.agents/skills/shed-customer-setup/SKILL.md) for the next
-company or shed buyer. The regular designer's Framing and Watch it build
-stay switched off; the separate learning page follows Alan's latest request
-to learn one piece at a time. Other companies keep their own choices.
+company or shed buyer. All customer designers offer Outside and Inside only.
+The separate internal learning page follows Alan's request to learn one
+piece at a time.
 
 Selling it to a company: [docs/SELLING.md](docs/SELLING.md).
 The rules every file is built to: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
@@ -219,7 +227,7 @@ companies/          one folder per company: demo (every style, example prices),
                     starter (a small made-up company), _template (what
                     new-company copies)
 ui/                 the screens: app.js (the page and its API, window.shedUI),
-                    views.js (Outside / Framing / Watch it build), blueprint.js
+                    views.js (Outside / Inside), blueprint.js
                     (the floor plan), quote.js (quote requests), share.js
                     (share links), embed-mode.js, setup.js, parts-gallery.js,
                     esc.js (every outside word is escaped here)
@@ -289,7 +297,10 @@ Chromium's software graphics, each on its own port.
 | `check-gable-window.mjs` | no | different opening sizes/positions, clear cavity, box contacts, exact mesh volume, fit rejection and restoration of no-window framing |
 | `check-model-live.mjs` | yes | the rules (sizes, walls, roof line, standard doors and windows, clamping, prices) are Barnwright's, number for number, against its live page |
 | `check-ui.mjs` | yes | the designer page works: every style, size, colour, door and window, drag, "Add here", layouts on phone and desktop, escaping |
-| `check-views.mjs` | yes | Outside, Inside, Framing and Watch it build on seven buildings, from real clicks and real pixels |
+| `check-views.mjs` | yes | Outside and Inside on seven buildings, dimension labels, unchanged finished geometry, no construction controls or runtime, and phone layout |
+| `check-customer-views.mjs` | no | Outside/Inside behavior, accessible selection, old flags unable to expose construction views, and no geometry access or rebuilds while switching |
+| `check-backend.mjs` | no | verified owner setup, company/lot isolation, admin-only settings, server pricing, duplicate orders, concurrent updates and origin checks |
+| `check-managed-client.mjs` | no | dealer routes and embeds, shared-design lot preservation, safe retries, error handling and customer build exclusions |
 | `check-blueprint.mjs` | yes | the floor plan: every wall, door, window and fixture symbol, touch and pinch, side by side with Barnwright's |
 | `check-gallery.mjs` | yes | the parts gallery and the contact sheet draw what they promise |
 | `check-leads.mjs` | yes | a quote request reaches the company every way a company can ask for it, and nobody it should not |

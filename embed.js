@@ -87,9 +87,10 @@
   host.setAttribute("data-shed-embed", "1");
 
   var company = String(script.getAttribute("data-company") || "").trim();
-  if (!ID_RE.test(company)) {
+  var lot = String(script.getAttribute("data-lot") || "").trim();
+  if (!ID_RE.test(lot || company)) {
     var msg = css(document.createElement("p"), { border: "1px solid #c8b8b0", borderRadius: "8px", padding: "12px 14px", color: "#7c2a22", background: "#fdf3f2", font: "14px/1.45 system-ui, sans-serif" });
-    msg.textContent = "The 3D designer could not be shown: the company name in its embed code (data-company=\"" + company +
+    msg.textContent = "The 3D designer could not be shown: the " + (lot ? "dealer lot" : "company") + " in its embed code (" + (lot ? "data-lot" : "data-company") + "=\"" + (lot || company) +
       "\") is not right. It should be 2 to 40 lower-case letters, digits or dashes, as it was given to you.";
     host.appendChild(msg);
     if (window.console) console.error("embed.js: data-company \"" + company + "\" is not a company id.");
@@ -108,7 +109,7 @@
     return d ? "#d=" + d + (view ? "&view=1" : "") : "";
   }
   function frameUrl() {
-    var u = new URL("c/" + company + "/", base);
+    var u = new URL((lot ? "d/" + lot : "c/" + company) + "/", base);
     u.search = "?embed=1";
     return u.href + designHash();
   }

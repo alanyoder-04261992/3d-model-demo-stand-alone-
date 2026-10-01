@@ -24,9 +24,16 @@ set up new companies**. Build it here and **do not touch Barnwright**.
 3. **One real-life part = one module in `parts/` + one skill in
    `.claude/skills/part-<id>/SKILL.md`.** Before changing a part, read its
    skill. After changing a part, update its skill.
-4. **A new company is a settings file** (`companies/<id>/company.json`), never
-   code. Use the `new-company` skill.
-5. **No backend, no runtime dependencies, no build step.** Plain ES modules.
+4. **A new company is configuration, never company-specific code.** Static
+   examples use `companies/<id>/company.json`; managed businesses store the same
+   validated configuration through the Owner/Admin portal. Use the `new-company` skill.
+5. **Keep the customer designer separate from internal construction lessons.**
+   The designer stays plain ES modules. The requested management backend uses
+   Netlify Functions, Identity and Blobs. `npm run build:client` creates an
+   explicit client package without lesson pages, skills, reference photos or
+   internal setup tools. Only Alan's learning preview enables lesson assets.
+   Owner/Admin controls each business's prices, options and dealer lots.
+   Dealer accounts see assigned lots' orders. Platform billing is deferred.
 6. The contract is `docs/ARCHITECTURE.md`. Deliberate behaviour differences from
    Barnwright are listed in `docs/DIFFERENCES.md`.
 

@@ -1,40 +1,29 @@
-# HOW NETLIFY SERVES THE DESIGNER (when Alan hosts it for a company).
-#
-# The designer is plain files -- no server program -- so Netlify only needs to
-# be told three things, all below:
-#
-# 1. THE COMPANY'S OWN ADDRESS. Each company's designer lives at
-#    /c/<company id>/ (for example /c/acme/). There is no folder called c/:
-#    Netlify quietly answers every /c/<id>/... address with index.html (a
-#    "rewrite": the address in the browser stays /c/acme/), and the designer
-#    reads the company id out of the address itself (ui/app.js). embed.js, the
-#    one line a company pastes on its website, opens /c/<id>/?embed=1.
-#    Any designer file asked for under /c/<id>/ (ui/, engine/, ...) is served
-#    from the top-level folder, in case a browser looks there before the page
-#    has told it where its files are.
-# 2. HOW LONG A BROWSER MAY KEEP EACH FILE ("Cache-Control"). The designer's
-#    code (engine/ model/ parts/ ui/ library/) and the company settings are
-#    kept but checked with Netlify on every visit ("max-age=0,
-#    must-revalidate"): the files are plain modules with no version number in
-#    their names, so a longer keep would mix old and new files after an update
-#    -- a half-updated designer. Checking costs a tiny "not changed" answer
-#    from Netlify's nearby servers. The fonts never change (a new font would
-#    get a new file name), so they are kept for a year. embed.js is kept for
-#    five minutes, so a fix reaches every company's website quickly.
-# 3. THE SAFETY RULES are in the file _headers (which websites may show each
-#    company's designer, and what the designer page may load). _headers is
-#    written by tools/build-headers.mjs from the companies' settings files and
-#    kept in the repo, so nothing has to run when Netlify publishes (this
-#    designer has no build step). RE-RUN IT after adding a company or changing
-#    a company's embed.origins or leads address:  node tools/build-headers.mjs
-#    (tools/check-embed.mjs fails, in plain words, while _headers is out of
-#    date.)
-#
-# The checks' own files (tools/, test/, .claude/) are not part of the website:
-# the last rules answer "not found" for them.
+# Client designer + Owner/Admin portal on Netlify.
+# npm run build uses an explicit shipping list; source, skills and private data
+# are never published. tools/site-profiles.mjs recognizes Alan's existing
+# learning-preview site by SITE_ID. New client sites default to customer-only.
+# /c/<id>/ loads a static company; /d/<slug>/ is served by dealer-page with
+# the lot's current allowed embed origins. /api routes enforce account scope.
+# Re-run node tools/build-headers.mjs after inline index script changes.
 
 [build]
-  publish = "."
+  command = "npm run build"
+  publish = "dist"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+  included_files = ["library/**", "companies/demo/company.json", "companies/starter/company.json"]
+
+[[redirects]]
+  from = "/portal"
+  to = "/portal.html"
+  status = 200
+
+[[redirects]]
+  from = "/portal/"
+  to = "/portal.html"
+  status = 200
 
 # --- 1. the company's own address ------------------------------------------
 

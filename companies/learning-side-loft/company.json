@@ -69,6 +69,29 @@
     }
   },
   "construction": {
+    "claddingStudy": {
+      "scope": "internal-learning-record",
+      "confirmedOn": "2026-10-01",
+      "siding": {
+        "thicknessIn": 0.5,
+        "loftedBarn": { "bottomOverhangIn": 3.5, "bottomOverhangDatum": "bottom-plate-bottom" },
+        "utility": { "topDatum": "upper-plate-top", "bottomOverhangIn": null }
+      },
+      "trim": { "widthIn": 3.5, "thicknessIn": 0.625 },
+      "utilityOutsideBoard": {
+        "description": "2x4 nailed outside the siding, parallel to the upper plate",
+        "nominal": "2x4", "thicknessIn": 1.5, "widthIn": 3.5,
+        "orientation": "broad-face-against-siding", "topDatum": "upper-plate-top"
+      },
+      "status": {
+        "sidingThickness": "confirmed", "loftedBottomOverhang": "confirmed", "loftedBottomDatum": "confirmed",
+        "utilityTopDatum": "confirmed", "utilityBottomOverhang": "unconfirmed-differs-from-lofted",
+        "trimSection": "confirmed", "utilityOutsideBoardLocation": "confirmed",
+        "utilityOutsideBoardOrientation": "confirmed", "utilityOutsideBoardTopDatum": "confirmed",
+        "utilityOutsideBoardName": "unconfirmed", "utilityOutsideBoardLengthAndEnds": "unconfirmed",
+        "utilityOutsideBoardNailDetails": "unconfirmed", "geometry": "not-implemented"
+      }
+    },
     "utilityStudy": {
       "studLengthIn": 89,
       "windowTopPlate": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5, "orientation": "flat", "studsAbove": true, "gapAboveIn": 12.5, "gapDatum": "top-plate-bottom-to-window-plate-top" },
@@ -263,6 +286,8 @@
   },
   "cfg": 1,
   "_help": [
+    "INTERNAL SETUP TOOL: the lessons and framing studies teach construction so new customer buildings can be configured faster. Do not ship the learning company or lessons as customer designer features.",
+    "claddingStudy records Alan's October 1 siding, trim and utility outside-2x4 facts only; no renderer consumes it. Utility bottom overhang, board name, length/end fit and nail details remain pending.",
     "LEARNING EXAMPLE, not a customer price list. The numeric prices are $1 placeholders required by the model; do not copy them into a customer quote.",
     "Alan confirmed: side loft means Side Lofted Barn (SLB), with the entrance on the long wall. See docs/BUILDING-TERMS.md and docs/examples/10x16-side-loft.md.",
     "The floor lesson uses Alan's confirmed skid and crosswise member sizes, 1 inch seating, 16/12 inch spacing and 30 inches from outside wall to inside skid face. Cut clearance, first notch offsets and remaining layout details are pending.",

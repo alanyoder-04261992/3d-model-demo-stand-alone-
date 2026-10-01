@@ -1,5 +1,29 @@
 # Our building terms — working discussion list
 
+This is internal setup knowledge. Alan clarified on October 1, 2026 that
+learning parts and framing is how we prepare new customer buildings faster.
+The lessons and framing studies are development tools, not customer
+designer features. Preserve each confirmed rule's builder/style scope.
+
+## Siding, trim and the utility outside board — October 1, 2026
+
+| Confirmed term or descriptive label | Agreed fact |
+| --- | --- |
+| **Siding** | The outside wall covering; Alan's “sliding” in this discussion means siding. Actual thickness **1/2 in**. |
+| **Lofted-barn siding bottom** | Extends **3.5 in below the bottom of the bottom plate**. |
+| **Utility siding top** | Flush with the **upper-plate top**. The bottom extends below the wall, by a different amount than the lofted barn; exact utility overhang is pending. |
+| **Trim** | Actual stock **3.5 in wide × 5/8 in thick**. Specific named trim applications and joints remain to learn. |
+| **Outside 2x4** (description; shop name pending) | Nailed outside the utility siding, parallel to the upper plate, with its **3.5 in broad face against the siding** and **top edge level with the upper-plate top**. |
+
+The utility outside board is separate from the trim stock. Its actual 2x4
+section gives a derived 1.5 in outward projection and 3.5 in vertical
+height. Its length, end/corner fit and nail details remain unconfirmed.
+Do not name it a belt band or gable trim band without Alan's confirmation.
+See [siding](../.claude/skills/part-siding/SKILL.md) and
+[trim](../.claude/skills/part-corner-trim/SKILL.md). The learning company's
+`construction.claddingStudy` stores these facts only; the model does not
+yet render the new siding thickness or outside board.
+
 ## Utility framing — confirmed October 1, 2026
 
 | Alan's term | Agreed rule |
@@ -331,7 +355,6 @@ teaching the name as agreed.
 | **Roof break / shoulder** | Where the steep and shallow roof slopes meet. This is a bend below the ridge. The upper metal sheet laps over the lower sheet here. | [Roofing](../.claude/skills/part-roofing/SKILL.md) |
 | **Eave** | The low roof edge along a long side, where the roof reaches past the wall. | [Roofing](../.claude/skills/part-roofing/SKILL.md) |
 | **Rake board / metal rake trim** | The sloped trim following the roof edge at a gable end. On this barn, metal rake trim partly covers the painted rake board. | [Roofing](../.claude/skills/part-roofing/SKILL.md) |
-| **Siding** | The outside wall covering. This painted style uses the LP rough-sawn panel appearance, with vertical grooves. | [Siding](../.claude/skills/part-siding/SKILL.md) |
 | **Siding skirt** | The siding extending below floor level to cover the floor's rim. | [Siding](../.claude/skills/part-siding/SKILL.md) |
 | **Corner trim** | Trim boards covering the outside wall corners. | [Corner trim](../.claude/skills/part-corner-trim/SKILL.md) |
 | **Gable siding** | The end-wall covering above the wall top, cut to the roof shape. | [Gable siding](../.claude/skills/part-gable-siding/SKILL.md) |

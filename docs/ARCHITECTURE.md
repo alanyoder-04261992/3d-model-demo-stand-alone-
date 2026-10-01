@@ -12,14 +12,17 @@ critiques of version 1 — see git history.)
 | "I like how it looks" (Barnwright's 3D designer) | the same shader, textures and triangles, ported | `tools/check-golden.mjs` (every triangle), `tools/check-look.mjs` (pixels) |
 | "3D rendering of each part of a shed" | one module per real part in `parts/`, and `parts.html` shows each on its own | `tools/check-parts.mjs`, `tools/check-framing.mjs` |
 | "a skill for each part" | `.claude/skills/part-<id>/SKILL.md` for every part | `tools/check-parts.mjs` (no part without a skill, no skill without a part) |
-| "when there is a new design it builds it like in real life" | every triangle carries its construction stage; Framing view and Watch-it-build playback, with real framing sized from construction settings | `tools/check-framing.mjs`, `tools/check-views.mjs` |
+| "when there is a new design it builds it like in real life" | internal construction lessons and part skills inform the model; customers use the finished building and floor plan | `tools/check-framing.mjs`, `tools/check-views.mjs` |
 | "fast to set up new companies" | a company is one settings file on top of a shared manufacturer file; `tools/new-company.mjs`, `tools/import-prices.mjs`, `setup.html` contact sheet | `tools/check-companies.mjs`, `tools/check-loadouts.mjs`, `tools/check-starter.mjs` |
-| "a company that just buys my 3D design, not the software" | no backend; `embed.js`; leads by form service / e-mail / webhook / the host page; hosting per company with allowed sites, status and credit | `tools/check-embed.mjs`, `tools/check-leads.mjs` |
+| "a company that just buys my 3D design, not the software" | managed dealer links and order inboxes; Owner/Admin catalogue control; `embed.js`; optional legacy lead integrations | `tools/check-embed.mjs`, `tools/check-leads.mjs` |
 | "not touch Barnwright" | Barnwright is only ever read, by the golden capture | nothing in this repo writes outside it |
 
 ## Ground rules
 
-1. **Plain ES modules, no build step, no runtime dependencies.**
+1. **Plain ES modules for the designer; separate management backend.**
+   Netlify Functions/Identity/Blobs support managed businesses and dealer lots.
+   An allowlisted build excludes internal lessons and skills from client output.
+   See [DEALER-BACKEND.md](DEALER-BACKEND.md) for server authorization and setup.
 2. **Node-safe vs browser files.** Everything under `model/`, `parts/`,
    `library/`, and the engine files marked *Node-safe* below must import and run
    in Node 22 with no DOM and no WebGL. They never import a browser file
@@ -130,21 +133,22 @@ Ids are permanent: append, never renumber. `uStg` has room for 32.
 
 ### Views
 
-* **Finished** (default): `always`, `both`, `finish`. Identical to Barnwright.
-* **Framing**: `always`, `both`, `frame`.
-* **Build** (playback): steps in `construction.buildOrder`. At step *k* the
-  shown stages are those at or before *k*, minus any frame stage already
-  covered by a finish stage that has landed:
-  `siding` covers `wall-frame`; `roofing` covers `roof-frame roof-deck loft dormer-frame`.
-  The step being placed is lowered into position (lift from +3 ft to 0, eased).
-  After the last step the view becomes Finished (the `floor` slab and `shading`
-  only appear there). Default `buildOrder`:
-  `site foundation skids floor-frame floor-deck wall-frame siding porch-frame
-  roof-frame dormer-frame loft gable-end roof-deck roofing dormer trim porch
-  doors windows extras interior ramp`.
+The customer designer offers **Outside** (the finished 3D building) and
+**Inside** (the dimensioned floor plan, unless `features.floorPlan` is false).
+The finished picture retains `always`, `both` and `finish` stages, identical
+to Barnwright. Customer rebuilds always use `frames: false`, including calls
+to the page API. Switching views changes only the display mode; it does not
+scan triangles, construct framing, create a player or run construction timers.
+Legacy `features.framingView` and `features.buildPlayback` values cannot enable
+customer tabs.
 
-Frame parts are built only when a view needs them: `assemble(plan, {frames:true})`.
-Finished-view rebuilds (every colour tap, every drag tick) cost what Barnwright's do.
+Construction lessons, part descriptions, the parts gallery and their skills
+are internal onboarding aids. They remain in the working repository and
+learning preview, outside the client website. `ui/part-details.js` holds the
+parts gallery's geometry summaries; `ui/views.js` does not import them.
+The engine retains framing stages and `assemble(plan, {frames:true})` for
+internal previews and checks. `construction.buildOrder` records the internal
+construction sequence and is not a customer playback feature.
 
 ## The engine
 
@@ -502,7 +506,7 @@ without overlapping; the demo reproduces the golden `includedItems` exactly.
              "smsConsent": null, "images": false },
   "embed": { "origins": ["https://acme-sheds.com"], "shareUrl": "https://acme-sheds.com/design" },
   "look": { "trueColour": true, "scene": "studio" },
-  "features": { "framingView": true, "buildPlayback": true, "floorPlan": true },
+  "features": { "floorPlan": true },
   "license": { "plan": "hosted", "renews": "2027-09-01" },
   "renames": { "items": {}, "sizes": {}, "colors": {} },
   "cfg": 1                             // bump when prices/items change; saved designs carry it
@@ -553,6 +557,13 @@ view mode prices from today's list; when the link's `priced.total` differs it
 says so ("this link was priced at $X on <date>; prices may have changed").
 
 ## Leads (`ui/quote.js`)
+
+Managed `/d/<lot>/` links load their company and lot from the backend. Submitting
+an order resolves the recipient and recomputes its price on the server, saves a
+catalogue/price snapshot and returns a receipt. A design link retains its lot.
+Owner/Admin accounts control the business catalogue; dealer staff read only
+assigned-lot orders. No payment or automatic dealer email is sent. Alan's
+platform billing remains separate and deferred.
 
 `company.leads.mode`:
 

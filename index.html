@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<!-- Identity emails may return to the site root; the portal owns these flows. -->
+<script>if(/(?:^#|&)(?:confirmation_token|recovery_token|invite_token|email_change_token|access_token|error_description)=/.test(location.hash)){location.replace('/portal.html'+location.hash);}</script>
 <!-- UNDER /c/<company>/ (the address embed.js opens -- a rewrite to this page)
      every file of the designer would be looked for inside /c/<company>/ and
      not found. This puts the page's base back at the folder above /c/, and
@@ -10,7 +12,7 @@
      page arrives, before any script runs, so a relative address written
      plainly in this file would be fetched from the wrong folder first. At the
      site's root the base is left alone. -->
-<script>(function(){var m=/^(.*\/)c\/[a-z0-9-]{2,40}\/?$/.exec(location.pathname);if(m){var b=document.createElement("base");b.href=m[1];document.head.appendChild(b);}document.write('<link rel="stylesheet" href="ui/styles.css">');})();</script>
+<script>(function(){var m=/^(.*\/)[cd]\/[a-z0-9-]{2,40}\/?$/.exec(location.pathname);if(m){var b=document.createElement("base");b.href=m[1];document.head.appendChild(b);}document.write('<link rel="stylesheet" href="ui/styles.css">');})();</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>3D Shed Designer</title>
 <meta name="description" content="Design your shed in 3D: pick a style and size, choose colours, place doors and windows, and see the price as you go.">
@@ -26,7 +28,7 @@
        the cards         1 building, 2 size, 3 colours, 4 doors & windows,
                          5 inside & upgrades, 6 your quote
      MOUNT POINTS for the pieces other files add (see ui/app.js, "PLUGINS"):
-       #view-mount   Outside / Inside / Framing / Build switcher (ui/views.js)
+       #view-mount   Outside / Inside switcher (ui/views.js)
        #bp           the floor-plan canvas (ui/blueprint.js)
        #quote-mount  the quote form and sending it (ui/quote.js)
        #share-mount  the share-my-design link (ui/share.js)
