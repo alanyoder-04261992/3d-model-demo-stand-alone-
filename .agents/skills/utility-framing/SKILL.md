@@ -11,11 +11,21 @@ the utility lesson distinct from the learned lofted wall.
 - Utility wall **stud cut length is 89 in**. It is not total wall height.
 - **Top window plate** is one flat 2x4: actual 1.5 in tall, 3.5 in deep
   through the wall. Put studs in the space above it to the top plate.
+- Its **top** is **12.5 in below the bottom of the wall top plate**.
+  These are the two tape datums. Upper studs cut to 12.5 in; do not
+  subtract the window plate thickness from this gap again.
 - Fill empty space above any framed opening with studs, including above a
   utility doorway header. Do not draw zero-height studs when it meets the plate.
 - Roof name: **A-frame roof**, also **utility-style roof**. Standard pitch
   is **5/12**; steep is **7/12**. The denominator is horizontal run, not
   distance along the sloping board. Rise = horizontal run × rise/run ratio.
+- Roof stock follows the **nominal sales width**: **10-wide and under
+  use 2x4** (actual 1.5 x 3.5); wider uses **2x6** (actual 1.5 x 5.5).
+  Actual building width is a separate geometry input (12-wide is 134 in).
+- Roof projects **4 in beyond each side wall**; its outer end is **2 in
+  high** before the top slopes to the peak. The bottom cut is level with
+  the **top of the side wall's upper plate**. Exact seat shape is pending
+  fit confirmation; do not quietly borrow the lofted truss tail.
 
 Read [shared measurements](../shed-measurements/SKILL.md),
 [utility top window plate](../../../.claude/skills/part-utility-window-frame/SKILL.md),
@@ -29,8 +39,10 @@ confirmation alone does not confirm every construction detail for this style.
 
 With the current 1.5 in bottom plate, top-plate underside is `1.5+89=90.5`
 in above flooring. Three flat plates give total `89+3×1.5=93.5` in.
-For window opening top `U` above flooring, short upper-stud cut is
-`90.5 - (U+1.5)`. For king cut `K` and chosen header height `H`, the
+Window-plate top is `90.5 - 12.5 = 78 in` above flooring; its underside
+is `78 - 1.5 = 76.5 in`. In general use `topPlate.bottom - gap` for
+window-plate top, then subtract actual thickness for its underside.
+For king cut `K` and chosen header height `H`, the
 upper-stud cut is `89-K-H`. These are formulas; window/door dimensions vary.
 Keep plate cut independent until window side supports/bearing are taught.
 
@@ -40,7 +52,9 @@ Alan's shorter **king stud** to the legacy code's king/jack terminology.
 Choose the doorway header separately using the learned doorway arrangements.
 For a 60 in horizontal run, 5/12 rises 25 in and 7/12 rises 35 in. These
 are pitch calculations, not confirmed peak elevations or fabrication cuts;
-rafter stock, bearing span, overhang, seat and joints remain to learn.
+peak datum, complete seat shape and joints remain to learn.
+`utilityRoofRule` selects confirmed stock/projection/end height independently
+of the pitch-only diagram. Preserve the named width even when actual width differs.
 
 The phone lesson is [utility-framing.html](../../../utility-framing.html),
 with an adjustable window detail, exact-mesh PNGs and a pitch diagram.

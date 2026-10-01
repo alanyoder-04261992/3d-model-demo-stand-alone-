@@ -1,5 +1,6 @@
 /* Opt-in utility lesson. Explicit shop rules do not replace the loft lesson
-   or alter the ordinary designer. Window heights and plate cuts vary. */
+   or alter the ordinary designer. Window placement follows the shop gap;
+   plate cuts and explicitly selected gap-study overrides can vary. */
 import {deepFreeze} from "./company.js";
 import {floorStudyPlan} from "./floor-study.js";
 import {wallStudyPlan} from "./wall-study.js";
@@ -27,27 +28,32 @@ export function utilityWallStudyPlan(plan,{wall="end"}={}) {
   return deepFreeze(result);
 }
 
-export function utilityWindowStudyPlan(plan,{lengthIn,openingTopAboveFloorIn}={}) {
+export function utilityWindowStudyPlan(plan,{lengthIn,gapAboveIn}={}) {
   const raw=plan.construction?.utilityStudy?.windowTopPlate,wall=plan.wallStudy;
   if(!raw || wall?.style!=="utility" || wall.wall!=="end")throw new Error("Use the measured utility end-wall lesson.");
   const t=positive(raw.thicknessIn,"top window plate thickness"),d=positive(raw.depthIn,"plate depth");
-  positive(lengthIn,"plate cut");positive(openingTopAboveFloorIn,"window-top height");
+  positive(lengthIn,"plate cut");
+  if(raw.gapDatum!=="top-plate-bottom-to-window-plate-top")throw new Error("Confirm the top window plate gap datum.");
+  const gap=gapAboveIn===undefined?positive(raw.gapAboveIn,"shop window-plate gap"):gapAboveIn;
+  if(!Number.isFinite(gap)||gap<0)throw new Error("Use a nonnegative gap above the top window plate.");
   if(raw.orientation!=="flat" || raw.studsAbove!==true || Math.abs(d-wall.stud.depthIn)>1e-8
     || Math.abs(t-wall.stud.widthIn)>1e-8 || lengthIn>wall.frameRange.lengthFt*12 || lengthIn<=t)
     throw new Error("The flat 2x4 top window plate must match and fit the utility wall.");
   const center=(wall.floorBounds.x0Ft+wall.floorBounds.x1Ft)/2;
   const x0Ft=center-lengthIn/24,x1Ft=center+lengthIn/24;
-  const bottomYFt=wall.baseYFt+openingTopAboveFloorIn/12,topYFt=bottomYFt+t/12;
+  const topYFt=wall.studTopYFt-gap/12,bottomYFt=topYFt-t/12;
+  const openingTopAboveFloorIn=(bottomYFt-wall.baseYFt)*12;
   if(bottomYFt<=wall.bottomPlateTopYFt || topYFt>wall.studTopYFt+1e-8)
     throw new Error("That window-top height and plate must fit below the wall's top plate.");
   const gapIn=(wall.studTopYFt-topYFt)*12;
   const studs=gapIn>1e-8?openingStudLayout(plan,x0Ft,x1Ft):[];
   if(gapIn>1e-8 && !studs.length)throw new Error("Choose a plate cut that covers a wall stud mark.");
   const copy=structuredClone(plan);
-  copy.utilityWindowStudy={nominal:raw.nominal,lengthIn,openingTopAboveFloorIn,x0Ft,x1Ft,bottomYFt,topYFt,
+  copy.utilityWindowStudy={nominal:raw.nominal,lengthIn,gapAboveIn:gap,gapDatum:raw.gapDatum,openingTopAboveFloorIn,x0Ft,x1Ft,bottomYFt,topYFt,
     studTopYFt:wall.studTopYFt,thicknessFt:t/12,depthFt:d/12,outsideZFt:wall.floorBounds.z0Ft,studs,
     status:{section:"confirmed",orientation:"confirmed",studsAbove:"confirmed",layout:"provisional-wall-layout",
-      length:"illustrative-input",openingHeight:"illustrative-input",sideSupports:"unconfirmed"}};
+      length:"illustrative-input",gap:gapAboveIn===undefined?"confirmed-shop-rule":"explicit-study-override",
+      openingHeight:"derived-from-gap",sideSupports:"unconfirmed"}};
   return deepFreeze(copy);
 }
 
@@ -83,4 +89,19 @@ export function utilityRoofPitch(plan,mode="standard",runIn=12) {
   return {name:raw.name,mode,rise,run,horizontalRunIn:runIn,riseIn:runIn*rise/run,
     angleDeg:Math.atan(rise/run)*180/Math.PI,slopeLengthIn:Math.hypot(runIn,runIn*rise/run),
     scope:"pitch-geometry-only"};
+}
+
+/* Sales width selects stock; actual wall width remains a separate input. */
+export function utilityRoofRule(plan,nominalWidthFt=Number(String(plan.state?.size).split("x")[0])) {
+  const raw=plan.construction?.utilityStudy?.roof;
+  if(raw?.shape!=="a-frame")throw new Error("Use the learned utility A-frame roof settings.");
+  positive(nominalWidthFt,"nominal building width");
+  const threshold=positive(raw.stock?.thresholdNominalWidthFt,"roof stock threshold");
+  const stock=raw.stock[nominalWidthFt<=threshold?"atOrBelow":"above"];
+  positive(stock?.thicknessIn,"roof stock thickness");positive(stock?.depthIn,"roof stock depth");
+  if(stock.thicknessIn>=stock.depthIn || raw.bottomCutDatum!=="side-wall-upper-plate-top")
+    throw new Error("Confirm the utility roof stock and upper-plate bottom-cut datum.");
+  return {name:raw.name,nominalWidthFt,stock:{...stock},
+    overhangEachSideIn:positive(raw.overhangEachSideIn,"side overhang"),
+    tipHeightIn:positive(raw.tipHeightIn,"truss end height"),bottomCutDatum:raw.bottomCutDatum};
 }

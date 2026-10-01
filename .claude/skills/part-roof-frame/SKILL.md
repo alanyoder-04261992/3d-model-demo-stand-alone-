@@ -13,10 +13,14 @@ per horizontal run: 7 in up for each 12 in across. Use the actual ratio,
 not distance along the slope or a lofted-roof angle. Read
 [utility framing](../../../.agents/skills/utility-framing/SKILL.md).
 `utilityRoofPitch` calculates rise/angle/slope for an explicit horizontal
-run and drives the diagram in `utility-framing.html`. It is pitch geometry
-only: rafter stock, bearing span/datum, overhang, seats and joints remain
-to learn. Do not replace the ordinary roof or fabricate a cut list from
-the diagram. The lofted truss size table remains a separate shop rule.
+run and drives the diagram in `utility-framing.html`. Select roof stock
+by **nominal sales width**: 10-wide and under use 2x4 (actual 1.5 x 3.5),
+wider buildings use 2x6 (actual 1.5 x 5.5). `utilityRoofRule` keeps this
+selection separate from actual frame width. Alan specified **4 in beyond
+each side wall**, **2 in outer-end height**, and a bottom cut level with
+the **side wall's upper-plate top**. Exact seat shape and joints remain
+to confirm. Do not replace the ordinary roof or fabricate a cut list from
+the pitch diagram. The lofted truss size table remains a separate shop rule.
 
 ## Gable backing added to the learned assembly
 

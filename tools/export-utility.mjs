@@ -9,7 +9,7 @@ import {woodFinish,floorWoodTexture} from "../ui/learn-wood.js";
 
 const cat=loadCatalogue("learning-side-loft"),raw=cat.construction.utilityStudy;
 const wall=utilityWallStudyPlan(makePlan(defaults(cat),cat));
-const windowPlan=utilityWindowStudyPlan(wall,{lengthIn:raw.examplePlateCutIn,openingTopAboveFloorIn:raw.exampleWindowTopAboveFloorIn});
+const windowPlan=utilityWindowStudyPlan(wall,{lengthIn:raw.examplePlateCutIn});
 const doorPlan=doorwayStudyPlan(wall,{widthIn:cat.construction.doorwayLesson.exampleWidthIn,kingCutIn:raw.exampleKingCutIn});
 const window=utilityWindowMeasurements(windowPlan),door=doorwayMeasurements(doorPlan);
 mkdirSync(new URL("../test/out/",import.meta.url),{recursive:true});

@@ -107,9 +107,12 @@ rules. Utility studs cut to **89 in**; the lofted stud cut stays 75 in.
 With the current three 1.5 in plates, utility wall height is a derived
 **93.5 in above flooring**. Plate count/corners are carried preview rules.
 The **top window plate** is one flat 2x4 with studs above it, separate
-from the lofted window's three-board header. For opening-top elevation
-`U` above flooring, upper studs cut to `bottomPlate.thickness + 89 - U - 1.5`.
-Keep window plate cut and opening height variable; side-support allowances
+from the lofted window's three-board header. Its **top is 12.5 in below
+the bottom of the wall top plate**; upper studs cut to 12.5 in.
+With the current bottom plate, window-plate top is `90.5-12.5=78 in`
+above flooring; its underside is `78-1.5=76.5 in`. Do not measure the
+12.5-inch gap to the window plate underside or subtract its thickness again.
+Keep window plate cut variable; side-support allowances
 are not yet taught. Upper-stud grid reuse remains provisional.
 
 An **A-frame roof / utility-style roof** uses standard **5/12** or steep
@@ -117,7 +120,11 @@ An **A-frame roof / utility-style roof** uses standard **5/12** or steep
 `slope length = hypot(horizontalRun, rise)` and angle is `atan(pitch/12)`.
 A 60 in horizontal run rises 25 or 35 in. Horizontal run is not the
 sloping board length; these calculations do not establish rafters' long
-points, bearing datum, overhang, seats, joints or complete roof cut lengths.
+points, seats, joints or complete roof cut lengths. Stock uses the sales
+width: at or below 10-wide use actual 1.5 x 3.5 in (2x4); above 10-wide
+use actual 1.5 x 5.5 in (2x6). Each side projection is 4 in beyond the
+outside wall, and outer-end height is 2 in. The bottom cut is level with
+the side-wall upper-plate top. Complete seat shape remains to confirm.
 
 ## Gable window box measurements
 

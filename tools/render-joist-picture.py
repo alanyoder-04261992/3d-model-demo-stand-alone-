@@ -205,7 +205,8 @@ def render_utility():
         stud=m['studMembers'][len(m['studMembers'])//2]
         leader(d,project(stud['center']),(670,737,500,110),'Studs above',[f"{m['studLengthIn']:g} in cut · vertical grain"])
         dimension(d,project,[s['x0Ft'],s['bottomYFt'],z],[s['x1Ft'],s['bottomYFt'],z],f"{s['lengthIn']:g} in · example plate cut",(0,42))
-        d.text((35,883),f"Upper-stud cut = {m['topPlateBottomAboveFloorIn']:g} − {s['openingTopAboveFloorIn']:g} − {s['thicknessFt']*12:g} = {m['studLengthIn']:g} in. Window heights vary.",font=font(23),fill=NAVY)
+        dimension(d,project,[s['x0Ft'],s['topYFt'],z],[s['x0Ft'],s['studTopYFt'],z],f"{s['gapAboveIn']:g} in gap",(155,0))
+        d.text((35,883),f"Plate top: {m['topPlateBottomAboveFloorIn']:g} − {s['gapAboveIn']:g} = {s['openingTopAboveFloorIn']+s['thicknessFt']*12:g} in above flooring. Upper studs: {m['studLengthIn']:g} in.",font=font(23),fill=NAVY)
         im.save(ROOT/'images/utility-window-top.png')
     else:
         m=data['metadata']['doorway'];s=m['study'];z=s['outsideZFt'];bottom=m['plateMembers'][0]['bounds']
