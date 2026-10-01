@@ -105,10 +105,16 @@ finished designer retains the golden geometry.
     and, on phones, of the price plate; a lifted finger no longer "clicks" the
     Outside button underneath; a tap never slides the picked item; tapping
     empty paper does not rebuild the building.
-20. **New views Barnwright never had**: Framing and Watch it build (the
-    finished view is unchanged), and nothing can be picked while the building
-    is going together; adding something in those views goes back to Outside
-    so it can be seen and dragged.
+20. **Customer views are Outside and Inside only**: Framing and Watch it
+    build were removed at Alan's request. Customer rebuilds never construct
+    framing, and no construction player, captions or timers load. The
+    finished geometry is unchanged. Lessons and skills remain internal
+    onboarding aids, separate from the client website.
 21. **Construction settings are checked when a company is loaded**: a lumber
     size that is not one ("2y4"), a spacing of 0, an unknown build step and so
-    on are refused in plain words, instead of breaking the Framing view later.
+    on are refused in plain words, before they reach the model or internal previews.
+22. **Managed dealer orders are verified on the server**: lot links retain
+    their recipient, submitted prices and free-item flags are checked against
+    the business catalogue, and duplicate submissions return one receipt.
+    Turning off an electrical package clears its outside-light toggle, including
+    dormant toggles in older saved links when opened in the customer designer.

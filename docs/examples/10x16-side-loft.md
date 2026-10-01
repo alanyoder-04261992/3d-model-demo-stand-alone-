@@ -1,6 +1,32 @@
 # First example: 10 x 16 Side Lofted Barn
 
-## Latest lesson: doorway framing
+This example and the construction lessons are internal setup tools. Alan
+clarified on October 1, 2026 that learning these parts and framing rules
+should make new customer buildings faster to configure; the lessons and
+framing studies are not features to ship in the customer designer.
+
+## Latest recorded facts: siding and trim
+
+Alan confirmed on October 1, 2026 that the siding is **1/2 in thick** and
+the trim stock is **3.5 in wide × 5/8 in thick**. His “sliding” in this
+discussion means siding. Lofted-barn siding extends **3.5 in below the
+bottom of the bottom plate**.
+
+For the utility style, siding top is flush with the **upper-plate top**.
+Its bottom overhang differs from the lofted barn; the amount is still
+pending. A **2x4 nailed outside the siding** runs parallel to the upper
+plate with its **3.5 in broad face against the siding** and its **top
+edge level with the upper-plate top**. The 2x4's shop name, length,
+end/corner fit and nail details remain to learn. It is separate from
+the thinner trim stock.
+
+The facts are retained in the learning company's `construction.claddingStudy`
+and the [siding](../../.claude/skills/part-siding/SKILL.md) and
+[trim](../../.claude/skills/part-corner-trim/SKILL.md) skills. This is a
+recording step: no renderer consumes those settings, and these new facts
+have not changed the siding or trim geometry.
+
+## Doorway framing
 
 Alan confirmed a full-height **stud** beside each **king stud**, his name
 for the shorter support under the header. Both stand on the bottom plate.

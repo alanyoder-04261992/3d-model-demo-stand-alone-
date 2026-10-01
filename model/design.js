@@ -127,6 +127,10 @@ export function normalize(state, frame, cat) {
     pkFixtures(state, fr, cat);
   }
   if (state.elec && state.elec.ext && (cat.MISC || {}).ext == null) { state.elec.ext = false; changed.push("The exterior light is not offered, so it was switched off."); }
+  if (state.elec && state.elec.ext && state.elec.pkg === 0) {
+    state.elec.ext = false;
+    changed.push("The exterior electrical light needs an electrical package, so it was switched off.");
+  }
   if (state.ramp && state.ramp !== "none" && !(cat.RAMPS || []).some((r) => r[0] === state.ramp)) { changed.push(`The ramp "${state.ramp}" is not offered, so it was switched off.`); state.ramp = "none"; }
   const O = state.opts || {};
   for (const k of Object.keys(O)) if (O[k] && !Object.prototype.hasOwnProperty.call(cat.RATES || {}, k)) { O[k] = false; changed.push(`The upgrade "${k}" is not offered, so it was switched off.`); }

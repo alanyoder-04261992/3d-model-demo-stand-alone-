@@ -50,7 +50,7 @@ import { createRenderer } from "../engine/renderer.js";
 import { snapshotCanvas } from "../engine/snapshot.js";
 import { STAGES, STAGE_ID } from "../parts/stages.js";
 import { fillRealLife } from "../parts/index.js";
-import { partCatalogue, stagesPresent } from "./views.js";
+import { partCatalogue, stagesPresent } from "./part-details.js";
 
 const ID_RE = /^[a-z0-9-]{2,40}$/;
 export const PART_PIC = Object.freeze({ w: 320, h: 240 });

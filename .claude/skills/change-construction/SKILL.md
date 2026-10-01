@@ -5,6 +5,15 @@ description: Change how the buildings are framed -- stud size or spacing, floor 
 
 # Change the construction numbers
 
+Alan's construction-learning work and framing studies are internal setup
+tools (clarified October 1, 2026). Use learned rules to configure customer
+buildings faster; do not add lessons, study controls or new framing features
+to the shipped customer designer merely because a rule was learned.
+Read the [setup scope](../../../.agents/skills/shed-customer-setup/SKILL.md)
+and the affected part's skill before applying a learned fact. Keep facts
+without a geometry consumer in the internal learning record instead of
+inventing a runtime setting and claiming the drawing now follows it.
+
 The Framing view and Watch it build draw real lumber, sized from
 **construction settings**, never from numbers typed into the parts. So "Acme
 uses 2x6 studs at 24 in" is a settings change: no part file changes. Read
@@ -97,7 +106,9 @@ standard manufacturer file** changes every Barnwright building and turns
 `docs/FOR-ALAN.md` ("What you still need to decide") lists every number we
 chose. When he answers:
 
-* change the number where it lives (usually the library, for everybody);
+* record and apply the fact within its confirmed scope, usually the
+  learning example or that company's settings; use the library for
+  everybody only when Alan has established that wider scope;
 * take the ASSUMPTION note off: `site.anchorsAssumed` in
   `library/construction.json`, `"assumed": true` on a style's `loft`, and the
   word ASSUMPTION in the `_help` note;

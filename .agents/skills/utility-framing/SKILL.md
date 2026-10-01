@@ -5,6 +5,12 @@ description: "Learn or apply Alan's utility wall, opening and A-frame roof rules
 
 # Utility framing
 
+This is internal knowledge for Alan and the setup agent to learn a builder's
+construction and configure customer buildings faster. The lesson pages,
+framing previews and study settings are development aids; do not ship them
+as customer designer features. Apply confirmed rules to a customer's
+settings/model only within that builder's scope.
+
 Alan confirmed these rules October 1, 2026. Use his terminology and keep
 the utility lesson distinct from the learned lofted wall.
 
@@ -26,6 +32,18 @@ the utility lesson distinct from the learned lofted wall.
   high** before the top slopes to the peak. The bottom cut is level with
   the **top of the side wall's upper plate**. Exact seat shape is pending
   fit confirmation; do not quietly borrow the lofted truss tail.
+- **Siding** is actual **1/2 in thick**, with its top flush with the
+  **upper-plate top**. Its bottom overhang differs from the lofted barn's
+  3.5 in and remains to be measured.
+- An **outside 2x4** is nailed over that siding, parallel to the upper
+  plate, with its **3.5 in face against the siding** and its **top edge
+  level with the upper-plate top**. Use this descriptive name until Alan
+  names it. End/corner fit, length and nail details remain unconfirmed.
+
+The [siding skill](../../../.claude/skills/part-siding/SKILL.md) records these
+new cladding facts and the separate **3.5 in × 5/8 in trim**. They are saved
+under `construction.claddingStudy` as facts only; no cladding geometry or
+new customer controls follow merely from saving them.
 
 Read [shared measurements](../shed-measurements/SKILL.md),
 [utility top window plate](../../../.claude/skills/part-utility-window-frame/SKILL.md),

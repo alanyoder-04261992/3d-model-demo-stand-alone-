@@ -374,6 +374,7 @@ export function moveItem(state, id, to, cat) {
 /* An electric package chip: its fixtures are laid out afresh. */
 export function setElec(state, pkg, cat) {
   state.elec.pkg = +pkg;
+  if (state.elec.pkg === 0) state.elec.ext = false;
   pkFixtures(state, frame(state, cat), cat);
   return state;
 }

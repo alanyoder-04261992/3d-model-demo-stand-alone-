@@ -8,6 +8,17 @@
 
 ## How it is sold: Alan hosts it, the company pastes two lines
 
+For managed businesses, use the [Owner/Admin portal](../portal.html) and
+[account setup guide](DEALER-BACKEND.md). An owner manages the business's prices,
+options and dealer lots. Each lot has `/d/<lot slug>/` and its own `data-lot`
+embed snippet; customer requests are saved to that lot's inbox. Allowed website
+origins take effect through the dealer page function without rebuilding.
+The static `/c/<company id>/` workflow below remains supported for older setups.
+
+`npm run build:client` creates client output without lessons, reference photos,
+skills or setup tools. The existing Yoder learning preview opts into those
+lesson pages with a site-specific build setting. Never enable it for clients.
+
 * **Alan hosts one copy of the designer** (the files are ready for Netlify:
   `netlify.toml`). Every company runs on that one copy, at its own address:
   `/c/<company id>/`. A company never receives the files, so every fix and
@@ -49,9 +60,8 @@
   double windows, a window in a door; pick a dormer, porch, electrical
   package, ramp, benches, shelves and upgrades; and see the total change as
   they go.
-* The **floor plan** (Inside), the **framing** inside the walls, and **Watch it
-  build**, the building going up in the order the shop builds it — each can
-  be switched off.
+* **Outside**, the finished 3D building, and **Inside**, the dimensioned floor
+  plan. The company can switch the floor plan off.
 * **Share my design**: a link that opens that exact building, for the
   customer's spouse or for the salesperson. Links can open on the company's
   own page (`embed.shareUrl`).
@@ -63,9 +73,9 @@
   link to their design, so no lead is lost.
 * A **full-screen** button, a phone-friendly layout, and a "Tap to design"
   cover so the designer never traps a visitor scrolling their page on a phone.
-* Its own **framing numbers** if it builds differently (stud spacing, joist
-  size, truss spacing, headers, anchors…) — the Framing view and Watch it
-  build then show its way.
+* Company-specific model settings prepared during onboarding. Construction
+  lessons and reusable skills are Alan's internal setup aids; they are not
+  included in the customer designer.
 * A **contact sheet** before going live: every building and size it offers,
   drawn with its standard doors and windows and priced, to check and sign off.
 

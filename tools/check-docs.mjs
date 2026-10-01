@@ -451,14 +451,14 @@ ok("tools/check-parts.mjs passes (every part valid, every skill well formed, no 
     if (!it) notes.push("docs/FOR-ALAN.md has no item about the width notes -- they were not compared");
     else ok("docs/FOR-ALAN.md quotes the width notes exactly as library/construction.json has them", J(quoted.slice().sort()) === J(files.slice().sort()), `it quotes ${J(quoted)}, the file has ${J(files)}`);
   }
-  /* the Watch it build order, step by step and in order */
+  /* the internal construction sequence, step by step and in order */
   {
     const WORDS = { foundation: "blocks", "floor-frame": "floor frame", "floor-deck": "decking", "wall-frame": "walls", "porch-frame": "porch posts",
       "roof-frame": "trusses", "dormer-frame": "dormer framing", "gable-end": "gable ends", "roof-deck": "roof deck", interior: "inside" };
     const want = (con.buildOrder || []).map((k) => WORDS[k] || k);
-    const list = (/\*\*The Watch it build order\*\* \(([^)]*)\)/.exec(flatAlan) || [, ""])[1];
+    const list = (/\*\*The internal construction sequence\*\* \(([^)]*)\)/.exec(flatAlan) || [, ""])[1];
     const got = list.split(",").map((x) => x.trim()).filter(Boolean);
-    ok(`docs/FOR-ALAN.md lists the Watch it build order as library/construction.json buildOrder has it (${want.length} steps, in order)`, J(got) === J(want),
+    ok(`docs/FOR-ALAN.md lists the internal construction sequence as library/construction.json buildOrder has it (${want.length} steps, in order)`, J(got) === J(want),
       `it lists ${J(got)}; buildOrder reads ${J(want)}`);
   }
 

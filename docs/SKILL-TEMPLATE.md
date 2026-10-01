@@ -5,6 +5,13 @@ module in `parts/` and one skill file at `.claude/skills/part-<id>/SKILL.md`,
 where `<id>` is the part's `id` (the module's file name). A Claude session
 that is about to change a part reads its skill first, and updates it after.
 
+These skills and the construction-learning/framing studies are internal
+setup tools. Alan clarified on October 1, 2026 that their purpose is to make
+new customer building setup faster. Keep lessons and study controls out of
+the shipped customer designer; carry applicable confirmed construction
+rules into its company settings and model. Record unknown fits explicitly
+instead of treating a learning preview as an approved customer default.
+
 `tools/check-parts.mjs` enforces the layout below: a part that is no longer a
 stub (`pending` is gone) with no skill file fails, a `part-*` skill with no
 part fails, and a skill missing the frontmatter or one of the eight required

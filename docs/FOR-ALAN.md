@@ -53,7 +53,7 @@ none.
 
 ## The views
 
-Four buttons sit over the top-left of the picture:
+Two buttons sit over the top-left of the picture:
 
 * **Outside** — the finished building, drawn exactly as Barnwright draws it.
   This is what opens first, and it turns slowly for ten seconds (not for a
@@ -62,21 +62,13 @@ Four buttons sit over the top-left of the picture:
   every wall, door (with its swing), window, roll-up, porch, outlet, light,
   bench, shelf and the ramp, with the width and length marked. Things can be
   picked, dragged and added on the plan too.
-* **Framing** — the lumber inside the building: blocks and anchors, skids,
-  floor joists and decking, studs with their headers round every door and
-  window, trusses, the loft, the roof deck, and the benches, shelves and
-  electrical boxes. The siding, roofing, doors and windows are hidden. A line
-  just under the four buttons gives the sizes (stud size and spacing,
-  trusses, joists), taken from the company's own construction numbers.
-* **Watch it build** — the building put together in the order the shop builds
-  it: site, blocks, skids, floor frame, decking, walls, siding, and so on up to
-  the roof, doors, windows and extras. Each step is lowered into place with a
-  caption saying what it is in real life. Play, pause, back, forward and start
-  again; a step this building has nothing for is skipped; at the end it goes
-  back to Outside.
+A company can switch the floor plan off in its settings. The Framing and
+Build tabs are removed from every customer designer.
 
-A company can switch Framing, Watch it build and the floor plan off in its
-settings.
+The construction lessons and reusable skills are our internal onboarding
+notes. We use them to understand how each company builds and prepare its
+models; customers do not receive the lessons or skills with their designer.
+The separate learning preview remains available for our work together.
 
 ## Setting up a new company
 
@@ -138,17 +130,23 @@ do. What their visitors get:
 * On a phone, a "Tap to design" cover lets a finger scroll past the designer
   without spinning the building, until the visitor taps it.
 * A shared design link on their page opens that building.
-* Their page is told when a quote was requested (for their own records or
-  analytics). Telling it when the designer is ready and when the customer
-  changes the building is written but not switched on yet (see "Not finished
-  yet" at the end).
+* Their allowed website is told when the designer is ready, when the design
+  changes and when a quote was requested. Customer contact details stay in the
+  dealer inbox for managed links.
 
 Each company's designer lives at its own address on the site you host
 (/c/ and the company's id). The company never gets a copy of the files.
 
 ## Where quote requests go
 
-This designer has no server of its own, so a quote request goes wherever the
+The [Owner/Admin portal](../portal.html) manages a business's prices, options
+and dealer lots. Each lot gets a link for its own website. A customer submitting
+through that link appears in that lot's order inbox, with the submitted design
+and the server's price at that time. Owners can see their whole business;
+dealer staff see the lots assigned to them. These are order requests to review,
+not paid purchases. Your platform's billing of these businesses comes later.
+
+Existing static company links can still send quote requests wherever the
 company already receives things. One choice per company:
 
 * **None** — a showroom: no quote form, just the building and the price.
@@ -296,7 +294,7 @@ everybody or for one company):
    not been newly confirmed. The ordinary finished reference keeps
    Barnwright's older skid; the learning page uses the corrected section.
 9. **Porch: 4x4 posts, 2x6 deck joists, railing 34 in high.**
-10. **The Watch it build order** (site, blocks, skids, floor frame, decking,
+10. **The internal construction sequence** (site, blocks, skids, floor frame, decking,
     walls, siding, porch posts, trusses, dormer framing, loft, gable ends, roof
     deck, roofing, dormer, trim, porch, doors, windows, extras, inside, ramp).
 11. **The two width notes** shown on 12 and 14 ft wide buildings: "A 12 ft wide
@@ -351,13 +349,11 @@ proved; the full list is in [the README](../README.md).
 
 ## Not finished yet
 
-* The designer does not yet tell a company's page "ready" and "the customer
-  changed the building" by itself (a quote request it already reports): the
-  piece that does it (ui/embed-mode.js) is written and tested, but the
-  designer page does not load it yet.
-* A company that frames its roofs with rafters instead of trusses still reads
-  the word "trusses" in the Framing line, and the roof-framing caption still
-  talks about gusset plates and a bottom chord. The rafters themselves are
+* The management portal needs Netlify Identity enabled and the first owner
+  explicitly assigned before staff can sign in. Platform billing and automatic
+  dealer email notifications are not connected.
+* Some internal part descriptions still assume trusses and their framing
+  description talks about gusset plates and a bottom chord. The rafters themselves are
   drawn and checked; only the words have not caught up.
 * The contract promises one more check that is not written yet: that every
   style's standard doors and windows land without being nudged, at every size

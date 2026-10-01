@@ -5,6 +5,11 @@ description: Calculate shed floor, wall and learned gable-board measurements for
 
 # Shed measurements
 
+This is internal setup knowledge: calculate and verify a builder's rules
+so customer buildings can be configured faster. Lessons, framing studies
+and their controls are development aids, not features to ship to the
+customer designer. Transfer only scoped, confirmed construction rules.
+
 Use this workflow to explain and apply the measurement relationships learned
 in [the 10x16 example](../../../docs/examples/10x16-side-loft.md). It does not
 replace the individual [wall](../../../.claude/skills/part-wall-frame/SKILL.md),

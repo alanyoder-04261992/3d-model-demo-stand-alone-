@@ -20,6 +20,13 @@ design within that company's catalogue. Read an existing part's skill before
 changing it, and update that skill with any part change. Preserve finished
 geometry unless a visual change is requested.
 
+The management portal stores validated company configuration and dealer lots
+on the server. Each business has an Owner/Admin who controls prices and options;
+dealer staff can access only assigned orders. Alan's own platform billing is
+separate and deferred. Never trust browser prices, recipient IDs or user-editable
+role metadata. Construction lessons and skills are internal setup knowledge,
+excluded from the default customer build; see `docs/DEALER-BACKEND.md`.
+
 Validate company files with `node tools/list-companies.mjs`; run
 `node tools/check-all.mjs --fast` for the checks without a browser. The legacy
 automated browser checks target a Linux Playwright installation. On other

@@ -87,3 +87,32 @@ export async function loadCatalogue(id, opts) {
   }
   return r.catalogue;
 }
+
+/* Managed dealer links resolve their company and routing on the server. A
+   shared design cannot choose a different recipient or change HQ's catalogue. */
+export async function loadLot(slug, opts = {}) {
+  checkId(slug, "The dealer lot");
+  const base = opts.base || ROOT;
+  const data = await fetchJSON(`api/lots/${slug}`, base);
+  const company = data.company;
+  const [manufacturer, library] = await Promise.all([
+    loadManufacturer(company.manufacturer, base), fetchJSON("library/construction.json", base),
+  ]);
+  const problems = validateManufacturer(manufacturer).concat(validate(company, manufacturer));
+  if (problems.length) return { company, manufacturer, library, catalogue: null, problems };
+  const cat = resolve(company, manufacturer, library);
+  const lot = data.lot;
+  const lotUrl = new URL(`d/${slug}/`, base).href;
+  const fields = { ...cat.leads.fields, name: "required" };
+  if (fields.phone === "off" && fields.email === "off") fields.email = "required";
+  const catalogue = Object.freeze({ ...cat,
+    brand: Object.freeze({ ...cat.brand, name: `${cat.brand.name} — ${lot.name}`,
+      phone: lot.phone || cat.brand.phone, email: lot.email || cat.brand.email,
+      website: lot.website || cat.brand.website }),
+    leads: Object.freeze({ ...cat.leads, fields: Object.freeze(fields), mode: "managed", images: false }),
+    embed: Object.freeze({ ...cat.embed, shareUrl: lotUrl, origins: lot.embedOrigins || [] }),
+    managed: Object.freeze({ slug, lotId: lot.id, companyId: company.id, version: data.version,
+      orderUrl: new URL(`api/lots/${slug}/orders`, base).href }),
+  });
+  return { company, manufacturer, library, catalogue, problems: [] };
+}

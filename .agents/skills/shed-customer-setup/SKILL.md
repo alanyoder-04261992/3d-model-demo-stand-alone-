@@ -1,9 +1,17 @@
 ---
 name: shed-customer-setup
-description: Set up a shed company or an individual buyer's design in the 3D stand alone repository, and learn or agree on building terms using the visible 10x16 Side Lofted Barn example. Use when Alan asks to onboard a designer customer, start a shed design, or clarify what a building part is called.
+description: Set up a shed company or buyer design using internally learned construction rules and terminology. Use when Alan asks to onboard a designer customer, start a shed design, or clarify building parts; the learning pages and framing studies are internal setup aids, not customer features.
 ---
 
 # Shed customer setup
+
+Alan clarified on October 1, 2026 that learning the framing, parts and
+construction rules is **internal work to make new customer building setup
+faster**. Keep the skills, lessons, study previews and learning example as
+setup/development tools. A customer receives the configured designer;
+do not add these lessons or framing studies to its shipped features or
+navigation. Reuse confirmed rules in the appropriate customer settings
+and model, preserving each builder's scope and outstanding measurements.
 
 Work in this repository. Start with the relevant entries in
 [the building terms](../../../docs/BUILDING-TERMS.md) and
@@ -44,6 +52,17 @@ affects the current result; a learning exercise does not need a complete
 company intake. Preserve the user's selected scope and view choices.
 
 ## Learn the terms together
+
+For the latest siding/trim facts, read
+[siding](../../../.claude/skills/part-siding/SKILL.md) and
+[trim](../../../.claude/skills/part-corner-trim/SKILL.md). Alan's “sliding”
+means siding: actual 1/2 in thick, with a 3.5 in bottom-plate overhang for
+the lofted barn. Utility siding is flush with the upper-plate top; its
+different bottom overhang is still pending. The utility's outside 2x4 has
+its broad face against the siding and its top level with that same plate.
+Trim stock is actual 3.5 in wide × 5/8 in thick. Preserve those facts in
+the internal record; do not invent the outside board's shop name or
+promote pending placements to customer construction settings.
 
 For Alan's utility style, use [utility framing](../utility-framing/SKILL.md)
 and [its phone lesson](../../../utility-framing.html): 89 in wall studs,

@@ -69,6 +69,17 @@ Porting edits, all from the contract's Porting rules:
 
 ## The owner's facts
 
+Alan confirmed the discussed **trim stock is 3.5 in wide × 5/8 in thick**
+on October 1, 2026. These are actual dimensions. Store them as learned
+construction facts in the learning company's `construction.claddingStudy.trim`;
+the current chamfered-post drawing below does not implement that board
+thickness. Specific corner joints, ends and the application of this stock
+to other named trim pieces remain to learn. Keep the utility's outside
+2x4 separate: it is actual 1.5 × 3.5 in stock, not this trim board.
+See [siding](../part-siding/SKILL.md#alans-learned-siding-rules--october-1-2026)
+for its confirmed placement. This lesson is internal setup knowledge,
+not a request to add a customer lesson or change the finished model.
+
 Kept word for word in the code: "corner trim: chamfered posts (eased outer
 edge catches the light the way a real 1x4 pair does) plus a soft thickness
 shadow on both adjoining walls".
