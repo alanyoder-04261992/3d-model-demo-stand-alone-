@@ -5,6 +5,8 @@ import {defaults} from "../model/design.js";
 import {makePlan} from "../model/plan.js";
 import {utilityWallStudyPlan,utilityWindowStudyPlan,utilityWindowMeasurements,utilityWindowDrawing} from "../model/utility-study.js";
 import {doorwayStudyPlan,doorwayMeasurements,doorwayDrawing} from "../model/doorway-study.js";
+import {utilityRoofStudyPlan} from "../model/utility-roof-study.js";
+import {utilityRoofMeasurements,utilityRoofDrawing} from "../model/utility-roof-measurements.js";
 import {woodFinish,floorWoodTexture} from "../ui/learn-wood.js";
 
 const cat=loadCatalogue("learning-side-loft"),raw=cat.construction.utilityStudy;
@@ -12,10 +14,12 @@ const wall=utilityWallStudyPlan(makePlan(defaults(cat),cat));
 const windowPlan=utilityWindowStudyPlan(wall,{lengthIn:raw.examplePlateCutIn});
 const doorPlan=doorwayStudyPlan(wall,{widthIn:cat.construction.doorwayLesson.exampleWidthIn,kingCutIn:raw.exampleKingCutIn});
 const window=utilityWindowMeasurements(windowPlan),door=doorwayMeasurements(doorPlan);
+const roofPlan=utilityRoofStudyPlan(wall),roof=utilityRoofMeasurements(roofPlan);
 mkdirSync(new URL("../test/out/",import.meta.url),{recursive:true});
 for(const [name,build,metadata] of [
   ["window",woodFinish(utilityWindowDrawing(windowPlan,window),{utilityWindow:window}),{utilityWindow:window}],
-  ["door",woodFinish(doorwayDrawing(doorPlan,door),{doorway:door}),{doorway:door}]
+  ["door",woodFinish(doorwayDrawing(doorPlan,door),{doorway:door}),{doorway:door}],
+  ["roof",woodFinish(utilityRoofDrawing(roofPlan,roof),{wall:roof.wallFinish,utilityRoof:roof}),{utilityRoof:roof}]
 ]) {
   const groups=[],textures={};
   for(const key of build.ORDER) {

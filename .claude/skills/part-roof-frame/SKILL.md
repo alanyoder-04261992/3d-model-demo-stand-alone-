@@ -22,6 +22,40 @@ the **side wall's upper-plate top**. Exact seat shape and joints remain
 to confirm. Do not replace the ordinary roof or fabricate a cut list from
 the pitch diagram. The lofted truss size table remains a separate shop rule.
 
+### Utility roof over an end wall: exact-mesh preview
+
+Alan requested this view October 1. `utilityRoofStudyPlan` opts in after
+`utilityWallStudyPlan`; `utilityRoofStudyMembers` supplies this part's two
+sloping boards. `utilityRoofMeasurements` and `utilityRoofDrawing` include
+the existing end wall and short display portions of side-wall upper plates
+at the corner laps. They draw no invented utility gable studs, bottom chord,
+webs, connectors or openings. Actual stock remains perpendicular to the slope.
+
+The **preview assumption** is a level tail cut whose entire bottom lies at
+side-wall upper-plate top. For actual width `W`, overhang `O`, end height `E`,
+pitch ratio `p` and actual board depth `D`, working in inches:
+
+- Half roof run `R = W/2 + O`.
+- Shown peak rise `E + R*p`; this is derived from the preview tail fit.
+- Vertical stock thickness `D / cos(atan(p))`.
+- Level-cut run from the tip `(D/cos(atan(p)) - E)/p`.
+- Keep the sloping stock strip above the plate datum; do not add timber.
+
+For 10-wide standard 5/12, `R=64`, shown peak rise is `28⅔ in`, and
+level cut runs 4.3 in from the tip. That fit has only 0.3 in of plate
+contact and does **not** establish the shop's finished seat or bearing.
+The same assumption with 2x4 at 7/12 would miss the plate; reject that fit
+instead of stretching stock. The steep pitch diagram still works. Do not
+mark the seat, peak datum, centered depth placement or ridge mitre confirmed
+until Alan checks them. The roof remains an isolated review illustration.
+
+`utility-framing.html#roof` links overview and tail-close-up PNGs from these
+same exact triangles and seeded wood pixels. Export with
+`node tools/export-utility.mjs`; render with
+`python tools/render-joist-picture.py --utility roof`. Required fast checks
+include stock depth, slope, projection, end height, contact/no overlap,
+wood geometry preservation and unchanged ordinary roof output.
+
 ## Gable backing added to the learned assembly
 
 Read [the gable-backing skill](../part-gable-backing/SKILL.md) before changing

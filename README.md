@@ -33,6 +33,8 @@ and studs filling space above openings.
 The [utility skill](.agents/skills/utility-framing/SKILL.md) records those
 rules, standard 5/12 / steep 7/12 A-frame pitch, roof stock by sales width,
 4-inch side overhang and 2-inch truss end height.
+The roof section includes a measured 3D render over the utility end wall
+and a close-up of the tail/upper-plate fit for Alan to check.
 The preceding lesson: [doorway framing](doorway-framing.html), with three
 adjustable header arrangements, labeled phone pictures and
 [a reusable skill](.claude/skills/part-doorway-frame/SKILL.md).

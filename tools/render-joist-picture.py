@@ -24,7 +24,7 @@ parser.add_argument('--window',help='Render an adjustable window example exporte
 parser.add_argument('--header',action='store_true',help='Render the loft window header and outside ledge from header-render-data.json.')
 parser.add_argument('--window-plate',action='store_true',help='Render the flat window plate and supporting studs from window-plate-render-data.json.')
 parser.add_argument('--doorway',choices=['loft','flat','to-plate'],help='Render one learned doorway arrangement from its exact mesh.')
-parser.add_argument('--utility',choices=['window','door'],help='Render the utility top window plate or doorway from exact mesh data.')
+parser.add_argument('--utility',choices=['window','door','roof'],help='Render a utility window, doorway or end-wall roof from exact mesh data.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
@@ -193,7 +193,37 @@ def render_doorway():
     im.save(ROOT/f"images/doorway-{mode}.png")
 
 def render_utility():
-    if args.utility=='window':
+    if args.utility=='roof':
+        m=data['metadata']['utilityRoof'];s=m['study'];w=m['wall'];a=m['anchors'];z=s['outsideZFt']
+        im,project=scene(yaw=.12,pitch=.12);d=ImageDraw.Draw(im)
+        title(d,'Utility roof on the end wall','10 ft wide · standard 5/12 A-frame roof · measured fit preview')
+        leader(d,project(m['roofMembers'][0]['center']),(30,155,300,143),'Utility truss · 2×4',['1½ × 3½ in actual','Standard pitch: 5/12'])
+        leader(d,project(w['plates']['upper']['center']),(870,155,300,143),'Upper plate',['Top of this layer is the','roof bottom-cut datum'])
+        leader(d,project(w['studs'][2]['center']),(30,737,435,110),'End wall studs',['89 in cut · 2×4 framing'])
+        leader(d,project(a['rightTip']),(690,737,480,110),'Roof end',['4 in past wall · 2 in end height'])
+        dimension(d,project,w['start'],w['end'],'10 ft · end wall',(0,30))
+        dimension(d,project,[w['start'][0],w['baseYFt']+w['plateThicknessFt'],z],
+                  [w['start'][0],w['topYFt']-2*w['plateThicknessFt'],z],'89 in cut',(-65,0))
+        dimension(d,project,a['leftTip'],a['leftWall'],'4 in',(-110,20))
+        dimension(d,project,a['rightWall'],a['rightTip'],'4 in',(110,20))
+        d.text((35,883),'Sloping roof pieces shown. Tail cut, ridge joint and depth placement are preview fits.',font=font(23),fill=NAVY)
+        im.save(ROOT/'images/utility-roof-end-wall.png')
+        # Close-up uses exactly the same triangles, not an enlarged sketch.
+        im,project=scene([a['leftWall'][0]-.08,s['baseYFt']+.21,z+.12],2.4,yaw=.12,pitch=.17);d=ImageDraw.Draw(im)
+        title(d,'Utility roof end · close-up','4-inch side projection · 2-inch end height · level-tail preview')
+        leader(d,project([a['leftTip'][0]+.13,s['baseYFt']+.18,z]),(30,155,390,110),'Roof · 2×4',['Actual 1½ × 3½ in'])
+        leader(d,project([a['leftWall'][0]+w['depthFt']/2,s['baseYFt']-.05,w['start'][2]]),
+               (790,155,380,143),'Side wall upper plate',['Portion shown at corner','Top is the roof-cut datum'])
+        dimension(d,project,a['leftTip'],a['leftWall'],'4 in · past outside wall',(0,96))
+        tiptop=[a['leftTip'][0],s['baseYFt']+s['tipHeightIn']/12,z]
+        dimension(d,project,a['leftTip'],tiptop,'2 in',(-105,0))
+        leader(d,project([a['leftWall'][0]+.11,s['baseYFt']-.17,w['start'][2]]),
+               (30,737,490,110),'End wall top plate',['Lower layer under the upper plate'],via=[(770,635),(770,690),(275,690)])
+        leader(d,project([a['leftTip'][0]+.09,s['baseYFt'],z]),
+               (670,737,500,110),'Level bottom cut',['Shown level with upper-plate top'],via=[(920,660)])
+        d.text((35,883),'Tail shape shown for you to check. Utility gable infill and roof connectors are still to learn.',font=font(23),fill=NAVY)
+        im.save(ROOT/'images/utility-roof-tail.png')
+    elif args.utility=='window':
         m=data['metadata']['utilityWindow'];s=m['study'];z=s['outsideZFt']
         top=m['plateMembers'][0];upper=m['plateMembers'][1]
         im,project=scene([(s['x0Ft']+s['x1Ft'])/2,(s['bottomYFt']+upper['bounds']['y1Ft'])/2,z+s['depthFt']/2],5.2,yaw=2.9,pitch=.2)

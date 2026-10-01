@@ -58,8 +58,13 @@ of the pitch-only diagram. Preserve the named width even when actual width diffe
 
 The phone lesson is [utility-framing.html](../../../utility-framing.html),
 with an adjustable window detail, exact-mesh PNGs and a pitch diagram.
+The roof section shows a 10-wide standard 5/12 roof over the utility end
+wall and a tail close-up. The level-tail shape and ridge/depth fit are
+explicit review assumptions, not confirmed cuts. Read the roof skill's
+[preview formulas](../../../.claude/skills/part-roof-frame/SKILL.md#utility-roof-over-an-end-wall-exact-mesh-preview).
+The shown gable is left open; its utility infill rules remain to learn.
 The doorway link selects `doorway-framing.html?wall=utility#rotate`.
 Run company validation, `node tools/check-all.mjs --fast`, and inspect
 mobile controls. Export PNG geometry with `node tools/export-utility.mjs`
 and render with `python tools/render-joist-picture.py --utility window`
-and `--utility door` (development Pillow/NumPy only).
+and `--utility door` or `--utility roof` (development Pillow/NumPy only).

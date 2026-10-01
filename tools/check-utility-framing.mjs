@@ -11,6 +11,9 @@ import {doorwayStudyPlan,doorwayMeasurements} from "../model/doorway-study.js";
 import {openingStudLayout} from "../model/opening-studs.js";
 import utilityPart from "../parts/utility-window-frame.js";
 import {woodFinish} from "../ui/learn-wood.js";
+import {utilityRoofStudyPlan,utilityRoofStudyMembers} from "../model/utility-roof-study.js";
+import {utilityRoofMeasurements,utilityRoofDrawing} from "../model/utility-roof-measurements.js";
+import roofPart from "../parts/roof-frame.js";
 
 const near=(a,b,label)=>assert.ok(Math.abs(a-b)<1e-8,`${label}: ${a} != ${b}`);
 const cat=loadCatalogue("learning-side-loft"),base=makePlan(defaults(cat),cat),before=JSON.stringify(base);
@@ -88,5 +91,33 @@ assert.throws(()=>utilityRoofPitch(base,"loft"));
 for(const value of [-1,90,Infinity,NaN])assert.throws(()=>utilityWindowStudyPlan(wall,{lengthIn:36,gapAboveIn:value}));
 for(const value of [0,1,121,NaN])assert.throws(()=>utilityWindowStudyPlan(wall,{lengthIn:value}));
 for(const value of [0,-1,NaN,Infinity])assert.throws(()=>utilityRoofRule(base,value));
+const roofPlan=utilityRoofStudyPlan(wall),roof=utilityRoofMeasurements(roofPlan),rs=roof.study;
+assert.equal(roof.roofMembers.length,2,"only the two learned roof slopes");
+assert.equal(roof.sidePlates.length,2,"corner plate display portions");
+assert.deepEqual(roofPart.members(roofPlan),utilityRoofStudyMembers(roofPlan),"actual roof part uses measured preview");
+near(rs.widthIn,120,"actual end-wall width");near(rs.halfRunIn,64,"run includes overhang");
+near(rs.peakRiseIn,28+2/3,"shown peak is derived from level-tail fit");
+assert.equal(rs.status.tailShape,"provisional-level-tail");assert.equal(rs.status.peak,"derived-from-preview-fit");
+for(const side of ["left","right"]) {
+  const tip=roof.anchors[side+"Tip"],edge=roof.anchors[side+"Wall"];
+  near(Math.abs(tip[0]-edge[0])*12,4,"four inches from outside wall to outer roof tip");
+  near(tip[1],s.topYFt,"tail bottom at upper-plate top");
+  const r=roof.roofMembers.find(r=>r.member.meta.side===side),atTip=r.poly.filter(p=>Math.abs(p[0]-tip[0])<1e-8);
+  assert.equal(atTip.length,2);near(Math.abs(atTip[0][1]-atTip[1][1])*12,2,"vertical end face");
+  const [a,b]=r.member.meta.grainEdge;near(Math.abs((b[1]-a[1])/(b[0]-a[0])),5/12,"top-edge pitch");
+  near(r.depthFt*12,1.5,"roof stock through thickness");
+  // Mid-board perpendicular distance between long edges is actual stock,
+  // regardless of its greater vertical height in a front view.
+  const inner=r.poly.find(p=>Math.abs(p[0]-rs.centerXFt)<1e-8&&p[1]<roof.anchors.peak[1]-1e-8);
+  const perpendicular=Math.abs((b[0]-a[0])*(inner[1]-a[1])-(b[1]-a[1])*(inner[0]-a[0]))/Math.hypot(b[0]-a[0],b[1]-a[1]);
+  near(perpendicular*12,3.5,"uncut slope stock depth perpendicular to grain");
+  const contact=rs.levelCutRunIn-rs.overhangEachSideIn;assert.ok(contact>0&&contact<3.5,"shown cut reaches plate without stretching stock");
+}
+noOverlap([...roof.wall.members,...roof.sidePlates,...roof.roofMembers]);
+const rawRoof=utilityRoofDrawing(roofPlan,roof),finishedRoof=woodFinish(rawRoof,{wall:roof.wallFinish,utilityRoof:roof});
+assert.deepEqual(mesh(rawRoof),mesh(finishedRoof),"roof wood preserves geometry and stages");
+assert.ok(finishedRoof.ORDER.every(key=>finishedRoof.buckets[key].tex.startsWith("lessonWood")));
+assert.throws(()=>utilityRoofStudyPlan(base),/utility end-wall/);
+assert.throws(()=>utilityRoofStudyPlan(wall,{mode:"steep"}),/different seat fit/,"do not add timber to an incompatible tail");
 assert.equal(JSON.stringify(base),before,"utility lesson does not mutate loft source");
-console.log("PROVED: utility window plate top is 12.5 in below top-plate underside, plate top/underside 78/76.5 in above flooring; supported upper studs preserve contacts and wood geometry; roof stock uses nominal 10-wide threshold, 4-in side projection and 2-in end height; utility/loft sources unchanged; pitch uses horizontal run.");
+console.log("PROVED: utility window 12.5-in gap/elevations; real opening contacts; roof stock uses nominal 10-wide threshold; exact 10-wide standard roof preview has 4-in projection, 2-in end height, perpendicular 3.5-in stock depth and level plate datum, with provisional fit status; no solid overlap or wood geometry changes; incompatible seats reject; loft source unchanged.");
