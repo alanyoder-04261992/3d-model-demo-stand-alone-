@@ -5,14 +5,16 @@
 | Alan's term | Agreed rule |
 | --- | --- |
 | **Utility wall stud** | Cut length **89 in**. With the current three flat 1.5 in plates, derived wall height is 93.5 in above flooring. |
-| **Top window plate** | One **flat 2x4** above the utility window, actual 1.5 in tall × 3.5 in deep. Studs fill the space above it to the wall's top plate. |
+| **Top window plate** | One **flat 2x4** above the utility window, actual 1.5 in tall × 3.5 in deep. Its top is **12.5 in below the bottom of the wall top plate**, with 12.5-inch studs filling that gap. |
 | **Studs above a framed opening** | Fill positive empty space, including above a utility door header. Preview positions follow the current wall grid; exact layout is provisional. |
 | **A-frame roof / utility-style roof** | Two sloping sides meet at the peak. Standard pitch **5/12**, steep pitch **7/12**. |
 | **Roof pitch** | Rise per **horizontal run**: 7/12 means 7 in up for every 12 in horizontally; 5/12 means 5 in up for every 12 in horizontally. |
+| **Utility roof stock** | **10-wide and under: 2x4**, actual 1.5 × 3.5 in; **wider: 2x6**, actual 1.5 × 5.5 in. Select by sales width. |
+| **Utility truss end** | **4 in** beyond each side wall; **2 in** high before the top slopes to the peak. Bottom cut level with the side-wall upper-plate top; exact seat shape is being confirmed. |
 
 Opening dimensions vary. Utility previews carry the current wall stock,
-plate count and corners; rafter sections, roof seating and overhang cuts
-remain to learn. See [utility framing skill](../.agents/skills/utility-framing/SKILL.md)
+plate count and corners; complete roof seat shape and joints remain to learn.
+See [utility framing skill](../.agents/skills/utility-framing/SKILL.md)
 and [phone lesson](../utility-framing.html).
 
 ## Lofted truss sizes and actual building width

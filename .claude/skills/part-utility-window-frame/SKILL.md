@@ -26,19 +26,21 @@ bearing and cut-to-opening-width allowances remain unconfirmed.
 ## Construction settings
 
 Read `construction.utilityStudy.windowTopPlate` and the current wall
-stock. Select sample plate cut `C` and opening-top elevation `U` above
-flooring independently. The plate's underside is the opening top.
+stock. Select sample plate cut `C`; position its top **12.5 in below the
+bottom of the wall top plate**. The plate's underside is the opening top.
 
-- Top window plate bottom = `flooring.top + U`.
-- Plate top = `plate.bottom + actual thickness`.
+- Top window plate top = `wall.topPlate.bottom - gapAboveIn`.
+- Plate bottom = `plate.top - actual thickness`.
 - Short upper stud bottom = top window plate top.
 - Short upper stud top = wall top-plate underside.
 - Short stud cut = `topPlate.bottom - windowTopPlate.top`.
 
 For the current 89 in wall studs and 1.5 in bottom plate, top-plate
-underside is 90.5 in above flooring. A 72 in opening-top example gives
-`90.5 - 72 - 1.5 = 17 in` upper studs. The sample plate cut is 36 in;
-both are illustrative, not fixed product/window dimensions.
+underside is 90.5 in above flooring. Plate top is `90.5 - 12.5 = 78 in`;
+underside is `78 - 1.5 = 76.5 in`. Upper studs cut to **12.5 in**.
+The sample plate cut is 36 in and remains illustrative. The gap is a
+confirmed shop rule independent of window width. An explicit API
+`gapAboveIn` override is marked a study override, not confirmed product data.
 
 ## Kept quirks
 
@@ -56,7 +58,8 @@ finished geometry stay unchanged; only this lesson opts into the assembly.
 ## The owner's facts
 
 Alan specified 89-inch utility wall studs, a flat top window plate with
-studs above it, and studs wherever there is space above framed openings.
+studs above it, the 12.5-inch bottom-of-top-plate to top-of-window-plate
+gap, and studs wherever there is space above framed openings.
 He separately supplied standard 5/12 and steep 7/12 A-frame roof pitch.
 
 ## How to change it safely
@@ -74,5 +77,6 @@ for formulas. Refresh pictures with `node tools/export-utility.mjs` then
 ## Checks that guard it
 
 `node tools/check-utility-framing.mjs` validates contacts, actual sections,
-variable heights/cuts, no overlaps, no zero-length studs and roof pitch
+default gap/derived elevations, variable cuts and explicit gap overrides,
+no overlaps, no zero-length studs and roof pitch
 calculations. Also run company/skill validation and the required fast suite.

@@ -71,10 +71,12 @@
   "construction": {
     "utilityStudy": {
       "studLengthIn": 89,
-      "windowTopPlate": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5, "orientation": "flat", "studsAbove": true },
-      "roof": { "name": "A-frame roof", "shape": "a-frame", "standard": { "rise": 5, "run": 12 }, "steep": { "rise": 7, "run": 12 } },
-      "examplePlateCutIn": 36, "exampleWindowTopAboveFloorIn": 72, "exampleKingCutIn": 80,
-      "status": { "studLength": "confirmed", "windowTopPlate": "confirmed", "studsAbove": "confirmed", "roofName": "confirmed", "roofPitches": "confirmed", "upperStudLayout": "provisional", "plateCountAndCorners": "carried-from-wall-lesson", "exampleDimensions": "illustrative" }
+      "windowTopPlate": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5, "orientation": "flat", "studsAbove": true, "gapAboveIn": 12.5, "gapDatum": "top-plate-bottom-to-window-plate-top" },
+      "roof": { "name": "A-frame roof", "shape": "a-frame", "standard": { "rise": 5, "run": 12 }, "steep": { "rise": 7, "run": 12 },
+        "stock": { "thresholdNominalWidthFt": 10, "atOrBelow": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5 }, "above": { "nominal": "2x6", "thicknessIn": 1.5, "depthIn": 5.5 } },
+        "overhangEachSideIn": 4, "tipHeightIn": 2, "bottomCutDatum": "side-wall-upper-plate-top" },
+      "examplePlateCutIn": 36, "exampleKingCutIn": 80,
+      "status": { "studLength": "confirmed", "windowTopPlate": "confirmed", "windowTopPlateGap": "confirmed", "studsAbove": "confirmed", "roofName": "confirmed", "roofPitches": "confirmed", "roofStock": "confirmed", "roofOverhang": "confirmed", "roofTipHeight": "confirmed", "roofBottomCutDatum": "confirmed", "roofSeatShape": "awaiting-fit-confirmation", "upperStudLayout": "provisional", "plateCountAndCorners": "carried-from-wall-lesson", "exampleDimensions": "illustrative" }
     },
     "trussStudy": {
       "referenceNominalWidthFt": 10,

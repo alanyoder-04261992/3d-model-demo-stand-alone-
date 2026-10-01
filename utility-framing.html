@@ -19,19 +19,20 @@
   <p>Your utility wall studs cut to <strong>89 inches</strong>. The <strong>top window plate</strong> is one <strong>flat 2×4</strong>, with studs filling the space above it. Fill space above other framed openings with studs too.</p>
   <nav aria-label="Lesson navigation"><a href="#window">Top window plate</a><a href="#roof">A-frame roof</a><a href="doorway-framing.html?wall=utility#rotate">Rotate utility doorway</a><a href="walls.html">Lofted wall lesson</a></nav>
   <h2 id="window">Top window plate and studs above</h2>
-  <figure><a href="images/utility-window-top.png"><img src="images/utility-window-top.png" width="1200" height="940" alt="Utility window detail: a flat 2x4 top window plate with 17-inch studs above it, meeting the wall's top plate. The upper plate is a separate board above the top plate."></a><figcaption>Example plate cut: 36 inches. Its underside is 72 inches above flooring. With 89-inch wall studs and a 1½-inch bottom plate, the short studs above cut to 17 inches. Tap to enlarge.</figcaption></figure>
+  <figure><a href="images/utility-window-top.png"><img src="images/utility-window-top.png" width="1200" height="940" alt="Utility window detail: 12½ inches from the bottom of the wall top plate to the top of the flat top window plate, with 12½-inch studs above it."></a><figcaption>Your spacing: <strong>12½ inches from the bottom of the top plate to the top of the window top plate</strong>. The short studs cut to 12½ inches. The example plate cuts to 36 inches; its top is 78 inches and its underside is 76½ inches above flooring. Tap to enlarge.</figcaption></figure>
   <h2>Rotate and change the example</h2><p class="hint">Drag to turn; pinch or use + / − to zoom. The picture above works on your phone even when 3D is unavailable.</p>
   <div class="stage"><canvas id="utility-canvas" tabindex="0" aria-label="Rotatable utility top window plate. Arrow keys turn; plus and minus zoom."></canvas></div>
   <div id="utility-controls" hidden>
     <div class="controls"><button id="utility-front" type="button">Front view</button><button id="utility-angle" type="button">Angle view</button><button id="utility-in" type="button" aria-label="Zoom in">+</button><button id="utility-out" type="button" aria-label="Zoom out">−</button></div>
     <form id="utility-form"><label for="plate-cut">Top window plate cut (inches)</label><input id="plate-cut" type="number" min="1.5" step="0.25" value="36" required>
-      <label for="window-top">Window opening top above flooring (inches)</label><input id="window-top" type="number" min="1.75" step="0.25" value="72" required>
-      <p class="hint">This measures to the underside of the flat top window plate. Its cut and opening height are adjustable examples; the window's side supports are still to learn.</p><button type="submit">Apply dimensions</button></form>
+      <p class="hint">The 12½-inch spacing stays fixed as the example plate cut changes. Window side supports and the cut allowance for an opening are still to learn.</p><button type="submit">Apply dimensions</button></form>
   </div>
-  <p id="utility-status" role="status">Loading the measured utility detail…</p><p class="facts">Stud cut above top window plate: <strong id="above-cut">17 in</strong></p>
+  <p id="utility-status" role="status">Loading the measured utility detail…</p><p class="facts">Stud cut above top window plate: <strong id="above-cut">12½ in</strong></p>
   <h2>Studs above a utility doorway</h2>
   <figure><a href="images/utility-doorway.png"><img src="images/utility-doorway.png" width="1200" height="940" alt="Utility doorway: 89-inch full-height studs, 80-inch king studs on the bottom plate, a five-inch loft-style header and four-inch studs filling the gap above that header."></a><figcaption>Example: 36-inch opening, 80-inch king studs, 5-inch header, and 4-inch studs above it: 89 − 80 − 5 = 4 inches. The header cuts to 39 inches. <a href="doorway-framing.html?wall=utility#rotate">Change the doorway dimensions.</a></figcaption></figure>
   <h2 id="roof">A-frame roof / utility-style roof</h2>
+  <p class="facts" id="roof-stock">10-wide example: 2×4, actual 1½ × 3½ in.</p>
+  <p>Use <strong>2×4 for 10-wide and under</strong>, and <strong>2×6 for wider buildings</strong> (actual 1½ × 5½ inches). The truss projects <strong>4 inches past each side wall</strong>. Its end is <strong>2 inches high</strong> before the top slopes toward the peak. The bottom cut is level with the <strong>top of the side wall’s upper plate</strong>.</p>
   <label for="roof-pitch">Roof pitch</label><select id="roof-pitch"><option value="standard">Standard · 5/12</option><option value="steep">Steep · 7/12</option></select>
   <svg id="roof-diagram" viewBox="0 0 640 270" role="img" aria-label="Standard roof: five inches up for every twelve inches horizontally">
     <rect width="640" height="270" fill="white"/><polyline id="roof-outline" points="40,210 320,93.333 600,210" fill="none" stroke="#203f4d" stroke-width="8" stroke-linejoin="round"/>
@@ -39,5 +40,5 @@
     <text x="128" y="243" fill="#203f4d" font-size="19">12 in horizontal run</text><text id="pitch-rise-label" x="342" y="196" fill="#203f4d" font-size="19">5 in rise</text>
   </svg><p id="pitch-description">Standard 5/12: 5 inches up for every 12 inches horizontally.</p>
   <p>For any horizontal distance, <strong>rise = horizontal run × pitch rise ÷ 12</strong>. Over a 60-inch horizontal run, 5/12 rises 25 inches and 7/12 rises 35 inches.</p>
-  <p class="note">The pitch diagram explains the slope. Rafter stock, roof overhang, seating and joints still need your shop measurements before we make roof cuts. The opening previews continue the current wall layout above the openings; those exact short-stud positions remain to check.</p>
+  <p class="note">The diagram explains pitch. We have your stock sizes, side overhang and end height; the exact bottom-cut shape and roof joints are still being fitted. The opening previews continue the current wall layout above the openings; those exact short-stud positions remain to check.</p>
 </main><script type="module" src="ui/learn-utility.js"></script></body></html>

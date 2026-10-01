@@ -3,7 +3,7 @@
 import {loadCatalogue} from "./load.js";
 import {defaults} from "../model/design.js";
 import {makePlan} from "../model/plan.js";
-import {utilityWallStudyPlan,utilityWindowStudyPlan,utilityWindowMeasurements,utilityWindowDrawing,utilityRoofPitch} from "../model/utility-study.js";
+import {utilityWallStudyPlan,utilityWindowStudyPlan,utilityWindowMeasurements,utilityWindowDrawing,utilityRoofPitch,utilityRoofRule} from "../model/utility-study.js";
 import {woodFinish,installFloorWood} from "./learn-wood.js";
 import {createRenderer} from "../engine/renderer.js";
 import {distToFit} from "./parts-gallery.js";
@@ -13,6 +13,8 @@ const api={ready:false,error:null,measurements:null};window.utilityLesson=api;
 async function start() {
   const cat=await loadCatalogue("learning-side-loft"),base=makePlan(defaults(cat),cat),wall=utilityWallStudyPlan(base);
   const raw=cat.construction.utilityStudy;
+  const roof=utilityRoofRule(base);api.roofRule=roof;
+  get("roof-stock").textContent=`${roof.nominalWidthFt}-wide example: ${roof.stock.nominal}, actual ${roof.stock.thicknessIn} × ${roof.stock.depthIn} in.`;
   function pitch() {
     const p=utilityRoofPitch(base,get("roof-pitch").value),peak=210-280*p.rise/p.run;
     get("roof-outline").setAttribute("points",`40,210 320,${peak} 600,210`);
@@ -33,7 +35,7 @@ async function start() {
     cam.dist=Math.max(1.1,distToFit(box,cam.yaw,cam.pitch,size())*zoom);cam.fitDist=cam.dist;renderer.draw();
   }
   function rebuild() {
-    const plan=utilityWindowStudyPlan(wall,{lengthIn:get("plate-cut").valueAsNumber,openingTopAboveFloorIn:get("window-top").valueAsNumber});
+    const plan=utilityWindowStudyPlan(wall,{lengthIn:get("plate-cut").valueAsNumber});
     const m=utilityWindowMeasurements(plan),records=m.members;
     const next=Object.fromEntries(["x","y","z"].flatMap(a=>[
       [a+"0",Math.min(...records.map(r=>r.bounds[a+"0Ft"]))],
@@ -46,7 +48,7 @@ async function start() {
     status.textContent=`Top window plate: ${m.study.lengthIn} in cut, flat 1½ × 3½ in. ${m.studMembers.length} studs above, ${Number(m.studLengthIn.toFixed(3))} in long. Wall studs: 89 in.`;
     get("above-cut").textContent=Number(m.studLengthIn.toFixed(3))+" in";
   }
-  get("plate-cut").value=raw.examplePlateCutIn;get("window-top").value=raw.exampleWindowTopAboveFloorIn;rebuild();
+  get("plate-cut").value=raw.examplePlateCutIn;rebuild();
   get("utility-controls").hidden=false;
   get("utility-form").addEventListener("submit",event=>{event.preventDefault();try{rebuild();}catch(error){status.textContent=error.message+" Previous drawing retained.";}});
   get("utility-front").addEventListener("click",()=>{cam.yaw=Math.PI;cam.pitch=0;zoom=1;draw();});

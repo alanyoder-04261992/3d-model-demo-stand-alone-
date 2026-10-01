@@ -6,7 +6,7 @@ import {defaults} from "../model/design.js";
 import {makePlan} from "../model/plan.js";
 import {floorStudyPlan} from "../model/floor-study.js";
 import {wallStudyPlan} from "../model/wall-study.js";
-import {utilityWallStudyPlan,utilityWindowStudyPlan,utilityWindowMeasurements,utilityWindowDrawing,utilityRoofPitch} from "../model/utility-study.js";
+import {utilityWallStudyPlan,utilityWindowStudyPlan,utilityWindowMeasurements,utilityWindowDrawing,utilityRoofPitch,utilityRoofRule} from "../model/utility-study.js";
 import {doorwayStudyPlan,doorwayMeasurements} from "../model/doorway-study.js";
 import {openingStudLayout} from "../model/opening-studs.js";
 import utilityPart from "../parts/utility-window-frame.js";
@@ -32,11 +32,12 @@ function mesh(build) {
   }
   return out.sort();
 }
-for(const lengthIn of [24,36,60])for(const openingTopAboveFloorIn of [48,72,89]) {
-  const plan=utilityWindowStudyPlan(wall,{lengthIn,openingTopAboveFloorIn}),m=utilityWindowMeasurements(plan);
+for(const lengthIn of [24,36,60])for(const gapAboveIn of [0,12.5,36]) {
+  const plan=utilityWindowStudyPlan(wall,{lengthIn,gapAboveIn}),m=utilityWindowMeasurements(plan);
   near(m.plate.lengthFt*12,lengthIn,"variable plate cut");near(m.plate.widthFt*12,1.5,"plate lies flat");near(m.plate.depthFt*12,3.5,"actual depth");
-  near((m.plate.bounds.y0Ft-s.baseYFt)*12,openingTopAboveFloorIn,"opening top is plate underside");
-  const cut=89-openingTopAboveFloorIn;near(m.studLengthIn,cut,"upper-stud cut");
+  near((s.studTopYFt-m.plate.bounds.y1Ft)*12,gapAboveIn,"gap measures to plate top, not underside");
+  const cut=gapAboveIn;near(m.studLengthIn,cut,"upper-stud cut equals clear gap");
+  assert.equal(m.study.status.gap,"explicit-study-override");
   assert.deepEqual(m.study.studs,cut?openingStudLayout(wall,m.study.x0Ft,m.study.x1Ft):[],"retain existing wall marks");
   assert.equal(m.studMembers.length,cut?m.study.studs.length:0,"no zero-height upper studs");
   for(const r of m.studMembers) {
@@ -62,8 +63,21 @@ for(const widthIn of [24,36,72])for(const headerMode of ["loft","flat","to-plate
 const sample=doorwayMeasurements(doorwayStudyPlan(wall,{widthIn:36,kingCutIn:80}));
 near(sample.gapAboveHeaderIn,4,"utility doorway gap");assert.ok(sample.aboveStudMembers.length>0,"utility gap contains real studs");
 assert.throws(()=>doorwayStudyPlan(wall,{widthIn:1,kingCutIn:80}),/upper-stud layout/,"do not silently leave positive space empty when no grid mark fits");
-const windowSample=utilityWindowMeasurements(utilityWindowStudyPlan(wall,{lengthIn:36,openingTopAboveFloorIn:72}));
-near(windowSample.studLengthIn,17,"utility window sample");
+for(const lengthIn of [24,36,60]) {
+  const sample=utilityWindowMeasurements(utilityWindowStudyPlan(wall,{lengthIn}));
+  near(sample.studLengthIn,12.5,"confirmed shop gap is default at every plate cut");
+  near((sample.plate.bounds.y1Ft-s.baseYFt)*12,78,"window plate top from flooring");
+  near((sample.plate.bounds.y0Ft-s.baseYFt)*12,76.5,"window plate underside from flooring");
+  assert.equal(sample.study.status.gap,"confirmed-shop-rule");
+}
+// Width labels choose stock even if a nominal 12-wide frame is actually 134 in.
+for(const [width,nominal,depth] of [[8,"2x4",3.5],[10,"2x4",3.5],[12,"2x6",5.5],[14,"2x6",5.5]]) {
+  const source=structuredClone(base);source.state.size=`${width}x16`;source.W=134/12;
+  const rule=utilityRoofRule(source);
+  assert.equal(rule.stock.nominal,nominal);near(rule.stock.depthIn,depth,"roof actual depth");
+  near(rule.stock.thicknessIn,1.5,"roof actual thickness");near(rule.overhangEachSideIn,4,"overhang beyond each side wall");
+  near(rule.tipHeightIn,2,"vertical end height");assert.equal(rule.bottomCutDatum,"side-wall-upper-plate-top");
+}
 for(const [mode,rise] of [["standard",5],["steep",7]])for(const run of [12,60,67]) {
   const p=utilityRoofPitch(base,mode,run);
   near(p.riseIn,run*rise/12,"pitch uses horizontal run");near(p.slopeLengthIn**2,run**2+p.riseIn**2,"slope length separate from run");
@@ -71,7 +85,8 @@ for(const [mode,rise] of [["standard",5],["steep",7]])for(const run of [12,60,67
 }
 for(const value of [0,-1,NaN,Infinity])assert.throws(()=>utilityRoofPitch(base,"standard",value));
 assert.throws(()=>utilityRoofPitch(base,"loft"));
-for(const value of [0,1,89.25,Infinity,NaN])assert.throws(()=>utilityWindowStudyPlan(wall,{lengthIn:36,openingTopAboveFloorIn:value}));
-for(const value of [0,1,121,NaN])assert.throws(()=>utilityWindowStudyPlan(wall,{lengthIn:value,openingTopAboveFloorIn:72}));
+for(const value of [-1,90,Infinity,NaN])assert.throws(()=>utilityWindowStudyPlan(wall,{lengthIn:36,gapAboveIn:value}));
+for(const value of [0,1,121,NaN])assert.throws(()=>utilityWindowStudyPlan(wall,{lengthIn:value}));
+for(const value of [0,-1,NaN,Infinity])assert.throws(()=>utilityRoofRule(base,value));
 assert.equal(JSON.stringify(base),before,"utility lesson does not mutate loft source");
-console.log("PROVED: utility studs 89 in, derived wall height 93.5 in; flat top window plate and variable upper-stud cuts with real contact; door gaps filled without overlap or zero-length studs; unchanged loft source and wood geometry; standard 5/12 and steep 7/12 use horizontal run.");
+console.log("PROVED: utility window plate top is 12.5 in below top-plate underside, plate top/underside 78/76.5 in above flooring; supported upper studs preserve contacts and wood geometry; roof stock uses nominal 10-wide threshold, 4-in side projection and 2-in end height; utility/loft sources unchanged; pitch uses horizontal run.");

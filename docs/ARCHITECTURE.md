@@ -334,11 +334,17 @@ reuses full-width supported wall marks; exact upper-stud layout is provisional.
 `model/utility-study.js` opts in to Alan's 89-inch utility stud cut, keeping
 the loft lesson and ordinary geometry unchanged. The new framing entry
 `utility-window-frame` reads `utilityWindowStudy`: one flat top window
-plate and studs above it. `utility-framing.html` uses exact-mesh PNGs and
+plate and studs above it. The confirmed gap is measured from the window
+plate top to the wall top-plate underside: 12.5 in. Plate top/underside
+derive to 78/76.5 in above flooring; they are not independent height defaults.
+`utility-framing.html` uses exact-mesh PNGs and
 an adjustable 3D detail; doorway framing can select utility or loft walls.
 `construction.utilityStudy.roof` records standard 5/12 and steep 7/12
 A-frame pitch. `utilityRoofPitch` computes rise from explicit horizontal
-run for the diagram, without inferring unlearned rafter stock, seating or cuts.
+run for the diagram. `utilityRoofRule` selects 2x4 at or below nominal
+10-wide, otherwise 2x6, and records 4-in side projection, 2-in end height
+and the side-wall upper-plate-top bottom-cut datum. Full seat/joint geometry
+remains separate from these confirmed inputs.
 
 `parts/openings/index.js` walks `plan.state.items` in array order exactly as
 `buildShed` calls `renderItem`: skip interior items (before `setItem`), apply
