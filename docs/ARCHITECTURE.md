@@ -345,6 +345,13 @@ run for the diagram. `utilityRoofRule` selects 2x4 at or below nominal
 10-wide, otherwise 2x6, and records 4-in side projection, 2-in end height
 and the side-wall upper-plate-top bottom-cut datum. Full seat/joint geometry
 remains separate from these confirmed inputs.
+`model/utility-roof-study.js` adds an explicitly selected standard-pitch
+end-wall roof preview; `roof-frame` reads its two clipped stock strips.
+`model/utility-roof-measurements.js` supplies the existing wall and corner
+plate display portions to exact-mesh PNGs. Its level tail, peak elevation,
+ridge mitre and centered depth fit remain review assumptions. No utility
+gable infill is inferred from the loft lesson; incompatible seat fits reject
+rather than adding timber. `utility-framing.html#roof` shows both pictures.
 
 `parts/openings/index.js` walks `plan.state.items` in array order exactly as
 `buildShed` calls `renderItem`: skip interior items (before `setItem`), apply
