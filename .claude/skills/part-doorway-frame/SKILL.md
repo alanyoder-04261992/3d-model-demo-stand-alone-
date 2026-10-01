@@ -83,7 +83,16 @@ Header depth does not scale with building width. Splices, fastening,
 treatment and load/span ratings are unspecified.
 
 The bottom plate is shown as framing context; its eventual doorway/threshold
-cut is still to learn. Pieces above a lower header also remain to learn.
+cut is still to learn. Alan confirmed October 1 that studs fill empty space
+above framed openings. Enable `doorwayLesson.studsAboveHeader`; upper-stud
+cut = `wallStudCut - kingCut - headerHeight`. Use full-width supported wall
+marks through `openingStudLayout`; exact upper-stud positions remain
+provisional. Keep covered double-stud pairs; draw none at zero gap.
+Reject a positive gap with no covered wall mark instead of silently leaving
+it empty or inventing an extra stud location.
+In the utility wall, 89 in studs with illustrative 80 in kings and a 5 in
+header leave 4 in upper studs. `doorway-framing.html?wall=utility#rotate`
+selects the utility wall; its 89 in cut does not change the 75 in loft wall.
 
 ## How to change it safely
 

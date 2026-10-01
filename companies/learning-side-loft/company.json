@@ -69,6 +69,13 @@
     }
   },
   "construction": {
+    "utilityStudy": {
+      "studLengthIn": 89,
+      "windowTopPlate": { "nominal": "2x4", "thicknessIn": 1.5, "depthIn": 3.5, "orientation": "flat", "studsAbove": true },
+      "roof": { "name": "A-frame roof", "shape": "a-frame", "standard": { "rise": 5, "run": 12 }, "steep": { "rise": 7, "run": 12 } },
+      "examplePlateCutIn": 36, "exampleWindowTopAboveFloorIn": 72, "exampleKingCutIn": 80,
+      "status": { "studLength": "confirmed", "windowTopPlate": "confirmed", "studsAbove": "confirmed", "roofName": "confirmed", "roofPitches": "confirmed", "upperStudLayout": "provisional", "plateCountAndCorners": "carried-from-wall-lesson", "exampleDimensions": "illustrative" }
+    },
     "trussStudy": {
       "referenceNominalWidthFt": 10,
       "byNominalWidthFt": {
@@ -120,11 +127,12 @@
       "bearingEachEndIn": 1.5, "loftHeader": "same-as-loft-window", "ledgeSide": "outside",
       "flatHeader": "two-stacked", "toPlate": "no-separate-header",
       "exampleWidthIn": 36, "exampleKingCutIn": 70,
+      "studsAboveHeader": true, "aboveHeaderStudLayout": "wall-stud-layout",
       "status": { "kingStudTerm": "confirmed", "kingStudSeat": "confirmed",
         "heightDatum": "derived-from-seat-and-cut", "bearing": "confirmed",
         "loftHeader": "confirmed", "flatHeader": "confirmed", "toPlate": "confirmed",
         "exampleWidth": "illustrative", "exampleKingCut": "illustrative",
-        "thresholdCut": "unconfirmed", "aboveHeaderFraming": "unconfirmed" }
+        "thresholdCut": "unconfirmed", "aboveHeaderFraming": "confirmed", "aboveHeaderStudLayout": "provisional" }
     },
     "gableBacking": {
       "nominal": "2x4", "thicknessIn": 1.5, "heightIn": 3.5, "bottomOffsetIn": 11,

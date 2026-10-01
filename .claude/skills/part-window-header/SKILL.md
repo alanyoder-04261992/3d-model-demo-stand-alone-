@@ -5,6 +5,11 @@ description: Model or explain Alan's lofted-wall window header, outside ledge an
 
 # Lofted-wall window header
 
+For the utility style, use
+[top window plate](../part-utility-window-frame/SKILL.md): one flat 2x4
+with studs filling the space above it. Alan taught that October 1;
+the three-board loft assembly below remains specifically lofted-wall.
+
 ## What it is in real life
 
 The **window header**, also called the **loft header** here, crosses above

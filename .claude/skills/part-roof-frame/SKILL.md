@@ -5,6 +5,19 @@ description: The roof trusses (or rafters) of a portable building, for every roo
 
 # Roof framing (`parts/roof-frame.js`)
 
+## Alan's utility A-frame roof
+
+Alan confirmed October 1: **A-frame roof**, also **utility-style roof**,
+has **5/12 standard pitch** or **7/12 steep pitch**. Pitch measures rise
+per horizontal run: 7 in up for each 12 in across. Use the actual ratio,
+not distance along the slope or a lofted-roof angle. Read
+[utility framing](../../../.agents/skills/utility-framing/SKILL.md).
+`utilityRoofPitch` calculates rise/angle/slope for an explicit horizontal
+run and drives the diagram in `utility-framing.html`. It is pitch geometry
+only: rafter stock, bearing span/datum, overhang, seats and joints remain
+to learn. Do not replace the ordinary roof or fabricate a cut list from
+the diagram. The lofted truss size table remains a separate shop rule.
+
 ## Gable backing added to the learned assembly
 
 Read [the gable-backing skill](../part-gable-backing/SKILL.md) before changing

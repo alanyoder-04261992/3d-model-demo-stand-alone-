@@ -326,7 +326,19 @@ shorter support; legacy wall-frame member names remain internal. Header
 cuts include full bearing at each end. The isolated `doorway-framing.html`
 lesson shows loft headers, two stacked-flat boards, or king studs directly
 to the top plate. Plate context retains actual elevations and upper end
-setbacks; threshold cuts and above-header framing remain unconfirmed.
+setbacks; threshold cuts remain unconfirmed. Alan's subsequent rule adds
+studs filling any positive gap above a framed opening. Their cuts follow
+actual header-top and top-plate-underneath datums. `openingStudLayout`
+reuses full-width supported wall marks; exact upper-stud layout is provisional.
+
+`model/utility-study.js` opts in to Alan's 89-inch utility stud cut, keeping
+the loft lesson and ordinary geometry unchanged. The new framing entry
+`utility-window-frame` reads `utilityWindowStudy`: one flat top window
+plate and studs above it. `utility-framing.html` uses exact-mesh PNGs and
+an adjustable 3D detail; doorway framing can select utility or loft walls.
+`construction.utilityStudy.roof` records standard 5/12 and steep 7/12
+A-frame pitch. `utilityRoofPitch` computes rise from explicit horizontal
+run for the diagram, without inferring unlearned rafter stock, seating or cuts.
 
 `parts/openings/index.js` walks `plan.state.items` in array order exactly as
 `buildShed` calls `renderItem`: skip interior items (before `setItem`), apply

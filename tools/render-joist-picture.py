@@ -24,10 +24,11 @@ parser.add_argument('--window',help='Render an adjustable window example exporte
 parser.add_argument('--header',action='store_true',help='Render the loft window header and outside ledge from header-render-data.json.')
 parser.add_argument('--window-plate',action='store_true',help='Render the flat window plate and supporting studs from window-plate-render-data.json.')
 parser.add_argument('--doorway',choices=['loft','flat','to-plate'],help='Render one learned doorway arrangement from its exact mesh.')
+parser.add_argument('--utility',choices=['window','door'],help='Render the utility top window plate or doorway from exact mesh data.')
 parser.add_argument('--font',help='Regular TrueType font path; defaults to Windows Segoe UI, then DejaVu Sans.')
 parser.add_argument('--font-bold',help='Bold TrueType font path; otherwise uses --font when provided.')
 args=parser.parse_args()
-source='doorway-'+args.doorway if args.doorway else 'window-plate' if args.window_plate else 'header' if args.header else 'window-'+args.window if args.window else 'truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
+source='utility-'+args.utility if args.utility else 'doorway-'+args.doorway if args.doorway else 'window-plate' if args.window_plate else 'header' if args.header else 'window-'+args.window if args.window else 'truss' if args.truss else 'gable' if args.gable else 'end-wall' if args.end_wall else 'side-wall' if args.wall else 'flooring' if args.deck else 'joist'
 data=json.loads((ROOT/f'test/out/{source}-render-data.json').read_text(encoding='utf-8'))
 W,H=1200,940
 NAVY='#173b56'
@@ -190,6 +191,34 @@ def render_doorway():
         footer=f"Header cut = {s['widthIn']:g} + {s['bearingEachEndIn']:g} + {s['bearingEachEndIn']:g} = {s['headerCutIn']:g} in. Width and height vary."
     d.text((35,883),footer,font=font(24),fill=NAVY)
     im.save(ROOT/f"images/doorway-{mode}.png")
+
+def render_utility():
+    if args.utility=='window':
+        m=data['metadata']['utilityWindow'];s=m['study'];z=s['outsideZFt']
+        top=m['plateMembers'][0];upper=m['plateMembers'][1]
+        im,project=scene([(s['x0Ft']+s['x1Ft'])/2,(s['bottomYFt']+upper['bounds']['y1Ft'])/2,z+s['depthFt']/2],5.2,yaw=2.9,pitch=.2)
+        d=ImageDraw.Draw(im)
+        title(d,'Utility · top window plate','89-inch wall studs · one flat 2×4 · studs fill the space above')
+        leader(d,project(top['center']),(30,155,385,110),'Top plate',['Stud tops meet its underside'])
+        leader(d,project(upper['center']),(785,155,385,110),'Upper plate',['Separate board above top plate'])
+        leader(d,project(m['plate']['center']),(30,737,530,110),'Top window plate',['Flat · 1½ in high × 3½ in deep'])
+        stud=m['studMembers'][len(m['studMembers'])//2]
+        leader(d,project(stud['center']),(670,737,500,110),'Studs above',[f"{m['studLengthIn']:g} in cut · vertical grain"])
+        dimension(d,project,[s['x0Ft'],s['bottomYFt'],z],[s['x1Ft'],s['bottomYFt'],z],f"{s['lengthIn']:g} in · example plate cut",(0,42))
+        d.text((35,883),f"Upper-stud cut = {m['topPlateBottomAboveFloorIn']:g} − {s['openingTopAboveFloorIn']:g} − {s['thicknessFt']*12:g} = {m['studLengthIn']:g} in. Window heights vary.",font=font(23),fill=NAVY)
+        im.save(ROOT/'images/utility-window-top.png')
+    else:
+        m=data['metadata']['doorway'];s=m['study'];z=s['outsideZFt'];bottom=m['plateMembers'][0]['bounds']
+        im,project=scene([(s['x0Ft']+s['x1Ft'])/2,(bottom['y0Ft']+m['plateMembers'][-1]['bounds']['y1Ft'])/2,z+s['depthFt']/2],16.5,yaw=3.02,pitch=.14)
+        d=ImageDraw.Draw(im)
+        title(d,'Utility doorway · studs above header','89-inch wall studs · example 80-inch king studs · 5-inch header')
+        leader(d,project(m['studMembers'][1]['center']),(30,155,385,110),'Stud',['89 in cut · full height'])
+        leader(d,project(m['aboveStudMembers'][0]['center']),(760,155,410,143),'Studs above header',[f"{m['gapAboveHeaderIn']:g} in cut · fill the gap",'Header top to top plate'])
+        leader(d,project(m['kingMembers'][1]['center']),(30,737,510,110),'King stud',[f"{s['kingCutIn']:g} in cut · on bottom plate"])
+        leader(d,project(m['headerMembers'][0]['center']),(670,737,500,110),'Header',[f"{s['headerCutIn']:g} in cut · {s['headerHeightIn']:g} in total height"])
+        dimension(d,project,[s['x0Ft'],s['studBottomYFt'],z],[s['x1Ft'],s['studBottomYFt'],z],f"{s['widthIn']:g} in · example opening",(0,40))
+        d.text((35,883),f"Studs above: 89 − {s['kingCutIn']:g} − {s['headerHeightIn']:g} = {m['gapAboveHeaderIn']:g} in. Header: opening + 1½ in at each end.",font=font(24),fill=NAVY)
+        im.save(ROOT/'images/utility-doorway.png')
 
 def render_window_plate():
     m=data['metadata']['windowPlate'];s=m['study'];b=m['bottomPlate']['bounds']
@@ -586,6 +615,11 @@ def render_flooring():
     d.text((62,948),'Row 2: 4 + 8 + 4 ft. Final row width: 10 − 4 − 4 = 2 ft.',font=font(27),fill=NAVY)
     d.text((40,1030),'⅝ in tongue-and-groove flooring · 7 laid pieces · colors distinguish the rows',font=font(23),fill='#526879')
     plan.save(ROOT/'images/flooring-layout.png')
+
+if args.utility:
+    render_utility()
+    print('Saved exact-mesh utility picture: '+args.utility)
+    sys.exit(0)
 
 if args.doorway:
     render_doorway()

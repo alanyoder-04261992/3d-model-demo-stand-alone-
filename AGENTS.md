@@ -8,6 +8,8 @@ For customer setup, terminology, or a new buyer's design, use
 For measurements or a different building size, use
 [shed-measurements](.agents/skills/shed-measurements/SKILL.md) to calculate from
 the new dimensions and the agreed construction rules.
+For Alan's utility style, use [utility-framing](.agents/skills/utility-framing/SKILL.md):
+89-inch wall studs, the flat top window plate, studs above openings and A-frame roof pitch.
 [BUILDING-TERMS.md](docs/BUILDING-TERMS.md) is the shared glossary, and
 [the 10x16 example](docs/examples/10x16-side-loft.md) records Alan's
 confirmed style and current floor-first, manual learning approach. Keep model defaults and unconfirmed shop

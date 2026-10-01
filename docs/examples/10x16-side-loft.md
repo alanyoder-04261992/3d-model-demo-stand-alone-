@@ -18,7 +18,7 @@ The illustrative 36 in opening gives a **39 in header cut**.
 [Open the adjustable doorway lesson](../../doorway-framing.html) and
 [its skill](../../.claude/skills/part-doorway-frame/SKILL.md). Bottom-plate
 portions are shown during framing; the eventual doorway cut and any
-pieces above a lower header remain to learn. Legacy king/jack names do
+studs fill space above a lower header; their exact layout remains provisional. Legacy king/jack names do
 not override the shop terms.
 
 ## Windows in a lofted wall
