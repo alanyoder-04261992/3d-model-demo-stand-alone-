@@ -68,5 +68,3 @@ export function partCatalogue() {
   PARTCAT = Object.freeze({ order: Object.freeze(order), byId: Object.freeze(byId), byLabel: Object.freeze(byLabel) });
   return PARTCAT;
 }
-
-
