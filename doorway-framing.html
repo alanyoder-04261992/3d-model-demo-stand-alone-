@@ -26,7 +26,7 @@
   <h1>Stud, king stud and header</h1>
   <p>Your <strong>king stud</strong> is the shorter stud under the header, beside a full-height <strong>stud</strong>. Both stand on the <strong>bottom plate</strong>.</p>
   <p>The header extends <strong>1½ inches at each end</strong> to rest on the king studs. Its cut length is <strong>opening width + 3 inches</strong>.</p>
-  <nav aria-label="Lesson navigation"><a href="#rotate">Rotate the doorway</a><a href="window-framing.html">Window framing</a><a href="walls.html">Wall framing</a></nav>
+  <nav aria-label="Lesson navigation"><a href="#rotate">Rotate the doorway</a><a href="window-framing.html">Window framing</a><a href="walls.html">Wall framing</a><a href="utility-framing.html">Utility framing</a></nav>
   <h2>The usual loft header</h2>
   <figure><a href="images/doorway-loft.png"><img src="images/doorway-loft.png" width="1200" height="940" alt="Doorway with a full-height stud beside each king stud and a five-inch loft header resting on the king studs. The example opening is 36 inches wide and each header board cuts to 39 inches."></a><figcaption>Adjustable example: 36-inch opening, 39-inch header cut, 70-inch king studs measured from bottom-plate top.</figcaption></figure>
   <h2>Two flat boards for a taller door</h2>
@@ -39,6 +39,7 @@
   <div id="doorway-controls" hidden>
     <div class="controls"><button id="front" type="button">Front view</button><button id="angle" type="button">Angle view</button><button id="zoom-in" type="button" aria-label="Zoom in">+</button><button id="zoom-out" type="button" aria-label="Zoom out">−</button><label><input id="plates" type="checkbox" checked> Show wall plates</label></div>
     <form id="dimensions-form">
+      <label for="wall-style">Wall style</label><select id="wall-style"><option value="loft">Lofted wall · 75-inch studs</option><option value="utility">Utility wall · 89-inch studs</option></select>
       <label for="width">Opening width (inches)</label><input id="width" type="number" min="1" step="0.25" value="36" required>
       <label for="height">Door height / king-stud cut (inches)</label><input id="height" type="number" min="0.25" step="0.25" value="70" required>
       <p class="hint">This height starts at the top of the bottom plate, where the king stud stands. Above the flooring, add the bottom plate's 1½-inch thickness.</p>
@@ -51,5 +52,5 @@
   <div class="facts"><span>King-stud cut: <strong id="king-cut">70 in</strong></span><span>Header cut: <strong id="header-cut">39 in</strong></span><span>Opening top above flooring: <strong id="opening-top">71½ in</strong></span></div>
   <h2>Our terms and measurements</h2>
   <dl><dt>Stud</dt><dd>The full-height stud beside the king stud.</dd><dt>King stud</dt><dd>Your shop's name for the stud under the header. It sits on the bottom plate and is cut to the selected height. In the garage-door arrangement it reaches the top plate.</dd><dt>Header</dt><dd>The boards across the top of the doorway, extending 1½ inches over each king stud.</dd><dt>Loft header</dt><dd>The same assembly learned for the loft window: two touching 2×4s on edge on a flat 2×4, totaling 5 inches tall, with the ½-inch ledge outside.</dd></dl>
-  <p class="note">These are the learned shop arrangements. The widths and cuts shown are examples. The bottom plate is shown during framing; its later doorway cut and any framing above a lower header are still to learn.</p>
+  <p class="note">Studs fill any space between the header and the top plate. The preview continues the wall's stud layout above the header; that exact upper-stud layout remains to check. Widths and cuts vary. The bottom plate is shown during framing; its later doorway cut is still to learn.</p>
 </main><script type="module" src="ui/learn-doorway.js"></script></body></html>

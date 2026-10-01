@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en"><head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex">
+  <title>Utility framing · Wall, windows and A-frame roof</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#eef2f3;color:#203f4d;font:17px/1.55 system-ui,sans-serif}
+    main{max-width:996px;margin:auto;padding:28px 18px 48px}h1{font-size:clamp(28px,5vw,40px);line-height:1.15;margin:0}h2{font-size:23px;margin:30px 0 12px}
+    a{color:#175a74}nav,.controls{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}nav a,button{background:#203f4d;color:white;text-decoration:none;border:0;border-radius:8px;padding:12px 16px;font:inherit;cursor:pointer}
+    a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #b96a30;outline-offset:3px}
+    figure{margin:0}img,svg{width:100%;height:auto;display:block;border-radius:10px}figcaption,.hint{font-size:14px;color:#4e6570;margin-top:8px}
+    .note,form,.facts{background:white;padding:18px;border-radius:10px}.note{border-left:4px solid #b96a30}
+    .stage{height:380px;background:#edf2f6;border-radius:12px;overflow:hidden}canvas{width:100%;height:100%;display:block;touch-action:none}
+    input[type=number]{font:inherit;width:115px;padding:8px;border:1px solid #91a5ad;border-radius:5px}select{font:inherit;max-width:100%;padding:8px}
+    label{display:block;margin:12px 0 4px}form button{margin-top:16px}[hidden]{display:none!important}
+    @media(max-width:480px){main{padding:22px 14px 36px}.stage{height:330px}nav a{flex:1;text-align:center;font-size:15px}}
+  </style>
+</head><body><main>
+  <p>LEARNING THE UTILITY STYLE</p><h1>Utility framing</h1>
+  <p>Your utility wall studs cut to <strong>89 inches</strong>. The <strong>top window plate</strong> is one <strong>flat 2×4</strong>, with studs filling the space above it. Fill space above other framed openings with studs too.</p>
+  <nav aria-label="Lesson navigation"><a href="#window">Top window plate</a><a href="#roof">A-frame roof</a><a href="doorway-framing.html?wall=utility#rotate">Rotate utility doorway</a><a href="walls.html">Lofted wall lesson</a></nav>
+  <h2 id="window">Top window plate and studs above</h2>
+  <figure><a href="images/utility-window-top.png"><img src="images/utility-window-top.png" width="1200" height="940" alt="Utility window detail: a flat 2x4 top window plate with 17-inch studs above it, meeting the wall's top plate. The upper plate is a separate board above the top plate."></a><figcaption>Example plate cut: 36 inches. Its underside is 72 inches above flooring. With 89-inch wall studs and a 1½-inch bottom plate, the short studs above cut to 17 inches. Tap to enlarge.</figcaption></figure>
+  <h2>Rotate and change the example</h2><p class="hint">Drag to turn; pinch or use + / − to zoom. The picture above works on your phone even when 3D is unavailable.</p>
+  <div class="stage"><canvas id="utility-canvas" tabindex="0" aria-label="Rotatable utility top window plate. Arrow keys turn; plus and minus zoom."></canvas></div>
+  <div id="utility-controls" hidden>
+    <div class="controls"><button id="utility-front" type="button">Front view</button><button id="utility-angle" type="button">Angle view</button><button id="utility-in" type="button" aria-label="Zoom in">+</button><button id="utility-out" type="button" aria-label="Zoom out">−</button></div>
+    <form id="utility-form"><label for="plate-cut">Top window plate cut (inches)</label><input id="plate-cut" type="number" min="1.5" step="0.25" value="36" required>
+      <label for="window-top">Window opening top above flooring (inches)</label><input id="window-top" type="number" min="1.75" step="0.25" value="72" required>
+      <p class="hint">This measures to the underside of the flat top window plate. Its cut and opening height are adjustable examples; the window's side supports are still to learn.</p><button type="submit">Apply dimensions</button></form>
+  </div>
+  <p id="utility-status" role="status">Loading the measured utility detail…</p><p class="facts">Stud cut above top window plate: <strong id="above-cut">17 in</strong></p>
+  <h2>Studs above a utility doorway</h2>
+  <figure><a href="images/utility-doorway.png"><img src="images/utility-doorway.png" width="1200" height="940" alt="Utility doorway: 89-inch full-height studs, 80-inch king studs on the bottom plate, a five-inch loft-style header and four-inch studs filling the gap above that header."></a><figcaption>Example: 36-inch opening, 80-inch king studs, 5-inch header, and 4-inch studs above it: 89 − 80 − 5 = 4 inches. The header cuts to 39 inches. <a href="doorway-framing.html?wall=utility#rotate">Change the doorway dimensions.</a></figcaption></figure>
+  <h2 id="roof">A-frame roof / utility-style roof</h2>
+  <label for="roof-pitch">Roof pitch</label><select id="roof-pitch"><option value="standard">Standard · 5/12</option><option value="steep">Steep · 7/12</option></select>
+  <svg id="roof-diagram" viewBox="0 0 640 270" role="img" aria-label="Standard roof: five inches up for every twelve inches horizontally">
+    <rect width="640" height="270" fill="white"/><polyline id="roof-outline" points="40,210 320,93.333 600,210" fill="none" stroke="#203f4d" stroke-width="8" stroke-linejoin="round"/>
+    <path d="M40 210H320" stroke="#758d98" stroke-width="2" stroke-dasharray="6 5"/><line id="roof-rise" x1="320" y1="210" x2="320" y2="93.333" stroke="#b96a30" stroke-width="3"/>
+    <text x="128" y="243" fill="#203f4d" font-size="19">12 in horizontal run</text><text id="pitch-rise-label" x="342" y="196" fill="#203f4d" font-size="19">5 in rise</text>
+  </svg><p id="pitch-description">Standard 5/12: 5 inches up for every 12 inches horizontally.</p>
+  <p>For any horizontal distance, <strong>rise = horizontal run × pitch rise ÷ 12</strong>. Over a 60-inch horizontal run, 5/12 rises 25 inches and 7/12 rises 35 inches.</p>
+  <p class="note">The pitch diagram explains the slope. Rafter stock, roof overhang, seating and joints still need your shop measurements before we make roof cuts. The opening previews continue the current wall layout above the openings; those exact short-stud positions remain to check.</p>
+</main><script type="module" src="ui/learn-utility.js"></script></body></html>

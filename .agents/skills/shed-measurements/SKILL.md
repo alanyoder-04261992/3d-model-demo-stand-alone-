@@ -28,7 +28,10 @@ Maximum king cut is `S-headerHeight`; the to-plate option uses `K=S`
 with no separate header below that plate. Keep the height input measured
 from bottom-plate top. The 75 in wall gives 70/72/75 in maximum king cuts
 for the three options. These are derived examples, not standard door sizes.
-Threshold cut and above-header framing remain unspecified. Legacy code's
+Fill any positive gap above a framed opening with studs. For a doorway,
+their cut is `S - K - headerHeight`; no gap means no upper studs. The
+preview continues the wall grid, but the exact upper-stud layout remains
+provisional. Threshold cut remains unspecified. Legacy code's
 king/jack labels do not override Alan's shop terms.
 
 For the learned **lofted-wall window** header, read
@@ -96,6 +99,25 @@ model, 30 in support offset, notch/end-board arrangement and treatment are
 not universal size rules. Confirm their applicability before using them
 for another building. Do not copy all `confirmed` statuses into a new design;
 carry the provenance of a reusable rule and mark new results as derived.
+
+## Utility wall and A-frame pitch measurements
+
+Read [utility framing](../utility-framing/SKILL.md) for Alan's October 1
+rules. Utility studs cut to **89 in**; the lofted stud cut stays 75 in.
+With the current three 1.5 in plates, utility wall height is a derived
+**93.5 in above flooring**. Plate count/corners are carried preview rules.
+The **top window plate** is one flat 2x4 with studs above it, separate
+from the lofted window's three-board header. For opening-top elevation
+`U` above flooring, upper studs cut to `bottomPlate.thickness + 89 - U - 1.5`.
+Keep window plate cut and opening height variable; side-support allowances
+are not yet taught. Upper-stud grid reuse remains provisional.
+
+An **A-frame roof / utility-style roof** uses standard **5/12** or steep
+**7/12**: `rise = horizontalRun × pitchNumerator / 12`.
+`slope length = hypot(horizontalRun, rise)` and angle is `atan(pitch/12)`.
+A 60 in horizontal run rises 25 or 35 in. Horizontal run is not the
+sloping board length; these calculations do not establish rafters' long
+points, bearing datum, overhang, seats, joints or complete roof cut lengths.
 
 ## Gable window box measurements
 

@@ -12,6 +12,15 @@ of carrying this example's rules into a new building.
 
 ## Scope of the current wall lesson
 
+For Alan's **utility** style, read
+[utility framing](../../../.agents/skills/utility-framing/SKILL.md).
+Utility stud cut is 89 in; lofted stays 75 in. `utilityWallStudyPlan`
+opts in to that cut without changing ordinary geometry. Current three
+plates give derived height 93.5 in, with corner/grid details carried as
+preview choices. Its **top window plate** is one flat 2x4 with studs above,
+not the loft window header. Fill positive space above any framed opening
+with studs; preview layout follows the wall grid but remains provisional.
+
 For Alan's learned **doorway** rule, read
 [doorway framing](../part-doorway-frame/SKILL.md). His **king stud** is the
 shorter support under the header beside a full-height **stud**, seated on

@@ -1,5 +1,20 @@
 # Our building terms — working discussion list
 
+## Utility framing — confirmed October 1, 2026
+
+| Alan's term | Agreed rule |
+| --- | --- |
+| **Utility wall stud** | Cut length **89 in**. With the current three flat 1.5 in plates, derived wall height is 93.5 in above flooring. |
+| **Top window plate** | One **flat 2x4** above the utility window, actual 1.5 in tall × 3.5 in deep. Studs fill the space above it to the wall's top plate. |
+| **Studs above a framed opening** | Fill positive empty space, including above a utility door header. Preview positions follow the current wall grid; exact layout is provisional. |
+| **A-frame roof / utility-style roof** | Two sloping sides meet at the peak. Standard pitch **5/12**, steep pitch **7/12**. |
+| **Roof pitch** | Rise per **horizontal run**: 7/12 means 7 in up for every 12 in horizontally; 5/12 means 5 in up for every 12 in horizontally. |
+
+Opening dimensions vary. Utility previews carry the current wall stock,
+plate count and corners; rafter sections, roof seating and overhang cuts
+remain to learn. See [utility framing skill](../.agents/skills/utility-framing/SKILL.md)
+and [phone lesson](../utility-framing.html).
+
 ## Lofted truss sizes and actual building width
 
 Alan's sloping 2x4 truss pieces use the longest-point measurement.
@@ -29,7 +44,7 @@ thickness when showing height above flooring. Opening width and king cut
 vary by door. See the [doorway lesson](../doorway-framing.html) and
 [construction guide](../.claude/skills/part-doorway-frame/SKILL.md).
 The bottom plate is shown during framing; its later doorway cut and any
-pieces above a lower header remain to learn.
+studs fill space above a lower header; their exact layout remains provisional.
 
 Older code calls the full-height member `king` and the shorter support
 `jack`. Those internal labels do not replace Alan's agreed **king stud**.

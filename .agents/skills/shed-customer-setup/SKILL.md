@@ -45,6 +45,12 @@ company intake. Preserve the user's selected scope and view choices.
 
 ## Learn the terms together
 
+For Alan's utility style, use [utility framing](../utility-framing/SKILL.md)
+and [its phone lesson](../../../utility-framing.html): 89 in wall studs,
+one flat **top window plate**, studs filling space above openings, and
+an **A-frame roof** with 5/12 standard or 7/12 steep pitch. Preserve the
+lofted wall/roof rules separately; utility does not inherit its header.
+
 For Alan's doorway lesson, read
 [its construction guide](../../../.claude/skills/part-doorway-frame/SKILL.md)
 and [adjustable preview](../../../doorway-framing.html). His **king stud**

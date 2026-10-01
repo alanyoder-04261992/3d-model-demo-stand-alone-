@@ -6,6 +6,7 @@ import {doorwayMembers} from "../parts/doorway-frame.js";
 import {prismMember,drawMembers} from "../parts/floor-frame.js";
 import {windowDetailRecord} from "./window-header-study.js";
 import {createBuild,makeKit} from "../engine/buckets.js";
+import {openingStudLayout} from "./opening-studs.js";
 
 export function doorwayStudyPlan(plan,{widthIn,kingCutIn,headerMode="loft"}={}) {
   const raw=plan.construction?.doorwayLesson,wall=plan.wallStudy;
@@ -36,7 +37,13 @@ export function doorwayStudyPlan(plan,{widthIn,kingCutIn,headerMode="loft"}={}) 
     headerBottomYFt:wall.bottomPlateTopYFt+kingCutIn/12,
     headerTopYFt:wall.bottomPlateTopYFt+(kingCutIn+headerHeightIn)/12,
     status:{width:"illustrative-input",heightDatum:"bottom-plate-top",seat:"confirmed",
-      bearing:"confirmed",headerOption:"builder-selected",thresholdCut:"unconfirmed",aboveHeader:"unconfirmed"}};
+      bearing:"confirmed",headerOption:"builder-selected",thresholdCut:"unconfirmed",
+      aboveHeader:raw.studsAboveHeader===true?"confirmed":"unconfirmed",aboveHeaderStudLayout:"provisional"}};
+  const s=copy.doorwayStudy;
+  s.aboveHeaderStuds=raw.studsAboveHeader===true && wall.studTopYFt-s.headerTopYFt>1e-8
+    ?openingStudLayout(plan,s.x0Ft-s.thicknessFt,s.x1Ft+s.thicknessFt):[];
+  if(raw.studsAboveHeader===true && wall.studTopYFt-s.headerTopYFt>1e-8 && !s.aboveHeaderStuds.length)
+    throw new Error("This doorway detail misses the wall's stud marks. Its upper-stud layout needs a separate placement choice.");
   return deepFreeze(copy);
 }
 
@@ -61,6 +68,7 @@ export function doorwayMeasurements(plan) {
   return {study:s,members:[...members,...plateMembers],frameMembers:members,plateMembers,
     kingMembers:members.filter(r=>r.kind==="king-stud"),studMembers:members.filter(r=>r.kind==="door-stud"),
     headerMembers:members.filter(r=>r.kind.startsWith("door-header")),
+    aboveStudMembers:members.filter(r=>r.kind==="door-above-stud"),
     headerBottomAboveFloorIn:(s.headerBottomYFt-wall.baseYFt)*12,
     gapAboveHeaderIn:(wall.studTopYFt-s.headerTopYFt)*12};
 }

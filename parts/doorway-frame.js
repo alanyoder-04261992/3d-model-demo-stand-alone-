@@ -33,6 +33,8 @@ export function doorwayMembers(plan) {
     members.push(board("door-header-flat",left,right,h,h+t,z,d,"Header · lower flat board"),
       board("door-header-flat",left,right,h+t,h+2*t,z,d,"Header · upper flat board"));
   }
+  for(const stud of s.aboveHeaderStuds || [])
+    members.push(board("door-above-stud",stud.x0Ft,stud.x1Ft,s.headerTopYFt,top,z,d,"Stud above doorway header",true));
   return members;
 }
 

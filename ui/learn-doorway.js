@@ -5,6 +5,7 @@ import {defaults} from "../model/design.js";
 import {makePlan} from "../model/plan.js";
 import {floorStudyPlan} from "../model/floor-study.js";
 import {wallStudyPlan} from "../model/wall-study.js";
+import {utilityWallStudyPlan} from "../model/utility-study.js";
 import {doorwayStudyPlan,doorwayMeasurements,doorwayDrawing} from "../model/doorway-study.js";
 import {woodFinish,installFloorWood} from "./learn-wood.js";
 import {createRenderer} from "../engine/renderer.js";
@@ -13,7 +14,11 @@ import {distToFit} from "./parts-gallery.js";
 const get=id=>document.getElementById(id),canvas=get("doorway-canvas"),status=get("doorway-status");
 async function start() {
   const cat=await loadCatalogue("learning-side-loft");
-  const wall=wallStudyPlan(floorStudyPlan(makePlan(defaults(cat),cat)),{wall:"end"});
+  const base=makePlan(defaults(cat),cat);
+  const styleInput=get("wall-style");
+  styleInput.value=new URLSearchParams(location.search).get("wall")==="utility"?"utility":"loft";
+  const makeWall=()=>styleInput.value==="utility"?utilityWallStudyPlan(base):wallStudyPlan(floorStudyPlan(base),{wall:"end"});
+  let wall=makeWall();
   const renderer=createRenderer(canvas,{trueColour:true,scene:"studio",note:" "});
   if(renderer.off)throw new Error("3D is unavailable on this device. Use the pictures above.");
   installFloorWood(renderer);
@@ -45,14 +50,15 @@ async function start() {
     get("header-cut").textContent=s.headerCutIn===null?"No separate header":`${widthIn} + 1.5 + 1.5 = ${number(s.headerCutIn)} in`;
     get("opening-top").textContent=number(m.headerBottomAboveFloorIn)+" in";
     status.textContent=`${widthIn}-inch opening · ${number(s.kingCutIn)}-inch king studs · `+
-      (s.headerMode==="to-plate"?"king studs meet the top plate.":`${s.headerHeightIn}-inch header · ${number(m.gapAboveHeaderIn)} inches to the top plate.`);
+      (s.headerMode==="to-plate"?"king studs meet the top plate.":`${s.headerHeightIn}-inch header · ${number(m.gapAboveHeaderIn)} inches to the top plate · ${m.aboveStudMembers.length} studs fill that space.`);
     get("height").disabled=s.headerMode==="to-plate";get("height").value=number(s.kingCutIn);
   }
   function rebuildCurrent(){const s=plan.doorwayStudy;rebuild(s.widthIn,s.kingCutIn,s.headerMode);}
   function preset(front){cam.yaw=front?Math.PI:2.94;cam.pitch=front?0:.20;zoom=1;draw();}
   get("width").value=cat.construction.doorwayLesson.exampleWidthIn;
-  get("height").value=cat.construction.doorwayLesson.exampleKingCutIn;
-  rebuild(cat.construction.doorwayLesson.exampleWidthIn,cat.construction.doorwayLesson.exampleKingCutIn,"loft");
+  const initialCut=styleInput.value==="utility"?cat.construction.utilityStudy.exampleKingCutIn:cat.construction.doorwayLesson.exampleKingCutIn;
+  get("height").value=initialCut;
+  rebuild(cat.construction.doorwayLesson.exampleWidthIn,initialCut,"loft");
   get("doorway-controls").hidden=false;
   get("dimensions-form").addEventListener("submit",event=>{
     event.preventDefault();
@@ -60,6 +66,11 @@ async function start() {
     catch(error){status.textContent=error.message+" Previous drawing retained.";}
   });
   get("header-mode").addEventListener("change",()=>{get("height").disabled=get("header-mode").value==="to-plate";});
+  styleInput.addEventListener("change",()=>{
+    const s=plan.doorwayStudy;wall=makeWall();
+    const available=wall.wallStudy.stud.lengthIn;
+    rebuild(s.widthIn,Math.min(s.kingCutIn,available-s.headerHeightIn),s.headerMode);
+  });
   get("plates").addEventListener("change",rebuildCurrent);
   get("front").addEventListener("click",()=>preset(true));get("angle").addEventListener("click",()=>preset(false));
   function scale(factor){zoom=Math.max(.25,Math.min(3,zoom*factor));draw();}
