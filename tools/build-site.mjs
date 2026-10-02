@@ -56,7 +56,8 @@ if (learning) {
   copy("ui/learn.css"); tree("images");
 }
 await build({ entryPoints: [resolve(root, "ui/portal.js")], outfile: resolve(out, "ui/portal.js"),
-  bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, logLevel: "warning" });
+  bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, logLevel: "warning",
+  define: { __PORTAL_DEMO__: JSON.stringify(learning) } });
 const html = readFileSync(resolve(root, "index.html"), "utf8");
 let headers = buildHeaders({ companies: selected, indexHtml: html });
 headers += "\n/portal*\n  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'\n  Cache-Control: no-store\n";
