@@ -11,7 +11,22 @@ purchase, payment, or signed contract. The office stores the request and lets
 staff track it as new, contacted, quoted, ordered, or closed. No email, text,
 or external webhook is sent by this backend.
 
-## First setup
+## Try the demo
+
+On Alan's existing learning/demo site, leave the email and password fields
+empty and press **Sign in**. This opens an Owner/Admin sample workspace with
+two dealer lots and fictional requests. Explore all four tabs and save sample
+prices, options, lots and request statuses. Changes stay in memory for that
+page and reset on refresh or sign-out. The demo does not call the staff API,
+create real accounts, publish dealer links, or read/write customer records.
+Sample designer links open the static demo catalogue; portal edits do not
+change that catalogue. Real account sign-in still uses both email and password.
+
+The build enables this entry only alongside the learning preview. Explicit
+client builds disable it, including on the demo site's host. The backend's
+authentication and company/dealer permissions remain unchanged.
+
+## First setup for real accounts
 
 1. Deploy the functions and portal using the project's normal Netlify build.
    Enable **Netlify Identity** in the site's settings. Prefer invite-only

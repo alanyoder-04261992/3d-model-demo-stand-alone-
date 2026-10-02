@@ -1,10 +1,13 @@
 import { getUser, getSettings, handleAuthCallback, login, signup, logout, onAuthChange,
   requestPasswordRecovery, updateUser, acceptInvite } from '@netlify/identity';
 import { encodeSync } from '../model/design.js';
+import { createDemoWorkspace } from './portal-demo.js';
+
+// Enabled only by the existing learning/demo site's build; client builds disable it.
 
 const content=document.querySelector('#content'), notice=document.querySelector('#notice');
 const navigation=document.querySelector('#navigation'), scope=document.querySelector('#scope'), account=document.querySelector('#account');
-const state={me:null,companyId:'',view:'orders',dirty:false,saving:0,epoch:0,authMode:'login',inviteToken:null,settings:null,authSetupMessage:''};
+const state={me:null,companyId:'',view:'orders',dirty:false,saving:0,epoch:0,authMode:'login',inviteToken:null,settings:null,authSetupMessage:'',demo:null};
 const statuses=['new','contacted','quoted','ordered','closed'];
 const money=new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'});
 const clone=value=>JSON.parse(JSON.stringify(value));
@@ -43,6 +46,7 @@ function statusBadge(status){return el('span',{class:`badge ${statuses.includes(
 function allowedLink(value){try{const u=new URL(value,location.origin);return u.origin===location.origin&&['http:','https:'].includes(u.protocol)?u.href:null;}catch{return null;}}
 function apiPath(path){return `/api/dealer${path}`;}
 async function api(path,{method='GET',body}={}){
+  if(state.demo)return state.demo.request(path,{method,body});
   const response=await fetch(apiPath(path),{method,credentials:'same-origin',cache:'no-store',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
   let result;try{result=await response.json();}catch{throw new Error('The workspace service did not return a valid response. Try again.');}
   if(!response.ok){
@@ -67,7 +71,7 @@ function formAction(form,work){
 }
 function setDirty(){state.dirty=true;}
 function leave(){if(state.saving){message('Please wait for the current request to finish.');return false;}if(state.dirty&&!window.confirm('Leave without saving your changes?'))return false;state.dirty=false;return true;}
-function clearPrivate(){state.epoch++;state.me=null;state.companyId='';state.dirty=false;content.replaceChildren();scope.replaceChildren();navigation.replaceChildren();account.replaceChildren();scope.hidden=navigation.hidden=account.hidden=true;}
+function clearPrivate(){state.epoch++;state.me=null;state.demo=null;state.companyId='';state.dirty=false;document.querySelector('#demo-banner').hidden=true;content.replaceChildren();scope.replaceChildren();navigation.replaceChildren();account.replaceChildren();scope.hidden=navigation.hidden=account.hidden=true;}
 function admin(){return state.me?.membership?.role==='admin';}
 function company(){return state.me?.companies?.find(c=>c.id===state.companyId);}
 function companyPath(suffix=''){return `/companies/${encodeURIComponent(state.companyId)}${suffix}`;}
@@ -84,15 +88,25 @@ function renderAuth(mode='login'){
   const form=el('form',{},el('h2',{},title));
   let name,email,password,confirmPassword;
   if(mode==='signup'){name=field('Your name',{required:true,autocomplete:'name',maxLength:120});form.append(name.wrapper);}
-  if(!special){email=field('Email address',{type:'email',required:true,autocomplete:'email',maxLength:254});form.append(email.wrapper);}
+  if(!special){email=field('Email address',{type:'email',required:!(__PORTAL_DEMO__&&mode==='login'),autocomplete:'email',maxLength:254});form.append(email.wrapper);}
   if(mode!=='forgot'){
-    password=field(special?'New password':'Password',{type:'password',required:true,minLength:mode==='login'?1:10,maxLength:256,autocomplete:mode==='login'?'current-password':'new-password',hint:mode==='login'?null:'Use at least 10 characters.'});form.append(password.wrapper);
+    password=field(special?'New password':'Password',{type:'password',required:!(__PORTAL_DEMO__&&mode==='login'),minLength:mode==='login'?1:10,maxLength:256,autocomplete:mode==='login'?'current-password':'new-password',hint:mode==='login'?null:'Use at least 10 characters.'});form.append(password.wrapper);
     if(special){confirmPassword=field('Confirm new password',{type:'password',required:true,minLength:10,autocomplete:'new-password'});form.append(confirmPassword.wrapper);}
   }
+  if(__PORTAL_DEMO__&&mode==='login')form.append(el('p',{class:'auth-note'},'Leave both fields empty and press Sign in to explore the demo.'));
   form.append(el('button',{class:'button',type:'submit'},mode==='forgot'?'Send recovery email':title));
   const feedback=formAction(form,async()=>{
     authBusy=true;
     try{
+      if(__PORTAL_DEMO__&&mode==='login'){
+        if(!email.input.value.trim()&&!password.input.value){
+          const template=await staticJSON('/companies/demo/company.json');
+          const manufacturer=await staticJSON(`/library/manufacturers/${encodeURIComponent(template.manufacturer)}.json`);
+          const library=await staticJSON('/library/construction.json');
+          state.demo=createDemoWorkspace(template,manufacturer,library);message('');await loadWorkspace();return;
+        }
+        if(!email.input.value.trim()||!password.input.value)throw new Error('Leave both fields empty for the demo, or enter both your email and password for a real account.');
+      }
       if(mode==='forgot'){await requestPasswordRecovery(email.input.value.trim());feedback.className='form-message';feedback.textContent='If an account exists for this address, check your email for the recovery link.';feedback.hidden=false;return;}
       if(confirmPassword&&confirmPassword.input.value!==password.input.value)throw new Error('The two passwords do not match.');
       if(mode==='signup'){
@@ -110,11 +124,12 @@ function renderAuth(mode='login'){
     links.append(el('button',{type:'button',class:'text-button',onclick:()=>renderAuth('forgot')},'Forgot password?'));
   }else if(!special)links.append(el('button',{type:'button',class:'text-button',onclick:()=>renderAuth('login')},'Back to sign in'));
   const authPanel=el('section',{class:'auth-panel'},form,links,el('p',{class:'auth-note'},mode==='signup'?'Creating an account does not grant company access. Your administrator assigns your role after you confirm your email.':'Access is limited to the company and dealer lots assigned to your account.'));
-  if(state.authSetupMessage)authPanel.prepend(el('p',{class:'form-error',role:'alert'},state.authSetupMessage));
+  if(state.authSetupMessage&&!(__PORTAL_DEMO__&&mode==='login'))authPanel.prepend(el('p',{class:'form-error',role:'alert'},state.authSetupMessage));
   content.replaceChildren(el('div',{class:'auth-wrap'},intro,authPanel));
 }
 
 function renderChrome(){
+  document.querySelector('#demo-banner').hidden=!state.demo;
   const me=state.me, companies=me.companies||[];
   scope.hidden=navigation.hidden=account.hidden=false;scope.replaceChildren();navigation.replaceChildren();account.replaceChildren();
   if(companies.length){
@@ -129,7 +144,7 @@ function renderChrome(){
   const userText=el('div',{},el('p',{},me.user.name||'Signed in'),el('p',{},me.user.email));
   account.append(userText,el('button',{type:'button',class:'text-button',onclick:async()=>{
     if(!leave())return;authBusy=true;
-    try{await logout();}catch(error){message(error.message,true);}finally{authBusy=false;renderAuth();}
+    try{if(!state.demo)await logout();}catch(error){message(error.message,true);}finally{authBusy=false;message('');renderAuth();}
   }},'Sign out'));
 }
 
@@ -241,7 +256,7 @@ function renderCatalogue(data,manufacturer){
   extras.forEach(addExtra);
   form.append(accordion('Your additional options',[extraBox,button('Add an option',()=>{addExtra();setDirty();},'secondary small')]));
   const review=check('I have reviewed these prices and options for all of this company’s dealer lots.',false);
-  form.append(panel(null,review.wrapper,el('p',{class:'hint'},'Turning off a required building item or dormer can make a catalogue invalid. The server checks the complete catalogue before saving.')));
+  form.append(panel(null,review.wrapper,el('p',{class:'hint'},state.demo?'Sample catalogue changes last until you refresh or sign out.':'Turning off a required building item or dormer can make a catalogue invalid. The server checks the complete catalogue before saving.')));
   const save=el('button',{type:'submit',class:'button'},'Save catalogue');
   form.append(el('div',{class:'sticky-save actions'},save,button('Reload saved catalogue',()=>{if(leave())openView('catalogue',false);}),el('span',{class:'hint'},`Revision ${data.version}`)));
   formAction(form,async()=>{
@@ -277,20 +292,20 @@ function renderLotForm(lot,onCancel){
   formAction(form,async()=>{
     const values={name:name.input.value.trim(),phone:phone.input.value.trim(),email:email.input.value.trim(),website:website.input.value.trim(),embedOrigins:parseOrigins(origins.input.value),active:active.input.checked};
     await api(companyPath(lot?`/lots/${encodeURIComponent(lot.id)}`:'/lots'),{method:lot?'PUT':'POST',body:lot?{...values,version:lot.version}:{...values,slug:slug.input.value.trim()}});
-    state.dirty=false;await openView('lots',false);message(lot?'Dealer lot saved.':'Dealer lot created. Copy its unique designer link or embed code below.');
+    state.dirty=false;await openView('lots',false);message(state.demo?'Sample dealer lot saved for this demo session.':lot?'Dealer lot saved.':'Dealer lot created. Copy its unique designer link or embed code below.');
   });return form;
 }
 function renderLots(lots){
   const list=el('div'),editor=el('div');
   function showEditor(lot){if(!leave())return;editor.replaceChildren(renderLotForm(lot,()=>{if(leave())editor.replaceChildren();}));editor.scrollIntoView({block:'start'});}
   for(const lot of lots){
-    const url=new URL(`/d/${encodeURIComponent(lot.slug)}/`,location.origin).href;
+    const url=new URL(state.demo?'/c/demo/#view=1':`/d/${encodeURIComponent(lot.slug)}/`,location.origin).href;
     const snippet=`<div id="shed-designer"></div>\n<script src="${location.origin}/embed.js" data-lot="${lot.slug}" data-height="720"></script>`;
     const code=el('pre',{class:'code-copy'},snippet);
     const copy=button('Copy embed code',async()=>{try{await navigator.clipboard.writeText(snippet);message(`Embed code copied for ${lot.name}.`);}catch{message('Select and copy the embed code shown below.',true);}},'secondary small');
     const box=panel(null,el('div',{class:'lot-header'},el('div',{},el('h2',{},lot.name),el('p',{},[lot.phone,lot.email].filter(Boolean).join(' · ')||'No contact details yet.')),statusBadge(lot.active?'active':'suspended')),
-      el('div',{class:'lot-links'},el('a',{href:url,target:'_blank',rel:'noopener'},'Open dealer designer'),button('Copy link',async()=>{try{await navigator.clipboard.writeText(url);message('Dealer link copied.');}catch{message(url);}},'secondary small'),button('Edit lot',()=>showEditor(lot),'secondary small')),
-      el('p',{class:'hint'},url),el('p',{class:'hint'},lot.embedOrigins?.length?`Allowed websites: ${lot.embedOrigins.join(', ')}`:'Add allowed websites before embedding this designer.'),code,copy);
+      el('div',{class:'lot-links'},el('a',{href:url,target:'_blank',rel:'noopener'},state.demo?'Open sample designer':'Open dealer designer'),state.demo?null:button('Copy link',async()=>{try{await navigator.clipboard.writeText(url);message('Dealer link copied.');}catch{message(url);}},'secondary small'),button('Edit lot',()=>showEditor(lot),'secondary small')),
+      state.demo?el('p',{class:'hint'},'Sample lots use the public demo designer. Demo edits do not publish a website, change that designer, or create a working dealer link.'):el('div',{},el('p',{class:'hint'},url),el('p',{class:'hint'},lot.embedOrigins?.length?`Allowed websites: ${lot.embedOrigins.join(', ')}`:'Add allowed websites before embedding this designer.'),code,copy));
     list.append(box);
   }
   if(!lots.length)list.append(empty('Connect your first dealer lot','Each lot gets its own designer link and inbox. The company catalogue controls its prices and options.'));
@@ -307,7 +322,7 @@ function renderTeam(lots){
   formAction(form,async()=>{
     if(role.input.value==='dealer'&&!lot.input.value)throw new Error('Create a dealer lot before assigning a dealer.');
     await api('/memberships',{method:'POST',body:{userId:userId.input.value.trim(),email:email.input.value.trim(),role:role.input.value,companyId:state.companyId,...(role.input.value==='dealer'?{lotId:lot.input.value}:{})}});
-    userId.input.value='';email.input.value='';message('Access granted. The user can sign in and refresh their workspace.');
+    userId.input.value='';email.input.value='';message(state.demo?'Sample assignment saved for this demo session. No real account access was changed.':'Access granted. The user can sign in and refresh their workspace.');
   });
   content.replaceChildren(heading('Team access',`${company()?.name} · Assign the right access to each person.`),form);
 }
@@ -343,12 +358,12 @@ function renderOrder(order,orders){
   let link=allowedLink(order.link);try{if(link){const url=new URL(link);url.hash=`d=${encodeSync(design)}&view=1`;link=url.href;}}catch{link=null;}
   const designActions=link?el('div',{class:'form-footer'},el('a',{class:'button secondary',href:link,target:'_blank',rel:'noopener'},'Open saved design')):el('p',{class:'hint'},'The saved design link is unavailable.');
   const priceTable=el('table',{},el('tbody',{},el('tr',{},el('td',{},'Building'),el('td',{class:'money'},currency(price.base))),...(Array.isArray(price.lines)?price.lines:[]).map(line=>el('tr',{},el('td',{},String(line[0]||'Option')),el('td',{class:'money'},currency(line[1])))),el('tr',{},el('td',{class:'grand-total'},'Total'),el('td',{class:'money grand-total'},currency(price.total)))));
-  content.replaceChildren(heading(contact.name||'Customer request',`${order.lotName||'Dealer lot'} · ${order.id}`,button('Back to inbox',()=>renderOrders(orders))),el('div',{class:'detail-grid'},el('div',{},panel('Customer details',contacts),panel('Saved building',building,designActions)),el('div',{},panel('Recorded price',priceTable,el('p',{class:'hint'},'Calculated by the server when the request was received. Later catalogue changes do not change this recorded total.')),panel('Follow-up',form))));
+  content.replaceChildren(heading(contact.name||'Customer request',`${order.lotName||'Dealer lot'} · ${order.id}`,button('Back to inbox',()=>renderOrders(orders))),el('div',{class:'detail-grid'},el('div',{},panel('Customer details',contacts),panel('Saved building',building,designActions)),el('div',{},panel('Recorded price',priceTable,el('p',{class:'hint'},state.demo?'Fictional request with an example price for this demo.':'Calculated by the server when the request was received. Later catalogue changes do not change this recorded total.')),panel('Follow-up',form))));
 }
 
 window.addEventListener('beforeunload',event=>{if(state.dirty){event.preventDefault();event.returnValue='';}});
 onAuthChange((event)=>{
-  if(authBusy)return;
+  if(authBusy||state.demo)return;
   if(event==='logout'){message('');renderAuth();}
   else if(event==='recovery')renderAuth('recovery');
   else if(event==='login'&&!['invite','recovery'].includes(state.authMode))loadWorkspace();
