@@ -9,10 +9,10 @@ import { h, icon } from "../../dom.js";
 import { readPrice, NAME_MAX } from "./model.js";
 
 /* A dollar (or percent) box. onChange(number|null) on every keystroke. */
-export function priceInput({ value, label, field, onChange, unit = "$", suffix, disabled = false, step = "any", max = 1000000 }) {
+export function priceInput({ value, label, field, onChange, unit = "$", suffix, disabled = false, step = "any", max = 1000000, placeholder }) {
   const attrs = {
     type: "number", inputmode: "decimal", min: 0, max, step, "aria-label": label, disabled,
-    class: "pl-price-input", autocomplete: "off",
+    class: "pl-price-input", autocomplete: "off", placeholder,
   };
   if (field) attrs.dataset = { field };
   const input = h("input", attrs);

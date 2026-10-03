@@ -156,14 +156,14 @@ function addSizeForm(key, entry) {
   const usual = sortSizes(keysOf(entry.sizes)).map((z) => z.split("x")[0]);
   width.value = String(S.lastWidth[key] || usual[usual.length - 1] || 10);
   const length = h("input", { type: "number", inputmode: "numeric", min: LENGTH_MIN, max: LENGTH_MAX, step: 1, placeholder: "Length", "aria-label": "Length in feet", dataset: { field: `newlength:${key}` } });
-  const price = priceInput({ value: null, label: "Price of the new size", onChange: () => { msg.textContent = ""; } });
+  const price = priceInput({ value: null, label: "Price of the new size", placeholder: "Price", onChange: () => { msg.textContent = ""; } });
   const msg = h("p", { class: "pl-add-msg", role: "status" });
   const form = h("form", { class: "pl-add-size", novalidate: true },
     h("p", { class: "pl-add-title" }, "Add a size"),
     h("div", { class: "pl-add-fields" },
       h("span", { class: "pl-add-w" }, width),
       h("span", { class: "pl-times", "aria-hidden": "true" }, "×"),
-      h("span", { class: "pl-add-l" }, length, h("span", { class: "pl-unit", "aria-hidden": "true" }, "ft long")),
+      h("span", { class: "pl-add-l" }, length, h("span", { class: "pl-unit", "aria-hidden": "true" }, "ft")),
       h("span", { class: "pl-add-p" }, price.wrap),
       button("Add size", null, { type: "submit", icon: "plus", kind: "ghost" })),
     msg);

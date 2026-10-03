@@ -25,7 +25,9 @@ a { color: #000 !important; text-decoration: none !important; }
 .sheet-block { border-color: #999 !important; padding: 8pt 10pt !important; }
 .sheet-top { flex-direction: row !important; }
 .sheet-lot { text-align: right !important; }
-.sheet-picture img { max-width: 4.6in !important; border-color: #999 !important; }
+.sheet-building { grid-template-columns: minmax(0, 1fr) auto !important; }
+.sheet-picture { width: 3.1in !important; }
+.sheet-picture img { border-color: #999 !important; }
 .sheet-price { font-size: 10.5pt !important; }
 .sheet-price th, .sheet-price td { padding: 4pt 2pt !important; border-color: #bbb !important; }
 .sheet-price .sheet-total th { border-top: 1.5pt solid #000 !important; font-size: 13pt !important; }

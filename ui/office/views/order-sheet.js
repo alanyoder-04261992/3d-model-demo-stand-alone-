@@ -85,10 +85,11 @@ export async function render(ctx) {
   /* ---- the building ---- */
   const picture = h("div", { class: "sheet-picture", hidden: true });
   const buildingPart = h("section", { class: "sheet-section sheet-building" },
-    h("h3", {}, "The building"),
-    h("p", { class: "sheet-building-name" }, building),
-    design ? colorList(design) : null,
-    design && cat ? itemLists(design, cat) : null,
+    h("div", { class: "sheet-building-words" },
+      h("h3", {}, "The building"),
+      h("p", { class: "sheet-building-name" }, building),
+      design ? colorList(design) : null,
+      design && cat ? itemLists(design, cat) : null),
     picture);
 
   /* ---- the price ---- */
