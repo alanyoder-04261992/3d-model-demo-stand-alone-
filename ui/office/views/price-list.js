@@ -119,7 +119,7 @@ export async function render(ctx) {
   /* on a phone the tabs scroll sideways: bring the one showing into view */
   setTimeout(() => {
     const on = page?.tabs?.querySelector("[aria-selected=true]");
-    if (on && page.tabs.scrollWidth > page.tabs.clientWidth) page.tabs.scrollLeft = Math.max(0, on.offsetLeft - page.tabs.offsetLeft - 24);
+    if (on && page.tabs.scrollWidth > page.tabs.clientWidth) page.tabs.scrollLeft = Math.max(0, on.offsetLeft - page.tabs.offsetLeft - (page.tabs.clientWidth - on.offsetWidth) / 2);
   }, 0);
   return root;
 }
@@ -247,7 +247,8 @@ function focusPending() {
   const groupBody = el.closest(".pl-group-body");
   if (groupBody?.hidden) groupBody.previousElementSibling?.click();
   el.scrollIntoView({ block: "center", behavior: "smooth" });
-  if (el.matches("input, select, textarea, button")) el.focus({ preventScroll: true });
+  const target = el.matches("input, select, textarea, button") ? el : el.closest(".card")?.querySelector("input:not([disabled]), select");
+  target?.focus({ preventScroll: true });
 }
 
 function showFirstProblem() {

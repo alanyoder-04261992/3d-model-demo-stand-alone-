@@ -83,6 +83,12 @@ if (learning) {
 await build({ entryPoints: [resolve(root, "ui/office/main.js")], outfile: resolve(out, "ui/office/main.js"),
   bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, sourcemap: false,
   legalComments: "none", logLevel: "warning" });
+// The "try it" demo (/dealer?demo): its own file, loaded only by the demo. It
+// carries a copy of the Dealer Center's server code and runs it in the page
+// on made-up data; it holds no secrets (those live only in Netlify's settings).
+await build({ entryPoints: [resolve(root, "ui/office/demo.js")], outfile: resolve(out, "ui/office/demo.js"),
+  bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, sourcemap: false,
+  legalComments: "none", logLevel: "warning" });
 const html = readFileSync(resolve(root, "index.html"), "utf8");
 let headers = buildHeaders({ companies: selected, indexHtml: html });
 // /dealer is rewritten to dealer.html (netlify.toml); Netlify matches these

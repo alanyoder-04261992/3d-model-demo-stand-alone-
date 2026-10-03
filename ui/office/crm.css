@@ -87,8 +87,11 @@
 .crm-tile strong { font: 500 26px/1.05 var(--head); color: var(--brand-header); font-variant-numeric: tabular-nums; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .crm-tile span:last-child { font-size: 13px; color: var(--muted); }
 .crm-tile.money .crm-tile-icon { color: var(--good); }
-.crm-perlot .table td, .crm-perlot .table th { padding: 10px 16px; }
-.crm-perlot .table td:first-child, .crm-perlot .table th:first-child { white-space: nowrap; }
+.crm-perlot .table { font-size: 14.5px; }
+.crm-perlot .table td, .crm-perlot .table th { padding: 10px 9px; }
+.crm-perlot .table thead th { letter-spacing: .04em; font-size: 12px; }
+.crm-perlot .table td:first-child, .crm-perlot .table th:first-child { white-space: nowrap; padding-left: 20px; }
+.crm-perlot .table td:last-child, .crm-perlot .table th:last-child { padding-right: 20px; }
 .crm-perlot tfoot th { border-top: 1px solid var(--line-strong); color: var(--ink); font-size: 14px; letter-spacing: 0; text-transform: none; }
 
 /* ---- Customers: the toolbar ---------------------------------------------------------- */
@@ -386,7 +389,7 @@
 .sheet-fine { font-size: 12.5px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 12px; }
 
 /* ---- phones ---------------------------------------------------------------------------------- */
-@media (max-width: 900px) {
+@media (max-width: 1100px) {
   .crm-today-grid { grid-template-columns: minmax(0, 1fr); }
   .crm-today-left, .crm-today-right { display: contents; }
   .crm-sec-follow { order: 1; }
@@ -394,6 +397,10 @@
   .crm-sec-deliveries { order: 3; }
   .crm-month { order: 4; }
   .crm-perlot { order: 5; }
+  .crm-tiles { grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); }
+}
+
+@media (max-width: 1100px) {
   .crm-cust-grid { grid-template-columns: minmax(0, 1fr); }
   .crm-cust-main, .crm-cust-side { display: contents; }
   .crm-cust-grid { display: flex; flex-direction: column; align-items: stretch; gap: 16px; }
@@ -412,7 +419,8 @@
   .crm-design-title { flex: 1 1 0; }
   .crm-design-title strong { font-size: 17px; }
   .crm-design-title strong span { display: none; }
-  .crm-design-total { font-size: 18px; }
+  .crm-design-total { display: none; }
+  .crm-design-kicker { font-size: 11px; white-space: nowrap; }
   .crm-design-actions .btn-ghost { padding: 9px 12px; }
 
   .crm-toolbar { padding: 12px; }
@@ -504,3 +512,9 @@
   .topbar:has(.lot-picker) .lot-select { max-width: 190px; }
 }
 .sheet-quote-total { font: 500 28px/1.1 var(--head); color: var(--brand-header); font-variant-numeric: tabular-nums; }
+
+/* phones: every tap target at least 44 px tall */
+@media (max-width: 760px) {
+  .crm-chipbar .chip, .crm-quick .chip, .crm-kinds button, .crm-move, .crm-lost-toggle, .crm-lines summary { min-height: 44px !important; }
+  .crm-quote-total a.pill { min-height: 32px; }
+}

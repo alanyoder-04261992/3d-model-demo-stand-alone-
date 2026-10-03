@@ -23,7 +23,7 @@ function groupsFor(settings) {
   const dormerNames = dormerStyles.map((k) => styleName(M, k, settings.offer[k]));
   return [
     ["dormers", "Dormers",
-      dormerStyles.length ? `You sell the ${dormerNames.join(" and ")}, so sell at least one dormer size.` : "Only a Dormer Shed has a dormer. These show when you sell one.",
+      dormerStyles.length ? `Customers pick one of these on the ${dormerNames.join(" and ")}.` : "Only a Dormer Shed has a dormer. These show when you sell one.",
       () => ({})],
     ["ramps", "Ramps", "A wooden ramp up to the biggest door.", (id) => ({ desc: M.options.ramps[id]?.lengthFt === 0 ? "The customer builds it from the kit." : null })],
     ["elec", "Electrical packages",

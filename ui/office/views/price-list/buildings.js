@@ -337,7 +337,7 @@ function openChangePrices() {
       h("p", { class: "pl-preview-head" }, h("strong", {}, plural(out.length, "price")), ` change, in ${plural(styles, "building style")}.`),
       h("ul", { class: "pl-preview-list" }, picks.map((c) => h("li", {},
         h("span", { class: "pl-preview-what" }, `${styleName(S.M, c.key, d.offer[c.key])} ${size(c.z)}`),
-        h("span", { class: "pl-preview-was" }, money(c.old)), icon("arrowRight"), h("strong", {}, money(c.next))))),
+        h("span", { class: "pl-preview-nums" }, h("span", { class: "pl-preview-was" }, money(c.old)), icon("arrowRight"), h("strong", {}, money(c.next)))))),
       h("p", { class: "pl-preview-range" }, `Afterwards the lowest price is ${money(low)} and the highest is ${money(high)}.`),
       held ? h("p", { class: "pl-preview-held" }, `${plural(held, "price")} would drop below ${money(Number(round.value))}, so ${held === 1 ? "it stays" : "they stay"} at ${money(Number(round.value))}.`) : null);
   }

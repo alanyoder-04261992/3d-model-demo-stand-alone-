@@ -164,6 +164,7 @@
 .pl-preview-list li:last-child { border-bottom: 0; }
 .pl-preview-what { flex: 1 1 180px; }
 .pl-preview-was { color: var(--muted); text-decoration: line-through; }
+.pl-preview-nums { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; white-space: nowrap; }
 .pl-preview-list .icon { width: 16px; height: 16px; color: var(--muted); }
 .pl-preview-range { color: var(--muted); font-size: 14.5px; }
 .pl-preview-held { color: var(--warn); font-size: 14.5px; }

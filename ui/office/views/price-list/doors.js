@@ -83,8 +83,10 @@ function itemRow(id) {
     let control;
     if (lock) {
       const { words, all } = lockWords(lock);
-      control = h("span", { class: "pl-std", title: all ? `Comes with: ${all}` : null }, icon("check"), h("span", {}, "Always sold"));
       name.append(h("p", { class: "pl-lock-words", title: all ? `Comes with: ${all}` : null }, words));
+    }
+    if (lock && isSold) {
+      control = h("span", { class: "pl-std", title: "It comes with a building or option you sell" }, icon("check"), h("span", {}, "Always sold"));
     } else {
       control = sellBox(isSold, (on) => {
         if (on) {

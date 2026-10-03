@@ -192,6 +192,7 @@ export async function render(ctx) {
       lotSel.addEventListener("change", async () => {
         const to = lotSel.value;
         lotSel.value = c.lot;
+        if (to === c.lot) return;
         const ok = await confirmBox(`Move ${c.name} to ${app.lotName(to)}?`,
           `${app.lotName(to)}'s dealers will see ${c.name.split(" ")[0]} from now on, and ${app.lotName(c.lot)}'s dealers won't. Their quotes, orders and notes go with them.`,
           { yes: `Move to ${app.lotName(to)}` });

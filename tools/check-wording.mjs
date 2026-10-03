@@ -122,6 +122,8 @@ function strings(src) {
   return out;
 }
 
+/* an address (/d/port-charlotte/?embed=1, https://...) is not a sentence */
+const address = (t) => /^\s*(\/|https?:\/\/|#\/|\?)/.test(t) && !/\s[a-z]{3,}\s[a-z]{3,}\s/i.test(t.replace(/\$\{[^}]*\}/g, ""));
 const visible = (t) => /\s/.test(t.trim()) || /^[A-Z][a-z]/.test(t.trim());
 const codeLike = (t) => /^[\w./:#?=&%-]+$/.test(t.trim()) || /^\s*[.#]?[a-z-]+(\s+[.#]?[a-z-]+)*\s*$/.test(t) && !/\s[a-z]{3,}\s[a-z]{3,}/.test(t);
 
@@ -152,7 +154,7 @@ for (const file of files) {
   if (file.endsWith(".html")) {
     items = [{ text: src.replace(/<script[\s\S]*?<\/script>|<style[\s\S]*?<\/style>/g, " ").replace(/<[^>]+>/g, " "), line: 1 }];
   } else {
-    items = strings(src).filter((s) => visible(s.text) && !codeLike(s.text));
+    items = strings(src).filter((s) => visible(s.text) && !codeLike(s.text) && !address(s.text));
   }
   for (const { text, line } of items) {
     checked++;

@@ -815,6 +815,13 @@ ok("a send with a known phone number (digits compared) adds the quote to that cu
 receipt = await sendQuote("port-charlotte", lbDesign, { name: "Maria", phone: "941-555-0999", email: "MARIA@example.com", zip: "33952" }, { label: "Maria, by her email in capitals" });
 mariaNow = await S.get(`customers/${maria.id}`);
 ok("... and a known email (any capitals) does too", mariaNow.quotes.some((q) => q.id === receipt.id) && (await allCustomers()).length === customersBefore);
+{
+  const before = (await allCustomers()).length;
+  const stranger = await sendQuote("port-charlotte", lbDesign, { name: "Bob Jones", phone: "941-555-0102", zip: "33952" }, { label: "a stranger with Maria's phone number" });
+  const after = await allCustomers();
+  ok("somebody else using a known phone number (a different first and last name) becomes a new customer, not Maria",
+    after.length === before + 1 && !(await S.get(`customers/${maria.id}`)).quotes.some((q) => q.id === stranger.id));
+}
 ok("... the customer keeps their own name; a blank detail is filled in", mariaNow.name === "Maria Gonzalez" && mariaNow.phone === "941-555-0102");
 for (const stage of ["lost", "delivered"]) {
   as("u-mike");

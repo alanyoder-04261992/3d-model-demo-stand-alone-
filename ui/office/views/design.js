@@ -12,7 +12,7 @@
    A lot whose designer link is closed shows why instead of a blank frame. */
 
 import { h, icon, button, linkButton, toast, loading } from "../dom.js";
-import { post } from "../api.js";
+import { get, post } from "../api.js";
 import { money, todayKey } from "../words.js";
 import { encodeSync } from "../../../model/design.js";
 import { loadCustomer, missingCustomer } from "./crm-kit.js";
@@ -41,9 +41,10 @@ export async function render(ctx) {
     h("div", { class: "crm-design-actions" }, linkButton("Cancel", `#/customers/${c.id}`, { kind: "ghost" }), saveBtn));
   const stage = h("div", { class: "crm-design-stage" }, loading("Opening the 3D designer…"));
   const screen = h("div", { class: "crm-design" }, bar, stage);
+  const closedNow = (note) => { saveBtn.hidden = true; total.hidden = true; stage.replaceChildren(note); };
 
   if (quoteId && !quote) {
-    stage.replaceChildren(closedNote("That quote isn't here", "It may belong to another customer. Go back and pick the quote again.", c));
+    closedNow(closedNote("That quote isn't here", "It may belong to another customer. Go back and pick the quote again.", c));
     return screen;
   }
 
@@ -53,17 +54,19 @@ export async function render(ctx) {
     const r = await fetch(`/api/lots/${encodeURIComponent(c.lot)}`, { credentials: "same-origin", cache: "no-store" });
     open = r.ok;
     if (!r.ok && r.status !== 404) {
-      stage.replaceChildren(closedNote("The 3D designer didn't load", "Check your internet connection, then try again.", c, true));
+      closedNow(closedNote("The 3D designer didn't load", "Check your internet connection, then try again.", c, true));
       return screen;
     }
   } catch {
-    stage.replaceChildren(closedNote("The 3D designer didn't load", "Check your internet connection, then try again.", c, true));
+    closedNow(closedNote("The 3D designer didn't load", "Check your internet connection, then try again.", c, true));
     return screen;
   }
   if (!open) {
-    const lot = app.lot(c.lot);
-    const lotClosed = lot && lot.active === false;
-    stage.replaceChildren(closedNote("The 3D designer is closed",
+    /* the lot itself, or the whole business? (asked fresh: the lot may have closed since the page opened) */
+    const fresh = (await get("lots").catch(() => null))?.lots || [];
+    const lot = fresh.find((l) => l.slug === c.lot) || app.lot(c.lot);
+    const lotClosed = !!lot && lot.active === false;
+    closedNow(closedNote("The 3D designer is closed",
       lotClosed
         ? `${lotName} is closed, so its 3D designer can't open here either. The owner can open the lot again in Lots.`
         : "The 3D designer is closed to customers right now, so it can't open here either. The owner can open it in Settings.",
@@ -118,7 +121,7 @@ export async function render(ctx) {
     let closedPage = false;
     try { closedPage = !frame.contentWindow.document.getElementById("stage") && !frame.contentWindow.shedUI; } catch { closedPage = true; }
     if (closedPage) {
-      stage.replaceChildren(closedNote("The 3D designer is closed",
+      closedNow(closedNote("The 3D designer is closed",
         "The 3D designer is closed to customers right now, so it can't open here either. The owner can open it in Settings.", c, false,
         app.isOwner ? ["Open Settings", "#/settings"] : null));
       return;

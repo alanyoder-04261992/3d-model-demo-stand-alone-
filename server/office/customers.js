@@ -470,7 +470,21 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
     const mail = (contact.email || "").toLowerCase();
     const digits = phoneDigits(contact.phone);
     const rows = Object.values(doc.rows).sort((a, b) => String(b.updatedAt).localeCompare(String(a.updatedAt)));
-    return rows.find((r) => (mail && r.email && r.email.toLowerCase() === mail) || (digits.length >= 7 && phoneDigits(r.phone) === digits)) || null;
+    /* The same email is the same customer. The same phone is the same
+       customer (or household) when the first or the last name agrees too:
+       "Maria G" is Maria Gonzalez, Mary Smith shares John Smith's phone,
+       but Bob Jones typing Maria's number is somebody new. */
+    const words = (name) => String(name || "").trim().toLowerCase().replace(/[^a-z\s'-]/g, "").split(/\s+/).filter(Boolean);
+    const sameName = (a, b) => {
+      const x = words(a), y = words(b);
+      if (!x.length || !y.length) return true;
+      const first = x[0] === y[0];
+      const last = x.length > 1 && y.length > 1 && (x.at(-1) === y.at(-1) || x.at(-1).startsWith(y.at(-1)) || y.at(-1).startsWith(x.at(-1)));
+      return first || last;
+    };
+    return rows.find((r) => mail && r.email && r.email.toLowerCase() === mail)
+      || rows.find((r) => digits.length >= 7 && phoneDigits(r.phone) === digits && sameName(r.name, contact.name))
+      || null;
   }
 
   async function addWebsiteQuote(slug, contact, priced, cat) {

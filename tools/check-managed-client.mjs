@@ -366,7 +366,7 @@ try {
   });
 
   if (process.argv.includes("--skip-build")) console.log("SKIPPED: customer build checks (--skip-build).");
-  else await check("the customer build ships the designer and the Dealer Center (one bundled script, its stylesheets, its security policy) and nothing private", async () => {
+  else await check("the customer build ships the designer and the Dealer Center (one bundled script and the demo's own file, its stylesheets, its security policy) and nothing private", async () => {
     for (const path of ["dealer.html", "ui/office/main.js", "ui/office/closed.css"]) assert.ok(existsSync(resolve(ROOT, path)), "Required build input missing: " + path);
     for (const old of ["portal.html", "ui/portal.js", "ui/portal.css"]) assert.ok(!existsSync(resolve(ROOT, old)), "The old dealer software is still here: " + old);
     const result = spawnSync(process.execPath, ["tools/build-site.mjs", "--client"], { cwd: ROOT, encoding: "utf8", timeout: 120000,
@@ -387,7 +387,10 @@ try {
     const forbidden = files.filter(file => /(^|\/)(\.agents|\.claude|\.office-local|docs|tools|test|server|netlify|node_modules|images)(\/|$)|(^|\/)learning-[^/]+|^ui\/(learn[^/]*|parts-gallery|part-details|setup)\.|(^|\/)portal\.|\.(md|tsx|ts|mts|toml|map)$/i.test(file));
     assert.deepEqual(forbidden, []);
     assert.deepEqual(files.filter(file => file.endsWith(".html")).sort(), ["404.html", "dealer.html", "index.html"]);
-    assert.deepEqual(files.filter(file => file.startsWith("ui/office/") && file.endsWith(".js")), ["ui/office/main.js"], "the Dealer Center ships as one bundled script");
+    assert.deepEqual(files.filter(file => file.startsWith("ui/office/") && file.endsWith(".js")).sort(), ["ui/office/demo.js", "ui/office/main.js"],
+      "the Dealer Center ships as one bundled script, plus the \"try it\" demo's own file");
+    const mainJs = await readFile(resolve(out, "ui/office/main.js"), "utf8");
+    assert.ok(!/MemoryBlobs|website-requests\//.test(mainJs), "the Dealer Center's script does not carry the demo's copy of the server");
     for (const file of files.filter(file => file.endsWith(".js"))) {
       const source = await readFile(resolve(out, file), "utf8");
       assert.ok(!/sourceMappingURL/.test(source), "no source map in " + file);
