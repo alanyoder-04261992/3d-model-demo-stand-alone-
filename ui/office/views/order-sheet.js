@@ -80,7 +80,10 @@ export async function render(ctx) {
         h("p", {}, h("strong", {}, order.deliveryDate ? longDate(order.deliveryDate + "T12:00:00") : "Date to be set")),
         order.deliveryAddress ? h("p", { class: "sheet-pre" }, order.deliveryAddress) : null,
         order.deliveryNotes ? h("p", { class: "sheet-pre sheet-small" }, order.deliveryNotes) : null)
-      : block("Building", h("strong", {}, building), h("p", { class: "sheet-small" }, `${lot.name} lot`)));
+      : block("Your quote",
+        h("p", { class: "sheet-quote-total" }, money(total)),
+        h("p", { class: "sheet-small" }, `Prices as of ${longDate(quote.at)}`),
+        h("p", { class: "sheet-small" }, quote.by?.name ? `Prepared by ${quote.by.name} at ${lot.name}` : `Made on the ${lot.name} 3D designer`)));
 
   /* ---- the building ---- */
   const picture = h("div", { class: "sheet-picture", hidden: true });

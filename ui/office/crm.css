@@ -497,3 +497,4 @@
   .topbar:has(.lot-picker) .brand-words { display: none; }
   .topbar:has(.lot-picker) .lot-select { max-width: 190px; }
 }
+.sheet-quote-total { font: 500 28px/1.1 var(--head); color: var(--brand-header); font-variant-numeric: tabular-nums; }

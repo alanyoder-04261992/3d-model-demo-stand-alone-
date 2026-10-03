@@ -16,7 +16,7 @@ export function priceInput({ value, label, field, onChange, unit = "$", suffix, 
   };
   if (field) attrs.dataset = { field };
   const input = h("input", attrs);
-  input.value = value == null ? "" : String(value);
+  input.value = value == null ? "" : Number.isInteger(value) ? String(value) : Number(value).toFixed(2);
   input.addEventListener("input", () => onChange(readPrice(input.value), input));
   const wrap = h("span", { class: ["pl-price", unit === "%" && "pct", disabled && "off"] },
     unit === "$" ? h("span", { class: "pl-price-sign", "aria-hidden": "true" }, "$") : null,

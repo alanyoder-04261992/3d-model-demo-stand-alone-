@@ -116,6 +116,11 @@ export async function render(ctx) {
   updateBar();
   app.leaveGuard = leaveGuard;
   if (S.focus) S.hooks.focus();
+  /* on a phone the tabs scroll sideways: bring the one showing into view */
+  setTimeout(() => {
+    const on = page?.tabs?.querySelector("[aria-selected=true]");
+    if (on && page.tabs.scrollWidth > page.tabs.clientWidth) page.tabs.scrollLeft = Math.max(0, on.offsetLeft - page.tabs.offsetLeft - 24);
+  }, 0);
   return root;
 }
 

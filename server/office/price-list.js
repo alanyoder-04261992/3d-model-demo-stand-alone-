@@ -251,7 +251,14 @@ export function describeChanges(before, after, manufacturer) {
     }
     for (const z of keys(os)) if (!(z in ns)) out.push(`${name}: removed ${fmtSize(z)}`);
   }
-  if (!same(before.categories, after.categories)) out.push("Changed how buildings are grouped");
+  /* Starting or stopping a style moves it in or out of its group; only a
+     real regrouping of the styles sold both before and after is news. */
+  const kept = (cats) => (Array.isArray(cats) ? cats : [])
+    .map((g) => [g?.[0], (Array.isArray(g?.[1]) ? g[1] : []).filter((k) => oldStyles.includes(k) && newStyles.includes(k))])
+    .filter((g) => g[1].length);
+  if (Array.isArray(before.categories) !== Array.isArray(after.categories) || !same(kept(before.categories), kept(after.categories))) {
+    out.push("Changed how buildings are grouped");
+  }
 
   /* doors, windows, fixtures */
   const oi = before.items || {}, ni = after.items || {};
