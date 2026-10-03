@@ -491,11 +491,13 @@ without overlapping; the demo reproduces the golden `includedItems` exactly.
              "colors": { "header", "accent" }, "logo",
              "credit": { "text": "3D designer by Barnwright", "url": "", "show": true } },
   "offer": {                           // ONLY these styles load; sizes REPLACE, in chip order
-    "UT": { "sizes": { "8x12": 3400, … }, "name": "…optional rename…" }
+    "UT": { "sizes": { "8x12": 3400, … }, "name": "…optional rename…" },
+    "UTX1": { "base": "UT", "name": "Premium Utility Shed", "sizes": { "8x12": 3900, … } }  // the company's own, built like UT
   },
-  "categories": [ ["Utility & Storage", ["UT", "SU"]] ],
+  "categories": [ ["Utility & Storage", ["UT", "UTX1", "SU"]] ],
   "items": { "w48": 150, "w72": 300, … },            // offered items and their prices
-  "options": { "dormers": {"6": 1300}, "ramps": {…}, "elec": {…}, "misc": {…}, "rates": {…}, "extras": [] },
+  "options": { "dormers": {"6": 1300}, "ramps": {…}, "elec": {"1": {"price": 675, "name": "Basic electric"}, …},
+               "misc": {…}, "rates": {…}, "extras": [] },   // each option: a price, or {"price", "name"}
   "palettes": { "paint": ["White", "Navy", …] },     // names picked from the manufacturer, or [name, hex] pairs
   "defaults": { "style": "LB", "size": "10x20", "colors": { "body": "White", "trim": "Black", "roof": "Black" } },
   "construction": { … },
@@ -522,6 +524,26 @@ without overlapping; the demo reproduces the golden `includedItems` exactly.
   Barnwright's shapes (`P`, `TYPES`, `CATS`, `CAT`, `DORMERS`, `RAMPS`,
   `ELECPK`, `MISC`, `RATES`, `OPTX`, `COLORS`) so ported code keeps its names,
   and reports every problem in plain words.
+* **A style of the company's own** is an `offer` entry with `base`: a new code
+  (1–8 letters or digits, never a manufacturer code, not even in other
+  letters), `base` one of the manufacturer's styles (never another `base`
+  entry) and a `name` (at most 60 letters). The names of all offered styles,
+  renames included, are unique (case and spacing ignored), so a customer never
+  sees two buttons with one name. `TYPES[code]` is a copy of the base's traits
+  (roof, walls, loft, porch, loadout…) with the new name, the base's category
+  unless `categories` says otherwise, and `"base"`. The parts read traits only;
+  the one place a style is looked up by code, a construction rule's `styles`
+  test, uses the base (`buildingFacts` in `model/construction.js`), and a rule
+  naming the new code is refused. So it is drawn, framed, fitted and priced
+  exactly like its base; only its name and prices are its own
+  (`tools/check-style-variants.mjs`, every style at every size). A different
+  shape is a new manufacturer style (`add-a-style` skill).
+* **An option** (`dormers`, `ramps`, `elec`, `misc`, `rates`) is a price or
+  `{"price", "name"}` (like an item). A name replaces the words on the button
+  and the quote line: the `DORMERS` / `RAMPS` / `ELECPK` label, `RATEDEF`
+  `name` and `quoteName`, `MISCNAMES` for shutters, the door window and the
+  outside light, and ELECPK's fourth entry for the package's quote line. With
+  no name every label and quote line is Barnwright's, word for word.
 
 ## Design (saved/shared) and state (live)
 

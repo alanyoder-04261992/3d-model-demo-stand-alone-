@@ -119,3 +119,15 @@ export function recall(key, fallback) {
 
 /* Digits only, for searching phone numbers however they were typed. */
 export const digitsOf = (s) => String(s || "").replace(/\D/g, "");
+
+/* A question with a few answers. choices: [[key, label, kind]].
+   -> Promise<key|null> (null: closed without answering) */
+export function confirmChoice(title, words, choices) {
+  return new Promise((resolve) => {
+    let answered = false;
+    const pick = (key) => { answered = true; box.close(); resolve(key); };
+    const box = dialog(title, [h("p", {}, words),
+      h("div", { class: "actions end crm-choice" }, choices.slice().reverse().map(([key, label, kind]) => button(label, () => pick(key), { kind: kind || "ghost" })))],
+    { onClose: () => { if (!answered) resolve(null); } });
+  });
+}
