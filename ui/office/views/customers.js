@@ -27,9 +27,9 @@ export async function render(ctx) {
   await app.loadCustomers();
   const me = app.person?.userId;
   const memoryKey = `customers:${me}`;
-  const saved = recall(memoryKey, { view: "list", sort: "activity", stage: "all", mine: false });
+  const saved = recall(memoryKey, { view: "list", sort: "activity", stage: "all", mine: false, lost: false });
   const state = { ...saved, search: "", shown: PAGE };
-  const save = () => remember(memoryKey, { view: state.view, sort: state.sort, stage: state.stage, mine: state.mine });
+  const save = () => remember(memoryKey, { view: state.view, sort: state.sort, stage: state.stage, mine: state.mine, lost: state.lost });
   const manyLots = app.lotFilter === "all" && app.lots.length > 1;
 
   /* ---- the toolbar ---- */
@@ -70,7 +70,7 @@ export async function render(ctx) {
         h("div", { class: "search crm-search" }, icon("search"), search),
         h("div", { class: "crm-toolbar-tools" }, mineBtn, h("label", { class: "crm-sort" }, h("span", { class: "sr-only" }, "Sort by"), sortSel))),
       chipsWrap),
-    h("div", { class: "crm-countline" }, countWords, viewBtns), results);
+    h("div", { class: "crm-countline" }, countWords, h("div", { class: "crm-countline-tools" }, lostBtn, viewBtns)), results);
 
   /* ---- filtering ---- */
   function matches(r, words, digits) {
@@ -99,14 +99,20 @@ export async function render(ctx) {
     return list.slice().sort(by);
   }
 
+  const lostBtn = h("button", { type: "button", class: "btn btn-quiet btn-small crm-lost-toggle", onclick: () => { state.lost = !state.lost; save(); draw(); } });
+
   function draw() {
     const { base, counts } = filtered();
-    clear(chipsWrap, chips(
+    clear(chipsWrap, state.view === "board" ? null : chips(
       [["all", "All", base.length], ...STAGES.map(([k, label]) => [k, label, counts[k] || 0])],
       state.stage, (k) => { state.stage = k; save(); state.shown = PAGE; draw(); }, { label: "Stage" }));
+    chipsWrap.hidden = state.view === "board";
+    lostBtn.hidden = state.view !== "board";
     if (state.view === "board") {
       countWords.textContent = plural(base.length, "customer");
-      clear(results, board(ctx, sorted(base), { manyLots, redraw: draw }));
+      lostBtn.textContent = state.lost ? "Hide Lost" : `Show Lost (${counts.lost || 0})`;
+      lostBtn.setAttribute("aria-pressed", String(!!state.lost));
+      clear(results, board(ctx, sorted(base), { manyLots, redraw: draw, lost: state.lost }));
       return;
     }
     const list = sorted(state.stage === "all" ? base : base.filter((r) => r.stage === state.stage));
@@ -151,14 +157,15 @@ function listView(app, rows, manyLots) {
       h("span", { class: "c-when", role: "cell", title: when(r.lastActivityAt) }, ago(r.lastActivityAt)))));
 }
 
-/* ---- the board: one column per stage, Lost folded away ---- */
+/* ---- the board: one column per stage (Lost only when asked for) ---- */
 
-function board(ctx, rows, { manyLots, redraw }) {
+function board(ctx, rows, { manyLots, redraw, lost }) {
   const { app } = ctx;
   const byStage = Object.fromEntries(STAGES.map(([k]) => [k, []]));
   for (const r of rows) (byStage[r.stage] || byStage.new).push(r);
   const wrap = h("div", { class: "crm-board" });
   for (const [stage, label] of STAGES) {
+    if (stage === "lost" && !lost) continue;
     const list = byStage[stage];
     const cards = h("div", { class: "crm-col-cards" });
     let shown = 0;
@@ -176,21 +183,8 @@ function board(ctx, rows, { manyLots, redraw }) {
         h("h2", {}, label), h("span", { class: "crm-count" }, String(list.length)),
         stage !== "lost" && total ? h("span", { class: "crm-col-sum" }, money(total)) : null),
       cards, more);
-    if (stage === "lost") {
-      col.classList.add("folded");
-      const toggle = h("button", { type: "button", class: "btn btn-quiet btn-small crm-col-toggle", "aria-expanded": "false",
-        onclick: () => {
-          const open = col.classList.toggle("folded") === false;
-          toggle.setAttribute("aria-expanded", String(open));
-          toggle.querySelector("span").textContent = open ? "Hide" : "Show";
-          if (open && !shown) fill();
-        } }, h("span", {}, "Show"));
-      col.querySelector(".crm-col-head").append(toggle);
-      more.hidden = true;
-    } else {
-      fill();
-    }
-    if (!list.length && stage !== "lost") cards.append(h("p", { class: "crm-col-empty" }, "Nobody here right now."));
+    fill();
+    if (!list.length) cards.append(h("p", { class: "crm-col-empty" }, "Nobody here right now."));
     wrap.append(col);
   }
   return wrap;
@@ -199,11 +193,13 @@ function board(ctx, rows, { manyLots, redraw }) {
 function boardCard(ctx, r, manyLots, redraw) {
   const { app } = ctx;
   const move = h("select", { class: "crm-move", "aria-label": `Move ${r.name} to another stage` },
-    STAGES.map(([k, label]) => h("option", { value: k }, k === r.stage ? `${label} (now)` : `Move to ${label}`)));
-  move.value = r.stage;
+    h("option", { value: "" }, "Move to…"),
+    STAGES.filter(([k]) => k !== r.stage).map(([k, label]) => h("option", { value: k }, label)));
+  move.value = "";
   move.addEventListener("change", async () => {
     const stage = move.value;
-    move.value = r.stage;
+    move.value = "";
+    if (!stage) return;
     if ((stage === "sold" || stage === "delivered") && !(r.orders || []).some((o) => o.status !== "cancelled")) {
       const pick = await confirmChoice(`Mark ${r.name} ${STAGE_WORDS[stage]}?`,
         r.quotes?.length
