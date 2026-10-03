@@ -222,6 +222,7 @@ Public routes (no sign-in):
 | Route | Does |
 |---|---|
 | `GET /api/lots/:slug` | `{company, lot, version}` for the lot's 3D designer; 404 when the lot is closed or the business is not open yet |
+| `GET /d/:slug/` | the lot's 3D designer page; when closed, a short "This designer link isn't open right now" page that says who to call — the lot's phone when the owner closed the whole designer, the business's phone when only that lot is closed (`pages.js` `closedPage`) |
 | `POST /api/lots/:slug/quote-requests` | `{design, contact, idempotencyKey}` → `{id, number, total, price, receivedAt, repriced}` (201; the same send again → the same receipt, 200) |
 
 A website quote request is matched to an existing customer of that lot by
@@ -396,22 +397,45 @@ saving: "Saved. All 3 lots show the new prices now." with the change list.
 If someone else saved first, the owner is told and reloads. *History* lists
 every save in words, with who and when, and (owner) "Put this back".
 
-**Lots** (`#/lots`) — a card per lot: name, address, phone, its counts, its
-designer link (open, copy), "Put the designer on your website" (the code to
-paste and the websites allowed to show it), people working it. "+ Add a lot".
-A lot can be closed (its link stops working; its customers stay).
+**Lots** (`#/lots`, one lot at `#/lots/<link name>`) — a card per lot: name,
+Open or Closed, address, phone, email, hours, website; customers working now,
+sold and sales this month ("See its customers"); the dealers who work it; its
+3D designer link (shown in full, "Open the designer", "Copy link"); "Put the
+designer on your website": one sentence to pass on ("Send this to whoever
+runs your website…"), the website code with "Copy website code"
+(`<div id="shed-designer">` and `embed.js` with `data-lot`), and "Websites
+that may show it" as plain addresses (yoursite.com), with "Add website"
+(offering the www. twin in one tap) and "Remove". Owners: "Add a lot" (the
+pop-up shows the link the name will get), "Edit lot", "Close lot" / "Open
+lot" ("Closing Arcadia stops its 3D designer link. Its customers stay.").
+Managers see every lot and dealers their own, without the owner's buttons
+but with the link and the website code.
 
-**Team** (`#/team`) — people with role, lots and last visit; invites not yet
-used. "+ Add a person": name, email, role, lots. Then a message to send them,
-ready to copy (and emailed when email is set up): where to go and which email
-to sign in with.
+**Team** (`#/team`, owner and manager) — people with job, lots and last
+visit; removed people (greyed, "Put back"); invites not yet used ("Invited
+Oct 3 — hasn't signed in yet", "Copy message", "Remove invite"). "Add a
+person": name, email, job (Owner, Manager, Dealer) and, for a dealer, lots.
+Then a message to send them, ready to copy or email ("Hi Maria — I added you
+to the Yoder Storage Barns Dealer Center. Go to …/dealer, tap “Make your
+login” and use maria@example.com."), and emailed too when email is set up.
+"Edit": name, job, lots, "Remove from team" (they can't sign in; their
+customers stay). The last owner can't be removed or made a manager or
+dealer. Managers see the list without the buttons; dealers don't see it.
 
-**Settings** (`#/settings`, owner) — business name, phone, email, website,
-tagline, logo (upload; shrunk in the browser), header and accent colors; how
-prices show on the designer (full price, "from" price, no price), rent-to-own
-monthly terms; the line under the price (fine print); which contact details
-the quote form asks for; text-message permission wording; "Open for
-customers" / "Closed".
+**Settings** (`#/settings`, owner) — *Your business* (name, phone, email,
+website, tagline); *Logo* (upload; shrunk in the browser to fit 360×360,
+PNG or WebP, at most 150 KB; "Remove logo"); *Colors* (header and button
+colors with a live preview; a warning when white words would be hard to
+read); *3D designer* ("Open to customers" or "Closed" — closed links show
+who to call; how prices show: the full price, a starting price ("from") or
+no price; a monthly rent-to-own price over one of the price list's terms;
+the line under the price; notes for building widths; the building it opens
+on); *The quote form* (phone, email, ZIP, street address and a note: "Must
+give", "Can give" or "Don't ask" — the name is always asked, and phone or
+email must be; the texting permission sentence, empty = don't ask). It all
+saves into the price list record with one bar at the bottom ("3 changes",
+"Undo changes", "Save settings"); someone saving first is told to reload.
+Managers and dealers see "Only the owner can change settings".
 
 **Sign in** — email and password; "Make your login" (for people the owner
 added); "Forgot your password?"; links from Netlify emails (confirm, invite,
@@ -419,8 +443,10 @@ reset) land here and are handled. Someone signed in but not added yet sees
 "You're signed in as maria@…, but you're not on the team yet.
 Ask the owner to add this email."
 
-**First setup** (the first owner, once) — three steps: your business, your
-starting price list (every standard building at example prices, or three
-buildings to start small — all example prices to change), your first lot.
-The designer links stay closed until the owner presses "Open for
-customers".
+**First setup** (`#/setup`, the first owner, once; the menu is hidden
+until it's done) — three steps: your business (your name, business name,
+phone, email), your starting price list (every standard building at example
+prices, or three buildings to start small — all example prices to change),
+your first lot (showing the link it will get). Then "Your Dealer Center is
+ready." with "Check your prices" and "Add your team". The designer links
+stay closed until the owner picks "Open to customers" in Settings.

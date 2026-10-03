@@ -180,7 +180,7 @@ async function route(request) {
       const html = designerHtml();
       return lotDesignerPage({ html, hashes: inlineScriptHashes(html), origins: data.lot.embedOrigins || [], head: request.method === "HEAD" });
     } catch (e) {
-      return closedPage(e.status || 503);
+      return closedPage(e.status || 503, e.call);
     }
   }
   m = /^\/(c|d)\/[a-z0-9-]{2,40}\/(ui|engine|model|parts|library|companies|fonts)\/(.+)$/.exec(path);

@@ -378,16 +378,20 @@ function lotDialog(ctx, lot) {
     placeholder: "yoursite.com", wide: true, hint: "If this lot has its own website. Leave it empty to use the business website." });
   website.input.setAttribute("autocapitalize", "off");
 
-  const linkWords = h("strong", {});
+  const linkWords = h("span", {});
   const showLink = () => {
-    const slug = isNew ? freeLinkName(app, name.input.value || "") : lot.slug;
-    linkWords.textContent = new URL(app.designerUrl(slug), location.origin).href;
+    if (isNew && !name.input.value.trim()) {
+      clear(linkWords, "Its 3D designer link is made from the lot's name.");
+      return;
+    }
+    const slug = isNew ? freeLinkName(app, name.input.value) : lot.slug;
+    const url = new URL(app.designerUrl(slug), location.origin).href;
+    clear(linkWords, isNew ? "Its 3D designer link will be " : "Its 3D designer link stays ", h("strong", {}, url),
+      isNew ? "" : ". Renaming the lot keeps the same link, so websites keep working.");
   };
   if (isNew) name.input.addEventListener("input", showLink);
   showLink();
-  const linkNote = h("p", { class: "lots-link-preview" }, icon("link"),
-    h("span", {}, isNew ? "Its 3D designer link will be " : "Its 3D designer link stays ", linkWords,
-      isNew ? "" : ". Renaming the lot keeps the same link, so websites keep working."));
+  const linkNote = h("p", { class: "lots-link-preview" }, icon("link"), linkWords);
 
   const box = dialog(isNew ? "Add a lot" : `Edit ${lot.name}`, form([
     h("div", { class: "form-grid" }, name.wrap),

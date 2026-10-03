@@ -84,7 +84,7 @@ const WATCH = [
   ["Business name", (s) => s.brand?.name || ""],
   ["Phone", (s) => s.brand?.phone || ""],
   ["Email", (s) => s.brand?.email || ""],
-  ["Website", (s) => s.brand?.website || ""],
+  ["Website", (s) => plainAddress(s.brand?.website)],
   ["Tagline", (s) => s.brand?.tagline || ""],
   ["Logo", (s) => s.brand?.logo || ""],
   ["Colors", (s) => [s.brand?.colors?.header || "", s.brand?.colors?.accent || ""]],
@@ -161,7 +161,7 @@ function showProblems(problems) {
 function businessCard() {
   const B = page.draft.brand;
   const box = (key, label, opts = {}) => {
-    const f = field(label, { value: B[key] || "", ...opts });
+    const f = field(label, { value: key === "website" ? plainAddress(B[key]) : B[key] || "", ...opts });
     f.input.addEventListener("input", () => {
       B[key] = f.input.value;
       if (key === "name") page.namePreview?.forEach((n) => { n.textContent = f.input.value || "Your business"; });
@@ -176,8 +176,7 @@ function businessCard() {
       box("phone", "Phone", { type: "tel", maxLength: 40, autocomplete: "tel", hint: "A lot's own phone number shows on that lot's designer instead." }),
       box("email", "Email", { type: "email", maxLength: 200, autocomplete: "email" }),
       box("website", "Website", { maxLength: 300, inputmode: "url", placeholder: "yourbusiness.com", autocomplete: "url" }),
-      box("tagline", "Tagline", { maxLength: 80, wide: true, placeholder: "Portable storage buildings, delivered and set up",
-        hint: "A few words under your name at the top of the 3D designer." })));
+      box("tagline", "Tagline", { maxLength: 80, wide: true, placeholder: "Portable storage buildings, delivered and set up" })));
 }
 
 /* ---- Logo ---------------------------------------------------------------------------------- */
@@ -191,7 +190,7 @@ function logoCard() {
   const B = page.draft.brand;
   const preview = h("div", { class: "set-logo-preview" });
   const status = h("p", { class: "set-problem", role: "alert" });
-  const input = h("input", { type: "file", accept: "image/png,image/jpeg,image/webp,image/gif,image/svg+xml", class: "sr-only", id: nextId("logo") });
+  const input = h("input", { type: "file", accept: "image/png,image/jpeg,image/webp,image/gif,image/svg+xml", class: "set-file", id: nextId("logo") });
   const remove = button("Remove logo", () => { B.logo = ""; paint(); paintColors(); edited(); }, { kind: "quiet", icon: "trash" });
   const paint = () => {
     clear(preview, B.logo ? h("img", { src: B.logo, alt: "Your logo" })
@@ -426,9 +425,9 @@ function designerCard() {
   }
 
   /* the line under the price */
-  const fine = field("The line under the price", { value: s.notes.finePrint || "", maxLength: 200, wide: true,
+  const fine = field("The line under the price", { type: "textarea", rows: 1, class: "set-grow", value: s.notes.finePrint || "", maxLength: 200, wide: true,
     placeholder: "Prices plus tax. Delivery and setup included within our area.", hint: "Short and plain, like what's included and what isn't." });
-  fine.input.addEventListener("input", () => { s.notes.finePrint = fine.input.value; edited(); });
+  fine.input.addEventListener("input", () => { fine.input.value = fine.input.value.replace(/[\r\n]+/g, " "); s.notes.finePrint = fine.input.value; edited(); });
 
   return cardOf("cube", "3D designer", "How every lot's 3D designer works for customers.",
     s.status === "suspended" ? h("p", { class: "set-callout" }, icon("alert"),
@@ -452,8 +451,9 @@ function widthNotes() {
   const draw = () => {
     const used = Object.keys(N).filter((k) => !k.startsWith("_")).sort((a, b) => Number(a) - Number(b));
     clear(list, used.length ? used.map((w) => {
-      const input = h("input", { type: "text", value: N[w], maxLength: 200, "aria-label": `Note for ${w} ft wide buildings` });
-      input.addEventListener("input", () => { N[w] = input.value; edited(); });
+      const input = h("textarea", { rows: 1, maxLength: 200, class: "set-grow", "aria-label": `Note for ${w} ft wide buildings` });
+      input.value = N[w];
+      input.addEventListener("input", () => { input.value = input.value.replace(/[\r\n]+/g, " "); N[w] = input.value; edited(); });
       return h("div", { class: "set-note" }, h("span", { class: "set-note-w" }, `${w} ft wide`), input,
         h("button", { type: "button", class: "set-icon-btn", "aria-label": `Remove the note for ${w} ft wide buildings`, title: "Remove note",
           onclick: () => { delete N[w]; draw(); edited(); } }, icon("trash")));
@@ -537,6 +537,11 @@ function quoteFormCard() {
 
 /* ---- checking and saving ------------------------------------------------------------------------------ */
 
+/* "https://yoursite.com/" -> "yoursite.com" (how people say it) */
+function plainAddress(address) {
+  return String(address || "").trim().replace(/^https:\/\//i, "").replace(/\/$/, "");
+}
+
 /* "yoursite.com" -> "https://yoursite.com/"; "" stays "". Throws on junk. */
 function websiteAddress(value) {
   const t = String(value || "").trim();
@@ -571,7 +576,7 @@ function prepared() {
   }
   for (const k of ["phone", "email", "tagline"]) B[k] = String(B[k] || "").trim();
   B.email = B.email.toLowerCase();
-  if (String(B.website || "").trim() !== (before.website || "")) B.website = websiteAddress(B.website);
+  B.website = plainAddress(B.website) === plainAddress(before.website) ? before.website || "" : websiteAddress(B.website);
   if (s.status !== "suspended") s.status = "active";
   s.notes.finePrint = String(s.notes.finePrint || "").trim();
   const notes = {};

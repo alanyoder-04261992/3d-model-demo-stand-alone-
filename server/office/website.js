@@ -13,7 +13,7 @@
    repeats the customer's contact details. */
 
 import { sha256Hex } from "./hash.js";
-import { fail, text, email, phone, bool, onlyKeys } from "./http.js";
+import { fail, OfficeError, text, email, phone, bool, onlyKeys } from "./http.js";
 import { KEEP } from "./store.js";
 import { publicLotFields } from "./lots.js";
 import { priceOrExplain } from "./pricing.js";
@@ -26,11 +26,23 @@ const ON_ITS_WAY = "Your request is already on its way. Wait a moment, then chec
 const SEND_AGAIN = "Please refresh the page and send it again.";
 
 export function createWebsite({ store, now, lots, priceList, customers, notify = async () => {}, log = console.error }) {
+  /* A closed link still says who to call: the lot's own phone when the
+     owner closed the whole 3D designer, the business's phone when only
+     this lot is closed. It rides on the error for the "not open" page
+     (pages.js closedPage); the API's answer never includes it. */
+  function closed(name, phoneNumber) {
+    const error = new OfficeError(404, "This designer link is not open right now.");
+    if (phoneNumber) error.call = { name: name || "", phone: phoneNumber };
+    throw error;
+  }
+
   async function publicLot(slug) {
     const lot = await lots.get(slug);
-    if (!lot || lot.active === false) fail(404, "This designer link is not open right now.");
-    const record = await priceList.current();
-    if (!record || record.data.settings.status === "suspended") fail(404, "This designer link is not open right now.");
+    const record = lot ? await priceList.current() : null;
+    const brand = record?.data.settings.brand || {};
+    if (!lot) closed();
+    if (lot.active === false) closed(brand.name, brand.phone);
+    if (!record || record.data.settings.status === "suspended") closed(brand.name || lot.name, lot.phone || brand.phone);
     return { company: record.data.settings, lot: publicLotFields(lot), version: record.data.version };
   }
 

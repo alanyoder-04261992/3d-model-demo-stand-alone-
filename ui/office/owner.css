@@ -736,3 +736,84 @@ body.set-bar-on .toasts { bottom: 96px; }
   .set-bar-actions .btn { flex: 1; padding-left: 10px; padding-right: 10px; }
   body.set-bar-on .toasts { bottom: calc(190px + env(safe-area-inset-bottom)); }
 }
+.set-card input.set-file { position: absolute; width: 1px; height: 1px; min-height: 0; padding: 0; border: 0; opacity: 0; overflow: hidden; clip: rect(0 0 0 0); }
+.set-card label.btn:has(+ .set-file:focus-visible), .set-card .actions:has(+ .set-file:focus-visible) label.btn { outline: 3px solid var(--focus); outline-offset: 2px; }
+.set textarea.set-grow { min-height: 44px; resize: none; field-sizing: content; }
+
+/* ---- setup --------------------------------------------------------------------------------------
+   views/setup.js (#/setup, the first owner's three steps). Every class starts with "setup-".
+   While it shows, the menu is hidden (body.setup-on): nothing else works before the business exists. */
+
+body.setup-on .sidenav, body.setup-on .tabbar, body.setup-on .more-sheet, body.setup-on .new-customer, body.setup-on .lot-picker { display: none !important; }
+body.setup-on .main { margin-left: 0; max-width: none; padding-bottom: 60px; }
+.setup-page { max-width: 760px; margin: 0 auto; display: grid; gap: 20px; }
+.setup-hello { display: flex; align-items: center; gap: 16px; padding: 6px 0 2px; }
+.setup-mark { width: 56px; height: 56px; border-radius: 14px; flex: none; display: grid; place-items: center; background: var(--brand-accent); color: #fff; box-shadow: var(--shadow); }
+.setup-mark .icon { width: 32px; height: 32px; }
+.setup-hello h1 { font: 500 clamp(26px, 3.4vw, 34px)/1.15 var(--head); letter-spacing: .02em; color: var(--brand-header); }
+.setup-hello p { color: var(--muted); margin-top: 3px; }
+.setup-body { display: grid; gap: 16px; }
+.setup-steps { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.setup-step {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #fff;
+  border: 1px solid var(--line); color: var(--muted); font-weight: 600; font-size: 14.5px; min-width: 0;
+}
+.setup-step > span:last-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.setup-num {
+  width: 26px; height: 26px; border-radius: 6px; flex: none; display: grid; place-items: center;
+  background: var(--bg); color: var(--muted); font: 600 14px/1 var(--head);
+}
+.setup-num .icon { width: 16px; height: 16px; stroke-width: 2.4; }
+.setup-step.now { border-color: var(--brand-header); color: var(--brand-header); box-shadow: inset 0 -3px 0 var(--brand-accent); }
+.setup-step.now .setup-num { background: var(--kraft); color: #fff; }
+.setup-step.done { color: var(--good); }
+.setup-step.done .setup-num { background: var(--good); color: #fff; }
+.setup-card { padding: 22px 24px 24px; }
+.setup-card .card-title { font-size: 17px; }
+.setup-card .card-title .step { width: 26px; height: 26px; font-size: 14px; }
+.setup-intro { color: var(--muted); margin: -6px 0 16px; }
+.setup-choices { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.setup-choice {
+  display: flex; gap: 12px; align-items: flex-start; padding: 18px 18px 16px; min-height: 150px; border: 1px solid var(--line-strong);
+  border-radius: 12px; background: #fff; cursor: pointer;
+}
+.setup-choice:hover { border-color: var(--brand-header); }
+.setup-choice input { width: 20px; height: 20px; margin: 3px 0 0; accent-color: var(--brand-header); flex: none; }
+.setup-choice:has(input:checked) { border-color: var(--brand-header); background: var(--cream); box-shadow: inset 0 0 0 2px var(--brand-header); }
+.setup-choice:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.setup-choice-words { display: grid; gap: 6px; line-height: 1.4; }
+.setup-choice-words strong { font: 500 21px/1.2 var(--head); letter-spacing: .02em; color: var(--brand-header); }
+.setup-choice-words small { color: var(--muted); font-size: 13.5px; }
+.setup-note, .setup-link {
+  display: flex; align-items: flex-start; gap: 9px; font-size: 14.5px; border-radius: 8px; padding: 10px 12px;
+}
+.setup-note { background: var(--warn-bg); color: var(--warn); }
+.setup-link { background: var(--bg); color: var(--muted); }
+.setup-note .icon, .setup-link .icon { width: 17px; height: 17px; margin-top: 1px; flex: none; }
+.setup-link strong { color: var(--brand-header); overflow-wrap: anywhere; font-weight: 600; }
+.setup-nav { justify-content: space-between; }
+.setup-addr { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 14px 16px; }
+.setup-ready { display: grid; gap: 14px; justify-items: center; text-align: center; padding: 34px 28px 30px; }
+.setup-done-mark { width: 64px; height: 64px; border-radius: 50%; background: var(--good); color: #fff; display: grid; place-items: center; }
+.setup-done-mark .icon { width: 34px; height: 34px; stroke-width: 2.4; }
+.setup-ready h2 { font: 500 clamp(26px, 3.2vw, 32px)/1.2 var(--head); color: var(--brand-header); }
+.setup-ready-words { color: var(--muted); max-width: 52ch; font-size: 16.5px; }
+.setup-ready .setup-link { text-align: left; }
+.setup-next { text-align: left; margin: 4px 0 6px; padding-left: 22px; display: grid; gap: 6px; max-width: 56ch; }
+.setup-next li::marker { color: var(--kraft); font-weight: 700; }
+
+@media (max-width: 760px) {
+  body.setup-on .main { padding-bottom: 40px; }
+  .setup-steps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .setup-step { flex-direction: column; align-items: flex-start; gap: 6px; padding: 9px 10px; font-size: 13px; }
+  .setup-step > span:last-child { white-space: normal; line-height: 1.25; }
+  .setup-card { padding: 18px 16px 20px; }
+  .setup-choices { grid-template-columns: minmax(0, 1fr); }
+  .setup-choice { min-height: 0; }
+  .setup-addr { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .setup-addr > .field:first-child { grid-column: 1 / -1; }
+  .setup-nav .btn, .setup-card .actions.end .btn, .setup-ready .actions .btn { flex: 1; }
+  .setup-ready { padding: 26px 16px; }
+}
+.setup-card .form-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+body.setup-on #main > .banner { display: none; }
