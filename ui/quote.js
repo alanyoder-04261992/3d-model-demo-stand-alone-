@@ -3,8 +3,18 @@
    and calls install(api) with window.shedUI). It fills #quote-mount, under
    the summary in card 6, "Your quote".
 
-   Managed dealer links save requests through the same-origin backend. Legacy
-   company links use the COMPANY'S settings, company.leads.mode:
+   A LOT'S LINK (/d/<lot>/, leads.mode "managed", ui/load.js loadLot) sends
+   the quote to the Dealer Center (ui/managed-order.js): the server prices it
+   from the price list and answers with the quote's number, which the
+   customer sees ("Your quote number is #1042."), with today's price when it
+   differs from the one on the page. When it cannot be sent, the customer
+   sees the server's own sentence (something to fix), a Refresh that keeps
+   their building (something is no longer offered), or plain words and the
+   lot's phone. Sentences name the business ("Yoder Storage Barns has your
+   design"), never "<Business> — <Lot>".
+
+   A company's own link (/c/<id>/) uses the COMPANY'S settings,
+   company.leads.mode:
      none         a showroom: no form at all.
      form         an ordinary web-form post to a form service the company
                   already uses (Formspree, Basin, Web3Forms, Netlify Forms):
@@ -77,7 +87,7 @@
    (can be changed), summary(contact), link(), images(cap) }. */
 
 import { esc, safeUrl } from "./esc.js";
-import { submitManagedOrder } from "./managed-order.js";
+import { submitManagedOrder, reloadWithDesign, WORDS as MANAGED_WORDS } from "./managed-order.js";
 import { money, priceParts } from "../model/pricing.js";
 import { colorName, sidingPalette } from "../model/company.js";
 import { frameOf } from "../model/frame.js";
@@ -85,7 +95,7 @@ import { makePlan } from "../model/plan.js";
 import { assemble } from "../engine/assemble.js";
 import { snapshotCanvas } from "../engine/snapshot.js";
 import { stageTableFor } from "../engine/renderer.js";
-import { keepLink, copyText, contactHtml, today } from "./share.js";
+import { keepLink, copyText, contactHtml, today, businessName } from "./share.js";
 
 export const MIN_MS = 3000;            /* the least time a person spends before sending */
 export const TIMEOUT_MS = 20000;       /* how long a form service or webhook gets to answer */
@@ -158,6 +168,27 @@ export function fitMailto(to, subject, bodies) {
   for (const b of bodies) { h = mailHref(to, subject, b); if (h && h.length <= MAILTO_MAX) return h; }
   return h;
 }
+
+/* ------------------------------------------------------------------------
+   A lot's receipt (leads.mode "managed"): the quote's number, and today's
+   price when the server's total is not the one the page showed (the price
+   list changed while the customer was designing). A company that shows no
+   prices never gets a price here either. -> a list of sentences. */
+export function receiptWords(receipt, shownTotal, cat) {
+  const out = [];
+  if (!receipt || typeof receipt !== "object") return out;
+  const number = receipt.number == null ? "" : String(receipt.number).trim();
+  if (number) out.push("Your quote number is #" + number + ".");
+  const total = typeof receipt.total === "number" && isFinite(receipt.total) ? receipt.total : null;
+  const showsPrices = !(cat && cat.pricing && cat.pricing.show === "none");
+  if (showsPrices && total !== null && typeof shownTotal === "number" && Math.abs(total - shownTotal) >= 0.005) {
+    out.push("Today's price for this building is " + dollars(total) + ".");
+  }
+  return out;
+}
+
+/* "$5,540" -- cents only when there are some ("$5,540.50") */
+function dollars(n) { return money(n).replace(/\.00$/, ""); }
 
 /* ------------------------------------------------------------------------
    The pictures (webhook, leads.images: true). */
@@ -391,7 +422,9 @@ export function install(api) {
   addCss();
 
   keeper = keepLink(api, { view: true });
-  const who = cat.brand.name || "the company";
+  /* who will answer, as a sentence names them: on a lot's link the business
+     ("Yoder Storage Barns"), not the header's "Yoder Storage Barns — Port Charlotte" */
+  const who = businessName(cat) || "the company";
   const canReach = !!contactHtml(cat, {});         /* the company has a phone or an e-mail to show */
   const shownAt = (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now();
   const since = () => ((typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now()) - shownAt;
@@ -495,9 +528,57 @@ export function install(api) {
     res.innerHTML = '<div class="qerr"><b>We couldn’t send your request just now.</b> Nothing is lost — ' + (canReach ? "reach " + esc(who) + " directly below" : "copy the link to your design below and send it to " + esc(who)) + ", or try again in a minute.</div>" + fallback(link, summary);
     wireFallback(link, summary);
     btn.hidden = false; btn.disabled = false; btn.textContent = "Try again";
-    if (why) {
+    if (why) res.querySelector(".qerr").setAttribute("data-why", why);
+  }
+
+  /* A lot's send that did not work (ui/managed-order.js says which kind):
+       refresh   the server's sentence ("Something in this building is no
+                 longer offered ...") and a Refresh button that puts the
+                 building in the address first, so it comes back with
+                 today's options;
+       answer    the server's own sentence, written for customers; for
+                 something in the boxes (422) that is all, they fix it and
+                 send again;
+       anything else (too slow, no connection, the server busy): our plain
+       words, the ways to reach the business, and Try again -- which sends
+       the same one-time key, so the quote is never made twice. */
+  function showManagedFailed(link, summary, r) {
+    const why = r.why || MANAGED_WORDS.busy;
+    if (r.kind === "refresh") {
+      res.innerHTML = '<div class="qerr qrefresh"><b class="qwhy"></b> Your building will still be here.</div>' +
+        '<button type="button" class="bigbtn qreload">Refresh</button>';
+      res.querySelector(".qwhy").textContent = why;
       res.querySelector(".qerr").setAttribute("data-why", why);
-      if (cat.managed) { const detail = document.createElement("p"); detail.textContent = why; res.querySelector(".qerr").appendChild(detail); }
+      const reload = res.querySelector(".qreload");
+      reload.addEventListener("click", () => {
+        reload.disabled = true; reload.textContent = "Refreshing…";
+        reloadWithDesign(api.getDesign()).catch((e) => {
+          console.error("The building could not be put in the address before the refresh:", e);
+          location.reload();
+        });
+      });
+      btn.hidden = true;
+      return;
+    }
+    const fixIt = r.kind === "answer" && r.code === 422;
+    const reach = canReach ? " You can also reach " + esc(who) + " directly below."
+      : " Or copy the link to your design below and send it to " + esc(who) + ".";
+    res.innerHTML = '<div class="qerr"><b class="qwhy"></b>' + (fixIt ? "" : reach) + "</div>" + (fixIt ? "" : fallback(link, summary));
+    res.querySelector(".qwhy").textContent = why;
+    res.querySelector(".qerr").setAttribute("data-why", why);
+    if (!fixIt) wireFallback(link, summary);
+    btn.hidden = false; btn.disabled = false; btn.textContent = fixIt ? btnWords : "Try again";
+  }
+
+  /* the quote's number (and today's price) under "Quote request sent" */
+  function showReceipt(receipt, shownTotal) {
+    const box = res.querySelector(".sent");
+    if (!box) return;
+    for (const words of receiptWords(receipt, shownTotal, cat)) {
+      const p = document.createElement("p");
+      p.className = "qreceipt";
+      p.textContent = words;
+      box.appendChild(p);
     }
   }
   function showMailto(href, link, summary) {
@@ -582,6 +663,7 @@ export function install(api) {
       summary = summaryText(api.getState(), cat, c, link);
       const design = api.getDesign({ priced: true, at: today() });   /* the customer's own day */
       let r;
+      const shownTotal = design.priced && typeof design.priced.total === "number" ? design.priced.total : api.price().total;
       if (mode === "managed" && cat.managed) {
         r = await submitManagedOrder(cat.managed, design, c, state.timeoutMs);
       } else if (mode === "form") {
@@ -616,22 +698,21 @@ export function install(api) {
       }
       if (r.ok) {
         showSent(c, r.how);
-        if (r.receipt) {
-          const receipt = document.createElement("p");
-          receipt.textContent = `Request ${r.receipt.id} · Saved to your dealer's inbox.`;
-          res.querySelector(".sent").appendChild(receipt);
-        }
+        if (r.receipt) showReceipt(r.receipt, shownTotal);
         if (mode !== "postMessage") tellParent({ type: "shed:quote-requested", v: 1, mode: mode, sent: true, design: design, link: link }, false);
         out = record(Object.assign({ status: "sent" }, r));
       } else {
-        showFailed(link, summary, r.why);
+        if (mode === "managed") showManagedFailed(link, summary, r);
+        else showFailed(link, summary, r.why);
         out = record(Object.assign({ status: "failed" }, r));
       }
       return out;
     } catch (e) {
       console.error("The quote request could not be sent:", e);
       const lk = link || "";
-      showFailed(lk, summary || summaryText(api.getState(), cat, c, lk), "a fault in the page");
+      const sum = summary || summaryText(api.getState(), cat, c, lk);
+      if (mode === "managed") showManagedFailed(lk, sum, { kind: "busy", why: MANAGED_WORDS.busy });
+      else showFailed(lk, sum, "a fault in the page");
       return record({ status: "failed", why: String(e && e.message || e) });
     } finally {
       state.busy = false;

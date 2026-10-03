@@ -1,0 +1,58 @@
+/* THE "THIS DESIGNER LINK ISN'T OPEN" PAGE (server/office/pages.js
+   closedPage). A customer opening a closed lot's 3D designer link, or the
+   link while the designer cannot load, sees two short sentences in the
+   middle of the screen. Its security policy allows only this site's own
+   styles and nothing else (no fonts, pictures or scripts), so everything
+   here is plain CSS with the computer's own fonts. */
+
+:root {
+  color-scheme: light;
+  --navy: #0A2C49;
+  --ink: #2b3440;
+  --paper: #F4F6F8;
+  --line: #DCE2E8;
+}
+
+* { box-sizing: border-box; }
+
+html, body { height: 100%; }
+
+body {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 17px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  text-align: center;
+}
+
+main {
+  width: 100%;
+  max-width: 460px;
+  padding: 32px 28px;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-top: 6px solid var(--navy);
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(10, 44, 73, 0.08);
+}
+
+h1 {
+  margin: 0 0 10px;
+  color: var(--navy);
+  font-size: 24px;
+  line-height: 1.25;
+  font-weight: 700;
+}
+
+p { margin: 0; }
+
+a { color: var(--navy); font-weight: 600; }
+
+@media (max-width: 380px) {
+  main { padding: 24px 18px; }
+  h1 { font-size: 21px; }
+}

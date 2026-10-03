@@ -699,12 +699,15 @@ try {
   if (want(11)) section("11. A company whose words contain HTML: shown as text, never run");
   if (want(11)) {
     const EVIL = `<img src=x onerror="window.__pwned=1"><script>window.__pwned=2</script>`;
+    /* a style's name is at most 60 letters (model/company.js NAME_MAX), so the
+       style gets the shorter trick: still a picture that would run code */
+    const EVIL_STYLE = `<img src=x onerror="window.__pwned=1">`;
     const co = readJSON("companies/starter/company.json");
     co.id = "xss-test";
     co.brand.name = "Acme " + EVIL; co.brand.short = "Short" + EVIL; co.brand.initials = "<b>"; co.brand.tagline = EVIL;
     co.brand.credit = { text: "Credit " + EVIL, url: "javascript:window.__pwned=3", show: true };
     co.brand.logo = "javascript:window.__pwned=4";
-    co.offer.UT.name = "Utility " + EVIL;
+    co.offer.UT.name = "Utility " + EVIL_STYLE;
     co.categories = [["Sheds " + EVIL, ["UT", "LB"]], ["Garages", ["G"]]];
     co.palettes.paint[0] = ["Cream " + EVIL, "#EFE7D2"];
     co.defaults.colors.body = "Cream " + EVIL;
@@ -742,9 +745,9 @@ try {
     const pageScripts = (readFileSync(resolve(ROOT, "index.html"), "utf8").match(/<script\b/g) || []).length;
     ok("nothing in the company's words ran (no script, no onerror, no javascript: link or picture)", r.pwned === undefined && r.onerr === 0 && r.jsLinks === 0 && r.imgs.length === 0 && r.scripts === pageScripts, J(r));
     ok("the header, plate, style chip, category, colour name, extra, fine print, size note, credit, item list and summary show the characters as text",
-      r.name === "Acme " + EVIL && r.plateBrand === "Short" + EVIL && r.chip.indexOf("Utility " + EVIL) === 0 && r.cat === "Sheds " + EVIL && r.colour === "Cream " + EVIL &&
+      r.name === "Acme " + EVIL && r.plateBrand === "Short" + EVIL && r.chip.indexOf("Utility " + EVIL_STYLE) === 0 && r.cat === "Sheds " + EVIL && r.colour === "Cream " + EVIL &&
       r.extra.indexOf("Extra " + EVIL) >= 0 && r.fine === "Fine " + EVIL && r.note === "Note " + EVIL && r.credit === "Credit " + EVIL && r.list.indexOf("Window " + EVIL) >= 0 &&
-      r.sum.indexOf("Utility " + EVIL) >= 0 && r.plate.indexOf("Utility " + EVIL) >= 0 && r.badge === "<B>", J(r));
+      r.sum.indexOf("Utility " + EVIL_STYLE) >= 0 && r.plate.indexOf("Utility " + EVIL_STYLE) >= 0 && r.badge === "<B>", J(r));
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
     await ctx.close();
     /* a settings mistake: the problems in plain words, not a half-working designer */

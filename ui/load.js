@@ -88,31 +88,72 @@ export async function loadCatalogue(id, opts) {
   return r.catalogue;
 }
 
-/* Managed dealer links resolve their company and routing on the server. A
-   shared design cannot choose a different recipient or change HQ's catalogue. */
+/* A LOT'S 3D DESIGNER (/d/<lot>/). The Dealer Center's server answers
+   GET api/lots/<lot> with the business's price list as it is right now (the
+   one every lot shares) and the lot's own public details. The page never
+   reads a company file for a lot, so a shared design cannot pick another
+   business, another lot or other prices.
+
+   What changes for a lot, compared with the price list on its own:
+     brand.name    "<Business> — <Lot>" (the header and the page title)
+     brand.phone / email / website   the lot's own, when it has them
+     leads         mode "managed": the quote goes to the Dealer Center; the
+                   form always asks for a name and a phone or an email
+     embed         the lot's link (for shared designs) and its websites
+     managed       what the quote form and the page need:
+                     slug, lotId, lotName, lotPhone, businessName,
+                     companyId, version, quoteUrl
+                   Sentences that say who will answer ("Thanks, Bob! Yoder
+                   Storage Barns has your design") use businessName, never
+                   "<Business> — <Lot>" in the middle of a sentence.
+
+   When the lot cannot be loaded, the Error says why for the console and
+   carries .status (the server's answer, e.g. 404 for a closed lot; 0 when
+   there was no answer at all). With settings problems, `lot` is returned
+   too, so the page can still show the lot's phone number. */
 export async function loadLot(slug, opts = {}) {
-  checkId(slug, "The dealer lot");
+  checkId(slug, "The lot");
   const base = opts.base || ROOT;
-  const data = await fetchJSON(`api/lots/${slug}`, base);
+  const data = await fetchLot(`api/lots/${slug}`, base);
   const company = data.company;
+  const lot = data.lot || {};
   const [manufacturer, library] = await Promise.all([
     loadManufacturer(company.manufacturer, base), fetchJSON("library/construction.json", base),
   ]);
   const problems = validateManufacturer(manufacturer).concat(validate(company, manufacturer));
-  if (problems.length) return { company, manufacturer, library, catalogue: null, problems };
+  if (problems.length) return { company, manufacturer, library, lot, catalogue: null, problems };
   const cat = resolve(company, manufacturer, library);
-  const lot = data.lot;
   const lotUrl = new URL(`d/${slug}/`, base).href;
   const fields = { ...cat.leads.fields, name: "required" };
   if (fields.phone === "off" && fields.email === "off") fields.email = "required";
+  const lotName = String(lot.name || "");
   const catalogue = Object.freeze({ ...cat,
-    brand: Object.freeze({ ...cat.brand, name: `${cat.brand.name} — ${lot.name}`,
+    brand: Object.freeze({ ...cat.brand, name: lotName ? `${cat.brand.name} — ${lotName}` : cat.brand.name,
       phone: lot.phone || cat.brand.phone, email: lot.email || cat.brand.email,
       website: lot.website || cat.brand.website }),
     leads: Object.freeze({ ...cat.leads, fields: Object.freeze(fields), mode: "managed", images: false }),
     embed: Object.freeze({ ...cat.embed, shareUrl: lotUrl, origins: lot.embedOrigins || [] }),
-    managed: Object.freeze({ slug, lotId: lot.id, companyId: company.id, version: data.version,
-      orderUrl: new URL(`api/lots/${slug}/orders`, base).href }),
+    managed: Object.freeze({
+      slug, lotId: lot.id || slug, lotName, lotPhone: lot.phone || "",
+      businessName: cat.brand.name || "", companyId: company.id, version: data.version,
+      quoteUrl: new URL(`api/lots/${slug}/quote-requests`, base).href,
+    }),
   });
-  return { company, manufacturer, library, catalogue, problems: [] };
+  return { company, manufacturer, library, lot, catalogue, problems: [] };
+}
+
+/* GET api/lots/<lot>, keeping the server's answer code on the Error (a
+   closed lot is 404) so the page can tell "closed" from "no connection". */
+async function fetchLot(rel, base) {
+  let r;
+  try { r = await fetch(new URL(rel, base), { cache: "no-cache" }); }
+  catch (e) { throw Object.assign(new Error(`Could not load ${rel} (no connection?).`), { status: 0 }); }
+  if (!r.ok) throw Object.assign(new Error(`Could not load ${rel} (the server said ${r.status}).`), { status: r.status });
+  let data;
+  try { data = await r.json(); }
+  catch (e) { throw Object.assign(new Error(`${rel} is not valid JSON.`), { status: r.status }); }
+  if (!data || typeof data !== "object" || !data.company || typeof data.company !== "object") {
+    throw Object.assign(new Error(`${rel} did not include the price list.`), { status: r.status });
+  }
+  return data;
 }

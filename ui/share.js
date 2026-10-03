@@ -65,6 +65,10 @@
                                    differently -- Barnwright's smsLink)
      contactHtml(cat, words)       Call / Text / E-mail links for the company,
                                    escaped, or "" when it has none
+     businessName(cat)             the name a sentence uses for who answers:
+                                   on a lot's link (/d/<lot>/) the business
+                                   ("Yoder Storage Barns"), not the header's
+                                   "Yoder Storage Barns — Port Charlotte"
      priceNote(design, total, cat) the "priced at $X on <date>" sentence or ""
      viewAsked(href)               does this address ask for the look-only page
    and hangs shedUI.share = { link(), linkNow(), view, notice, copy() } on the
@@ -222,6 +226,16 @@ export function contactHtml(cat, words) {
 /* ------------------------------------------------------------------------
    The words. */
 
+/* Who a sentence names. On a lot's link the header says "<Business> —
+   <Lot>" (ui/load.js), which reads badly in the middle of a sentence
+   ("contact Yoder Storage Barns — Port Charlotte at ..."), so sentences
+   use the business's own name there. A company's own link: its name. */
+export function businessName(cat) {
+  const managed = cat && cat.managed;
+  if (managed && typeof managed.businessName === "string" && managed.businessName.trim()) return managed.businessName.trim();
+  return (cat && cat.brand && cat.brand.name) || "";
+}
+
 export function niceDate(at) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(at == null ? "" : at));
   if (!m || +m[2] < 1 || +m[2] > 12 || +m[3] < 1 || +m[3] > 31) return "";
@@ -241,7 +255,7 @@ export function priceNote(design, nowTotal, cat) {
   if (!isFinite(was) || Math.abs(was - nowTotal) < 0.005) return "";
   const when = niceDate(p.at);
   const b = cat.brand || {};
-  const who = (b.name || "the company") + (b.phone ? " at " + b.phone : "");
+  const who = (businessName(cat) || "the company") + (b.phone ? " at " + b.phone : "");
   return "This design was priced at " + money(was) + (when ? " on " + when : " earlier") +
     "; prices may have changed - contact " + who + " for today's price. The price shown here is from today's price list.";
 }
@@ -288,7 +302,8 @@ export function install(api) {
   const currentLink = () => keeper.get();
 
   const b = cat.brand || {};
-  const shareTitle = (b.name ? b.name + " — " : "") + "my shed design";
+  const name = businessName(cat);                  /* for sentences and titles: never "<Business> — <Lot>" */
+  const shareTitle = (name ? name + " — " : "") + "my shed design";
 
   /* ---- the Share button ---- */
   function shareBox(label) {
@@ -360,7 +375,7 @@ export function install(api) {
   }
 
   if (damaged) {
-    const who = b.name ? b.name : "the company";
+    const who = name || "the company";
     const phone = b.phone ? ", or call " + who + " at " + b.phone : "";
     info.notice = "This design link could not be opened. " + damaged + " You're looking at the standard building instead. Ask whoever sent the link to send it again" + phone + ".";
     cardAtTop("shnotice shbad",
@@ -394,7 +409,7 @@ export function install(api) {
     const hintWas = hint ? hint.textContent : "";
     if (hint) hint.textContent = "Drag to spin it around";
     const card = cardAtTop("shview",
-      "<h3>" + esc(b.name ? b.name + " — a shared design" : "A shared design") + "</h3>" +
+      "<h3>" + esc(name ? name + " — a shared design" : "A shared design") + "</h3>" +
       '<div class="shsum"></div>' +
       (note ? '<p class="vnote shprice">' + esc(note) + "</p>" : "") + warnHtml() +
       contactHtml(cat, { sms: "Hi, I'm looking at a shed design on your website and I have a question." }) +

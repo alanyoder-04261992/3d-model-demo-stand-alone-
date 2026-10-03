@@ -21,13 +21,14 @@ company that only wants the designer.
 * **A new company is one settings file**, `companies/<id>/company.json`, made
   with `node tools/new-company.mjs` and filled from a price spreadsheet with
   `node tools/import-prices.mjs`.
-* **Owner/Admin portal for each client business.** Netlify Functions, Identity
-  and Blobs store company catalogues, dealer lots and order requests. Owners
-  control prices/options; dealer staff see assigned lots. Each lot gets its own
-  website link. Static company links still support existing lead integrations.
-* **Explicit client build.** `npm run build:client` packages the customer
-  designer and portal without internal lessons, photos, skills or setup tools.
-  See [deployment and account setup](docs/DEALER-BACKEND.md).
+* **The Dealer Center** (`/dealer`) for each shed business: the owner sets
+  the price list (sizes, styles, prices, options, colors) once and every lot
+  uses it; each lot gets its own 3D designer link; dealers work their lots'
+  customers (stages, follow-ups, notes, quotes) and orders. Netlify
+  Functions, Identity and Blobs. Try it with sample data: `npm run office`.
+  See [the Dealer Center guide](docs/OFFICE.md).
+* **Client build.** `npm run build:client` packages the customer designer
+  and the Dealer Center without internal lessons, photos, skills or setup tools.
 
 For Alan, in plain words: [docs/FOR-ALAN.md](docs/FOR-ALAN.md).
 The construction lessons, part skills and setup previews below are internal
@@ -299,8 +300,12 @@ Chromium's software graphics, each on its own port.
 | `check-ui.mjs` | yes | the designer page works: every style, size, colour, door and window, drag, "Add here", layouts on phone and desktop, escaping |
 | `check-views.mjs` | yes | Outside and Inside on seven buildings, dimension labels, unchanged finished geometry, no construction controls or runtime, and phone layout |
 | `check-customer-views.mjs` | no | Outside/Inside behavior, accessible selection, old flags unable to expose construction views, and no geometry access or rebuilds while switching |
-| `check-backend.mjs` | no | verified owner setup, company/lot isolation, admin-only settings, server pricing, duplicate orders, concurrent updates and origin checks |
-| `check-managed-client.mjs` | no | dealer routes and embeds, shared-design lot preservation, safe retries, error handling and customer build exclusions |
+| `check-office.mjs` | no | the Dealer Center's server: first owner, invites, who sees which lot, the price list reaching every lot at once, server pricing, quote requests sent twice or at once, customers, orders, and safe answers |
+| `check-style-variants.mjs` | no | a business's own style built like a library style draws, comes with and prices exactly like it; named options; every mistake in plain words |
+| `check-dealer-center.mjs` | yes | the Dealer Center in Chromium: every screen for the owner, a manager and a dealer on a desktop and a phone, a price change reaching every lot's designer, a website quote landing on its lot, designing for a customer, and the "try it" demo |
+| `check-dealer-demo.mjs` | no | the "try it" demo runs the real Dealer Center on made-up data with nothing sent anywhere, and only Alan's learning preview offers it (a client build has no demo file and no empty-boxes sign-in) |
+| `check-wording.mjs` | no | every sentence on the Dealer Center's screens, its server answers and emails uses the plain words in docs/OFFICE.md, none of the old ones |
+| `check-managed-client.mjs` | no | lot links and website code, shared-design lot preservation, safe retries, error handling and customer build exclusions |
 | `check-blueprint.mjs` | yes | the floor plan: every wall, door, window and fixture symbol, touch and pinch, side by side with Barnwright's |
 | `check-gallery.mjs` | yes | the parts gallery and the contact sheet draw what they promise |
 | `check-leads.mjs` | yes | a quote request reaches the company every way a company can ask for it, and nobody it should not |

@@ -115,6 +115,13 @@ export function createPanels(ctx) {
     });
     const MISC = cat.MISC || {};
     el("extlrow").style.display = (state.elec.pkg > 0 && MISC.ext != null) ? "flex" : "none";
+    /* the company's own name for the exterior light, when it gave one
+       (index.html holds the usual words) */
+    const extName = (cat.MISCNAMES || {}).ext;
+    if (extName) {
+      el("extlrow").firstElementChild.textContent = extName;
+      el("opt-ext").setAttribute("aria-label", extName);
+    }
     el("opr-ext").textContent = showMoney() && MISC.ext != null ? "+ " + M(MISC.ext) : "";
     const tg = el("opt-ext"); tg.className = "tgl" + (state.elec.ext ? " on" : "");
     tg.setAttribute("aria-checked", state.elec.ext ? "true" : "false");

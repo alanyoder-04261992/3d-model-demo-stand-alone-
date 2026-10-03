@@ -93,15 +93,22 @@ export function readPriceRows(text, manufacturer, company) {
   const styles = manufacturer.styles || {}, items = manufacturer.items || {};
   const offer = (company && company.offer) || {};
   const out = { styles: {}, items: {}, options: {}, problems: [], rows: 0 };
+  /* the company's own styles (built like a manufacturer style, "base") are
+     found by their code or their name too, before the manufacturer's names,
+     so "Premium Lofted Barn" never lands on the Lofted Barn */
+  const ownStyles = Object.keys(offer).filter((k) => !k.startsWith("_") && offer[k] && offer[k].base != null);
   const styleOf = (w) => {
     if (Object.prototype.hasOwnProperty.call(styles, w)) return w;
+    if (ownStyles.indexOf(w) >= 0) return w;
     const up = String(w).toUpperCase();
     if (Object.prototype.hasOwnProperty.call(styles, up)) return up;
     const n = norm(w);
+    for (const k of ownStyles) if (norm(k) === n || (offer[k].name && norm(offer[k].name) === n)) return k;
     for (const k of Object.keys(styles)) if (norm(styles[k].name) === n || norm(k) === n) return k;
     for (const k of Object.keys(offer)) if (offer[k] && offer[k].name && norm(offer[k].name) === n) return k;
     return null;
   };
+  const nameOf = (k) => (offer[k] && offer[k].base != null && offer[k].name) || (styles[k] && styles[k].name) || k;
   const itemOf = (w) => {
     if (Object.prototype.hasOwnProperty.call(items, w)) return w;
     const n = norm(w);
@@ -119,9 +126,9 @@ export function readPriceRows(text, manufacturer, company) {
       const k = styleOf(c[0]);
       const p = readPrice(c[2]);
       if (!k) { out.problems.push(`${at}: there is no building style called "${c[0]}" (the styles are ${Object.keys(styles).map((s) => s + " " + styles[s].name).join(", ")}).`); continue; }
-      if (p == null || p <= 0) { out.problems.push(`${at}: the price of the ${styles[k].name} ${size} ("${c[2] || ""}") is not a number of dollars above 0.`); continue; }
+      if (p == null || p <= 0) { out.problems.push(`${at}: the price of the ${nameOf(k)} ${size} ("${c[2] || ""}") is not a number of dollars above 0.`); continue; }
       const list = (out.styles[k] = out.styles[k] || []);
-      if (list.some((e) => e[0] === size)) { out.problems.push(`${at}: the ${styles[k].name} ${size} is in the spreadsheet twice.`); continue; }
+      if (list.some((e) => e[0] === size)) { out.problems.push(`${at}: the ${nameOf(k)} ${size} is in the spreadsheet twice.`); continue; }
       list.push([size, p]); out.rows++;
       continue;
     }
@@ -157,9 +164,12 @@ export function applyPrices(company, parsed, manufacturer, opts) {
     const sizes = {};
     for (const [z, p] of parsed.styles[k]) sizes[z] = p;
     const before = c.offer[k] ? JSON.stringify(c.offer[k].sizes) : null;
+    /* a style of the company's own is always in the offer already (the
+       spreadsheet only finds it there), so only a manufacturer style is added */
+    const name = (c.offer[k] && c.offer[k].base != null && c.offer[k].name) || styles[k].name;
     if (!c.offer[k]) {
       c.offer[k] = { sizes: sizes };
-      changes.push(`added the ${styles[k].name} (${k}) with ${Object.keys(sizes).length} sizes`);
+      changes.push(`added the ${name} (${k}) with ${Object.keys(sizes).length} sizes`);
       if (Array.isArray(c.categories)) {
         const label = styles[k].category || "Buildings";
         let g = c.categories.find((x) => Array.isArray(x) && x[0] === label);
@@ -168,7 +178,7 @@ export function applyPrices(company, parsed, manufacturer, opts) {
       }
     } else {
       c.offer[k].sizes = sizes;
-      if (before !== JSON.stringify(sizes)) changes.push(`${styles[k].name} (${k}): ${Object.keys(sizes).length} sizes, prices from the spreadsheet`);
+      if (before !== JSON.stringify(sizes)) changes.push(`${name} (${k}): ${Object.keys(sizes).length} sizes, prices from the spreadsheet`);
     }
   }
   c.items = c.items || {};
@@ -184,9 +194,11 @@ export function applyPrices(company, parsed, manufacturer, opts) {
   for (const g of Object.keys(parsed.options)) {
     c.options[g] = c.options[g] && typeof c.options[g] === "object" ? c.options[g] : {};
     for (const id of Object.keys(parsed.options[g])) {
-      const old = c.options[g][id], p = parsed.options[g][id];
+      /* an option the company named ({"price", "name"}) keeps its name */
+      const cur = c.options[g][id], p = parsed.options[g][id];
+      const old = cur && typeof cur === "object" && !Array.isArray(cur) ? cur.price : cur;
       if (old === p) continue;
-      c.options[g][id] = p;
+      if (cur && typeof cur === "object" && !Array.isArray(cur)) cur.price = p; else c.options[g][id] = p;
       changes.push(`option ${g}.${id}: ${old == null ? "now offered at" : "$" + old + " ->"} $${p}`);
     }
   }
@@ -231,8 +243,9 @@ export function exportCsv(company, manufacturer) {
     for (const id of Object.keys(grp)) {
       if (id.startsWith("_")) continue;
       const m = mo[g] && mo[g][id];
-      const name = (m && (m.name || m.label)) || (g === "rates" ? id + " (per sq ft)" : id);
-      L.push([g + "." + id, grp[id], name].map(csvCell).join(","));
+      const v = grp[id], named = v && typeof v === "object" && !Array.isArray(v);
+      const name = (named && v.name) || (m && (m.name || m.label)) || (g === "rates" ? id + " (per sq ft)" : id);
+      L.push([g + "." + id, named ? v.price : v, name].map(csvCell).join(","));
     }
   }
   return L.join("\n") + "\n";

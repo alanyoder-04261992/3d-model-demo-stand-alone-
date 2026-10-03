@@ -8,7 +8,8 @@
     "serve": "npx http-server -p 8282 -c-1 .",
     "check": "node tools/check-all.mjs",
     "build": "node tools/build-site.mjs",
-    "build:client": "node tools/build-site.mjs --client"
+    "build:client": "node tools/build-site.mjs --client",
+    "office": "node tools/office-local.mjs"
   },
   "engines": {
     "node": ">=22"

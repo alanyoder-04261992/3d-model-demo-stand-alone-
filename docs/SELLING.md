@@ -8,12 +8,14 @@
 
 ## How it is sold: Alan hosts it, the company pastes two lines
 
-For managed businesses, use the [Owner/Admin portal](../portal.html) and
-[account setup guide](DEALER-BACKEND.md). An owner manages the business's prices,
-options and dealer lots. Each lot has `/d/<lot slug>/` and its own `data-lot`
-embed snippet; customer requests are saved to that lot's inbox. Allowed website
-origins take effect through the dealer page function without rebuilding.
-The static `/c/<company id>/` workflow below remains supported for older setups.
+A business gets its own copy of the site with the **Dealer Center**
+([how it works and how to set one up](OFFICE.md)). The owner sets the price
+list and adds the lots and the team there. Each lot has its own 3D designer
+link, `/d/<lot>/`, and two lines of website code with its own `data-lot`;
+every quote sent from it lands on that lot's customer list. The websites
+allowed to show a lot's designer take effect as soon as they are saved.
+The older `/c/<company id>/` setup below still works for companies that only
+want the designer.
 
 `npm run build:client` creates client output without lessons, reference photos,
 skills or setup tools. `tools/site-profiles.mjs` recognizes the existing Yoder
