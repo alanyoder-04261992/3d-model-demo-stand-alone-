@@ -39,13 +39,13 @@
 /* a price box: "$" inside on the left, words after */
 .pl-price { position: relative; display: inline-flex; align-items: center; gap: 8px; min-width: 0; }
 .pl-price-sign { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
-.pl-price .pl-price-input { width: 128px; padding-left: 24px; text-align: right; font-variant-numeric: tabular-nums; }
-.pl-price.pct .pl-price-input { padding-left: 12px; padding-right: 28px; width: 104px; }
+.pl-price input.pl-price-input { width: 128px; padding-left: 24px; text-align: right; font-variant-numeric: tabular-nums; }
+.pl-price.pct input.pl-price-input { padding-left: 12px; padding-right: 28px; width: 104px; }
 .pl-price-pct { position: absolute; left: 82px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .pl-price-suffix { color: var(--muted); font-size: 14px; white-space: nowrap; }
-.pl-price.off .pl-price-input { background: var(--bg); color: var(--faint); border-style: dashed; }
+.pl-price.off input.pl-price-input { background: var(--bg); color: var(--faint); border-style: dashed; }
 .pl-price.off .pl-price-sign { color: var(--faint); }
-.pl-price.pl-bad .pl-price-input, input.pl-bad, select.pl-bad {
+.pl-price.pl-bad input.pl-price-input, .pl input.pl-bad, .pl select.pl-bad {
   border-color: var(--bad); background-color: #FFF8F7; box-shadow: 0 0 0 3px rgba(179, 38, 30, .12);
 }
 .pl-price input::-webkit-outer-spin-button, .pl-price input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
@@ -116,11 +116,11 @@
 
 .pl-sizes { list-style: none; margin: 0; padding: 0; columns: 2 320px; column-gap: 36px; }
 .pl-size-row {
-  display: grid; grid-template-columns: 70px minmax(0, 1fr) 44px; align-items: center; gap: 10px; padding: 5px 0;
+  display: grid; grid-template-columns: 70px minmax(0, 170px) 44px; justify-content: start; align-items: center; gap: 10px; padding: 5px 0;
   border-bottom: 1px solid var(--line); break-inside: avoid;
 }
 .pl-size { font-weight: 600; font-variant-numeric: tabular-nums; }
-.pl-size-row .pl-price-input { width: 100%; max-width: 170px; }
+.pl-size-row .pl-price, .pl-size-row input.pl-price-input { width: 100%; }
 .pl-sizes-empty { color: var(--muted); padding: 8px 0; }
 .pl-new { animation: pl-glow 2.2s ease-out; }
 @keyframes pl-glow { from { background: #FFF1C9; } to { background: transparent; } }
@@ -131,7 +131,7 @@
 .pl-add-w select { width: 150px; }
 .pl-times { color: var(--muted); font-size: 18px; }
 .pl-add-l { display: inline-flex; align-items: center; gap: 8px; }
-.pl-add-l input { width: 92px; }
+.pl-add-size .pl-add-l input { width: 92px; }
 .pl-unit { color: var(--muted); font-size: 14px; white-space: nowrap; }
 .pl-add-msg { color: var(--bad); font-size: 14px; font-weight: 500; }
 .pl-add-msg:empty { display: none; }
@@ -151,8 +151,8 @@
 .pl-seg-item input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 1px; }
 .pl-change-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 14px 18px; }
 .pl-amount { position: relative; display: block; max-width: 200px; }
-.pl-amount input { padding-left: 26px; }
-.pl-amount.pct input { padding-left: 12px; padding-right: 30px; }
+.pl-amount input[type=number] { padding-left: 26px; }
+.pl-amount.pct input[type=number] { padding-left: 12px; padding-right: 30px; }
 .pl-amount-sign { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none; }
 .pl-amount.pct .pl-amount-sign { left: auto; right: 12px; }
 .pl-preview { border: 1px solid var(--line); border-radius: 10px; background: #FBFCFD; padding: 14px 16px; display: grid; gap: 10px; min-height: 72px; }
@@ -204,7 +204,7 @@
 .pl-row > .pl-msgs { grid-column: 1 / -1; }
 .pl-row-main { min-width: 0; }
 .pl-row-side { display: flex; align-items: center; gap: 14px; justify-content: flex-end; }
-.pl-row-side .pl-price-input { width: 118px; }
+.pl-row-side input.pl-price-input { width: 118px; }
 .pl-row.off .pl-name-text { color: var(--muted); }
 .pl-row-desc, .pl-lock-words { color: var(--muted); font-size: 13.5px; line-height: 1.4; margin-top: 2px; }
 .pl-name { display: grid; gap: 1px; min-width: 0; }
@@ -219,7 +219,7 @@
 .pl-extra { padding: 14px 0; border-top: 1px solid var(--line); display: grid; gap: 8px; }
 .pl-rows > .pl-extra:first-child { border-top: 0; padding-top: 4px; }
 .pl-extra-fields { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1.5fr) minmax(0, 1.1fr) 44px; gap: 12px; align-items: end; }
-.pl-extra-fields .pl-price, .pl-extra-fields .pl-price-input { width: 100%; }
+.pl-extra-fields .pl-price, .pl-extra-fields input.pl-price-input { width: 100%; }
 .pl-extra-rm { padding-bottom: 0; }
 
 /* ---- Colors ---- */
@@ -312,10 +312,10 @@ body.pl-bar-on .toasts { bottom: 96px; }
   .pl-toolbar .actions { width: 100%; }
   .pl-toolbar .actions .btn { flex: 1; }
   .pl-add-fields { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
-  .pl-add-w select, .pl-add-l input { width: 100%; }
+  .pl-add-w select, .pl-add-size .pl-add-l input { width: 100%; }
   .pl-add-l { min-width: 0; }
   .pl-add-p, .pl-add-fields > .btn { grid-column: 1 / -1; }
-  .pl-add-p .pl-price, .pl-add-p .pl-price-input { width: 100%; }
+  .pl-add-p .pl-price, .pl-add-p input.pl-price-input { width: 100%; }
   .pl-row { grid-template-columns: minmax(0, 1fr); }
   .pl-row-side { justify-content: space-between; }
   .pl-extra-fields { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 44px; }
