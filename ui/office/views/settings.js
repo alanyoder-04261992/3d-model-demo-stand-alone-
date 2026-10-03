@@ -31,6 +31,11 @@ const ASK = [["required", "Must give"], ["optional", "Can give"], ["off", "Don't
 
 let page = null;   /* this screen's state while it is showing */
 
+/* the save bar lifts the toasts; put them back when leaving the screen */
+window.addEventListener("hashchange", () => {
+  if (!/^#\/settings(?:[/?]|$)/.test(location.hash)) document.body.classList.remove("set-bar-on");
+});
+
 export async function render(ctx) {
   const { app } = ctx;
   ctx.setTitle("Settings");
@@ -128,7 +133,6 @@ function draw() {
     page.bar);
   page.root = el;
   drawBar();
-  ctx.app.leaveGuard = ctx.app.leaveGuard || (() => null);
   return el;
 }
 
@@ -567,7 +571,7 @@ function prepared() {
   }
   for (const k of ["phone", "email", "tagline"]) B[k] = String(B[k] || "").trim();
   B.email = B.email.toLowerCase();
-  B.website = websiteAddress(B.website);
+  if (String(B.website || "").trim() !== (before.website || "")) B.website = websiteAddress(B.website);
   if (s.status !== "suspended") s.status = "active";
   s.notes.finePrint = String(s.notes.finePrint || "").trim();
   const notes = {};
@@ -595,9 +599,20 @@ function drawBar() {
         : [h("strong", {}, plural(list.length, "change")), h("span", {}, shown)]),
     h("div", { class: "set-bar-actions" },
       page.stale
-        ? button("Reload settings", () => { page = null; page = null; location.reload(); }, { kind: "accent" })
+        ? button("Reload settings", reload, { kind: "accent" })
         : [button("Undo changes", undo, { kind: "ghost" }),
           button("Save settings", save, { kind: "accent", icon: "check" })])));
+}
+
+/* someone else saved first: start again from what they saved */
+async function reload() {
+  const record = await page.ctx.app.loadPriceList(true);
+  page.saved = record;
+  page.draft = normalized(record.settings);
+  page.stale = false;
+  page.error = null;
+  rerender();
+  toast("Settings reloaded. Make your changes again.");
 }
 
 async function undo() {
