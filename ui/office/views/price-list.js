@@ -107,10 +107,10 @@ export async function render(ctx) {
   S.tab = tab;
   S.renderedHash = location.hash || "#/price-list";
 
-  const root = h("div", { class: "pl" });
   const body = h("div", { class: "pl-body" });
-  page = { root, body };
-  root.append(head(app), staleBanner(), savedBanner(), tabStrip(app), body, bar(app));
+  page = { root: null, body };
+  page.root = h("div", { class: "pl" }, head(app), staleBanner(), savedBanner(), tabStrip(app), body, bar(app));
+  const root = page.root;
   recompute();
   renderTab();
   updateBar();

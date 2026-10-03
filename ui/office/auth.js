@@ -125,7 +125,10 @@ async function localPicker(root, { business, note }) {
     location.reload();
   };
   const other = field("Or sign in with another email", { type: "email", placeholder: ownerEmail || "name@example.com" });
-  frame(root, "Who are you?", `This is the Dealer Center on your computer${business ? ` for ${business.name}` : ""}. No passwords here — pick a person.`,
+  const demo = new URLSearchParams(location.search).has("demo");
+  frame(root, demo ? "Try the Dealer Center" : "Who are you?",
+    demo ? "A made-up shed business with three lots and thirty customers. Pick who you want to be — the owner sees everything, a dealer sees only their lot."
+      : `This is the Dealer Center on your computer${business ? ` for ${business.name}` : ""}. No passwords here — pick a person.`,
     note ? h("p", { class: "auth-note" }, note) : null,
     h("div", { class: "people-pick" }, people.map((p) => h("button", {
       type: "button", class: "person-pick", onclick: () => signInAs(p.email),

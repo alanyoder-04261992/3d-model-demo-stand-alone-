@@ -131,3 +131,11 @@ export function confirmChoice(title, words, choices) {
     { onClose: () => { if (!answered) resolve(null); } });
   });
 }
+
+/* "Oct 9 · in 6 days", "Sep 21 · 12 days ago" -- for delivery dates */
+export function dateFromNow(key) {
+  if (!key) return "";
+  const diff = daysBetween(todayKey(), key);
+  const rel = diff === 0 ? "today" : diff === 1 ? "tomorrow" : diff === -1 ? "yesterday" : diff > 0 ? `in ${diff} days` : `${-diff} days ago`;
+  return `${dayWords(key)} · ${rel}`;
+}

@@ -18,6 +18,7 @@ export const app = {
   priceList: null,
   priceListAt: 0,
   leaveGuard: null,
+  demo: false,
 
   get person() { return this.me?.person || null; },
   get business() { return this.me?.business || null; },
@@ -47,6 +48,12 @@ export const app = {
   setLotFilter(slug) {
     this.lotFilter = slug;
     try { localStorage.setItem(`${LOT_KEY}:${this.me?.user?.id}`, slug); } catch { /* fine */ }
+  },
+
+  /* Where a lot's 3D designer lives. The demo has no lot links, so it uses
+     the example designer (its business shares that designer's id). */
+  designerUrl(slug) {
+    return this.demo ? "/c/demo/" : `/d/${slug}/`;
   },
 
   openLots() { return this.lots.filter((l) => l.active !== false); },

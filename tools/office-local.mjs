@@ -101,6 +101,10 @@ if (!EMPTY && !existsSync(join(DATA, encodeURIComponent("price-list") + ".json")
 
 /* ---- the Dealer Center's script, bundled like the build does ---------------- */
 
+const demoBundler = await esbuildContext({
+  entryPoints: [resolve(ROOT, "ui/office/demo.js")], bundle: true, format: "esm", platform: "browser",
+  target: "es2022", write: false, outfile: "demo.js", logLevel: "silent", sourcemap: "inline",
+});
 const bundler = await esbuildContext({
   entryPoints: [resolve(ROOT, "ui/office/main.js")], bundle: true, format: "esm", platform: "browser",
   target: "es2022", write: false, outfile: "main.js", logLevel: "silent", sourcemap: "inline",
@@ -158,6 +162,10 @@ async function route(request) {
   if (path === "/dealer" || path === "/dealer.html") {
     return fileAnswer("/dealer.html", { "Content-Security-Policy": OFFICE_POLICY, "Referrer-Policy": "same-origin" });
   }
+  if (path === "/ui/office/demo.js") {
+    const r = await demoBundler.rebuild();
+    return new Response(r.outputFiles[0].contents, { headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" } });
+  }
   if (path === "/ui/office/main.js") {
     return new Response(await officeBundle(), { headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" } });
   }
@@ -209,4 +217,4 @@ server.listen(PORT, "127.0.0.1", () => {
   console.log(EMPTY ? `No sample data. Sign in as ${OWNER_EMAIL} to set up the business.` : "Sign in as anyone on the sample team. Press Ctrl+C to stop.");
 });
 
-for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { bundler.dispose(); server.close(); process.exit(0); });
+for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { bundler.dispose(); demoBundler.dispose(); server.close(); process.exit(0); });

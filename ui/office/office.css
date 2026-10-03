@@ -352,3 +352,7 @@ table.table { width: 100%; border-collapse: collapse; font-size: 15px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
 }
+
+/* ---- the "try it" demo -------------------------------------------------------------------- */
+.banner.demo { background: #EEF1FB; color: #2B3A8C; border: 1px solid #C9D1F3; }
+.banner.demo .btn { flex: none; }

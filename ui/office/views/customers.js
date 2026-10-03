@@ -176,12 +176,15 @@ function board(ctx, rows, { manyLots, redraw, lost }) {
       more.hidden = shown >= list.length;
       more.textContent = `Show ${Math.min(COLUMN, list.length - shown)} more`;
     };
-    const total = list.reduce((s, r) => s + (Number(r.total) || 0), 0);
+    const sales = stage === "sold" || stage === "delivered";
+    const total = list.reduce((s, r) => s + (sales
+      ? (r.orders || []).filter((o) => o.status !== "cancelled").reduce((t, o) => t + (Number(o.total) || 0), 0)
+      : Number(r.total) || 0), 0);
     const col = h("section", { class: ["crm-col", `col-${stage}`], "aria-label": label },
       h("header", { class: "crm-col-head" },
         h("span", { class: ["crm-col-dot", `stage-${stage}`] }),
         h("h2", {}, label), h("span", { class: "crm-count" }, String(list.length)),
-        stage !== "lost" && total ? h("span", { class: "crm-col-sum" }, money(total)) : null),
+        stage !== "lost" && total ? h("span", { class: "crm-col-sum" }, `${money(total)} in ${sales ? "sales" : "quotes"}`) : null),
       cards, more);
     fill();
     if (!list.length) cards.append(h("p", { class: "crm-col-empty" }, "Nobody here right now."));

@@ -17,7 +17,7 @@ import {
   todayKey, addDays, dayWords, followUpWords, ago, when, plural,
 } from "../words.js";
 import { encodeSync } from "../../../model/design.js";
-import { stagePill, statusPill, followUpTone, changeStage, sourceWords, confirmChoice, dayKeyOf } from "./crm-kit.js";
+import { statusPill, followUpTone, changeStage, sourceWords, confirmChoice, dayKeyOf, dateFromNow } from "./crm-kit.js";
 
 const STEPS = ["sold", "sent", "ready", "delivered"];
 const ACTIVITY_ICONS = {
@@ -311,7 +311,7 @@ export async function render(ctx) {
         fact("Payment", PAYMENT_WORDS[o.payment] || "—"),
         fact("Deposit", money(o.deposit || 0)),
         fact("Balance due", money(balance), balance > 0 ? "crm-due" : ""),
-        fact("Delivery date", o.deliveryDate ? `${dayWords(o.deliveryDate)} (${followUpWords(o.deliveryDate)})` : "Not set yet"),
+        fact("Delivery date", o.deliveryDate ? dateFromNow(o.deliveryDate) : "Not set yet"),
         fact("Deliver to", o.deliveryAddress, "crm-pre"),
         fact("Delivery notes", o.deliveryNotes, "crm-pre"),
         fact("Order notes", o.notes, "crm-pre")),

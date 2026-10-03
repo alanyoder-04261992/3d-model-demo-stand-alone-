@@ -75,6 +75,7 @@ export async function startDemo() {
     now: () => clock.at || new Date(),
     siteUrl: location.origin,
     signIn: "local",
+    checkOrigin: false,   /* every call is made inside this page */
     log: () => {},
   });
   if (!had) {
@@ -108,7 +109,6 @@ export async function startDemo() {
     }
     if (path.startsWith("/api/office/") || path.startsWith("/api/lots/")) {
       const headers = new Headers(init.headers || {});
-      if (init.method && init.method !== "GET") headers.set("Origin", location.origin);
       const request = new Request(url.href, { method: init.method || "GET", headers, body: init.body });
       return office.handle(request, { clientIp: "demo" });
     }

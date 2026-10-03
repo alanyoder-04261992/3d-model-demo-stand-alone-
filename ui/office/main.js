@@ -145,7 +145,16 @@ function frameUp() {
     moreSheet);
 }
 
+/* The "try it" demo (/dealer?demo): made-up data that lives only in this tab. */
+function demoBanner() {
+  if (!app.demo) return null;
+  return h("div", { class: "banner demo" }, icon("star"),
+    h("span", {}, "This is a demo with a made-up business. Everything you do stays in this browser tab — nothing is saved or sent."),
+    button("Start over", async () => (await import(DEMO_MODULE)).demoStartOver(), { kind: "ghost", small: true }));
+}
+
 function closedBanner() {
+  if (app.demo) return demoBanner();
   if (!app.business || app.business.open || !app.isOwner) return null;
   return h("div", { class: "banner warn" }, icon("alert"),
     h("span", {}, "Your 3D designer links are closed to customers. Check your prices, then open them in Settings."),
@@ -212,13 +221,30 @@ window.addEventListener("dealer:refresh", () => render());
 
 /* ---- start-up ----------------------------------------------------------------------- */
 
+/* The demo's code is its own file (it carries a copy of the server), loaded
+   only for /dealer?demo -- the name is kept in a variable so the build does
+   not fold it into this file. */
+const DEMO_MODULE = "/ui/office/demo.js";
+
 async function start() {
   clear(root, h("div", { class: "boot" }, loading("Opening the Dealer Center…")));
   let note = null;
-  try {
-    const linked = await handleEmailLink(root);
-    note = linked?.message || null;
-  } catch { /* carry on to sign in */ }
+  if (new URLSearchParams(location.search).has("demo")) {
+    try {
+      await (await import(DEMO_MODULE)).startDemo();
+      app.demo = true;
+    } catch (e) {
+      console.error(e);
+      clear(root, h("main", { class: "auth" }, h("div", { class: "auth-card" },
+        h("h1", {}, "The demo didn't start"), h("p", {}, "Reload the page to try again."))));
+      return;
+    }
+  } else {
+    try {
+      const linked = await handleEmailLink(root);
+      note = linked?.message || null;
+    } catch { /* carry on to sign in */ }
+  }
   let me;
   try {
     me = await app.loadMe();
