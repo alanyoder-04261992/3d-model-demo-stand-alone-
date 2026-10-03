@@ -234,7 +234,7 @@ window.addEventListener("dealer:brand", () => {
       h("span", { class: "brand-words" }, h("strong", {}, business?.short || business?.name || "Dealer Center"), h("span", {}, "Dealer Center")));
   }
   if (!main) return;
-  const old = [...main.children].find((el) => el.matches(".banner.warn"));
+  const old = [...main.children].find((el) => el.matches(".banner.warn, .banner.demo"));
   const fresh = closedBanner();
   if (old && fresh) old.replaceWith(fresh);
   else if (old) old.remove();
