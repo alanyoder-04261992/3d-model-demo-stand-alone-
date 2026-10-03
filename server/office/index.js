@@ -14,6 +14,8 @@
      sendEmail      optional async ({to, subject, text, html}) -> true
      siteUrl        "https://the-site" for links inside emails
      signIn         "netlify" | "local": which sign-in screen to show
+     checkOrigin    false ONLY for the in-browser demo (/dealer?demo), where
+                    every "request" is made inside the page itself
 
    The routes are listed in docs/OFFICE.md. */
 
@@ -226,7 +228,7 @@ export function createOffice(deps) {
       const path = url.pathname.replace(/\/+$/, "");
       const method = request.method === "HEAD" ? "GET" : request.method;
       if (!["GET", "POST", "PUT", "PATCH", "DELETE"].includes(method)) fail(405, "Something went wrong. Reload the page and try again.");
-      if (method !== "GET") requireSameSite(request);
+      if (method !== "GET" && deps.checkOrigin !== false) requireSameSite(request);
       let pathMatched = false;
       for (const r of routes) {
         const m = r.pattern.exec(path);

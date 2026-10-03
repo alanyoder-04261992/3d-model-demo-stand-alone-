@@ -1,10 +1,21 @@
-# Client designer + Owner/Admin portal on Netlify.
-# npm run build uses an explicit shipping list; source, skills and private data
-# are never published. tools/site-profiles.mjs recognizes Alan's existing
-# learning-preview site by SITE_ID. New client sites default to customer-only.
-# /c/<id>/ loads a static company; /d/<slug>/ is served by dealer-page with
-# the lot's current allowed embed origins. /api routes enforce account scope.
-# Re-run node tools/build-headers.mjs after inline index script changes.
+# The 3D designer and the Dealer Center on Netlify.
+#
+# npm run build (tools/build-site.mjs) ships an explicit list of files into
+# dist/: the designer, the Dealer Center (dealer.html + one bundled script),
+# fonts, the builder's library and the example companies. Source, skills,
+# tools, docs and server code are never published. tools/site-profiles.mjs
+# recognizes Alan's learning-preview site by SITE_ID; every other site gets
+# the customer-only build.
+#
+# Two functions (netlify/functions/):
+#   office-api.mts    the Dealer Center's API (/api/office/*) and each lot's
+#                     public price list and quote requests (/api/lots/*);
+#                     every rule about who may see or change what is checked
+#                     there (server/office/, contract: docs/OFFICE.md)
+#   lot-designer.mts  a lot's 3D designer (/d/<lot>/), sent with that lot's
+#                     own list of websites allowed to show it in a frame
+# /c/<id>/ still opens a company's designer from its settings file.
+# Re-run node tools/build-headers.mjs after editing index.html's inline scripts.
 
 [build]
   command = "npm run build"
@@ -15,15 +26,44 @@
   node_bundler = "esbuild"
   included_files = ["library/**", "companies/demo/company.json", "companies/starter/company.json"]
 
+# --- the Dealer Center --------------------------------------------------------
+
 [[redirects]]
-  from = "/portal"
-  to = "/portal.html"
+  from = "/dealer"
+  to = "/dealer.html"
   status = 200
 
 [[redirects]]
+  from = "/dealer/"
+  to = "/dealer"
+  status = 301
+
+# old addresses of the dealer software: bookmarks and old emails still arrive
+
+[[redirects]]
+  from = "/office"
+  to = "/dealer"
+  status = 301
+
+[[redirects]]
+  from = "/office/"
+  to = "/dealer"
+  status = 301
+
+[[redirects]]
+  from = "/portal"
+  to = "/dealer"
+  status = 301
+
+[[redirects]]
   from = "/portal/"
-  to = "/portal.html"
-  status = 200
+  to = "/dealer"
+  status = 301
+
+[[redirects]]
+  from = "/portal.html"
+  to = "/dealer"
+  status = 301
 
 # --- 1. the company's own address ------------------------------------------
 

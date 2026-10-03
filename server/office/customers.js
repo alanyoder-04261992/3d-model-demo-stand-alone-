@@ -16,7 +16,7 @@
    right to the customer's lot is checked again on that newest copy: a
    manager may have moved the customer to another lot in the meantime. */
 
-import { randomBytes } from "node:crypto";
+import { randomId } from "./hash.js";
 import { fail, text, email, phone, day, money, oneOf, bool, onlyKeys } from "./http.js";
 import { KEEP } from "./store.js";
 import { can, ROLE_WORDS } from "./people.js";
@@ -37,7 +37,7 @@ const MAX_ACTIVITY = 500;
 const MAX_QUOTES = 100;
 const MAX_ORDERS = 50;
 
-export const newId = () => randomBytes(9).toString("base64url").replace(/[-_]/g, (c) => (c === "-" ? "x" : "z"));
+export const newId = () => randomId(12);
 const ID_RE = /^[A-Za-z0-9]{8,24}$/;
 
 const dollars = (n) => "$" + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
@@ -141,6 +141,7 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
       if (!cur || (who && !can.seeLot(who.person, cur.lot))) fail(404, NOT_FOUND);
       const before = cur.lot;
       const out = fn(cur) ?? cur;
+      if (out.stage !== "lost") out.lostReason = "";      /* a reason only while they are Lost */
       movedFrom = out.lot !== before ? before : null;
       if (movedFrom) out.pastLots = [...new Set([...(out.pastLots || []), movedFrom])].slice(-20);
       return out;

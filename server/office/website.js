@@ -12,14 +12,14 @@
    quote. Sends are limited per visitor and per lot. The answer never
    repeats the customer's contact details. */
 
-import { createHash } from "node:crypto";
+import { sha256Hex } from "./hash.js";
 import { fail, text, email, phone, bool, onlyKeys } from "./http.js";
 import { KEEP } from "./store.js";
 import { publicLotFields } from "./lots.js";
 import { priceOrExplain } from "./pricing.js";
 
 const KEY_RE = /^[A-Za-z0-9_-]{16,128}$/;
-const hash = (s) => createHash("sha256").update(s).digest("hex");
+const hash = (s) => sha256Hex(s);
 
 const TOO_MANY = "Too many quote requests from here right now. Please call the lot, or try again in a few minutes.";
 const ON_ITS_WAY = "Your request is already on its way. Wait a moment, then check for the confirmation.";

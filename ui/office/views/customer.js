@@ -10,7 +10,7 @@
    Each change sends one small request; the answer is the whole customer,
    and the page redraws from it in place (no reload, the scroll stays). */
 
-import { h, icon, button, linkButton, field, checkbox, form, dialog, confirmBox, toast } from "../dom.js";
+import { h, clear, icon, button, linkButton, field, checkbox, form, dialog, confirmBox, toast } from "../dom.js";
 import { get, post, patch } from "../api.js";
 import {
   STAGES, STAGE_WORDS, PAYMENTS, PAYMENT_WORDS, ORDER_WORDS, NOTE_KINDS, money, phone as phoneWords, telHref, smsHref,
@@ -60,7 +60,7 @@ export async function render(ctx) {
     ctx.setTitle(c.name);
     const side = h("div", { class: "crm-cust-side" }, contactCard(), followCard(), lotCard());
     const main = h("div", { class: "crm-cust-main" }, quotesCard(), ordersCard(), activityCard());
-    root.replaceChildren(header(), c.stage === "lost" ? lostBanner() : null, h("div", { class: "crm-cust-grid" }, main, side));
+    clear(root, header(), c.stage === "lost" ? lostBanner() : null, h("div", { class: "crm-cust-grid" }, main, side));
   }
 
   /* ---- the top ---- */

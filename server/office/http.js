@@ -2,8 +2,9 @@
 
    Every answer is JSON and never cached. Every mistake is an OfficeError
    with an HTTP status and one plain sentence a dealer can act on; anything
-   else that goes wrong becomes "The Office had a problem" (503) so no
-   internal detail ever reaches a browser.
+   else that goes wrong is logged and answered "Something went wrong on our
+   end. Try again in a minute." (503), so no internal detail ever reaches a
+   browser.
 
    A change (POST, PUT, PATCH, DELETE) must come from a page on this same
    site: its Origin header must equal the site's own, which stops another
@@ -42,7 +43,7 @@ export function errorAnswer(error, log = console.error) {
   if (error instanceof OfficeError) {
     return json({ error: error.message, ...(error.problems ? { problems: error.problems } : {}) }, error.status);
   }
-  log("Office error:", error);
+  log("Dealer Center error:", error);
   return json({ error: "Something went wrong on our end. Try again in a minute." }, 503);
 }
 
@@ -86,7 +87,10 @@ export async function readBody(request) {
   }
   let data;
   try {
-    data = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+    const all = new Uint8Array(size);
+    let at = 0;
+    for (const c of chunks) { all.set(c, at); at += c.byteLength; }
+    data = JSON.parse(new TextDecoder().decode(all));
   } catch {
     fail(400, "Something went wrong. Reload the page and try again.");
   }

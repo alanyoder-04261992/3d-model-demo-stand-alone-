@@ -300,6 +300,8 @@ Chromium's software graphics, each on its own port.
 | `check-ui.mjs` | yes | the designer page works: every style, size, colour, door and window, drag, "Add here", layouts on phone and desktop, escaping |
 | `check-views.mjs` | yes | Outside and Inside on seven buildings, dimension labels, unchanged finished geometry, no construction controls or runtime, and phone layout |
 | `check-customer-views.mjs` | no | Outside/Inside behavior, accessible selection, old flags unable to expose construction views, and no geometry access or rebuilds while switching |
+| `check-office.mjs` | no | the Dealer Center's server: first owner, invites, who sees which lot, the price list reaching every lot at once, server pricing, quote requests sent twice or at once, customers, orders, and safe answers |
+| `check-style-variants.mjs` | no | a business's own style built like a library style draws, comes with and prices exactly like it; named options; every mistake in plain words |
 | `check-wording.mjs` | no | every sentence on the Dealer Center's screens, its server answers and emails uses the plain words in docs/OFFICE.md, none of the old ones |
 | `check-managed-client.mjs` | no | lot links and website code, shared-design lot preservation, safe retries, error handling and customer build exclusions |
 | `check-blueprint.mjs` | yes | the floor plan: every wall, door, window and fixture symbol, touch and pinch, side by side with Barnwright's |

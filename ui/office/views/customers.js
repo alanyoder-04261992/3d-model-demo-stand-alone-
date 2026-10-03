@@ -10,7 +10,7 @@
    browser; nothing here calls the server per customer, and only the first
    rows are drawn until someone asks for more, so 2,000 customers stay fast. */
 
-import { h, icon, button, field, form, dialog, chips, toast, emptyState, pageHead, linkButton } from "../dom.js";
+import { h, clear, icon, button, field, form, dialog, chips, toast, emptyState, pageHead, linkButton } from "../dom.js";
 import { post } from "../api.js";
 import { STAGES, STAGE_WORDS, SOURCES, money, ago, when, plural, todayKey, addDays, phone as phoneWords } from "../words.js";
 import {
@@ -33,7 +33,7 @@ export async function render(ctx) {
   const manyLots = app.lotFilter === "all" && app.lots.length > 1;
 
   /* ---- the toolbar ---- */
-  const search = h("input", { type: "search", placeholder: "Search name, phone, email or building", "aria-label": "Search customers", autocomplete: "off", enterKeyHint: "search" });
+  const search = h("input", { type: "search", placeholder: "Search name, phone, email, building", "aria-label": "Search customers", autocomplete: "off", enterKeyHint: "search" });
   let timer = 0;
   search.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => { state.shown = PAGE; draw(); }, 120); });
 
@@ -57,20 +57,20 @@ export async function render(ctx) {
 
   const chipsWrap = h("div", { class: "crm-chipbar" });
   const results = h("div", { class: "crm-results" });
-  const countWords = h("p", { class: "crm-countline", role: "status", "aria-live": "polite" });
+  const countWords = h("p", { role: "status", "aria-live": "polite" });
 
   const head = pageHead("Customers",
     app.lotFilter === "all" ? (app.lots.length > 1 ? (app.seesAllLots ? "Every lot" : "Your lots") : app.lots[0]?.name) : app.lotName(app.lotFilter),
-    app.can("exportCustomers") ? h("a", { class: "btn btn-ghost", href: "/api/office/customers.csv", download: "" }, icon("download"), h("span", {}, "Download spreadsheet")) : null,
+    app.can("exportCustomers") ? h("a", { class: "btn btn-ghost crm-download", href: "/api/office/customers.csv", download: "", title: "Download spreadsheet" }, icon("download"), h("span", {}, "Download spreadsheet")) : null,
     button("Add customer", () => addCustomer(ctx), { kind: "accent", icon: "plus" }));
 
   const page = h("div", { class: "crm-customers" }, head,
     h("div", { class: "card crm-toolbar" },
       h("div", { class: "crm-toolbar-row" },
         h("div", { class: "search crm-search" }, icon("search"), search),
-        h("div", { class: "crm-toolbar-tools" }, mineBtn, h("label", { class: "crm-sort" }, h("span", { class: "sr-only" }, "Sort by"), sortSel), viewBtns)),
+        h("div", { class: "crm-toolbar-tools" }, mineBtn, h("label", { class: "crm-sort" }, h("span", { class: "sr-only" }, "Sort by"), sortSel))),
       chipsWrap),
-    countWords, results);
+    h("div", { class: "crm-countline" }, countWords, viewBtns), results);
 
   /* ---- filtering ---- */
   function matches(r, words, digits) {
@@ -101,26 +101,26 @@ export async function render(ctx) {
 
   function draw() {
     const { base, counts } = filtered();
-    chipsWrap.replaceChildren(chips(
+    clear(chipsWrap, chips(
       [["all", "All", base.length], ...STAGES.map(([k, label]) => [k, label, counts[k] || 0])],
       state.stage, (k) => { state.stage = k; save(); state.shown = PAGE; draw(); }, { label: "Stage" }));
     if (state.view === "board") {
       countWords.textContent = plural(base.length, "customer");
-      results.replaceChildren(board(ctx, sorted(base), { manyLots, redraw: draw }));
+      clear(results, board(ctx, sorted(base), { manyLots, redraw: draw }));
       return;
     }
     const list = sorted(state.stage === "all" ? base : base.filter((r) => r.stage === state.stage));
     countWords.textContent = plural(list.length, "customer") + (search.value.trim() ? ` match “${search.value.trim()}”` : "");
     if (!list.length) {
       const nobody = app.rowsInView().length === 0;
-      results.replaceChildren(h("div", { class: "card" }, nobody
+      clear(results, h("div", { class: "card" }, nobody
         ? emptyState("No customers yet", "Customers who send a quote from your 3D designer show up here, and so do the walk-ins and phone calls you add.",
           button("Add customer", () => addCustomer(ctx), { kind: "primary", icon: "plus" }))
         : emptyState("Nobody matches", "Try fewer words, another stage, or turn off “Only mine”.",
           button("Show everyone", () => { search.value = ""; state.stage = "all"; state.mine = false; mineBtn.setAttribute("aria-pressed", "false"); save(); draw(); }))));
       return;
     }
-    results.replaceChildren(listView(app, list.slice(0, state.shown), manyLots),
+    clear(results, listView(app, list.slice(0, state.shown), manyLots),
       list.length > state.shown ? h("button", { type: "button", class: "btn btn-ghost btn-block crm-more", onclick: () => { state.shown += PAGE * 3; draw(); } },
         `Show more (${(list.length - state.shown).toLocaleString("en-US")} left)`) : null);
   }
@@ -146,7 +146,7 @@ function listView(app, rows, manyLots) {
       h("span", { class: "c-building", role: "cell" }, buildingWords(r)),
       h("span", { class: "c-total num", role: "cell" }, r.total != null ? money(r.total) : ""),
       h("span", { class: "c-stage", role: "cell" }, stagePill(r.stage)),
-      h("span", { class: "c-follow", role: "cell" }, followUpBadge(r.followUp) || h("span", { class: "muted" }, "—")),
+      h("span", { class: ["c-follow", !r.followUp && "none"], role: "cell" }, followUpBadge(r.followUp) || h("span", { class: "muted", "aria-label": "No follow-up" }, "—")),
       manyLots ? h("span", { class: "c-lot", role: "cell" }, app.lotName(r.lot)) : null,
       h("span", { class: "c-when", role: "cell", title: when(r.lastActivityAt) }, ago(r.lastActivityAt)))));
 }

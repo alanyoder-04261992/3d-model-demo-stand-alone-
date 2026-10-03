@@ -8,7 +8,7 @@
 
 import { h, icon, linkButton, emptyState } from "../dom.js";
 import {
-  greeting, money, plural, todayKey, addDays, daysBetween, dayWords, followUpWords, ORDER_WORDS,
+  greeting, money, plural, todayKey, addDays, daysBetween, dayWords, followUpWords,
 } from "../words.js";
 import { followUpBadge, callButton, statusPill, buildingWords, thisMonth, dayKeyOf, sourceWords } from "./crm-kit.js";
 
@@ -48,11 +48,10 @@ export async function render(ctx) {
       h("p", { class: "crm-eyebrow" }, [dateWords, lotWords].filter(Boolean).join(" · ")),
       h("h1", {}, greeting(app.person?.name)),
       h("p", {}, summary.length ? summary.join(", ") + "." : "You're all caught up. Nice work.")),
-    h("div", { class: "actions" },
-      linkButton("Add customer", "#/customers?new=1", { kind: "accent", icon: "plus" })));
+  );
 
   /* ---- follow-ups ---- */
-  const followCard = section("Follow up today", "clock", due.length,
+  const followCard = section("crm-sec-follow", "Follow up today", "clock", due.length,
     due.length ? listOf(due, (r) => personRow(r, {
       sub: buildingWords(r) + (r.total != null ? ` · ${money(r.total)}` : ""),
       note: r.followUp.note,
@@ -61,7 +60,7 @@ export async function render(ctx) {
     })) : quiet("Nothing due today. Nice.", "When you set a follow-up on a customer, it shows up here on that day."));
 
   /* ---- new ---- */
-  const newCard = section("New — nobody has talked to them yet", "star", fresh.length,
+  const newCard = section("crm-sec-new", "New — nobody has talked to them yet", "star", fresh.length,
     fresh.length ? listOf(fresh, (r) => {
       const waited = daysBetween(dayKeyOf(r.createdAt), today);
       return personRow(r, {
@@ -73,7 +72,7 @@ export async function render(ctx) {
     }) : quiet("Everyone has been contacted.", "New customers from your 3D designer and the ones you add show up here until someone calls, texts or emails them."));
 
   /* ---- deliveries ---- */
-  const deliveryCard = section("Deliveries coming up", "truck", deliveries.length,
+  const deliveryCard = section("crm-sec-deliveries", "Deliveries coming up", "truck", deliveries.length,
     deliveries.length ? listOf(deliveries, ({ row, order }) => deliveryRow(app, row, order, today))
       : quiet("No deliveries in the next two weeks.", "When an order has a delivery date, it shows up here two weeks ahead."));
 
@@ -115,14 +114,14 @@ export async function render(ctx) {
 
   return h("div", { class: "crm-today" }, head,
     h("div", { class: "crm-today-grid" },
-      h("div", { class: "stack" }, followCard, newCard),
-      h("div", { class: "stack" }, tiles, perLot, deliveryCard)));
+      h("div", { class: "stack crm-today-left" }, followCard, newCard),
+      h("div", { class: "stack crm-today-right" }, tiles, perLot, deliveryCard)));
 }
 
 /* ---- pieces ---------------------------------------------------------------- */
 
-function section(title, iconName, count, body) {
-  return h("section", { class: "card flush crm-section" },
+function section(cls, title, iconName, count, body) {
+  return h("section", { class: ["card", "flush", "crm-section", cls] },
     h("div", { class: "card-head" },
       h("h2", { class: "card-title" }, icon(iconName), title),
       count ? h("span", { class: "crm-count" }, String(count)) : null),
@@ -160,15 +159,16 @@ function personRow(r, { sub, note, end, lot }) {
 function deliveryRow(app, row, order, today) {
   const d = new Date(order.deliveryDate + "T12:00:00");
   const diff = daysBetween(today, order.deliveryDate);
-  const whenWords = diff < 0 ? `${-diff} day${diff === -1 ? "" : "s"} late` : followUpWords(order.deliveryDate);
+  const soonWords = followUpWords(order.deliveryDate);
+  const whenWords = diff < 0 ? "Not marked delivered yet" : soonWords === dayWords(order.deliveryDate) ? "" : soonWords;
   return h("div", { class: "crm-line" },
     h("a", { class: "crm-line-main crm-delivery", href: `#/customers/${row.id}/orders/${order.id}` },
       h("span", { class: ["crm-datebox", diff < 0 && "late"], "aria-hidden": "true" },
         h("span", {}, d.toLocaleDateString("en-US", { month: "short" })), h("strong", {}, String(d.getDate()))),
       h("span", { class: "row-title" }, row.name),
-      h("span", { class: "row-sub" }, [`#${order.number}`, order.building, lotTag(app, row)].filter(Boolean).join(" · ")),
-      h("span", { class: ["crm-note", diff < 0 && "late"] }, `${whenWords} · ${dayWords(order.deliveryDate)}`),
-      h("span", { class: "crm-line-end", title: ORDER_WORDS[order.status] }, statusPill(order.status))),
+      h("span", { class: "row-sub" }, [order.building, lotTag(app, row)].filter(Boolean).join(" · ")),
+      h("span", { class: "crm-delivery-status" }, statusPill(order.status), h("span", { class: "crm-num-small" }, `#${order.number}`),
+        whenWords ? h("span", { class: ["crm-when-small", diff < 0 && "late"] }, whenWords) : null)),
     callButton(row.phone, row.name));
 }
 

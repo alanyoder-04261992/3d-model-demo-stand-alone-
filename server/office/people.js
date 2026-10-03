@@ -16,14 +16,14 @@
    Roles: owner (everything), manager (every lot's customers and orders),
    dealer (their own lots' customers and orders). */
 
-import { createHash } from "node:crypto";
+import { sha256Hex } from "./hash.js";
 import { fail, text, email as emailField, oneOf, bool } from "./http.js";
 
 export const ROLES = ["owner", "manager", "dealer"];
 export const ROLE_WORDS = { owner: "Owner", manager: "Manager", dealer: "Dealer" };
 
 export function emailKey(address) {
-  return createHash("sha256").update(String(address).trim().toLowerCase()).digest("hex").slice(0, 40);
+  return sha256Hex(String(address).trim().toLowerCase()).slice(0, 40);
 }
 
 /* A login counts only when Identity confirmed its email. Roles or anything

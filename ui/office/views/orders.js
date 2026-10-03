@@ -6,7 +6,7 @@
    Built from the customer list rows (each row carries its orders), so it
    is one request however many orders there are. */
 
-import { h, icon, chips, emptyState, pageHead } from "../dom.js";
+import { h, clear, icon, chips, emptyState, pageHead } from "../dom.js";
 import { ORDER_STATUSES, PAYMENT_WORDS, money, plural, dayWords, followUpWords, todayKey } from "../words.js";
 import { statusPill, remember, recall, dayKeyOf } from "./crm-kit.js";
 
@@ -26,7 +26,7 @@ export async function render(ctx) {
   }
   all.sort((a, b) => String(b.soldAt).localeCompare(String(a.soldAt)));
 
-  const search = h("input", { type: "search", placeholder: "Search customer, order number or building", "aria-label": "Search orders", autocomplete: "off" });
+  const search = h("input", { type: "search", placeholder: "Search name, order # or building", "aria-label": "Search orders", autocomplete: "off" });
   let timer = 0;
   search.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(() => { state.shown = PAGE; draw(); }, 120); });
   const chipsWrap = h("div", { class: "crm-chipbar" });
@@ -52,7 +52,7 @@ export async function render(ctx) {
     const counts = {};
     for (const o of base) counts[o.status] = (counts[o.status] || 0) + 1;
     const open = base.filter((o) => o.status !== "delivered" && o.status !== "cancelled");
-    chipsWrap.replaceChildren(chips([
+    clear(chipsWrap, chips([
       ["open", "Not delivered yet", open.length],
       ["all", "All", base.length],
       ...ORDER_STATUSES.map(([k, label]) => [k, label, counts[k] || 0]),
@@ -62,18 +62,18 @@ export async function render(ctx) {
     const live = list.filter((o) => o.status !== "cancelled");
     const month = todayKey().slice(0, 7);
     const monthLive = all.filter((o) => o.status !== "cancelled" && dayKeyOf(o.soldAt).startsWith(month));
-    sums.replaceChildren(
+    clear(sums, 
       sum(plural(list.length, "order"), live.length !== list.length ? `${list.length - live.length} cancelled` : "in this list"),
       sum(money(live.reduce((s, o) => s + (Number(o.total) || 0), 0)), "sales in this list"),
       sum(money(monthLive.reduce((s, o) => s + (Number(o.total) || 0), 0)), "sold this month"));
 
     if (!list.length) {
-      results.replaceChildren(h("div", { class: "card" }, all.length
+      clear(results, h("div", { class: "card" }, all.length
         ? emptyState("No orders here", "Try another status or fewer words.")
         : emptyState("No orders yet", "When a customer buys, open them and tap Mark sold on their quote. The order shows up here.")));
       return;
     }
-    results.replaceChildren(
+    clear(results, 
       h("div", { class: ["card", "flush", "crm-list", "crm-order-rows", manyLots && "with-lot"], role: "table", "aria-label": "Orders" },
         h("div", { class: "crm-list-head", role: "row" },
           ["Order", "Customer", "Building", "Total", "Payment", "Delivery", "Status", manyLots ? "Lot" : null].filter(Boolean)

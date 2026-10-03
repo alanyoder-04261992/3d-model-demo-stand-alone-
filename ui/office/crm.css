@@ -40,7 +40,8 @@
 /* ---- Today ------------------------------------------------------------------------ */
 .crm-today-head h1 { font: 500 clamp(28px, 3.4vw, 38px)/1.1 var(--head); color: var(--brand-header); letter-spacing: .01em; }
 .crm-today-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 18px; align-items: start; }
-.crm-section .card-head, .crm-month .card-head, .crm-perlot .card-head { padding: 16px 20px 0; margin-bottom: 8px; }
+.crm-section .card-head, .crm-month .card-head, .crm-perlot .card-head { padding: 16px 20px 0; margin-bottom: 12px; flex-wrap: nowrap; align-items: flex-start; }
+.crm-section .card-title { flex: 1; min-width: 0; line-height: 1.35; }
 .crm-month .card-head { padding: 0; margin-bottom: 14px; }
 .crm-section .card-title .icon, .crm-month .card-title .icon, .crm-perlot .card-title .icon { color: var(--kraft); width: 19px; height: 19px; }
 .crm-rows { border-top: 1px solid var(--line); }
@@ -59,10 +60,13 @@
 .crm-note.late { color: var(--bad); opacity: 1; font-weight: 600; }
 .crm-wait { font-size: 13.5px; color: var(--muted); white-space: nowrap; }
 .crm-wait.late { color: var(--warn); font-weight: 600; }
-.crm-delivery { grid-template-columns: auto minmax(0, 1fr) auto; }
+.crm-delivery { grid-template-columns: auto minmax(0, 1fr); column-gap: 14px; }
 .crm-delivery .crm-datebox { grid-column: 1; grid-row: 1 / span 3; }
-.crm-delivery .row-title, .crm-delivery .row-sub, .crm-delivery .crm-note { grid-column: 2; }
-.crm-delivery .crm-line-end { grid-column: 3; }
+.crm-delivery .row-title, .crm-delivery .row-sub, .crm-delivery .crm-delivery-status { grid-column: 2; }
+.crm-delivery-status { display: flex; align-items: center; gap: 4px 10px; flex-wrap: wrap; margin-top: 3px; font-size: 13.5px; }
+.crm-num-small { color: var(--muted); font-variant-numeric: tabular-nums; }
+.crm-when-small { color: var(--ink); }
+.crm-when-small.late { color: var(--bad); font-weight: 600; }
 .crm-datebox {
   width: 48px; height: 52px; border-radius: 8px; border: 1px solid var(--line-strong); display: grid; align-content: center; justify-items: center;
   background: #fff; line-height: 1; overflow: hidden;
@@ -84,10 +88,12 @@
 .crm-tile span:last-child { font-size: 13px; color: var(--muted); }
 .crm-tile.money .crm-tile-icon { color: var(--good); }
 .crm-perlot .table td, .crm-perlot .table th { padding: 10px 16px; }
+.crm-perlot .table td:first-child, .crm-perlot .table th:first-child { white-space: nowrap; }
 .crm-perlot tfoot th { border-top: 1px solid var(--line-strong); color: var(--ink); font-size: 14px; letter-spacing: 0; text-transform: none; }
 
 /* ---- Customers: the toolbar ---------------------------------------------------------- */
-.crm-toolbar { padding: 14px 16px; display: grid; gap: 12px; margin-bottom: 10px; }
+.crm-toolbar { padding: 14px 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; margin-bottom: 10px; }
+.crm-chipbar { min-width: 0; }
 .crm-toolbar-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .crm-search { flex: 1 1 280px; min-width: 0; }
 .crm-toolbar-tools { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
@@ -105,7 +111,7 @@
 .crm-chipbar .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .crm-chipbar .chips::-webkit-scrollbar { display: none; }
 .crm-chipbar .chip { flex: none; min-height: 40px; }
-.crm-countline { color: var(--muted); font-size: 14px; margin: 4px 2px 10px; }
+.crm-countline { display: flex; justify-content: space-between; align-items: center; gap: 12px; color: var(--muted); font-size: 14px; margin: 4px 0 10px 2px; }
 
 /* ---- Customers and Orders: the list (a table on wide screens, cards on phones) ---- */
 .crm-list { --cols: minmax(0, 2fr) minmax(0, 1.7fr) 92px 112px 128px minmax(0, 1fr); }
@@ -368,6 +374,12 @@
 /* ---- phones ---------------------------------------------------------------------------------- */
 @media (max-width: 900px) {
   .crm-today-grid { grid-template-columns: minmax(0, 1fr); }
+  .crm-today-left, .crm-today-right { display: contents; }
+  .crm-sec-follow { order: 1; }
+  .crm-sec-new { order: 2; }
+  .crm-sec-deliveries { order: 3; }
+  .crm-month { order: 4; }
+  .crm-perlot { order: 5; }
   .crm-cust-grid { grid-template-columns: minmax(0, 1fr); }
   .crm-cust-main, .crm-cust-side { display: contents; }
   .crm-cust-grid { display: flex; flex-direction: column; gap: 16px; }
@@ -393,7 +405,6 @@
   .crm-toolbar-tools { width: 100%; }
   .crm-sort { flex: 1; }
   .crm-sort select { min-width: 0; }
-  .crm-switch button span { display: none; }
   .crm-switch button { padding: 0 12px; min-height: 44px; }
 
   /* the list becomes cards */
@@ -421,14 +432,27 @@
   .o-status { grid-area: status; justify-self: end; }
   .o-date { grid-area: date; justify-self: end; }
   .crm-order-rows .o-pay, .crm-order-rows .o-lot { display: none; }
-  .crm-order-sums { grid-template-columns: 1fr 1fr; }
-  .crm-order-sums .crm-sum:first-child { grid-column: 1 / -1; display: flex; align-items: baseline; gap: 10px; }
-  .crm-sum strong { font-size: 21px; }
+  .crm-order-sums { gap: 8px; }
+  .crm-sum { padding: 10px 12px; }
+  .crm-sum strong { font-size: 19px; }
+  .crm-sum span { font-size: 12.5px; display: block; line-height: 1.3; }
+  .crm-list-row .c-follow.none { display: none; }
+  .crm-download span { display: none; }
+  .crm-customers .page-head .actions .btn.crm-download { flex: 0 0 auto; width: 48px; padding: 0; }
 
   .crm-board { grid-auto-columns: 82%; margin: 0 -16px; padding: 0 16px 10px; scroll-padding: 0 16px; }
   .crm-col.folded { grid-auto-columns: 82%; }
 
   .crm-line-main { padding-left: 14px; }
+  .crm-line-end { grid-row: 1; }
+  .crm-line-main .row-sub, .crm-line-main .crm-note { grid-column: 1 / -1; }
+  .crm-delivery .row-sub, .crm-delivery .crm-delivery-status { grid-column: 2; }
+  .crm-perlot .table td, .crm-perlot .table th { padding: 9px 8px; font-size: 14px; }
+  .crm-perlot .table th { font-size: 11px; letter-spacing: .04em; }
+  .crm-perlot .table td:first-child, .crm-perlot .table th:first-child { padding-left: 14px; white-space: normal; }
+  .crm-perlot .table td:last-child, .crm-perlot .table th:last-child { padding-right: 14px; }
+  .crm-customers .page-head .actions, .crm-orders-page .page-head .actions { width: 100%; }
+  .crm-customers .page-head .actions .btn { flex: 1 1 auto; }
   .crm-line { padding-right: 10px; }
   .crm-tile strong { font-size: 22px; }
   .crm-tile { padding: 12px; column-gap: 10px; }
@@ -455,4 +479,12 @@
   .sheet-signs { grid-template-columns: 1fr 1fr; gap: 20px; }
   .sheet-tools .actions { width: 100%; }
   .sheet-tools .actions .btn { flex: 1; }
+}
+.crm-perlot .table th.right { text-align: right; }
+
+/* The frame on a phone with the lot picker: the business initials stay, the
+   name gives its room to the picker so the lot can be read. */
+@media (max-width: 760px) {
+  .topbar:has(.lot-picker) .brand-words { display: none; }
+  .topbar:has(.lot-picker) .lot-select { max-width: 190px; }
 }

@@ -31,7 +31,7 @@ import { createOffice } from "../server/office/index.js";
 import { lotDesignerPage, closedPage, OFFICE_POLICY } from "../server/office/pages.js";
 import { inlineScriptHashes } from "./build-headers.mjs";
 import { FileBlobs } from "./lib/file-blobs.mjs";
-import { seedSample, SAMPLE_PEOPLE } from "./lib/office-sample.mjs";
+import { seedSample, SAMPLE_PEOPLE } from "../server/office/sample.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);

@@ -37,7 +37,10 @@
      in the company's settings (embed.origins).
 
    OPTIONS (data-... on the script line)
-     data-company        the company's id (required)
+     data-company        the company's id (this or data-lot is required)
+     data-lot            a lot of a business on the Dealer Center: its link
+                         name (data-lot="port-charlotte" shows /d/port-charlotte/);
+                         used instead of data-company when both are there
      data-height         the height in pixels (at least 520)
      data-target         where to put it, as a CSS selector (default
                          #shed-designer)
@@ -88,12 +91,18 @@
 
   var company = String(script.getAttribute("data-company") || "").trim();
   var lot = String(script.getAttribute("data-lot") || "").trim();
+  /* data-lot wins over data-company: a lot's designer (/d/<lot>/) gets the
+     business's price list from the Dealer Center */
+  var attr = lot ? "data-lot" : "data-company";
   if (!ID_RE.test(lot || company)) {
     var msg = css(document.createElement("p"), { border: "1px solid #c8b8b0", borderRadius: "8px", padding: "12px 14px", color: "#7c2a22", background: "#fdf3f2", font: "14px/1.45 system-ui, sans-serif" });
-    msg.textContent = "The 3D designer could not be shown: the " + (lot ? "dealer lot" : "company") + " in its embed code (" + (lot ? "data-lot" : "data-company") + "=\"" + (lot || company) +
+    msg.textContent = "The 3D designer could not be shown: the " + (lot ? "lot" : "company") + " in its embed code (" + attr + "=\"" + (lot || company) +
       "\") is not right. It should be 2 to 40 lower-case letters, digits or dashes, as it was given to you.";
     host.appendChild(msg);
-    if (window.console) console.error("embed.js: data-company \"" + company + "\" is not a company id.");
+    if (window.console) {
+      console.error(lot ? "embed.js: data-lot \"" + lot + "\" is not a lot's link name (2 to 40 lower-case letters, digits or dashes)."
+        : "embed.js: data-company \"" + company + "\" is not a company id.");
+    }
     return;
   }
 

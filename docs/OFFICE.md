@@ -147,7 +147,7 @@ each other.
 | `invites/<sha256(email)>` | `{email, name, role, lots[], invitedAt, invitedBy}` |
 | `customers/<id>` | the whole customer (below) |
 | `lists/<slug>` | one row per customer of that lot, for lists, search and the Today screen |
-| `counters/order-number` | `{next}` — order numbers start at 1001 |
+| `counters/quote-number` | `{next}` — one counter for quote numbers, from 1001; an order keeps its quote's number |
 | `website-requests/<hash>` | `{customerId, quoteId, fingerprint, receipt}` — makes a retried send safe |
 | `limits/<slug>/<bucket>` | website send counts per lot (and per visitor) |
 
@@ -160,10 +160,11 @@ A **customer**:
   followUp,          // {date: "2026-10-05", note} or null
   quotes: [{ id, number, at, by, source, building, design, price, total, cfg }],
   orders: [{ id, number, quoteId, status, soldAt, soldBy, total, payment,
-             downPayment, deliveryAddress, deliveryDate, deliveryNotes,
+             deposit, deliveryAddress, deliveryDate, deliveryNotes,
              notes, history: [{status, at, by}] }],
   activity: [{ id, at, by /* {id,name} or null for the website */,
                type, text }],
+  pastLots,          // lots they were moved away from (to tidy old list rows)
   createdAt, updatedAt }
 ```
 
@@ -174,12 +175,19 @@ A **list row** holds what lists need without opening every customer: `id,
 name, phone, email, stage, assignedTo, followUp, building, total, source,
 createdAt, updatedAt, lastActivityAt, quotes:[[at,total]], orders:[{id,
 number, status, total, soldAt}]`. The customer record is the truth; a row is
-rebuilt from it whenever the customer changes.
+rebuilt from it whenever the customer changes. The row is written from the
+customer as stored at that moment (read inside the list's own conditional
+write), so two changes finishing together never leave an older row, and a
+moved customer's row never comes back to the lot they left. A row that is
+missing or out of date (a write that stopped halfway) is put right when
+anyone opens the customer.
 
 ## The Office API
 
 All under `/api/office/`. JSON in and out. Errors are `{error: "Plain
-sentence a dealer can act on"}` with a 4xx/5xx status. Every change
+sentence a dealer can act on"}` with a 4xx/5xx status; a price list that
+cannot be saved (422) also lists every problem as `problems: ["…"]`, in the
+owner's words (never a settings path or a code). Every change
 (`POST/PUT/PATCH/DELETE`) needs an `Origin` header equal to the site's own.
 Responses are `Cache-Control: private, no-store`.
 
@@ -204,8 +212,8 @@ Responses are `Cache-Control: private, no-store`.
 | `PATCH customers/:id` | lot access | contact fields, `stage`, `lostReason`, `assignedTo`, `followUp`, `lot` (owner/manager) |
 | `POST customers/:id/activity` | lot access | `{type: note\|call\|text\|email\|visit, text}` |
 | `POST customers/:id/quotes` | lot access | `{design}` — a building designed in the Office; priced on the server |
-| `POST customers/:id/orders` | lot access | `{quoteId, payment, downPayment, deliveryAddress, deliveryDate, deliveryNotes, notes}` |
-| `PATCH customers/:id/orders/:orderId` | lot access | `{status?, payment?, downPayment?, deliveryDate?, …}` |
+| `POST customers/:id/orders` | lot access | `{quoteId, payment, deposit, deliveryAddress, deliveryDate, deliveryNotes, notes}`; the deposit is never above the total |
+| `PATCH customers/:id/orders/:orderId` | lot access | `{status?, payment?, deposit?, deliveryDate?, …}` |
 | `GET customers.csv` | owner, manager | a spreadsheet of the visible customers |
 
 Public routes (no sign-in):
@@ -213,11 +221,15 @@ Public routes (no sign-in):
 | Route | Does |
 |---|---|
 | `GET /api/lots/:slug` | `{company, lot, version}` for the lot's 3D designer; 404 when the lot is closed or the business is not open yet |
-| `POST /api/lots/:slug/quote-requests` | `{design, contact, idempotencyKey}` → `{id, number, total, price, receivedAt}` |
+| `POST /api/lots/:slug/quote-requests` | `{design, contact, idempotencyKey}` → `{id, number, total, price, receivedAt, repriced}` (201; the same send again → the same receipt, 200) |
 
 A website quote request is matched to an existing customer of that lot by
-email or phone; otherwise a new customer is made. Either way the quote and an
-activity line are added. A Lost customer who comes back goes back to New.
+email or phone (digits compared); otherwise a new customer is made. A
+customer of another lot is never matched. Either way the quote and an
+activity line are added. A Lost or Delivered customer who comes back goes
+back to New. The same send arriving twice at once (a double tap, a retry)
+waits a few seconds for the first and gets its receipt; a send left half
+done for over a minute is taken over by the retry.
 
 ## Security rules that never bend
 

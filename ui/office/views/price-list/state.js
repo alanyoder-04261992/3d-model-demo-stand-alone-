@@ -49,6 +49,18 @@ export function edited(opts = {}) {
   S.hooks.edited?.(opts);
 }
 
+/* Draw the problem marks again (after part of a tab was drawn again). */
+export function repaint() {
+  S.hooks.paint?.();
+}
+
+/* Bring a box into view and put the cursor in it once it is on the page:
+   {field} (data-field) or {where} (data-msgs). */
+export function focusLater(spec) {
+  S.focus = spec;
+  S.hooks.focus?.();
+}
+
 export function freshParked() {
   return { offer: {}, items: {}, options: {} };
 }
