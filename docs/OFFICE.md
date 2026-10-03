@@ -1,11 +1,12 @@
-# The Office — how the dealer software works
+# The Dealer Center — how the dealer software works
 
-<!-- WHAT THIS FILE IS: the contract for the private Office (prices, lots,
+<!-- WHAT THIS FILE IS: the contract for the Dealer Center (prices, lots,
      team, customers, orders) and the public lot designer links. Code in
-     server/office/, ui/office/, netlify/functions/ and tools/office-*.mjs
-     follows it. Plain-English guide for Alan: docs/FOR-ALAN.md. -->
+     server/office/, ui/office/, netlify/functions/ and tools/office-local.mjs
+     follows it ("office" is only the code's folder name; people always
+     read "Dealer Center"). Plain-English guide for Alan: docs/FOR-ALAN.md. -->
 
-The **Office** is the private side of the 3D designer. One shed business
+The **Dealer Center** is the private side of the 3D designer, at `/dealer`. One shed business
 (for example Yoder Storage Barns) runs everything from it:
 
 * the **owner** sets the **price list** — which buildings are sold, every size
@@ -16,9 +17,9 @@ The **Office** is the private side of the 3D designer. One shed business
 * everybody who sells works their **customers** — new website quote requests,
   walk-ins and phone calls — with notes, follow-up dates, quotes and **orders**.
 
-One Office site belongs to one business. A new shed company gets its own copy
+One Dealer Center site belongs to one business. A new shed company gets its own copy
 of the site (see "Setting up a new company" below), so one company's customers
-can never show up in another company's Office.
+can never show up in another company's Dealer Center.
 
 ## The words we use
 
@@ -27,7 +28,7 @@ messages and docs. Never show a code ("LB", "w48", an ID) where a name fits.
 
 | Say | Meaning | Never say |
 |---|---|---|
-| **Office** | the private site at `/office` | portal, workspace, dashboard, back end |
+| **Dealer Center** | the private site at `/dealer` | portal, office, workspace, dashboard, back end |
 | **Owner** | runs the business; sets prices, lots and team | admin, Owner/Admin, administrator, tenant |
 | **Manager** | works every lot's customers and orders; cannot change prices or people | admin |
 | **Dealer** | works the customers and orders of their own lot(s) | member, staff account, user |
@@ -126,7 +127,7 @@ It is drawn exactly like its base (same roof, walls, standard doors and
 windows, construction). A building with a different shape (a new roof, wall
 height or door layout) is a new library style: use the `add-a-style` skill.
 
-Sizes are whole feet, width 4–16 and length 4–60 in the Office. Widths with
+Sizes are whole feet, width 4–16 and length 4–60 in the Dealer Center. Widths with
 proven drawings and skid tables are 6, 8, 10, 12 and 14.
 
 ## Data
@@ -182,7 +183,7 @@ moved customer's row never comes back to the lot they left. A row that is
 missing or out of date (a write that stopped halfway) is put right when
 anyone opens the customer.
 
-## The Office API
+## The Dealer Center API
 
 All under `/api/office/`. JSON in and out. Errors are `{error: "Plain
 sentence a dealer can act on"}` with a 4xx/5xx status; a price list that
@@ -211,7 +212,7 @@ Responses are `Cache-Control: private, no-store`.
 | `GET customers/:id` | lot access | the whole customer |
 | `PATCH customers/:id` | lot access | contact fields, `stage`, `lostReason`, `assignedTo`, `followUp`, `lot` (owner/manager) |
 | `POST customers/:id/activity` | lot access | `{type: note\|call\|text\|email\|visit, text}` |
-| `POST customers/:id/quotes` | lot access | `{design}` — a building designed in the Office; priced on the server |
+| `POST customers/:id/quotes` | lot access | `{design}` — a building designed in the Dealer Center; priced on the server |
 | `POST customers/:id/orders` | lot access | `{quoteId, payment, deposit, deliveryAddress, deliveryDate, deliveryNotes, notes}`; the deposit is never above the total |
 | `PATCH customers/:id/orders/:orderId` | lot access | `{status?, payment?, deposit?, deliveryDate?, …}` |
 | `GET customers.csv` | owner, manager | a spreadsheet of the visible customers |
@@ -252,22 +253,32 @@ done for over a minute is taken over by the retry.
 
 ## Email (optional)
 
-When `RESEND_API_KEY` and `EMAIL_FROM` are set, the Office emails a lot's
+When `RESEND_API_KEY` and `EMAIL_FROM` are set, the Dealer Center emails a lot's
 email address when a website quote request arrives, and can email an invite
-to a person the owner adds. Without them nothing is emailed and the Office
+to a person the owner adds. Without them nothing is emailed and the Dealer Center
 works the same.
 
 ## Running it on your computer
 
 ```
-npm run office          # http://127.0.0.1:8383/office — sample business, sign in as anyone
+npm run office          # http://127.0.0.1:8383/dealer — sample business, sign in as anyone
 npm run office -- --reset   # start the sample data again
 ```
 
-This local Office keeps its data in `.office-local/` (never published) and
+This local Dealer Center keeps its data in `.office-local/` (never published) and
 replaces Netlify sign-in with a list of the sample people. It serves the lot
 designer links too (`/d/port-charlotte/`), so a quote sent from the designer
-appears in the Office.
+appears in the Dealer Center.
+
+## Try it without signing in
+
+`/dealer?demo` opens the Dealer Center with the sample business, running
+entirely in the visitor's browser: the server code runs inside the page on
+made-up data that stays in that browser tab, and nothing is sent to the
+site's real data. Pick who to be (the owner, the manager or a dealer).
+A lot's 3D designer link does not exist in the demo, so "See it in 3D" and
+"Design a building" use the example designer (`/c/demo/`). Good for showing
+the Dealer Center to a shed company before they buy.
 
 ## Setting up a new company
 
@@ -275,7 +286,7 @@ appears in the Office.
 2. In the site's settings turn on **Identity** (registration: open — anyone
    can make a login, but only people the owner adds can see anything).
 3. Add the environment variable `OWNER_EMAIL` with the owner's email.
-4. The owner opens `/office`, makes a login with that email, confirms it, and
+4. The owner opens `/dealer`, makes a login with that email, confirms it, and
    follows the setup steps: business details, a starting price list, the
    first lot.
 
@@ -296,21 +307,27 @@ appears in the Office.
 | `server/office/netlify.js` | Netlify Blobs, Identity and environment |
 | `netlify/functions/office-api.mts` | serves `/api/office/*` and `/api/lots/*` |
 | `netlify/functions/lot-designer.mts` | serves `/d/:slug/` with that lot's allowed websites |
-| `office.html`, `ui/office/*` | the Office screens |
-| `tools/office-local.mjs` | the local Office with sample data |
+| `dealer.html`, `ui/office/*` | the Dealer Center's screens (`ui/office/views/`), its frame and its look |
+| `ui/office/demo.js` | the "try it" demo: the server code running in the page on made-up data (`/dealer?demo`) |
+| `server/office/sample.js` | the sample business (Yoder Storage Barns, 3 lots, 30 customers) for the local Dealer Center, the demo and the checks |
+| `server/office/identity.js` | asks Netlify Identity who is signed in; the autoconfirm guard |
+| `server/office/hash.js` | SHA-256 and random ids in plain JavaScript (the same on Netlify and in a browser) |
+| `tools/office-local.mjs` | the local Dealer Center with sample data (`npm run office`) |
 | `tools/check-office.mjs` | proves the API rules |
-| `tools/check-office-browser.mjs` | clicks through the Office and a lot designer in Chromium |
+| `tools/check-dealer-center.mjs` | clicks through the Dealer Center, a lot designer and the demo in Chromium |
+| `tools/check-wording.mjs` | keeps the old words out of every screen and answer |
+| `tools/check-style-variants.mjs` | a business's own style draws and prices exactly like its library style |
 
 ## The screens
 
-The Office looks like the 3D designer: the navy header with the blueprint
+The Dealer Center looks like the 3D designer: the navy header with the blueprint
 grid, Oswald capitals for headings, IBM Plex Sans for writing, white cards on
 a light page, the business's own header and accent colors. It works on a
 phone first: a dealer standing on the lot uses it one-handed. Buttons are at
 least 44 px tall; phone numbers and emails are tap-to-call, tap-to-text and
 tap-to-email links.
 
-Frame: header (business logo/name, "Office", the lot picker for people with
+Frame: header (business logo/name, "Dealer Center", the lot picker for people with
 more than one lot, the person's menu with Sign out). Navigation: a left
 column on wide screens, a bottom bar on phones.
 
@@ -375,7 +392,7 @@ customers" / "Closed".
 **Sign in** — email and password; "Make your login" (for people the owner
 added); "Forgot your password?"; links from Netlify emails (confirm, invite,
 reset) land here and are handled. Someone signed in but not added yet sees
-"You're signed in as maria@…, but nobody has added you to this Office yet.
+"You're signed in as maria@…, but you're not on the team yet.
 Ask the owner to add this email."
 
 **First setup** (the first owner, once) — three steps: your business, your
