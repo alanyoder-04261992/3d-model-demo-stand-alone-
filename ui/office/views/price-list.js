@@ -222,6 +222,8 @@ function paintProblems() {
   }
   /* a red count on each tab with something to fix */
   if (page.tabs) {
+    const count = page.tabs.querySelector('.tab[data-key="buildings"] .count');
+    if (count) count.textContent = String(keysOf((S.draft || S.saved.settings).offer).length);
     for (const b of page.tabs.querySelectorAll(".tab")) {
       b.querySelector(".pl-tab-flag")?.remove();
       const n = S.problems.filter((p) => p.tab === b.dataset.key).length;
