@@ -6,8 +6,8 @@
    Only the everyday screens use this file; the frame's own helpers are in
    ../dom.js and the words in ../words.js. */
 
-import { h, icon, dialog, form, field, button, toast } from "../dom.js";
-import { patch } from "../api.js";
+import { h, icon, dialog, form, field, button, toast, emptyState, linkButton } from "../dom.js";
+import { get, patch } from "../api.js";
 import {
   STAGE_WORDS, ORDER_WORDS, LOST_REASONS, followUpWords, dayWords, todayKey, daysBetween, telHref, phone as phoneWords,
 } from "../words.js";
@@ -138,4 +138,23 @@ export function dateFromNow(key) {
   const diff = daysBetween(todayKey(), key);
   const rel = diff === 0 ? "today" : diff === 1 ? "tomorrow" : diff === -1 ? "yesterday" : diff > 0 ? `in ${diff} days` : `${-diff} days ago`;
   return `${dayWords(key)} · ${rel}`;
+}
+
+/* One customer, or null when they are not there for this person (another
+   lot's customer answers "not found", the same as a wrong link). */
+export async function loadCustomer(id) {
+  try {
+    return (await get(`customers/${id}`)).customer;
+  } catch (e) {
+    if (e.status === 404) return null;
+    throw e;
+  }
+}
+
+export function missingCustomer(ctx) {
+  ctx.setTitle("Not found");
+  return h("div", {}, h("a", { class: "back", href: "#/customers" }, icon("arrowLeft"), "Customers"),
+    h("div", { class: "card" }, emptyState("We couldn't find that customer",
+      "They may belong to a lot you don't work, or the link was cut short. Find them in Customers.",
+      linkButton("Go to Customers", "#/customers", { kind: "primary" }))));
 }

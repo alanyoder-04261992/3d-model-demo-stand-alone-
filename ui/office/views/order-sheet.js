@@ -13,10 +13,10 @@
    one in a hidden frame; the sheet never waits for it. */
 
 import { h, icon, button, emptyState, linkButton } from "../dom.js";
-import { get } from "../api.js";
 import { money, phone as phoneWords, PAYMENT_WORDS, ORDER_WORDS, initials } from "../words.js";
 import { encodeSync } from "../../../model/design.js";
 import { resolve as resolveCatalogue } from "../../../model/company.js";
+import { loadCustomer, missingCustomer } from "./crm-kit.js";
 
 const PICTURE_MS = 25000;
 const COLOR_WORDS = [["body", "Siding"], ["trim", "Trim"], ["roof", "Roof"], ["door", "Door"], ["shutters", "Shutters"]];
@@ -25,7 +25,8 @@ export async function render(ctx) {
   const { app } = ctx;
   const [cid, xid] = ctx.params;
   const isOrder = ctx.view === "order";
-  const c = (await get(`customers/${cid}`)).customer;
+  const c = await loadCustomer(cid);
+  if (!c) return missingCustomer(ctx);
   const order = isOrder ? c.orders.find((o) => o.id === xid) : null;
   const quote = isOrder ? (order && c.quotes.find((q) => q.id === order.quoteId)) : c.quotes.find((q) => q.id === xid);
   const backTo = h("a", { class: "back", href: `#/customers/${c.id}` }, icon("arrowLeft"), c.name);

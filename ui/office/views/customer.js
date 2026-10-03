@@ -10,14 +10,14 @@
    Each change sends one small request; the answer is the whole customer,
    and the page redraws from it in place (no reload, the scroll stays). */
 
-import { h, clear, icon, button, linkButton, field, checkbox, form, dialog, confirmBox, toast, emptyState } from "../dom.js";
-import { get, post, patch } from "../api.js";
+import { h, clear, icon, button, linkButton, field, checkbox, form, dialog, confirmBox, toast } from "../dom.js";
+import { post, patch } from "../api.js";
 import {
   STAGES, STAGE_WORDS, PAYMENTS, PAYMENT_WORDS, ORDER_WORDS, NOTE_KINDS, money, phone as phoneWords, telHref, smsHref,
   todayKey, addDays, dayWords, followUpWords, ago, when, plural,
 } from "../words.js";
 import { encodeSync } from "../../../model/design.js";
-import { statusPill, followUpTone, changeStage, sourceWords, confirmChoice, dayKeyOf, dateFromNow } from "./crm-kit.js";
+import { statusPill, followUpTone, changeStage, sourceWords, confirmChoice, dayKeyOf, dateFromNow, loadCustomer, missingCustomer } from "./crm-kit.js";
 
 const STEPS = ["sold", "sent", "ready", "delivered"];
 const ACTIVITY_ICONS = {
@@ -36,17 +36,8 @@ const ACTIVITY_PAGE = 25;
 export async function render(ctx) {
   const { app } = ctx;
   const [id] = ctx.params;
-  let c;
-  try {
-    c = (await get(`customers/${id}`)).customer;
-  } catch (e) {
-    if (e.status !== 404) throw e;
-    ctx.setTitle("Not found");
-    return h("div", {}, h("a", { class: "back", href: "#/customers" }, icon("arrowLeft"), "Customers"),
-      h("div", { class: "card" }, emptyState("We couldn't find that customer",
-        "They may belong to a lot you don't work, or the link was cut short. Find them in Customers.",
-        linkButton("Go to Customers", "#/customers", { kind: "primary" }))));
-  }
+  let c = await loadCustomer(id);
+  if (!c) return missingCustomer(ctx);
   const view = { kind: "note", draft: "", activityShown: ACTIVITY_PAGE, open: new Set() };
   const root = h("div", { class: "crm-customer" });
 
@@ -261,11 +252,12 @@ export async function render(ctx) {
   }
 
   function addressOf() {
+    if (!c.address && !c.city) return "";
     return [c.address, [c.city, [c.state, c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ")].filter(Boolean).join("\n");
   }
 
   function markSold(q) {
-    const pay = field("Payment", { type: "select", options: PAYMENTS, required: true });
+    const pay = field("Payment", { type: "select", options: PAYMENTS, required: true, value: "cash" });
     const deposit = field("Deposit", { type: "money", placeholder: "0", hint: `Total ${money(q.total)}` });
     const addr = field("Delivery address", { type: "textarea", rows: 2, value: addressOf(), wide: true });
     const date = field("Delivery date", { type: "date", min: todayKey() });

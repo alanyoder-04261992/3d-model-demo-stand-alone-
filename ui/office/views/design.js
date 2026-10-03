@@ -12,16 +12,18 @@
    A lot whose designer link is closed shows why instead of a blank frame. */
 
 import { h, icon, button, linkButton, toast, loading } from "../dom.js";
-import { get, post } from "../api.js";
+import { post } from "../api.js";
 import { money, todayKey } from "../words.js";
 import { encodeSync } from "../../../model/design.js";
+import { loadCustomer, missingCustomer } from "./crm-kit.js";
 
 const WAIT_MS = 60000;
 
 export async function render(ctx) {
   const { app } = ctx;
   const [id, quoteId] = ctx.params;
-  const c = (await get(`customers/${id}`)).customer;
+  const c = await loadCustomer(id);
+  if (!c) return missingCustomer(ctx);
   const quote = quoteId ? c.quotes.find((q) => q.id === quoteId) : null;
   const lotName = app.lotName(c.lot);
   ctx.setTitle(`Design for ${c.name}`);
