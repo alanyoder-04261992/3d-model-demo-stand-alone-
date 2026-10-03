@@ -272,13 +272,22 @@ appears in the Dealer Center.
 
 ## Try it without signing in
 
-`/dealer?demo` opens the Dealer Center with the sample business, running
-entirely in the visitor's browser: the server code runs inside the page on
-made-up data that stays in that browser tab, and nothing is sent to the
-site's real data. Pick who to be (the owner, the manager or a dealer).
-A lot's 3D designer link does not exist in the demo, so "See it in 3D" and
-"Design a building" use the example designer (`/c/demo/`). Good for showing
-the Dealer Center to a shed company before they buy.
+On Alan's learning preview, leave the email and password empty and tap
+**Sign in** (or open `/dealer?demo`). The Dealer Center opens with the
+sample business, running entirely in the visitor's browser: the server
+code runs inside the page on made-up data that stays in that browser tab,
+and nothing is sent to the site's real data. Pick who to be (the owner,
+the manager or a dealer). Reloading the tab keeps what was done; **Start
+over** puts the sample back. A lot's 3D designer link does not exist in the
+demo, so "See it in 3D" and "Design a building" use the example designer
+(`/c/demo/`). Good for showing the Dealer Center to a shed company before
+they buy.
+
+Only the learning preview offers it. Every other site, and every client
+build (`npm run build:client`), leaves the demo out completely: no demo
+file and no empty-boxes sign-in, so a real login always needs both an email
+and a password. The build decides this (`__DEALER_DEMO__` in
+`tools/build-site.mjs`); `tools/check-dealer-demo.mjs` proves it.
 
 ## Setting up a new company
 
@@ -308,7 +317,7 @@ the Dealer Center to a shed company before they buy.
 | `netlify/functions/office-api.mts` | serves `/api/office/*` and `/api/lots/*` |
 | `netlify/functions/lot-designer.mts` | serves `/d/:slug/` with that lot's allowed websites |
 | `dealer.html`, `ui/office/*` | the Dealer Center's screens (`ui/office/views/`), its frame and its look |
-| `ui/office/demo.js` | the "try it" demo: the server code running in the page on made-up data (`/dealer?demo`) |
+| `ui/office/demo.js` | the "try it" demo: the server code running in the page on made-up data (`/dealer?demo`, learning preview only) |
 | `server/office/sample.js` | the sample business (Yoder Storage Barns, 3 lots, 30 customers) for the local Dealer Center, the demo and the checks |
 | `server/office/identity.js` | asks Netlify Identity who is signed in; the autoconfirm guard |
 | `server/office/hash.js` | SHA-256 and random ids in plain JavaScript (the same on Netlify and in a browser) |

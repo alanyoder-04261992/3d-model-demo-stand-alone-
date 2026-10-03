@@ -147,7 +147,7 @@ function frameUp() {
 
 /* The "try it" demo (/dealer?demo): made-up data that lives only in this tab. */
 function demoBanner() {
-  if (!app.demo) return null;
+  if (!__DEALER_DEMO__ || !app.demo) return null;
   return h("div", { class: "banner demo" }, icon("star"),
     h("span", {}, "This is a demo with a made-up business. Everything you do stays in this browser tab — nothing is saved or sent."),
     button("Start over", async () => (await import(DEMO_MODULE)).demoStartOver(), { kind: "ghost", small: true }));
@@ -165,6 +165,7 @@ function closedBanner() {
 
 let renderSeq = 0;
 async function render() {
+  if (!main) return;   /* still on the sign-in screen: nothing to show yet */
   const { path, query } = currentPath();
   let match = null, viewName = null;
   for (const [re, name] of ROUTES) {
@@ -233,7 +234,7 @@ window.addEventListener("dealer:brand", () => {
       h("span", { class: "brand-words" }, h("strong", {}, business?.short || business?.name || "Dealer Center"), h("span", {}, "Dealer Center")));
   }
   if (!main) return;
-  const old = main.querySelector(":scope > .banner.warn");
+  const old = [...main.children].find((el) => el.matches(".banner.warn"));
   const fresh = closedBanner();
   if (old && fresh) old.replaceWith(fresh);
   else if (old) old.remove();
@@ -256,12 +257,17 @@ window.addEventListener("dealer:lots", () => {
 /* The demo's code is its own file (it carries a copy of the server), loaded
    only for /dealer?demo -- the name is kept in a variable so the build does
    not fold it into this file. */
-const DEMO_MODULE = "/ui/office/demo.js";
+const DEMO_MODULE = __DEALER_DEMO__ ? "/ui/office/demo.js" : "";
+
+/* __DEALER_DEMO__ (true or false) is written in by whatever bundles this
+   file: tools/build-site.mjs says true only for Alan's learning preview, so a
+   client build leaves every bit of the demo out; the local Dealer Center
+   (tools/office-local.mjs) says true. */
 
 async function start() {
   clear(root, h("div", { class: "boot" }, loading("Opening the Dealer Center…")));
   let note = null;
-  if (new URLSearchParams(location.search).has("demo")) {
+  if (__DEALER_DEMO__ && new URLSearchParams(location.search).has("demo")) {
     try {
       await (await import(DEMO_MODULE)).startDemo();
       app.demo = true;

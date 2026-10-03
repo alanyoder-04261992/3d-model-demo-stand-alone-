@@ -6,11 +6,16 @@
    which land on this page with a token after the #.
 
    On the local Dealer Center (npm run office) there are no passwords: pick
-   who you are from the sample team. */
+   who you are from the sample team.
+
+   On Alan's learning preview the sign-in also opens the "try it" demo:
+   leave both boxes empty and tap Sign in. A client build leaves that out
+   (the build sets __DEALER_DEMO__ to false, see tools/build-site.mjs). */
 
 import { h, clear, button, field, form, icon } from "./dom.js";
 import { identity } from "./api.js";
 import { ROLE_WORDS } from "./words.js";
+
 
 function frame(root, title, intro, ...body) {
   clear(root, h("main", { class: "auth" },
@@ -63,11 +68,17 @@ export function signInScreen(root, { mode, business, note }) {
   let view = "in";
   const draw = () => {
     if (view === "in") {
-      const email = field("Email", { type: "email", required: true, autocomplete: "email" });
-      const password = field("Password", { type: "password", required: true, autocomplete: "current-password" });
+      const email = field("Email", { type: "email", required: !__DEALER_DEMO__, autocomplete: "email" });
+      const password = field("Password", { type: "password", required: !__DEALER_DEMO__, autocomplete: "current-password" });
       frame(root, "Sign in", name ? `The Dealer Center for ${name}.` : "The Dealer Center.",
         note ? h("p", { class: "auth-note" }, note) : null,
-        form([email.wrap, password.wrap, h("button", { class: "btn btn-primary btn-block", type: "submit" }, "Sign in")], async () => {
+        form([email.wrap, password.wrap, h("button", { class: "btn btn-primary btn-block", type: "submit" }, "Sign in"),
+          __DEALER_DEMO__ ? h("p", { class: "hint" }, "Leave both boxes empty and tap Sign in to try a made-up shed business.") : null], async () => {
+          if (__DEALER_DEMO__) {
+            const typed = [email.input.value.trim(), password.input.value].filter(Boolean).length;
+            if (typed === 0) { location.assign("/dealer?demo"); return; }
+            if (typed === 1) throw new Error("Type your email and your password, or leave both empty to try the demo.");
+          }
           try {
             await identity.login(email.input.value.trim(), password.input.value);
           } catch (e) {
@@ -125,7 +136,7 @@ async function localPicker(root, { business, note }) {
     location.reload();
   };
   const other = field("Or sign in with another email", { type: "email", placeholder: ownerEmail || "name@example.com" });
-  const demo = new URLSearchParams(location.search).has("demo");
+  const demo = __DEALER_DEMO__ && new URLSearchParams(location.search).has("demo");
   frame(root, demo ? "Try the Dealer Center" : "Who are you?",
     demo ? "A made-up shed business with three lots and thirty customers. Pick who you want to be — the owner sees everything, a dealer sees only their lot."
       : `This is the Dealer Center on your computer${business ? ` for ${business.name}` : ""}. No passwords here — pick a person.`,

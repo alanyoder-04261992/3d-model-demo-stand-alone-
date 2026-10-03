@@ -108,6 +108,7 @@ const demoBundler = await esbuildContext({
 const bundler = await esbuildContext({
   entryPoints: [resolve(ROOT, "ui/office/main.js")], bundle: true, format: "esm", platform: "browser",
   target: "es2022", write: false, outfile: "main.js", logLevel: "silent", sourcemap: "inline",
+  define: { __DEALER_DEMO__: "true" },   /* the local copy always offers the "try it" demo */
 });
 async function officeBundle() {
   const r = await bundler.rebuild();

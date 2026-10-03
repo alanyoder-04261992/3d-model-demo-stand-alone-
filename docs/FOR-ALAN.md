@@ -177,9 +177,12 @@ site. One shed business runs everything from it:
 Every price a customer sees is worked out again by the server from the price
 list, so nobody can change a price by tampering with the page.
 
-To try it on your own computer with a made-up business (three lots, five
-people, thirty customers), run `npm run office` and open the address it
-prints. How it is put on a real website is in [the Dealer Center
+To try it with a made-up business (three lots, five people, thirty
+customers), open `/dealer` on your learning preview site, leave the email
+and password empty and tap **Sign in**. Nothing you do there is saved or
+sent anywhere. Sites you sell to a shed company never have this: their
+sign-in always needs a real email and password. On your own computer,
+`npm run office` does the same with the sample business. How it is put on a real website is in [the Dealer Center
 guide](OFFICE.md).
 
 ### Older company links (without the Dealer Center)
