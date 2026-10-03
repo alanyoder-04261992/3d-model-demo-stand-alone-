@@ -153,16 +153,15 @@
 }
 
 /* ---- Customers: the board -------------------------------------------------------------- */
-.crm-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(250px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 10px; align-items: start; scroll-snap-type: x proximity; }
+.crm-countline-tools { display: flex; align-items: center; gap: 8px; }
+.crm-lost-toggle { min-height: 44px; color: var(--muted); }
+.crm-board { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(178px, 1fr); gap: 12px; overflow-x: auto; padding-bottom: 10px; align-items: start; scroll-snap-type: x proximity; }
 .crm-col { background: #E6EBF0; border-radius: var(--radius); padding: 10px; display: grid; gap: 8px; align-content: start; min-width: 0; scroll-snap-align: start; }
-.crm-col.folded { grid-auto-columns: auto; background: #EEF1F4; }
-.crm-col.folded .crm-col-cards { display: none; }
 .crm-col-head { display: flex; align-items: center; gap: 8px; padding: 4px 4px 6px; min-height: 36px; }
 .crm-col-head h2 { font: 500 15px/1.2 var(--head); letter-spacing: .1em; text-transform: uppercase; color: var(--brand-header); }
 .crm-col-dot { width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex: none; }
 .crm-col-head .crm-count { background: #fff; }
 .crm-col-sum { margin-left: auto; font-size: 13px; color: var(--muted); font-weight: 600; font-variant-numeric: tabular-nums; }
-.crm-col-toggle { margin-left: auto; min-height: 36px; }
 .crm-col-cards { display: grid; gap: 8px; }
 .crm-col-empty { color: var(--muted); font-size: 14px; padding: 8px 6px 12px; text-align: center; }
 .crm-card { position: relative; background: #fff; border: 1px solid var(--line); border-radius: 9px; padding: 11px 12px; box-shadow: 0 1px 2px rgba(10, 44, 73, .06); display: grid; gap: 6px; }
@@ -173,7 +172,13 @@
 .crm-card-meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 14px; }
 .crm-card-meta strong { font-variant-numeric: tabular-nums; }
 .crm-card-lot { color: var(--muted); font-size: 13px; }
-.crm-move { position: relative; z-index: 1; min-height: 38px !important; padding: 5px 10px !important; font-size: 13.5px; color: var(--muted); background: #F7F9FB !important; }
+.crm-move {
+  position: relative; z-index: 1; min-height: 40px !important; margin-top: 2px; padding: 6px 30px 6px 10px !important; font-size: 13.5px; color: var(--muted);
+  background-color: #F5F7F9 !important; border-color: transparent !important; appearance: none; cursor: pointer;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 17px, calc(100% - 11px) 17px; background-size: 5px 5px; background-repeat: no-repeat;
+}
+.crm-move:hover, .crm-move:focus { border-color: var(--line-strong) !important; color: var(--ink); }
 
 /* ---- Add a customer ----------------------------------------------------------------------- */
 .crm-follow-pick { display: flex; gap: 10px 14px; align-items: flex-end; flex-wrap: wrap; }
@@ -441,7 +446,6 @@
   .crm-customers .page-head .actions .btn.crm-download { flex: 0 0 auto; width: 48px; padding: 0; }
 
   .crm-board { grid-auto-columns: 82%; margin: 0 -16px; padding: 0 16px 10px; scroll-padding: 0 16px; }
-  .crm-col.folded { grid-auto-columns: 82%; }
 
   .crm-line-main { padding-left: 14px; }
   .crm-line-end { grid-row: 1; }

@@ -55,6 +55,8 @@ export async function render(ctx) {
       },
     }, icon(ic), h("span", {}, label))));
 
+  const lostBtn = h("button", { type: "button", class: "btn btn-quiet btn-small crm-lost-toggle", onclick: () => { state.lost = !state.lost; save(); draw(); } });
+
   const chipsWrap = h("div", { class: "crm-chipbar" });
   const results = h("div", { class: "crm-results" });
   const countWords = h("p", { role: "status", "aria-live": "polite" });
@@ -98,8 +100,6 @@ export async function render(ctx) {
     }[state.sort] || (() => 0);
     return list.slice().sort(by);
   }
-
-  const lostBtn = h("button", { type: "button", class: "btn btn-quiet btn-small crm-lost-toggle", onclick: () => { state.lost = !state.lost; save(); draw(); } });
 
   function draw() {
     const { base, counts } = filtered();
