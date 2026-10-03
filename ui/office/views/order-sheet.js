@@ -13,6 +13,7 @@
    one in a hidden frame; the sheet never waits for it. */
 
 import { h, icon, button, emptyState, linkButton } from "../dom.js";
+import { app } from "../app.js";
 import { money, phone as phoneWords, PAYMENT_WORDS, ORDER_WORDS, initials } from "../words.js";
 import { encodeSync } from "../../../model/design.js";
 import { resolve as resolveCatalogue } from "../../../model/company.js";
@@ -121,7 +122,7 @@ export async function render(ctx) {
 
   const tools = h("div", { class: "sheet-tools" }, backTo,
     h("div", { class: "actions" },
-      design ? h("a", { class: "btn btn-ghost", href: `/d/${c.lot}/#d=${encodeSync(design)}&view=1`, target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")) : null,
+      design ? h("a", { class: "btn btn-ghost", href: `${app.designerUrl(c.lot)}#d=${encodeSync(design)}&view=1`, target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")) : null,
       button(`Print ${kindWords.toLowerCase()}`, () => window.print(), { kind: "primary", icon: "print" })));
 
   const page = h("div", { class: "sheet-page" }, tools, sheet);
@@ -196,7 +197,7 @@ async function catalogue(app) {
 async function addPicture(lot, design, slot) {
   if (!slot.isConnected) return;
   const frame = h("iframe", { class: "sheet-shot", title: "Picture of the building", "aria-hidden": "true", tabindex: "-1",
-    src: `/d/${encodeURIComponent(lot)}/?embed=1#d=${encodeSync(design)}&view=1` });
+    src: `${app.designerUrl(lot)}?embed=1#d=${encodeSync(design)}&view=1` });
   Object.assign(frame.style, { position: "fixed", left: "-12000px", top: "0", width: "960px", height: "640px", border: "0", opacity: "0", pointerEvents: "none" });
   document.body.append(frame);
   const done = () => frame.remove();

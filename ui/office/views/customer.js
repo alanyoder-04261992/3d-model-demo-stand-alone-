@@ -11,6 +11,7 @@
    and the page redraws from it in place (no reload, the scroll stays). */
 
 import { h, clear, icon, button, linkButton, field, checkbox, form, dialog, confirmBox, toast } from "../dom.js";
+import { app } from "../app.js";
 import { post, patch } from "../api.js";
 import {
   STAGES, STAGE_WORDS, PAYMENTS, PAYMENT_WORDS, ORDER_WORDS, NOTE_KINDS, money, phone as phoneWords, telHref, smsHref,
@@ -238,7 +239,7 @@ export async function render(ctx) {
       details,
       h("div", { class: "crm-quote-actions" },
         order ? null : button("Mark sold", () => markSold(q), { kind: "primary", icon: "check" }),
-        h("a", { class: "btn btn-ghost", href: `/d/${c.lot}/#d=${encodeSync(q.design)}&view=1`, target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")),
+        h("a", { class: "btn btn-ghost", href: `${app.designerUrl(c.lot)}#d=${encodeSync(q.design)}&view=1`, target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")),
         linkButton("Change it", `#/customers/${c.id}/design/${q.id}`, { kind: "ghost", icon: "edit" }),
         linkButton("Print", `#/customers/${c.id}/quotes/${q.id}`, { kind: "ghost", icon: "print" })));
   }

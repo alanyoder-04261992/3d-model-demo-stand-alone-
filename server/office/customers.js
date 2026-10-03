@@ -490,7 +490,7 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
   async function addWebsiteQuote(slug, contact, priced, cat) {
     const number = await nextNumber("quote-number");
     const quote = quoteOf(priced, cat, { by: null, source: "website", number });
-    const words = `Designed a ${quote.building} on the website — ${dollars(quote.total)} (quote #${number})`;
+    const words = `Sent a quote from the 3D designer: ${quote.building} — ${dollars(quote.total)} (quote #${number})`;
     const match = await findMatch(slug, contact);
     let c = null;
     if (match) {

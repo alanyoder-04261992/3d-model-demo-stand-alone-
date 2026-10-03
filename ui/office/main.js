@@ -173,7 +173,9 @@ async function render() {
   }
   for (const el of [...navEls, ...root.querySelectorAll(".tab-item[data-path], .more-item[data-path]")]) {
     const p = el.dataset.path;
-    const on = p === "/" ? path === "/" : path === p || path.startsWith(p + "/") || (p === "/customers" && /^\/customers\//.test(path) && !/\/orders\//.test(path)) || (p === "/orders" && /\/orders\//.test(path));
+    /* an order sheet lives under its customer's address but belongs to Orders */
+    const section = /^\/customers\/[^/]+\/orders\//.test(path) ? "/orders" : "/" + (path.split("/")[1] || "");
+    const on = p === section;
     el.classList.toggle("on", on);
     if (on) el.setAttribute("aria-current", "page"); else el.removeAttribute("aria-current");
   }
@@ -218,6 +220,36 @@ window.addEventListener("beforeunload", (e) => {
   if (app.leaveGuard && app.leaveGuard()) { e.preventDefault(); e.returnValue = ""; }
 });
 window.addEventListener("dealer:refresh", () => render());
+
+/* Settings changed the business (name, logo, colors, open or closed):
+   put the header and the "closed" banner right without reloading the page
+   (so nothing typed on the screen is lost). Added by the Settings screen. */
+window.addEventListener("dealer:brand", () => {
+  const business = app.business;
+  applyBrand(business);
+  const brand = root.querySelector(".topbar .brand");
+  if (brand) {
+    brand.replaceChildren(badge(business),
+      h("span", { class: "brand-words" }, h("strong", {}, business?.short || business?.name || "Dealer Center"), h("span", {}, "Dealer Center")));
+  }
+  if (!main) return;
+  const old = main.querySelector(":scope > .banner.warn");
+  const fresh = closedBanner();
+  if (old && fresh) old.replaceWith(fresh);
+  else if (old) old.remove();
+  else if (fresh) main.prepend(fresh);
+});
+
+/* A lot was added, closed or opened: rebuild the lot picker at the top.
+   Added by the Lots screen. */
+window.addEventListener("dealer:lots", () => {
+  const tools = root.querySelector(".topbar-tools");
+  if (!tools) return;
+  const next = buildLotPicker();
+  if (lotPicker) lotPicker.remove();
+  lotPicker = next;
+  if (next) tools.prepend(next);
+});
 
 /* ---- start-up ----------------------------------------------------------------------- */
 

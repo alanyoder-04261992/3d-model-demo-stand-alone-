@@ -11,6 +11,7 @@
    rows are drawn until someone asks for more, so 2,000 customers stay fast. */
 
 import { h, clear, icon, button, field, form, dialog, chips, toast, emptyState, pageHead } from "../dom.js";
+import { app } from "../app.js";
 import { post } from "../api.js";
 import { STAGES, STAGE_WORDS, SOURCES, money, ago, when, plural, todayKey, addDays, phone as phoneWords } from "../words.js";
 import {
@@ -63,7 +64,10 @@ export async function render(ctx) {
 
   const head = pageHead("Customers",
     app.lotFilter === "all" ? (app.lots.length > 1 ? (app.seesAllLots ? "Every lot" : "Your lots") : app.lots[0]?.name) : app.lotName(app.lotFilter),
-    app.can("exportCustomers") ? h("a", { class: "btn btn-ghost crm-download", href: "/api/office/customers.csv", download: "", title: "Download spreadsheet" }, icon("download"), h("span", {}, "Download spreadsheet")) : null,
+    app.can("exportCustomers") ? (app.demo
+      /* the demo's server runs in this page, so the file is made here too */
+      ? h("button", { type: "button", class: "btn btn-ghost crm-download", title: "Download spreadsheet", onclick: downloadInPage }, icon("download"), h("span", {}, "Download spreadsheet"))
+      : h("a", { class: "btn btn-ghost crm-download", href: "/api/office/customers.csv", download: "", title: "Download spreadsheet" }, icon("download"), h("span", {}, "Download spreadsheet"))) : null,
     button("Add customer", () => addCustomer(ctx), { kind: "accent", icon: "plus" }));
 
   const page = h("div", { class: "crm-customers" }, head,
@@ -287,4 +291,15 @@ export function addCustomer(ctx) {
     ctx.go(`/customers/${out.customer.id}`);
   }), { wide: true });
   return box;
+}
+
+/* The "try it" demo: ask the in-page server for the spreadsheet and save it. */
+async function downloadInPage() {
+  const r = await fetch("/api/office/customers.csv");
+  const url = URL.createObjectURL(await r.blob());
+  const a = h("a", { href: url, download: "customers.csv" });
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

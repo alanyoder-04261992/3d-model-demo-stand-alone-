@@ -227,3 +227,23 @@ export function chips(items, current, onPick, { label = "Filter" } = {}) {
 
 /* Wait for the next frame (so a screen paints before slow work). */
 export const frame = () => new Promise((r) => requestAnimationFrame(() => r()));
+
+/* Copy words to the clipboard (a link, website code, a message to send).
+   -> Promise<boolean>. Falls back to the older copy command where the
+   clipboard is not allowed. Added by the Lots and Team screens. */
+export async function copyText(words) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(words);
+      return true;
+    }
+  } catch { /* try the older way */ }
+  const box = h("textarea", { readonly: true, class: "sr-only", "aria-hidden": "true" });
+  box.value = words;
+  document.body.append(box);
+  box.select();
+  let done = false;
+  try { done = document.execCommand("copy"); } catch { done = false; }
+  box.remove();
+  return done;
+}

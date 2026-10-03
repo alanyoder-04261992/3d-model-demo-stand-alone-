@@ -12,6 +12,7 @@
    A lot whose designer link is closed shows why instead of a blank frame. */
 
 import { h, icon, button, linkButton, toast, loading } from "../dom.js";
+import { app } from "../app.js";
 import { get, post } from "../api.js";
 import { money, todayKey } from "../words.js";
 import { encodeSync } from "../../../model/design.js";
@@ -75,7 +76,7 @@ export async function render(ctx) {
   }
 
   const hash = quote ? `#d=${encodeSync(quote.design)}` : "";
-  const frame = h("iframe", { class: "crm-design-frame", title: `3D designer for ${c.name}`, src: `/d/${encodeURIComponent(c.lot)}/?embed=1${hash}` });
+  const frame = h("iframe", { class: "crm-design-frame", title: `3D designer for ${c.name}`, src: `${app.designerUrl(c.lot)}?embed=1${hash}` });
   stage.replaceChildren(frame, h("div", { class: "crm-design-wait" }, loading("Opening the 3D designer…")));
 
   let shed = null;
@@ -131,6 +132,14 @@ export async function render(ctx) {
   const poll = setInterval(() => {
     if (shed || !frame.isConnected) { clearInterval(poll); return; }
     watch();
+    let failed = false;
+    try { failed = !!frame.contentWindow.document.getElementById("bootmsg") && !frame.contentWindow.shedUI; } catch { failed = false; }
+    if (failed) {
+      clearInterval(poll);
+      closedNow(closedNote("The 3D designer didn't open",
+        "The 3D designer couldn't start just now. Try again in a minute.", c, false, null));
+      return;
+    }
     if (Date.now() - started > WAIT_MS) {
       clearInterval(poll);
       stage.querySelector(".crm-design-wait")?.replaceChildren(h("p", {}, "The 3D designer is taking a long time. ",
