@@ -11,7 +11,8 @@
      [{ "when": {"maxW": 8}, "value": "2x4" }, { "value": "2x6" }]
    The first rule whose "when" matches wins. "when" may test:
      minW maxW minL maxL   the building's width / length in feet
-     styles                a list of style keys ("UT", "LB", ...)
+     styles                a list of style keys ("UT", "LB", ...); a company's own
+                           style built like another is tested as its base
      roof                  a roof shape, or a list of them
      metal                 true for a metal building, false for a painted one
    and, for rules that are about ONE OPENING rather than the building (the
@@ -245,9 +246,12 @@ function valueProblems(tree, where) {
 }
 
 /* The facts a building rule can test. d is {W, L} (the corner porch's 4 ft
-   deck is part of L, as it is everywhere else in the model). */
+   deck is part of L, as it is everywhere else in the model). A company's own
+   style built like another (t.base, model/company.js) is framed exactly like
+   that one, so a "styles" rule tests the base: "LB" covers the Lofted Barn and
+   a "Premium Lofted Barn" built like it. */
 export function buildingFacts(styleKey, t, d) {
-  return { W: d.W, L: d.L, style: styleKey, roof: t.roof, metal: !!t.metal };
+  return { W: d.W, L: d.L, style: (t && t.base) || styleKey, roof: t.roof, metal: !!t.metal };
 }
 
 /* The option keys switched on in a live design, in the key form the catalogue

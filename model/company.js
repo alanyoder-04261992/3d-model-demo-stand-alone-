@@ -14,14 +14,15 @@
                                     -> ONE catalogue in Barnwright's shapes, so
                                        ported code keeps its names:
      P        {style: {"WxL": price}}           the price book, in chip order
-     TYPES    {style: {name roof wallH metal dormer porch side + traits, loadout, category}}
+     TYPES    {style: {name roof wallH metal dormer porch side + traits, loadout, category, base?}}
      CATS     [[label, "UT,SU,..."]]
      CAT      {item: {k n w h p + flags (gable int stretch dep perFt free sill)
                       + draw traits (draw leaves rotatable liteSwap switch)}}
      DORMERS  [["none","No dormer",0], [id, label, price]...]
      RAMPS    [["none","No ramp",0], [id, label, price, quoteLabel?]...]
-     ELECPK   [["0","No electric",0], [id, label, price]...]
+     ELECPK   [["0","No electric",0], [id, label, price, quoteLabel?]...]
      MISC     {shutter, lite, ext: price}      RATES {dbl, jo12, ...: price per sq ft}
+     MISCNAMES {shutter?, lite?, ext?: the company's own name}
      RATEDEF  {id: {name, quoteName, basis}}   OPTX {extras, hide}
      COLORS   {paint, trim, metal: [[name, hex]...]}
      ELECDESC {"0": "", id: text}              ELECFX {id: [fixture...]}
@@ -33,7 +34,23 @@
 
    THE ONE RULE ABOUT MONEY: a company inherits NO price. Every size, item and
    option it offers carries a price in its OWN file, or validation fails. A
-   manufacturer file with a price in it fails too. The catalogue is frozen. */
+   manufacturer file with a price in it fails too. The catalogue is frozen.
+
+   A STYLE OF THE COMPANY'S OWN, BUILT LIKE ONE OF THE MANUFACTURER'S. An offer
+   entry is normally one of the manufacturer's styles, by its key ("LB"). It
+   can also be a new key with "base" -- the manufacturer style it is built
+   like -- and a name of its own:
+     "offer": {"LB":   {"sizes": {"10x16": 5540}},
+               "LBX1": {"base": "LB", "name": "Premium Lofted Barn", "sizes": {"10x16": 6290}}}
+   TYPES.LBX1 is then a copy of the Lofted Barn's traits (roof, walls, loft,
+   standard doors and windows...) with the new name and "base": "LB", so it is
+   drawn, framed, fitted and priced exactly like the Lofted Barn. Only its name
+   and its prices are its own. Anything that looks a style up by its key (a
+   construction rule's "styles" test) uses the base: baseStyle(t, key).
+
+   OPTION NAMES. options.dormers / ramps / elec / misc / rates entries are a
+   price, or {"price": n, "name": "Basic electric"} -- the name is then shown
+   to customers and printed on the quote instead of the usual words. */
 
 import { constructionProblems, mergeConstruction } from "./construction.js";
 import { standardItems, NAMED_RECIPES } from "./loadouts.js";
@@ -63,8 +80,25 @@ function keysOf(o) { return isObj(o) ? Object.keys(o).filter((k) => !k.startsWit
 function isPrice(v) { return typeof v === "number" && isFinite(v) && v >= 0; }
 function q(s) { return JSON.stringify(String(s)); }
 
-/* An item's price in the company file: a number, or {"price": n, "name": "..."}. */
+/* An item's price in the company file: a number, or {"price": n, "name": "..."}.
+   Options (dormers, ramps, elec, misc, rates) are written the same way. */
 function itemPrice(v) { return isObj(v) ? v.price : v; }
+
+/* The company's own name for an option, or null when it uses the usual words. */
+function ownName(v) { return isObj(v) && typeof v.name === "string" && v.name.trim() ? v.name.trim() : null; }
+
+/* The longest name a company can give a style or an option (it has to fit on
+   a button and a quote line). */
+export const NAME_MAX = 60;
+export const STYLE_KEY_RE = /^[A-Za-z0-9]{1,8}$/;
+
+/* The manufacturer style a catalogue style is drawn as: its base when it is
+   a company's own style built like another, otherwise its own key. Use it
+   wherever a style KEY is used to look something up. */
+export function baseStyle(t, key) { return (t && t.base) || key; }
+
+/* Names compared the way a customer reads them: case and spacing ignored. */
+function sameNameKey(s) { return String(s).trim().replace(/\s+/g, " ").toLowerCase(); }
 
 /* https://host[:port] only (http allowed for localhost / 127.0.0.1), never "*". */
 export function originProblem(o) {
@@ -221,6 +255,63 @@ function loadoutCats(t, key, sizes, CAT) {
 }
 
 /* ------------------------------------------------------------------------ */
+/* A style of the company's own, built like one of the manufacturer's        */
+
+/* What is wrong with offer[k] = {"base": ..., "name": ..., "sizes": ...}, or
+   null when it is a good one. One problem at a time: each later test needs
+   the earlier ones to have passed. */
+function variantProblem(k, o, offer, styles, mid) {
+  const at = `offer.${k}`;
+  const named = typeof o.name === "string" && o.name.trim() ? ` (${q(o.name.trim())})` : "";
+  /* the manufacturer's own style is sold as itself, never "built like" another */
+  if (own(styles, k)) {
+    return `${at} is the ${mid} manufacturer's own ${styles[k].name}, so it cannot also be built like another style: ` +
+      `take out "base", or give the new style a code of its own.`;
+  }
+  if (!STYLE_KEY_RE.test(k)) return `${at}: a style's code is 1 to 8 letters or digits, like "LBX1".`;
+  /* "lb" next to the manufacturer's "LB" would be two styles a person cannot tell apart by code */
+  const twin = keysOf(styles).find((s) => s.toLowerCase() === k.toLowerCase());
+  if (twin) return `${at}: the code ${q(k)} is the manufacturer's ${q(twin)} (${styles[twin].name}) in other letters; give the new style a code of its own, like ${q(twin + "X1")}.`;
+  const base = o.base;
+  if (typeof base !== "string" || !own(styles, base)) {
+    /* built like another of the company's own styles: point at that one's base */
+    if (typeof base === "string" && own(offer, base) && isObj(offer[base]) && typeof offer[base].base === "string" && own(styles, offer[base].base)) {
+      const root = offer[base].base;
+      return `${at}${named} is built like ${q(base)}, which is itself built like ${q(root)} (${styles[root].name}): ` +
+        `a style can only be built like one of the manufacturer's own styles, so write "base": ${q(root)}.`;
+    }
+    return `${at}${named} is built like ${q(base)}, but the ${mid} manufacturer file has no style ${q(base)} (its styles are ${keysOf(styles).join(", ")}).`;
+  }
+  if (typeof o.name !== "string" || !o.name.trim()) {
+    return `${at} is built like the ${styles[base].name}, so it needs a name of its own that customers see on its button, like ${q("Premium " + styles[base].name)}.`;
+  }
+  return null;
+}
+
+/* A construction rule that tests one of the company's own styles by its code
+   would never match: such a style is framed exactly as its base (buildingFacts
+   in model/construction.js tests the base). Name it instead. */
+function variantRuleProblems(tree, offer, styles, where) {
+  const out = [];
+  (function walk(v, path) {
+    if (Array.isArray(v)) {
+      v.forEach((r, i) => {
+        const tested = isObj(r) && isObj(r.when) && Array.isArray(r.when.styles) ? r.when.styles : [];
+        for (const k of tested) {
+          if (typeof k === "string" && !own(styles, k) && own(offer, k) && isObj(offer[k]) && typeof offer[k].base === "string") {
+            out.push(`${path}[${i}].when.styles names ${q(k)}, which is built like ${q(offer[k].base)} and framed exactly like it: test ${q(offer[k].base)} instead.`);
+          }
+        }
+        walk(r, `${path}[${i}]`);
+      });
+      return;
+    }
+    if (isObj(v)) for (const k of keysOf(v)) walk(v[k], `${path}.${k}`);
+  })(tree, where);
+  return out;
+}
+
+/* ------------------------------------------------------------------------ */
 /* The company file                                                          */
 
 export function validate(company, manufacturer) {
@@ -256,24 +347,51 @@ export function validate(company, manufacturer) {
     }
   }
 
-  /* offer: the styles, their sizes and prices */
+  /* offer: the styles, their sizes and prices. Each entry is one of the
+     manufacturer's styles, or the company's own style built like one of them
+     ("base" + its own "name"; variantProblem below). */
   const styles = manufacturer.styles || {};
   const offer = c.offer;
   const offered = [];
+  const baseOf = {};          /* offered key -> the manufacturer style it is drawn as */
+  const nameOf = {};          /* offered key -> the name customers see */
   if (!isObj(offer) || !keysOf(offer).length) err.push("offer is empty: offer at least one building style, with its sizes and prices.");
   else for (const k of keysOf(offer)) {
     const o = offer[k], at = `offer.${k}`;
-    if (!own(styles, k)) { err.push(`${at}: there is no style ${q(k)} in the ${manufacturer.id} manufacturer file (its styles are ${keysOf(styles).join(", ")}).`); continue; }
+    const isVariant = isObj(o) && o.base != null;
+    if (isVariant) {
+      const p = variantProblem(k, o, offer, styles, manufacturer.id);
+      if (p) { err.push(p); continue; }
+    } else if (!own(styles, k)) {
+      err.push(`${at}: there is no style ${q(k)} in the ${manufacturer.id} manufacturer file (its styles are ${keysOf(styles).join(", ")}). ` +
+        `A style of the company's own needs "base" (the style it is built like) and a "name".`);
+      continue;
+    }
     if (!isObj(o)) { err.push(`${at} must be {"sizes": {"10x20": price, ...}}.`); continue; }
     if (o.name != null && (typeof o.name !== "string" || !o.name.trim())) err.push(`${at}.name must be text (it renames the style).`);
+    else if (o.name != null && o.name.trim().length > NAME_MAX) err.push(`${at}.name ${q(o.name)} is too long: a style's name is at most ${NAME_MAX} letters, so it fits on its button.`);
     if (!isObj(o.sizes) || !keysOf(o.sizes).length) { err.push(`${at}.sizes: no sizes. List each size sold with its price, like "10x20": 6095.`); continue; }
     offered.push(k);
+    baseOf[k] = isVariant ? o.base : k;
+    nameOf[k] = isVariant ? o.name.trim() : styles[k].name;
     for (const z of keysOf(o.sizes)) {
       const v = o.sizes[z];
       if (!SIZE_RE.test(z)) err.push(`${at}.sizes[${q(z)}]: a size must be written width x length in feet, like "10x20".`);
       if (v === null || v === undefined || v === "") err.push(`${at}.sizes[${q(z)}] has no price. Every size needs the company's own price -- nothing is copied from anywhere else.`);
       else if (!isPrice(v)) err.push(`${at}.sizes[${q(z)}]: the price must be a number of dollars (it is ${JSON.stringify(v)}).`);
       else if (v === 0) err.push(`${at}.sizes[${q(z)}]: the price must be more than 0 (0 would mean "not sold" -- leave the size out instead).`);
+    }
+  }
+  /* no two buttons with one name: every offered style's name (after renames)
+     must be its own, case and spacing ignored */
+  {
+    const byName = new Map();
+    for (const k of offered) {
+      const shown = isObj(offer[k]) && typeof offer[k].name === "string" && offer[k].name.trim() ? offer[k].name.trim() : nameOf[k];
+      const key = sameNameKey(shown);
+      if (byName.has(key)) {
+        err.push(`offer.${k} is called ${q(shown)}, the same name as offer.${byName.get(key)}: customers would see two ${q(shown)} buttons. Give each building style its own name.`);
+      } else byName.set(key, k);
     }
   }
 
@@ -295,11 +413,11 @@ export function validate(company, manufacturer) {
   const mCAT = manufacturerCAT(manufacturer);
   const needs = {};
   for (const k of offered) {
-    const t = styles[k];
+    const t = styles[baseOf[k]];          /* a style built like another comes with its doors and windows */
     let cats;
     try { cats = loadoutCats(t, k, keysOf(offer[k].sizes).filter((z) => SIZE_RE.test(z)), mCAT); }
     catch (e) { err.push(`offer.${k}: its standard doors and windows could not be worked out: ${e.message}`); continue; }
-    for (const ic of cats) if (!priced.has(ic) && !own(items, ic)) (needs[ic] = needs[ic] || []).push(`${t.name} (${k})`);
+    for (const ic of cats) if (!priced.has(ic) && !own(items, ic)) (needs[ic] = needs[ic] || []).push(`${nameOf[k]} (${k})`);
   }
   for (const ic of Object.keys(needs)) {
     err.push(`items.${ic} needs a price: the ${mItems[ic] ? mItems[ic].name : ic} (${ic}) comes as standard on the ${needs[ic].join(", ")}. 0 is fine for one that is never charged.`);
@@ -316,14 +434,23 @@ export function validate(company, manufacturer) {
       if (!isObj(O[g])) { err.push(`options.${g} must be {id: price}.`); continue; }
       for (const id of keysOf(O[g])) {
         if (!own(mO[g], id)) err.push(`options.${g}.${id}: the manufacturer has no ${g} option ${q(id)} (it has ${keysOf(mO[g]).join(", ") || "none"}).`);
+        /* a price, or {"price": n, "name": "..."} -- the company's own name for it */
         const v = O[g][id];
-        if (v === null || v === undefined || v === "") err.push(`options.${g}.${id} has no price.`);
-        else if (!isPrice(v)) err.push(`options.${g}.${id}: the price must be a number of dollars, 0 or more (it is ${JSON.stringify(v)}).`);
+        if (isObj(v)) {
+          for (const f of keysOf(v)) {
+            if (f !== "price" && f !== "name") err.push(`options.${g}.${id}.${f} is not part of an option: write a price, or {"price": 250, "name": "..."}.`);
+          }
+          if (v.name != null && (typeof v.name !== "string" || !v.name.trim())) err.push(`options.${g}.${id}.name must be text: the name customers see for this option.`);
+          else if (v.name != null && v.name.trim().length > NAME_MAX) err.push(`options.${g}.${id}.name ${q(v.name)} is too long: an option's name is at most ${NAME_MAX} letters, so it fits on its button and the quote.`);
+        }
+        const p = itemPrice(v);
+        if (p === null || p === undefined || p === "") err.push(`options.${g}.${id} has no price.`);
+        else if (!isPrice(p)) err.push(`options.${g}.${id}: the price must be a number of dollars, 0 or more (it is ${JSON.stringify(p)}).`);
       }
     }
-    const dormerStyles = offered.filter((k) => styles[k].dormer);
+    const dormerStyles = offered.filter((k) => styles[baseOf[k]].dormer);
     if (dormerStyles.length && !keysOf(O.dormers).length) {
-      err.push(`${dormerStyles.map((k) => styles[k].name).join(", ")} ${dormerStyles.length > 1 ? "are" : "is"} offered, so options.dormers needs at least one dormer size with a price.`);
+      err.push(`${dormerStyles.map((k) => nameOf[k]).join(", ")} ${dormerStyles.length > 1 ? "are" : "is"} offered, so options.dormers needs at least one dormer size with a price.`);
     }
     if (keysOf(O.elec).length) {
       /* every fixture the OFFERED packages place, read from the manufacturer's
@@ -366,7 +493,7 @@ export function validate(company, manufacturer) {
           inCat.add(k);
         }
       });
-      for (const k of offered) if (!inCat.has(k)) err.push(`${styles[k].name} (${k}) is offered but in no category, so a customer could never pick it.`);
+      for (const k of offered) if (!inCat.has(k)) err.push(`${nameOf[k]} (${k}) is offered but in no category, so a customer could never pick it.`);
     }
   }
 
@@ -404,7 +531,7 @@ export function validate(company, manufacturer) {
       if (cc != null) {
         if (!isObj(cc)) err.push("defaults.colors must be {\"body\", \"trim\", \"roof\"} colour names.");
         else {
-          const t = styles[st] || {};
+          const t = styles[baseOf[st]] || {};
           const checks = [["body", t.metal ? pal.metal : pal.paint, t.metal ? "metal" : "paint"], ["trim", pal.trim, "trim"], ["roof", pal.metal, "metal"]];
           for (const [f, list, gname] of checks) {
             if (cc[f] != null && !hexOfName(list, cc[f])) err.push(`defaults.colors.${f} ${q(cc[f])} is not on the ${gname} palette.`);
@@ -418,7 +545,10 @@ export function validate(company, manufacturer) {
 
   /* construction */
   if (c.construction != null && !isObj(c.construction)) err.push("construction must be an object of construction settings.");
-  else err.push(...constructionProblems(c.construction || {}, "construction"));
+  else {
+    err.push(...constructionProblems(c.construction || {}, "construction"));
+    err.push(...variantRuleProblems(c.construction || {}, isObj(offer) ? offer : {}, styles, "construction"));
+  }
 
   /* pricing */
   const pr = c.pricing;
@@ -553,12 +683,15 @@ export function resolve(company, manufacturer, library) {
   };
   const P = {}, TYPES = {};
   for (const k of keysOf(c.offer)) {
-    const s = m.styles[k], o = c.offer[k];
-    const t = { name: o.name || s.name, roof: s.roof, wallH: s.wallH };
+    /* a style of the company's own is a copy of its base's traits: only the
+       name (and, below, the prices) are its own */
+    const o = c.offer[k], base = o.base != null ? o.base : k, s = m.styles[base];
+    const t = { name: o.base != null ? o.name.trim() : (o.name || s.name), roof: s.roof, wallH: s.wallH };
     for (const f of ["side", "dormer", "porch", "metal"]) if (s[f] !== undefined) t[f] = s[f];
     for (const f of ["kennel", "cottage", "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft"]) if (s[f] !== undefined) t[f] = copy(s[f]);
     t.loadout = copy(s.loadout);
     t.category = s.category || "";
+    if (o.base != null) t.base = base;
     TYPES[k] = t;
     P[k] = {};
     for (const z of keysOf(o.sizes)) P[k][z] = o.sizes[z];
@@ -583,34 +716,47 @@ export function resolve(company, manufacturer, library) {
     const name = isObj(v) && v.name ? v.name : it.name;
     CAT[k] = Object.assign({ k: it.kind, n: name, w: it.w, h: it.h, p: itemPrice(v) }, traitsOf(it));
   }
+  /* The options. Each is a price, or {"price", "name"}: a name the company
+     gives replaces the manufacturer's on the buttons AND on the quote; with
+     no name the labels are exactly the usual ones (Barnwright's). */
   const none = mO.none || {};
   const DORMERS = [["none", none.dormer || "No dormer", 0]];
   for (const id of keysOf(mO.dormers)) {
-    if (own(O.dormers, id)) DORMERS.push([id, mO.dormers[id].name, O.dormers[id]]); else hide.push("dormer." + id);
+    if (!own(O.dormers, id)) { hide.push("dormer." + id); continue; }
+    DORMERS.push([id, ownName(O.dormers[id]) || mO.dormers[id].name, itemPrice(O.dormers[id])]);
   }
   const RAMPS = [["none", none.ramp || "No ramp", 0]];
   for (const id of keysOf(mO.ramps)) {
     if (!own(O.ramps, id)) { hide.push("ramp." + id); continue; }
-    const r = [id, mO.ramps[id].name, O.ramps[id]];
-    if (mO.ramps[id].quoteName) r.push(mO.ramps[id].quoteName);
+    const named = ownName(O.ramps[id]);
+    const r = [id, named || mO.ramps[id].name, itemPrice(O.ramps[id])];
+    if (!named && mO.ramps[id].quoteName) r.push(mO.ramps[id].quoteName);
     RAMPS.push(r);
   }
   const ELECPK = [["0", none.elec || "No electric", 0]];
   const ELECDESC = { 0: "" }, ELECFX = {};
   for (const id of keysOf(mO.elec)) {
     if (!own(O.elec, id)) { hide.push("elec." + id); continue; }
-    ELECPK.push([id, mO.elec[id].name, O.elec[id]]);
+    const named = ownName(O.elec[id]);
+    /* the fourth entry, the quote's words, only when the company named it
+       (otherwise the quote says "Electric package 1", as it always has) */
+    ELECPK.push(named ? [id, named, itemPrice(O.elec[id]), named] : [id, mO.elec[id].name, itemPrice(O.elec[id])]);
     ELECDESC[id] = mO.elec[id].desc || "";
     ELECFX[id] = copy(mO.elec[id].fixtures || []);
   }
-  const MISC = {};
-  for (const id of keysOf(mO.misc)) { if (own(O.misc, id)) MISC[id] = O.misc[id]; else hide.push("misc." + id); }
+  const MISC = {}, MISCNAMES = {};
+  for (const id of keysOf(mO.misc)) {
+    if (!own(O.misc, id)) { hide.push("misc." + id); continue; }
+    MISC[id] = itemPrice(O.misc[id]);
+    if (ownName(O.misc[id])) MISCNAMES[id] = ownName(O.misc[id]);
+  }
   const RATES = {}, RATEDEF = {}, optionEffects = {};
   for (const id of keysOf(mO.rates)) {
     if (!own(O.rates, id)) { hide.push("rate." + id); continue; }
     const r = mO.rates[id];
-    RATES[id] = O.rates[id];
-    RATEDEF[id] = { name: r.name, quoteName: r.quoteName || r.name, basis: r.basis };
+    const named = ownName(O.rates[id]);
+    RATES[id] = itemPrice(O.rates[id]);
+    RATEDEF[id] = { name: named || r.name, quoteName: named || r.quoteName || r.name, basis: r.basis };
     if (r.construction) optionEffects["rate." + id] = stripHelp(copy(r.construction));
   }
   for (const g of [["dormers", "dormer"], ["ramps", "ramp"], ["elec", "elec"], ["misc", "misc"]]) {
@@ -648,7 +794,7 @@ export function resolve(company, manufacturer, library) {
     status: c.status || "active",
     manufacturer: m.id,
     cfg: c.cfg || 1,
-    P, TYPES, CATS, CAT, DORMERS, RAMPS, ELECPK, MISC, RATES, RATEDEF,
+    P, TYPES, CATS, CAT, DORMERS, RAMPS, ELECPK, MISC, MISCNAMES, RATES, RATEDEF,
     OPTX: { extras, hide },
     COLORS, ELECDESC, ELECFX, LISTS,
     defaults,

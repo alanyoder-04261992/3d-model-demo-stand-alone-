@@ -169,9 +169,12 @@ export function priceParts(state, cat, frame) {
     total += chg;
   });
   /* (a price missing from MISC means the company does not offer it: no line,
-     never a NaN total) */
-  if (shutN > 0 && MISC.shutter != null) { const shC = MISC.shutter * shutN; lines.push(["Shutters × " + shutN + " set" + (shutN > 1 ? "s" : ""), shC, "misc.shutter"]); total += shC; }
-  if (liteN > 0 && MISC.lite != null) { const ltC = MISC.lite * liteN; lines.push(["Door window × " + liteN, ltC, "misc.lite"]); total += ltC; }
+     never a NaN total). An option the company named itself (MISCNAMES,
+     ELECPK's fourth entry, RAMPS / DORMERS / RATEDEF names) is quoted by that
+     name; otherwise the words are Barnwright's, exactly as they always were. */
+  const MN = cat.MISCNAMES || {};
+  if (shutN > 0 && MISC.shutter != null) { const shC = MISC.shutter * shutN; lines.push([(MN.shutter || "Shutters") + " × " + shutN + " set" + (shutN > 1 ? "s" : ""), shC, "misc.shutter"]); total += shC; }
+  if (liteN > 0 && MISC.lite != null) { const ltC = MISC.lite * liteN; lines.push([(MN.lite || "Door window") + " × " + liteN, ltC, "misc.lite"]); total += ltC; }
   if (fr.t.dormer && state.dormer !== "none") {
     const d = (cat.DORMERS || []).filter((x) => x[0] === state.dormer)[0];
     if (d && !hidden(cat, "dormer." + d[0])) { lines.push([d[1], d[2], "dormer." + d[0]]); total += d[2]; }
@@ -179,8 +182,8 @@ export function priceParts(state, cat, frame) {
   if (state.elec && state.elec.pkg > 0) {
     const epk = (cat.ELECPK || []).filter((x) => +x[0] === +state.elec.pkg)[0];
     const ep = epk ? epk[2] : 0;
-    lines.push(["Electric package " + state.elec.pkg, ep, "elec." + state.elec.pkg]); total += ep;
-    if (state.elec.ext && MISC.ext != null) { lines.push(["Exterior light + dual switch", MISC.ext, "misc.ext"]); total += MISC.ext; }
+    lines.push([(epk && epk[3]) || ("Electric package " + state.elec.pkg), ep, "elec." + state.elec.pkg]); total += ep;
+    if (state.elec.ext && MISC.ext != null) { lines.push([MN.ext || "Exterior light + dual switch", MISC.ext, "misc.ext"]); total += MISC.ext; }
   }
   if (state.ramp && state.ramp !== "none") {
     const rmp = (cat.RAMPS || []).filter((x) => x[0] === state.ramp)[0];

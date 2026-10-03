@@ -3,14 +3,17 @@ name: new-company
 description: Set up a new shed company (a new customer of the designer) from its prices, colours, logo and where its leads go -- use when Alan asks to add, onboard or set up a company or dealer, or to change a company's settings file.
 ---
 
-## Managed businesses and dealer lots
+## A business on the Dealer Center
 
-For the managed product, a business Owner/Admin controls the same validated
-company configuration through `portal.html`. Dealer lots get `/d/<slug>/`
-links and `data-lot` embed snippets; their requests go to scoped order inboxes.
-Read `docs/DEALER-BACKEND.md` for Identity provisioning and membership setup.
-Keep each independent business isolated. Dealer staff must not change prices
-or options. Alan's platform HQ/billing is a separate future feature.
+A business that wants its own price list, lots, team and customer list gets
+its own copy of the site with the Dealer Center (`/dealer`). Follow "Setting up
+a new company" in `docs/OFFICE.md`: a new Netlify site, Identity on, the
+owner's email as `OWNER_EMAIL`. The owner then sets everything up on screen:
+the price list (sizes, styles, prices, options, colors), the lots (each gets
+`/d/<lot>/` and its own `data-lot` website code) and the team. No settings
+file is written by hand for these businesses; the price list is the same
+validated settings object a `companies/<id>/company.json` file holds. Dealers
+never change prices or options. Charging businesses for Barnwright comes later.
 
 Run `npm run build:client` for a client delivery. Do not include learning pages,
 reference photos, setup tools, `.agents`, `.claude` or these skills. The existing
