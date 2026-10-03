@@ -25,7 +25,7 @@
 .crm-call .icon { width: 19px; height: 19px; }
 .crm-more { margin-top: 12px; }
 .crm-quick { display: flex; flex-wrap: wrap; gap: 6px; }
-.crm-quick .chip { min-height: 40px; }
+.crm-quick .chip { min-height: 40px; padding: 5px 11px; }
 .crm-label { font-weight: 600; font-size: 14px; margin-bottom: 6px; }
 .crm-pre { white-space: pre-line; }
 .crm-break { overflow-wrap: anywhere; }

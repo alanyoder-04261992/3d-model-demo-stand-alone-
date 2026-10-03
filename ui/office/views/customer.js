@@ -298,7 +298,7 @@ export async function render(ctx) {
       STEPS.map((s, i) => h("li", { class: [i < at && "done", i === at && "now"] },
         h("button", { type: "button", "aria-current": i === at ? "step" : null, disabled: i === at,
           title: i === at ? `${ORDER_WORDS[s]} now` : `Mark ${ORDER_WORDS[s]}`,
-          onclick: () => quiet(act(() => patch(`customers/${c.id}/orders/${o.id}`, { status: s }), `Order #${o.number} is ${ORDER_WORDS[s]}.`)) },
+          onclick: () => quiet(act(() => patch(`customers/${c.id}/orders/${o.id}`, { status: s }), `Order #${o.number} moved to ${ORDER_WORDS[s]}.`)) },
         h("span", { class: "crm-step-dot" }, i < at ? icon("check") : String(i + 1)), h("span", {}, ORDER_WORDS[s])))));
     const fact = (label, value, cls) => value ? [h("dt", {}, label), h("dd", { class: cls }, value)] : null;
     return h("article", { class: ["crm-order", cancelled && "cancelled"] },
@@ -324,7 +324,7 @@ export async function render(ctx) {
           ? button("Reopen order", () => quiet(act(() => patch(`customers/${c.id}/orders/${o.id}`, { status: "sold" }), `Order #${o.number} is open again.`)), { kind: "quiet", icon: "history" })
           : button("Cancel order", async () => {
             const ok = await confirmBox(`Cancel order #${o.number}?`,
-              `${c.name}'s ${o.building} order is marked Cancelled. The quote stays, so you can sell it again later.`,
+              `${c.name}'s order for the ${o.building} will show as Cancelled everywhere, and it leaves the sales numbers. The quote stays, so you can sell it again later.`,
               { yes: "Cancel order", no: "Keep the order", danger: true });
             if (ok) quiet(act(() => patch(`customers/${c.id}/orders/${o.id}`, { status: "cancelled" }), `Order #${o.number} is cancelled.`));
           }, { kind: "quiet", icon: "x" })));
@@ -374,7 +374,7 @@ export async function render(ctx) {
       kinds.append(h("button", { type: "button", dataset: { key: k }, onclick: () => { setKind(k); textBox.focus(); } }, icon(ic), h("span", {}, label)));
     }
     setKind(view.kind);
-    const doneBox = c.followUp ? checkbox(`Follow-up done (it was ${followUpWords(c.followUp.date).toLowerCase()})`, false) : null;
+    const doneBox = c.followUp ? checkbox(`Follow-up done (it was set for ${dayWords(c.followUp.date)})`, false) : null;
     const composer = form([kinds, textBox,
       h("div", { class: "crm-compose-foot" }, doneBox ? doneBox.wrap : h("span", {}), saveBtn)], async () => {
       const words = textBox.value.trim();

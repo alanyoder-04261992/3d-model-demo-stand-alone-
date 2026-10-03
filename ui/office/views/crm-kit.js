@@ -6,7 +6,7 @@
    Only the everyday screens use this file; the frame's own helpers are in
    ../dom.js and the words in ../words.js. */
 
-import { h, icon, dialog, form, field, button, toast, emptyState, linkButton } from "../dom.js";
+import { h, icon, dialog, form, field, button, toast, emptyState, linkButton, nextId } from "../dom.js";
 import { get, patch } from "../api.js";
 import {
   STAGE_WORDS, ORDER_WORDS, LOST_REASONS, followUpWords, dayWords, todayKey, daysBetween, telHref, phone as phoneWords,
@@ -46,7 +46,7 @@ export function callButton(number, name) {
 export function askLostReason(name) {
   return new Promise((resolve) => {
     let answered = false;
-    const group = `lost-${Math.random().toString(36).slice(2, 8)}`;
+    const group = nextId("lost");
     const radios = LOST_REASONS.map((reason, i) => {
       const input = h("input", { type: "radio", name: group, value: reason, checked: i === 0 });
       return { input, wrap: h("label", { class: "crm-radio" }, input, h("span", {}, reason)) };
