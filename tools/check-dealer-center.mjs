@@ -8,8 +8,9 @@
      1. signing in: the sign-in screen lists the sample team; picking the
         owner opens Today;
      2. every screen opens for the owner, the manager and a dealer, on a
-        desktop and on a phone, with no errors, no "didn't load", and no
-        sideways scrolling on the phone; a dealer has no Team or Settings
+        desktop and on a phone, with no errors, no "didn't load", no stray
+        "null" or "undefined" in the words, and no sideways scrolling on
+        the phone; a dealer has no Team or Settings
         and sees only their own lot;
      3. a price change reaches every lot at once: the owner raises a price,
         and each lot's 3D designer has the new price on its next visit;
@@ -136,6 +137,8 @@ try {
         await openScreen(page, hash);
         const text = await page.textContent("#main");
         if (/didn't load|Something went wrong|being built|Coming soon/.test(text)) broken.push(name);
+        const junk = /\bnull\b|\bundefined\b|\bNaN\b|\[object Object\]/.exec(text);
+        if (junk) broken.push(`${name} (shows "${junk[0]}")`);
         if (label === "phone") {
           const wide = await page.evaluate(() => document.documentElement.scrollWidth);
           if (wide > 392) sideways.push(`${name} (${wide}px)`);

@@ -97,6 +97,7 @@ function optionRow(g, id, { desc, suffix, step }) {
       edited();
       draw();
       if (on && priceOf(d.options[g][id]) == null) row.querySelector(`[data-field="opt:${g}:${id}"]`)?.focus();
+      else row.querySelector(".pl-sell input")?.focus();
     }, `Sell ${shown}`);
     row.className = ["pl-row", !sold && "off"].filter(Boolean).join(" ");
     row.replaceChildren(h("div", { class: "pl-row-main" }, name), h("div", { class: "pl-row-side" }, sell, price.wrap), msgs(`opt:${g}:${id}`));

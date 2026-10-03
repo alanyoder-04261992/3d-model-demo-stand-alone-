@@ -355,22 +355,37 @@ printable order sheet: business header, order number and date, customer,
 building with every option and price line, total, down payment, balance,
 delivery address, date and notes, and signature lines.
 
-**Price list** (`#/price-list`) — four tabs. Everyone can look; only owners
-see inputs.
-* *Buildings* — styles by group; each shows "Sold" or "Not sold", its name
-  as customers see it, and a table of sizes and prices. Add a size (width ×
-  length, price), remove a size, rename the style, add a style (from the
-  library or built like one of them). "Change prices" raises or lowers
-  every price in a style, a group or everything by a percent or dollars,
-  rounded to $5, with a preview first.
-* *Doors & windows* — each door, window, light and fixture: price, sold or
-  not (standard ones cannot be switched off but can be $0).
+**Price list** (`#/price-list`, `#/price-list/<tab>`) — tabs Buildings,
+Doors & windows, Options, Colors and (owner, manager) History. Everyone can
+look: dealers and managers see a clean price sheet with a search box ("12x24",
+"cabin"). Only owners see inputs, and they work on a draft that is checked
+as they type with the server's own rules (`model/company.js`), so each
+problem shows in plain words next to the box it is about, before saving.
+* *Buildings* — styles by group in cards that fold; each style shows its
+  name, a Sold switch, its size count and "from" price, and opens to the
+  name customers see, its sizes and prices (width then length) and "Add a
+  size" (width 4–16, length 4–60, whole feet). Switching a style off keeps
+  its sizes until saving; removing its last size asks to stop selling it.
+  "Change prices" raises or lowers every price in a style, a group or
+  everything by a percent or dollars, rounded to the nearest $1, $5, $10
+  or $25, with a preview; it changes the draft only. "Add a building style"
+  adds one of the library's styles (example sizes, prices left empty to
+  type) or the business's own style built like one of them (code like
+  "LB1", never shown). "The 3D designer opens on" picks the first building.
+* *Doors & windows* — each door, window, light and fixture: name customers
+  see, price, "Sell this". One that comes with a sold style or option says
+  so and stays sold ($0 is fine).
 * *Options* — dormers, ramps, electrical packages, shutters, door window,
-  exterior light, per-square-foot upgrades, and the business's own extras.
-* *Colors* — which siding, trim and roof colors customers can pick.
-A bar at the bottom counts unsaved changes: "6 changes — Save for all
-lots" / "Undo". After saving: "Saved. All 3 lots show the new prices now."
-*History* lists every save in words, with who and when, and "Put this back".
+  exterior light and per-square-foot upgrades (sell, price, rename), and the
+  business's own options (name, how it is priced, price).
+* *Colors* — siding, trim and roof swatches to switch on and off, colors of
+  the business's own, and the colors the 3D designer opens on.
+A bar at the bottom counts unsaved changes: "6 changes", "See them", "Undo
+changes", "Save for all lots", and what still needs fixing ("2 prices
+missing", "Show me"). Leaving the price list with changes asks first. After
+saving: "Saved. All 3 lots show the new prices now." with the change list.
+If someone else saved first, the owner is told and reloads. *History* lists
+every save in words, with who and when, and (owner) "Put this back".
 
 **Lots** (`#/lots`) — a card per lot: name, address, phone, its counts, its
 designer link (open, copy), "Put the designer on your website" (the code to

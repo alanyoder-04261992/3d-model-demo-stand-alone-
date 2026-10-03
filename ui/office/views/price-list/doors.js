@@ -81,7 +81,7 @@ function itemRow(id) {
       },
     });
     let control;
-    if (lock) {
+    if (lock && isSold) {
       const { words, all } = lockWords(lock);
       name.append(h("p", { class: "pl-lock-words", title: all ? `Comes with: ${all}` : null }, words));
     }
@@ -99,6 +99,7 @@ function itemRow(id) {
         edited();
         draw();
         if (on && priceOf(d.items[id]) == null) row.querySelector(`[data-field="item:${id}"]`)?.focus();
+        else row.querySelector(".pl-sell input")?.focus();
       }, `Sell the ${ownName(v) || libName}`);
     }
     row.className = ["pl-row", !isSold && !lock && "off"].filter(Boolean).join(" ");

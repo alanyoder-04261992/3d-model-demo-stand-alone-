@@ -428,14 +428,14 @@ export function explain(problem, draft, M) {
     [/^offer\.(\w+)\.sizes\[(.+?)\] has no price/, (m) => ({ words: `${z(m[2])} needs a price.`, tab: "buildings", where: `style:${m[1]}`, field: `size:${m[1]}:${raw(m[2])}`, style: m[1], missing: true })],
     [/^offer\.(\w+)\.sizes\[(.+?)\]: the price must be more than 0/, (m) => ({ words: `${z(m[2])} needs a price above $0. To stop selling a size, remove it.`, tab: "buildings", where: `style:${m[1]}`, field: `size:${m[1]}:${raw(m[2])}`, style: m[1], missing: true })],
     [/^offer\.(\w+)\.sizes\[(.+?)\]: the price must be/, (m) => ({ words: `${z(m[2])}: type the price in dollars.`, tab: "buildings", where: `style:${m[1]}`, field: `size:${m[1]}:${raw(m[2])}`, style: m[1], missing: true })],
-    [/^offer\.(\w+) is called "(.+?)", the same name as offer\.(\w+)/, (m) => ({ words: `The ${m[2]} is already a building you sell. Give each style its own name.`, tab: "buildings", where: `style:${m[1]}`, field: `name:${m[1]}`, style: m[1] })],
+    [/^offer\.(\w+) is called "(.+?)", the same name as offer\.(\w+)/, (m) => ({ words: `You already sell a building called ${sName(m[3])}. Give each style its own name.`, tab: "buildings", where: `style:${m[1]}`, field: `name:${m[1]}`, style: m[1] })],
 
-    [/^items\.(\w+) needs a price: the .+? \([A-Za-z0-9_-]+\) comes as standard on the (.+?)\. 0 is fine/, (m) => ({ words: `It comes with the ${withoutCodes(m[2])}, so it needs a price. $0 is fine.`, tab: "doors", where: `item:${m[1]}`, field: `item:${m[1]}` })],
+    [/^items\.(\w+) needs a price: the .+? \([A-Za-z0-9_-]+\) comes as standard on the (.+?)\. 0 is fine/, (m) => ({ words: `It comes with the ${withoutCodes(m[2])}, so it must be sold. Check Sell this ($0 is fine).`, tab: "doors", where: `item:${m[1]}`, field: `item:${m[1]}` })],
     [/^items\.(\w+) has no price/, (m) => ({ words: `The ${iName(m[1])} needs a price. $0 is fine.`, tab: "doors", where: `item:${m[1]}`, field: `item:${m[1]}` })],
     [/^items\.(\w+): the price must be/, (m) => ({ words: `The ${iName(m[1])}: type the price in dollars, $0 or more.`, tab: "doors", where: `item:${m[1]}`, field: `item:${m[1]}` })],
     [/^items\.(\w+)\.name must be text/, (m) => ({ words: "Give it a name customers will see.", tab: "doors", where: `item:${m[1]}`, field: `item:${m[1]}` })],
-    [/^An electrical package places an? (.+?), so items\.(\w+) needs a price/, (m) => ({ words: `Your electrical packages put in the ${iName(m[2])}, so sell it here. $0 is fine.`, tab: "doors", where: `item:${m[2]}`, field: `item:${m[2]}` })],
-    [/^options\.misc\.ext \(the exterior light\)/, () => ({ words: `The exterior light option puts up the ${iName("light")}, so sell it here. $0 is fine.`, tab: "doors", where: "item:light", field: "item:light" })],
+    [/^An electrical package places an? (.+?), so items\.(\w+) needs a price/, (m) => ({ words: `Your electrical packages put in the ${iName(m[2])}, so it must be sold. Check Sell this ($0 is fine).`, tab: "doors", where: `item:${m[2]}`, field: `item:${m[2]}` })],
+    [/^options\.misc\.ext \(the exterior light\)/, () => ({ words: `The exterior light option puts up the ${iName("light")}, so it must be sold. Check Sell this ($0 is fine).`, tab: "doors", where: "item:light", field: "item:light" })],
 
     [/^(.+?) (?:is|are) offered, so options\.dormers needs at least one dormer/, (m) => ({ words: `You sell the ${withoutCodes(m[1])}, so sell at least one dormer size.`, tab: "options", where: "opts:dormers" })],
     [/^options\.extras\[(\d+)\]\.key .* is used twice/, (m) => ({ words: "Two of your options have the same name. Remove one.", tab: "options", where: `extra:${m[1]}`, field: `extra:${m[1]}:name` })],

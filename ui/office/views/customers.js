@@ -10,7 +10,7 @@
    browser; nothing here calls the server per customer, and only the first
    rows are drawn until someone asks for more, so 2,000 customers stay fast. */
 
-import { h, clear, icon, button, field, form, dialog, chips, toast, emptyState, pageHead, linkButton } from "../dom.js";
+import { h, clear, icon, button, field, form, dialog, chips, toast, emptyState, pageHead } from "../dom.js";
 import { post } from "../api.js";
 import { STAGES, STAGE_WORDS, SOURCES, money, ago, when, plural, todayKey, addDays, phone as phoneWords } from "../words.js";
 import {
