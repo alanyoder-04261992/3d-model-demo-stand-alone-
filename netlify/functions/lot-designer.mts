@@ -11,7 +11,7 @@ export default async (request: Request, context: Context) => {
     const data = await officeFor(context).publicLot(context.params.slug);
     return lotDesignerPage({ html, hashes, origins: data.lot.embedOrigins || [], head: request.method === "HEAD" });
   } catch (error: any) {
-    return closedPage(Number.isInteger(error?.status) ? error.status : 503);
+    return closedPage(Number.isInteger(error?.status) ? error.status : 503, error?.call);
   }
 };
 
