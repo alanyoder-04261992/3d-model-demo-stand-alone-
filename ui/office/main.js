@@ -87,6 +87,13 @@ function applyBrand(business) {
   document.title = business ? `${business.name} · Dealer Center` : "Dealer Center";
 }
 
+/* The business's name over "Dealer Center" (just "Dealer Center" before
+   the business has a name, during first setup). */
+function brandWords(business) {
+  const name = business?.short || business?.name;
+  return h("span", { class: "brand-words" }, h("strong", {}, name || "Dealer Center"), name ? h("span", {}, "Dealer Center") : null);
+}
+
 function badge(business) {
   if (business?.logo) return h("img", { class: "brand-logo", src: business.logo, alt: "" });
   return h("span", { class: "brand-initials", "aria-hidden": "true" }, business?.initials || initials(business?.name || "DC"));
@@ -134,7 +141,7 @@ function frameUp() {
     h("a", { href: "#main", class: "skip" }, "Skip to the page"),
     h("header", { class: "topbar" },
       h("a", { href: "#/", class: "brand" }, badge(business),
-        h("span", { class: "brand-words" }, h("strong", {}, business?.short || business?.name || "Dealer Center"), h("span", {}, "Dealer Center"))),
+        brandWords(business)),
       h("div", { class: "topbar-tools" },
         lotPicker,
         h("a", { href: "#/customers?new=1", class: "btn btn-accent btn-small new-customer" }, icon("plus"), h("span", {}, "Customer")),
@@ -231,7 +238,7 @@ window.addEventListener("dealer:brand", () => {
   const brand = root.querySelector(".topbar .brand");
   if (brand) {
     brand.replaceChildren(badge(business),
-      h("span", { class: "brand-words" }, h("strong", {}, business?.short || business?.name || "Dealer Center"), h("span", {}, "Dealer Center")));
+      brandWords(business));
   }
   if (!main) return;
   const old = [...main.children].find((el) => el.matches(".banner.warn, .banner.demo"));

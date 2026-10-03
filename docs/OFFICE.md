@@ -222,7 +222,7 @@ Public routes (no sign-in):
 | Route | Does |
 |---|---|
 | `GET /api/lots/:slug` | `{company, lot, version}` for the lot's 3D designer; 404 when the lot is closed or the business is not open yet |
-| `GET /d/:slug/` | the lot's 3D designer page; when closed, a short "This designer link isn't open right now" page that says who to call — the lot's phone when the owner closed the whole designer, the business's phone when only that lot is closed (`pages.js` `closedPage`) |
+| `GET /d/:slug/` | the lot's 3D designer page; when closed, a short "Our 3D designer isn't open right now" page that says who to call — the lot's phone when the owner closed the whole designer, the business's phone when only that lot is closed (`pages.js` `closedPage`) |
 | `POST /api/lots/:slug/quote-requests` | `{design, contact, idempotencyKey}` → `{id, number, total, price, receivedAt, repriced}` (201; the same send again → the same receipt, 200) |
 
 A website quote request is matched to an existing customer of that lot by
@@ -423,7 +423,7 @@ customers stay). The last owner can't be removed or made a manager or
 dealer. Managers see the list without the buttons; dealers don't see it.
 
 **Settings** (`#/settings`, owner) — *Your business* (name, phone, email,
-website, tagline); *Logo* (upload; shrunk in the browser to fit 360×360,
+website); *Logo* (upload; shrunk in the browser to fit 360×360,
 PNG or WebP, at most 150 KB; "Remove logo"); *Colors* (header and button
 colors with a live preview; a warning when white words would be hard to
 read); *3D designer* ("Open to customers" or "Closed" — closed links show

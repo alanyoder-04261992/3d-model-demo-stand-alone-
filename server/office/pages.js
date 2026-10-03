@@ -40,10 +40,10 @@ export function closedPage(status, call = null) {
   const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
   const dial = call?.phone ? String(call.phone).replace(/[^\d+]/g, "") : "";
   const words = status === 404
-    ? ["This designer link isn't open right now.", dial
+    ? ["Our 3D designer isn't open right now.", dial
       ? `Please call ${esc(call.name || "us")} at <a href="tel:${dial}">${esc(call.phone)}</a>, or check back soon.`
       : "Please call the lot, or check back soon."]
-    : ["The designer couldn't load just now.", "Please try again in a minute."];
+    : ["Our 3D designer couldn't load just now.", "Please try again in a minute."];
   const page = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${words[0]}</title><link rel="stylesheet" href="/ui/office/closed.css"></head><body><main><h1>${words[0]}</h1><p>${words[1]}</p></main></body></html>`;
   return new Response(page, { status: status === 404 ? 404 : 503, headers: {
     "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store",

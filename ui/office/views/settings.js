@@ -1,7 +1,7 @@
 /* SETTINGS (#/settings, the owner): the business's details and how its 3D
    designer looks and works, for every lot at once.
 
-     Your business   name, phone, email, website, tagline
+     Your business   name, phone, email, website
      Logo            a picture, shrunk in the browser to fit 360×360
      Colors          the header color and the color of buttons
      3D designer     open to customers or closed; how prices show; a
@@ -175,8 +175,10 @@ function businessCard() {
       box("name", "Business name", { required: true, maxLength: 80, autocomplete: "organization" }),
       box("phone", "Phone", { type: "tel", maxLength: 40, autocomplete: "tel", hint: "A lot's own phone number shows on that lot's designer instead." }),
       box("email", "Email", { type: "email", maxLength: 200, autocomplete: "email" }),
-      box("website", "Website", { maxLength: 300, inputmode: "url", placeholder: "yourbusiness.com", autocomplete: "url" }),
-      box("tagline", "Tagline", { maxLength: 80, wide: true, placeholder: "Portable storage buildings, delivered and set up" })));
+      box("website", "Website", { maxLength: 300, inputmode: "url", placeholder: "yourbusiness.com", autocomplete: "url" })));
+  /* brand.tagline is kept as it is: the 3D designer's header line is fixed
+     text (index.html), so a box for it here would change nothing a
+     customer sees. */
 }
 
 /* ---- Logo ---------------------------------------------------------------------------------- */
