@@ -330,3 +330,255 @@ body.pl-bar-on .toasts { bottom: 96px; }
   .pl-switch { gap: 7px; }
   .pl-size-row { grid-template-columns: 62px minmax(0, 1fr) 44px; }
 }
+
+/* ---- lots ---------------------------------------------------------------------------------------
+   views/lots.js (#/lots and #/lots/<link name>). Every class starts with "lots-". */
+
+.lots-list { display: grid; gap: 20px; }
+.lots-card { padding: 0; overflow: hidden; }
+.lots-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap;
+  padding: 16px 20px; border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, #FBFCFD, #F5F8FA);
+}
+.lots-title { display: flex; align-items: center; gap: 12px; min-width: 0; flex-wrap: wrap; }
+.lots-name { font: 500 24px/1.15 var(--head); letter-spacing: .03em; color: var(--brand-header); min-width: 0; overflow-wrap: anywhere; }
+.lots-card.big .lots-name { font-size: clamp(28px, 3.2vw, 34px); }
+.lots-name a { color: inherit; text-decoration: none; }
+.lots-name a:hover { text-decoration: underline; text-decoration-thickness: 2px; }
+.lots-state.open { color: var(--good); background: var(--good-bg); }
+.lots-state.shut { color: var(--stage-lost); background: var(--stage-lost-bg); }
+.lots-tools .btn-quiet { color: var(--muted); }
+.lots-tools .btn-quiet:hover { color: var(--bad); background: var(--bad-bg); }
+.lots-closed-note {
+  display: flex; align-items: flex-start; gap: 10px; margin: 0; padding: 11px 20px; font-size: 14.5px;
+  background: var(--warn-bg); color: var(--warn); border-bottom: 1px solid #F1D29A;
+}
+.lots-closed-note .icon { margin-top: 1px; }
+.lots-card.closed .lots-head { background: #F4F5F7; }
+.lots-card.closed .lots-name { color: var(--muted); }
+
+.lots-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+.lots-col { padding: 18px 20px 20px; display: grid; gap: 18px; align-content: start; min-width: 0; }
+.lots-col + .lots-col { border-left: 1px solid var(--line); background: #FCFDFE; }
+.lots-sub {
+  display: flex; align-items: center; gap: 8px; margin: 0 0 8px;
+  font: 500 13.5px/1.2 var(--head); letter-spacing: .12em; text-transform: uppercase; color: var(--brand-header);
+}
+.lots-sub .icon { width: 17px; height: 17px; color: var(--kraft); }
+.lots-sub.small-sub { margin-top: 6px; color: var(--muted); }
+
+.lots-facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.lots-facts li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; line-height: 1.4; }
+.lots-facts .icon { color: var(--faint); margin-top: 1px; }
+.lots-facts a { overflow-wrap: anywhere; }
+.lots-hours { white-space: pre-line; }
+
+.lots-numbers { display: grid; gap: 8px; }
+.lots-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.lots-tile {
+  display: grid; gap: 2px; align-content: start; padding: 11px 12px; border-radius: 9px;
+  background: var(--bg); border: 1px solid var(--line); min-width: 0;
+}
+.lots-tile strong { font: 500 25px/1.05 var(--head); color: var(--brand-header); font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lots-tile.money strong { color: var(--good); }
+.lots-tile span { font-size: 12.5px; line-height: 1.3; color: var(--muted); }
+.lots-see { display: inline-flex; align-items: center; gap: 6px; justify-self: start; min-height: 40px; font-weight: 600; font-size: 14.5px; text-decoration: none; }
+.lots-see .icon { width: 16px; height: 16px; }
+.lots-see:hover { text-decoration: underline; }
+
+.lots-faces { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.lots-faces li { display: flex; align-items: center; gap: 9px; padding: 5px 12px 5px 5px; border: 1px solid var(--line); border-radius: 30px; background: #fff; }
+.lots-faces small { display: block; color: var(--muted); font-size: 12px; line-height: 1.1; }
+.lots-faces li > span:last-child { line-height: 1.2; font-weight: 500; font-size: 14.5px; }
+.lots-face {
+  width: 32px; height: 32px; border-radius: 50%; flex: none; display: grid; place-items: center;
+  background: var(--brand-header); color: #fff; font: 600 12px/1 var(--body); letter-spacing: .03em;
+}
+.lots-everyone { color: var(--muted); font-size: 13.5px; margin-top: 8px; }
+
+.lots-link { display: grid; gap: 10px; }
+.lots-link .lots-sub { margin: 0; }
+.lots-url {
+  font: 500 14.5px/1.4 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace; color: var(--brand-header);
+  background: var(--cream); border: 1px solid #E6DCC7; border-radius: 8px; padding: 9px 12px;
+  overflow-wrap: anywhere; user-select: all;
+}
+.lots-link.off .lots-url { color: var(--faint); background: var(--bg); border-color: var(--line); text-decoration: line-through; }
+.lots-link-note { color: var(--muted); font-size: 14px; }
+
+.lots-web { border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+.lots-web > summary {
+  display: flex; align-items: center; gap: 10px; min-height: 52px; padding: 8px 14px; cursor: pointer; list-style: none;
+  font-weight: 600; color: var(--brand-header); border-radius: 10px;
+}
+.lots-web > summary::-webkit-details-marker { display: none; }
+.lots-web > summary:hover { background: #F7F9FB; }
+.lots-web > summary > .icon:first-child { color: var(--kraft); }
+.lots-web-count { margin-left: auto; color: var(--muted); font-size: 13.5px; font-weight: 500; white-space: nowrap; }
+.lots-chev { color: var(--muted); transition: transform .15s; }
+.lots-web[open] > summary { border-bottom: 1px solid var(--line); border-radius: 10px 10px 0 0; }
+.lots-web[open] .lots-chev { transform: rotate(180deg); }
+.lots-web-body { padding: 14px; display: grid; gap: 12px; }
+.lots-web.open { border: 0; background: none; display: grid; gap: 12px; }
+.lots-web.open > .lots-sub { margin: 0; }
+.lots-web-intro { font-size: 15px; }
+.lots-code {
+  margin: 0; padding: 12px 14px; border-radius: 8px; background: #0F2234; color: #DCE8F2;
+  font: 13px/1.55 ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  white-space: pre-wrap; overflow-wrap: anywhere; user-select: all;
+}
+.lots-sites { list-style: none; margin: 0; padding: 0; display: grid; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+.lots-sites li { display: flex; align-items: center; gap: 10px; padding: 6px 6px 6px 12px; min-height: 48px; border-top: 1px solid var(--line); }
+.lots-sites li:first-child { border-top: 0; }
+.lots-sites li > .icon { color: var(--faint); width: 18px; height: 18px; }
+.lots-site-name { flex: 1; min-width: 0; font-weight: 500; overflow-wrap: anywhere; }
+.lots-sites .btn-quiet { color: var(--muted); }
+.lots-sites .btn-quiet:hover { color: var(--bad); background: var(--bad-bg); }
+li.lots-sites-none { color: var(--muted); font-size: 14px; padding: 10px 12px; }
+.lots-site-add .form { gap: 8px; }
+.lots-site-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: start; }
+.lots-site-row > .btn { margin-top: 27px; }
+.lots-suggest {
+  display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; padding: 10px 12px; margin-bottom: 10px;
+  border-radius: 8px; background: #E6F0FA; color: var(--brand-primary); border: 1px solid #C5DAEF; font-size: 14.5px;
+}
+.lots-suggest > span { flex: 1 1 200px; }
+
+.lots-link-preview { display: flex; align-items: flex-start; gap: 9px; font-size: 14px; color: var(--muted); background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+.lots-link-preview .icon { width: 17px; height: 17px; margin-top: 1px; flex: none; }
+.lots-link-preview strong { color: var(--brand-header); overflow-wrap: anywhere; font-weight: 600; }
+.lots-addr { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: 14px 16px; }
+
+@media (max-width: 1000px) {
+  .lots-body { grid-template-columns: minmax(0, 1fr); }
+  .lots-col + .lots-col { border-left: 0; border-top: 1px solid var(--line); }
+}
+@media (max-width: 760px) {
+  .lots-head { padding: 14px 16px; }
+  .lots-col { padding: 16px; }
+  .lots-closed-note { padding: 10px 16px; }
+  .lots-tools { width: 100%; }
+  .lots-tools .btn { flex: 1; min-height: 44px; }
+  .lots-tile { padding: 10px; }
+  .lots-tile strong { font-size: 22px; }
+  .lots-addr { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .lots-addr > .field:first-child { grid-column: 1 / -1; }
+  .lots-link .actions .btn, .lots-web-body > .actions .btn, .lots-web.open > .actions .btn { flex: 1; min-height: 44px; }
+  .lots-site-row { grid-template-columns: minmax(0, 1fr); }
+  .lots-site-row > .btn { margin-top: 0; }
+  .lots-web-count { display: none; }
+}
+.lots-tile.zero strong { color: var(--faint); }
+
+/* ---- team ---------------------------------------------------------------------------------------
+   views/team.js (#/team). Every class starts with "team-". */
+
+.team-card .card-head { padding: 16px 20px 0; margin-bottom: 6px; }
+.team-count { font-size: 13px; font-weight: 600; color: var(--muted); background: var(--bg); border-radius: 20px; padding: 3px 10px; }
+.team-card-note { color: var(--muted); font-size: 14px; padding: 0 20px 6px; }
+.team-group { font: 600 12.5px/1.2 var(--body); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 16px 20px 6px; border-top: 1px solid var(--line); }
+.team-rows { display: grid; }
+.team-row {
+  display: grid; align-items: center; gap: 4px 16px; padding: 13px 20px; border-top: 1px solid var(--line);
+  grid-template-columns: 42px minmax(0, 1.5fr) 104px minmax(0, 1.3fr) minmax(0, 1.2fr) auto;
+  grid-template-areas: "av who role lots seen act";
+}
+.team-rows > .team-row:first-child { border-top: 0; }
+.team-avatar {
+  grid-area: av; width: 42px; height: 42px; border-radius: 50%; display: grid; place-items: center;
+  background: var(--brand-header); color: #fff; font: 600 14px/1 var(--body); letter-spacing: .03em;
+}
+.team-avatar.ghost { background: #fff; color: var(--brand-header); border: 2px dashed var(--line-strong); }
+.team-who { grid-area: who; display: grid; min-width: 0; line-height: 1.3; }
+.team-who strong { display: flex; align-items: center; gap: 8px; font-size: 16px; min-width: 0; overflow-wrap: anywhere; }
+.team-who a { color: var(--muted); font-size: 14px; text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.team-who a:hover { text-decoration: underline; color: var(--brand-primary); }
+.team-you { font-size: 11.5px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #6B4A22; background: #F3E6D3; border-radius: 5px; padding: 1px 7px; }
+.team-meta { display: contents; }
+.team-role-cell { grid-area: role; }
+.team-lots { grid-area: lots; }
+.team-seen { grid-area: seen; }
+.team-lots, .team-seen { display: flex; align-items: flex-start; gap: 7px; font-size: 14px; color: var(--ink); min-width: 0; line-height: 1.35; }
+.team-seen { color: var(--muted); }
+.team-lots .icon, .team-seen .icon { width: 16px; height: 16px; margin-top: 1px; color: var(--faint); }
+.team-act { grid-area: act; display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.team-act .btn-quiet { color: var(--muted); }
+.team-act .btn-quiet:hover { color: var(--bad); background: var(--bad-bg); }
+.team-role.owner { color: #6B4A22; background: #F3E6D3; }
+.team-role.manager { color: var(--stage-contacted); background: var(--stage-contacted-bg); }
+.team-role.dealer { color: var(--stage-new); background: var(--stage-new-bg); }
+.team-role.gone { color: var(--stage-lost); background: var(--stage-lost-bg); }
+.team-row.removed .team-avatar { background: #B7C0C9; }
+.team-row.removed .team-who strong, .team-row.removed .team-lots { color: var(--muted); }
+.team-row.invite {
+  grid-template-columns: 42px minmax(0, 1.6fr) 104px minmax(0, 1.2fr) auto;
+  grid-template-areas: "av who role lots act" "av seen role lots act";
+}
+.team-row.invite .team-seen { font-size: 13.5px; }
+
+.team-hello { display: flex; gap: 18px; align-items: flex-start; background: linear-gradient(135deg, #fff, var(--cream)); }
+.team-hello-icon { width: 44px; height: 44px; color: var(--kraft); stroke-width: 1.4; }
+.team-hello h2 { font: 500 22px/1.2 var(--head); color: var(--brand-header); }
+.team-hello p { color: var(--muted); margin: 4px 0 12px; max-width: 60ch; }
+
+/* the pop-ups */
+.team-jobs, .team-lots-pick { border: 0; margin: 0; padding: 0; min-width: 0; }
+.team-jobs legend, .team-lots-pick legend { font-weight: 600; font-size: 14px; padding: 0; margin-bottom: 8px; }
+.team-job-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.team-job {
+  position: relative; display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; min-height: 64px;
+  border: 1px solid var(--line-strong); border-radius: 10px; background: #fff; cursor: pointer;
+}
+.team-job:hover { border-color: var(--brand-header); }
+.team-job input { width: 18px; height: 18px; margin: 2px 0 0; accent-color: var(--brand-header); flex: none; }
+.team-job:has(input:checked) { border-color: var(--brand-header); background: var(--cream); box-shadow: inset 0 0 0 1px var(--brand-header); }
+.team-job:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.team-job-words { display: grid; gap: 2px; line-height: 1.3; }
+.team-job-words strong { font-size: 16px; color: var(--brand-header); }
+.team-job-words small { color: var(--muted); font-size: 13px; }
+.team-lot-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.team-lot {
+  display: inline-flex; align-items: center; gap: 9px; min-height: 44px; padding: 6px 14px 6px 10px;
+  border: 1px solid var(--line-strong); border-radius: 24px; background: #fff; cursor: pointer; font-weight: 500;
+}
+.team-lot input { width: 18px; height: 18px; margin: 0; accent-color: var(--brand-header); }
+.team-lot:has(input:checked) { border-color: var(--brand-header); background: var(--cream); }
+.team-lot small { color: var(--muted); font-weight: 400; }
+.team-all-lots { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14px; background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+.team-all-lots .icon { width: 17px; height: 17px; }
+.team-dialog { display: grid; gap: 14px; }
+.team-dialog-email { display: flex; align-items: center; gap: 8px; color: var(--muted); font-size: 14.5px; }
+.team-dialog-email .icon { width: 17px; height: 17px; }
+.team-danger {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px 16px; flex-wrap: wrap;
+  margin-top: 6px; padding-top: 14px; border-top: 1px solid var(--line);
+}
+.team-danger strong { color: var(--bad); }
+.team-danger > .form-status { flex-basis: 100%; }
+.team-added { display: flex; align-items: flex-start; gap: 12px; }
+.team-added-mark { width: 32px; height: 32px; border-radius: 50%; background: var(--good); color: #fff; display: grid; place-items: center; flex: none; }
+.team-added p { font-size: 16px; margin-top: 4px; }
+textarea.team-message { background: var(--cream); border-color: #E6DCC7; font-size: 15.5px; min-height: 104px; }
+.team-local-note { display: flex; gap: 8px; align-items: flex-start; font-size: 14px; color: #2B3A8C; background: #EEF1FB; border: 1px solid #C9D1F3; border-radius: 8px; padding: 10px 12px; }
+.team-local-note .icon { width: 17px; height: 17px; margin-top: 1px; flex: none; }
+
+@media (max-width: 1100px) {
+  .team-row, .team-row.invite {
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+    grid-template-areas: "av who act" "av meta meta";
+  }
+  .team-meta { grid-area: meta; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 16px; margin-top: 4px; }
+}
+@media (max-width: 760px) {
+  .team-card .card-head { padding: 14px 16px 0; }
+  .team-card-note, .team-group { padding-left: 16px; padding-right: 16px; }
+  .team-row, .team-row.invite { padding: 12px 16px; gap: 4px 12px; grid-template-areas: "av who act" "meta meta meta"; }
+  .team-meta { gap: 6px 14px; }
+  .team-row.invite { grid-template-areas: "av who who" "meta meta meta" "act act act"; }
+  .team-row.invite .team-act { justify-content: stretch; margin-top: 6px; }
+  .team-row.invite .team-act .btn { flex: 1; min-height: 44px; }
+  .team-act .btn-small { min-height: 44px; }
+  .team-job-list { grid-template-columns: minmax(0, 1fr); }
+  .team-hello { flex-direction: column; gap: 10px; }
+}
