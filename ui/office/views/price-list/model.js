@@ -284,6 +284,16 @@ function slug(s) {
    from its name, once (afterwards the key never changes). */
 export function prepare(draft) {
   const s = structuredClone(draft);
+  /* sizes in order, width then length: the 3D designer shows its size
+     buttons in this order, so a size added later still lands in its place */
+  for (const k of keysOf(s.offer)) {
+    const e = s.offer[k];
+    if (!isObj(e) || !isObj(e.sizes)) continue;
+    const sorted = {};
+    for (const z of Object.keys(e.sizes).filter((z) => z.startsWith("_"))) sorted[z] = e.sizes[z];
+    for (const z of sortSizes(keysOf(e.sizes))) sorted[z] = e.sizes[z];
+    e.sizes = sorted;
+  }
   const extras = s.options?.extras;
   if (Array.isArray(extras)) {
     const used = new Set(extras.map((x) => x?.key).filter(Boolean));
