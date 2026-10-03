@@ -46,7 +46,8 @@
    standard doors and windows...) with the new name and "base": "LB", so it is
    drawn, framed, fitted and priced exactly like the Lofted Barn. Only its name
    and its prices are its own. Anything that looks a style up by its key (a
-   construction rule's "styles" test) uses the base: baseStyle(t, key).
+   construction rule's "styles" test: buildingFacts in model/construction.js)
+   uses the base, (t.base || key).
 
    OPTION NAMES. options.dormers / ramps / elec / misc / rates entries are a
    price, or {"price": n, "name": "Basic electric"} -- the name is then shown
@@ -91,11 +92,6 @@ function ownName(v) { return isObj(v) && typeof v.name === "string" && v.name.tr
    a button and a quote line). */
 export const NAME_MAX = 60;
 export const STYLE_KEY_RE = /^[A-Za-z0-9]{1,8}$/;
-
-/* The manufacturer style a catalogue style is drawn as: its base when it is
-   a company's own style built like another, otherwise its own key. Use it
-   wherever a style KEY is used to look something up. */
-export function baseStyle(t, key) { return (t && t.base) || key; }
 
 /* Names compared the way a customer reads them: case and spacing ignored. */
 function sameNameKey(s) { return String(s).trim().replace(/\s+/g, " ").toLowerCase(); }
