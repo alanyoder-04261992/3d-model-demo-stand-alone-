@@ -5,7 +5,8 @@
    its stylesheets, including ui/office/closed.css for a closed lot's link),
    the fonts, the builder's library and the example companies. Never shipped:
    lesson pages, skills, reference photos, tests, tools, docs, server code or
-   source maps. Only Alan's learning preview adds the lesson pages.
+   source maps. Only Alan's learning preview adds the lesson pages and the
+   Dealer Center's "try it" demo (ui/office/demo.js).
 
    It also writes:
      <out>/_headers          the designer's rules (tools/build-headers.mjs)
@@ -80,15 +81,20 @@ if (learning) {
 }
 // The Dealer Center's screens: one minified file, no source map (the
 // local Dealer Center, tools/office-local.mjs, bundles the same entry on the fly).
+// __DEALER_DEMO__ says whether this build offers the "try it" demo: only
+// Alan's learning preview does. A client build leaves the demo out completely
+// (no demo file, and no "leave both boxes empty" sign-in).
 await build({ entryPoints: [resolve(root, "ui/office/main.js")], outfile: resolve(out, "ui/office/main.js"),
   bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, sourcemap: false,
-  legalComments: "none", logLevel: "warning" });
+  legalComments: "none", logLevel: "warning", define: { __DEALER_DEMO__: JSON.stringify(learning) } });
 // The "try it" demo (/dealer?demo): its own file, loaded only by the demo. It
 // carries a copy of the Dealer Center's server code and runs it in the page
 // on made-up data; it holds no secrets (those live only in Netlify's settings).
-await build({ entryPoints: [resolve(root, "ui/office/demo.js")], outfile: resolve(out, "ui/office/demo.js"),
-  bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, sourcemap: false,
-  legalComments: "none", logLevel: "warning" });
+if (learning) {
+  await build({ entryPoints: [resolve(root, "ui/office/demo.js")], outfile: resolve(out, "ui/office/demo.js"),
+    bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, sourcemap: false,
+    legalComments: "none", logLevel: "warning" });
+}
 const html = readFileSync(resolve(root, "index.html"), "utf8");
 let headers = buildHeaders({ companies: selected, indexHtml: html });
 // /dealer is rewritten to dealer.html (netlify.toml); Netlify matches these
