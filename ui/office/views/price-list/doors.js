@@ -28,7 +28,7 @@ export function doorsTab() {
   if (rest.length) groups.push(["More", rest, null]);
   if (!S.draft) return sheet(groups);
   return h("div", { class: "pl-tab stack" },
-    h("p", { class: "pl-intro" }, "Each price is what a customer pays to add one. Doors and windows that come with a building you sell are in its price, so they're always on here."),
+    h("p", { class: "pl-intro" }, "Each price is what a customer pays to add one. The ones that come with a building you sell are in the building's price, so they're always sold."),
     h("div", { class: "pl-cards" }, groups.filter((g) => g[1].length).map(([label, ids, sub]) => h("section", { class: "card pl-list-card" },
       h("h2", { class: "card-title" }, label),
       sub ? h("p", { class: "pl-card-sub" }, sub) : null,
@@ -46,7 +46,7 @@ export function lockWords(lock) {
   if (names.length) why.push(`Comes with the ${listWords(names)}.`);
   if (lock.elec) why.push("Your electrical packages put it in.");
   if (lock.ext) why.push("Your exterior light option puts it up.");
-  return { words: `${why.join(" ")} Customers pay this for each one they add. $0 is fine.`, all: names.join(", ") };
+  return { words: `${why.join(" ")} $0 is fine.`, all: names.join(", ") };
 }
 
 function itemRow(id) {

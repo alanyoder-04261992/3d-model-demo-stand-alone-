@@ -21,7 +21,8 @@
 .pl-card-link { margin: -4px 0 6px; }
 .pl-card-link .btn-link { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; }
 .pl-count { font-size: 13px; font-weight: 600; color: var(--muted); background: var(--bg); border-radius: 20px; padding: 3px 10px; white-space: nowrap; }
-.pl-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 18px; align-items: start; }
+.pl-cards { columns: 2 430px; column-gap: 18px; }
+.pl-cards > .card { break-inside: avoid; margin-bottom: 18px; }
 .pl-empty-line { color: var(--muted); font-size: 14.5px; padding: 6px 0 2px; }
 
 /* tabs: a red count on a tab with something to fix */
