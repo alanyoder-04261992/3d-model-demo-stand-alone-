@@ -50,8 +50,8 @@ function list(entries, app, ctx) {
 async function putBack(entry, app, ctx) {
   const unsaved = S.changes.length;
   const lots = app.openLots().length;
-  const ok = await confirmBox(`Put back the price list from ${dayWords(entry.savedAt)}?`,
-    `${lots === 1 ? "Your lot goes" : `All ${lots} lots go`} back to the prices saved ${when(entry.savedAt)} by ${entry.savedBy?.name || "someone"}. ` +
+  const ok = await confirmBox("Put this price list back?",
+    `${lots === 1 ? "Your lot goes" : `All ${lots} lots go`} back to the price list ${entry.savedBy?.name || "someone"} saved ${when(entry.savedAt)}. ` +
     `The price list in use now stays in this history, so you can put it back too.` +
     (unsaved ? ` Your ${plural(unsaved, "change")} not saved yet will be dropped.` : ""),
     { yes: "Put this back" });

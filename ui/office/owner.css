@@ -258,7 +258,7 @@
 .pl-changes { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 14.5px; }
 .pl-changes li { position: relative; padding: 3px 0 3px 16px; }
 .pl-changes li::before { content: ""; position: absolute; left: 2px; top: .8em; width: 6px; height: 6px; border-radius: 50%; background: var(--kraft); }
-.pl-more { margin-top: 2px; }
+.pl-more { margin-top: 2px; justify-self: start; }
 
 /* ---- Saved ---- */
 .pl-saved { background: var(--good-bg); border: 1px solid #BFDFC0; border-radius: var(--radius); padding: 14px 16px 14px 18px; margin-bottom: 18px; display: grid; gap: 10px; }

@@ -325,9 +325,7 @@ export function describe(before, after, M) {
   for (const k of newStyles) {
     if (!oldStyles.includes(k)) continue;
     const o = before.offer[k], n = after.offer[k];
-    if (nameKey(sName(before, k)) !== nameKey(sName(after, k)) || (o.name || "") !== (n.name || "")) {
-      if (sName(before, k) !== sName(after, k)) out.push(`The ${sName(before, k)} is now called the ${sName(after, k)}`);
-    }
+    if (sName(before, k) !== sName(after, k)) out.push(`The ${sName(before, k)} is now called the ${sName(after, k)}`);
     const name = sName(after, k);
     const os = o.sizes || {}, ns = n.sizes || {};
     for (const z of sortSizes(keysOf(ns))) {
@@ -388,10 +386,17 @@ export function describe(before, after, M) {
   }
   if (!same(od.colors, nd.colors)) out.push("Change the colors the 3D designer opens on");
 
-  if (!out.length && !same(stripCats(before), stripCats(after))) out.push("Tidy the price list");
+  if (!out.length && canon(stripCats(before)) !== canon(stripCats(after))) out.push("Tidy the price list");
   return [...new Set(out)];
 }
 const stripCats = (s) => ({ ...s, categories: null, defaults: { ...(s.defaults || {}), dormer: null } });
+/* JSON with every object's keys in order, so a list written in another
+   order (sizes sorted on save) is not a change */
+function canon(v) {
+  if (Array.isArray(v)) return `[${v.map(canon).join(",")}]`;
+  if (isObj(v)) return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canon(v[k])}`).join(",")}}`;
+  return JSON.stringify(v ?? null);
+}
 
 export function optionName(M, g, id, value) {
   const own = ownName(value);
