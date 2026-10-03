@@ -181,6 +181,12 @@
 .crm-move:hover, .crm-move:focus { border-color: var(--line-strong) !important; color: var(--ink); }
 
 /* ---- Add a customer ----------------------------------------------------------------------- */
+.crm-add-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.crm-add-grid .crm-follow-pick { grid-column: span 2; }
+@media (max-width: 760px) {
+  .crm-add-grid { grid-template-columns: minmax(0, 1fr); }
+  .crm-add-grid .crm-follow-pick { grid-column: auto; }
+}
 .crm-follow-pick { display: flex; gap: 10px 14px; align-items: flex-end; flex-wrap: wrap; }
 .crm-follow-pick .field { flex: 1 1 200px; }
 .crm-follow-pick .crm-quick { padding-bottom: 2px; }

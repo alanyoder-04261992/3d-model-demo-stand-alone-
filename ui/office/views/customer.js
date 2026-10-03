@@ -10,7 +10,7 @@
    Each change sends one small request; the answer is the whole customer,
    and the page redraws from it in place (no reload, the scroll stays). */
 
-import { h, clear, icon, button, linkButton, field, checkbox, form, dialog, confirmBox, toast } from "../dom.js";
+import { h, clear, icon, button, linkButton, field, checkbox, form, dialog, confirmBox, toast, emptyState } from "../dom.js";
 import { get, post, patch } from "../api.js";
 import {
   STAGES, STAGE_WORDS, PAYMENTS, PAYMENT_WORDS, ORDER_WORDS, NOTE_KINDS, money, phone as phoneWords, telHref, smsHref,
@@ -36,7 +36,17 @@ const ACTIVITY_PAGE = 25;
 export async function render(ctx) {
   const { app } = ctx;
   const [id] = ctx.params;
-  let c = (await get(`customers/${id}`)).customer;
+  let c;
+  try {
+    c = (await get(`customers/${id}`)).customer;
+  } catch (e) {
+    if (e.status !== 404) throw e;
+    ctx.setTitle("Not found");
+    return h("div", {}, h("a", { class: "back", href: "#/customers" }, icon("arrowLeft"), "Customers"),
+      h("div", { class: "card" }, emptyState("We couldn't find that customer",
+        "They may belong to a lot you don't work, or the link was cut short. Find them in Customers.",
+        linkButton("Go to Customers", "#/customers", { kind: "primary" }))));
+  }
   const view = { kind: "note", draft: "", activityShown: ACTIVITY_PAGE, open: new Set() };
   const root = h("div", { class: "crm-customer" });
 

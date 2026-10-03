@@ -264,8 +264,8 @@ export function addCustomer(ctx) {
 
   const box = dialog("Add a customer", form([
     lots.length > 1 ? lot.wrap : h("p", { class: "muted small" }, `For ${lots[0].name}`),
-    h("div", { class: "form-grid" }, name.wrap, source.wrap, tel.wrap, mail.wrap, street.wrap, city.wrap, st.wrap, zip.wrap, note.wrap),
-    h("div", { class: "crm-follow-pick" }, follow.wrap, quick),
+    h("div", { class: "form-grid crm-add-grid" }, name.wrap, tel.wrap, mail.wrap, street.wrap, city.wrap, st.wrap, zip.wrap,
+      source.wrap, h("div", { class: "crm-follow-pick" }, follow.wrap, quick), note.wrap),
     h("div", { class: "actions end" }, button("Cancel", () => box.close()),
       h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, "Save customer"))),
   ], async () => {
