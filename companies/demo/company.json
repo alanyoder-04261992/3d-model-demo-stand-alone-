@@ -16,7 +16,7 @@
     "phone": "",
     "email": "",
     "website": "",
-    "colors": {"header": "#0A2C49", "primary": "#0E3A5F", "accent": "#B23A2E", "cream": "#F4EFE4", "cyan": "#7FD3FF", "hdrSub": "#9FC0D8"},
+    "colors": {"header": "#16130E", "primary": "#2E2920", "accent": "#C9A227", "cream": "#F4EFE4", "cyan": "#E2BE4E", "hdrSub": "#BDB5A5"},
     "logo": "",
     "credit": {"text": "3D designer by Barnwright", "url": "", "show": true}
   },

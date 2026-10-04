@@ -22,7 +22,8 @@ import { tidyDefaults, sortSizes, styleName, keysOf, groupsOf } from "./price-li
 
 const LOGO_BOX = 360;
 const LOGO_MAX = 150 * 1024;
-const STANDARD_COLORS = { header: "#0A2C49", accent: "#B23A2E" };
+/* the standard black and gold, the same as the Dealer Center (server/office/price-list.js gives it to a new business) */
+const STANDARD_COLORS = { header: "#16130E", primary: "#2E2920", accent: "#C9A227" };
 const EMAIL_RE = /^[^\s@<>()",;]+@[^\s@<>()",;]+\.[^\s@<>()",;]+$/;
 const FORM_FIELDS = [
   ["phone", "Phone"], ["email", "Email"], ["zip", "ZIP"], ["address", "Street address"], ["note", "A note from them"],
@@ -291,13 +292,11 @@ function colorsCard() {
     const head = hex6(C.header || STANDARD_COLORS.header), accent = hex6(C.accent || STANDARD_COLORS.accent);
     bar.style.backgroundColor = head;
     sample.style.backgroundColor = accent;
+    sample.style.color = wordsOn(accent, head);
     clear(badge, badgeFor(B, "set-preview-badge"));
     const b = badge.firstChild;
-    if (b && !B.logo) b.style.backgroundColor = accent;
-    const notes = [];
-    if (contrast(head, "#ffffff") < 4.5) notes.push("White words are hard to read on this header color. Pick a darker one.");
-    if (contrast(accent, "#ffffff") < 3) notes.push("White words are hard to read on this button color. Pick a darker one.");
-    warn.textContent = notes.join(" ");
+    if (b && !B.logo) { b.style.backgroundColor = accent; b.style.color = wordsOn(accent, head); }
+    warn.textContent = contrast(head, "#ffffff") < 4.5 ? "White words are hard to read on this header color. Pick a darker one." : "";
     for (const r of rows) {
       const v = hex6(C[r.key] || STANDARD_COLORS[r.key]);
       if (r.input.value !== v) r.input.value = v;
@@ -305,13 +304,14 @@ function colorsCard() {
     }
   };
   paintColors();
-  return cardOf("star", "Colors", "Your customers see these on every lot's 3D designer. Pick colors that match your sign. White words go on both, so darker colors work best.",
+  return cardOf("star", "Colors", "Your customers see these on every lot's 3D designer. Pick colors that match your sign. The header needs a dark color. On a light button the words turn black so they stay easy to read.",
     h("div", { class: "set-preview" }, bar, h("div", { class: "set-preview-page" }, h("span", { class: "set-preview-line" }), h("span", { class: "set-preview-line short" }), sample)),
     h("div", { class: "set-colors" }, rows.map((r) => r.el)),
     warn,
-    button("Use the standard colors", () => {
+    button("Use the standard black and gold", () => {
       setColor("header", STANDARD_COLORS.header);
       setColor("accent", STANDARD_COLORS.accent);
+      page.draft.brand.colors.primary = STANDARD_COLORS.primary.toLowerCase();
       paintColors();
       edited();
     }, { kind: "link" }));
@@ -342,6 +342,16 @@ function luminance(x) {
 function contrast(a, b) {
   const x = luminance(a), y = luminance(b);
   return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+}
+/* the words on a button, picked the way the 3D designer picks them
+   (ui/app.js onColour): white when white reads on it, else the header
+   color darkened until it does */
+function wordsOn(fill, dark) {
+  const white = contrast("#ffffff", fill);
+  if (white >= 4.5) return "#ffffff";
+  let c = hex6(dark);
+  for (let i = 1; i <= 20 && contrast(c, fill) < 4.5; i++) c = hexOf(rgbOf(dark).map((v) => v * (1 - i / 20)));
+  return contrast(c, fill) > white ? c : "#ffffff";
 }
 /* a little lighter than the header, but always readable on white */
 function linkColor(header) {

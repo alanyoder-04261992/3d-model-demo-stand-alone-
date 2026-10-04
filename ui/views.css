@@ -1,5 +1,5 @@
 /* Customer view buttons keep the designer's existing Oswald and navy pills. */
-.vw-tabs{display:flex;gap:3px;padding:3px;border-radius:999px;background:rgba(14,58,95,.82);border:1px solid rgba(255,255,255,.28);box-shadow:0 2px 8px rgba(10,30,50,.25);max-width:100%}
+.vw-tabs{display:flex;gap:3px;padding:3px;border-radius:999px;background:rgba(var(--glass),.82);border:1px solid rgba(255,255,255,.28);box-shadow:0 2px 8px rgba(10,30,50,.25);max-width:100%}
 .vw-tab{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;background:transparent;color:var(--cream);border:0;border-radius:999px;padding:6px 10px;white-space:nowrap;line-height:1.2}
 .vw-tab:hover{background:rgba(255,255,255,.12)}
 .vw-tab.on{background:var(--cream);color:var(--navy-deep)}

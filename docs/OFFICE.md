@@ -407,7 +407,9 @@ and the page you are on, Oswald capitals for headings, IBM Plex Sans for
 writing, white cards on a warm light page. Gold words on white use a deeper
 gold so they read easily, and gold buttons carry black words. The business's
 logo and name show in the header; its own colors (Settings, Colors) go on its
-customers' 3D designer, never on the Dealer Center. It works on a
+customers' 3D designer, never on the Dealer Center. A new business's 3D
+designer starts black and gold too, and "Use the standard black and gold"
+in Settings, Colors puts it back. It works on a
 phone first: a dealer standing on the lot uses it one-handed. Buttons are at
 least 44 px tall; phone numbers and emails are tap-to-call, tap-to-text and
 tap-to-email links.
@@ -501,7 +503,8 @@ dealer. Managers see the list without the buttons; dealers don't see it.
 website); *Logo* (upload; shrunk in the browser to fit 360×360,
 PNG or WebP, at most 150 KB; "Remove logo"); *Colors* (header and button
 colors with a live preview; a warning when white words would be hard to
-read); *3D designer* ("Open to customers" or "Closed" — closed links show
+read on the header; on a light button the words turn black; "Use the
+standard black and gold"); *3D designer* ("Open to customers" or "Closed" — closed links show
 who to call; how prices show: the full price, a starting price ("from") or
 no price; a monthly rent-to-own price over one of the price list's terms;
 the line under the price; notes for building widths; the building it opens

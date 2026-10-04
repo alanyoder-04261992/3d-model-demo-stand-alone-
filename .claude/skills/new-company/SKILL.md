@@ -56,7 +56,9 @@ current setup; do not ask the company to repeat information already supplied.
 3. **Name**, short name for the price plate, **phone**, **e-mail**,
    **website**, tagline.
 4. **Colours**: header and accent (`#rrggbb`), and which siding, trim and
-   roof colours they offer.
+   roof colours they offer. With none given, the standard black and gold
+   (header `#16130E`, accent `#C9A227`). The header needs a dark colour; a
+   light button colour is fine, its words turn dark (docs/DIFFERENCES.md 23).
 5. **Logo**: an `https://` address of a picture, or none (the badge shows the
    initials).
 6. **Where quote requests go** and which boxes to ask (see step 4).

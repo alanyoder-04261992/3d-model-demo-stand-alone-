@@ -3,14 +3,17 @@
    link while the designer cannot load, sees two short sentences in the
    middle of the screen. Its security policy allows only this site's own
    styles and nothing else (no fonts, pictures or scripts), so everything
-   here is plain CSS with the computer's own fonts. */
+   here is plain CSS with the computer's own fonts. Black and gold, like the
+   Dealer Center and the standard 3D designer. */
 
 :root {
   color-scheme: light;
-  --navy: #0A2C49;
-  --ink: #2b3440;
-  --paper: #F4F6F8;
-  --line: #DCE2E8;
+  --black: #16130E;
+  --gold: #C9A227;
+  --gold-deep: #85660F;
+  --ink: #1D1A15;
+  --paper: #F4F2ED;
+  --line: #E5E0D5;
 }
 
 * { box-sizing: border-box; }
@@ -35,14 +38,14 @@ main {
   padding: 32px 28px;
   background: #fff;
   border: 1px solid var(--line);
-  border-top: 6px solid var(--navy);
+  border-top: 6px solid var(--gold);
   border-radius: 12px;
-  box-shadow: 0 6px 24px rgba(10, 44, 73, 0.08);
+  box-shadow: 0 6px 24px rgba(22, 19, 14, 0.08);
 }
 
 h1 {
   margin: 0 0 10px;
-  color: var(--navy);
+  color: var(--black);
   font-size: 24px;
   line-height: 1.25;
   font-weight: 700;
@@ -50,7 +53,7 @@ h1 {
 
 p { margin: 0; }
 
-a { color: var(--navy); font-weight: 600; }
+a { color: var(--gold-deep); font-weight: 600; }
 
 @media (max-width: 380px) {
   main { padding: 24px 18px; }
