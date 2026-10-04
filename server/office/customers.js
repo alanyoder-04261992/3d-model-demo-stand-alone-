@@ -21,6 +21,8 @@ import { fail, text, email, phone, day, money, oneOf, bool, onlyKeys } from "./h
 import { KEEP } from "./store.js";
 import { can, ROLE_WORDS } from "./people.js";
 import { priceOrExplain, buildingName } from "./pricing.js";
+import { rtoMonthly } from "../../model/pricing.js";
+import { planWords } from "../../model/quote-plan.js";
 
 export const STAGES = ["new", "contacted", "quoted", "sold", "delivered", "lost"];
 export const STAGE_WORDS = { new: "New", contacted: "Contacted", quoted: "Quoted", sold: "Sold", delivered: "Delivered", lost: "Lost" };
@@ -490,7 +492,16 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
   async function addWebsiteQuote(slug, contact, priced, cat) {
     const number = await nextNumber("quote-number");
     const quote = quoteOf(priced, cat, { by: null, source: "website", number });
-    const words = `Sent a quote from the 3D designer: ${quote.building} — ${dollars(quote.total)} (quote #${number})`;
+    /* what they want to do with it, and the rent-to-own payment they looked
+       at -- worked out here from the server's own price, never the page's */
+    if (contact.plan) quote.plan = contact.plan;
+    const monthly = contact.rtoMonths ? rtoMonthly(quote.total, cat.pricing?.rto, contact.rtoMonths) : 0;
+    if (monthly > 0) quote.rto = { months: contact.rtoMonths, monthly };
+    const words = [
+      `Sent a quote from the 3D designer: ${quote.building} — ${dollars(quote.total)} (quote #${number})`,
+      quote.plan ? `What they want to do: ${planWords(quote.plan)}` : "",
+      quote.rto ? `Looked at rent to own: ${dollars(quote.rto.monthly)} a month over ${quote.rto.months} months` : "",
+    ].filter(Boolean).join("\n");
     const match = await findMatch(slug, contact);
     let c = null;
     if (match) {
@@ -498,7 +509,7 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
         if (cur.lot !== slug) fail(404, "moved");
         cur.quotes.push(quote);
         trimQuotes(cur);
-        for (const k of ["phone", "email", "address", "zip"]) if (!cur[k] && contact[k]) cur[k] = contact[k];
+        for (const k of ["phone", "email", "address", "city", "zip"]) if (!cur[k] && contact[k]) cur[k] = contact[k];
         if (typeof contact.smsOk === "boolean") cur.smsOk = contact.smsOk;
         log(cur, null, "website", words + (contact.note ? `\n“${contact.note}”` : ""));
         if (cur.stage === "lost" || cur.stage === "delivered") {
@@ -514,7 +525,7 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
       const at = iso();
       c = {
         id: newId(), lot: slug, name: contact.name, phone: contact.phone || "", email: contact.email || "",
-        address: contact.address || "", city: "", state: "", zip: contact.zip || "", smsOk: typeof contact.smsOk === "boolean" ? contact.smsOk : null,
+        address: contact.address || "", city: contact.city || "", state: "", zip: contact.zip || "", smsOk: typeof contact.smsOk === "boolean" ? contact.smsOk : null,
         source: "website", stage: "new", lostReason: "", assignedTo: null, followUp: null,
         quotes: [quote], orders: [], activity: [], createdAt: at, updatedAt: at,
       };

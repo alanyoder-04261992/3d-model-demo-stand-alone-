@@ -19,8 +19,8 @@
      form         an ordinary web-form post to a form service the company
                   already uses (Formspree, Basin, Web3Forms, Netlify Forms):
                   one plain field each (name, phone, email, zip, address,
-                  note, sms_ok, building, total, summary, link, _subject,
-                  _replyto) -- the kind of post every such service takes, and
+                  city, note, sms_ok, plan, rent_to_own, building, total,
+                  summary, link, _subject, _replyto) -- the kind of post every such service takes, and
                   the kind a browser sends without asking permission first. It
                   goes into a hidden frame (or a new tab, when leads.target is
                   "tab", for a service that shows its own "are you human?"
@@ -57,10 +57,19 @@
    mode, sent: true, design, link}) WITHOUT the customer's details.
 
    WHAT IS ASKED: company.leads.fields -- name, phone, email, zip, address,
-   note, each "required", "optional" or "off" (not asked). A company with
-   leads.smsConsent gets a box with those words, NOT ticked: texting is
-   something a customer agrees to, never something assumed. When neither a
-   phone nor an e-mail is required, at least one of them is.
+   note, each "required", "optional" or "off" (not asked). The address is a
+   question of its own (the Yoder site, Sep 2026): an "Address" heading over
+   a Street box and a City box, because a phone that fills in a saved
+   address puts only the street into a street box (Alan's own test lost his
+   town). The City box comes with the address and is never required (the
+   ZIP answers it). A company with leads.smsConsent gets a box with those
+   words, NOT ticked: texting is something a customer agrees to, never
+   something assumed. When neither a phone nor an e-mail is required, at
+   least one of them is. Unless leads.askPlan is false, "What do you want
+   to do with this quote?" with four answers (model/quote-plan.js), none
+   picked and none required. The contact sent carries city, plan (the
+   answer's key, "" for none) and, when the rent-to-own box is showing,
+   rtoMonths (the term the customer was looking at, ui/panels.js).
 
    TWO SPEED BUMPS FOR ROBOTS: a box no person can see (a robot filling in
    every box fills that one too), and a minimum time on the page (3 seconds
@@ -88,7 +97,8 @@
 
 import { esc, safeUrl } from "./esc.js";
 import { submitManagedOrder, reloadWithDesign, WORDS as MANAGED_WORDS } from "./managed-order.js";
-import { money, priceParts } from "../model/pricing.js";
+import { money, priceParts, rtoMonthly } from "../model/pricing.js";
+import { QUOTE_PLANS, planWords, asksPlan } from "../model/quote-plan.js";
 import { colorName, sidingPalette } from "../model/company.js";
 import { frameOf } from "../model/frame.js";
 import { makePlan } from "../model/plan.js";
@@ -109,18 +119,27 @@ export const FIELDS = [
   { key: "phone", words: "your phone number", ph: "Phone", auto: "tel", type: "tel", mode: "tel", max: 40 },
   { key: "zip", words: "your ZIP code", ph: "ZIP", auto: "postal-code", type: "text", mode: "numeric", max: 12, cls: "qzip" },
   { key: "email", words: "your e-mail address", ph: "Email", auto: "email", type: "email", mode: "email", max: 200, cls: "qwide" },
-  { key: "address", words: "where the building will go", ph: "Where it will go (street address)", auto: "street-address", type: "text", max: 300, cls: "qwide" },
+  { key: "address", words: "where the building will go", ph: "Street", auto: "street-address", type: "text", max: 300, cls: "qwide", group: "address" },
+  { key: "city", words: "the town", ph: "City", auto: "address-level2", type: "text", max: 100, cls: "qwide", group: "address" },
   { key: "note", words: "a note", ph: "Anything else we should know?", type: "textarea", max: 1000, cls: "qwide" },
 ];
-const LABEL = { name: "Name", phone: "Phone", zip: "ZIP", email: "E-mail", address: "Address", note: "Note" };
+const LABEL = { name: "Name", phone: "Phone", zip: "ZIP", email: "E-mail", address: "Address", city: "City", note: "Note" };
 const EMAIL_RE = /^[^\s@<>"',;:?&]+@[^\s@<>"',;:?&]+\.[^\s@<>"',;:?&]+$/;   /* an address put INTO a mail link: strict */
 /* the customer's own address, only ever sent as data: looser, because real
    addresses have apostrophes in them (o'brien@...) and must not be turned away */
 const CUSTOMER_EMAIL_RE = /^[^\s@<>()[\]\\,;:"]+@[^\s@<>()[\]\\,;:"]+\.[^\s@<>()[\]\\,;:"]+$/;
 
 function andList(a) { return a.length < 2 ? (a[0] || "") : a.slice(0, -1).join(", ") + " and " + a[a.length - 1]; }
-function asked(cat, key) { const m = (cat.leads.fields || {})[key]; return m === "required" || m === "optional"; }
-function required(cat, key) { return (cat.leads.fields || {})[key] === "required"; }
+/* the City box comes with the address question and is never required */
+function asked(cat, key) { const m = (cat.leads.fields || {})[key === "city" ? "address" : key]; return m === "required" || m === "optional"; }
+function required(cat, key) { return key !== "city" && (cat.leads.fields || {})[key] === "required"; }
+
+/* "$183.89 a month over 60 months" -- worked out on the total, "" when that
+   term is not on the price list */
+function rtoWords(total, cat, months) {
+  const m = rtoMonthly(total, cat.pricing && cat.pricing.rto, months);
+  return m > 0 ? money(m) + " a month over " + months + " months" : "";
+}
 
 /* ------------------------------------------------------------------------
    The summary: Barnwright's summaryText (3ddesign.html 5312-5327) -- the
@@ -147,11 +166,14 @@ export function summaryText(state, cat, contact, link, opts) {
   if (show) L.push("Estimated total: " + money(pp.total));
   const c = contact || {};
   for (const f of FIELDS) {
-    if (short >= 3 && (f.key === "address" || f.key === "note")) continue;
+    if (short >= 3 && (f.group === "address" || f.key === "note")) continue;
     const v = String(c[f.key] == null ? "" : c[f.key]).trim();
     if (v) L.push(LABEL[f.key] + ": " + v.replace(/\s*\n\s*/g, " / "));
   }
   if (typeof c.smsOk === "boolean") L.push("OK to text: " + (c.smsOk ? "yes" : "no"));
+  if (planWords(c.plan)) L.push("What they want to do: " + planWords(c.plan));
+  const rto = show && c.rtoMonths ? rtoWords(pp.total, cat, c.rtoMonths) : "";
+  if (rto) L.push("Rent to own: as low as " + rto);
   if (link) L.push("See it in 3D: " + link);
   return L.join("\n");
 }
@@ -374,19 +396,33 @@ function addCss() {
   document.head.appendChild(l);
 }
 
+/* one box; the Street and City boxes say nothing about being optional (the
+   line under them does) */
+function boxHtml(cat, f) {
+  const req = required(cat, f.key);
+  const ph = f.ph + (req || f.group ? "" : " (optional)");
+  const common = ' name="' + f.key + '" class="qin' + (f.cls ? " " + f.cls : "") + '" aria-label="' + esc(f.ph) + '"' +
+    ' placeholder="' + esc(ph) + '" maxlength="' + f.max + '"' + (f.auto ? ' autocomplete="' + f.auto + '"' : "") +
+    (f.mode ? ' inputmode="' + f.mode + '"' : "") + (req ? ' aria-required="true"' : "");
+  return f.type === "textarea" ? "<textarea rows=\"2\"" + common + "></textarea>" : '<input type="' + f.type + '"' + common + ">";
+}
+
 function formHtml(cat) {
   const L = cat.leads;
-  let h = '<form class="qform" novalidate autocomplete="on"><div class="qgrid">';
-  for (const f of FIELDS) {
-    if (!asked(cat, f.key)) continue;
-    const req = required(cat, f.key);
-    const ph = f.ph + (req ? "" : " (optional)");
-    const common = ' name="' + f.key + '" class="qin' + (f.cls ? " " + f.cls : "") + '" aria-label="' + esc(f.ph) + '"' +
-      ' placeholder="' + esc(ph) + '" maxlength="' + f.max + '"' + (f.auto ? ' autocomplete="' + f.auto + '"' : "") +
-      (f.mode ? ' inputmode="' + f.mode + '"' : "") + (req ? ' aria-required="true"' : "");
-    h += f.type === "textarea" ? "<textarea rows=\"2\"" + common + "></textarea>" : '<input type="' + f.type + '"' + common + ">";
+  const boxes = (pick) => FIELDS.filter((f) => pick(f) && asked(cat, f.key)).map((f) => boxHtml(cat, f)).join("");
+  let h = '<form class="qform" novalidate autocomplete="on"><div class="qgrid">' + boxes((f) => !f.group && f.key !== "note") + "</div>";
+  /* where it is going: a question of its own, with a heading */
+  if (asked(cat, "address")) {
+    h += '<div class="qaddr" role="group" aria-labelledby="qaddr-l"><span class="qaddr-l" id="qaddr-l">Address</span>' + boxes((f) => f.group === "address") +
+      (required(cat, "address") ? "" : '<small class="qaddr-note">Can skip if you already sent it to us.</small>') + "</div>";
   }
-  h += "</div>";
+  if (asked(cat, "note")) h += '<div class="qgrid">' + boxes((f) => f.key === "note") + "</div>";
+  /* what they want to do with it: one tap, never required */
+  if (asksPlan(cat)) {
+    h += '<fieldset class="qplan"><legend class="qplan-l">What do you want to do with this quote?</legend>' +
+      QUOTE_PLANS.map((p) => '<label class="qplan-o"><input type="radio" name="plan" value="' + esc(p[0]) + '"><span>' + esc(p[1]) + "</span></label>").join("") +
+      "<small>Up to you — it just helps us answer you properly.</small></fieldset>";
+  }
   if (typeof L.smsConsent === "string" && L.smsConsent.trim()) {
     h += '<label class="smsok qsms"><input type="checkbox" name="sms_ok" value="yes"><span>' + esc(L.smsConsent.trim()) + "</span></label>";
   }
@@ -452,6 +488,9 @@ export function install(api) {
     }
     const sms = box("sms_ok");
     if (sms) c.smsOk = !!sms.checked;
+    if (asksPlan(cat)) { const p = form.querySelector('input[name="plan"]:checked'); c.plan = p ? p.value : ""; }
+    const rto = typeof api.rentToOwn === "function" ? api.rentToOwn() : null;
+    if (rto && rto.months) c.rtoMonths = rto.months;
     return c;
   }
 
@@ -672,6 +711,8 @@ export function install(api) {
         const fields = {};
         for (const f of FIELDS) if (asked(cat, f.key)) fields[f.key] = c[f.key] || "";
         if (typeof c.smsOk === "boolean") fields.sms_ok = c.smsOk ? "yes" : "no";
+        if (asksPlan(cat)) fields.plan = planWords(c.plan);
+        if (c.rtoMonths && cat.pricing.show !== "none") fields.rent_to_own = rtoWords(pp.total, cat, c.rtoMonths);
         fields.building = String(api.getState().size).replace("x", " x ") + " " + (t.name || "");
         fields.total = cat.pricing.show === "none" ? "" : money(pp.total);
         fields.summary = summary;

@@ -159,7 +159,10 @@ A **customer**:
   source,            // "website" | "walk-in" | "phone" | "other"
   stage, lostReason, assignedTo /* userId or null */,
   followUp,          // {date: "2026-10-05", note} or null
-  quotes: [{ id, number, at, by, source, building, design, price, total, cfg }],
+  quotes: [{ id, number, at, by, source, building, design, price, total, cfg,
+             note?,           // a quote made in the Dealer Center
+             plan?,           // website: what they want to do (model/quote-plan.js key)
+             rto? }],         // website: {months, monthly} the rent to own they looked at
   orders: [{ id, number, quoteId, status, soldAt, soldBy, total, payment,
              deposit, deliveryAddress, deliveryDate, deliveryNotes,
              notes, history: [{status, at, by}] }],
@@ -231,7 +234,14 @@ Public routes (no sign-in):
 A website quote request is matched to an existing customer of that lot by
 email or phone (digits compared); otherwise a new customer is made. A
 customer of another lot is never matched. Either way the quote and an
-activity line are added. A Lost or Delivered customer who comes back goes
+activity line are added. The contact may carry `city` (kept with the street),
+`plan` (what they want to do with the quote) and `rtoMonths` (the rent-to-own
+term they looked at); the quote keeps `plan` and `rto: {months, monthly}`,
+the monthly worked out from the server's own price, and the activity line,
+the lot's email and the customer's quote say them in words ("What they want
+to do: Ready to buy now — no permit needed", "Looked at rent to own: $183.89
+a month over 60 months"). An answer or a term the business doesn't offer is
+left out, never a reason to turn the quote away. A Lost or Delivered customer who comes back goes
 back to New. The same send arriving twice at once (a double tap, a retry)
 waits a few seconds for the first and gets its receipt; a send left half
 done for over a minute is taken over by the retry.
@@ -506,11 +516,15 @@ colors with a live preview; a warning when white words would be hard to
 read on the header; on a light button the words turn black; "Use the
 standard black and gold"); *3D designer* ("Open to customers" or "Closed" — closed links show
 who to call; how prices show: the full price, a starting price ("from") or
-no price; a monthly rent-to-own price over one of the price list's terms;
+no price; a monthly rent-to-own price over one of the price list's terms,
+which also puts a box in the customer's quote with a button for each term,
+and the words under that figure;
 the line under the price; notes for building widths; the building it opens
 on); *The quote form* (phone, email, ZIP, street address and a note: "Must
 give", "Can give" or "Don't ask" — the name is always asked, and phone or
-email must be; the texting permission sentence, empty = don't ask). It all
+email must be; the street address is asked as Street and City; "Ask what
+they want to do with the quote", on unless turned off; the texting
+permission sentence, empty = don't ask). It all
 saves into the price list record with one bar at the bottom ("3 changes",
 "Undo changes", "Save settings"); someone saving first is told to reload.
 Managers and dealers see "Only the owner can change settings".

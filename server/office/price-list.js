@@ -187,6 +187,7 @@ export function explainProblem(problem, manufacturer, settings = {}) {
     [/^pricing\.show/, () => "Pick how prices show on the designer: the full price, a starting price, or no price."],
     [/^pricing\.(roundTo|minCharge|roofAreaFactor)/, () => "The per-square-foot rounding could not be saved. Reload the page and try again."],
     [/^pricing\.rto\.showTerm/, () => "The rent-to-own term shown on the designer must be one of your terms."],
+    [/^pricing\.rto\.note/, () => "The words under the rent-to-own price can be at most 300 letters."],
     [/^pricing\.rto/, () => "Each rent-to-own term needs a number of months and a factor between 0 and 1."],
 
     [/^notes\.finePrint/, () => "The line under the price must be written as text."],
@@ -194,6 +195,7 @@ export function explainProblem(problem, manufacturer, settings = {}) {
 
     [/^leads\.fields/, () => "Pick Required, Optional or Off for each box on the quote form."],
     [/^leads\.smsConsent/, () => "The texting permission wording must be written as text."],
+    [/^leads\.askPlan/, () => "Say whether the quote form asks what they want to do with the quote."],
     [/^leads/, () => "The quote form settings could not be saved. Reload the page and try again."],
 
     [/^embed/, () => "The websites allowed to show the designer must each be a full address that starts with https://, like https://mysite.com."],
@@ -314,7 +316,9 @@ export function describeChanges(before, after, manufacturer) {
   if ((before.pricing?.show || "price") !== (after.pricing?.show || "price")) {
     out.push(`The designer shows ${showWords[after.pricing?.show || "price"]} (was ${showWords[before.pricing?.show || "price"]})`);
   }
-  if (!same(before.pricing?.rto, after.pricing?.rto)) out.push("Changed the rent-to-own terms");
+  const terms = (rto) => ({ factors: rto?.factors, showTerm: rto?.showTerm ?? null });
+  if (!same(terms(before.pricing?.rto), terms(after.pricing?.rto))) out.push("Changed the rent-to-own terms");
+  if ((before.pricing?.rto?.note || "") !== (after.pricing?.rto?.note || "")) out.push("Changed the words under the rent-to-own price");
   for (const k of POLICY_PARTS) if ((before.pricing?.[k] ?? null) !== (after.pricing?.[k] ?? null)) out.push("Changed how per-square-foot prices are rounded");
   if ((before.notes?.finePrint || "") !== (after.notes?.finePrint || "")) out.push("Changed the line under the price");
   if (!same(before.notes?.sizeNotes, after.notes?.sizeNotes)) out.push("Changed the notes shown for building widths");

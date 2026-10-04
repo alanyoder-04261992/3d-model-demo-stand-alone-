@@ -682,6 +682,8 @@ const BROKEN = [
   ["opening on a style not sold", (s) => { s.defaults.style = "ZZ"; }, /The building the designer opens on/],
   ["prices shown an unknown way", (s) => { s.pricing.show = "maybe"; }, /Pick how prices show/],
   ["a rent-to-own factor of 2", (s) => { s.pricing.rto = { factors: { 36: 2 }, showTerm: null }; }, /rent-to-own term/],
+  ["rent-to-own words that run on", (s) => { s.pricing.rto = { factors: { 36: 0.6 }, showTerm: 36, note: "x".repeat(301) }; }, /words under the rent-to-own price/],
+  ["asking what they want to do written wrong", (s) => { s.leads.askPlan = "yes"; }, /what they want to do with the quote/],
   ["a quote form box that is neither", (s) => { s.leads.fields.phone = "maybe"; }, /Required, Optional or Off/],
   ["a * website for the designer", (s) => { s.embed.origins = ["*"]; }, /websites allowed to show the designer/],
   ["open or closed written wrong", (s) => { s.status = "open"; }, /open or closed/],
@@ -746,6 +748,28 @@ let johnFile = (await want(200, "GET", `/api/office/customers/${johnRow.id}`)).c
 ok("... the quote keeps the server's price lines and today's cfg", johnFile.quotes[0].total === lbTotal && johnFile.quotes[0].cfg === cat.cfg && johnFile.quotes[0].source === "website");
 ok("... their note and texting permission are kept", johnFile.activity.some((a) => a.type === "website" && a.text.includes("Call after 5")) && johnFile.smsOk === true);
 as(null);
+
+/* the address as Street and City, what they want to do with the quote, and
+   the rent-to-own term they were looking at (the 3D designer's quote form) */
+{
+  const factor = cat.pricing.rto?.factors?.["60"];
+  const monthly = Math.round((lbTotal / factor / 60) * 100) / 100;
+  const money2 = (n) => "$" + n.toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
+  emailsBefore = sent.length;
+  await sendQuote("port-charlotte", lbDesign, { name: "Rita Planner", phone: "941-555-0177", zip: "33952", address: "12 Elm St", city: "Port Charlotte", plan: "buy-permit", rtoMonths: 60 }, { label: "a send with a city, what they want to do and a rent-to-own term" });
+  await sendQuote("port-charlotte", lbDesign, { name: "Sam Odd", phone: "941-555-0178", zip: "33952", plan: "someday", rtoMonths: 13 }, { label: "an answer and a term nobody offers (still taken)" });
+  as("u-alan");
+  rows = (await want(200, "GET", "/api/office/customers?lot=port-charlotte")).rows;
+  const rita = (await want(200, "GET", `/api/office/customers/${rows.find((x) => x.name === "Rita Planner").id}`)).customer;
+  const sam = (await want(200, "GET", `/api/office/customers/${rows.find((x) => x.name === "Sam Odd").id}`)).customer;
+  const ritaEmail = sent.slice(emailsBefore).find((m) => m.subject.includes("Rita Planner"));
+  ok("a website customer's city is kept with their street", rita.address === "12 Elm St" && rita.city === "Port Charlotte", JSON.stringify([rita.address, rita.city]));
+  ok(`... what they want to do and the rent-to-own payment (${money2(monthly)} a month over 60 months, from the server's own price) are on the quote`, rita.quotes[0].plan === "buy-permit" && same(rita.quotes[0].rto, { months: 60, monthly }), JSON.stringify([rita.quotes[0].plan, rita.quotes[0].rto]));
+  ok("... and in what happened, in plain words", rita.activity.some((a) => a.type === "website" && a.text.includes("What they want to do: Ready to buy now — I need paperwork for permits") && a.text.includes(`Looked at rent to own: ${money2(monthly)} a month over 60 months`)));
+  ok("... and in the lot's email", !!ritaEmail && ritaEmail.text.includes("What they want to do: Ready to buy now — I need paperwork for permits") && ritaEmail.text.includes(`${money2(monthly)} a month over 60 months`) && ritaEmail.html.includes("Ready to buy now"));
+  ok("an answer or a term the business doesn't offer never turns a quote away: it is left out", sam.quotes.length === 1 && sam.quotes[0].plan === undefined && sam.quotes[0].rto === undefined && !sam.activity.some((a) => /What they want to do|rent to own/.test(a.text)));
+  as(null);
+}
 
 const forged = clone(lbDesign); forged.priced = { total: 1, at: "2026-10-03" };
 receipt = await sendQuote("port-charlotte", forged, john, { label: "a design that says it costs $1" });

@@ -105,6 +105,10 @@ export async function seedSample({ office, act, clock, manufacturer, library, bu
   settings.status = "active";
   settings.brand.website = "https://yoderbarns.example";
   settings.brand.tagline = "Portable storage buildings, delivered and set up";
+  /* rent to own the way Alan's own site shows it: 60 months by the price,
+     and his words under the monthly figure */
+  settings.pricing.rto = { ...settings.pricing.rto, showTerm: 60,
+    note: "Before sales tax, and before any delivery fee past our free 50 miles. Starts with a deposit plus the first payment — ask us and we will put the exact figures on your quote." };
   await call("PUT", "/api/office/price-list", { settings, version: pl.version });
   for (const lot of LOTS) await call("POST", "/api/office/lots", lot);
   for (const p of SAMPLE_PEOPLE.slice(1)) {

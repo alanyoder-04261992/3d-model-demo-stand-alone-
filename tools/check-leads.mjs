@@ -16,15 +16,23 @@
    1. THE FORM: only the boxes the company asks for are there, the texting box
       (leads.smsConsent) is there UNTICKED, the robots' box is hidden. An
       empty form sends nothing and says, in plain words, what is missing.
+      The address is a question of its own (an Address heading, a Street box
+      and a City box, "Can skip if you already sent it to us."); "What do you
+      want to do with this quote?" has four answers, none picked, and a
+      company with leads.askPlan false is not asked it. With a rent-to-own
+      term shown (pricing.rto.showTerm), "Your quote" has a chip for each
+      term and the monthly figure to the cent (price / factor / months), the
+      plate shows the same figure, and tapping another term changes both.
    2. ROBOTS: a request sent within 3 seconds of the form appearing is
       dropped (nothing arrives) with a "just a moment" message; a request
       with the hidden robots' box filled is dropped (nothing arrives) and the
       page still shows the company's phone and the design.
    3. FORM SERVICE (leads.mode "form"): an ordinary form post arrives -- no
       permission request (preflight) before it -- with every box, the texting
-      answer, the building, the total, the summary and a link that opens THIS
-      design (same style, size and price, look-only); the page says it was
-      sent. A form service that never answers shows the "reach us directly"
+      answer, the city, the answer about what they want to do, the
+      rent-to-own term they looked at, the building, the total, the summary
+      and a link that opens THIS design (same style, size and price,
+      look-only); the page says it was sent. A form service that never answers shows the "reach us directly"
       box after the time limit.
    4. WEBHOOK: the post arrives as text/plain with no preflight, carrying
       {design, contact, summary, link, priceComputedBy: "browser"}; no
@@ -116,7 +124,10 @@ function company(id, leads, extra) {
 function companies() {
   const allowed = { origins: [FAKE], shareUrl: "" };
   return {
-    leadform: company("leadform", { mode: "form", url: FAKE + "/form", smsConsent: SMS_WORDS }),
+    /* shows a rent-to-own price, starting on 60 months */
+    leadform: company("leadform", { mode: "form", url: FAKE + "/form", smsConsent: SMS_WORDS }, { pricing: Object.assign({}, DEMO.pricing, { rto: Object.assign({}, DEMO.pricing.rto, { showTerm: 60 }) }) }),
+    /* asks no address and not what they want to do */
+    leadnoplan: company("leadnoplan", { mode: "form", url: FAKE + "/form", fields: Object.assign({}, FIELDS_ALL, { address: "off" }), askPlan: false }),
     leadhang: company("leadhang", { mode: "form", url: FAKE + "/hang" }),
     leadhook: company("leadhook", { mode: "webhook", url: FAKE + "/hook", smsConsent: SMS_WORDS }),
     leadimg: company("leadimg", { mode: "webhook", url: FAKE + "/hook", images: true }),
@@ -184,6 +195,8 @@ async function fillBasics(target, o) {
   await target.fill('#quote-mount [name="zip"]', o.zip || "33952");
   if (o.email !== undefined) await target.fill('#quote-mount [name="email"]', o.email);
   if (o.address !== undefined) await target.fill('#quote-mount [name="address"]', o.address);
+  if (o.city !== undefined) await target.fill('#quote-mount [name="city"]', o.city);
+  if (o.plan !== undefined) await target.check('#quote-mount input[name="plan"][value="' + o.plan + '"]');
   if (o.note !== undefined) await target.fill('#quote-mount [name="note"]', o.note);
 }
 const lastOf = (target) => target.evaluate(() => window.shedUI.quote.last);
@@ -230,7 +243,33 @@ try {
         hp: hp ? { visible: vis(hp), name: hp.name, auto: hp.getAttribute("autocomplete") } : null,
         btn: m.querySelector(".qsend") && m.querySelector(".qsend").textContent, mode: window.shedUI.quote.mode };
     });
-    ok("the six boxes the company asks for are there, in Barnwright's order then the new ones", J(form.names) === J(["name", "phone", "zip", "email", "address", "note"]), J(form.names));
+    ok("the boxes the company asks for are there, in Barnwright's order then the new ones (the address as Street and City)", J(form.names) === J(["name", "phone", "zip", "email", "address", "city", "note"]), J(form.names));
+    const extra = await page.evaluate(() => {
+      const m = document.getElementById("quote-mount");
+      const a = m.querySelector(".qaddr");
+      const plans = Array.from(m.querySelectorAll('input[name="plan"]'));
+      return {
+        addr: a ? { head: a.querySelector(".qaddr-l").textContent, ph: Array.from(a.querySelectorAll(".qin")).map((e) => e.placeholder), note: (a.querySelector(".qaddr-note") || {}).textContent, auto: Array.from(a.querySelectorAll(".qin")).map((e) => e.getAttribute("autocomplete")) } : null,
+        legend: (m.querySelector(".qplan legend") || {}).textContent,
+        plans: plans.map((p) => [p.value, p.parentElement.textContent, p.checked]),
+      };
+    });
+    ok("the address is a question of its own: an Address heading, Street and City boxes a phone can fill in one tap, and 'Can skip if you already sent it to us.'", extra.addr && extra.addr.head === "Address" && J(extra.addr.ph) === J(["Street", "City"]) && extra.addr.note === "Can skip if you already sent it to us." && J(extra.addr.auto) === J(["street-address", "address-level2"]), J(extra.addr));
+    ok("'What do you want to do with this quote?' has the four answers, none picked", extra.legend === "What do you want to do with this quote?" && J(extra.plans.map((x) => x[0])) === J(["buy-now", "buy-permit", "engineering", "pricing"]) && extra.plans[0][1] === "Ready to buy now — no permit needed" && extra.plans.every((x) => x[2] === false), J(extra));
+
+    /* 1c. rent to own: the box under the total, the same figure on the plate */
+    const rtoAt = async () => page.evaluate(() => ({
+      chips: Array.from(document.querySelectorAll("#sum .rtochip")).map((b) => [+b.getAttribute("data-rto"), b.classList.contains("on")]),
+      fig: (document.querySelector("#sum .rtomonthly") || {}).textContent, plate: document.getElementById("platerto").textContent,
+      note: (document.querySelector("#sum .rtonote") || {}).textContent, total: window.shedUI.price().total, picked: window.shedUI.rentToOwn(),
+    }));
+    const r60 = await rtoAt();
+    const want = (m, f) => "$" + (Math.round((r60.total / f / m) * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    ok("rent to own in 'Your quote': a chip for 36, 48 and 60 months, starting on 60, 'as low as' " + r60.fig + " (the price / 0.45 / 60, to the cent)", J(r60.chips) === J([[36, false], [48, false], [60, true]]) && r60.fig === want(60, 0.45) + "/mo" && /deposit plus the first payment/.test(r60.note || ""), J(r60));
+    ok("...and the price plate shows the same figure", r60.plate === " · or " + want(60, 0.45) + "/mo", J(r60.plate));
+    await page.click('#sum .rtochip[data-rto="36"]');
+    const r36 = await rtoAt();
+    ok("tapping 36 months changes the figure and the plate to " + r36.fig + " (the price / 0.60 / 36)", J(r36.chips) === J([[36, true], [48, false], [60, false]]) && r36.fig === want(36, 0.6) + "/mo" && r36.plate === " · or " + want(36, 0.6) + "/mo" && r36.picked && r36.picked.months === 36, J(r36));
     ok("the texting box is there, with the company's words, and NOT ticked", form.sms && form.sms.visible && form.sms.checked === false && form.sms.words.indexOf("Reply STOP to stop") >= 0, J(form.sms));
     ok("the robots' box is on the page but no person can see it (and its name is not one AutoFill knows)", form.hp && !form.hp.visible && form.hp.auto === "off" && !/company|name|email|phone/i.test(form.hp.name), J(form.hp));
 
@@ -270,7 +309,7 @@ try {
     await page.evaluate(() => { document.querySelector('#quote-mount [name="leave_this_empty"]').value = ""; });
 
     /* 3. a real post */
-    await fillBasics(page, { name: "Jane Doe", email: "jane@example.com", address: "123 Main St, Port Charlotte", note: "Gate is 10 ft wide." });
+    await fillBasics(page, { name: "Jane Doe", email: "jane@example.com", address: "123 Main St", city: "Port Charlotte", note: "Gate is 10 ft wide.", plan: "engineering" });
     await page.check('#quote-mount [name="sms_ok"]');
     fake.reset();
     await page.evaluate(() => { document.querySelector("#quote-mount .qresult").innerHTML = ""; });
@@ -284,7 +323,10 @@ try {
     ok("the form service receives an ordinary form post (application/x-www-form-urlencoded)", got && /application\/x-www-form-urlencoded/.test(got.headers["content-type"]), got && got.headers["content-type"]);
     ok("with no permission request (preflight) before it", preflights(fake).length === 0, J(preflights(fake)));
     const f = (got && got.fields) || {};
-    ok("every box arrives as its own field, as typed", f.name === "Jane Doe" && f.phone === "(941) 555-0123" && f.zip === "33952" && f.email === "jane@example.com" && f.address === "123 Main St, Port Charlotte" && f.note === "Gate is 10 ft wide.", J(f));
+    ok("every box arrives as its own field, as typed", f.name === "Jane Doe" && f.phone === "(941) 555-0123" && f.zip === "33952" && f.email === "jane@example.com" && f.address === "123 Main St" && f.city === "Port Charlotte" && f.note === "Gate is 10 ft wide.", J(f));
+    const rtoSent = "$" + (Math.round((onPage.total / 0.6 / 36) * 100) / 100).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " a month over 36 months";
+    ok("what they want to do arrives in plain words, and the rent-to-own term they were looking at (" + f.rent_to_own + ")", f.plan === "I need engineering plans for permits first" && f.rent_to_own === rtoSent, J({ plan: f.plan, rto: f.rent_to_own, want: rtoSent }));
+    ok("...and both are in the summary, with the city", /City: Port Charlotte/.test(f.summary || "") && /What they want to do: I need engineering plans for permits first/.test(f.summary || "") && (f.summary || "").indexOf("Rent to own: as low as " + rtoSent) > 0, f.summary);
     ok("the texting answer arrives (sms_ok = yes, because it was ticked); the robots' box does not", f.sms_ok === "yes" && !("leave_this_empty" in f), J({ sms_ok: f.sms_ok }));
     ok("the building, the total, a subject line and a reply-to arrive", f.building === "10 x 20 Lofted Barn" && f.total === "$" + onPage.total.toLocaleString("en-US", { minimumFractionDigits: 2 }) && /Quote request: 10 x 20 Lofted Barn/.test(f._subject || "") && f._replyto === "jane@example.com", J({ building: f.building, total: f.total, s: f._subject, r: f._replyto }));
     ok("the summary arrives: the company, the building, the total, the customer and the link", /^ACME SHEDS QUOTE REQUEST/.test(f.summary || "") && /Estimated total: \$/.test(f.summary || "") && /Name: Jane Doe/.test(f.summary || "") && (f.summary || "").indexOf(f.link) > 0, f.summary);
@@ -315,6 +357,20 @@ try {
   }
 
   /* ------------------------------------------------------------ 4 */
+  section("1d. A company that asks no address and not what they want to do");
+  {
+    const ctx = await newContext(browser);
+    const { page, noise } = await openDesigner(ctx, "leadnoplan");
+    const r = await page.evaluate(() => {
+      const m = document.getElementById("quote-mount");
+      return { names: Array.from(m.querySelectorAll(".qin")).map((e) => e.name), addr: !!m.querySelector(".qaddr"), plan: !!m.querySelector(".qplan"), rto: !!document.querySelector("#sum .rtobox"), plate: document.getElementById("platerto").textContent };
+    });
+    ok("no Address question (no Street, no City), no 'What do you want to do' question (leads.askPlan false)", J(r.names) === J(["name", "phone", "zip", "email", "note"]) && !r.addr && !r.plan, J(r));
+    ok("no rent-to-own box and no monthly price on the plate when the company shows no term", !r.rto && r.plate === "", J(r));
+    ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
+    await ctx.close();
+  }
+
   section("4. The webhook: text/plain, no preflight, pictures only when asked");
   {
     const ctx = await newContext(browser);
@@ -334,6 +390,7 @@ try {
     ok("with no permission request (preflight) before it", preflights(fake).length === 0, J(preflights(fake)));
     ok("it carries design, contact, summary, link and priceComputedBy: \"browser\" -- and no pictures (leads.images is off)", J(Object.keys(j).sort()) === J(["contact", "design", "link", "priceComputedBy", "summary"]) && j.priceComputedBy === "browser", J(Object.keys(j)));
     ok("the contact is what was typed -- an e-mail address with an apostrophe in it (jane.o'hara@...) is accepted -- with the texting answer (not ticked: false)", j.contact && j.contact.name === "Jane Doe" && j.contact.phone === "(941) 555-0123" && j.contact.zip === "33952" && j.contact.email === "jane.o'hara@example.com" && j.contact.smsOk === false, J(j.contact));
+    ok("...with the city and what they want to do (nothing picked: empty), and no rent-to-own term (this company shows none)", j.contact && j.contact.city === "" && j.contact.plan === "" && !("rtoMonths" in j.contact), J(j.contact));
     const dd = j.design ? Object.assign({}, j.design) : {};
     delete dd.priced;
     ok("the design is the one on screen (and carries the price the browser worked out)", J(dd) === J(onPage.design) && j.design.priced && Math.abs(j.design.priced.total - onPage.total) < 0.005, J({ got: dd, want: onPage.design }));
@@ -347,8 +404,10 @@ try {
   {
     const ctx = await newContext(browser);
     const { page, noise, readyAt } = await openDesigner(ctx, "leadimg");
-    /* sent from the Framing view: the pictures must still be of the FINISHED building */
-    const framing = await page.evaluate(() => { const v = window.shedUI.views; if (!v || !v.set) return false; v.set("framing"); return v.view === "framing"; });
+    /* sent from the Inside view (the floor plan on screen; customers have
+       Outside and Inside only, docs/DIFFERENCES.md #20): the pictures must
+       still be of the FINISHED building */
+    const inside = await page.evaluate(() => { const v = window.shedUI.views; if (!v || !v.set) return false; v.set("inside"); return v.view === "inside"; });
     await fillBasics(page);
     await pastMinimum(readyAt);
     fake.reset();
@@ -385,9 +444,9 @@ try {
     const CAP = 60 * 1024;
     const small = await page.evaluate(async (cap) => { const r = await window.shedUI.quote.images(cap); return { bytes: r.bytes, steps: r.steps, view: !!(r.images && r.images.view), plan: !!(r.images && r.images.plan) }; }, CAP);
     ok("with a smaller cap (60 KB) the pictures are made smaller, step by step, until they fit (" + Math.round(small.bytes / 1024) + " KB after " + small.steps + " steps; the building kept)", small.view && small.bytes > 0 && small.bytes <= CAP && small.steps > 1, J(small));
-    const after = await page.evaluate(() => ({ view: window.shedUI.views && window.shedUI.views.view, sidingHidden: window.shedUI.renderer.stageTable[9 * 4] }));
-    ok("sent from the Framing view, the pictures are of the FINISHED building (its black roof is in them: " + dims.dark + " dark pixels)", framing && dims.dark > 2000, J({ framing, dark: dims.dark }));
-    ok("...and the screen is left in the Framing view it was in (the siding still hidden there)", after.view === "framing" && after.sidingHidden === 1, J(after));
+    const after = await page.evaluate(() => ({ view: window.shedUI.views && window.shedUI.views.view, plan: document.querySelector(".stage").classList.contains("bpmode") }));
+    ok("sent from the Inside view, the pictures are of the FINISHED building (its black roof is in them: " + dims.dark + " dark pixels)", inside && dims.dark > 2000, J({ inside, dark: dims.dark }));
+    ok("...and the screen is left in the Inside view it was in (the floor plan still showing)", after.view === "inside" && after.plan === true, J(after));
     await page.evaluate(() => window.shedUI.views.set("finished"));
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
     try { mkdirSync(OUT, { recursive: true }); const buf = Buffer.from((im.view || "").split(",")[1] || "", "base64"); if (buf.length) (await import("node:fs")).writeFileSync(resolve(OUT, "leads-webhook-picture.jpg"), buf); } catch {}
@@ -621,5 +680,5 @@ function fileSrc() { return readFileSync(resolve(ROOT, "ui/quote.js"), "utf8"); 
 
 console.log(`\ncheck-leads: ${pass} passed, ${fail} failed`);
 if (fail) { console.log("FAILED:\n - " + failures.join("\n - ")); process.exit(1); }
-console.log("PROVED: a quote request reaches the company every way a company can receive one -- a form service (an ordinary post with every box, the summary and a link that opens the same building), a webhook (text/plain with no preflight, pictures only when asked and under 300 KB), the customer's own e-mail (under 1,800 characters, never losing the link) and the company's own page (only an allowed address, never \"*\") -- robots and unfinished forms send nothing, a failure always leaves the customer the phone number, their link and their design, and nothing typed can run on the page.");
+console.log("PROVED: a quote request reaches the company every way a company can receive one -- a form service (an ordinary post with every box, the summary and a link that opens the same building), a webhook (text/plain with no preflight, pictures only when asked and under 300 KB), the customer's own e-mail (under 1,800 characters, never losing the link) and the company's own page (only an allowed address, never \"*\") -- the address (Street and City), what they want to do and the rent-to-own term they looked at ride along; robots and unfinished forms send nothing, a failure always leaves the customer the phone number, their link and their design, and nothing typed can run on the page.");
 process.exit(0);

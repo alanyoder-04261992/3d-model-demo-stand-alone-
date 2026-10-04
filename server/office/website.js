@@ -17,6 +17,7 @@ import { fail, OfficeError, text, email, phone, bool, onlyKeys } from "./http.js
 import { KEEP } from "./store.js";
 import { publicLotFields } from "./lots.js";
 import { priceOrExplain } from "./pricing.js";
+import { planWords } from "../../model/quote-plan.js";
 
 const KEY_RE = /^[A-Za-z0-9_-]{16,128}$/;
 const hash = (s) => sha256Hex(s);
@@ -63,7 +64,7 @@ export function createWebsite({ store, now, lots, priceList, customers, account 
 
   function contactOf(data, settings) {
     if (!data || typeof data !== "object" || Array.isArray(data)) fail(422, "Please add your name and a way to reach you.");
-    onlyKeys(data, ["name", "phone", "email", "zip", "address", "note", "smsOk"], "Your details");
+    onlyKeys(data, ["name", "phone", "email", "zip", "address", "city", "note", "smsOk", "plan", "rtoMonths"], "Your details");
     const asks = settings.leads?.fields || {};
     const out = {
       name: text(data.name, 100, "Your name", { required: true }),
@@ -71,7 +72,12 @@ export function createWebsite({ store, now, lots, priceList, customers, account 
       email: email(data.email, "Email", asks.email === "required"),
       zip: text(data.zip, 12, "ZIP", { required: asks.zip === "required" }),
       address: text(data.address, 300, "Address", { required: asks.address === "required" }),
+      city: text(data.city, 100, "City"),
       note: text(data.note, 1000, "Your note", { multiline: true }),
+      /* what they want to do and the rent-to-own term they looked at: never a
+         reason to turn a quote away, so anything we don't know is left out */
+      plan: typeof data.plan === "string" && planWords(data.plan) ? data.plan : "",
+      rtoMonths: Number.isInteger(data.rtoMonths) && data.rtoMonths > 0 && data.rtoMonths <= 600 ? data.rtoMonths : null,
     };
     if (asks.phone === "required" && !out.phone) fail(422, "Phone is needed.");
     if (!out.phone && !out.email) fail(422, "Please add a phone number or an email address so we can reach you.");

@@ -33,7 +33,7 @@
 
 import { esc } from "./esc.js";
 import * as S from "./state.js";
-import { money, pPrice, pSizes, minPrice, priceParts, itemCharge, rateCharges, optxList, optxQty, optxOn, optxCharge, optxChargeIfOn } from "../model/pricing.js";
+import { money, pPrice, pSizes, minPrice, priceParts, itemCharge, rateCharges, optxList, optxQty, optxOn, optxCharge, optxChargeIfOn, rtoTerms, rtoMonthly, RTO_NOTE } from "../model/pricing.js";
 import { colorName, sidingPalette } from "../model/company.js";
 
 /* where an item is, in words (Barnwright refreshLists 5084-5086; S3, the
@@ -307,6 +307,8 @@ export function createPanels(ctx) {
     h += '<div class="sumline"><span>' + (T.metal ? "Metal" : "Siding") + " " + esc(colorName(sidingPalette(T, cat.COLORS), state.body)) +
       " · Trim " + esc(colorName(cat.COLORS.trim, state.trim)) + " · Roof " + esc(colorName(cat.COLORS.metal, state.roof)) + "</span><b>—</b></div>";
     if (showMoney()) h += '<div class="sumline tot"><span class="disp" style="letter-spacing:.08em;text-transform:uppercase;font-size:13px">Estimated total</span><b>' + M(pp.total) + "</b></div>";
+    rtoTotal = pp.total;
+    if (rtoShown()) h += rtoHtml();
     el("sum").innerHTML = h;
     el("platename").textContent = title;
     const show = cat.pricing.show;
@@ -316,14 +318,59 @@ export function createPanels(ctx) {
     return pp;
   }
 
-  /* "or $226/mo" when the company shows a rent-to-own term: price / factor /
-     months (the arithmetic rent-to-own companies use; the Yoder site's rto60) */
+  /* RENT TO OWN in "Your quote" (the Yoder site; Alan, Aug 2026: "add rent to
+     own price before tax and be able to select the term limit we offer 36
+     months, 48 months, 60 months"). A chip for each term on the price list
+     and one figure, to the cent. "As low as", because it is before tax, any
+     delivery fee and the deposit: a floor, not a quote. Shown when the
+     company shows a rent-to-own price (pricing.rto.showTerm, the term it
+     starts on) and shows prices at all. The words under it are the
+     company's (pricing.rto.note), else ours. The term picked is not part of
+     the design; it rides along with the quote request (rentToOwn below). */
+  let rtoPick = null, rtoTotal = 0;
+  function rtoShown() {
+    const r = cat.pricing.rto;
+    return showMoney() && !!r && r.showTerm != null && rtoTerms(r).length > 0;
+  }
+  function rtoMonths() {
+    const terms = rtoTerms(cat.pricing.rto);
+    if (terms.includes(rtoPick)) return rtoPick;
+    const start = +cat.pricing.rto.showTerm;
+    return terms.includes(start) ? start : terms[terms.length - 1];
+  }
+  function rtoHtml() {
+    const m = rtoMonths();
+    const chips = rtoTerms(cat.pricing.rto).map((t) =>
+      '<button type="button" class="rtochip' + (t === m ? " on" : "") + '" data-rto="' + t + '" aria-pressed="' + (t === m) + '">' + t + " mo</button>").join("");
+    const note = typeof cat.pricing.rto.note === "string" && cat.pricing.rto.note.trim() ? cat.pricing.rto.note.trim() : RTO_NOTE;
+    return '<div class="rtobox"><div class="rtohead"><span class="disp">Rent to own</span><div class="rtochips" role="group" aria-label="How many months">' + chips + "</div></div>" +
+      '<div class="rtoline"><span class="disp">As low as</span><b class="rtomonthly">' + M(rtoMonthly(rtoTotal, cat.pricing.rto, m)) + "/mo</b></div>" +
+      '<p class="rtonote">' + esc(note) + "</p></div>";
+  }
+  /* -> {months, monthly} for the quote request, or null when not shown */
+  function rentToOwn() {
+    if (!rtoShown()) return null;
+    const m = rtoMonths();
+    return { months: m, monthly: rtoMonthly(rtoTotal, cat.pricing.rto, m) };
+  }
+  const sumBox = el("sum");
+  if (sumBox) sumBox.addEventListener("click", (e) => {
+    const b = e.target && e.target.closest ? e.target.closest(".rtochip") : null;
+    if (!b || !rtoShown()) return;
+    rtoPick = +b.getAttribute("data-rto");
+    refreshLists();                       /* the box and the plate, nothing in 3D */
+    const again = sumBox.querySelector('.rtochip[data-rto="' + rtoPick + '"]');
+    if (again) { try { again.focus(); } catch (err) { /* ignore */ } }
+  });
+
+  /* "or $248.15/mo" on the plate when the company shows a rent-to-own term
+     (the Yoder site's rto60): the same figure as the box in "Your quote", for
+     the term picked there */
   function rtoText(total) {
     const r = cat.pricing.rto;
-    if (!r || r.showTerm == null || !r.factors) return "";
-    const f = r.factors[String(r.showTerm)];
-    if (!(f > 0)) return "";
-    return " · or $" + Math.ceil(total / f / +r.showTerm).toLocaleString("en-US") + "/mo";
+    if (!r || r.showTerm == null || !rtoTerms(r).length) return "";
+    const m = rtoMonthly(total, r, rtoMonths());
+    return m > 0 ? " · or " + M(m) + "/mo" : "";
   }
 
   /* ---------- the add buttons (Barnwright 5065-5072) ----------
@@ -356,5 +403,5 @@ export function createPanels(ctx) {
   }
   wireButtons();
 
-  return { refreshUI, refreshLists, wallWords };
+  return { refreshUI, refreshLists, wallWords, rentToOwn };
 }

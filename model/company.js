@@ -563,6 +563,7 @@ export function validate(company, manufacturer) {
             if (!/^\d+$/.test(k) || !(typeof f === "number" && f > 0 && f <= 1)) err.push(`pricing.rto.factors[${q(k)}] must be a term in months with a factor between 0 and 1.`);
           }
           if (pr.rto.showTerm != null && !own(pr.rto.factors, String(pr.rto.showTerm))) err.push("pricing.rto.showTerm must be one of the terms in pricing.rto.factors (or null).");
+          if (pr.rto.note != null && !(typeof pr.rto.note === "string" && pr.rto.note.length <= 300)) err.push("pricing.rto.note must be the words under the rent-to-own price (at most 300 characters), or null.");
         }
       }
     }
@@ -603,6 +604,7 @@ export function validate(company, manufacturer) {
       }
       if (L.smsConsent != null && typeof L.smsConsent !== "string") err.push("leads.smsConsent must be the wording of the texting box, or null.");
       if (L.images != null && typeof L.images !== "boolean") err.push("leads.images must be true or false.");
+      if (L.askPlan != null && typeof L.askPlan !== "boolean") err.push("leads.askPlan must be true or false (ask what they want to do with the quote).");
     }
   }
 

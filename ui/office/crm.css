@@ -30,6 +30,8 @@
 .crm-pre { white-space: pre-line; }
 .crm-break { overflow-wrap: anywhere; }
 .crm-meta { color: var(--muted); font-size: 13.5px; }
+.crm-want { margin-top: 4px; font-size: 14px; color: var(--ink); }
+.crm-want strong { font-weight: 600; }
 .crm-eyebrow { color: var(--muted); font-size: 13px; letter-spacing: .08em; text-transform: uppercase; font-weight: 600; margin: 0 0 4px !important; }
 .crm-radios { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; }
 .crm-radio { display: flex; align-items: center; gap: 12px; padding: 10px 12px; min-height: 44px; border: 1px solid var(--line); border-radius: 8px; cursor: pointer; }

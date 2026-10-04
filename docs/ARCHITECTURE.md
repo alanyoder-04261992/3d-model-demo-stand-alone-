@@ -502,10 +502,10 @@ without overlapping; the demo reproduces the golden `includedItems` exactly.
   "defaults": { "style": "LB", "size": "10x20", "colors": { "body": "White", "trim": "Black", "roof": "Black" } },
   "construction": { … },
   "pricing": { "show": "price", "roundTo": 5, "minCharge": 5, "roofAreaFactor": 1.15,
-               "rto": { "factors": {"36": 0.60, "48": 0.53, "60": 0.45}, "showTerm": 60 } },
+               "rto": { "factors": {"36": 0.60, "48": 0.53, "60": 0.45}, "showTerm": 60, "note": "…" } },
   "notes": { "finePrint": "…", "sizeNotes": { "12": "…" } },
   "leads": { "mode": "form", "url": "…", "fields": { "name": "required", "phone": "required", "email": "optional", "zip": "required", "address": "optional", "note": "optional" },
-             "smsConsent": null, "images": false },
+             "smsConsent": null, "images": false, "askPlan": true },
   "embed": { "origins": ["https://acme-sheds.com"], "shareUrl": "https://acme-sheds.com/design" },
   "look": { "trueColour": true, "scene": "studio" },
   "features": { "floorPlan": true },
@@ -601,8 +601,18 @@ orders. The lot is emailed when email is set up. No payment is taken.
   images only when `leads.images` is true, capped at 300 KB.
 * `postMessage` — to the embedding page, only to an origin on `embed.origins`.
 
-Always: `leads.fields` decides what is asked and required; optional
-`leads.smsConsent` wording (unticked box); a honeypot field and a minimum time
+Always: `leads.fields` decides what is asked and required (the address is
+asked as an "Address" heading over a Street box and a City box; the City box
+comes with the address and is never required); optional `leads.smsConsent`
+wording (unticked box); unless `leads.askPlan` is false, "What do you want to
+do with this quote?" with four answers (`model/quote-plan.js`), never
+required; the `contact` sent carries `city`, `plan` (the answer's key, `""`
+for none) and, when the rent-to-own box shows, `rtoMonths`; a form service
+also gets `city`, `plan` and `rent_to_own` in words. With
+`pricing.rto.showTerm` set, "Your quote" has a rent-to-own box: a chip per
+term and "As low as $x.xx/mo" (price / factor / months, to the cent,
+`model/pricing.js rtoMonthly`), with `pricing.rto.note` (else standard words)
+under it, and the plate shows the same figure; a honeypot field and a minimum time
 on the form; the result is ALWAYS shown, and on failure (and always after
 `mailto`) the company's phone (call/text links), a "copy my design link" button
 and the summary appear on screen. Every string from a config, a link or a lead

@@ -142,7 +142,9 @@ The ones that usually need a hand edit:
   colours by name.
 * `leads` -- `mode` and `url` (above); `email` for `mailto` (else
   `brand.email`); `fields`: `name phone email zip address note`, each
-  `required`, `optional` or `off`; `smsConsent`: their exact words for an
+  `required`, `optional` or `off` (`address` asks Street and City);
+  `askPlan`: `false` to leave out "What do you want to do with this
+  quote?" (asked when missing); `smsConsent`: their exact words for an
   un-ticked "you may text me" box, or `null`; `images`: pictures with a
   `webhook` only; `target: "tab"` for a form service that shows its own
   "are you human?" page (the request then opens in a new tab). A `webhook`
@@ -151,7 +153,10 @@ The ones that usually need a hand edit:
   site in `embed.origins`.
 * `embed.origins` -- `https://` addresses only, never `*`; `embed.shareUrl`.
 * `pricing.show` (`price`, `from`, `none`), `pricing.rto.showTerm` (a term like
-  60, or `null`), `notes.finePrint`, `notes.sizeNotes` (by width in feet).
+  60, or `null`; with a term, "Your quote" gets the rent-to-own box),
+  `pricing.rto.note` (their words under the monthly figure, or leave it out
+  for the standard words), `notes.finePrint`, `notes.sizeNotes` (by width in
+  feet).
 * `look.trueColour` -- the template says `true` (grey daylight). Which one a
   new company gets is an open decision of Alan's (docs/FOR-ALAN.md): ask.
 * `features` -- `framingView`, `buildPlayback`, `floorPlan`.
