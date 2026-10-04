@@ -118,3 +118,17 @@ finished designer retains the golden geometry.
     the business catalogue, and duplicate submissions return one receipt.
     Turning off an electrical package clears its outside-light toggle, including
     dormant toggles in older saved links when opened in the customer designer.
+23. **The standard colours are black and gold** (Alan, Oct 2026: "Have the 3d
+    design same theme" as the Dealer Center), not Barnwright's navy and red:
+    a black header, gold buttons, a warm light page (`ui/styles.css`), and
+    the same for the sample company, a new business and the company
+    template. A company that picks its own colours still gets exactly
+    those. Three rules come with it (`ui/app.js themeTokens`): the words on
+    a button turn dark when white would be hard to read on the button colour
+    (a gold or orange button; a red, blue or green one keeps white words);
+    the see-through panels over the building (the hint, the view buttons,
+    "Tap to design") follow the company's colour instead of staying navy;
+    and warnings and wrong boxes keep their own red instead of the button
+    colour. Only colours change: the type, sizes, spacing and boxes are
+    still Barnwright's (`tools/check-ui.mjs` section 14), and the building
+    is untouched. The floor plan stays a blueprint on navy paper.

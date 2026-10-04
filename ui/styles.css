@@ -20,7 +20,13 @@
       6px so a 390px phone keeps a whole swatch per row.
    3. The company's own colours: ui/app.js sets --navy, --navy-deep, --red,
       --cream, --cyan and --hdr-sub from brand.colors (Barnwright's
-      wk-theme.js rules). With no colours set, this is Barnwright's navy.
+      wk-theme.js rules), and --on-red (the words on a button), --red-rgb
+      (the button's glow) and --glass (the see-through panels over the
+      building) as well. With no colours
+      set, this is the standard black and gold (Alan, Oct 2026: "Have the 3d
+      design same theme" as the Dealer Center), not Barnwright's navy; the
+      variable names are Barnwright's. Warnings and wrong boxes keep a red of
+      their own (--bad) so a gold button colour never makes them look fine.
    4. THE TWO TYPEFACES COME FROM THIS SITE, not from Google Fonts: Oswald
       (the capitals) and IBM Plex Sans (the writing), in fonts/ with their
       licence (fonts/OFL.txt, SIL Open Font License). A company's page, a
@@ -53,12 +59,12 @@
 @font-face{font-family:'IBM Plex Sans';font-style:normal;font-weight:100 700;font-stretch:100%;font-display:swap;src:url(../fonts/ibm-plex-sans-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 
 :root{
-  --hdr-sub:#9fc0d8;
-  --ink:#15212B; --sub:#5a6b75;
-  --navy:#0E3A5F; --navy-deep:#0A2C49; --cyan:#7FD3FF;
-  --paper:#E9EDF0; --kraft:#CDA97B; --kraft-dark:#BC9560; --kraft-line:#9C7C4E; --kraft-ink:#5B4426;
-  --red:#B23A2E; --cream:#F4EFE4; --green:#2E7D52;
-  --line:#D8DEE3; --card-line:#cfd6db;
+  --hdr-sub:#BDB5A5;
+  --ink:#1D1A15; --sub:#635D52;
+  --navy:#2E2920; --navy-deep:#16130E; --cyan:#E2BE4E; --glass:46,41,32;
+  --paper:#F4F2ED; --kraft:#CDA97B; --kraft-dark:#BC9560; --kraft-line:#9C7C4E; --kraft-ink:#5B4426;
+  --red:#C9A227; --red-rgb:201,162,39; --on-red:#16130E; --bad:#B23A2E; --cream:#F4EFE4; --green:#2E7D52;
+  --line:#E0DBD0; --card-line:#D6D0C3;
 }
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;touch-action:pan-x pan-y}
@@ -68,7 +74,7 @@ button,select{font-family:inherit;cursor:pointer}
 :focus-visible{outline:2px solid var(--cyan);outline-offset:2px}
 .hdr{background:var(--navy-deep);color:var(--cream);padding:10px 14px;display:flex;align-items:center;gap:10px;position:relative;z-index:5;
   background-image:linear-gradient(rgba(170,210,240,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(170,210,240,.05) 1px,transparent 1px);background-size:22px 22px}
-.wkbadge{width:38px;height:38px;border-radius:9px;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-weight:700;font-size:16px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25);flex-shrink:0;overflow:hidden}
+.wkbadge{width:38px;height:38px;border-radius:9px;background:var(--red);color:var(--on-red);display:flex;align-items:center;justify-content:center;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-weight:700;font-size:16px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.25);flex-shrink:0;overflow:hidden}
 .wkbadge img{width:100%;height:100%;object-fit:contain;background:#fff}
 .hdr .t1{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-weight:600;font-size:15px;letter-spacing:.12em;text-transform:uppercase;line-height:1.1;overflow-wrap:anywhere}
 .hdr .t2{font-size:11px;color:var(--hdr-sub);letter-spacing:.06em}
@@ -86,7 +92,7 @@ button,select{font-family:inherit;cursor:pointer}
 .modebar{display:block;width:100%;border:none;background:var(--navy);color:var(--cream);font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:12px;box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
 .modebar b{color:var(--cyan);font-weight:600}
 .modebar:active{background:var(--navy-deep)}
-.hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(14,58,95,.78);color:var(--cream);font-size:11px;letter-spacing:.05em;padding:5px 12px;border-radius:999px;pointer-events:none;transition:opacity .6s;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;text-transform:uppercase;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
+.hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(var(--glass),.78);color:var(--cream);font-size:11px;letter-spacing:.05em;padding:5px 12px;border-radius:999px;pointer-events:none;transition:opacity .6s;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;text-transform:uppercase;white-space:nowrap;max-width:calc(100% - 24px);overflow:hidden;text-overflow:ellipsis}
 .hint.gone{opacity:0}
 .addpop{position:absolute;display:none;flex-direction:column;gap:6px;background:#fff;border:1.5px solid var(--navy);border-radius:10px;box-shadow:0 8px 24px rgba(10,30,50,.35);padding:8px;z-index:7;min-width:132px}
 .addpop.open{display:flex}
@@ -97,13 +103,13 @@ button,select{font-family:inherit;cursor:pointer}
 .views .vmenu{display:none;flex-direction:column;gap:6px}
 .views.open .vmenu{display:flex}
 .views.open .vtog{background:var(--navy)}
-.views button{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;background:rgba(14,58,95,.82);color:var(--cream);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:6px 10px;min-width:62px;box-shadow:0 2px 8px rgba(10,30,50,.25)}
+.views button{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:10px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;background:rgba(var(--glass),.82);color:var(--cream);border:1px solid rgba(255,255,255,.28);border-radius:999px;padding:6px 10px;min-width:62px;box-shadow:0 2px 8px rgba(10,30,50,.25)}
 .views button:active{background:var(--navy)}
 /* THE SLOT FOR THE VIEW SWITCHER (Outside / Inside / Framing / Build) --
    ui/views.js fills it. Empty, it takes no room and catches no taps. */
 .viewmount{position:absolute;top:10px;left:10px;z-index:5;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 100px)}
 .viewmount:empty{display:none}
-.stagenote{position:absolute;left:12px;right:12px;top:44px;z-index:6;background:rgba(253,243,242,.96);border:1.5px solid var(--red);border-radius:9px;padding:8px 11px;font-size:12px;color:#7c2a22}
+.stagenote{position:absolute;left:12px;right:12px;top:44px;z-index:6;background:rgba(253,243,242,.96);border:1.5px solid var(--bad);border-radius:9px;padding:8px 11px;font-size:12px;color:#7c2a22}
 .stagenote[hidden]{display:none}
 .plate{position:absolute;left:12px;bottom:12px;min-width:196px;max-width:calc(100% - 24px);border-radius:8px;padding:10px 14px 9px;color:#2c3439;
   background:linear-gradient(168deg,#DDE1E4 0%,#C6CCD0 48%,#D5DADD 100%);
@@ -126,7 +132,7 @@ button,select{font-family:inherit;cursor:pointer}
 .sheet .shint{font-size:11.5px;color:var(--sub);margin-top:7px}
 .sheet .sbtns{display:flex;gap:8px;margin-top:10px}
 .sheet .sbtns button{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;border-radius:7px;padding:9px 12px;border:1.5px solid var(--card-line);background:#fff;color:var(--navy)}
-.sheet .sbtns .warn{color:var(--red);border-color:#e3b7b2}
+.sheet .sbtns .warn{color:var(--bad);border-color:#e3b7b2}
 .sheet .sbtns .done{margin-left:auto;background:var(--navy);color:var(--cream);border-color:var(--navy)}
 .sheet .tglrow{display:flex;align-items:center;gap:9px;margin-top:9px;font-size:13px}
 .sheet .tglrow .pr{margin-left:auto;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-weight:600;font-size:12px;color:var(--green)}
@@ -155,7 +161,7 @@ button,select{font-family:inherit;cursor:pointer}
 .catsel{width:100%;border:1.5px solid var(--card-line);border-radius:8px;padding:10px 11px;font-size:14px;background:#fff;color:var(--ink);margin-bottom:10px;font-weight:500}
 .chips{display:flex;flex-wrap:wrap;gap:7px}
 .chip{border:1.5px solid var(--card-line);background:#fff;color:var(--sub);border-radius:8px;padding:8px 12px;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:12.5px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;text-align:left;max-width:100%;overflow-wrap:anywhere}
-.chip.on{border-color:var(--navy);background:var(--navy);color:var(--cream);box-shadow:0 2px 6px rgba(14,58,95,.28)}
+.chip.on{border-color:var(--navy);background:var(--navy);color:var(--cream);box-shadow:0 2px 6px rgba(var(--glass),.28)}
 .chip small{display:block;font-family:'IBM Plex Sans',system-ui,sans-serif;font-size:10px;font-weight:500;letter-spacing:.02em;text-transform:none;opacity:.75;margin-top:1px}
 .chip:disabled{opacity:.45;cursor:default}
 .sizenote{font-size:11px;color:var(--sub);margin-top:9px}
@@ -199,7 +205,7 @@ button,select{font-family:inherit;cursor:pointer}
 .sumline b{color:var(--ink);font-weight:600;white-space:nowrap}
 .sumline.tot{border-top:2px solid var(--navy);margin-top:6px;padding-top:9px}
 .sumline.tot b{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:20px;color:var(--navy)}
-.bigbtn{width:100%;margin-top:12px;background:var(--red);color:#fff;border:none;border-radius:9px;padding:14px;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;box-shadow:0 3px 8px rgba(178,58,46,.35)}
+.bigbtn{width:100%;margin-top:12px;background:var(--red);color:var(--on-red);border:none;border-radius:9px;padding:14px;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;box-shadow:0 3px 8px rgba(var(--red-rgb),.35)}
 .bigbtn.alt{background:#fff;color:var(--navy);border:2px solid var(--navy)}
 .bigbtn:disabled{opacity:.55}
 .qnote{font-size:11px;color:var(--sub);text-align:center;margin-top:8px}
@@ -207,10 +213,10 @@ button,select{font-family:inherit;cursor:pointer}
 .sent{background:#e9f6ee;border:1.5px solid var(--green);border-radius:9px;padding:14px;text-align:center}
 .sent .disp{color:#1c6b3c;font-size:15px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
 .sent p{font-size:12.5px;color:#2c5c40;margin-top:4px}
-.errbox{background:#fdf3f2;border:1.5px solid var(--red);border-radius:9px;padding:12px;font-size:12.5px;color:#7c2a22;margin-top:10px}
+.errbox{background:#fdf3f2;border:1.5px solid var(--bad);border-radius:9px;padding:12px;font-size:12.5px;color:#7c2a22;margin-top:10px}
 .errbox ul{margin:6px 0 0 18px}
 .qok{background:#e9f6ee;border:1.5px solid var(--green);border-radius:9px;padding:12px;font-size:13px;color:#1c6b3c;margin-top:10px}
-.qerr{background:#fdf3f2;border:1.5px solid var(--red);border-radius:9px;padding:12px;font-size:13px;color:#7c2a22;margin-top:10px}
+.qerr{background:#fdf3f2;border:1.5px solid var(--bad);border-radius:9px;padding:12px;font-size:13px;color:#7c2a22;margin-top:10px}
 .copybtn{margin-top:8px;background:none;border:1.5px solid var(--navy);color:var(--navy);border-radius:7px;padding:8px 13px;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.07em;text-transform:uppercase}
 /* the look-only page (a shared link), for ui/share.js: every panel you would
    use to CHANGE the building goes away. .vcard is a card by another name so
@@ -236,7 +242,7 @@ body.viewonly .stage{height:56vh}
 body.embedded .hdr{display:none}
 .stage:has(> .tapcover){touch-action:pan-y}
 .tapcover{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:rgba(10,30,50,.18);touch-action:pan-y;border:none;width:100%}
-.tapcover span{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--cream);background:rgba(14,58,95,.86);border-radius:999px;padding:10px 18px;box-shadow:0 3px 10px rgba(10,30,50,.35)}
+.tapcover span{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--cream);background:rgba(var(--glass),.86);border-radius:999px;padding:10px 18px;box-shadow:0 3px 10px rgba(10,30,50,.35)}
 @media(max-width:600px){
   /* the hint wraps rather than running under the View button (Barnwright's
      one-line hint was wider than a phone) */

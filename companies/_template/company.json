@@ -19,7 +19,7 @@
     "phone": "(555) 010-0100",
     "email": "sales@yourcompany.example",
     "website": "https://yourcompany.example",
-    "colors": {"header": "#1F2A24", "accent": "#B8893A"},
+    "colors": {"header": "#16130E", "accent": "#C9A227"},
     "logo": "",
     "credit": {"text": "3D designer by Barnwright", "url": "", "show": true}
   },

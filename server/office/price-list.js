@@ -404,7 +404,7 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
       initials: words.slice(0, 2).map((w) => w[0].toUpperCase()).join("") || "SB",
       tagline: "Portable storage buildings",
       phone, email, website, logo: "",
-      colors: { header: "#0A2C49", primary: "#0E3A5F", accent: "#B23A2E" },
+      colors: { header: "#16130E", primary: "#2E2920", accent: "#C9A227" },
       credit: { text: "3D designer by Barnwright", url: "", show: true },
     };
     settings.leads = {

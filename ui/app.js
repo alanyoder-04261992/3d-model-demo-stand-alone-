@@ -131,7 +131,12 @@ const el = (id) => document.getElementById(id);
 /* ------------------------------------------------------------------------
    The company's colours (Barnwright's wk-theme.js, lines 60-190): five
    colours in, ten out, every worked-out one moved until it is readable
-   against what it sits on. No colours set: nothing changes. */
+   against what it sits on. No colours set: nothing changes (the standard
+   black and gold in ui/styles.css). Two more than Barnwright
+   (docs/DIFFERENCES.md): the words on the button colour are white when
+   white reads on it and dark when it does not (a gold or orange button),
+   and the see-through panels over the building (--glass) follow the
+   company's colour instead of staying navy. */
 function rgb(h) { return [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16)); }
 function hex(a) { return "#" + a.map((v) => { v = Math.max(0, Math.min(255, Math.round(v))); return (v < 16 ? "0" : "") + v.toString(16); }).join(""); }
 function lum(a) { const f = a.map((v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); }); return 0.2126 * f[0] + 0.7152 * f[1] + 0.0722 * f[2]; }
@@ -142,6 +147,15 @@ function readable(colour, against, need) {
   const away = lum(rgb(against)) > 0.5 ? "#000000" : "#ffffff";
   for (let i = 1; i <= 20; i++) { const tryIt = mix(colour, away, i / 20); if (ratio(tryIt, against) >= need) return tryIt; }
   return away;
+}
+/* words on a button: white when white reads on it, else a dark colour that does */
+export function onColour(fill, dark) {
+  const white = ratio("#ffffff", fill);
+  if (white >= 4.5) return "#ffffff";
+  const start = cleanHex(dark) || "#16130e";
+  let c = start;
+  for (let i = 1; i <= 20 && ratio(c, fill) < 4.5; i++) c = mix(start, "#000000", i / 20);
+  return ratio(c, fill) > white ? c : "#ffffff";
 }
 function cleanHex(v) {
   if (typeof v !== "string") return null;
@@ -164,6 +178,8 @@ export function themeTokens(C) {
   if (header) set("--cream", cleanHex(C.cream) || readable(mix(header, "#ffffff", 0.94), header, 7));
   if (header && accent) set("--cyan", cleanHex(C.cyan) || readable(mix(accent, "#ffffff", 0.45), header, 4.5));
   if (header) set("--hdr-sub", cleanHex(C.hdrSub) || readable(mix(header, "#ffffff", 0.66), header, 4.5));
+  if (accent) { set("--on-red", onColour(accent, header)); set("--red-rgb", rgb(accent).join(",")); }
+  if (primary) set("--glass", rgb(primary).join(","));
   return out;
 }
 function applyTheme(colors) {
