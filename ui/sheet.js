@@ -78,6 +78,16 @@ export function createSheet(ctx) {
 
   function toggle(tg, on) { tg.className = "tgl" + (on ? " on" : ""); tg.setAttribute("aria-checked", on ? "true" : "false"); }
 
+  /* A switch row's words: the company's own name for the option when it gave
+     one, otherwise the words index.html was written with (kept the first
+     time, so a later item can put them back). */
+  function setLabel(row, tg, name) {
+    const span = row.firstElementChild;
+    if (span.dataset.usual == null) { span.dataset.usual = span.textContent; tg.dataset.usual = tg.getAttribute("aria-label") || ""; }
+    span.textContent = name || span.dataset.usual;
+    tg.setAttribute("aria-label", name || tg.dataset.usual);
+  }
+
   /* the type drop-down's list for this item */
   function kindsFor(it, c) {
     const CAT = cat.CAT;
@@ -100,6 +110,8 @@ export function createSheet(ctx) {
     /* Type (built from the price tables, so the labels follow the company's prices) */
     const selEl = el("sh-type"); selEl.innerHTML = "";
     const epP = (n) => { const e = (cat.ELECPK || []).filter((x) => x[0] === String(n))[0]; return e ? e[2] : 0; };
+    /* the company's own name for a package (ELECPK's fourth entry), or null */
+    const epName = (n) => { const e = (cat.ELECPK || []).filter((x) => x[0] === String(n))[0]; return (e && e[3]) || null; };
     const elecCtx = (c.k === "out" || c.k === "ilt");
     const pr = (p, perFt) => showMoney() ? "  (+$" + p + (perFt ? "/ft)" : ")") : "";
     kindsFor(it, c).forEach((kk) => {
@@ -107,7 +119,7 @@ export function createSheet(ctx) {
       const pm = /^PKG(\d+)$/.exec(kk);
       const ck = CAT[kk];
       let label;
-      if (pm) label = "Electric package — Option " + pm[1] + pr(epP(pm[1]));
+      if (pm) label = (epName(pm[1]) || "Electric package — Option " + pm[1]) + pr(epP(pm[1]));
       else if (elecCtx && ck && ck.k === "out" && ck.switch) label = ck.n + " — in package";
       else if (elecCtx && ck && ck.k === "out") label = "Additional outlet" + pr(ck.p);
       else if (elecCtx && ck && ck.k === "ilt") label = "Additional overhead light" + pr(ck.p);
@@ -161,6 +173,7 @@ export function createSheet(ctx) {
     const sr = el("sh-shutrow");
     if (c.k === "win" && !c.gable && MISC.shutter != null) {
       sr.style.display = "flex";
+      setLabel(sr, el("sh-shut"), (cat.MISCNAMES || {}).shutter);
       el("sh-shutpr").textContent = showMoney() ? "+ $" + MISC.shutter + " / set" : "";
       const tg = el("sh-shut"); toggle(tg, it.shut);
       tg.onclick = () => change("item", (s) => S.toggleShutters(s, it.id), it.id);
@@ -173,6 +186,9 @@ export function createSheet(ctx) {
     const isSteel = !!(c.liteSwap && CAT[c.liteSwap]);
     if ((c.draw === "shop-door" && !T.metal && MISC.lite != null) || isSteel) {
       lr.style.display = "flex";
+      /* the company's name for the door window is for the wooden door's
+         window; the steel door's switch to its 11-lite twin keeps the usual words */
+      setLabel(lr, el("sh-lite"), isSteel ? null : (cat.MISCNAMES || {}).lite);
       const liteCat = isSteel ? (c.draw === "lite-door" ? CAT[it.cat] : CAT[c.liteSwap]) : null;
       const plainCat = isSteel ? (c.draw === "lite-door" ? CAT[c.liteSwap] : CAT[it.cat]) : null;
       el("sh-litepr").textContent = !showMoney() ? "" : "+ $" + (isSteel ? Math.max(0, liteCat.p - plainCat.p) : MISC.lite);

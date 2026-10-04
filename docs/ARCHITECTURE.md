@@ -14,15 +14,15 @@ critiques of version 1 — see git history.)
 | "a skill for each part" | `.claude/skills/part-<id>/SKILL.md` for every part | `tools/check-parts.mjs` (no part without a skill, no skill without a part) |
 | "when there is a new design it builds it like in real life" | internal construction lessons and part skills inform the model; customers use the finished building and floor plan | `tools/check-framing.mjs`, `tools/check-views.mjs` |
 | "fast to set up new companies" | a company is one settings file on top of a shared manufacturer file; `tools/new-company.mjs`, `tools/import-prices.mjs`, `setup.html` contact sheet | `tools/check-companies.mjs`, `tools/check-loadouts.mjs`, `tools/check-starter.mjs` |
-| "a company that just buys my 3D design, not the software" | managed dealer links and order inboxes; Owner/Admin catalogue control; `embed.js`; optional legacy lead integrations | `tools/check-embed.mjs`, `tools/check-leads.mjs` |
+| "a company that just buys my 3D design, not the software" | the Dealer Center (owner's price list for every lot, lot links, customers and orders); `embed.js`; optional legacy lead integrations | `tools/check-embed.mjs`, `tools/check-leads.mjs` |
 | "not touch Barnwright" | Barnwright is only ever read, by the golden capture | nothing in this repo writes outside it |
 
 ## Ground rules
 
 1. **Plain ES modules for the designer; separate management backend.**
-   Netlify Functions/Identity/Blobs support managed businesses and dealer lots.
+   Netlify Functions, Identity and Blobs run the Dealer Center (price list, lots, team, customers, orders).
    An allowlisted build excludes internal lessons and skills from client output.
-   See [DEALER-BACKEND.md](DEALER-BACKEND.md) for server authorization and setup.
+   See [OFFICE.md](OFFICE.md) for the Dealer Center's rules, data and setup.
 2. **Node-safe vs browser files.** Everything under `model/`, `parts/`,
    `library/`, and the engine files marked *Node-safe* below must import and run
    in Node 22 with no DOM and no WebGL. They never import a browser file
@@ -491,11 +491,13 @@ without overlapping; the demo reproduces the golden `includedItems` exactly.
              "colors": { "header", "accent" }, "logo",
              "credit": { "text": "3D designer by Barnwright", "url": "", "show": true } },
   "offer": {                           // ONLY these styles load; sizes REPLACE, in chip order
-    "UT": { "sizes": { "8x12": 3400, … }, "name": "…optional rename…" }
+    "UT": { "sizes": { "8x12": 3400, … }, "name": "…optional rename…" },
+    "UTX1": { "base": "UT", "name": "Premium Utility Shed", "sizes": { "8x12": 3900, … } }  // the company's own, built like UT
   },
-  "categories": [ ["Utility & Storage", ["UT", "SU"]] ],
+  "categories": [ ["Utility & Storage", ["UT", "UTX1", "SU"]] ],
   "items": { "w48": 150, "w72": 300, … },            // offered items and their prices
-  "options": { "dormers": {"6": 1300}, "ramps": {…}, "elec": {…}, "misc": {…}, "rates": {…}, "extras": [] },
+  "options": { "dormers": {"6": 1300}, "ramps": {…}, "elec": {"1": {"price": 675, "name": "Basic electric"}, …},
+               "misc": {…}, "rates": {…}, "extras": [] },   // each option: a price, or {"price", "name"}
   "palettes": { "paint": ["White", "Navy", …] },     // names picked from the manufacturer, or [name, hex] pairs
   "defaults": { "style": "LB", "size": "10x20", "colors": { "body": "White", "trim": "Black", "roof": "Black" } },
   "construction": { … },
@@ -522,6 +524,26 @@ without overlapping; the demo reproduces the golden `includedItems` exactly.
   Barnwright's shapes (`P`, `TYPES`, `CATS`, `CAT`, `DORMERS`, `RAMPS`,
   `ELECPK`, `MISC`, `RATES`, `OPTX`, `COLORS`) so ported code keeps its names,
   and reports every problem in plain words.
+* **A style of the company's own** is an `offer` entry with `base`: a new code
+  (1–8 letters or digits, never a manufacturer code, not even in other
+  letters), `base` one of the manufacturer's styles (never another `base`
+  entry) and a `name` (at most 60 letters). The names of all offered styles,
+  renames included, are unique (case and spacing ignored), so a customer never
+  sees two buttons with one name. `TYPES[code]` is a copy of the base's traits
+  (roof, walls, loft, porch, loadout…) with the new name, the base's category
+  unless `categories` says otherwise, and `"base"`. The parts read traits only;
+  the one place a style is looked up by code, a construction rule's `styles`
+  test, uses the base (`buildingFacts` in `model/construction.js`), and a rule
+  naming the new code is refused. So it is drawn, framed, fitted and priced
+  exactly like its base; only its name and prices are its own
+  (`tools/check-style-variants.mjs`, every style at every size). A different
+  shape is a new manufacturer style (`add-a-style` skill).
+* **An option** (`dormers`, `ramps`, `elec`, `misc`, `rates`) is a price or
+  `{"price", "name"}` (like an item). A name replaces the words on the button
+  and the quote line: the `DORMERS` / `RAMPS` / `ELECPK` label, `RATEDEF`
+  `name` and `quoteName`, `MISCNAMES` for shutters, the door window and the
+  outside light, and ELECPK's fourth entry for the package's quote line. With
+  no name every label and quote line is Barnwright's, word for word.
 
 ## Design (saved/shared) and state (live)
 
@@ -558,12 +580,14 @@ says so ("this link was priced at $X on <date>; prices may have changed").
 
 ## Leads (`ui/quote.js`)
 
-Managed `/d/<lot>/` links load their company and lot from the backend. Submitting
-an order resolves the recipient and recomputes its price on the server, saves a
-catalogue/price snapshot and returns a receipt. A design link retains its lot.
-Owner/Admin accounts control the business catalogue; dealer staff read only
-assigned-lot orders. No payment or automatic dealer email is sent. Alan's
-platform billing remains separate and deferred.
+Lot links (`/d/<lot>/`) load the business's price list and the lot from the
+Dealer Center. Sending a quote request: the server takes the lot from the
+address, checks and prices the design itself, adds the quote to that lot's
+customer (matched by email or phone) or a new one, and answers with the quote
+number and price. A design made under an older price list is priced at
+today's prices when everything in it is still sold. A design link keeps its
+lot. Owners set the price list; dealers see their own lots' customers and
+orders. The lot is emailed when email is set up. No payment is taken.
 
 `company.leads.mode`:
 

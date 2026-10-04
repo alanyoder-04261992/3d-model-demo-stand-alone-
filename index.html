@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<!-- Identity emails may return to the site root; the portal owns these flows. -->
-<script>if(/(?:^#|&)(?:confirmation_token|recovery_token|invite_token|email_change_token|access_token|error_description)=/.test(location.hash)){location.replace('/portal.html'+location.hash);}</script>
+<!-- The sign-in emails (invite, confirm, password reset) may land on the site's
+     front page; the Dealer Center (/dealer) handles them, so they go there with
+     the part after "#" kept. After editing this script, run
+     node tools/build-headers.mjs (its fingerprint is in _headers). -->
+<script>if(/(?:^#|&)(?:confirmation_token|recovery_token|invite_token|email_change_token|access_token|error_description)=/.test(location.hash)){location.replace('/dealer'+location.hash);}</script>
 <!-- UNDER /c/<company>/ (the address embed.js opens -- a rewrite to this page)
      every file of the designer would be looked for inside /c/<company>/ and
      not found. This puts the page's base back at the folder above /c/, and

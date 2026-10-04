@@ -1,0 +1,47 @@
+/* PRINTING an order sheet or a quote sheet (loaded with media="print").
+   Only the sheet prints: no header, menus, buttons or messages; a white
+   page with black writing; one or two pages; a price line or a signature
+   never split across two pages. Other screens print plainly too. */
+
+@page { size: letter; margin: 0.45in 0.5in; }
+
+html, body { background: #fff !important; color: #000 !important; font-size: 10pt; }
+.topbar, .sidenav, .tabbar, .more-sheet, .skip, .toasts, .banner, .sheet-tools, .btn, button, .dialog, .sheet-shot, .crm-design-bar { display: none !important; }
+.main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
+a { color: #000 !important; text-decoration: none !important; }
+.card, .crm-quote, .crm-order { box-shadow: none !important; border-color: #bbb !important; }
+
+/* the sheet */
+.sheet-page { max-width: none; margin: 0; }
+.sheet { border: 0 !important; box-shadow: none !important; padding: 0 !important; gap: 10pt !important; color: #000 !important; border-radius: 0; }
+.sheet h3, .sheet-title p, .sheet-small, .sheet-lines, .sheet-colors dt, .sheet-price thead th, .sheet-sign, .sheet-fine { color: #333 !important; }
+.sheet-top { border-bottom: 2pt solid #000 !important; padding-bottom: 8pt !important; }
+.sheet-lines, .sheet-lot { font-size: 9.5pt !important; line-height: 1.35 !important; }
+.sheet-items ul, .sheet-colors { font-size: 10pt !important; line-height: 1.4 !important; }
+.sheet-section { gap: 6pt !important; }
+.sheet-business h2, .sheet-title h1 { color: #000 !important; }
+.sheet-initials { background: #000 !important; color: #fff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.sheet-title h1 { font-size: 22pt !important; }
+.sheet-title .pill { border: 1pt solid #000; background: none !important; color: #000 !important; }
+.sheet-title .pill::before { display: none; }
+.sheet-two { grid-template-columns: 1fr 1fr !important; gap: 12pt !important; }
+.sheet-block { border-color: #999 !important; padding: 8pt 10pt !important; }
+.sheet-top { flex-direction: row !important; }
+.sheet-lot { text-align: right !important; }
+.sheet-building { grid-template-columns: minmax(0, 1fr) auto !important; }
+.sheet-picture { width: 2.4in !important; }
+.sheet-picture img { border-color: #999 !important; }
+.sheet-price { font-size: 10.5pt !important; }
+.sheet-price th, .sheet-price td { padding: 4pt 2pt !important; border-color: #bbb !important; }
+.sheet-price .sheet-total th { border-top: 1.5pt solid #000 !important; font-size: 13pt !important; }
+.sheet-price tr, .sheet-items li, .sheet-block, .sheet-sign { break-inside: avoid; page-break-inside: avoid; }
+.sheet-price thead { display: table-header-group; }
+.sheet-signs { break-inside: avoid; page-break-inside: avoid; grid-template-columns: 2fr 1fr 2fr 1fr !important; gap: 12pt 16pt !important; padding-top: 4pt !important; }
+.sheet-sign-line { border-bottom: 1pt solid #000 !important; height: 22pt !important; }
+.sheet-fine { border-top-color: #999 !important; font-size: 9pt !important; }
+.sheet-section h3, .sheet-block h3 { break-after: avoid; page-break-after: avoid; }
+.sheet h3 { margin-bottom: 3pt !important; }
+.sheet-title p { margin-top: 2pt !important; }
+.sheet-block { padding: 6pt 9pt !important; gap: 2pt !important; }
+.sheet-price th, .sheet-price td { padding: 3pt 2pt !important; }
+.sheet-fine { padding-top: 6pt !important; }

@@ -20,12 +20,16 @@ design within that company's catalogue. Read an existing part's skill before
 changing it, and update that skill with any part change. Preserve finished
 geometry unless a visual change is requested.
 
-The management portal stores validated company configuration and dealer lots
-on the server. Each business has an Owner/Admin who controls prices and options;
-dealer staff can access only assigned orders. Alan's own platform billing is
-separate and deferred. Never trust browser prices, recipient IDs or user-editable
-role metadata. Construction lessons and skills are internal setup knowledge,
-excluded from the default customer build; see `docs/DEALER-BACKEND.md`.
+The Dealer Center (`/dealer`; contract in `docs/OFFICE.md`) keeps each
+business's price list, lots, team, customers and orders on the server. The
+owner sets sizes, styles, prices and options once and every lot uses them;
+dealers see only their own lots' customers and orders. Never trust browser
+prices, lot names or anything a person can edit on their own login. A
+business Barnwright sells to is connected to Barnwright's control room
+(`server/office/account.js`, "The business's Barnwright account" in
+`docs/OFFICE.md`); Alan's own site is not. Construction lessons and skills are
+internal setup knowledge, left out of the customer build. Screen words follow
+"The words we use" in `docs/OFFICE.md`.
 
 Validate company files with `node tools/list-companies.mjs`; run
 `node tools/check-all.mjs --fast` for the checks without a browser. The legacy

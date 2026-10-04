@@ -131,20 +131,92 @@ do. What their visitors get:
   without spinning the building, until the visitor taps it.
 * A shared design link on their page opens that building.
 * Their allowed website is told when the designer is ready, when the design
-  changes and when a quote was requested. Customer contact details stay in the
-  dealer inbox for managed links.
+  changes and when a quote was requested. On a lot's link, the customer's
+  contact details go only to the Dealer Center.
 
 Each company's designer lives at its own address on the site you host
 (/c/ and the company's id). The company never gets a copy of the files.
 
-## Where quote requests go
+## The Dealer Center
 
-The [Owner/Admin portal](../portal.html) manages a business's prices, options
-and dealer lots. Each lot gets a link for its own website. A customer submitting
-through that link appears in that lot's order inbox, with the submitted design
-and the server's price at that time. Owners can see their whole business;
-dealer staff see the lots assigned to them. These are order requests to review,
-not paid purchases. Your platform's billing of these businesses comes later.
+The Dealer Center is the private side of the designer, at **/dealer** on the
+site. One shed business runs everything from it:
+
+* **The owner sets the price list once** — which buildings are sold, every
+  size and its price, the doors and windows, the options and the colors.
+  Every lot uses that one price list, so when the owner saves a change,
+  every lot's 3D designer shows it right away. Quotes a customer already
+  has keep the price they were given.
+* **The owner can add sizes and building styles.** A style can be one of the
+  builder's styles, renamed if they like, or their own style "built like" one
+  of them (for example a "Premium Lofted Barn" that looks like the Lofted
+  Barn but has its own sizes and prices). A "Change prices" button raises or
+  lowers a whole group at once (say, every barn 5%), with a preview first.
+  Every save is kept with a list of what changed, and an older price list
+  can be put back.
+* **Lots.** Each lot gets its own 3D designer link and the two lines of
+  website code for its own website. A lot can be closed and opened again.
+* **Team.** The owner adds people by email: an **owner**, a **manager** (sees
+  every lot, can't change prices or people) or a **dealer** (sees only their
+  own lots). The person makes a login with that email and they're in.
+* **Customers.** Every quote sent from a lot's 3D designer becomes a customer
+  of that lot (the same person sending again is added to their file, not
+  doubled up). Walk-ins and phone calls are added by hand. Each customer has
+  a stage — New, Contacted, Quoted, Sold, Delivered or Lost — a follow-up
+  date, notes of every call and text, their quotes, and their orders.
+* **Designing for a customer.** "Design a building for them" opens the lot's
+  3D designer inside the Dealer Center; "Save quote" puts the building and
+  its price on the customer's file.
+* **Orders.** "Mark sold" turns a quote into an order with the same number
+  (#1042): cash, rent-to-own or financing, the deposit, the delivery address
+  and date. The order moves Sold → Sent to builder → Ready → Delivered, and
+  prints as an order sheet with signature lines.
+* **Today** shows each person who to call today, who is new, the deliveries
+  coming up and the month's numbers.
+
+Every price a customer sees is worked out again by the server from the price
+list, so nobody can change a price by tampering with the page.
+
+To try it with a made-up business (three lots, five people, thirty
+customers), open `/dealer` on your learning preview site, leave the email
+and password empty and tap **Sign in**. Nothing you do there is saved or
+sent anywhere. Sites you sell to a shed company never have this: their
+sign-in always needs a real email and password. On your own computer,
+`npm run office` does the same with the sample business. How it is put on a real website is in [the Dealer Center
+guide](OFFICE.md).
+
+### Connected to your control room
+
+When you sell the Dealer Center to a shed company, you make the company in
+your control room, take its payment there and make its activation key. The
+key and four other settings go into the company's Netlify settings (the
+list is in [the Dealer Center guide](OFFICE.md)). From then on:
+
+* **It checks in with your control room** every few hours and gets a pass
+  good for 7 days.
+* **If they stop paying, or you switch them off,** changes stop the next time it
+  checks in. They can still look at and download all their customers and
+  orders, and remove a person from their team. Every screen tells them why.
+* **Their 3D designer links close** and show "Our 3D designer isn't open
+  right now" with the lot's phone number, because a new quote is a change.
+* **If their site can't reach your control room for 7 days,** the same
+  thing happens until it can. Their owner gets a warning a day after it
+  last checked in, with the day it will happen.
+* **The number of lots in their plan** (the dealership limit you set in the
+  control room) is how many lots they can have open. The Lots screen says
+  "3 of 3 open lots in your Barnwright plan" and turns off **Add a lot**
+  when they're at the limit.
+* **Help from Barnwright:** their owner can switch it on in Settings for 1 to
+  24 hours. Then **Run customer diagnostics** in your control room checks
+  how their Dealer Center is running. You never see their customers or
+  prices, and it turns itself off when the time is up. They can see each
+  check in a short list under the switch.
+
+Your own business isn't connected to a control room, so none of this ever
+limits it. On your own computer, `npm run office -- --control-room` shows
+what a connected company sees.
+
+### Older company links (without the Dealer Center)
 
 Existing static company links can still send quote requests wherever the
 company already receives things. One choice per company:
@@ -349,9 +421,14 @@ proved; the full list is in [the README](../README.md).
 
 ## Not finished yet
 
-* The management portal needs Netlify Identity enabled and the first owner
-  explicitly assigned before staff can sign in. Platform billing and automatic
-  dealer email notifications are not connected.
+* Each business's Dealer Center needs Netlify Identity turned on and the
+  owner's email set once (the steps are in [the Dealer Center guide](OFFICE.md)).
+  Emailing a lot when a quote arrives needs an email service key; without it
+  everything else works the same. Taking payment from a business happens
+  in your control room; turning on live payments there is still to do.
+* The control room's own screens and messages still say "HQ" (for example
+  "enable support in HQ Setup"). For a Dealer Center company that switch is
+  **Help from Barnwright** in their Settings.
 * Some internal part descriptions still assume trusses and their framing
   description talks about gusset plates and a bottom chord. The rafters themselves are
   drawn and checked; only the words have not caught up.

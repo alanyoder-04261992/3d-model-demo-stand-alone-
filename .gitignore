@@ -8,3 +8,6 @@ test/out/
 dist/
 dist-client/
 server/generated/
+
+# The local Dealer Center (npm run office)
+.office-local*/

@@ -16,6 +16,9 @@ there -- every company that sells the style prices it in its own file. Read
 * **Same building, another name or other sizes** -- no new style. The company
   renames it in its own `offer` (`"LB": {"name": "Loft Barn", "sizes": {...}}`)
   and lists the sizes it sells. Done.
+* **Same building sold twice, under two names and two prices** (a "Premium
+  Lofted Barn" next to the Lofted Barn) -- no new style either: see "A style
+  built like another one" below.
 * **A building the traits below can describe** (a roof shape that exists, a
   wall height, a porch, a loft, a dormer, metal or painted, its own doors and
   windows) -- a new style entry, no code. This skill.
@@ -23,6 +26,39 @@ there -- every company that sells the style prices it in its own file. Read
   straight, a new kind of porch) -- that is code in `model/roof-shapes.js` and
   the parts. Tell Alan first: it is a bigger job, and every existing building
   must still draw exactly as Barnwright does (`check-the-look` skill).
+
+## A style built like another one
+
+When the shape is the same as a style the library already draws -- same
+roof, walls, porch, loft and standard doors and windows -- and only the name
+and the prices are different, the **owner adds it in the Dealer Center**
+(price list, Buildings: add a style built like one of the library's). No
+code, no new library entry. In the price list it is an `offer` entry with a
+new code and a `base`:
+
+```json
+"offer": {
+  "LB":   {"sizes": {"10x16": 5540}},
+  "LBX1": {"base": "LB", "name": "Premium Lofted Barn", "sizes": {"10x16": 6290}}
+}
+```
+
+* the code: 1 to 8 letters or digits, never one of the manufacturer's codes
+  (not even in other letters);
+* `base`: one of the manufacturer's styles -- never another style built like
+  one;
+* `name`: needed, at most 60 letters, and no two building styles on sale may
+  share a name (capitals and spaces do not count);
+* it goes in a group like any style, and the designer may open on it.
+
+It is drawn, framed, fitted and priced exactly like its base:
+`model/company.js` copies the base's traits into it with `"base": "LB"`, and
+a construction rule that tests `"styles": ["LB"]` covers both (a rule naming
+`LBX1` is refused). `node tools/check-style-variants.mjs` proves it for every
+style at every size.
+
+**When the shape is different** -- another wall height, roof, porch, loft or
+standard door and window layout -- it is a new library style: carry on below.
 
 ## 1. Where the entry goes
 

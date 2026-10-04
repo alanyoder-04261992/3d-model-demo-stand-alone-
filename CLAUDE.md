@@ -25,22 +25,37 @@ set up new companies**. Build it here and **do not touch Barnwright**.
    `.claude/skills/part-<id>/SKILL.md`.** Before changing a part, read its
    skill. After changing a part, update its skill.
 4. **A new company is configuration, never company-specific code.** Static
-   examples use `companies/<id>/company.json`; managed businesses store the same
-   validated configuration through the Owner/Admin portal. Use the `new-company` skill.
+   examples use `companies/<id>/company.json`; a business on the Dealer Center
+   keeps the same validated settings as its price list. Use the `new-company`
+   skill.
 5. **Keep the customer designer separate from internal construction lessons.**
-   The designer stays plain ES modules. The requested management backend uses
-   Netlify Functions, Identity and Blobs. `npm run build:client` creates an
-   explicit client package without lesson pages, skills, reference photos or
-   internal setup tools. Only Alan's learning preview enables lesson assets.
-   Owner/Admin controls each business's prices, options and dealer lots.
-   Dealer accounts see assigned lots' orders. Platform billing is deferred.
+   The designer stays plain ES modules. The **Dealer Center** (`/dealer`,
+   `ui/office/`, `server/office/`, contract `docs/OFFICE.md`) runs on Netlify
+   Functions, Identity and Blobs. The owner sets sizes, styles, prices and
+   options once and every lot uses them; dealers see their own lots'
+   customers and orders. `npm run build:client` makes a client package
+   without lesson pages, skills, reference photos or setup tools. Only Alan's
+   learning preview has lesson pages. A business Barnwright sells to is
+   connected to Barnwright's control room (`server/office/account.js`):
+   its account being off stops changes and closes its 3D designer links.
 6. The contract is `docs/ARCHITECTURE.md`. Deliberate behaviour differences from
    Barnwright are listed in `docs/DIFFERENCES.md`.
+
+## Words we use
+
+Everything a person reads (screens, emails, errors, docs) uses one word per
+thing: **Dealer Center** (never portal, office, workspace), **owner**,
+**manager**, **dealer** (never admin, member, user), **lot**, **price list**
+(never catalogue), **customer**, **quote** (#1042), **order** (same number),
+**follow-up**, **3D designer**. Stages: New, Contacted, Quoted, Sold,
+Delivered, Lost. Say what happened and what to tap; no disclaimers, no
+slashes, no "this does not…". The full list is in `docs/OFFICE.md`.
 
 ## Running it
 
 ```
 npm run serve            # http://127.0.0.1:8282/  (the designer)
+npm run office           # http://127.0.0.1:8383/dealer  (the Dealer Center, sample data)
 node tools/check-all.mjs # every check; each one prints what it proved
 ```
 

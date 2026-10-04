@@ -1,14 +1,21 @@
 /* THE DESIGNER PAGE'S ENGINE ROOM. Browser file (index.html loads it).
 
    What it does, in order:
-   1. Works out which company this is: /c/<id>/ in the address, else
-      ?company=<id>, else "demo". ?embed=1 means the page is inside a
-      company's own web page (embed.js): no header bar.
+   1. Works out which company this is: /d/<lot>/ in the address is a lot of
+      a business on the Dealer Center (its price list comes from the
+      server); else /c/<id>/, else ?company=<id>, else "demo". ?embed=1
+      means the page is inside a company's own web page (embed.js): no
+      header bar.
    2. Loads that company's settings BEFORE anything is drawn (ui/load.js:
       the company file, its manufacturer, the construction defaults, all
       checked). A settings problem shows the list of problems in plain words
       instead of a half-working designer; a company whose status is
       "suspended" shows "This designer is not available -- call <phone>".
+      ON A LOT'S LINK the customer never sees a settings problem, a code or
+      "demo": a closed lot (or a business not open yet) says "Our 3D
+      designer isn't open right now. Call us at <phone>." and anything else
+      that stops it says "Our 3D designer couldn't open just now"; the
+      reason goes to the browser's console for whoever looks after it.
    3. Paints the company's colours and name on the page (Barnwright's
       wk-theme.js rules: five colours in, the rest worked out and kept
       readable).
@@ -199,13 +206,25 @@ function brandHeader(cat) {
   el("fineprint").textContent = (cat.notes && cat.notes.finePrint) || "";
 }
 
+/* A lot's link that cannot open: words for the customer, never the reason.
+   closed: the lot is closed or the business is not open yet (the server
+   said 404, or the price list says suspended). phone: the lot's (or the
+   business's) number when it is known. */
+function lotClosedMessage(closed, phone) {
+  const tel = telHref(phone);
+  const call = phone ? "Call us at " + (tel ? '<a href="' + esc(tel) + '">' + esc(phone) + "</a>" : esc(phone)) + "." : "";
+  if (closed) bootMessage("Our 3D designer isn't open right now", "<p>" + (call || "Please check back soon.") + "</p>");
+  else bootMessage("Our 3D designer couldn't open just now", "<p>Please try again in a minute." + (call ? " " + call : "") + "</p>");
+}
+
 /* ------------------------------------------------------------------------ */
 
 async function boot() {
   const q = new URLSearchParams(location.search);
   const pm = /\/c\/([a-z0-9-]{2,40})\/?$/.exec(location.pathname);
   const lotMatch = /\/d\/([a-z0-9-]{2,40})\/?$/.exec(location.pathname);
-  const companyId = (pm && pm[1]) || q.get("company") || "demo";
+  /* a lot's link never falls back to a company file ("demo" or ?company=) */
+  const companyId = lotMatch ? null : (pm && pm[1]) || q.get("company") || "demo";
   const embedded = q.get("embed") === "1";
   if (embedded) document.body.classList.add("embedded");
 
@@ -214,7 +233,14 @@ async function boot() {
   try { loaded = lotMatch ? await loadLot(lotMatch[1]) : await loadCompany(companyId); }
   catch (e) {
     console.error("The designer could not load its settings:", e.message);
-    bootMessage("This designer could not start", "<p>" + esc(e.message) + "</p>");
+    if (lotMatch) lotClosedMessage(e.status === 404, "");
+    else bootMessage("This designer could not start", "<p>" + esc(e.message) + "</p>");
+    return null;
+  }
+  if (lotMatch && loaded.problems.length) {
+    console.error(`The price list for the lot "${lotMatch[1]}" has ${loaded.problems.length} problem(s):\n - ` + loaded.problems.join("\n - "));
+    const lot = loaded.lot || {}, brand = (loaded.company && loaded.company.brand) || {};
+    lotClosedMessage(false, lot.phone || brand.phone || "");
     return null;
   }
   if (loaded.problems.length) {
@@ -229,6 +255,10 @@ async function boot() {
   /* 3. the company's colours and name */
   applyTheme(cat.brand.colors);
   brandHeader(cat);
+  if (cat.status === "suspended" && cat.managed) {
+    lotClosedMessage(true, cat.brand.phone);
+    return null;
+  }
   if (cat.status === "suspended") {
     const ph = cat.brand.phone, tel = telHref(ph);
     bootMessage("This designer is not available",

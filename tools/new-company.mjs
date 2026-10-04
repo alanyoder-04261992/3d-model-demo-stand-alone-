@@ -90,14 +90,16 @@ export function placeholders(c, manufacturer) {
   for (const k of Object.keys(c.offer || {})) {
     if (k.startsWith("_")) continue;
     const zs = Object.keys((c.offer[k] || {}).sizes || {}).filter((z) => c.offer[k].sizes[z] === 1);
-    if (zs.length) out.push(`${(styles[k] && styles[k].name) || k} (${k}): ${zs.length === Object.keys(c.offer[k].sizes).length ? "every size" : zs.length + " size" + (zs.length > 1 ? "s" : "")} -- ${zs.join(", ")}`);
+    /* a style of the company's own (built like another, "base") goes by its own name */
+    const name = (c.offer[k] && c.offer[k].base != null && c.offer[k].name) || (styles[k] && styles[k].name) || k;
+    if (zs.length) out.push(`${name} (${k}): ${zs.length === Object.keys(c.offer[k].sizes).length ? "every size" : zs.length + " size" + (zs.length > 1 ? "s" : "")} -- ${zs.join(", ")}`);
   }
   const its = Object.keys(c.items || {}).filter((k) => !k.startsWith("_") && (c.items[k] === 1 || (c.items[k] && c.items[k].price === 1)));
   if (its.length) out.push("doors, windows and fixtures: " + its.map((k) => `${k} (${items[k] ? items[k].name : k})`).join(", "));
   const opts = [];
   for (const g of ["dormers", "ramps", "elec", "misc", "rates"]) {
     const grp = (c.options || {})[g];
-    if (grp && typeof grp === "object") for (const id of Object.keys(grp)) if (!id.startsWith("_") && grp[id] === 1) opts.push(g + "." + id);
+    if (grp && typeof grp === "object") for (const id of Object.keys(grp)) if (!id.startsWith("_") && (grp[id] === 1 || (grp[id] && grp[id].price === 1))) opts.push(g + "." + id);
   }
   if (opts.length) out.push("upgrades: " + opts.join(", "));
   return out;
