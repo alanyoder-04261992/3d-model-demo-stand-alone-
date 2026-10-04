@@ -51,16 +51,30 @@ export async function render(ctx) {
       ? `${plural(open, "lot")} open${closed ? `, ${closed} closed` : ""}. Every lot sells from the same price list, and each one has its own 3D designer link.`
       : "Every lot sells from the same price list, and each one has its own 3D designer link."
     : lots.length > 1 ? "The lots you work." : "The lot you work.";
-  const head = pageHead("Lots", sub, owner ? button("Add a lot", () => lotDialog(ctx, null), { kind: "primary", icon: "plus" }) : null);
+  const room = planRoom(app);
+  const addLot = () => button("Add a lot", () => lotDialog(ctx, null), { kind: "primary", icon: "plus", disabled: !room.canOpen, title: room.why || undefined });
+  const head = pageHead("Lots", sub, owner ? addLot() : null);
+  const plan = room.line && app.seesAllLots ? h("p", { class: ["lots-plan", !room.canOpen && "full"] }, icon("lots"), h("span", {}, room.line)) : null;
 
   if (!lots.length) {
-    return h("div", { class: "lots" }, head, h("section", { class: "card" }, owner
-      ? emptyState("No lots yet", "Add your first lot to get its 3D designer link and the code for your website.",
-        button("Add a lot", () => lotDialog(ctx, null), { kind: "primary", icon: "plus" }))
+    return h("div", { class: "lots" }, head, plan, h("section", { class: "card" }, owner
+      ? emptyState("No lots yet", "Add your first lot to get its 3D designer link and the code for your website.", addLot())
       : emptyState("You're not on a lot yet", "Ask the owner to add you to a lot. Its customers and orders show up here once they do.")));
   }
-  return h("div", { class: "lots" }, head,
+  return h("div", { class: "lots" }, head, plan,
     h("div", { class: "lots-list" }, lots.map((lot) => lotCard(ctx, lot, rows, { big: false }))));
+}
+
+/* With a Barnwright account: how many lots the plan lets be open at once.
+   -> {canOpen, line, why}. Not connected: no limit, no line. */
+function planRoom(app) {
+  const a = app.account;
+  if (!a) return { canOpen: true, line: "", why: "" };
+  if (!a.canWrite) return { canOpen: false, line: "", why: "Changes can't be saved right now (see the note at the top)." };
+  const open = a.openLots, limit = a.lotLimit;
+  const canOpen = open < limit;
+  const line = `${open} of ${limit} open lot${limit === 1 ? "" : "s"} in your Barnwright plan.` + (canOpen ? "" : " Close a lot, or contact Barnwright to add more.");
+  return { canOpen, line, why: canOpen ? "" : "Your Barnwright plan's lots are all open." };
 }
 
 function backLink() {
@@ -77,7 +91,7 @@ function lotCard(ctx, lot, rows, { big }) {
   const tools = owner ? h("div", { class: "actions lots-tools" },
     button("Edit lot", () => lotDialog(ctx, lot), { icon: "edit", small: true }),
     isOpen ? button("Close lot", () => setOpen(ctx, lot, false), { kind: "quiet", small: true })
-      : button("Open lot", () => setOpen(ctx, lot, true), { kind: "primary", small: true })) : null;
+      : button("Open lot", () => setOpen(ctx, lot, true), { kind: "primary", small: true, disabled: !planRoom(app).canOpen, title: planRoom(app).why || undefined })) : null;
 
   return h("section", { class: ["card", "lots-card", big && "big", !isOpen && "closed"] },
     h("header", { class: "lots-head" },

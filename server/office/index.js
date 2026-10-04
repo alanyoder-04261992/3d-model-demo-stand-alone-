@@ -16,6 +16,11 @@
      signIn         "netlify" | "local": which sign-in screen to show
      checkOrigin    false ONLY for the in-browser demo (/dealer?demo), where
                     every "request" is made inside the page itself
+     license        optional: the check-in with Barnwright's control room
+                    (control-room.js TenantLicenseClient, made by netlify.js).
+                    Left out, the Dealer Center is not connected and nothing
+                    is limited (Alan's own business, this computer, the demo).
+     appVersion     optional: what this copy reports to the control room
 
    The routes are listed in docs/OFFICE.md. */
 
@@ -27,6 +32,7 @@ import { createLots, website as websiteAddress } from "./lots.js";
 import { createCustomers } from "./customers.js";
 import { createWebsite } from "./website.js";
 import { createEmail } from "./email.js";
+import { createAccount } from "./account.js";
 
 export function createOffice(deps) {
   const now = deps.now || (() => new Date());
@@ -37,6 +43,7 @@ export function createOffice(deps) {
   const lots = createLots({ store, now });
   const priceList = createPriceList({ store, manufacturer: deps.manufacturer, library: deps.library, templates: deps.templates || {}, now, log });
   const customers = createCustomers({ store, now, lots, priceList, log });
+  const account = createAccount({ store, license: deps.license || null, lots, now, appVersion: deps.appVersion, log });
   const businessName = async () => (await priceList.current())?.data.settings.brand?.name || "the business";
   const team = createTeam({
     store, now,
@@ -45,7 +52,7 @@ export function createOffice(deps) {
     log,
   });
   const website = createWebsite({
-    store, now, lots, priceList, customers, log,
+    store, now, lots, priceList, customers, log, account,
     notify: async (event) => { if (event.type === "website-quote") await email.websiteQuote(event); },
   });
   const signIn = deps.signIn || "netlify";
@@ -68,6 +75,7 @@ export function createOffice(deps) {
       if (e.status === 401) return json({ error: e.message, signIn }, 401);
       throw e;
     }
+    if (who.person) await account.checkIn();
     const record = (await priceList.current())?.data || null;
     const visible = who.person ? (await lots.all()).filter((l) => can.seeLot(who.person, l.slug)) : [];
     /* everybody's names, so screens can say who is working a customer */
@@ -83,7 +91,18 @@ export function createOffice(deps) {
       team: teamNames,
       emailOn: email.on,
       signIn,
+      /* null when not connected to Barnwright's control room */
+      account: who.person ? await account.status() : null,
     });
+  }
+
+  /* The person, signed in and on the team, and the business's Barnwright
+     account letting changes be saved. Every route that changes something
+     starts here; the role checks (must) come after. */
+  async function writer(req) {
+    const who = await people.member(req);
+    await account.mustWrite();
+    return who;
   }
 
   /* ---- the router ------------------------------------------------------ */
@@ -104,7 +123,7 @@ export function createOffice(deps) {
   route("GET", /^\/api\/office\/me$/, (req) => me(req));
 
   route("POST", /^\/api\/office\/setup$/, async (req) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     must(who.person.role === "owner", "Only the owner can set up the business.");
     const data = await readBody(req);
     const yourName = text(data.yourName, 80, "Your name");
@@ -124,7 +143,7 @@ export function createOffice(deps) {
     return json(await priceList.get());
   });
   route("PUT", /^\/api\/office\/price-list$/, async (req) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     must(can.changePrices(who.person), "Only the owner can change the price list.");
     const data = await readBody(req);
     const lotCount = (await lots.all()).filter((l) => l.active !== false).length;
@@ -137,7 +156,7 @@ export function createOffice(deps) {
     return json(await priceList.history());
   });
   route("POST", /^\/api\/office\/price-list\/restore$/, async (req) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     must(can.changePrices(who.person), "Only the owner can change the price list.");
     const data = await readBody(req);
     return json(await priceList.restore(who.person, data));
@@ -147,15 +166,38 @@ export function createOffice(deps) {
     const who = await people.member(req);
     return json({ lots: (await lots.all()).filter((l) => can.seeLot(who.person, l.slug)) });
   });
+  /* With a Barnwright account, opening a lot (a new one, or reopening a
+     closed one) first takes a place in the plan's number of open lots. */
   route("POST", /^\/api\/office\/lots$/, async (req) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     must(can.changeLots(who.person), "Only the owner can add a lot.");
-    return json({ lot: await lots.create(who.person, await readBody(req)) }, 201);
+    const data = await readBody(req);
+    const hold = data.active === false ? null : await account.holdLot();
+    try {
+      const lot = await lots.create(who.person, data);
+      await account.keepLot(hold, lot.slug);
+      return json({ lot }, 201);
+    } catch (error) {
+      await account.freeLot(hold);
+      throw error;
+    }
   });
   route("PATCH", /^\/api\/office\/lots\/([a-z0-9-]{2,40})$/, async (req, [slug]) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     must(can.changeLots(who.person), "Only the owner can change a lot.");
-    return json({ lot: await lots.update(who.person, slug, await readBody(req)) });
+    const data = await readBody(req);
+    const before = await lots.get(slug);
+    const reopening = before && before.active === false && data.active === true;
+    const hold = reopening ? await account.holdLot(slug) : null;
+    let lot;
+    try {
+      lot = await lots.update(who.person, slug, data);
+    } catch (error) {
+      if (hold) await account.freeLot(hold);
+      throw error;
+    }
+    if (lot.active === false && before?.active !== false) await account.freeLot(slug);
+    return json({ lot });
   });
 
   route("GET", /^\/api\/office\/team$/, async (req) => {
@@ -164,19 +206,37 @@ export function createOffice(deps) {
     return json(await team.list());
   });
   route("POST", /^\/api\/office\/team$/, async (req) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     must(can.changeTeam(who.person), "Only the owner can add people.");
     return json(await team.add(who.person, await readBody(req)), 201);
   });
+  /* Taking somebody off the team (or taking back an invite) works even
+     while changes are stopped, so nobody keeps access by accident. */
   route("PATCH", /^\/api\/office\/team\/([A-Za-z0-9_-]{1,128})$/, async (req, [userId]) => {
     const who = await people.member(req);
     must(can.changeTeam(who.person), "Only the owner can change people.");
-    return json(await team.change(who.person, userId, await readBody(req)));
+    const data = await readBody(req);
+    const removing = data && typeof data === "object" && Object.keys(data).length === 1 && data.active === false;
+    if (!removing) await account.mustWrite();
+    return json(await team.change(who.person, userId, data));
   });
   route("DELETE", /^\/api\/office\/team\/invites\/([a-f0-9]{40})$/, async (req, [id]) => {
     const who = await people.member(req);
     must(can.changeTeam(who.person), "Only the owner can change people.");
     return json(await team.cancelInvite(id));
+  });
+
+  /* Help from Barnwright (only with a Barnwright account): the owner lets
+     Barnwright run checks for 1 to 24 hours, or turns it off. */
+  route("GET", /^\/api\/office\/barnwright-help$/, async (req) => {
+    const who = await people.member(req);
+    must(can.changeSettings(who.person), "Only the owner can see this.");
+    return json({ help: await account.help() });
+  });
+  route("POST", /^\/api\/office\/barnwright-help$/, async (req) => {
+    const who = await people.member(req);
+    must(can.changeSettings(who.person), "Only the owner can let Barnwright help.");
+    return json({ help: await account.setHelp(who.person, await readBody(req)) });
   });
 
   route("GET", /^\/api\/office\/customers$/, async (req) => {
@@ -194,7 +254,7 @@ export function createOffice(deps) {
     } });
   });
   route("POST", /^\/api\/office\/customers$/, async (req) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     return json({ customer: await customers.create(who, await readBody(req)) }, 201);
   });
   route("GET", /^\/api\/office\/customers\/([A-Za-z0-9]{8,24})$/, async (req, [id]) => {
@@ -202,23 +262,23 @@ export function createOffice(deps) {
     return json({ customer: await customers.get(who, id) });
   });
   route("PATCH", /^\/api\/office\/customers\/([A-Za-z0-9]{8,24})$/, async (req, [id]) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     return json({ customer: await customers.update(who, id, await readBody(req)) });
   });
   route("POST", /^\/api\/office\/customers\/([A-Za-z0-9]{8,24})\/activity$/, async (req, [id]) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     return json({ customer: await customers.addActivity(who, id, await readBody(req)) }, 201);
   });
   route("POST", /^\/api\/office\/customers\/([A-Za-z0-9]{8,24})\/quotes$/, async (req, [id]) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     return json(await customers.addQuote(who, id, await readBody(req)), 201);
   });
   route("POST", /^\/api\/office\/customers\/([A-Za-z0-9]{8,24})\/orders$/, async (req, [id]) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     return json(await customers.addOrder(who, id, await readBody(req)), 201);
   });
   route("PATCH", /^\/api\/office\/customers\/([A-Za-z0-9]{8,24})\/orders\/([A-Za-z0-9]{8,24})$/, async (req, [id, orderId]) => {
-    const who = await people.member(req);
+    const who = await writer(req);
     return json(await customers.updateOrder(who, id, orderId, await readBody(req)));
   });
 
@@ -243,5 +303,11 @@ export function createOffice(deps) {
     }
   }
 
-  return { handle, publicLot: website.publicLot, parts: { store, people, lots, priceList, customers, team, website } };
+  return {
+    handle, publicLot: website.publicLot,
+    /* for netlify/functions: the control room's support check, and the check-in every six hours */
+    diagnostics: account.diagnostics,
+    checkIn: account.checkIn,
+    parts: { store, people, lots, priceList, customers, team, website, account },
+  };
 }

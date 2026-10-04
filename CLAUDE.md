@@ -35,8 +35,9 @@ set up new companies**. Build it here and **do not touch Barnwright**.
    options once and every lot uses them; dealers see their own lots'
    customers and orders. `npm run build:client` makes a client package
    without lesson pages, skills, reference photos or setup tools. Only Alan's
-   learning preview has lesson pages. Charging businesses for Barnwright
-   comes later.
+   learning preview has lesson pages. A business Barnwright sells to is
+   connected to Barnwright's control room (`server/office/account.js`):
+   its account being off stops changes and closes its 3D designer links.
 6. The contract is `docs/ARCHITECTURE.md`. Deliberate behaviour differences from
    Barnwright are listed in `docs/DIFFERENCES.md`.
 

@@ -15,7 +15,7 @@ import { h, clear, icon, button, toast, loading, emptyState } from "./dom.js";
 import { app } from "./app.js";
 import { configureApi, signOut } from "./api.js";
 import { signInScreen, notOnTeam, handleEmailLink } from "./auth.js";
-import { ROLE_WORDS, initials } from "./words.js";
+import { ROLE_WORDS, initials, dayWords, todayKey } from "./words.js";
 
 const root = document.getElementById("dealer-center");
 
@@ -160,8 +160,31 @@ function demoBanner() {
     button("Start over", async () => (await import(DEMO_MODULE)).demoStartOver(), { kind: "ghost", small: true }));
 }
 
+/* The business's Barnwright account (only with a control room connection):
+   why nothing can be saved, for everybody; and for the owner, a warning
+   while check-ins are failing, before the seven days run out. */
+const ACCOUNT_BANNER = {
+  unactivated: "Your Dealer Center isn't switched on yet. Contact Barnwright to finish setting it up. Until then nothing can be saved and your 3D designer links are closed.",
+  invalid_license: "Your Dealer Center can't confirm its Barnwright account, so nothing can be saved and your 3D designer links are closed. Contact Barnwright.",
+  deactivated: "Your Barnwright account is switched off. You can still look at and download everything, but changes can't be saved and your 3D designer links are closed. Contact Barnwright to switch it back on.",
+  expired: "Your Dealer Center hasn't reached Barnwright in 7 days. You can still look at and download everything, but changes can't be saved and your 3D designer links are closed until it does.",
+};
+function accountBanner() {
+  const a = app.account;
+  if (!a) return null;
+  if (!a.canWrite) return h("div", { class: "banner warn account" }, icon("alert"), h("span", {}, ACCOUNT_BANNER[a.reason] || ACCOUNT_BANNER.invalid_license));
+  const day = 86400000;
+  if (app.isOwner && a.checkedAt && Date.now() - a.checkedAt > day && a.expiresAt) {
+    return h("div", { class: "banner warn account" }, icon("clock"), h("span", {},
+      `Your Dealer Center hasn't reached Barnwright since ${dayWords(todayKey(new Date(a.checkedAt)))}. If it can't by ${dayWords(todayKey(new Date(a.expiresAt)))}, changes will stop and your 3D designer links will close.`));
+  }
+  return null;
+}
+
 function closedBanner() {
   if (app.demo) return demoBanner();
+  const account = accountBanner();
+  if (account) return account;
   if (!app.business || app.business.open || !app.isOwner) return null;
   return h("div", { class: "banner warn" }, icon("alert"),
     h("span", {}, "Your 3D designer links are closed to customers. Check your prices, then open them in Settings."),

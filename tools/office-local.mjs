@@ -5,6 +5,11 @@
          npm run office -- --empty      no sample data: try the first setup
                                         (sign in as owner@example.com)
          npm run office -- --port 8390  another port
+         npm run office -- --control-room      as a business connected to a
+                                        pretend Barnwright control room (3
+                                        open lots in its plan); add
+                                        --control-room-off to start with
+                                        the account switched off
 
    Then open http://127.0.0.1:8383/dealer
 
@@ -32,6 +37,8 @@ import { lotDesignerPage, closedPage, OFFICE_POLICY } from "../server/office/pag
 import { inlineScriptHashes } from "./build-headers.mjs";
 import { FileBlobs } from "./lib/file-blobs.mjs";
 import { seedSample, SAMPLE_PEOPLE } from "../server/office/sample.js";
+import { TenantLicenseClient, createLeaseStore } from "../server/office/control-room.js";
+import { fakeControlRoom } from "./lib/fake-control-room.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -41,6 +48,7 @@ const PORT = Number(value("--port", process.env.PORT || 8383));
 const DATA = resolve(ROOT, value("--data", ".office-local"));
 const EMPTY = flag("--empty");
 const OWNER_EMAIL = value("--owner", EMPTY ? "owner@example.com" : SAMPLE_PEOPLE[0].email);
+const CONTROL_ROOM = flag("--control-room") || flag("--control-room-off");
 
 if (process.env.NETLIFY || process.env.NETLIFY_BLOBS_CONTEXT) {
   console.log("FAIL: the local Dealer Center is for your own computer, not for Netlify.");
@@ -77,7 +85,7 @@ function cookieEmail(request) {
 let seeding = null;          /* during seeding, the person the sample script acts as */
 const clock = { at: null };
 const blobs = new FileBlobs(DATA);
-const office = createOffice({
+const deps = {
   blobs,
   identityUser: async (request) => (seeding ? seeding.user : localUserFrom(cookieEmail(request || requestStore.getStore()))),
   ownerEmail: OWNER_EMAIL,
@@ -86,17 +94,35 @@ const office = createOffice({
   siteUrl: `http://127.0.0.1:${PORT}`,
   signIn: "local",
   log: (...a) => console.error(...a),
+};
+/* --control-room: a pretend Barnwright control room in this process
+   (tools/lib/fake-control-room.mjs). POST /__local/control-room with
+   {status: "active" | "deactivated", down: true | false, dealerLimit: n}
+   changes it; POST /__local/control-room/check runs a support check. */
+const room = CONTROL_ROOM ? fakeControlRoom({ clock: { get t() { return (clock.at || new Date()).getTime(); } }, dealerLimit: 3 }) : null;
+const office = createOffice({
+  ...deps,
+  license: room ? new TenantLicenseClient({
+    controlRoomUrl: room.origin, customerId: room.business.id, siteId: room.business.siteId,
+    activationKey: room.business.key, publicKeyPem: room.publicKeyPem,
+    store: createLeaseStore(room.business.id, room.business.siteId, blobs), fetch: room.fetch,
+  }) : undefined,
+  appVersion: "dealer-center local",
 });
 
 if (!EMPTY && !existsSync(join(DATA, encodeURIComponent("price-list") + ".json"))) {
   process.stdout.write("Making the sample business (Yoder Storage Barns, 3 lots, 30 customers)... ");
   const t = Date.now();
   await seedSample({
-    office, clock, manufacturer, library,
+    office: room ? createOffice(deps) : office, clock, manufacturer, library,
     act: (person) => { seeding = person ? { user: localUserFrom(person.email) } : { user: null }; },
   });
   seeding = null;
   console.log(`done in ${((Date.now() - t) / 1000).toFixed(1)} s.`);
+}
+if (room) {
+  if (flag("--control-room-off")) room.business.status = "deactivated";
+  console.log(`Connected to a pretend Barnwright control room: account ${room.business.status === "active" ? "on" : "switched off"}, ${room.business.dealerLimit} open lots in the plan.`);
 }
 
 /* ---- the Dealer Center's script, bundled like the build does ---------------- */
@@ -140,6 +166,20 @@ async function route(request) {
   const path = url.pathname;
   if (path.startsWith("/api/")) return office.handle(request, { clientIp: "127.0.0.1" });
 
+  if (room && path === "/__local/control-room" && request.method === "POST") {
+    const body = await request.json().catch(() => ({}));
+    if (body.status === "active" || body.status === "deactivated") room.business.status = body.status;
+    if (typeof body.down === "boolean") room.down = body.down;
+    if (Number.isInteger(body.dealerLimit) && body.dealerLimit >= 0) room.business.dealerLimit = body.dealerLimit;
+    await office.checkIn({ force: true });
+    return Response.json({ status: room.business.status, down: room.down, dealerLimit: room.business.dealerLimit, dealerCount: room.business.dealerCount });
+  }
+  if (room && path === "/__local/control-room/check" && request.method === "POST") {
+    let token;
+    try { token = room.issueSupport("alan@barnwright.example"); } catch { return Response.json({ error: "Help from Barnwright is off." }, { status: 403 }); }
+    return office.diagnostics(new Request(`http://127.0.0.1:${PORT}/.netlify/functions/tenant-diagnostics`, { method: "POST", headers: { authorization: `Bearer ${token}` } }));
+  }
+  if (path === "/.netlify/functions/tenant-diagnostics") return office.diagnostics(request);
   if (path === "/__local/people" && request.method === "GET") {
     const people = (await office.parts.store.all("people/")).filter((p) => p.active !== false)
       .map((p) => ({ email: p.email, name: p.name, role: p.role, lots: p.lots }));

@@ -1,0 +1,53 @@
+{
+  "about": "Leases signed by the control room's own code (alanyoder-04261992/control-room shared/license.ts signLease, commit be6b56e) with a throwaway key made for this file. tools/check-control-room.mjs proves the Dealer Center's port verifies them exactly as the control room does. Never a real key.",
+  "publicKeyPem": "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEbNtQ4B+7/MfcVfX/cwu9y5NUaR8M\nWXtgWCixI3Dlp3UoPyTO5CfD267CLB6EDTk/u37tPTuZ22to/3xJ/csbsQ==\n-----END PUBLIC KEY-----\n",
+  "binding": {
+    "customerId": "cust_fixture_yoder",
+    "siteId": "site-fixture-0001"
+  },
+  "issuedAt": 1791028800000,
+  "leases": {
+    "active": {
+      "payload": {
+        "version": 1,
+        "customerId": "cust_fixture_yoder",
+        "siteId": "site-fixture-0001",
+        "status": "active",
+        "issuedAt": 1791028800000,
+        "expiresAt": 1791633600000,
+        "dealerLimit": 3,
+        "addons": []
+      },
+      "signature": "0YyjANKWF9nVKkCtFR38VktwmF0gMR2ODU7tHc46LNBLb0oijHyRLEvGZ-SPUoH_1UX5ZmU95f-ifB7qglT_Cw"
+    },
+    "readOnly": {
+      "payload": {
+        "version": 1,
+        "customerId": "cust_fixture_yoder",
+        "siteId": "site-fixture-0001",
+        "status": "read_only",
+        "issuedAt": 1791028801000,
+        "expiresAt": 1791633601000,
+        "dealerLimit": 3,
+        "addons": []
+      },
+      "signature": "zvtrLSx8GRcO0CbknOs9ogJeOR2cNYKve1VuXwA4nqhAQvhx0Zu1VM8RxArnff8BGRYeS2uXvzyXHh-WzXyJNA"
+    },
+    "withAddons": {
+      "payload": {
+        "version": 1,
+        "customerId": "cust_fixture_yoder",
+        "siteId": "site-fixture-0001",
+        "status": "active",
+        "issuedAt": 1791028800000,
+        "expiresAt": 1791633600000,
+        "dealerLimit": 10,
+        "addons": [
+          "extra-lots",
+          "reports"
+        ]
+      },
+      "signature": "TUCYVp4Jk0qnq4ggu0WtvbXhw64i5_AXEt3UXkgdM6RWQ1I9yujPaznKQ1TM4QTJSeCAdTstXR1q8PkpbRZQWw"
+    }
+  }
+}

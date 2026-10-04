@@ -185,6 +185,37 @@ sign-in always needs a real email and password. On your own computer,
 `npm run office` does the same with the sample business. How it is put on a real website is in [the Dealer Center
 guide](OFFICE.md).
 
+### Connected to your control room
+
+When you sell the Dealer Center to a shed company, you make the company in
+your control room, take its payment there and make its activation key. The
+key and four other settings go into the company's Netlify settings (the
+list is in [the Dealer Center guide](OFFICE.md)). From then on:
+
+* **It checks in with your control room** every few hours and gets a pass
+  good for 7 days.
+* **If they stop paying, or you switch them off,** changes stop the next time it
+  checks in. They can still look at and download all their customers and
+  orders, and remove a person from their team. Every screen tells them why.
+* **Their 3D designer links close** and show "Our 3D designer isn't open
+  right now" with the lot's phone number, because a new quote is a change.
+* **If their site can't reach your control room for 7 days,** the same
+  thing happens until it can. Their owner gets a warning a day after it
+  last checked in, with the day it will happen.
+* **The number of lots in their plan** (the dealership limit you set in the
+  control room) is how many lots they can have open. The Lots screen says
+  "3 of 3 open lots in your Barnwright plan" and turns off **Add a lot**
+  when they're at the limit.
+* **Help from Barnwright:** their owner can switch it on in Settings for 1 to
+  24 hours. Then **Run customer diagnostics** in your control room checks
+  how their Dealer Center is running. You never see their customers or
+  prices, and it turns itself off when the time is up. They can see each
+  check in a short list under the switch.
+
+Your own business isn't connected to a control room, so none of this ever
+limits it. On your own computer, `npm run office -- --control-room` shows
+what a connected company sees.
+
 ### Older company links (without the Dealer Center)
 
 Existing static company links can still send quote requests wherever the
@@ -393,8 +424,11 @@ proved; the full list is in [the README](../README.md).
 * Each business's Dealer Center needs Netlify Identity turned on and the
   owner's email set once (the steps are in [the Dealer Center guide](OFFICE.md)).
   Emailing a lot when a quote arrives needs an email service key; without it
-  everything else works the same. Charging businesses for Barnwright comes
-  later.
+  everything else works the same. Taking payment from a business happens
+  in your control room; turning on live payments there is still to do.
+* The control room's own screens and messages still say "HQ" (for example
+  "enable support in HQ Setup"). For a Dealer Center company that switch is
+  **Help from Barnwright** in their Settings.
 * Some internal part descriptions still assume trusses and their framing
   description talks about gusset plates and a bottom chord. The rafters themselves are
   drawn and checked; only the words have not caught up.

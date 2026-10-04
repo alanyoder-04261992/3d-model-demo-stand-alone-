@@ -25,7 +25,7 @@ const TOO_MANY = "Too many quote requests from here right now. Please call the l
 const ON_ITS_WAY = "Your request is already on its way. Wait a moment, then check for the confirmation.";
 const SEND_AGAIN = "Please refresh the page and send it again.";
 
-export function createWebsite({ store, now, lots, priceList, customers, notify = async () => {}, log = console.error }) {
+export function createWebsite({ store, now, lots, priceList, customers, account = null, notify = async () => {}, log = console.error }) {
   /* A closed link still says who to call: the lot's own phone when the
      owner closed the whole 3D designer, the business's phone when only
      this lot is closed. It rides on the error for the "not open" page
@@ -43,6 +43,8 @@ export function createWebsite({ store, now, lots, priceList, customers, notify =
     if (!lot) closed();
     if (lot.active === false) closed(brand.name, brand.phone);
     if (!record || record.data.settings.status === "suspended") closed(brand.name || lot.name, lot.phone || brand.phone);
+    /* the business's Barnwright account stopped changes: a quote is a change, so the link closes the same way */
+    if (account && !(await account.designerOpen())) closed(brand.name || lot.name, lot.phone || brand.phone);
     return { company: record.data.settings, lot: publicLotFields(lot), version: record.data.version };
   }
 

@@ -7,13 +7,17 @@
 # recognizes Alan's learning-preview site by SITE_ID; every other site gets
 # the customer-only build.
 #
-# Two functions (netlify/functions/):
+# The functions (netlify/functions/):
 #   office-api.mts    the Dealer Center's API (/api/office/*) and each lot's
 #                     public price list and quote requests (/api/lots/*);
 #                     every rule about who may see or change what is checked
 #                     there (server/office/, contract: docs/OFFICE.md)
 #   lot-designer.mts  a lot's 3D designer (/d/<lot>/), sent with that lot's
 #                     own list of websites allowed to show it in a frame
+#   tenant-diagnostics.mts, barnwright-check-in.mts
+#                     only for a business connected to Barnwright's control
+#                     room: its support check, and a check-in every six
+#                     hours (server/office/account.js)
 # /c/<id>/ still opens a company's designer from its settings file.
 # Re-run node tools/build-headers.mjs after editing index.html's inline scripts.
 

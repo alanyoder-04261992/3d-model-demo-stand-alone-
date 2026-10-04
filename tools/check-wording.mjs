@@ -138,10 +138,15 @@ function walk(dir) {
   return out;
 }
 
+/* server/office/control-room.js is the control room's own check-in code,
+   copied as it is (its error sentences are for programmers and never reach
+   a person: server/office/account.js catches every one and says it in plain
+   words, and that file is checked like the rest). */
+const COPIED = new Set([resolve(ROOT, "server/office/control-room.js")]);
 const files = [
   resolve(ROOT, "dealer.html"),
   ...walk(resolve(ROOT, "ui/office")),
-  ...walk(resolve(ROOT, "server/office")),
+  ...walk(resolve(ROOT, "server/office")).filter((f) => !COPIED.has(f)),
   resolve(ROOT, "ui/managed-order.js"),
 ].filter(existsSync);
 

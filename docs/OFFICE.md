@@ -194,7 +194,7 @@ Responses are `Cache-Control: private, no-store`.
 
 | Route | Who | Does |
 |---|---|---|
-| `GET me` | anyone | `{person, business, lots, signIn}`; `person` is null until the person has access; `business` is null before setup |
+| `GET me` | anyone | `{person, business, lots, signIn, account}`; `person` is null until the person has access; `business` is null before setup; `account` is null unless the business is connected to Barnwright's control room (see "The business's Barnwright account") |
 | `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small"}` creates the price list (closed to customers until the owner opens it) |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
 | `PUT price-list` | owner | `{settings, version}` → `{version, cfg, changes}`; 409 when someone saved first |
@@ -216,6 +216,8 @@ Responses are `Cache-Control: private, no-store`.
 | `POST customers/:id/orders` | lot access | `{quoteId, payment, deposit, deliveryAddress, deliveryDate, deliveryNotes, notes}`; the deposit is never above the total |
 | `PATCH customers/:id/orders/:orderId` | lot access | `{status?, payment?, deposit?, deliveryDate?, …}` |
 | `GET customers.csv` | owner, manager | a spreadsheet of the visible customers |
+| `GET barnwright-help` | owner | `{help: {on, until, reason, log}}`, or `help: null` when not connected to the control room |
+| `POST barnwright-help` | owner | `{on: true, reason, hours: 1–24}` lets Barnwright run checks; `{on: false}` stops them at once |
 
 Public routes (no sign-in):
 
@@ -224,6 +226,7 @@ Public routes (no sign-in):
 | `GET /api/lots/:slug` | `{company, lot, version}` for the lot's 3D designer; 404 when the lot is closed or the business is not open yet |
 | `GET /d/:slug/` | the lot's 3D designer page; when closed, a short "Our 3D designer isn't open right now" page that says who to call — the lot's phone when the owner closed the whole designer, the business's phone when only that lot is closed (`pages.js` `closedPage`) |
 | `POST /api/lots/:slug/quote-requests` | `{design, contact, idempotencyKey}` → `{id, number, total, price, receivedAt, repriced}` (201; the same send again → the same receipt, 200) |
+| `POST /.netlify/functions/tenant-diagnostics` | Barnwright's support check (control room only, with a support pass, while the owner has help turned on) |
 
 A website quote request is matched to an existing customer of that lot by
 email or phone (digits compared); otherwise a new customer is made. A
@@ -232,6 +235,69 @@ activity line are added. A Lost or Delivered customer who comes back goes
 back to New. The same send arriving twice at once (a double tap, a retry)
 waits a few seconds for the first and gets its receipt; a send left half
 done for over a minute is taken over by the retry.
+
+## The business's Barnwright account
+
+A shed company that buys the Dealer Center from Barnwright is connected to
+Barnwright's control room (`alanyoder-04261992/control-room`), where Alan
+keeps his customers, their payments and their activation keys. Alan's own
+business, the local copy and the demo are not connected, and nothing below
+applies to them.
+
+**Checking in.** The Dealer Center checks in with the control room when
+someone opens it and its last check-in is more than six hours old, and
+every six hours on its own (`netlify/functions/barnwright-check-in.mts`).
+It reports how many lots are open and gets back a pass signed by the
+control room, good for exactly seven days: the account is on or off, and
+how many lots may be open. `server/office/control-room.js` is the control
+room's own check-in code (its `sdk/`, copied to plain JavaScript;
+`license-core.js` holds the rules) and `account.js` says what the pass
+means here.
+
+**When changes stop.** The account was never switched on, Barnwright
+switched it off, the pass can't be confirmed, or seven days passed without a
+check-in. Then:
+* every change answers 423 with a plain sentence, and every screen shows why
+  at the top. Reading, searching and the spreadsheet keep working;
+* taking a person off the team, or taking back an invite, still works, so
+  nobody keeps access by accident;
+* every lot's 3D designer link closes ("Our 3D designer isn't open right
+  now" with the lot's number to call), because a customer's quote is a
+  change too;
+* the owner is warned at the top once a day passes without a check-in,
+  with the day changes will stop.
+
+**Open lots.** A lot that opens (a new one, or a closed one reopened) first
+takes a place in one shared record (`barnwright-lot-slots`), written with a
+conditional write, so two lots opened at the same moment can't both take
+the last place. A lot added closed needs no place; closing a lot gives its
+place back. Lots already open over a lowered limit stay open; the Lots
+screen says "3 of 3 open lots in your Barnwright plan" and turns off
+**Add a lot** when it is full.
+
+**Help from Barnwright.** In Settings the owner lets Barnwright run checks
+for 1 to 24 hours, with a reason. The control room then sends a support pass
+(at most 15 minutes) to `/.netlify/functions/tenant-diagnostics`; every
+visit is checked online with the control room and against the owner's
+switch here. The answer is how the Dealer Center runs (version, account
+state, whether storage answers) and never customers, prices, settings or
+keys. Turning help off stops it here at once, even if the control room
+can't be reached. Each turn on, turn off and check is written in a short log
+the owner sees under the switch.
+
+**Settings** (Netlify environment variables, from the control room when
+Alan makes the activation key): `CONTROL_ROOM_URL`,
+`CONTROL_ROOM_CUSTOMER_ID`, `CONTROL_ROOM_ACTIVATION_KEY` (secret,
+Functions scope only), `CONTROL_ROOM_PUBLIC_KEY`, and optionally
+`CONTROL_ROOM_SITE_ID` (Netlify's own site ID otherwise). None set: not
+connected. Some but not all: nothing can be changed until they are all
+there.
+
+`npm run office -- --control-room` runs the local copy against a pretend
+control room (`tools/lib/fake-control-room.mjs`, 3 open lots in its plan);
+`tools/check-control-room.mjs` proves every rule above, and that leases
+signed by the control room's own code (`test/control-room/leases.json`)
+read the same way.
 
 ## Security rules that never bend
 
@@ -315,6 +381,10 @@ and a password. The build decides this (`__DEALER_DEMO__` in
 | `server/office/pricing.js` | checking and pricing a design on the server |
 | `server/office/email.js` | the optional emails |
 | `server/office/netlify.js` | Netlify Blobs, Identity and environment |
+| `server/office/account.js` | the business's Barnwright account: when changes stop, open lots, help from Barnwright |
+| `server/office/control-room.js`, `license-core.js` | the control room's own check-in code, copied to plain JavaScript |
+| `netlify/functions/tenant-diagnostics.mts` | Barnwright's support check |
+| `netlify/functions/barnwright-check-in.mts` | checks in with the control room every six hours |
 | `netlify/functions/office-api.mts` | serves `/api/office/*` and `/api/lots/*` |
 | `netlify/functions/lot-designer.mts` | serves `/d/:slug/` with that lot's allowed websites |
 | `dealer.html`, `ui/office/*` | the Dealer Center's screens (`ui/office/views/`), its frame and its look |
@@ -327,6 +397,7 @@ and a password. The build decides this (`__DEALER_DEMO__` in
 | `tools/check-dealer-center.mjs` | clicks through the Dealer Center, a lot designer and the demo in Chromium |
 | `tools/check-wording.mjs` | keeps the old words out of every screen and answer |
 | `tools/check-style-variants.mjs` | a business's own style draws and prices exactly like its library style |
+| `tools/check-control-room.mjs` | the Barnwright account rules, against a pretend control room |
 
 ## The screens
 

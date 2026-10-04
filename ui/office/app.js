@@ -25,6 +25,9 @@ export const app = {
   get role() { return this.me?.person?.role || null; },
   get isOwner() { return this.role === "owner"; },
   get seesAllLots() { return this.role === "owner" || this.role === "manager"; },
+  /* the business's Barnwright account (null when not connected to Barnwright's control room) */
+  get account() { return this.me?.account || null; },
+  get changesStopped() { return !!this.me?.account && !this.me.account.canWrite; },
 
   can(what) {
     const r = this.role;

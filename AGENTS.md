@@ -24,8 +24,10 @@ The Dealer Center (`/dealer`; contract in `docs/OFFICE.md`) keeps each
 business's price list, lots, team, customers and orders on the server. The
 owner sets sizes, styles, prices and options once and every lot uses them;
 dealers see only their own lots' customers and orders. Never trust browser
-prices, lot names or anything a person can edit on their own login. Charging
-businesses for Barnwright comes later. Construction lessons and skills are
+prices, lot names or anything a person can edit on their own login. A
+business Barnwright sells to is connected to Barnwright's control room
+(`server/office/account.js`, "The business's Barnwright account" in
+`docs/OFFICE.md`); Alan's own site is not. Construction lessons and skills are
 internal setup knowledge, left out of the customer build. Screen words follow
 "The words we use" in `docs/OFFICE.md`.
 

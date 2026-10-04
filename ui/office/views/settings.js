@@ -15,9 +15,9 @@
    page works on a draft; a bar at the bottom counts the changes and saves
    them all at once. Managers and dealers get a short note instead. */
 
-import { h, clear, icon, button, field, toast, pageHead, emptyState, linkButton, confirmBox, nextId } from "../dom.js";
-import { put } from "../api.js";
-import { money, size as sizeWords, plural, initials } from "../words.js";
+import { h, clear, icon, button, field, form, toast, pageHead, emptyState, linkButton, confirmBox, nextId } from "../dom.js";
+import { get, put, post } from "../api.js";
+import { money, size as sizeWords, plural, initials, when } from "../words.js";
 import { tidyDefaults, sortSizes, styleName, keysOf, groupsOf } from "./price-list/model.js";
 
 const LOGO_BOX = 360;
@@ -46,8 +46,9 @@ export async function render(ctx) {
         `The business details and the 3D designer's look are set by ${owners.length ? owners.join(" or ") : "the owner"}. Ask them when something needs to change.`,
         linkButton("Go to Today", "#/", { kind: "primary" }))));
   }
-  const [record, M] = await Promise.all([app.loadPriceList(true), loadLibrary(app)]);
-  page = { ctx, M, saved: record, draft: normalized(record.settings), sections: {}, bar: null, problems: {} };
+  const [record, M, help] = await Promise.all([app.loadPriceList(true), loadLibrary(app),
+    app.account ? get("barnwright-help").then((r) => r.help).catch(() => null) : null]);
+  page = { ctx, M, saved: record, draft: normalized(record.settings), sections: {}, bar: null, problems: {}, help };
   app.leaveGuard = () => (page && changes().length ? "You have settings you haven't saved. Leave without saving them?" : null);
   return draw();
 }
@@ -118,6 +119,7 @@ function draw() {
     ["colors", "Colors", colorsCard()],
     ["designer", "3D designer", designerCard()],
     ["form", "Quote form", quoteFormCard()],
+    ...(page.help ? [["help", "Help from Barnwright", helpCard()]] : []),
   ];
   const jump = h("nav", { class: "set-jump", "aria-label": "Settings sections" },
     cards.map(([key, words, el]) => h("button", { type: "button", class: "chip", onclick: () => el.scrollIntoView({ behavior: "smooth", block: "start" }) }, words)));
@@ -129,7 +131,8 @@ function draw() {
       cards[0][2],
       h("div", { class: "grid-2" }, cards[1][2], cards[2][2]),
       cards[3][2],
-      cards[4][2]),
+      cards[4][2],
+      cards[5]?.[2] || null),
     page.bar);
   page.root = el;
   drawBar();
@@ -669,4 +672,53 @@ async function save(e) {
   const lots = out.lotCount;
   toast(!out.changes?.length ? "Nothing changed." : lots ? `Saved. ${lots === 1 ? "Your lot shows" : `All ${lots} lots show`} it now.` : "Saved.");
   rerender();
+}
+
+/* ---- Help from Barnwright (only with a Barnwright account) ------------------------------
+   The owner lets Barnwright run checks for 1 to 24 hours. Not part of the
+   settings saved with the bar at the bottom: it turns on and off at once. */
+
+function helpCard() {
+  const box = h("div", { class: "stack" });
+  const show = (help) => {
+    page.help = help;
+    const log = help.log?.length
+      ? h("div", { class: "stack" }, h("h3", { class: "set-sub" }, "What happened"),
+        h("ul", { class: "help-log" }, help.log.map((e) => h("li", {}, h("time", { dateTime: e.at }, when(e.at)), e.words))))
+      : null;
+    if (help.on) {
+      clear(box,
+        h("div", { class: "help-state on" }, icon("check"), h("span", {},
+          h("strong", {}, `Barnwright can run checks until ${when(help.until)}.`), " ", help.reason ? `You asked them to look at: ${help.reason}` : "")),
+        h("div", { class: "actions" }, button("Turn off now", async (ev) => {
+          ev.currentTarget.disabled = true;
+          try {
+            show((await post("barnwright-help", { on: false })).help);
+            toast("Help from Barnwright is off.");
+          } catch (e) {
+            ev.currentTarget.disabled = false;
+            toast(e.message, { error: true });
+          }
+        })),
+        log);
+      return;
+    }
+    const reason = field("What should Barnwright look at?", { required: true, maxLength: 300, wide: true, placeholder: "Quotes from the Arcadia lot aren't showing up" });
+    const hours = field("For how long", { type: "select", value: "4", options: [["1", "1 hour"], ["4", "4 hours"], ["8", "8 hours"], ["24", "24 hours"]] });
+    clear(box,
+      h("div", { class: "help-state" }, icon("alert"), h("span", {}, "Off. Barnwright can't run any checks on your Dealer Center.")),
+      form([
+        h("div", { class: "form-grid" }, reason.wrap, hours.wrap),
+        h("div", { class: "actions" }, h("button", { type: "submit", class: "btn btn-primary" }, h("span", {}, "Let Barnwright help"))),
+      ], async () => {
+        const out = await post("barnwright-help", { on: true, reason: reason.input.value, hours: Number(hours.input.value) });
+        show(out.help);
+        toast("Barnwright can help now.");
+      }),
+      log);
+  };
+  show(page.help);
+  return cardOf("user", "Help from Barnwright",
+    "When something isn't working, let Barnwright check how your Dealer Center is running. They can't see your customers or prices, and they can't change anything. It turns itself off when the time is up.",
+    box);
 }

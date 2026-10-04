@@ -817,3 +817,13 @@ body.setup-on .main { margin-left: 0; max-width: none; padding-bottom: 60px; }
 }
 .setup-card .form-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
 body.setup-on #main > .banner { display: none; }
+
+/* ---- the Barnwright plan's open lots (Lots) and Help from Barnwright (Settings) ---- */
+.lots-plan { display: flex; align-items: center; gap: 8px; margin: -6px 0 16px; color: var(--muted); font-size: 14.5px; }
+.lots-plan svg { width: 18px; height: 18px; flex: none; }
+.lots-plan.full { color: var(--warn); }
+.help-state { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius-small); background: var(--bg); }
+.help-state.on { background: var(--good-bg); color: var(--good); }
+.help-state svg { width: 20px; height: 20px; flex: none; margin-top: 1px; }
+.help-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+.help-log time { color: var(--ink); font-weight: 500; margin-right: 6px; }
