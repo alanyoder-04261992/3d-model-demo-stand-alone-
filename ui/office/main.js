@@ -78,12 +78,10 @@ function currentPath() {
 
 let main, navEls = [], lotPicker, lastHash = location.hash;
 
+/* The Dealer Center keeps its own black and gold look for every business
+   (office.css); a business's colors are for its customers' 3D designer.
+   Its name and logo show here. */
 function applyBrand(business) {
-  const colors = business?.colors || {};
-  const set = (name, value) => { if (value && /^#[0-9a-f]{3,6}$/i.test(value)) document.documentElement.style.setProperty(name, value); };
-  set("--brand-header", colors.header);
-  set("--brand-accent", colors.accent);
-  set("--brand-primary", colors.primary);
   document.title = business ? `${business.name} · Dealer Center` : "Dealer Center";
 }
 

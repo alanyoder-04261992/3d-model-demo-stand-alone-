@@ -305,7 +305,7 @@ function colorsCard() {
     }
   };
   paintColors();
-  return cardOf("star", "Colors", "Pick colors that match your sign. White words go on both, so darker colors work best.",
+  return cardOf("star", "Colors", "Your customers see these on every lot's 3D designer. Pick colors that match your sign. White words go on both, so darker colors work best.",
     h("div", { class: "set-preview" }, bar, h("div", { class: "set-preview-page" }, h("span", { class: "set-preview-line" }), h("span", { class: "set-preview-line short" }), sample)),
     h("div", { class: "set-colors" }, rows.map((r) => r.el)),
     warn,

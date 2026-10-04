@@ -401,9 +401,13 @@ and a password. The build decides this (`__DEALER_DEMO__` in
 
 ## The screens
 
-The Dealer Center looks like the 3D designer: the navy header with the blueprint
-grid, Oswald capitals for headings, IBM Plex Sans for writing, white cards on
-a light page, the business's own header and accent colors. It works on a
+The Dealer Center is black and gold for every business: a black header with
+the blueprint grid and a black left column, gold for the button that matters
+and the page you are on, Oswald capitals for headings, IBM Plex Sans for
+writing, white cards on a warm light page. Gold words on white use a deeper
+gold so they read easily, and gold buttons carry black words. The business's
+logo and name show in the header; its own colors (Settings, Colors) go on its
+customers' 3D designer, never on the Dealer Center. It works on a
 phone first: a dealer standing on the lot uses it one-handed. Buttons are at
 least 44 px tall; phone numbers and emails are tap-to-call, tap-to-text and
 tap-to-email links.
