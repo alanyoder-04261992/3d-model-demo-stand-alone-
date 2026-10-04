@@ -9,9 +9,17 @@
    designer's own "send me a quote" form is hidden inside the frame, so
    nobody sends it as if they were the customer.
 
+   COPY LINK TO THIS BUILDING (Alan, Oct 2026: "Add the copy link to
+   dealership design page not on the website link that customer would
+   use"): copies the lot's own 3D designer link with this exact building in
+   it, every door and window where it was put, for the dealer to text or
+   email to the customer. The customer can change it there and send it in
+   like any other quote. Only here, for the team: the lot's link that
+   customers use has no such button (they have Share my design).
+
    A lot whose designer link is closed shows why instead of a blank frame. */
 
-import { h, icon, button, linkButton, toast, loading } from "../dom.js";
+import { h, icon, button, linkButton, toast, loading, copyText } from "../dom.js";
 import { app } from "../app.js";
 import { get, post } from "../api.js";
 import { money, todayKey } from "../words.js";
@@ -36,13 +44,16 @@ export async function render(ctx) {
   const total = h("span", { class: "crm-design-total", "aria-live": "polite" });
   const saveBtn = button("Save quote", null, { kind: "accent", icon: "check" });
   saveBtn.disabled = true;
+  const copyBtn = button("Copy link to this building", null, { kind: "ghost", icon: "copy", title: `A link to this building for ${c.name}` });
+  copyBtn.classList.add("crm-design-copy");
+  copyBtn.disabled = true;
   const bar = h("div", { class: "crm-design-bar" },
     h("a", { class: "crm-design-back", href: `#/customers/${c.id}`, "aria-label": `Back to ${c.name}` }, icon("arrowLeft")),
     title, total,
-    h("div", { class: "crm-design-actions" }, linkButton("Cancel", `#/customers/${c.id}`, { kind: "ghost" }), saveBtn));
+    h("div", { class: "crm-design-actions" }, copyBtn, linkButton("Cancel", `#/customers/${c.id}`, { kind: "ghost" }), saveBtn));
   const stage = h("div", { class: "crm-design-stage" }, loading("Opening the 3D designer…"));
   const screen = h("div", { class: "crm-design" }, bar, stage);
-  const closedNow = (note) => { saveBtn.hidden = true; total.hidden = true; stage.replaceChildren(note); };
+  const closedNow = (note) => { saveBtn.hidden = true; copyBtn.hidden = true; total.hidden = true; stage.replaceChildren(note); };
 
   if (quoteId && !quote) {
     closedNow(closedNote("That quote isn't here", "It may belong to another customer. Go back and pick the quote again.", c));
@@ -100,6 +111,7 @@ export async function render(ctx) {
     doc?.getElementById("tapcover")?.remove();
     stage.querySelector(".crm-design-wait")?.remove();
     saveBtn.disabled = false;
+    copyBtn.disabled = false;
     showTotal();
     shed.on("change", () => { dirty = true; showTotal(); });
     if (quote && shed.startWarnings?.length) {
@@ -146,6 +158,16 @@ export async function render(ctx) {
         button("Try again", () => ctx.refresh(), { kind: "link" })));
     }
   }, 400);
+
+  /* the lot's link with the building in it, as it is on screen now */
+  copyBtn.addEventListener("click", async () => {
+    if (!shed) return;
+    let link;
+    try { link = `${app.designerUrl(c.lot)}#d=${encodeSync(shed.getDesign())}`; }
+    catch { toast("The building couldn't be read. Try again.", { error: true }); return; }
+    if (await copyText(link)) toast(`Link copied. Paste it in a text or email to ${c.name}.`);
+    else window.prompt("Copying isn't allowed here. Copy this link:", link);
+  });
 
   saveBtn.addEventListener("click", async () => {
     if (!shed) return;

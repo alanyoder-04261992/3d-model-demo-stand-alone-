@@ -443,7 +443,11 @@ person; contact with call/text/email buttons and an edit form; follow-up date
 with "Tomorrow", "In 3 days", "Next week" and a note; quotes (building,
 price, date, "Open in 3D", "Print", "Mark sold"); orders (number, status
 steps, payment, down payment, balance, delivery); "Design a building for
-them" (opens the lot's 3D designer for this customer); the activity history
+them" (opens the lot's 3D designer for this customer, under a bar with
+"Copy link to this building", Cancel and "Save quote": the copy button puts
+the lot's own designer link with this exact building in it on the clipboard,
+to text or email to the customer, who can change it and send it in like any
+quote; the lot's link that customers use has no such button); the activity history
 with a box to add a note, call, text, email or visit.
 
 **Orders** (`#/orders`) — sold buildings: status chips (Sold, Sent to

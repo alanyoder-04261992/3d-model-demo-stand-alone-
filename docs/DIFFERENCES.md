@@ -142,6 +142,7 @@ finished designer retains the golden geometry.
     do you want to do with this quote?" with four answers, none required
     (`leads.askPlan: false` leaves it out). The city, the answer and the term
     ride along with every way a quote is sent, and the Dealer Center keeps
-    them on the customer. Alan's own "Copy link to this building" button is
-    not copied: Share my design already makes a link that reopens the exact
-    building, every door and window where it was put.
+    them on the customer. Alan's "Copy link to this building" button is on
+    the Dealer Center's design page instead (he asked for it there, "not on
+    the website link that customer would use"): it copies the lot's
+    designer link with the exact building in it for the dealer to send.
