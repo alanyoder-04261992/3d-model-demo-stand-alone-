@@ -3,7 +3,9 @@
    embed.js and the browser files ui/app.js reaches), the Dealer Center
    (dealer.html, its screens bundled into one file, ui/office/main.js, and
    its stylesheets, including ui/office/closed.css for a closed lot's link),
-   the fonts, the builder's library and the example companies. Never shipped:
+   the fonts, the builder's library, the example companies and legal/ (the
+   Barnwright terms the Dealer Center's "I agree" box links to,
+   server/office/terms.js). Never shipped:
    lesson pages, skills, reference photos, tests, tools, docs, server code or
    source maps. Only Alan's learning preview adds the lesson pages and the
    Dealer Center's "try it" demo (ui/office/demo.js).
@@ -69,7 +71,7 @@ for (const name of ["styles", "views", "blueprint", "quote", "share", "embed-mod
 // closed.css, the page a closed lot's designer link shows.
 if (!existsSync(resolve(root, "ui/office/closed.css"))) throw new Error("ui/office/closed.css is missing: a closed lot's link needs it");
 for (const file of readdirSync(resolve(root, "ui/office")).filter(f => f.endsWith(".css")).sort()) copy(`ui/office/${file}`);
-tree("fonts"); tree("library");
+tree("fonts"); tree("library"); tree("legal");
 const { companies, problems } = await readCompanies();
 if (problems.length) throw new Error(problems.join("\n"));
 const selected = companies.filter(c => learning || !c.id.startsWith("learning-"));

@@ -95,7 +95,8 @@ export async function seedSample({ office, act, clock, manufacturer, library, bu
   const owner = SAMPLE_PEOPLE[0];
   act(owner);
   await call("GET", "/api/office/me");
-  await call("POST", "/api/office/setup", { yourName: owner.name, businessName: "Yoder Storage Barns", phone: "(941) 555-0100", email: "office@yoderbarns.example", start: "full" });
+  /* agreeTerms: the owner ticks "I agree" when the business is connected to a (pretend) control room */
+  await call("POST", "/api/office/setup", { yourName: owner.name, businessName: "Yoder Storage Barns", phone: "(941) 555-0100", email: "office@yoderbarns.example", start: "full", agreeTerms: true });
   if (businessId) {
     /* the id never changes through the API, so the sample sets it in the store */
     await office.parts.store.change("price-list", (r) => { r.settings.id = businessId; });

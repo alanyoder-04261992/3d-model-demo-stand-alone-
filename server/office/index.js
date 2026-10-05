@@ -33,6 +33,7 @@ import { createCustomers } from "./customers.js";
 import { createWebsite } from "./website.js";
 import { createEmail } from "./email.js";
 import { createAccount } from "./account.js";
+import { createTerms } from "./terms.js";
 
 export function createOffice(deps) {
   const now = deps.now || (() => new Date());
@@ -44,6 +45,7 @@ export function createOffice(deps) {
   const priceList = createPriceList({ store, manufacturer: deps.manufacturer, library: deps.library, templates: deps.templates || {}, now, log });
   const customers = createCustomers({ store, now, lots, priceList, log });
   const account = createAccount({ store, license: deps.license || null, lots, now, appVersion: deps.appVersion, log });
+  const terms = createTerms({ store, account, now });
   const businessName = async () => (await priceList.current())?.data.settings.brand?.name || "the business";
   const team = createTeam({
     store, now,
@@ -93,6 +95,8 @@ export function createOffice(deps) {
       signIn,
       /* null when not connected to Barnwright's control room */
       account: who.person ? await account.status() : null,
+      /* the Barnwright terms the owner agrees to: null when not connected */
+      terms: who.person ? await terms.status() : null,
     });
   }
 
@@ -126,6 +130,7 @@ export function createOffice(deps) {
     const who = await writer(req);
     must(who.person.role === "owner", "Only the owner can set up the business.");
     const data = await readBody(req);
+    terms.mustHaveAgreed(data);
     const yourName = text(data.yourName, 80, "Your name");
     if (yourName) await store.change(`people/${who.person.userId}`, (p) => { if (p) p.name = yourName; });
     const record = await priceList.setup({ ...who.person, name: yourName || who.person.name }, {
@@ -135,7 +140,19 @@ export function createOffice(deps) {
       website: websiteAddress(data.website),
       start: data.start === "small" ? "small" : "full",
     });
+    if (terms.asks()) await terms.agree({ ...who.person, name: yourName || who.person.name });
     return json({ business: business(record) }, 201);
+  });
+
+  /* The owner agrees to the Barnwright terms (when they set up before the
+     box existed, or the terms changed). Works while changes are stopped too:
+     agreeing is never what a switched-off account is waiting for. */
+  route("POST", /^\/api\/office\/terms$/, async (req) => {
+    const who = await people.member(req);
+    must(who.person.role === "owner", "Only the owner can agree to the Barnwright terms.");
+    const data = await readBody(req);
+    if (data.agree !== true) fail(422, "Tick the box to agree to the Barnwright terms.");
+    return json({ terms: await terms.agree(who.person) });
   });
 
   route("GET", /^\/api\/office\/price-list$/, async (req) => {

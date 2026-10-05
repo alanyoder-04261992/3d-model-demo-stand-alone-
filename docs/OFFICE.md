@@ -141,6 +141,7 @@ each other.
 | Key | Holds |
 |---|---|
 | `setup` | the first owner's claim `{userId, at}` |
+| `barnwright-terms` | `{current: {version, agreedAt, by: {userId, email, name}}, history: [...]}` — the owner's agreement to the Barnwright terms (connected businesses only) |
 | `price-list` | `{settings, version, cfg, savedAt, savedBy}` — `settings` is a company settings object (`model/company.js`) |
 | `price-list-history/<version>` | `{version, savedAt, savedBy, changes:[text], settings}` |
 | `lots/<slug>` | `{slug, name, address, city, state, zip, phone, email, hours, website, embedOrigins[], active, createdAt, updatedAt}` |
@@ -197,8 +198,9 @@ Responses are `Cache-Control: private, no-store`.
 
 | Route | Who | Does |
 |---|---|---|
-| `GET me` | anyone | `{person, business, lots, signIn, account}`; `person` is null until the person has access; `business` is null before setup; `account` is null unless the business is connected to Barnwright's control room (see "The business's Barnwright account") |
-| `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small"}` creates the price list (closed to customers until the owner opens it) |
+| `GET me` | anyone | `{person, business, lots, signIn, account, terms}`; `person` is null until the person has access; `business` is null before setup; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version |
+| `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright terms.") and the agreement is kept |
+| `POST terms` | owner | `{agree: true}` agrees to the current Barnwright terms (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
 | `PUT price-list` | owner | `{settings, version}` → `{version, cfg, changes}`; 409 when someone saved first |
 | `GET price-list/history` | owner, manager | `{entries: [{version, savedAt, savedBy, changes}]}` |
@@ -368,13 +370,50 @@ and a password. The build decides this (`__DEALER_DEMO__` in
 
 ## Setting up a new company
 
-1. Make a new Netlify site from this repository.
-2. In the site's settings turn on **Identity** (registration: open — anyone
-   can make a login, but only people the owner adds can see anything).
-3. Add the environment variable `OWNER_EMAIL` with the owner's email.
-4. The owner opens `/dealer`, makes a login with that email, confirms it, and
-   follows the setup steps: business details, a starting price list, the
-   first lot.
+Alan's whole procedure, from the day a company says yes to the day it goes
+live, with every button named, is
+**`docs/legal/Barnwright-Adding-a-New-Customer.pdf`** (made by
+`tools/legal/make-legal-pdfs.py`). In short:
+
+1. **Paperwork.** Alan fills in Sections B and D of the Sign-Up Form
+   (`docs/legal/Barnwright-Sign-Up-Form.pdf`, fillable) and sends it with the
+   terms (`legal/barnwright-terms.pdf`); the company fills in Section A,
+   initials Section E and signs; Alan signs.
+2. **Control room.** **Add customer** with the dealership cap (open lots),
+   one-time build fee and monthly subscription from the form; **Collect build
+   fee** and wait until it is paid.
+3. **Their site.** A new Netlify project from this repository (named for the
+   business); its Project ID and address go on the customer in the control
+   room; **Identity** on (registration open: anyone can make a login, but
+   only people the owner adds can see anything); **Create activation key** in
+   the control room; then the environment variables `OWNER_EMAIL` (the
+   owner's email from the form), `CONTROL_ROOM_URL`,
+   `CONTROL_ROOM_CUSTOMER_ID`, `CONTROL_ROOM_PUBLIC_KEY` and
+   `CONTROL_ROOM_ACTIVATION_KEY` (secret, Functions scope only), optionally
+   `RESEND_API_KEY` and `EMAIL_FROM`; deploy again.
+4. **The owner sets up.** They open `/dealer`, make a login with that email,
+   confirm it, and follow the setup steps: business details with "I agree to
+   the Barnwright terms", a starting price list, the first lot. Then their
+   prices, Settings, lots and team; Open to customers; the website code for
+   each lot; a test quote.
+5. **Go live.** **Start monthly subscription** in the control room, and the
+   go-live email with the date the monthly fee starts.
+
+### The Barnwright terms
+
+A business Barnwright sells to agrees to the **Barnwright Software Terms and
+Conditions** (`legal/barnwright-terms.pdf`, published on every business's
+site by `tools/build-site.mjs`) in two places: the paper Sign-Up Form, and
+the Dealer Center (`server/office/terms.js`). First setup can't make the
+business without the owner's "I agree"; an owner who set up before the box
+existed, or before the terms changed, sees "Please read the Barnwright
+Software Terms and Conditions (version 1.0), then tap I agree." at the top
+of every screen until they do. Each agreement is kept with its version, time
+and the owner's login, and Settings, Help from Barnwright, says who agreed
+and when. Alan's own business, the local copy and the demo are not asked.
+To change the terms: edit `tools/legal/make-legal-pdfs.py`, raise `VERSION`
+there and `TERMS.version` in `server/office/terms.js` together, run the
+script, and email every customer the new terms 30 days ahead.
 
 ## Files
 
@@ -392,6 +431,9 @@ and a password. The build decides this (`__DEALER_DEMO__` in
 | `server/office/email.js` | the optional emails |
 | `server/office/netlify.js` | Netlify Blobs, Identity and environment |
 | `server/office/account.js` | the business's Barnwright account: when changes stop, open lots, help from Barnwright |
+| `server/office/terms.js` | the owner's agreement to the Barnwright terms |
+| `legal/barnwright-terms.pdf` | the Barnwright Software Terms and Conditions, published on every business's site |
+| `tools/legal/make-legal-pdfs.py` | makes the terms, the Sign-Up Form and the new customer steps (`docs/legal/`) |
 | `server/office/control-room.js`, `license-core.js` | the control room's own check-in code, copied to plain JavaScript |
 | `netlify/functions/tenant-diagnostics.mts` | Barnwright's support check |
 | `netlify/functions/barnwright-check-in.mts` | checks in with the control room every six hours |
@@ -541,7 +583,10 @@ Ask the owner to add this email."
 
 **First setup** (`#/setup`, the first owner, once; the menu is hidden
 until it's done) — three steps: your business (your name, business name,
-phone, email), your starting price list (every standard building at example
+phone, email, and for a business Barnwright sells to "I have read and agree
+to the Barnwright Software Terms and Conditions (version 1.0) for my
+business", with a link to the PDF; Next says "Tick the box to agree to the
+Barnwright terms." until it is ticked), your starting price list (every standard building at example
 prices, or three buildings to start small — all example prices to change),
 your first lot (showing the link it will get). Then "Your Dealer Center is
 ready." with "Check your prices" and "Add your team". The designer links

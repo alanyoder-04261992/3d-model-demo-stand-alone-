@@ -170,6 +170,10 @@ site. One shed business runs everything from it:
   doubled up). Walk-ins and phone calls are added by hand. Each customer has
   a stage — New, Contacted, Quoted, Sold, Delivered or Lost — a follow-up
   date, notes of every call and text, their quotes, and their orders.
+* **Signing up a new company.** Your step-by-step guide from "yes" to live:
+  `docs/legal/Barnwright-Adding-a-New-Customer.pdf`. Their owner ticks
+  "I agree to the Barnwright terms" in the Dealer Center's first setup, and
+  Settings shows who agreed and when.
 * **Designing for a customer.** "Design a building for them" opens the lot's
   3D designer inside the Dealer Center; "Save quote" puts the building and
   its price on the customer's file. "Copy link to this building" copies a

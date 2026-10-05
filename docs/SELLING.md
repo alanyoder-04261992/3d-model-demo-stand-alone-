@@ -8,6 +8,13 @@
 
 ## How it is sold: Alan hosts it, the company pastes two lines
 
+**Signing up a company that said yes**, step by step (the Sign-Up Form and
+terms, the control room, their Dealer Center site, their owner's setup with
+"I agree to the Barnwright terms", go-live):
+`docs/legal/Barnwright-Adding-a-New-Customer.pdf`. The papers themselves:
+`docs/legal/Barnwright-Sign-Up-Form.pdf` and `legal/barnwright-terms.pdf`
+([OFFICE.md, "Setting up a new company"](OFFICE.md)).
+
 A business gets its own copy of the site with the **Dealer Center**
 ([how it works and how to set one up](OFFICE.md)). The owner sets the price
 list and adds the lots and the team there. Each lot has its own 3D designer
