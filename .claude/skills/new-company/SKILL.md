@@ -17,8 +17,29 @@ the price list (sizes, styles, prices, options, colors), the lots (each gets
 `/d/<lot>/` and its own `data-lot` website code) and the team. No settings
 file is written by hand for these businesses; the price list is the same
 validated settings object a `companies/<id>/company.json` file holds. Dealers
-never change prices or options. Barnwright charges a business through the
-control room (a one-time build fee, then a monthly fee from go-live).
+never change prices or options. Barnwright sells one product (the 3D designer
+with its Dealer Center) and charges through the control room: a one-time build
+fee plus $250 one time for each lot after the first (together, the control
+room's build fee; a lot added later is a separate Stripe invoice), then a
+monthly fee from go-live that is the same for any number of lots. The site's
+address is `<their name>.barnwrightsoftware.com`.
+
+**The company's answers.** A new company fills in
+`docs/legal/Barnwright-Setup-Questions.pdf` (made by
+`tools/legal/make-legal-pdfs.py`; its style, item, option, color and
+construction lists come from `library/`). Where each answer goes:
+
+| Section | Goes to |
+|---|---|
+| 1. Business, web address | first setup and Settings (`brand`); the Netlify domain and the control room's Application URL |
+| 2. Look | Settings: logo, colors (`brand.colors`), tagline |
+| 3. Lots | Lots: name, address, phone, email, hours, website (`embedOrigins`) |
+| 4. Team | Team: owner, manager or dealer, and their lots |
+| 5. Styles, sizes and prices | Price list: `offer` (own names as `name`; a style of their own is a new key with `base`), standard doors and windows |
+| 6. How they build | the `construction` block (the `change-construction` skill); there is no Dealer Center screen for it |
+| 7. Doors, windows, options | Price list: `items`, `options` (own names as `{price, name}`), `options.extras` |
+| 8. Colors | Price list: `palettes`, `defaults` |
+| 9. Prices and quotes | Settings: `pricing.show`, `notes.finePrint`, `notes.sizeNotes`, `pricing.rto` (factor = 5000 / (monthly × months)), `leads.fields`, `leads.askPlan`, `leads.smsConsent` |
 
 Run `npm run build:client` for a client delivery. Do not include learning pages,
 reference photos, setup tools, `.agents`, `.claude` or these skills. The existing
