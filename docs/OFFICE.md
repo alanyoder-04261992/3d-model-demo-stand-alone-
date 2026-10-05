@@ -407,10 +407,11 @@ already uses. The first lot comes with the plan; each lot after the first is
    each lot; a test quote.
 5. **Go live.** **Start monthly subscription** in the control room, and the
    go-live email with the date the monthly fee starts.
-6. **Adding a lot later.** A $250 invoice from Stripe (the control room
-   collects the build fee only once); when it is paid, **Edit customer** and
-   raise the **Dealership cap** by one. The Dealer Center picks it up at its
-   next check-in (within six hours).
+6. **Adding a lot later.** **Collect lot fee** on the customer in the
+   control room ($250 for each new lot, one time) and email them the link.
+   When Stripe confirms the payment, the control room raises the
+   **Dealership cap** by that many lots by itself; the Dealer Center picks it
+   up at its next check-in (within six hours).
 
 ### The Setup Questions
 

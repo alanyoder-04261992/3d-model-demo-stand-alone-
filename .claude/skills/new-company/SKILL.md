@@ -20,7 +20,8 @@ validated settings object a `companies/<id>/company.json` file holds. Dealers
 never change prices or options. Barnwright sells one product (the 3D designer
 with its Dealer Center) and charges through the control room: a one-time build
 fee plus $250 one time for each lot after the first (together, the control
-room's build fee; a lot added later is a separate Stripe invoice), then a
+room's build fee; a lot added later is the control room's Collect lot fee, which
+raises the dealership cap when Stripe confirms the payment), then a
 monthly fee from go-live that is the same for any number of lots. The site's
 address is `<their name>.barnwrightsoftware.com`.
 

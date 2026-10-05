@@ -544,9 +544,9 @@ PARTS = [
         ]),
     ]),
     ("Later. Adding a lot", "When they open another lot.", [
-        ("Charge the lot fee, then raise their lots", [
-            "Send them an invoice for <b>$" + str(LOT_FEE) + "</b> from your Stripe account (<b>Invoices, Create invoice</b>). The control room collects the build fee only once.",
-            "When it's paid: in the control room, open the customer, tap <b>Edit customer</b>, raise <b>Dealership cap</b> by one and tap <b>Save changes</b>. The monthly fee stays the same.",
+        ("Collect the lot fee", [
+            "In the control room, open the customer and tap <b>Collect lot fee</b>. Type how many new lots (each is <b>$" + str(LOT_FEE) + "</b>, one time), then copy the payment link and email it to them.",
+            "When Stripe confirms the payment, the control room raises their <b>Dealership cap</b> by that many lots by itself. The monthly fee stays the same.",
             "Their Dealer Center picks up the new number within six hours. Their owner then adds the lot under <b>Lots</b>.",
         ]),
     ]),
