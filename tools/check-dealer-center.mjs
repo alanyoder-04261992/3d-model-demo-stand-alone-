@@ -237,6 +237,7 @@ try {
     ok("\"Copy link to this building\" copies the customer's lot's 3D designer link with this exact building in it", copied.startsWith(lotLink) && !/view=1/.test(copied) && linked && linked.type === onScreen.type && linked.size === onScreen.size && JSON.stringify(linked.items) === JSON.stringify(onScreen.items), copied.slice(0, 90));
     ok("... and says so", /Link copied/.test(await page.textContent("body")));
     ok("the 3D designer itself (the link customers use) has no copy-link button", !(await inner.evaluate(() => /Copy link to this building/.test(document.body.textContent))));
+    await page.getByRole("button", { name: /save quote/i }).click();
     await page.waitForFunction((id) => location.hash === `#/customers/${id}`, customer.id, { timeout: 20000 }).catch(() => {});
     const after = (await apiAs(PEOPLE.owner, `customers/${customer.id}`)).data.customer;
     ok(`"Save quote" adds a quote to ${customer.name}'s file (${customer.quotes.length} → ${after.quotes.length})`, after.quotes.length === customer.quotes.length + 1);

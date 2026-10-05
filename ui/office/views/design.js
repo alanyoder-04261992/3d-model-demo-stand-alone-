@@ -44,9 +44,9 @@ export async function render(ctx) {
   const total = h("span", { class: "crm-design-total", "aria-live": "polite" });
   const saveBtn = button("Save quote", null, { kind: "accent", icon: "check" });
   saveBtn.disabled = true;
-  const copyBtn = button("Copy link to this building", null, { kind: "ghost", icon: "copy", title: `A link to this building for ${c.name}` });
-  copyBtn.classList.add("crm-design-copy");
-  copyBtn.disabled = true;
+  /* "Copy link to this building"; on a phone just "Copy link" */
+  const copyBtn = h("button", { type: "button", class: ["btn", "btn-ghost", "crm-design-copy"], title: `A link to this building for ${c.name}`, disabled: true },
+    icon("copy"), h("span", {}, "Copy link", h("span", { class: "crm-design-long" }, " to this building")));
   const bar = h("div", { class: "crm-design-bar" },
     h("a", { class: "crm-design-back", href: `#/customers/${c.id}`, "aria-label": `Back to ${c.name}` }, icon("arrowLeft")),
     title, total,
@@ -163,7 +163,7 @@ export async function render(ctx) {
   copyBtn.addEventListener("click", async () => {
     if (!shed) return;
     let link;
-    try { link = `${app.designerUrl(c.lot)}#d=${encodeSync(shed.getDesign())}`; }
+    try { link = `${new URL(app.designerUrl(c.lot), location.origin).href}#d=${encodeSync(shed.getDesign())}`; }
     catch { toast("The building couldn't be read. Try again.", { error: true }); return; }
     if (await copyText(link)) toast(`Link copied. Paste it in a text or email to ${c.name}.`);
     else window.prompt("Copying isn't allowed here. Copy this link:", link);

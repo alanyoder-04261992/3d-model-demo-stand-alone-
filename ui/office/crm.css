@@ -424,7 +424,9 @@
   .crm-design-total { display: none; }
   .crm-design-kicker { font-size: 11px; white-space: nowrap; }
   .crm-design-actions .btn-ghost { padding: 9px 12px; }
-  .crm-design-actions { flex-wrap: wrap; }
+  .crm-design-actions { flex: 1 1 100%; flex-wrap: wrap; }
+  .crm-design-actions .btn-accent { margin-left: auto; }
+  .crm-design-long { display: none; }
 
   .crm-toolbar { padding: 12px; }
   .crm-toolbar-tools { width: 100%; }
