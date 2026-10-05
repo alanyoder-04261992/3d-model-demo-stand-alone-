@@ -15,10 +15,12 @@
    page works on a draft; a bar at the bottom counts the changes and saves
    them all at once. Managers and dealers get a short note instead. */
 
-import { h, clear, icon, button, field, form, toast, pageHead, emptyState, linkButton, confirmBox, nextId } from "../dom.js";
+import { h, clear, icon, button, field, checkbox, form, toast, pageHead, emptyState, linkButton, confirmBox, nextId } from "../dom.js";
 import { get, put, post } from "../api.js";
 import { money, size as sizeWords, plural, initials, when } from "../words.js";
 import { tidyDefaults, sortSizes, styleName, keysOf, groupsOf } from "./price-list/model.js";
+import { RTO_NOTE } from "../../../model/pricing.js";
+import { QUOTE_PLANS } from "../../../model/quote-plan.js";
 
 const LOGO_BOX = 360;
 const LOGO_MAX = 150 * 1024;
@@ -93,11 +95,13 @@ const WATCH = [
   ["Open or closed", (s) => s.status || "active"],
   ["How prices show", (s) => s.pricing?.show || "price"],
   ["Rent-to-own price", (s) => s.pricing?.rto?.showTerm ?? null],
+  ["Words under the rent-to-own price", (s) => (s.pricing?.rto?.note || "").trim()],
   ["Line under the price", (s) => s.notes?.finePrint || ""],
   ["Notes for widths", (s) => s.notes?.sizeNotes || {}],
   ["Building it opens on", (s) => [s.defaults?.style || "", s.defaults?.size || ""]],
   ["Quote form", (s) => FORM_FIELDS.map(([k]) => s.leads?.fields?.[k] || "")],
   ["Texting permission", (s) => (s.leads?.smsConsent || "").trim()],
+  ["What they want to do", (s) => s.leads?.askPlan !== false],
 ];
 
 function changes() {
@@ -425,18 +429,22 @@ function designerCard() {
       const m = Number(term.value), f = factors[String(m)];
       const p = openingPrice();
       eg.textContent = on.checked && f > 0
-        ? `A ${money(p)} building shows “or ${money(Math.ceil(p / f / m))}/mo” over ${m} months.`
+        ? `A ${money(p)} building shows “or ${money(Math.round((p / f / m) * 100) / 100)}/mo” over ${m} months.`
         : "No monthly price shows.";
       edited();
     };
     on.addEventListener("change", sync);
     term.addEventListener("change", sync);
     sync();
+    /* the words under the monthly price in the customer's quote */
+    const note = field("The words under the monthly price", { type: "textarea", rows: 2, value: s.pricing.rto.note || "", maxLength: 300, wide: true,
+      placeholder: RTO_NOTE, hint: "Customers read this under “As low as” in their quote. Leave it empty to use the words shown here." });
+    note.input.addEventListener("input", () => { s.pricing.rto.note = note.input.value; edited(); });
     rtoPart = h("div", { class: "set-block" }, h("h3", { class: "set-sub" }, "Rent-to-own"),
       h("div", { class: "set-rto" },
-        h("label", { class: "check" }, on, h("span", {}, "Show a monthly rent-to-own price next to the total")),
+        h("label", { class: "check" }, on, h("span", {}, "Show a monthly rent-to-own price by the total, and a box in the quote to pick the months")),
         h("label", { class: "set-rto-term" }, h("span", {}, "Over"), term)),
-      eg);
+      eg, note.wrap);
   }
 
   /* the line under the price */
@@ -541,12 +549,17 @@ function quoteFormCard() {
     placeholder: "Yes, you may text me about this quote. Message and data rates may apply. Reply STOP to stop.",
     hint: "Customers tick a box with these words to say you may text them. Leave it empty to not ask." });
   sms.input.addEventListener("input", () => { L.smsConsent = sms.input.value; edited(); });
+  /* "What do you want to do with this quote?" -- one tap, never required */
+  const plan = checkbox("Ask what they want to do with the quote", L.askPlan !== false,
+    { hint: `They can pick one: ${QUOTE_PLANS.map((p) => p[1]).join("; ")}. Nobody has to answer.` });
+  plan.input.addEventListener("change", () => { L.askPlan = plan.input.checked; edited(); });
   checkForm();
   return cardOf("note", "The quote form", "What the form asks when a customer sends their design to a lot.",
     h("div", { class: "set-ask" },
       row("Name", h("span", { class: "set-always" }, icon("check"), "Always asked")),
       segs),
     problem,
+    h("div", { class: "set-block" }, plan.wrap),
     h("div", { class: "set-block" }, sms.wrap));
 }
 
@@ -599,6 +612,10 @@ function prepared() {
   s.notes.sizeNotes = notes;
   const sms = String(s.leads.smsConsent || "").trim();
   s.leads.smsConsent = sms || null;
+  if (s.pricing.rto) {
+    const rtoNote = String(s.pricing.rto.note || "").trim();
+    if (rtoNote) s.pricing.rto.note = rtoNote; else delete s.pricing.rto.note;
+  }
   s.leads.fields.name = "required";
   return s;
 }

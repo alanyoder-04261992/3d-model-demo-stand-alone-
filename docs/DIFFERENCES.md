@@ -132,3 +132,17 @@ finished designer retains the golden geometry.
     colour. Only colours change: the type, sizes, spacing and boxes are
     still Barnwright's (`tools/check-ui.mjs` section 14), and the building
     is untouched. The floor plan stays a blueprint on navy paper.
+24. **"Your quote" has three things from the Yoder site** (Alan, Oct 2026,
+    with a picture of his own quote card: "Add this to the 3d design"), not
+    from Barnwright's 3D designer: a rent-to-own box under the total when the
+    company shows a rent-to-own term (a chip for each term on its price list
+    and "As low as $x.xx/mo", price / factor / months to the cent, the plate
+    showing the same figure); the address asked as Street and City under an
+    "Address" heading ("Can skip if you already sent it to us."); and "What
+    do you want to do with this quote?" with four answers, none required
+    (`leads.askPlan: false` leaves it out). The city, the answer and the term
+    ride along with every way a quote is sent, and the Dealer Center keeps
+    them on the customer. Alan's "Copy link to this building" button is on
+    the Dealer Center's design page instead (he asked for it there, "not on
+    the website link that customer would use"): it copies the lot's
+    designer link with the exact building in it for the dealer to send.

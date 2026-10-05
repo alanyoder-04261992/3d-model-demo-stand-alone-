@@ -68,7 +68,7 @@
     "_help": "Changes to the real-life construction numbers (library/construction.json), for this company only. For example {\"floor\": {\"spacingIn\": 12}} if every building gets 12 in joists. Leave empty to build the standard way."
   },
   "pricing": {
-    "_help": "show: price | from | none. roundTo and minCharge: how per-square-foot charges are rounded (to the nearest $5, never under $5). roofAreaFactor: roof area = floor area x this. rto: rent-to-own factors by term in months (monthly = price / factor / months) and the term to show, or null to show none.",
+    "_help": "show: price | from | none. roundTo and minCharge: how per-square-foot charges are rounded (to the nearest $5, never under $5). roofAreaFactor: roof area = floor area x this. rto: rent-to-own factors by term in months (monthly = price / factor / months), the term to show (null shows no monthly price and no rent-to-own box in the quote), and optionally note: the words under the monthly figure.",
     "show": "price",
     "roundTo": 5,
     "minCharge": 5,
@@ -81,7 +81,7 @@
     "sizeNotes": {}
   },
   "leads": {
-    "_help": "Where a quote request goes. mode: none (a showroom, no quote button) | form (posts to a form service the company already uses; url is the form's address) | mailto (opens the visitor's e-mail; leads.email or brand.email) | webhook (posts JSON to url) | postMessage (hands it to the page the designer is embedded in; needs embed.origins). fields: name phone email zip address note, each required | optional | off. smsConsent: the wording of an unticked \"you may text me\" box, or null. images: attach pictures (webhook only).",
+    "_help": "Where a quote request goes. mode: none (a showroom, no quote button) | form (posts to a form service the company already uses; url is the form's address) | mailto (opens the visitor's e-mail; leads.email or brand.email) | webhook (posts JSON to url) | postMessage (hands it to the page the designer is embedded in; needs embed.origins). fields: name phone email zip address note, each required | optional | off (address asks Street and City). smsConsent: the wording of an unticked \"you may text me\" box, or null. images: attach pictures (webhook only). askPlan: false leaves out \"What do you want to do with this quote?\" (asked when missing).",
     "mode": "none",
     "url": "",
     "fields": {

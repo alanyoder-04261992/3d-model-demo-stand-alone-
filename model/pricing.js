@@ -18,6 +18,10 @@
                                   button label AND the charge (Barnwright had
                                   four copies of it)
      money                        "$1,234.00"
+     rtoTerms / rtoMonthly        rent to own: the terms offered, and the
+                                  monthly payment for one of them (RTO_NOTE:
+                                  the words under it when the company has
+                                  written none)
 
    The per-square-foot areas are Barnwright's: floor = W x L (the corner porch's
    4 ft deck included), wall = round(2 x (W + L) x wall height), roof =
@@ -213,4 +217,23 @@ export function money(n, symbol) {
   const v = Number(n) || 0;
   const s = symbol == null ? "$" : symbol;
   return (v < 0 ? "-" + s : s) + Math.abs(v).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/* RENT TO OWN (the Yoder site, Aug 2026). pricing.rto is
+   {factors: {"36": 0.60, "48": 0.53, "60": 0.45}, showTerm, note}: a monthly
+   payment is the price / the term's factor / the months -- the arithmetic
+   rent-to-own companies use -- worked out on the pre-tax total and rounded
+   to the cent. rtoTerms -> the months offered, shortest first; rtoMonthly ->
+   the payment, 0 when the term is not one of them. */
+/* the words under the monthly price when the company has written none */
+export const RTO_NOTE = "Before sales tax and any delivery fee. Starts with a deposit plus the first payment — ask us and we will put the exact figures on your quote.";
+export function rtoTerms(rto) {
+  const f = rto && rto.factors;
+  if (!f || typeof f !== "object") return [];
+  return Object.keys(f).map(Number).filter((m) => Number.isInteger(m) && m > 0 && +f[String(m)] > 0).sort((x, y) => x - y);
+}
+export function rtoMonthly(total, rto, months) {
+  const f = rto && rto.factors ? +rto.factors[String(months)] : 0;
+  if (!(f > 0) || !(months > 0) || !(total > 0)) return 0;
+  return Math.round((total / f / months) * 100) / 100;
 }

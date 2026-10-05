@@ -44,7 +44,13 @@ The page has the 3D building on one side and six cards on the other:
    a ramp, the per-square-foot upgrades (double floor, 12 in joists, moisture
    and radiant barriers) and any extras the company adds of its own.
 6. **Your quote** — the price with everything in it, a quote request form, and
-   **Share my design**, which makes a link that opens this exact building.
+   **Share my design**, which makes a link that opens this exact building. When
+   the business shows rent to own, a box under the price has a button for each
+   term (36, 48, 60 months) and "As low as $183.89/mo". The form asks the
+   address as Street and City, and "What do you want to do with this quote?"
+   with your four answers, the same as your own site. Nobody has to answer it.
+   "Copy link to this building" is in the Dealer Center, where your team
+   designs for a customer, not here.
 
 The price plate on the picture shows the total as the customer goes. A company
 can choose instead to show a "from" price (the building on its own) or no price
@@ -166,7 +172,10 @@ site. One shed business runs everything from it:
   date, notes of every call and text, their quotes, and their orders.
 * **Designing for a customer.** "Design a building for them" opens the lot's
   3D designer inside the Dealer Center; "Save quote" puts the building and
-  its price on the customer's file.
+  its price on the customer's file. "Copy link to this building" copies a
+  link to the lot's designer with that exact building in it, every door and
+  window where you put it, to text or email to the customer. That button is
+  only for your team; the designer link customers use doesn't have it.
 * **Orders.** "Mark sold" turns a quote into an order with the same number
   (#1042): cash, rent-to-own or financing, the deposit, the delivery address
   and date. The order moves Sold → Sent to builder → Ready → Delivered, and

@@ -205,6 +205,19 @@ button,select{font-family:inherit;cursor:pointer}
 .sumline b{color:var(--ink);font-weight:600;white-space:nowrap}
 .sumline.tot{border-top:2px solid var(--navy);margin-top:6px;padding-top:9px}
 .sumline.tot b{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:20px;color:var(--navy)}
+/* RENT TO OWN under the total (ui/panels.js rtoHtml; the Yoder site's rtobox):
+   a chip for each term and the monthly figure. Tinted from the company's own
+   colour (--glass) so it sits in any company's look. */
+.rtobox{margin-top:12px;background:rgba(var(--glass),.06);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.rtohead{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.rtohead .disp{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:12px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--ink)}
+.rtochips{display:flex;gap:6px;margin-left:auto}
+.rtochip{border:1.5px solid var(--card-line);background:#fff;color:var(--sub);border-radius:999px;padding:6px 11px;min-height:32px;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:11.5px;font-weight:600;letter-spacing:.04em}
+.rtochip.on{border-color:var(--navy-deep);background:var(--navy-deep);color:var(--cream)}
+.rtoline{display:flex;justify-content:space-between;align-items:baseline;gap:10px;border-top:2px solid var(--navy);margin-top:8px;padding-top:8px}
+.rtoline .disp{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:13px;color:var(--sub)}
+.rtoline b{font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:20px;font-weight:700;color:var(--navy);white-space:nowrap}
+.rtonote{font-size:11px;color:var(--sub);line-height:1.5;margin:7px 0 0}
 .bigbtn{width:100%;margin-top:12px;background:var(--red);color:var(--on-red);border:none;border-radius:9px;padding:14px;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;box-shadow:0 3px 8px rgba(var(--red-rgb),.35)}
 .bigbtn.alt{background:#fff;color:var(--navy);border:2px solid var(--navy)}
 .bigbtn:disabled{opacity:.55}

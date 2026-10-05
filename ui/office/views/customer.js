@@ -18,6 +18,7 @@ import {
   todayKey, addDays, dayWords, followUpWords, ago, when, plural,
 } from "../words.js";
 import { encodeSync } from "../../../model/design.js";
+import { planWords } from "../../../model/quote-plan.js";
 import { statusPill, followUpTone, changeStage, sourceWords, confirmChoice, dayKeyOf, dateFromNow, loadCustomer, missingCustomer } from "./crm-kit.js";
 
 const STEPS = ["sold", "sent", "ready", "delivered"];
@@ -233,7 +234,10 @@ export async function render(ctx) {
         h("div", {},
           h("p", { class: "crm-num" }, `Quote #${q.number}`),
           h("h3", {}, q.building),
-          h("p", { class: "crm-meta" }, `${dayWords(dayKeyOf(q.at))} · ${madeBy}`)),
+          h("p", { class: "crm-meta" }, `${dayWords(dayKeyOf(q.at))} · ${madeBy}`),
+          /* what the customer said on the 3D designer's quote form */
+          planWords(q.plan) ? h("p", { class: "crm-want" }, "What they want to do: ", h("strong", {}, planWords(q.plan))) : null,
+          q.rto ? h("p", { class: "crm-want" }, `Looked at rent to own: ${money(q.rto.monthly)} a month over ${q.rto.months} months`) : null),
         h("div", { class: "crm-quote-total" }, h("strong", {}, money(q.total)),
           order ? h("a", { class: "pill status-sold", href: `#/customers/${c.id}/orders/${order.id}` }, `Sold · order #${order.number}`) : null)),
       details,

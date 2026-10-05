@@ -31,6 +31,7 @@ import { mkdirSync, rmSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { decode } from "../model/design.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = resolve(ROOT, "test/out/dealer-center");
@@ -224,6 +225,18 @@ try {
     const inner = await frame.contentFrame();
     await inner.waitForFunction(() => window.shedUI && window.shedUI.ready, null, { timeout: 60000 });
     await page.screenshot({ path: `${OUT}/owner-desktop-design.png` });
+    /* "Copy link to this building": the lot's own designer link, this exact building in it */
+    await page.evaluate(() => { window.__copied = null; navigator.clipboard.writeText = async (t) => { window.__copied = t; }; });
+    await page.getByRole("button", { name: /copy link to this building/i }).click();
+    await page.waitForFunction(() => window.__copied, null, { timeout: 10000 }).catch(() => {});
+    const copied = await page.evaluate(() => window.__copied || "");
+    const onScreen = await inner.evaluate(() => window.shedUI.getDesign());
+    let linked = null;
+    try { linked = await decode(copied); } catch (e) { linked = { error: e.message }; }
+    const lotLink = `${BASE}/d/${customer.lot}/#d=`;
+    ok("\"Copy link to this building\" copies the customer's lot's 3D designer link with this exact building in it", copied.startsWith(lotLink) && !/view=1/.test(copied) && linked && linked.type === onScreen.type && linked.size === onScreen.size && JSON.stringify(linked.items) === JSON.stringify(onScreen.items), copied.slice(0, 90));
+    ok("... and says so", /Link copied/.test(await page.textContent("body")));
+    ok("the 3D designer itself (the link customers use) has no copy-link button", !(await inner.evaluate(() => /Copy link to this building/.test(document.body.textContent))));
     await page.getByRole("button", { name: /save quote/i }).click();
     await page.waitForFunction((id) => location.hash === `#/customers/${id}`, customer.id, { timeout: 20000 }).catch(() => {});
     const after = (await apiAs(PEOPLE.owner, `customers/${customer.id}`)).data.customer;

@@ -415,6 +415,7 @@ async function boot() {
     getPlan: () => ctx.plan,
     getResult: () => ctx.result,
     price: () => priceParts(state, cat),
+    rentToOwn: () => panels.rentToOwn(),       /* {months, monthly} the customer is looking at, or null */
     getDesign: (opts) => fromState(state, cat, opts),
     applyDesign(design) {
       const t = toState(design, cat);

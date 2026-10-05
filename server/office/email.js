@@ -7,6 +7,8 @@
    Without those settings nothing is emailed and everything else works the
    same. A failed email never stops the quote from being saved. */
 
+import { planWords } from "../../model/quote-plan.js";
+
 const dollars = (n) => "$" + Number(n || 0).toLocaleString("en-US", { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 });
 
 function escapeHtml(s) {
@@ -48,13 +50,16 @@ export function createEmail({ send = null, siteUrl = "" }) {
       `Price: ${dollars(quote.total)} (quote #${quote.number})`,
       reach ? `Reach them: ${reach}` : "",
       customer.zip ? `ZIP: ${customer.zip}` : "",
+      quote.plan ? `What they want to do: ${planWords(quote.plan)}` : "",
+      quote.rto ? `Looked at rent to own: ${dollars(quote.rto.monthly)} a month over ${quote.rto.months} months` : "",
       "",
       `Open them in the Dealer Center: ${link}`,
       "",
       `— ${business} Dealer Center`,
     ].filter((l) => l !== null).join("\n");
     const html = `<p><b>${escapeHtml(customer.name)}</b> designed a <b>${escapeHtml(quote.building)}</b> on the ${escapeHtml(lot.name)} designer.</p>
-<p>Price: <b>${dollars(quote.total)}</b> (quote #${quote.number})<br>${reach ? `Reach them: ${escapeHtml(reach)}<br>` : ""}${customer.zip ? `ZIP: ${escapeHtml(customer.zip)}` : ""}</p>
+<p>Price: <b>${dollars(quote.total)}</b> (quote #${quote.number})<br>${reach ? `Reach them: ${escapeHtml(reach)}<br>` : ""}${customer.zip ? `ZIP: ${escapeHtml(customer.zip)}` : ""}</p>${quote.plan || quote.rto ? `
+<p>${quote.plan ? `What they want to do: <b>${escapeHtml(planWords(quote.plan))}</b>` : ""}${quote.plan && quote.rto ? "<br>" : ""}${quote.rto ? `Looked at rent to own: ${dollars(quote.rto.monthly)} a month over ${quote.rto.months} months` : ""}</p>` : ""}
 <p><a href="${escapeHtml(link)}">Open them in the Dealer Center</a></p>
 <p style="color:#667">— ${escapeHtml(business)} Dealer Center</p>`;
     await send({ to: lot.email, subject, text, html, replyTo: customer.email || undefined });
