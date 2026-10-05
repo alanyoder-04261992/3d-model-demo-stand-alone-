@@ -424,6 +424,16 @@ rent to own, and what the quote form asks. Its lists come from
 script runs, so they always match the designer. The `new-company` skill says
 which answer goes where.
 
+### The papers in the control room
+
+The control room's **Papers** page lists the four papers (Sign-Up Form,
+terms, Setup Questions, Adding a New Customer) so Alan can open or download
+them anywhere. It reads `docs/legal/papers.json` and each PDF from this
+repository's `main` branch on GitHub every time, so once a change to the papers
+is merged here, the control room has it: there is nothing to copy. The script
+writes `papers.json` too; a new paper added to its list shows up in the
+control room on its own.
+
 ### The Barnwright terms
 
 A business Barnwright sells to agrees to the **Barnwright Software Terms and
@@ -458,7 +468,7 @@ script, and email every customer the new terms 30 days ahead.
 | `server/office/account.js` | the business's Barnwright account: when changes stop, open lots, help from Barnwright |
 | `server/office/terms.js` | the owner's agreement to the Barnwright terms |
 | `legal/barnwright-terms.pdf` | the Barnwright Software Terms and Conditions, published on every business's site |
-| `tools/legal/make-legal-pdfs.py` | makes the terms, the Sign-Up Form, the new customer steps and the Setup Questions (`docs/legal/`) |
+| `tools/legal/make-legal-pdfs.py` | makes the terms, the Sign-Up Form, the new customer steps and the Setup Questions (`docs/legal/`), and `docs/legal/papers.json`, the list the control room's Papers page reads |
 | `server/office/control-room.js`, `license-core.js` | the control room's own check-in code, copied to plain JavaScript |
 | `netlify/functions/tenant-diagnostics.mts` | Barnwright's support check |
 | `netlify/functions/barnwright-check-in.mts` | checks in with the control room every six hours |

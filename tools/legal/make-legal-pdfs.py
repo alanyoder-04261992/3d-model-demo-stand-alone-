@@ -10,6 +10,8 @@ conditions for me to have them sign when I sign them up").
                                              initials and signs (fillable boxes)
   docs/legal/Barnwright-Adding-a-New-Customer.pdf
                                              Alan's steps from "yes" to live
+  docs/legal/papers.json                     the list the control room's Papers
+                                             page reads (from main on GitHub)
   docs/legal/Barnwright-Setup-Questions.pdf  what a new company answers so its
                                              3D designer, lots, prices and
                                              buildings can be set up (fillable;
@@ -49,6 +51,7 @@ LINE = colors.HexColor("#CFC7B7")
 FIELD_BG = colors.HexColor("#FBF8EF")
 
 W, H = letter
+PAGES = {}   # doc name -> page count, filled in as each PDF is written
 MARGIN = 0.8 * inch
 
 # ---------------------------------------------------------------- styles
@@ -79,6 +82,7 @@ class NumberedCanvas(rl_canvas.Canvas):
 
     def save(self):
         n = len(self._saved)
+        PAGES[self.doc_name] = n
         for state in self._saved:
             self.__dict__.update(state)
             self._decorate(n)
@@ -906,3 +910,38 @@ signup_pdf(form_out)
 steps_pdf(steps_out)
 questions_pdf(questions_out)
 print("written:", terms_out, form_out, steps_out, questions_out, sep="\n  ")
+
+# THE PAPERS LIST the control room's Papers page reads (Alan, Oct 2026: "Add
+# all these files in control room so I can access them and keep them up to
+# date"). The control room fetches this file and each PDF from this
+# repository's main branch whenever Alan opens them, so a change merged here
+# is what he sees there. Paths are repository paths; nothing here is dated, so
+# running the script again changes the list only when a paper changes.
+if len(sys.argv) == 1:
+    PAPERS = [
+        ("sign-up-form", "Sign-Up Form", "customer", "Sign-Up Form",
+         "Fill in sections B and C (lots and fees), then send it with the terms and the Setup Questions. They fill in section A, initial and sign; you sign for Barnwright.",
+         "docs/legal/Barnwright-Sign-Up-Form.pdf", "Barnwright Sign-Up Form.pdf"),
+        ("terms", "Terms and Conditions", "customer", "Software Terms and Conditions",
+         "Send it with the Sign-Up Form. Their owner also ticks I agree to it in the Dealer Center's first setup.",
+         "legal/barnwright-terms.pdf", "Barnwright Terms and Conditions.pdf"),
+        ("setup-questions", "Setup Questions", "customer", "Setup Questions",
+         "Send it with the Sign-Up Form. They answer it and send it back with their logo, price sheet and photos, so you can set them up and build their buildings their way.",
+         "docs/legal/Barnwright-Setup-Questions.pdf", "Barnwright Setup Questions.pdf"),
+        ("adding-a-new-customer", "Adding a New Customer", "you", "Adding a new customer",
+         "Your steps from the day they say yes to the day they go live, and adding a lot later.",
+         "docs/legal/Barnwright-Adding-a-New-Customer.pdf", "Barnwright Adding a New Customer.pdf"),
+    ]
+    manifest = {
+        "_about": "The papers the control room's Papers page shows. Made by tools/legal/make-legal-pdfs.py; "
+                  "the control room reads this file and each PDF from this repository's main branch.",
+        "version": VERSION,
+        "papers": [{"id": i, "title": t, "for": who, "about": about, "path": path, "download": dl, "pages": PAGES[doc]}
+                   for i, t, who, doc, about, path, dl in PAPERS],
+    }
+    for paper in manifest["papers"]:
+        assert os.path.isfile(os.path.join(ROOT, paper["path"])), paper["path"]
+    with open(os.path.join(ROOT, "docs", "legal", "papers.json"), "w") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
+    print("  " + os.path.join(ROOT, "docs", "legal", "papers.json"))
