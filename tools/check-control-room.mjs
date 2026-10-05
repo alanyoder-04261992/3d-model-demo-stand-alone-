@@ -106,8 +106,28 @@ room.down = false;
 m = await me();
 ok("opening the Dealer Center checks in with the control room", room.calls.includes("/api/license") && m.account?.canWrite === true && m.account.reason === "active", JSON.stringify(m.account));
 ok("... and reports this copy and its open lots", room.business.appVersion === "dealer-center check" && room.business.dealerCount === 0);
+ok("the owner is asked to agree to the Barnwright terms, with a link to read them", m.terms?.version === "1.0" && m.terms.url === "/legal/barnwright-terms.pdf" && m.terms.agreed === null, JSON.stringify(m.terms));
 r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small" });
+ok("first setup without ticking \"I agree\" is refused in plain words, and no business is made", r.status === 422 && r.data.error === "Tick the box to agree to the Barnwright terms." && !(await office.parts.store.get("price-list")), JSON.stringify(r));
+r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small", agreeTerms: true });
 ok("first setup works", r.status === 201, JSON.stringify(r.data));
+m = await me();
+ok("the agreement is kept: version 1.0, when, and who (the owner's login)", m.terms.agreed?.version === "1.0" && m.terms.agreed.by.email === USERS.alan.email && m.terms.agreed.agreedAt === new Date(clock.t).toISOString(), JSON.stringify(m.terms));
+{
+  /* the terms changed since the owner agreed: asked again, and both are kept */
+  const kept = await office.parts.store.get("barnwright-terms");
+  const older = { ...kept.current, version: "0.9" };
+  await office.parts.store.put("barnwright-terms", { current: older, history: [older] });
+  m = await me();
+  ok("after the terms change, the owner is asked again", m.terms.agreed === null);
+  r = await call("POST", "/api/office/terms", { agree: false });
+  ok("... not agreeing is refused in plain words", r.status === 422 && /Tick the box/.test(r.data.error));
+  r = await call("POST", "/api/office/terms", { agree: true });
+  const doc = await office.parts.store.get("barnwright-terms");
+  ok("... \"I agree\" saves the new version and keeps the old one", r.status === 200 && r.data.terms.agreed?.version === "1.0" && doc.history.length === 2 && doc.history[1].version === "0.9", JSON.stringify(doc));
+  r = await call("POST", "/api/office/terms", { agree: true });
+  ok("... agreeing again to the same version changes nothing", r.status === 200 && (await office.parts.store.get("barnwright-terms")).history.length === 2);
+}
 const pl = (await call("GET", "/api/office/price-list")).data;
 await call("PUT", "/api/office/price-list", { settings: { ...pl.settings, status: "active" }, version: pl.version });
 const calls0 = room.calls.length;
@@ -155,6 +175,8 @@ ok("adding a customer works", r.status === 201);
 r = await call("POST", "/api/office/team", { email: USERS.mike.email, name: "Mike", role: "dealer", lots: ["port-charlotte"] });
 ok("adding a person works", r.status === 201 || r.status === 200, JSON.stringify(r));
 await me("mike");
+r = await call("POST", "/api/office/terms", { agree: true }, { as: "mike" });
+ok("a dealer can't agree to the Barnwright terms for the business", r.status === 403, JSON.stringify(r));
 
 section("6. Switched off by Barnwright: read-only at the next check-in");
 room.business.status = "deactivated";
@@ -272,6 +294,7 @@ ok("with some control room settings missing, nothing can be changed", m.account.
 office = officeWith(undefined);
 m = await me();
 ok("not connected at all (Alan's own business): no account, nothing limited", m.account === null && (await call("POST", "/api/office/lots", { name: "Sixth Lot" })).status === 201);
+ok("... and no Barnwright terms to agree to", m.terms === null && (await call("POST", "/api/office/terms", { agree: true })).status === 404);
 d = await office.diagnostics(new Request("https://dealer.test/.netlify/functions/tenant-diagnostics", { method: "POST" }));
 ok("... and no support check address", d.status === 404);
 
@@ -280,4 +303,4 @@ if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} control room checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): leases signed by the control room's own code read the same way; a Dealer Center never switched on, switched off, or out of touch for 7 days stops changes and closes its 3D designer links with the lot's number while reading and downloading still work; open lots never pass the plan's number, even when opened at the same moment; taking a person off always works; help from Barnwright needs the owner's switch, ends when turned off or when time is up, and answers only how the Dealer Center runs, in the shape the control room accepts.`);
+console.log(`PROVED (${passed} checks): leases signed by the control room's own code read the same way; a Dealer Center never switched on, switched off, or out of touch for 7 days stops changes and closes its 3D designer links with the lot's number while reading and downloading still work; open lots never pass the plan's number, even when opened at the same moment; taking a person off always works; the owner agrees to the Barnwright terms before the business is made, again when they change, and every agreement is kept; help from Barnwright needs the owner's switch, ends when turned off or when time is up, and answers only how the Dealer Center runs, in the shape the control room accepts.`);

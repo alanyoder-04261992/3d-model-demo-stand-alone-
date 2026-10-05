@@ -13,7 +13,7 @@
 
 import { h, clear, icon, button, toast, loading, emptyState } from "./dom.js";
 import { app } from "./app.js";
-import { configureApi, signOut } from "./api.js";
+import { configureApi, signOut, post } from "./api.js";
 import { signInScreen, notOnTeam, handleEmailLink } from "./auth.js";
 import { ROLE_WORDS, initials, dayWords, todayKey } from "./words.js";
 
@@ -179,10 +179,36 @@ function accountBanner() {
   return null;
 }
 
+/* The owner of a business Barnwright sells to agrees to the Barnwright terms:
+   asked here when they set up before the box existed, or the terms changed
+   (server/office/terms.js). Nobody else is asked. */
+function termsBanner() {
+  const t = app.me?.terms;
+  if (!t || t.agreed || !app.isOwner || !app.business) return null;
+  const btn = button("I agree", async () => {
+    btn.disabled = true;
+    try {
+      await post("terms", { agree: true });
+      await app.loadMe();
+      toast("Thanks. Your agreement to the Barnwright terms is saved.");
+      render();
+    } catch (e) {
+      btn.disabled = false;
+      toast(e.message, { error: true });
+    }
+  }, { kind: "primary", small: true });
+  return h("div", { class: "banner info terms" }, icon("note"),
+    h("span", {}, "Please read the ", h("a", { href: t.url, target: "_blank", rel: "noopener" }, t.title),
+      ` (version ${t.version}), then tap I agree.`),
+    btn);
+}
+
 function closedBanner() {
   if (app.demo) return demoBanner();
   const account = accountBanner();
   if (account) return account;
+  const terms = termsBanner();
+  if (terms) return terms;
   if (!app.business || app.business.open || !app.isOwner) return null;
   return h("div", { class: "banner warn" }, icon("alert"),
     h("span", {}, "Your 3D designer links are closed to customers. Check your prices, then open them in Settings."),

@@ -1,7 +1,10 @@
 /* FIRST SETUP (#/setup): shown once, to the first owner, before the
    business exists. Three short steps:
 
-     1  Your business       your name, the business name, phone, email
+     1  Your business       your name, the business name, phone, email,
+                            and (a business Barnwright sells to) "I agree to
+                            the Barnwright terms" -- the business is not
+                            made without it (server/office/terms.js)
      2  Your price list     every standard building at example prices, or
                             three buildings to start small
                             -> POST setup (the price list is made, closed
@@ -93,9 +96,17 @@ function business() {
     placeholder: "Yoder Storage Barns", hint: "Customers see it at the top of your 3D designer and on their quotes." });
   const phone = field("Business phone", { type: "tel", value: d.phone, maxLength: 40, autocomplete: "tel", placeholder: "(941) 555-0100" });
   const email = field("Business email", { type: "email", value: d.email, maxLength: 200, autocomplete: "email" });
+  /* the Barnwright terms: only for a business connected to Barnwright */
+  const terms = wiz.ctx.app.me?.terms || null;
+  const agree = h("input", { type: "checkbox", checked: !!d.agreeTerms, "aria-describedby": "setup-terms-words" });
+  const termsBox = terms ? h("label", { class: "check setup-terms" }, agree,
+    h("span", { id: "setup-terms-words" }, "I have read and agree to the ",
+      h("a", { href: terms.url, target: "_blank", rel: "noopener" }, terms.title),
+      ` (version ${terms.version}) for my business.`)) : null;
   return stepCard(1, "Your business", "Who you are and how customers reach the business.",
     form([
       h("div", { class: "form-grid" }, yourName.wrap, businessName.wrap, phone.wrap, email.wrap),
+      termsBox,
       h("div", { class: "actions end" },
         h("button", { type: "submit", class: "btn btn-primary" }, h("span", {}, "Next: your price list"), icon("arrowRight"))),
     ], async () => {
@@ -105,6 +116,10 @@ function business() {
       });
       if (!d.yourName) throw new Error("Type your name.");
       if (!d.businessName) throw new Error("Type the business name.");
+      if (terms) {
+        d.agreeTerms = agree.checked;
+        if (!d.agreeTerms) throw new Error("Tick the box to agree to the Barnwright terms.");
+      }
       wiz.step = 2;
       draw();
     }));

@@ -788,6 +788,9 @@ body.setup-on .main { margin-left: 0; max-width: none; padding-bottom: 60px; }
   display: flex; align-items: flex-start; gap: 9px; font-size: 14.5px; border-radius: 8px; padding: 10px 12px;
 }
 .setup-note { background: var(--warn-bg); color: var(--warn); }
+/* "I agree to the Barnwright terms" (a business Barnwright sells to) */
+.setup-terms { margin-top: 16px; padding: 12px 14px; border: 1px solid var(--gold-line); background: var(--gold-soft); border-radius: var(--radius-small); font-size: 15px; line-height: 1.45; }
+.setup-terms a { font-weight: 600; }
 .setup-link { background: var(--bg); color: var(--muted); }
 .setup-note .icon, .setup-link .icon { width: 17px; height: 17px; margin-top: 1px; flex: none; }
 .setup-link strong { color: var(--brand-header); overflow-wrap: anywhere; font-weight: 600; }
@@ -825,5 +828,8 @@ body.setup-on #main > .banner { display: none; }
 .help-state { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border-radius: var(--radius-small); background: var(--bg); }
 .help-state.on { background: var(--good-bg); color: var(--good); }
 .help-state svg { width: 20px; height: 20px; flex: none; margin-top: 1px; }
+/* who agreed to the Barnwright terms (server/office/terms.js) */
+.help-terms { display: flex; gap: 8px; align-items: flex-start; margin-top: 14px; color: var(--muted); font-size: 14px; }
+.help-terms svg { width: 18px; height: 18px; flex: none; margin-top: 1px; }
 .help-log { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
 .help-log time { color: var(--ink); font-weight: 500; margin-right: 6px; }

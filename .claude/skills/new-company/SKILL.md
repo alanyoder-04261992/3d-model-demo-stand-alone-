@@ -7,13 +7,18 @@ description: Set up a new shed company (a new customer of the designer) from its
 
 A business that wants its own price list, lots, team and customer list gets
 its own copy of the site with the Dealer Center (`/dealer`). Follow "Setting up
-a new company" in `docs/OFFICE.md`: a new Netlify site, Identity on, the
-owner's email as `OWNER_EMAIL`. The owner then sets everything up on screen:
+a new company" in `docs/OFFICE.md` (Alan's full steps, from the signed
+Sign-Up Form through the control room to go-live, are
+`docs/legal/Barnwright-Adding-a-New-Customer.pdf`): a new Netlify site,
+Identity on, the owner's email as `OWNER_EMAIL`, and the control room's
+`CONTROL_ROOM_*` settings for a business Barnwright sells to. The owner ticks
+"I agree" to the Barnwright terms in first setup, then sets everything up on screen:
 the price list (sizes, styles, prices, options, colors), the lots (each gets
 `/d/<lot>/` and its own `data-lot` website code) and the team. No settings
 file is written by hand for these businesses; the price list is the same
 validated settings object a `companies/<id>/company.json` file holds. Dealers
-never change prices or options. Charging businesses for Barnwright comes later.
+never change prices or options. Barnwright charges a business through the
+control room (a one-time build fee, then a monthly fee from go-live).
 
 Run `npm run build:client` for a client delivery. Do not include learning pages,
 reference photos, setup tools, `.agents`, `.claude` or these skills. The existing
