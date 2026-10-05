@@ -171,9 +171,15 @@ site. One shed business runs everything from it:
   a stage — New, Contacted, Quoted, Sold, Delivered or Lost — a follow-up
   date, notes of every call and text, their quotes, and their orders.
 * **Signing up a new company.** Your step-by-step guide from "yes" to live:
-  `docs/legal/Barnwright-Adding-a-New-Customer.pdf`. Their owner ticks
+  `docs/legal/Barnwright-Adding-a-New-Customer.pdf`. You send them the
+  Sign-Up Form, the terms and the questions they answer so you can set them
+  up and build their buildings their way:
+  `docs/legal/Barnwright-Setup-Questions.pdf`. Their owner ticks
   "I agree to the Barnwright terms" in the Dealer Center's first setup, and
-  Settings shows who agreed and when.
+  Settings shows who agreed and when. It's one product; each lot after the
+  first is $250 one time, and every business gets its own
+  `name.barnwrightsoftware.com` address. All four papers are also on the
+  **Papers** page of your control room, always the latest version.
 * **Designing for a customer.** "Design a building for them" opens the lot's
   3D designer inside the Dealer Center; "Save quote" puts the building and
   its price on the customer's file. "Copy link to this building" copies a

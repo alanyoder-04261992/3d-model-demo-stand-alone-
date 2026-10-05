@@ -10,15 +10,22 @@ conditions for me to have them sign when I sign them up").
                                              initials and signs (fillable boxes)
   docs/legal/Barnwright-Adding-a-New-Customer.pdf
                                              Alan's steps from "yes" to live
+  docs/legal/papers.json                     the list the control room's Papers
+                                             page reads (from main on GitHub)
+  docs/legal/Barnwright-Setup-Questions.pdf  what a new company answers so its
+                                             3D designer, lots, prices and
+                                             buildings can be set up (fillable;
+                                             its lists come from library/)
 
 Run:  python3 tools/legal/make-legal-pdfs.py            (into the repository)
-      python3 tools/legal/make-legal-pdfs.py <folder>   (all three there, to look at)
+      python3 tools/legal/make-legal-pdfs.py <folder>   (all four there, to look at)
 Needs: pip install reportlab
 
 When the terms change: change VERSION here and TERMS.version in
 server/office/terms.js together, so every owner is asked to agree again."""
 
-import sys, os
+import sys, os, re, json
+from xml.sax.saxutils import escape
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
 from reportlab.lib import colors
@@ -32,6 +39,8 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else None
 if OUT: os.makedirs(OUT, exist_ok=True)
 
 VERSION = "Version 1.0, October 2026"
+DOMAIN = "barnwrightsoftware.com"   # every business's web address is <their name>.barnwrightsoftware.com
+LOT_FEE = 250                       # one time, for each lot after the first (the monthly fee stays the same)
 BLACK = colors.HexColor("#16130E")
 INK = colors.HexColor("#1D1A15")
 MUTED = colors.HexColor("#635D52")
@@ -42,6 +51,7 @@ LINE = colors.HexColor("#CFC7B7")
 FIELD_BG = colors.HexColor("#FBF8EF")
 
 W, H = letter
+PAGES = {}   # doc name -> page count, filled in as each PDF is written
 MARGIN = 0.8 * inch
 
 # ---------------------------------------------------------------- styles
@@ -72,6 +82,7 @@ class NumberedCanvas(rl_canvas.Canvas):
 
     def save(self):
         n = len(self._saved)
+        PAGES[self.doc_name] = n
         for state in self._saved:
             self.__dict__.update(state)
             self._decorate(n)
@@ -87,7 +98,7 @@ class NumberedCanvas(rl_canvas.Canvas):
         self.rect(0, H - 0.45 * inch, W, 0.03 * inch, stroke=0, fill=1)
         self.setFont("Helvetica-Bold", 9.5)
         self.setFillColor(GOLD)
-        self.drawString(MARGIN, H - 0.27 * inch, "BARNWRIGHT")
+        self.drawString(MARGIN, H - 0.27 * inch, "BARNWRIGHT SOFTWARE")
         self.setFont("Helvetica", 8.5)
         self.setFillColor(colors.HexColor("#E8E2D4"))
         self.drawRightString(W - MARGIN, H - 0.27 * inch, f"{self.doc_name}  ·  {VERSION}")
@@ -98,6 +109,7 @@ class NumberedCanvas(rl_canvas.Canvas):
         self.setFont("Helvetica", 8)
         self.setFillColor(MUTED)
         self.drawString(MARGIN, 0.42 * inch, self.doc_name)
+        self.drawCentredString(W / 2, 0.42 * inch, DOMAIN)
         self.drawRightString(W - MARGIN, 0.42 * inch, f"Page {self._pageNumber} of {n}")
         self.restoreState()
 
@@ -126,10 +138,10 @@ class Field(Flowable):
     """A labelled box someone can type in (a PDF form field), or a plain line
     to sign on (sign=True: e-signature tools and Fill & Sign put the
     signature there)."""
-    def __init__(self, name, caption, width, height=20, multiline=False, sign=False, tip=None):
+    def __init__(self, name, caption, width, height=20, multiline=False, sign=False, tip=None, suffix=None):
         super().__init__()
         self.name, self.caption, self.w, self.h = name, caption, width, height
-        self.multiline, self.sign, self.tip = multiline, sign, tip or caption
+        self.multiline, self.sign, self.tip, self.suffix = multiline, sign, tip or caption, suffix
     def wrap(self, aw, ah):
         return self.w, self.h + 13
     def draw(self):
@@ -140,7 +152,12 @@ class Field(Flowable):
             c.setStrokeColor(INK); c.setLineWidth(0.8); c.line(0, 2, self.w, 2)
             c.setFont("Helvetica", 7); c.setFillColor(MUTED); c.drawString(2, 5, "Sign here")
             return
-        c.acroForm.textfield(name=self.name, tooltip=self.tip, x=0, y=0, width=self.w, height=self.h,
+        box = self.w
+        if self.suffix:   # words printed after the box, like ".barnwrightsoftware.com"
+            c.setFont("Helvetica", 10); c.setFillColor(INK)
+            box = self.w - c.stringWidth(self.suffix, "Helvetica", 10) - 3
+            c.drawString(box + 3, 6, self.suffix)
+        c.acroForm.textfield(name=self.name, tooltip=self.tip, x=0, y=0, width=box, height=self.h,
                              relative=True, borderStyle="underlined", borderColor=LINE, fillColor=FIELD_BG,
                              textColor=INK, fontName="Helvetica", fontSize=0 if self.multiline else 10,
                              borderWidth=1, fieldFlags="multiline" if self.multiline else "", maxlen=400 if self.multiline else 120)
@@ -193,16 +210,18 @@ def section_band(text):
 # ================================================================ 1. TERMS
 TERMS = [
     ("1. What you get", [
-        ("1.1", "Barnwright provides online software for selling portable buildings, as listed on your Sign-Up Form. It may include:"),
-        ("(a)", "the <b>3D designer</b>, where your customers pick a building, size, colors, doors, windows and options, see a price, and send you a quote request;", "sub"),
-        ("(b)", "the <b>Dealer Center</b>, where you set your price list, styles, sizes and options, add your lots and your team, and keep your customers, quotes, follow-ups and orders; and", "sub"),
-        ("(c)", "hosting, updates and fixes for as long as this agreement is in place.", "sub"),
-        ("1.2", "We may improve, change or replace features over time. We will not take away a main feature you pay for without telling you at least 30 days ahead."),
-        ("1.3", "Your plan includes the number of open lots shown on your Sign-Up Form. Opening more lots needs a change to your plan."),
+        ("1.1", "Barnwright provides one product: the <b>Barnwright 3D designer</b>. It includes:"),
+        ("(a)", "your <b>3D designer</b>, where your customers pick a building, size, colors, doors, windows and options, see a price, and send you a quote request;", "sub"),
+        ("(b)", "your <b>Dealer Center</b>, where you set your price list, styles, sizes and options once for every lot, add your lots and your team, and keep your customers, quotes, follow-ups and orders; and", "sub"),
+        ("(c)", "your web address, hosting, updates and fixes for as long as this agreement is in place.", "sub"),
+        ("1.2", "The 3D designer stands on its own. It works alongside the software you already use, such as your website, your accounting and your rent-to-own company, and does not replace it. You keep using your own software for contracts, payments, inventory and delivery."),
+        ("1.3", "We may improve, change or replace features over time. We will not take away a main feature you pay for without telling you at least 30 days ahead."),
+        ("1.4", "<b>Lots.</b> Your plan includes one lot. Each lot after the first has a one-time lot fee, shown on your Sign-Up Form, and adds nothing to your monthly fee. To open another lot later, ask us: we add it to your plan once its lot fee is paid. A lot fee is not refundable once the lot is open."),
+        ("1.5", "<b>Your web address.</b> Your 3D designer and Dealer Center are at a web address under " + DOMAIN + ", such as yourbusiness." + DOMAIN + ", which we choose with you. Barnwright owns " + DOMAIN + " and the addresses under it. You may use yours while this agreement is in place, and you may also show your 3D designer on your own websites."),
     ]),
     ("2. Setting up your software and the build fee", [
-        ("2.1", "You pay the one-time build fee shown on your Sign-Up Form. It covers setting up your software: your price list, your styles and sizes, your colors and logo, your lots, and the links for your website."),
-        ("2.2", "You agree to send us, on time and correct, what we need to set you up: your prices, the styles and sizes you sell, your colors, your logo, your contact details, your website addresses and where quote requests should go."),
+        ("2.1", "You pay the one-time build fee shown on your Sign-Up Form. It covers setting up your 3D designer: your price list, your styles and sizes, your colors and logo, your first lot, your web address, and the code for your website."),
+        ("2.2", "You agree to send us, on time and correct, what we need to set you up, such as your answers to the <b>Barnwright Setup Questions</b>: your prices, the styles and sizes you sell and how you build them, your colors, your logo, your lots, your contact details, your website addresses and where quote requests should go."),
         ("2.3", "Before your 3D designer goes live, we show you your buildings and prices. You check them and tell us they are right. You are responsible for the prices and choices you approve."),
         ("2.4", "The build fee is not refundable once we have started work, unless your Sign-Up Form says otherwise."),
     ]),
@@ -310,12 +329,12 @@ TERMS = [
 def terms_pdf(path):
     s = []
     s.append(Paragraph("Software Terms and Conditions", title))
-    s.append(Paragraph("For the Barnwright 3D designer and Dealer Center", subtitle))
+    s.append(Paragraph("For the Barnwright 3D designer", subtitle))
     s.append(GoldRule())
     s.append(Paragraph(
-        "These terms are the agreement between <b>Barnwright</b> and the business named on the "
+        "These terms are the agreement between <b>Barnwright Software</b> (" + DOMAIN + ") and the business named on the "
         "<b>Barnwright Sign-Up Form</b> (\"you\"). They apply together with your signed Sign-Up Form, which lists what "
-        "you are buying and what it costs. \"Barnwright\", \"we\" and \"us\" mean the company named as the provider on "
+        "you are buying and what it costs. \"Barnwright\", \"we\" and \"us\" mean Barnwright Software, the provider named on "
         "your Sign-Up Form. If the Sign-Up Form and these terms say different things, the Sign-Up Form wins.", lead))
     s.append(Spacer(1, 4))
     for head, items in TERMS:
@@ -344,16 +363,17 @@ def signup_pdf(path):
     third = (FW - 24) / 3
     s = []
     s.append(Paragraph("Sign-Up Form", title))
-    s.append(Paragraph("Barnwright 3D designer and Dealer Center", subtitle))
+    s.append(Paragraph("The Barnwright 3D designer", subtitle))
     s.append(GoldRule())
     s.append(Paragraph("Fill in the boxes on screen (any PDF reader with forms, such as the free Adobe Acrobat Reader) or print it and write in them. "
                        "Both of us sign at the end. This form and the <b>Barnwright Software Terms and Conditions</b> (" + VERSION + ") make up our agreement.", small))
     s.append(Spacer(1, 8))
 
-    s.append(section_band("THE PROVIDER (BARNWRIGHT)"))
+    s.append(section_band("THE PROVIDER: BARNWRIGHT SOFTWARE  ·  " + DOMAIN))
     s.append(Spacer(1, 6))
     s.append(row(Field("provider_name", "Legal name", half), Field("provider_email", "Email", half), widths=[half + 12, half]))
     s.append(row(Field("provider_address", "Mailing address", half), Field("provider_phone", "Phone", half), widths=[half + 12, half]))
+    s.append(row(Field("support_how", "How to reach Barnwright for help", half), Field("support_hours", "Support hours", half), widths=[half + 12, half]))
 
     s.append(Spacer(1, 4))
     s.append(section_band("A.  YOUR BUSINESS"))
@@ -362,36 +382,39 @@ def signup_pdf(path):
     s.append(row(Field("business_address", "Business address", half), Field("business_city_state_zip", "City, state and ZIP", half), widths=[half + 12, half]))
     s.append(row(Field("owner_name", "Owner's name", third), Field("owner_title", "Title", third), Field("owner_phone", "Phone", third), widths=[third + 12, third + 12, third]))
     s.append(row(Field("owner_email", "Owner's email (their Dealer Center login)", half), Field("billing_contact", "Billing contact and email", half), widths=[half + 12, half]))
-    s.append(Field("websites", "Websites that will show your 3D designer", FW))
+    s.append(row(Field("web_name", "Your web address (we choose it with you)", half, suffix="." + DOMAIN),
+                 Field("websites", "Your websites that will show your 3D designer", half), widths=[half + 12, half]))
 
     s.append(Spacer(1, 6))
     s.append(section_band("B.  WHAT YOU ARE BUYING"))
     s.append(Spacer(1, 6))
-    s.append(row(Check("buy_designer", "<b>3D designer</b>, with your name, colors, logo, styles, sizes and prices", half),
-                 Check("buy_dealer_center", "<b>Dealer Center</b>: price list, lots, team, customers, quotes, follow-ups and orders", half), widths=[half + 12, half]))
-    s.append(row(Field("lots_included", "Open lots included", third), Field("extra_lot_price", "Each extra lot, a month ($)", third),
+    s.append(Paragraph("<b>The Barnwright 3D designer</b>, one product: your 3D designer and your Dealer Center, on your own web address. "
+                       "It works alongside the software you already use (terms section 1).", body))
+    s.append(Spacer(1, 4))
+    s.append(row(Field("lots", "How many lots", third),
+                 Paragraph(f"The first lot comes with your plan. Each lot after the first is <b>${LOT_FEE} one time</b> and adds nothing "
+                           "to the monthly fee (terms section 1.4).", small),
                  Check("white_label", "<b>White-label</b> (no \"3D designer by Barnwright\" line)", third), widths=[third + 12, third + 12, third]))
     s.append(Field("other_items", "Anything else included", FW))
-
-    s.append(Spacer(1, 6))
-    s.append(section_band("C.  SUPPORT AND YOUR NAME"))
-    s.append(Spacer(1, 6))
-    s.append(row(Field("support_how", "How to reach Barnwright for help", half), Field("support_hours", "Support hours", half), widths=[half + 12, half]))
+    s.append(Spacer(1, 4))
     s.append(row(Paragraph("<b>May Barnwright name your business as a customer?</b>", body), Check("name_yes", "Yes", 60), Check("name_no", "No", 60),
                  widths=[half + 12, 80, 80]))
 
     s.append(PageBreak())
-    s.append(section_band("D.  FEES AND PAYMENT"))
+    s.append(section_band("C.  FEES AND PAYMENT"))
     s.append(Spacer(1, 6))
-    s.append(row(Field("build_fee", "One-time build fee ($)", third), Field("build_fee_terms", "Build fee paid (for example, all at signing)", third * 2 + 12), widths=[third + 12, third * 2 + 12]))
-    s.append(row(Field("monthly_fee", "Monthly fee ($), starting on the go-live date", half), Field("first_term", "First term (month to month, or number of months)", half), widths=[half + 12, half]))
+    s.append(row(Field("build_fee", "One-time build fee ($)", third), Field("lot_fees", f"Lot fees (${LOT_FEE} each after the first)", third),
+                 Field("one_time_total", "One-time total ($)", third), widths=[third + 12, third + 12, third]))
+    s.append(row(Field("build_fee_terms", "One-time total paid (for example, all at signing)", half), Field("first_term", "First term (month to month, or number of months)", half), widths=[half + 12, half]))
+    s.append(row(Field("monthly_fee", "Monthly fee ($), starting on the go-live date", half),
+                 Paragraph("The monthly fee is the same for any number of lots.", small), widths=[half + 12, half]))
     s.append(Paragraph("<b>Payment method</b>", label))
     s.append(Spacer(1, 3))
     s.append(row(Check("pay_card", "Card", third), Check("pay_bank", "Bank payment (ACH)", third), Check("pay_invoice", "Invoice, due in the days below", third), widths=[third + 12, third + 12, third]))
     s.append(row(Field("invoice_days", "Invoice due in (days)", third), Field("build_refund", "Build fee refund, if any (else none once work starts)", third * 2 + 12), widths=[third + 12, third * 2 + 12]))
 
     s.append(Spacer(1, 6))
-    s.append(section_band("E.  PLEASE INITIAL EACH ONE"))
+    s.append(section_band("D.  PLEASE INITIAL EACH ONE"))
     s.append(Spacer(1, 8))
     for name, words in [  # each with a little space after
         ("init_prices", "I will check my price list. My business is responsible for every price our customers see and every quote we give (section 6)."),
@@ -432,22 +455,30 @@ CONTROL_ROOM = "barnwright-control-room.netlify.app"
 REPO = "alanyoder-04261992/3d-model-demo-stand-alone-"
 
 PARTS = [
+    ("Before your first customer", "Once.", [
+        ("Set up " + DOMAIN, [
+            "Add <b>" + DOMAIN + "</b> to the Netlify project for your Barnwright website: <b>Domain management, Add a domain</b> (<b>Buy a new domain</b>, or <b>Add a domain you already own</b>).",
+            "Next to it, tap <b>Options, Set up Netlify DNS</b> and follow the steps. After that, each customer's web address takes one step (step 6), and Netlify makes the address and its https lock by itself.",
+        ]),
+    ]),
     ("Part 1. The paperwork", "The day they say yes.", [
         ("Fill in their Sign-Up Form", [
-            "Open your <b>Sign-Up Form (blank).pdf</b> template (Barnwright's details already typed in Section C and the provider box).",
-            "Fill in <b>Section B</b> (3D designer, Dealer Center, how many open lots, white-label) and <b>Section D</b> (build fee, monthly fee, how they pay) with what you agreed. Save it as <b>Sign-Up Form - (their business).pdf</b>.",
+            "Open your <b>Sign-Up Form (blank).pdf</b> template (Barnwright's details already typed in the provider box).",
+            "Fill in <b>Section B</b> (how many lots, white-label) and <b>Section C</b>: the build fee, the lot fees ($" + str(LOT_FEE) + " for each lot after the first), the one-time total, the monthly fee (the same for any number of lots) and how they pay. Save it as <b>Sign-Up Form - (their business).pdf</b>.",
+            "Pick their web address with them, for example <b>cedar-ridge-sheds</b>." + DOMAIN + ", and type it in Section A.",
         ]),
-        ("Send it with the terms", [
-            "Email them the Sign-Up Form <b>and</b> the <b>Barnwright Terms and Conditions.pdf</b> together.",
-            "They type in Section A (their business and the <b>owner's email</b>, which becomes their Dealer Center login), initial Section E, sign with <b>Fill and Sign</b> and email it back. You sign it for Barnwright and send them the finished copy.",
-            "Save the signed form in a folder for that company.",
+        ("Send it with the terms and the questions", [
+            "Email them the Sign-Up Form, the <b>Barnwright Terms and Conditions.pdf</b> and the <b>Barnwright Setup Questions.pdf</b> together.",
+            "They type in Section A (their business and the <b>owner's email</b>, which becomes their Dealer Center login), initial Section D, sign with <b>Fill and Sign</b> and email it back. You sign it for Barnwright and send them the finished copy.",
+            "They send back the Setup Questions with their logo, their price sheet and photos of their buildings. You need them for Part 4.",
+            "Save the signed form and their answers in a folder for that company.",
         ]),
     ]),
     ("Part 2. The control room", CONTROL_ROOM, [
         ("Add the customer", [
             "Sign in to the control room and tap <b>Add customer</b>.",
             "Type the <b>Business name</b>, <b>Contact person</b>, <b>Email address</b> and <b>Phone</b> from their Sign-Up Form.",
-            "<b>Dealership cap</b> is the number of open lots from Section B (the control room says dealerships; the Dealer Center says lots). <b>One-time build fee (USD)</b> and <b>Monthly subscription (USD)</b> are the amounts from Section D.",
+            "<b>Dealership cap</b> is how many lots from Section B (the control room says dealerships; the Dealer Center says lots). <b>One-time build fee (USD)</b> is the one-time total from Section C (the build fee plus the lot fees). <b>Monthly subscription (USD)</b> is the monthly fee.",
             "Leave <b>Application URL</b> and <b>Netlify site ID</b> empty for now (you get them in Part 3). Save.",
         ]),
         ("Collect the build fee", [
@@ -458,8 +489,9 @@ PARTS = [
     ("Part 3. Their Dealer Center site", "On netlify.com, about 15 minutes.", [
         ("Make their site", [
             "In Netlify: <b>Add new project</b>, <b>Import an existing project</b>, <b>GitHub</b>, then pick <b>" + REPO + "</b>. Keep the build settings it fills in and tap <b>Deploy</b>.",
-            "<b>Project configuration, Change project name</b>: use their business, for example <b>cedar-ridge-sheds</b>. Their Dealer Center is then https://cedar-ridge-sheds.netlify.app/dealer (or connect their own web address under <b>Domain management</b>).",
-            "Copy the <b>Project ID</b> (also called Site ID) from <b>Project configuration, General</b>. In the control room, open the customer and paste it in <b>Netlify site ID</b>, and paste their site's address in <b>Application URL</b>. Save.",
+            "<b>Project configuration, Change project name</b>: use their web address name, for example <b>cedar-ridge-sheds</b>.",
+            "<b>Domain management, Add a domain, Add a domain you already own</b>: type <b>cedar-ridge-sheds." + DOMAIN + "</b> and confirm. Their Dealer Center is then https://cedar-ridge-sheds." + DOMAIN + "/dealer.",
+            "Copy the <b>Project ID</b> (also called Site ID) from <b>Project configuration, General</b>. In the control room, open the customer and paste it in <b>Netlify site ID</b>, and put https://cedar-ridge-sheds." + DOMAIN + " in <b>Application URL</b>. Save.",
         ]),
         ("Turn on sign-in", [
             "In Netlify: <b>Project configuration, Identity</b>, tap <b>Enable Identity</b>. Leave registration <b>Open</b>: anybody can make a login, but only people their owner adds can see anything.",
@@ -478,20 +510,21 @@ PARTS = [
             "Then <b>Deploys, Trigger deploy, Deploy project</b>, so the settings take effect.",
         ]),
         ("Check it", [
-            "Open their site's <b>/dealer</b> address. The sign-in page shows, black and gold.",
+            "Open https://cedar-ridge-sheds." + DOMAIN + "/dealer. The sign-in page shows, black and gold.",
             "In the control room, the customer's <b>Software connection</b> fills in after the owner first opens the Dealer Center. <b>Run check</b> confirms it.",
         ]),
     ]),
     ("Part 4. Their owner sets up", "With them on the phone or a screen share, about 30 minutes.", [
         ("Their first sign-in", [
-            "Send the owner their link: https://(their site)/dealer. They tap <b>Make your login</b> with the owner's email, confirm it from their email, and sign in.",
+            "Send the owner their link: https://(their name)." + DOMAIN + "/dealer. They tap <b>Make your login</b> with the owner's email, confirm it from their email, and sign in.",
             "<b>Step 1, Your business</b>: their name, business name, phone and email, and the box <b>I have read and agree to the Barnwright Software Terms and Conditions</b>. The Dealer Center records who ticked it and when; it shows in <b>Settings, Help from Barnwright</b>.",
             "<b>Step 2</b>: a starting price list. <b>Step 3</b>: their first lot.",
         ]),
-        ("Their prices, look and lots", [
+        ("Their prices, look and lots, from their Setup Questions", [
             "<b>Price list</b>: turn off the styles they don't sell and type their prices for every size, door, window and option.",
             "<b>Settings</b>: their logo, colors, the line under the price, rent to own, and what the quote form asks.",
-            "<b>Lots</b>: add their other lots, up to the open lots in their plan. <b>Team</b>: add their managers and dealers; each gets a message saying how to sign in.",
+            "<b>Lots</b>: add their other lots, up to the lots in their plan. <b>Team</b>: add their managers and dealers; each gets a message saying how to sign in.",
+            "If they build differently from the standard (section 6 of their answers), ask Claude to set that up for their business before you open it.",
         ]),
         ("Open it to customers", [
             "They open each lot's <b>3D designer link</b> and check the buildings and prices. Then <b>Settings, 3D designer, Open to customers</b>, and save.",
@@ -502,12 +535,19 @@ PARTS = [
     ("Part 5. Go live", "When everything works.", [
         ("Start the monthly fee", [
             "In the control room, on the customer, tap <b>Start monthly subscription</b>, confirm, and copy the payment link.",
-            "Email it to them with their go-live date: \"Your Barnwright software is finished and ready to use as of (date). Your monthly fee of $(amount) starts today. Here is the link to set up the payment.\"",
+            "Email it to them with their go-live date: \"Your Barnwright 3D designer is finished and ready to use as of (date). Your monthly fee of $(amount) starts today. Here is the link to set up the payment.\"",
             "Write the go-live date at the bottom of their signed Sign-Up Form.",
         ]),
         ("Follow up", [
             "Add a reminder in the control room to call them in two weeks.",
             "If something isn't working later, ask them to turn on <b>Help from Barnwright</b> in Settings, then use <b>Run check</b> on their customer in the control room.",
+        ]),
+    ]),
+    ("Later. Adding a lot", "When they open another lot.", [
+        ("Charge the lot fee, then raise their lots", [
+            "Send them an invoice for <b>$" + str(LOT_FEE) + "</b> from your Stripe account (<b>Invoices, Create invoice</b>). The control room collects the build fee only once.",
+            "When it's paid: in the control room, open the customer, tap <b>Edit customer</b>, raise <b>Dealership cap</b> by one and tap <b>Save changes</b>. The monthly fee stays the same.",
+            "Their Dealer Center picks up the new number within six hours. Their owner then adds the lot under <b>Lots</b>.",
         ]),
     ]),
 ]
@@ -516,8 +556,9 @@ PARTS = [
 def steps_pdf(path):
     s = [Paragraph("Adding a new customer", title),
          Paragraph("From the day they say yes to the day they go live", subtitle), GoldRule()]
-    s.append(Paragraph("Everything you do for a shed company that buys Barnwright, in order: the paperwork, the control room, "
-                       "their Dealer Center site, their owner's setup, and the go-live. The words in <b>bold</b> are the buttons and boxes you will see.", lead))
+    s.append(Paragraph("Everything you do for a shed company that buys the Barnwright 3D designer, in order: the paperwork, the control room, "
+                       "their Dealer Center site at their own ." + DOMAIN + " address, their owner's setup, the go-live, and adding a lot later. "
+                       "The words in <b>bold</b> are the buttons and boxes you will see.", lead))
     n = 0
     for part, note, steps in PARTS:
         s.append(Spacer(1, 6))
@@ -541,23 +582,366 @@ def steps_pdf(path):
     build(path, s, "Adding a new customer", "Barnwright: adding a new customer")
 
 
+# ================================================================ 4. SETUP QUESTIONS (for the customer)
+# What a new company answers so their 3D designer and Dealer Center can be
+# set up, and their buildings drawn the way they really build them (Alan,
+# Oct 2026: "a list of questions to give to my customers to set up the
+# software to their needs ... their barn and their size so we can build the
+# barn"). The styles, doors, windows, options, colors and the "how we draw it"
+# column come from the designer's own files (library/manufacturers/standard.json
+# and library/construction.json), so the questions stay in step with them.
+
+def _json(rel):
+    with open(os.path.join(ROOT, rel)) as f:
+        return json.load(f)
+
+
+def inches(x):
+    """0.625 -> '5/8', 76.5 -> '76 1/2' (to the nearest sixteenth)."""
+    whole = int(x); n = round((x - whole) * 16)
+    if n == 16: whole, n = whole + 1, 0
+    if not n: return str(whole)
+    d = 16
+    while n % 2 == 0: n //= 2; d //= 2
+    return (f"{whole} " if whole else "") + f"{n}/{d}"
+
+
+def plain(t):
+    """Library names for Helvetica and Paragraph: 48″ -> 48 in, 6′ -> 6 ft, & escaped."""
+    t = re.sub(r'(\d)″', r'\1 in', t); t = re.sub(r'(\d)′', r'\1 ft', t); t = re.sub(r'(\d)"', r'\1 in', t)
+    return escape(t.replace(" — ", ", "))
+
+
+def half_in(x):
+    return inches(round(x * 2) / 2)
+
+
+def feet_inches(ft):
+    total = round(ft * 12 * 2) / 2
+    f, i = int(total // 12), total - 12 * int(total // 12)
+    return f"{f} ft" + (f" {inches(i)} in" if i else "")
+
+
+class Box(Flowable):
+    """A fillable box with no caption above it (for tables)."""
+    def __init__(self, name, width, height=17, tip="", multiline=False, prefix=None):
+        super().__init__(); self.name, self.w, self.h, self.tip, self.multiline, self.prefix = name, width, height, tip, multiline, prefix
+    def wrap(self, aw, ah):
+        return self.w, self.h
+    def draw(self):
+        c, x = self.canv, 0
+        if self.prefix:
+            c.setFont("Helvetica", 9); c.setFillColor(INK); c.drawString(0, 5, self.prefix)
+            x = c.stringWidth(self.prefix, "Helvetica", 9) + 2
+        c.acroForm.textfield(name=self.name, tooltip=self.tip, x=x, y=0, width=self.w - x, height=self.h, relative=True,
+                             borderStyle="underlined", borderColor=LINE, fillColor=FIELD_BG, textColor=INK,
+                             fontName="Helvetica", fontSize=0 if self.multiline else 9, borderWidth=1,
+                             fieldFlags="multiline" if self.multiline else "", maxlen=600 if self.multiline else 120)
+
+
+cell = ParagraphStyle("cell", parent=body, fontSize=8.8, leading=11.2, spaceAfter=0)
+cell_b = ParagraphStyle("cell_b", parent=cell, fontName="Helvetica-Bold")
+cell_m = ParagraphStyle("cell_m", parent=cell, textColor=MUTED)
+head_c = ParagraphStyle("head_c", fontName="Helvetica-Bold", fontSize=7.4, leading=9, textColor=MUTED)
+
+
+class Tick(Check):
+    """A tick box with smaller words, for tables."""
+    def __init__(self, name, words, width, tip=None):
+        Flowable.__init__(self); self.name, self.words, self.w, self.tip = name, words, width, tip or words
+        self.p = Paragraph(words, cell)
+
+
+def grid(rows, widths, head=None, zebra=True):
+    data = ([[Paragraph(h.upper(), head_c) for h in head]] if head else []) + rows
+    t = Table(data, colWidths=widths, hAlign="LEFT", repeatRows=1 if head else 0)
+    st = [("VALIGN", (0, 0), (-1, -1), "MIDDLE"), ("LEFTPADDING", (0, 0), (-1, -1), 4), ("RIGHTPADDING", (0, 0), (-1, -1), 6),
+          ("TOPPADDING", (0, 0), (-1, -1), 3), ("BOTTOMPADDING", (0, 0), (-1, -1), 3),
+          ("LINEBELOW", (0, 0), (-1, -1), 0.4, colors.HexColor("#E6E0D3"))]
+    if head: st += [("LINEBELOW", (0, 0), (-1, 0), 0.8, GOLD), ("BOTTOMPADDING", (0, 0), (-1, 0), 4)]
+    t.setStyle(TableStyle(st))
+    return t
+
+
+def questions_pdf(path):
+    M = _json("library/manufacturers/standard.json")
+    C = _json("library/construction.json")
+    FW = W - 2 * MARGIN
+    half, third, quarter = (FW - 12) / 2, (FW - 24) / 3, (FW - 36) / 4
+    named = lambda d: [(k, v) for k, v in d.items() if not k.startswith("_")]
+    s = [Paragraph("Setup Questions", title),
+         Paragraph("So we can set up your 3D designer and build your buildings the way you do", subtitle), GoldRule()]
+    s.append(Paragraph(
+        "Answer what you can and email it back to us with <b>your logo</b>, <b>your price sheet</b> and <b>photos of your buildings</b> "
+        "(the front, a side and the inside of each style). Skip anything that doesn't fit your business; we go over the rest with you on the phone. "
+        "Type in the boxes on screen (the free Adobe Acrobat Reader works) or print it and write.", lead))
+    s.append(Spacer(1, 6))
+    sent = [("sent_logo", "Our logo"), ("sent_prices", "Our price sheet"), ("sent_photos", "Photos of our buildings"), ("sent_trusses", "Truss or framing drawings")]
+    s.append(Paragraph("<b>We are sending you</b>", label)); s.append(Spacer(1, 3))
+    s.append(row(*[Check(k, w, quarter) for k, w in sent], widths=[quarter + 12] * 3 + [quarter]))
+    s.append(row(Field("q_filled_by", "Filled in by", half), Field("q_filled_date", "Date", half), widths=[half + 12, half]))
+
+    def part(text, note=None, first=()):
+        """A section's band (and note) never ends a page alone: it is kept with first."""
+        s.append(Spacer(1, 8))
+        s.append(KeepTogether([section_band(text)] + ([Spacer(1, 4), Paragraph(note, small)] if note else []) + [Spacer(1, 6)] + list(first)))
+
+    # ---- 1. business
+    part("1.  YOUR BUSINESS", first=[row(Field("q_business_name", "Business name, as your customers should see it", half), Field("q_short_name", "A short name, if that one is long", half), widths=[half + 12, half])])
+    s.append(row(Field("q_phone", "Main phone", third), Field("q_email", "Main email", third), Field("q_website", "Website", third), widths=[third + 12, third + 12, third]))
+    s.append(row(Field("q_contact", "Who we set things up with", third), Field("q_contact_phone", "Their phone", third), Field("q_contact_email", "Their email", third), widths=[third + 12, third + 12, third]))
+    s.append(row(Field("q_web_1", "Your web address, first choice", half, suffix="." + DOMAIN), Field("q_web_2", "Second choice", half, suffix="." + DOMAIN), widths=[half + 12, half]))
+
+    # ---- 2. look
+    part("2.  YOUR LOOK", "Your 3D designer and your Dealer Center use your logo and two colors. Send your logo as a PNG, SVG or JPG, the biggest and clearest one you have.",
+         first=[row(Check("q_colors_standard", "Use the standard <b>black and gold</b>", third),
+                    Field("q_color_header", "Or your colors: the top bar", third, tip="A color code like #1F3A5F, or 'match our logo'"),
+                    Field("q_color_accent", "Buttons and highlights", third, tip="A color code like #C9A227, or 'match our logo'"), widths=[third + 12, third + 12, third])])
+    s.append(Field("q_tagline", "A line under your name (for example: Storage buildings, delivered)", FW))
+
+    # ---- 3. lots
+    s.append(PageBreak())
+    lot_blocks = []
+    for i in (1, 2, 3):
+        k = f"q_lot{i}_"
+        block = [Paragraph(f"Lot {i}", h2),
+                 row(Field(k + "name", "Lot name (for example: Port Charlotte)", half), Field(k + "phone", "Phone", quarter), Field(k + "email", "Email for quote requests", quarter),
+                     widths=[half + 12, quarter + 12, quarter]),
+                 row(Field(k + "street", "Street", half), Field(k + "city", "City", quarter), Field(k + "state_zip", "State and ZIP", quarter), widths=[half + 12, quarter + 12, quarter]),
+                 row(Field(k + "hours", "Hours", half), Field(k + "site", "The web page that will show this lot's 3D designer", half), widths=[half + 12, half])]
+        lot_blocks.append(block)
+    part("3.  YOUR LOTS", "Each lot gets its own 3D designer link, and its quote requests go to that lot. More lots? List them in section 10.", first=lot_blocks[0])
+    s.extend(KeepTogether(b) for b in lot_blocks[1:])
+
+    # ---- 4. team
+    part("4.  YOUR TEAM", "Everyone who signs in to your Dealer Center. <b>Managers</b> see every lot's customers and orders, <b>dealers</b> their own lots'. "
+         "Only owners change prices and settings. More people? List them in section 10.")
+    tw = [FW * 0.26, FW * 0.34, FW * 0.17, FW * 0.23]
+    rows = [[Box(f"q_team{i}_name", tw[0] - 10), Box(f"q_team{i}_email", tw[1] - 10), Box(f"q_team{i}_role", tw[2] - 10, tip="Owner, manager or dealer"), Box(f"q_team{i}_lots", tw[3] - 10)] for i in range(1, 7)]
+    s[-1] = KeepTogether(list(s[-1]._content) + [grid(rows, tw, head=["Name", "Email (their login)", "Owner, manager or dealer", "Their lots"])])
+
+    # ---- 5. buildings
+    s.append(PageBreak())
+    cats = {}
+    for key, st in named(M["styles"]):
+        cats.setdefault(st.get("category") or "Other", []).append((key, st["name"]))
+    cw = [FW * 0.25, FW * 0.25 - 12, 12, FW * 0.25, FW * 0.25 - 12]
+    blocks = []
+    for cat, styles in cats.items():
+        rows = []
+        for j in range(0, len(styles), 2):
+            r = []
+            for key, name in styles[j:j + 2]:
+                r += [Tick(f"q_style_{key}", f"<b>{plain(name)}</b>", cw[0] - 8), Box(f"q_style_{key}_name", cw[1] - 10, tip=f"Your name for the {name}")]
+                if len(r) == 2: r.append("")
+            while len(r) < 5: r.append("")
+            rows.append(r)
+        blocks.append([Paragraph(cat.replace(" & ", " and "), h2), grid(rows, cw, head=None if blocks else ["Style", "Your name for it", "", "Style", "Your name for it"])])
+    part("5.  THE BUILDINGS YOU SELL", "Tick each style you sell, and give it your own name if you call it something else. "
+         "Each one is drawn the way it is built, so send photos of yours, and of anything you build that isn't on this list.", first=blocks[0])
+    s.extend(KeepTogether(b) for b in blocks[1:])
+    s.append(Spacer(1, 6))
+    s.append(Field("q_other_styles", "Buildings you sell that aren't on the list", FW, height=40, multiline=True))
+    s.append(Field("q_standard_items", "What comes standard on each style (doors, windows, vents)", FW, height=52, multiline=True,
+                   tip="For example: Lofted Barn, a 72 in double door and two 2x3 windows"))
+    s.append(Paragraph("For example: Lofted Barn, a 72 in double door and two 2×3 windows.", small))
+
+    s.append(PageBreak())
+    pw = [FW * 0.2, FW * 0.13, FW * 0.13, 12, FW * 0.2, FW * 0.13, FW * 0.13 - 12]
+    rows = []
+    for i in range(1, 25):
+        rows.append([Box(f"q_size{i}_style", pw[0] - 10), Box(f"q_size{i}_wl", pw[1] - 10, tip="Width x length, like 10 x 16"), Box(f"q_size{i}_price", pw[2] - 10, prefix="$"), "",
+                     Box(f"q_size{i + 24}_style", pw[4] - 10), Box(f"q_size{i + 24}_wl", pw[5] - 10, tip="Width x length, like 10 x 16"), Box(f"q_size{i + 24}_price", pw[6] - 10, prefix="$")])
+    part("5.  SIZES AND PRICES", "Easiest: send us your price sheet and skip this page. Otherwise write each size you sell as width × length in feet "
+         "(widths 4 to 16 ft, lengths up to 60 ft) and its price with the doors and windows it comes with.",
+         first=[grid(rows, pw, head=["Style", "Size", "Price", "", "Style", "Size", "Price"])])
+
+    # ---- 6. how you build
+    s.append(PageBreak())
+    part("6.  HOW YOU BUILD THEM", "We draw every building the way it is really built, from the skids up to the roof. The middle column is how we draw it now. "
+         "Write only what you do differently.")
+    sk = C["skids"]; fl = C["floor"]; wa = C["walls"]; rf = C["roof"]; rd = C["roofDeck"]; lo = C["loft"]; po = C["porch"]; op = C["openings"]; si = C["site"]
+    def rule_words(rules, unit=""):
+        parts = []
+        for r in rules:
+            when = r.get("when", {})
+            if "maxW" in when: parts.append(f"{r['value']} up to {when['maxW']} ft wide")
+            elif "maxL" in when: parts.append(f"{r['value']} up to {when['maxL']} ft long")
+            elif "maxSpanFt" in when: parts.append(f"{r['value']} up to {feet_inches(when['maxSpanFt'])}")
+            else: parts.append(f"{r['value']} {('wider' if parts else '')}".strip())
+        return ", ".join(parts)
+    counts = {}
+    for wft, offs in named(sk["table"]): counts.setdefault(2 * len(offs), []).append(int(wft))
+    skid_words = ", ".join(f"{n} under {min(ws)} to {max(ws)} ft wide" if len(ws) > 1 else f"{n} under {ws[0]} ft wide" for n, ws in sorted(counts.items()))
+    gable = rf["shapes"]["gable"]; barn = rf["shapes"]["gambrel"]
+    pitch = round(gable["rise"]["w"] * 2 * 12 * 2) / 2
+    loft_depth = next((st["loft"]["depthFt"] for _, st in named(M["styles"]) if st.get("loft")), 4)
+    anchors = rule_words([{**r, "value": str(r["value"])} for r in si["anchors"]]).replace(" wider", " longer")
+    BUILD = [
+        ("Blocks and anchors", f"{si['blocks']} concrete blocks, one for every {si['perimeterFtPerBlock']} ft of outside wall. Anchors: {anchors}"),
+        ("Skids", f"{sk['size']} treated, on edge: {skid_words}"),
+        ("Floor joists", f"{rule_words(fl['joist'])}, {fl['spacingIn']} in on center, {fl['rim']} rim joists"),
+        ("Floor", f"{inches(fl['deck']['thicknessIn'])} in {fl['deck']['sheet']}, {'one layer' if fl['deck']['layers'] == 1 else str(fl['deck']['layers']) + ' layers'}"),
+        ("Wall studs", f"{wa['stud']}, {wa['spacingIn']} in on center, {wa['bottomPlates']} bottom plate, {wa['topPlates']} top plates, {wa['corner']} corners"),
+        ("Stud length", f"{inches(wa['studLengthIn']['tall'])} in on tall walls, {inches(wa['studLengthIn']['loft'])} in on barn (loft) walls"),
+        ("Door and window headers", rule_words(wa["header"])),
+        ("Wooden door openings", f"{inches(op['doorHeightIn']['other'])} in high on tall walls, {inches(op['doorHeightIn']['gambrel'])} in on barns"),
+        ("Roof framing", f"{'Trusses' if rf['framing'] == 'truss' else 'Rafters'} {rf['spacingIn']} in on center, {rf['chord']} chords, {rf['gussets']} gussets"),
+        ("Roof pitch", f"About {inches(pitch)} in 12 on gable roofs; our standard barn (gambrel) truss on barns. Send your truss drawings if you have them"),
+        ("Overhangs", f"Gable roofs: {half_in(gable['eaveOverhang']['left'] * 12)} in at the eaves, {half_in(gable['rakeOverhang'] * 12)} in at the ends. "
+                      f"Barns: {half_in(barn['eaveOverhang']['left'] * 12)} in at the eaves, {half_in(barn['rakeOverhang'] * 12)} in at the ends"),
+        ("Roof deck", f"{inches(rd['sheathingIn'])} in OSB; {rd['purlins']['size']} purlins laid flat, {rd['purlins']['spacingIn']} in apart, on metal buildings"),
+        ("Roofing", "Ribbed metal panels with a ridge cap"),
+        ("Siding", "Painted wood siding; metal siding on metal buildings"),
+        ("Lofts", f"{feet_inches(loft_depth)} deep at both ends of lofted barns, {lo['joist']} loft joists {lo['spacingIn']} in on center"),
+        ("Porches", f"{po['post']} posts, {po['joist']} deck joists, a railing {po['railHeightIn']} in high"),
+        ("Widths and delivery", " ".join(v for k, v in named(C.get("notes", {})))),
+    ]
+    bw = [FW * 0.2, FW * 0.42, FW * 0.38]
+    rows = [[Paragraph(f"<b>{p}</b>", cell), Paragraph(plain(d), cell_m), Box(f"q_build_{i}", bw[2] - 10, height=22, multiline=True, tip=f"{p}: how you build it, if different")]
+            for i, (p, d) in enumerate(BUILD, 1)]
+    s[-1] = KeepTogether(list(s[-1]._content) + [grid(rows, bw, head=["Part", "How we draw it", "How you build it, if different"])])
+    s.append(Spacer(1, 8))
+    s.append(Field("q_build_other", "Anything else about how you build, or what an option changes", FW, height=46, multiline=True))
+
+    # ---- 7. doors, windows and options
+    s.append(PageBreak())
+    part("7.  DOORS, WINDOWS AND OPTIONS", "Tick what you offer and write your price. A building's price already includes the doors and windows it comes with; "
+         "a bigger door is charged as the difference. Give anything your own name if you call it something else.")
+    iw = [FW * 0.42, FW * 0.18, FW * 0.40]
+    per_foot = {"bench", "shelf"}
+    rows = []
+    for k, it in named(M["items"]):
+        words = plain(it["name"]) + (" (per foot)" if k in per_foot else "")
+        rows.append([Tick(f"q_item_{k}", words, iw[0] - 8), Box(f"q_item_{k}_price", iw[1] - 10, prefix="$"), Box(f"q_item_{k}_name", iw[2] - 10, tip=f"Your name for the {it['name']}")])
+    s[-1] = KeepTogether(list(s[-1]._content) + [grid(rows, iw, head=["Door, window or fixture", "Your price", "Your name for it"])])
+    s.append(PageBreak())
+    O = M["options"]
+    opts = []
+    for k, d in named(O.get("dormers", {})): opts.append((f"dormer_{k}", f"{d['name']} (Dormer Shed)"))
+    for k, d in named(O.get("ramps", {})): opts.append((f"ramp_{k}", d["name"]))
+    for k, d in named(O.get("elec", {})): opts.append((f"elec_{k}", f"Electrical package {k}: {d.get('desc', '')}"))
+    for k, d in named(O.get("misc", {})): opts.append((f"misc_{k}", d["name"] + (" (a pair, for one window)" if k == "shutter" else "")))
+    for k, d in named(O.get("rates", {})): opts.append((f"rate_{k}", f"{d['name']} (per square foot of {'floor' if d.get('basis') == 'floor' else d.get('basis', 'floor')})"))
+    rows = [[Tick(f"q_opt_{k}", plain(w), iw[0] - 8), Box(f"q_opt_{k}_price", iw[1] - 10, prefix="$"), Box(f"q_opt_{k}_name", iw[2] - 10)] for k, w in opts]
+    s.append(grid(rows, iw, head=["Option", "Your price", "Your name for it"]))
+    s.append(Spacer(1, 8))
+    ew = [FW * 0.42, FW * 0.36, FW * 0.22]
+    rows = [[Box(f"q_extra{i}_name", ew[0] - 10), Box(f"q_extra{i}_how", ew[1] - 10, tip="Each, per foot, per square foot of floor, walls or roof, or a percent"), Box(f"q_extra{i}_price", ew[2] - 10, prefix="$")] for i in range(1, 6)]
+    s.append(KeepTogether([Paragraph("Options of your own", h2), grid(rows, ew, head=["What it is", "How it's priced (each, per foot, per square foot, percent)", "Price"])]))
+
+    # ---- 8. colors
+    s.append(PageBreak())
+    part("8.  COLORS", "Tick the colors you offer. Have colors of your own? Write their names below and send a color chip or a photo.")
+    P = M["palettes"]
+    groups = [("paint", "Siding, doors and shutters (painted)"), ("trim", "Trim"), ("metal", "Metal roofs, and the siding of metal buildings")]
+    for g, words in groups:
+        names = [c[0] for c in P.get(g, [])]
+        cols = 4; w4 = (FW - 36) / cols
+        rows = []
+        for j in range(0, len(names), cols):
+            r = [Tick(f"q_color_{g}_{n.replace(' ', '_')}", plain(n), w4) for n in names[j:j + cols]]
+            r += [""] * (cols - len(r)); rows.append(r)
+        blk = [Paragraph(words, h2), grid(rows, [w4 + 12] * cols)]
+        if g == "paint": s[-1] = KeepTogether(list(s[-1]._content) + blk)
+        else: s.append(KeepTogether(blk))
+    s.append(Spacer(1, 6))
+    s.append(Field("q_colors_own", "Colors of your own (name, and the paint or metal company's color name)", FW, height=40, multiline=True))
+    s.append(Paragraph("The building your 3D designer opens on", h2))
+    fifth = (FW - 48) / 5
+    s.append(row(Field("q_open_style", "Style", fifth), Field("q_open_size", "Size", fifth), Field("q_open_body", "Siding color", fifth),
+                 Field("q_open_trim", "Trim color", fifth), Field("q_open_roof", "Roof color", fifth), widths=[fifth + 12] * 4 + [fifth]))
+
+    # ---- 9. prices and quotes
+    s.append(PageBreak())
+    part("9.  PRICES AND QUOTES", first=[Paragraph("<b>How prices show in your 3D designer</b>", label), Spacer(1, 3)])
+    s.append(row(Check("q_show_price", "<b>The full price</b>, with a running total", third), Check("q_show_from", "<b>A starting price</b> (\"from $4,250\")", third),
+                 Check("q_show_none", "<b>No price</b>: they send the design and you call", third), widths=[third + 12, third + 12, third]))
+    s.append(row(Field("q_fine_print", "The line under the price", half, tip="For example: Prices plus tax. Free delivery within 50 miles."),
+                 Field("q_width_notes", "Notes for building widths", half, tip="For example: 14 ft wide needs a permit"), widths=[half + 12, half]))
+    s.append(row(Paragraph("For example: Prices plus tax. Free delivery within 50 miles.", small), Paragraph("For example: 14 ft wide needs a permit.", small), widths=[half + 12, half]))
+    s.append(Spacer(1, 2))
+    s.append(Paragraph("<b>Rent to own</b>", label)); s.append(Spacer(1, 3))
+    s.append(Check("q_rto", "Show a monthly rent-to-own price by the total, and a box in the quote to pick the months", FW))
+    s.append(Spacer(1, 3))
+    terms = ["36", "48", "60"]
+    s.append(Paragraph("What your rent-to-own company charges a month on a <b>$5,000</b> building, for each term you offer (we work out the rest):", small))
+    s.append(Spacer(1, 3))
+    s.append(row(*[Field(f"q_rto_{m}", f"{m} months ($ a month)", third, tip=f"What your rent-to-own company charges a month on a $5,000 building over {m} months") for m in terms],
+                 widths=[third + 12, third + 12, third]))
+    s.append(row(Field("q_rto_company", "Your rent-to-own company", third), Field("q_rto_show", "Months to show by the price", third),
+                 Field("q_rto_note", "Words under the monthly price", third), widths=[third + 12, third + 12, third]))
+    s.append(Spacer(1, 2))
+    fields = [("name", "Name"), ("phone", "Phone"), ("email", "Email"), ("zip", "ZIP code"), ("address", "Street and city"), ("note", "A note from the customer")]
+    qw = [FW * 0.34, FW * 0.22, FW * 0.22, FW * 0.22]
+    rows = [[Paragraph(f"<b>{w}</b>", cell), Tick(f"q_ask_{k}_req", "Required", qw[1] - 8), Tick(f"q_ask_{k}_opt", "Optional", qw[2] - 8), Tick(f"q_ask_{k}_off", "Don't ask", qw[3] - 8)] for k, w in fields]
+    s.append(KeepTogether([Paragraph("What the quote form asks", h2), grid(rows, qw, head=["Question", "", "", ""])]))
+    s.append(Spacer(1, 6))
+    s.append(Check("q_ask_plan", "Also ask <b>What do you want to do with this quote?</b> (ready to buy, needs permit paperwork, needs engineering plans, or just seeing the price)", FW))
+    s.append(Spacer(1, 4))
+    s.append(Field("q_sms", "Permission to text: the words by a box customers can tick (for example: You may text me about my quote)", FW))
+
+    # ---- 10. anything else
+    part("10.  ANYTHING ELSE")
+    s.append(Field("q_anything", "More lots or people, other buildings, how you'd like it to work, or questions for us", FW, height=80, multiline=True))
+    build(path, s, "Setup Questions", "Barnwright Setup Questions")
+
+
 # ---------------------------------------------------------------- where the files go
 # With no argument: into the repository (legal/ is published on every
 # business's site; docs/legal/ is Alan's and never published). With a folder:
-# all three there, to look at first.
+# all four there, to look at first.
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 if len(sys.argv) > 1:
     terms_out = os.path.join(OUT, "Barnwright Terms and Conditions.pdf")
     form_out = os.path.join(OUT, "Barnwright Sign-Up Form.pdf")
     steps_out = os.path.join(OUT, "Barnwright Adding a New Customer.pdf")
+    questions_out = os.path.join(OUT, "Barnwright Setup Questions.pdf")
 else:
     os.makedirs(os.path.join(ROOT, "legal"), exist_ok=True)
     os.makedirs(os.path.join(ROOT, "docs", "legal"), exist_ok=True)
     terms_out = os.path.join(ROOT, "legal", "barnwright-terms.pdf")
     form_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Sign-Up-Form.pdf")
     steps_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Adding-a-New-Customer.pdf")
+    questions_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Setup-Questions.pdf")
 terms_pdf(terms_out)
 signup_pdf(form_out)
 steps_pdf(steps_out)
-print("written:", terms_out, form_out, steps_out, sep="\n  ")
+questions_pdf(questions_out)
+print("written:", terms_out, form_out, steps_out, questions_out, sep="\n  ")
+
+# THE PAPERS LIST the control room's Papers page reads (Alan, Oct 2026: "Add
+# all these files in control room so I can access them and keep them up to
+# date"). The control room fetches this file and each PDF from this
+# repository's main branch whenever Alan opens them, so a change merged here
+# is what he sees there. Paths are repository paths; nothing here is dated, so
+# running the script again changes the list only when a paper changes.
+if len(sys.argv) == 1:
+    PAPERS = [
+        ("sign-up-form", "Sign-Up Form", "customer", "Sign-Up Form",
+         "Fill in sections B and C (lots and fees), then send it with the terms and the Setup Questions. They fill in section A, initial and sign; you sign for Barnwright.",
+         "docs/legal/Barnwright-Sign-Up-Form.pdf", "Barnwright Sign-Up Form.pdf"),
+        ("terms", "Terms and Conditions", "customer", "Software Terms and Conditions",
+         "Send it with the Sign-Up Form. Their owner also ticks I agree to it in the Dealer Center's first setup.",
+         "legal/barnwright-terms.pdf", "Barnwright Terms and Conditions.pdf"),
+        ("setup-questions", "Setup Questions", "customer", "Setup Questions",
+         "Send it with the Sign-Up Form. They answer it and send it back with their logo, price sheet and photos, so you can set them up and build their buildings their way.",
+         "docs/legal/Barnwright-Setup-Questions.pdf", "Barnwright Setup Questions.pdf"),
+        ("adding-a-new-customer", "Adding a New Customer", "you", "Adding a new customer",
+         "Your steps from the day they say yes to the day they go live, and adding a lot later.",
+         "docs/legal/Barnwright-Adding-a-New-Customer.pdf", "Barnwright Adding a New Customer.pdf"),
+    ]
+    manifest = {
+        "_about": "The papers the control room's Papers page shows. Made by tools/legal/make-legal-pdfs.py; "
+                  "the control room reads this file and each PDF from this repository's main branch.",
+        "version": VERSION,
+        "papers": [{"id": i, "title": t, "for": who, "about": about, "path": path, "download": dl, "pages": PAGES[doc]}
+                   for i, t, who, doc, about, path, dl in PAPERS],
+    }
+    for paper in manifest["papers"]:
+        assert os.path.isfile(os.path.join(ROOT, paper["path"])), paper["path"]
+    with open(os.path.join(ROOT, "docs", "legal", "papers.json"), "w") as f:
+        json.dump(manifest, f, indent=2)
+        f.write("\n")
+    print("  " + os.path.join(ROOT, "docs", "legal", "papers.json"))

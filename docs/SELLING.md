@@ -8,11 +8,19 @@
 
 ## How it is sold: Alan hosts it, the company pastes two lines
 
-**Signing up a company that said yes**, step by step (the Sign-Up Form and
-terms, the control room, their Dealer Center site, their owner's setup with
-"I agree to the Barnwright terms", go-live):
-`docs/legal/Barnwright-Adding-a-New-Customer.pdf`. The papers themselves:
-`docs/legal/Barnwright-Sign-Up-Form.pdf` and `legal/barnwright-terms.pdf`
+**What Barnwright sells: one product**, the Barnwright 3D designer (the 3D
+designer and its Dealer Center). It stands on its own and works alongside the
+software the company already uses. A one-time build fee and a monthly fee
+from go-live; the first lot comes with it, and each lot after the first is
+**$250 one time** with no change to the monthly fee. Each business is at
+`<their name>.barnwrightsoftware.com`.
+
+**Signing up a company that said yes**, step by step (the Sign-Up Form,
+terms and Setup Questions, the control room, their Dealer Center site, their
+owner's setup with "I agree to the Barnwright terms", go-live, adding a lot
+later): `docs/legal/Barnwright-Adding-a-New-Customer.pdf`. The papers
+themselves: `docs/legal/Barnwright-Sign-Up-Form.pdf`,
+`docs/legal/Barnwright-Setup-Questions.pdf` and `legal/barnwright-terms.pdf`
 ([OFFICE.md, "Setting up a new company"](OFFICE.md)).
 
 A business gets its own copy of the site with the **Dealer Center**

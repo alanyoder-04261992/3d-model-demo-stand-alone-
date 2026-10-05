@@ -375,16 +375,25 @@ live, with every button named, is
 **`docs/legal/Barnwright-Adding-a-New-Customer.pdf`** (made by
 `tools/legal/make-legal-pdfs.py`). In short:
 
-1. **Paperwork.** Alan fills in Sections B and D of the Sign-Up Form
-   (`docs/legal/Barnwright-Sign-Up-Form.pdf`, fillable) and sends it with the
-   terms (`legal/barnwright-terms.pdf`); the company fills in Section A,
-   initials Section E and signs; Alan signs.
-2. **Control room.** **Add customer** with the dealership cap (open lots),
-   one-time build fee and monthly subscription from the form; **Collect build
-   fee** and wait until it is paid.
+Barnwright sells **one product**, the Barnwright 3D designer (the 3D designer
+and its Dealer Center), which works alongside whatever software the company
+already uses. The first lot comes with the plan; each lot after the first is
+**$250 one time** and the monthly fee stays the same. Every business lives at
+**`<their name>.barnwrightsoftware.com`** (once, before the first customer,
+`barnwrightsoftware.com` goes on Netlify DNS so each new address is one step).
+
+1. **Paperwork.** Alan fills in Sections B and C of the Sign-Up Form
+   (`docs/legal/Barnwright-Sign-Up-Form.pdf`, fillable: lots, build fee, lot
+   fees, monthly fee) and sends it with the terms (`legal/barnwright-terms.pdf`)
+   and the Setup Questions (`docs/legal/Barnwright-Setup-Questions.pdf`); the
+   company fills in Section A, initials Section D and signs; Alan signs. The
+   company sends back its answers with its logo, price sheet and photos.
+2. **Control room.** **Add customer** with the dealership cap (lots), the
+   one-time total (build fee plus lot fees) as the build fee, and the monthly
+   subscription; **Collect build fee** and wait until it is paid.
 3. **Their site.** A new Netlify project from this repository (named for the
-   business); its Project ID and address go on the customer in the control
-   room; **Identity** on (registration open: anyone can make a login, but
+   business) with the domain `<their name>.barnwrightsoftware.com`; its
+   Project ID and that address go on the customer in the control room; **Identity** on (registration open: anyone can make a login, but
    only people the owner adds can see anything); **Create activation key** in
    the control room; then the environment variables `OWNER_EMAIL` (the
    owner's email from the form), `CONTROL_ROOM_URL`,
@@ -398,6 +407,32 @@ live, with every button named, is
    each lot; a test quote.
 5. **Go live.** **Start monthly subscription** in the control room, and the
    go-live email with the date the monthly fee starts.
+6. **Adding a lot later.** A $250 invoice from Stripe (the control room
+   collects the build fee only once); when it is paid, **Edit customer** and
+   raise the **Dealership cap** by one. The Dealer Center picks it up at its
+   next check-in (within six hours).
+
+### The Setup Questions
+
+`docs/legal/Barnwright-Setup-Questions.pdf` is what a new company answers so
+it can be set up: the business and its web address, the look, each lot, the
+team, the styles it sells (with its own names), sizes and prices, how it
+builds (each construction number with the standard beside it), doors,
+windows and options with prices and its own extras, colors, how prices show,
+rent to own, and what the quote form asks. Its lists come from
+`library/manufacturers/standard.json` and `library/construction.json` when the
+script runs, so they always match the designer. The `new-company` skill says
+which answer goes where.
+
+### The papers in the control room
+
+The control room's **Papers** page lists the four papers (Sign-Up Form,
+terms, Setup Questions, Adding a New Customer) so Alan can open or download
+them anywhere. It reads `docs/legal/papers.json` and each PDF from this
+repository's `main` branch on GitHub every time, so once a change to the papers
+is merged here, the control room has it: there is nothing to copy. The script
+writes `papers.json` too; a new paper added to its list shows up in the
+control room on its own.
 
 ### The Barnwright terms
 
@@ -433,7 +468,7 @@ script, and email every customer the new terms 30 days ahead.
 | `server/office/account.js` | the business's Barnwright account: when changes stop, open lots, help from Barnwright |
 | `server/office/terms.js` | the owner's agreement to the Barnwright terms |
 | `legal/barnwright-terms.pdf` | the Barnwright Software Terms and Conditions, published on every business's site |
-| `tools/legal/make-legal-pdfs.py` | makes the terms, the Sign-Up Form and the new customer steps (`docs/legal/`) |
+| `tools/legal/make-legal-pdfs.py` | makes the terms, the Sign-Up Form, the new customer steps and the Setup Questions (`docs/legal/`), and `docs/legal/papers.json`, the list the control room's Papers page reads |
 | `server/office/control-room.js`, `license-core.js` | the control room's own check-in code, copied to plain JavaScript |
 | `netlify/functions/tenant-diagnostics.mts` | Barnwright's support check |
 | `netlify/functions/barnwright-check-in.mts` | checks in with the control room every six hours |
