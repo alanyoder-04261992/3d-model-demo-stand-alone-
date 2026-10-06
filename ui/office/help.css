@@ -1,0 +1,103 @@
+/* THE HELP SCREEN (#/help, views/help.js): the short answers, Ask
+   Barnwright and Your questions.
+
+   Built on office.css (cards, buttons, chips, pills, form boxes) and the
+   same black and gold. Every class here starts with hp- so it never touches
+   another screen. Two columns on a wide screen (the answers, then Ask
+   Barnwright over Your questions); one column under 1000 px, with chips at
+   the top that jump to each part. */
+
+.hp-jump { display: flex; gap: 6px; flex-wrap: wrap; margin: -6px 0 18px; }
+.hp-jump .chip { min-height: 38px; }
+.hp-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(320px, 1fr); gap: 18px; align-items: start; }
+.hp-side { display: grid; gap: 18px; align-content: start; min-width: 0; }
+.hp-answers, .hp-ask, .hp-questions { scroll-margin-top: calc(var(--top) + 16px); }
+.hp-answers .card-title .icon, .hp-ask .card-title .icon, .hp-questions .card-title .icon { color: var(--kraft); }
+@media (min-width: 1001px) { .hp-jump { display: none; } }
+@media (max-width: 1000px) { .hp-grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* ---- the short answers ------------------------------------------------------------ */
+.hp-answers { display: grid; gap: 14px; align-content: start; }
+.hp-answers-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.hp-answers-head .card-title { margin: 0; }
+.hp-list { display: grid; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; }
+.hp-list:empty { display: none; }
+.hp-answer + .hp-answer { border-top: 1px solid var(--line); }
+.hp-answer > summary {
+  display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 10px 14px 10px 16px; cursor: pointer; list-style: none;
+  font-weight: 600; color: var(--brand-header);
+}
+.hp-answer > summary::-webkit-details-marker { display: none; }
+.hp-answer > summary:hover { background: var(--hover); }
+.hp-answer[open] > summary { box-shadow: inset 3px 0 0 var(--brand-accent); background: var(--hover); }
+.hp-q { flex: 1; min-width: 0; }
+.hp-chev { color: var(--muted); transition: transform .15s; }
+.hp-answer[open] .hp-chev { transform: rotate(180deg); }
+.hp-a { display: grid; gap: 10px; padding: 6px 18px 16px 16px; box-shadow: inset 3px 0 0 var(--brand-accent); background: var(--hover); font-size: 15px; line-height: 1.55; }
+.hp-a strong { font-weight: 600; color: var(--brand-header); }
+.hp-go { display: inline-flex; align-items: center; gap: 6px; justify-self: start; min-height: 40px; font-weight: 600; font-size: 14.5px; text-decoration: none; }
+.hp-go .icon { width: 16px; height: 16px; }
+.hp-go:hover { text-decoration: underline; }
+.hp-none { display: grid; gap: 12px; justify-items: start; color: var(--muted); padding: 2px 2px 4px; }
+
+/* ---- Ask Barnwright -------------------------------------------------------------------- */
+.hp-ask { display: grid; gap: 12px; align-content: start; }
+.hp-ask > .card-title { margin: 0; }
+.hp-ask-body { display: grid; gap: 12px; }
+.hp-ask-body > .loading { padding: 22px 0; }
+.hp-intro { color: var(--muted); }
+.hp-form textarea { min-height: 128px; }
+.hp-goes { display: flex; gap: 9px; align-items: flex-start; font-size: 14px; line-height: 1.45; color: var(--muted); background: var(--bg); border-radius: 8px; padding: 10px 12px; }
+.hp-goes .icon { width: 17px; height: 17px; flex: none; margin-top: 1px; color: var(--gold-deep); }
+.hp-note {
+  display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: var(--radius-small);
+  background: var(--gold-soft); color: #5E480C; border: 1px solid var(--gold-line); line-height: 1.5;
+}
+.hp-note > .icon { flex: none; margin-top: 2px; }
+.hp-note a { font-weight: 600; overflow-wrap: anywhere; }
+.hp-note.warn { background: var(--warn-bg); color: var(--warn); border-color: #F1D29A; }
+.hp-note.warn > div { display: grid; gap: 10px; justify-items: start; }
+
+/* ---- Your questions ----------------------------------------------------------------------- */
+.hp-questions .card-head { padding: 16px 20px 0; margin-bottom: 12px; }
+.hp-questions .card-title { margin: 0; }
+.hp-waiting-line { padding: 0 20px 12px; color: var(--muted); font-size: 14px; }
+.hp-items { display: grid; border-top: 1px solid var(--line); }
+.hp-item { display: grid; gap: 8px; padding: 14px 20px 16px; min-width: 0; }
+.hp-item + .hp-item { border-top: 1px solid var(--line); }
+.hp-item-top { display: flex; align-items: center; gap: 6px 10px; flex-wrap: wrap; }
+.hp-item-meta { color: var(--muted); font-size: 13.5px; }
+.hp-item-text { white-space: pre-line; overflow-wrap: anywhere; }
+.pill.hp-waiting { color: var(--stage-quoted); background: var(--stage-quoted-bg); }
+.pill.hp-answered { color: var(--stage-sold); background: var(--stage-sold-bg); }
+.pill.hp-closed { color: var(--stage-lost); background: var(--stage-lost-bg); }
+.hp-reply { display: grid; gap: 6px; margin-top: 2px; padding: 10px 12px 12px; border-radius: 8px; background: var(--cream); border: 1px solid var(--gold-line); min-width: 0; }
+.hp-reply-who { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 13.5px; color: var(--muted); }
+.hp-reply-who strong { color: var(--brand-header); font-weight: 600; }
+.hp-mark {
+  width: 22px; height: 22px; flex: none; border-radius: 5px; display: grid; place-items: center;
+  background: var(--brand-header); color: var(--gold-bright); font: 600 12px/1 var(--head); letter-spacing: .04em;
+}
+.hp-reply-text { white-space: pre-line; overflow-wrap: anywhere; color: var(--ink); }
+.hp-quiet { display: flex; gap: 14px; align-items: flex-start; padding: 16px 20px 20px; border-top: 1px solid var(--line); color: var(--muted); }
+.hp-quiet > .icon { width: 26px; height: 26px; flex: none; color: var(--good); background: var(--good-bg); border-radius: 50%; padding: 4px; }
+.hp-quiet > div { display: grid; gap: 8px; justify-items: start; min-width: 0; }
+.hp-quiet strong { color: var(--ink); font-weight: 600; }
+.hp-quiet p { font-size: 14px; }
+.hp-quiet.warn > .icon { color: var(--warn); background: var(--warn-bg); }
+.hp-quiet.warn p { color: var(--ink); font-size: 15px; }
+
+/* ---- phones ---------------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .hp-jump { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; margin-left: -16px; margin-right: -16px; padding: 0 16px 2px; }
+  .hp-jump::-webkit-scrollbar { display: none; }
+  .hp-jump .chip { flex: none; }
+  .hp-answers, .hp-ask { padding: 16px; }
+  .hp-answer > summary { padding: 10px 12px 10px 14px; }
+  .hp-a { padding: 6px 14px 14px 14px; }
+  .hp-questions .card-head { padding: 14px 16px 0; }
+  .hp-waiting-line { padding: 0 16px 12px; }
+  .hp-item { padding: 14px 16px; }
+  .hp-quiet { padding: 14px 16px 16px; }
+  .hp-form .actions .btn { flex: 1; }
+}

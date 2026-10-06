@@ -11,9 +11,9 @@
    white is the deep gold (--gold-deep), which is dark enough to read.
 
    Phone first: under 760 px wide the side menu becomes a bar at the bottom.
-   Screens add their own pieces in crm.css (customers, orders, Today) and
-   owner.css (price list, lots, team, settings). No inline styles anywhere
-   (the page's security policy forbids them). */
+   Screens add their own pieces in crm.css (customers, orders, Today),
+   owner.css (price list, lots, team, settings) and help.css (Help). No
+   inline styles anywhere (the page's security policy forbids them). */
 
 @font-face { font-family: "Oswald"; font-style: normal; font-weight: 200 700; font-display: swap; src: url(/fonts/oswald-latin.woff2) format("woff2"); }
 @font-face { font-family: "IBM Plex Sans"; font-style: normal; font-weight: 100 700; font-display: swap; src: url(/fonts/ibm-plex-sans-latin.woff2) format("woff2"); }
@@ -113,6 +113,15 @@ p { margin: 0; }
   background-position: calc(100% - 15px) 16px, calc(100% - 10px) 16px; background-size: 5px 5px; background-repeat: no-repeat;
 }
 .lot-select option { color: var(--ink); }
+/* Help, at the top of every screen: a quiet outline on the black, gold on the Help screen */
+.topbar-help {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 36px; padding: 6px 12px; border-radius: 8px;
+  color: rgba(255, 255, 255, .86); border: 1px solid rgba(255, 255, 255, .25); background: rgba(255, 255, 255, .06);
+  text-decoration: none; font-weight: 600; font-size: 14px; white-space: nowrap;
+}
+.topbar-help .icon { width: 18px; height: 18px; }
+.topbar-help:hover { color: #fff; border-color: rgba(255, 255, 255, .5); }
+.topbar-help.on { color: var(--gold-bright); border-color: rgba(201, 162, 39, .7); background: rgba(201, 162, 39, .14); }
 .person { position: relative; }
 .person-button { display: flex; align-items: center; gap: 8px; background: none; border: 0; color: #fff; padding: 4px; cursor: pointer; border-radius: 30px; }
 .avatar { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: rgba(255, 255, 255, .12); box-shadow: inset 0 0 0 1.5px var(--brand-accent); color: var(--gold-bright); font: 600 13px/1 var(--body); letter-spacing: .03em; }
@@ -142,8 +151,9 @@ p { margin: 0; }
   :root { --top: 56px; }
   .sidenav { display: none; }
   .main { margin-left: 0; padding: 16px 16px calc(84px + env(safe-area-inset-bottom)); }
-  .brand-words span, .person-name, .new-customer span { display: none; }
+  .brand-words span, .person-name, .new-customer span, .topbar-help span { display: none; }
   .lot-select { max-width: 130px; }
+  .topbar-help { width: 38px; height: 38px; padding: 0; justify-content: center; }
   .tabbar {
     display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; position: fixed; left: 0; right: 0; bottom: 0; z-index: 30;
     background: var(--brand-header); border-top: 1px solid rgba(201, 162, 39, .55); padding-bottom: env(safe-area-inset-bottom);
