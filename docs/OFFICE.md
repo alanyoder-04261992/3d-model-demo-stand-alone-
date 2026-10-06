@@ -382,24 +382,25 @@ live, with every button named, is
 
 Barnwright sells **one product**, the Barnwright 3D designer (the 3D designer
 and its Dealer Center), which works alongside whatever software the company
-already uses: **$250 a month** from go-live, with **no build fee** (Alan's
-prices, October 6, 2026). The first lot comes with the plan; each lot after
-the first is **$250 one time** and the monthly fee stays the same. Every
-business lives at
+already uses. **No setup fee; $250 a month from go-live, with the first lot
+included**; each lot after the first is **$250 one time** and adds nothing to
+the monthly fee. Every business lives at
 **`<their name>.barnwrightsoftware.com`** (once, before the first customer,
 `barnwrightsoftware.com` goes on Netlify DNS so each new address is one step).
 
 1. **Paperwork.** Alan fills in Sections B and C of the Sign-Up Form
-   (`docs/legal/Barnwright-Sign-Up-Form.pdf`, fillable: lots, build fee, lot
-   fees, monthly fee) and sends it with the terms (`legal/barnwright-terms.pdf`)
+   (`docs/legal/Barnwright-Sign-Up-Form.pdf`, fillable, with Barnwright
+   Software, sales@barnwrightsoftware.com and the $250 monthly fee typed in:
+   lots, the lots after the first and their lot fees, which is nothing for
+   one lot) and sends it with the terms (`legal/barnwright-terms.pdf`)
    and the Setup Questions (`docs/legal/Barnwright-Setup-Questions.pdf`); the
    company fills in Section A, initials Section D and signs; Alan signs. The
    company sends back its answers with its logo, price sheet and photos.
-2. **Control room.** **Add customer** with the dealership cap (lots), the
-   one-time total (build fee plus lot fees: 0.00 for one lot) as the build
-   fee, and the monthly subscription. If the one-time total is more than $0,
-   **Collect build fee** and wait until it is paid; with one lot there is
-   nothing to collect.
+2. **Control room.** **Add customer** with a dealership cap of 1 (the lot
+   the monthly fee includes), 0 for the build fee and 250 for the monthly
+   subscription. More than one lot: **Collect lot fee** for the lots after
+   the first; when Stripe confirms the payment the control room raises the
+   cap by itself. The monthly fee does not start yet.
 3. **Their site.** A new Netlify project from this repository (named for the
    business) with the domain `<their name>.barnwrightsoftware.com`; its
    Project ID and that address go on the customer in the control room; **Identity** on (registration open: anyone can make a login, but
@@ -436,8 +437,9 @@ which answer goes where.
 
 ### The papers in the control room
 
-The control room's **Papers** page lists the four papers (Sign-Up Form,
-terms, Setup Questions, Adding a New Customer) so Alan can open or download
+The control room's **Papers** page lists the papers (Sign-Up Form, terms,
+Setup Questions, Adding a New Customer, and the one-page Flyer and Price
+Sheet to hand to shed companies) so Alan can open or download
 them anywhere. It reads `docs/legal/papers.json` and each PDF from this
 repository's `main` branch on GitHub every time, so once a change to the papers
 is merged here, the control room has it: there is nothing to copy. The script

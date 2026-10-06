@@ -10,12 +10,14 @@
 
 **What Barnwright sells: one product**, the Barnwright 3D designer (the 3D
 designer and its Dealer Center). It stands on its own and works alongside the
-software the company already uses. **$250 a month** from go-live and **no
-build fee** (Alan's prices, October 6, 2026); the first lot comes with it, and
-each lot after the first is **$250 one time** with no change to the monthly
-fee. Barnwright's money-back promise is for custom work only, so it does not
-cover the 3D designer. Each business is at
-`<their name>.barnwrightsoftware.com`.
+software the company already uses. **No setup fee and $250 a month from
+go-live, with the first lot included**; each lot after the first is **$250
+one time** and adds nothing to the monthly fee. Barnwright's money-back
+promise is for custom work only, so it does not cover the 3D designer. Each
+business is at `<their name>.barnwrightsoftware.com`. To hand to a shed
+company: the one-page flyer (`docs/legal/Barnwright-Flyer.pdf`) and price
+sheet (`docs/legal/Barnwright-Price-Sheet.pdf`), both pointing at
+www.barnwrightsoftware.com/3d-configurator and sales@barnwrightsoftware.com.
 
 **Signing up a company that said yes**, step by step (the Sign-Up Form,
 terms and Setup Questions, the control room, their Dealer Center site, their

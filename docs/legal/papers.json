@@ -1,6 +1,6 @@
 {
   "_about": "The papers the control room's Papers page shows. Made by tools/legal/make-legal-pdfs.py; the control room reads this file and each PDF from this repository's main branch.",
-  "version": "Version 1.0, October 2026",
+  "version": "Version 1.2, October 2026",
   "papers": [
     {
       "id": "sign-up-form",
@@ -37,6 +37,24 @@
       "path": "docs/legal/Barnwright-Adding-a-New-Customer.pdf",
       "download": "Barnwright Adding a New Customer.pdf",
       "pages": 4
+    },
+    {
+      "id": "flyer",
+      "title": "Flyer",
+      "for": "customer",
+      "about": "Hand it out or email it to shed companies. It shows the 3D designer, what they get and the price, with your email and web page.",
+      "path": "docs/legal/Barnwright-Flyer.pdf",
+      "download": "Barnwright Flyer.pdf",
+      "pages": 1
+    },
+    {
+      "id": "price-sheet",
+      "title": "Price Sheet",
+      "for": "customer",
+      "about": "What it costs: no setup fee, $250 a month with the first lot included, $250 one time for each lot after the first, with examples and how to start.",
+      "path": "docs/legal/Barnwright-Price-Sheet.pdf",
+      "download": "Barnwright Price Sheet.pdf",
+      "pages": 1
     }
   ]
 }
