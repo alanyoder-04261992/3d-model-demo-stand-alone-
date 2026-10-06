@@ -238,7 +238,9 @@ ui/                 the screens: app.js (the page and its API, window.shedUI),
                     views.js (Outside / Inside), blueprint.js
                     (the floor plan), quote.js (quote requests), share.js
                     (share links), embed-mode.js, setup.js, parts-gallery.js,
-                    esc.js (every outside word is escaped here)
+                    esc.js (every outside word is escaped here), problems.js
+                    (an error nothing caught goes to the site's own server);
+                    ui/office/ is the Dealer Center
 fonts/              the two typefaces, served from this site (with their licence)
 tools/              the checks and the setup tools (below)
 test/golden/        Barnwright's own drawing of 148 buildings, recorded
