@@ -186,8 +186,11 @@ The ones that usually need a hand edit:
   `pricing.rto.note` (their words under the monthly figure, or leave it out
   for the standard words), `notes.finePrint`, `notes.sizeNotes` (by width in
   feet).
-* `look.trueColour` -- the template says `true` (grey daylight). Which one a
-  new company gets is an open decision of Alan's (docs/FOR-ALAN.md): ask.
+* `look.trueColour` -- leave it `true` (the template's, and the default when
+  `look` is left out): the Yoder Storage Barns site's look, which Alan chose
+  for every company in Oct 2026 -- grey daylight, a neutral room and the
+  site's darker contact shadow. `false` (Barnwright's warm sun) only when the
+  company asks for it.
 * `features` -- `framingView`, `buildPlayback`, `floorPlan`.
 * `brand.credit.show` -- `false` only for a white-label licence.
 * `license` -- `plan` (`hosted`), `renews`.

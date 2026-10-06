@@ -1,6 +1,6 @@
 {
   "_help": [
-    "THE SALES DEMO: every standard style at every standard size, drawn exactly as Barnwright draws them, with EXAMPLE prices.",
+    "THE SALES DEMO: every standard style at every standard size, drawn exactly as Barnwright draws them and lit the way the Yoder Storage Barns site lights them (look.trueColour), with EXAMPLE prices.",
     "The example prices are NOT a real company's price list. Every building is priced by one simple formula: $900 + the style's own rate per square foot of floor (width x length), rounded to the nearest $5. Each style has its own rate, so no two styles start at the same price: UT $26, SU $27, DS $30, BU $24, GU $25, SB $28, LB $29, SLB $30.5, CS $31, SS $27.5, C $36, LBC $37, SC $38, LSC $39, DSC $41, SLC $40, G $34, LBG $35, MU $29.5, MLB $32, MG $33, MCS $31.5, DK $52. Doors, windows and options carry round example numbers.",
     "Barnwright's real prices live only in test/golden/barnwright-catalogue.json and are used only by the checks.",
     "No leads are sent from the demo (leads.mode none): it is a showroom."
@@ -272,7 +272,7 @@
   },
   "leads": {"mode": "none"},
   "embed": {"origins": [], "shareUrl": ""},
-  "look": {"trueColour": false, "scene": "studio"},
+  "look": {"trueColour": true, "scene": "studio"},
   "features": {"framingView": true, "buildPlayback": true, "floorPlan": true},
   "license": {"plan": "demo", "renews": ""},
   "renames": {"items": {}, "sizes": {}, "colors": {}},

@@ -101,7 +101,7 @@
     "shareUrl": ""
   },
   "look": {
-    "_help": "trueColour: true draws colours with neutral (grey) light, so a paint colour looks like its chip; false keeps Barnwright's warm late-afternoon sun. scene: studio | yard | paper.",
+    "_help": "trueColour: true (the standard) draws the building the way the Yoder Storage Barns site does -- neutral (grey) light so a paint colour looks like its chip, a white room and its darker soft shadow under the building; false keeps Barnwright's warm late-afternoon sun. scene: studio | yard | paper.",
     "trueColour": true,
     "scene": "studio"
   },

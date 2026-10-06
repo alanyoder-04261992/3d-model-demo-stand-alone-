@@ -1,11 +1,14 @@
 /* CHECK: the look-defining code is Barnwright's, character for character.
    Run: node tools/check-shaders.mjs
 
-   Alan likes how Barnwright's 3D designer LOOKS. Almost all of that look lives
-   in two places: the fragment shader (how light, shadow, paint and haze are
-   worked out for every pixel) and the eleven texture painters (the grain in
-   the siding, the ribs and screws in the metal, the lawn). This check reads
-   Barnwright's own file -- read only, never changed -- and proves:
+   Alan likes how Barnwright's 3D designer LOOKS, lit the way his own Yoder
+   Storage Barns site lights it (true colour, the standard look since Oct
+   2026; Barnwright's warm light is kept for the golden checks). Almost all
+   of that look lives in two places: the fragment shader (how light, shadow,
+   paint and haze are worked out for every pixel) and the eleven texture
+   painters (the grain in the siding, the ribs and screws in the metal, the
+   lawn). This check reads Barnwright's own file and the Yoder site's -- read
+   only, never changed -- and proves:
 
      1. our FS is Barnwright's FS byte for byte;
      2. our FSTRUE is the Yoder site's true-colour FS byte for byte, and it
@@ -19,7 +22,9 @@
      4. the eleven texture painters (and the grain helper) in engine/
         textures.js are Barnwright's text with every Math.random() turned
         into rand() and nothing else, in the same order, and mkTex is
-        Barnwright's plus the one seeding line;
+        Barnwright's plus the one seeding line; and the contact shadow the
+        true-colour look paints in their place afterwards is the Yoder
+        site's texAO painter character for character;
      5. all of them compile and link in a real browser (headless Chromium
         with software WebGL), the stage attribute sits in slot 3 in both
         programs, and Barnwright's own originals compile the same way.
@@ -77,7 +82,7 @@ console.log("check-shaders: the look-defining code is Barnwright's\n");
 /* ---------- 1. FS ---------- */
 console.log("The fragment shader");
 ok("FS is Barnwright's fragment shader byte for byte (" + barn.FS.length + " characters)", ours.FS === barn.FS, firstDiff(ours.FS, barn.FS));
-ok("FS still has the warm sun vec3(1.32,1.24,1.06) Alan likes", ours.FS.includes("vec3 sun=vec3(1.32,1.24,1.06)*ndl*sh;"));
+ok("FS still has Barnwright's warm sun vec3(1.32,1.24,1.06) (kept for the golden and look checks; true colour is the standard)", ours.FS.includes("vec3 sun=vec3(1.32,1.24,1.06)*ndl*sh;"));
 
 /* ---------- 2. FSTRUE ---------- */
 console.log("\nThe true-colour fragment shader (a company option)");
@@ -131,6 +136,11 @@ ok("the true-colour studio is the Yoder site's studio number for number (backdro
 ok("the true-colour yard is the Yoder site's yard number for number (its sky photograph is not in this repo; the plain gradient is kept)", canon(strip(sd.TRUE_SCENES.yard)) === canon(strip(ySCENES.yard)));
 ok("the true-colour paper is the Yoder site's paper number for number", canon(sd.TRUE_SCENES.paper) === canon(ySCENES.paper));
 ok("true-colour studio haze equals its backdrop's flat colour (#E9E9E9 = 233)", Math.round(sd.TRUE_SCENES.studio.fogC[0] * 255) === 233 && sd.TRUE_SCENES.studio.stage.includes("#E9E9E9 100%"));
+{
+  const css = readFileSync(resolve(ROOT, "ui/styles.css"), "utf8");
+  const m = css.match(/\.stage\{[^}]*background:(linear-gradient\([^)]*\))/);
+  ok("the page opens on the standard (true-colour) studio backdrop, so it never flicks from one to the other", !!m && m[1] === sd.TRUE_SCENES.studio.stage, m ? m[1] : "no .stage background in ui/styles.css");
+}
 ok("Barnwright studio haze equals its backdrop's flat colour (#E9E9E5)", sd.SCENES.studio.fogC.map((v) => Math.round(v * 255).toString(16).toUpperCase()).join("") === "E9E9E5" && sd.SCENES.studio.stage.includes("#E9E9E5 100%"));
 
 /* ---------- 3. VS / VSD / FSD ---------- */
@@ -210,6 +220,15 @@ const oursMk = between(TX, "/* ==== BEGIN mkTex", "/* ==== END mkTex");
 const barnMk = B.slice(B.indexOf("/* painter draws the color; hpaint"), B.indexOf("function grain(x,s,n,a){")).replace(/\n+$/, "");
 const mkLines = oursMk.split("\n"), seedLines = mkLines.filter((l) => l.includes("rand=randFor?randFor(texIndex++):Math.random;"));
 ok("mkTex is Barnwright's plus exactly one line: the seeding at its very start", seedLines.length === 1 && mkLines[mkLines.indexOf(seedLines[0]) - 1] === "function mkTex(painter,size,norm,hpaint){" && mkLines.filter((l) => !seedLines.includes(l)).join("\n") === barnMk, firstDiff(mkLines.filter((l) => !seedLines.includes(l)).join("\n"), barnMk));
+/* the Yoder site's contact shadow, worn with true colour (its own block after the eleven) */
+const oursYAO = between(TX, "/* ==== BEGIN YODER CONTACT SHADOW", "/* ==== END YODER CONTACT SHADOW");
+const iYAO = Y.indexOf("var texAO=mkTex(");
+const yoderAO = iYAO < 0 ? "" : Y.slice(iYAO, Y.indexOf("},256);", iYAO) + "},256);".length);
+ok("the true-colour contact shadow is the Yoder site's texAO painter character for character (" + yoderAO.split("\n").length + " lines)", yoderAO !== "" && oursYAO === yoderAO, firstDiff(oursYAO, yoderAO));
+ok("...it is darker than Barnwright's at its middle (#3f3f3f against #565656), and no other picture changes", oursYAO.includes('g.addColorStop(0,"#3f3f3f")') && sb.texAO.text.includes('g.addColorStop(0,"#565656")') && !oursYAO.includes("rand"));
+const yAt = TX.indexOf("/* ==== BEGIN YODER CONTACT SHADOW"), endP = TX.indexOf("/* ==== END PAINTERS");
+ok("...painted only with true colour, after all eleven (so the test randomness of every other picture is untouched), in place of Barnwright's",
+  yAt > endP && TX.slice(endP, yAt).includes("if(opts.trueColour){ gl.deleteTexture(texAO);") && TX.indexOf("out[TN.texAO]=texAO;") > yAt);
 const extLine = B.slice(B.indexOf("var extAniso=gl.getExtension("), B.indexOf("\n", B.indexOf("var extAniso=gl.getExtension(")));
 ok("the anisotropic-filtering line is Barnwright's", TX.includes("\n" + extLine + "\n"));
 
@@ -270,5 +289,6 @@ try {
 console.log("\n" + (fail ? "FAILED" : "PASSED") + ": " + pass + " passed, " + fail + " failed.");
 if (fail) { console.log("\nWhat failed:\n  " + failures.join("\n  ")); process.exit(1); }
 console.log("Proved: the picture shader, the shadow shaders and all eleven texture painters are Barnwright's own code,");
-console.log("the only additions are the building-step table and the test seeding line, the true-colour option is the");
-console.log("Yoder site's shader with exactly its six colour lines changed, and everything compiles in a real browser.");
+console.log("the only additions are the building-step table and the test seeding line, the true-colour look (the");
+console.log("standard one) is the Yoder site's shader with exactly its six colour lines changed and the Yoder site's own");
+console.log("contact shadow, and everything compiles in a real browser.");

@@ -402,10 +402,8 @@ ok("tools/check-parts.mjs passes (every part valid, every skill well formed, no 
   const hdr = rule(con.walls.header);
   const joist = rule(con.floor.joist);
   const FACTS = [
-    ["the light new companies start with", /New companies start with \*\*([^*]+)\*\*/g,
-      (m) => [tpl.look.trueColour === true ? "true colour" : "Barnwright's warm light", m[1]], "companies/_template/company.json look.trueColour"],
-    ["the demo's light", /demo keeps \*\*([^*]+?)\*\*/g,
-      (m) => [demo.look.trueColour === false ? "warm" : "true colour", /warm/i.test(m[1]) ? "warm" : m[1]], "companies/demo/company.json look.trueColour"],
+    ["the light the demo and new companies start with", /start with \*\*([^*]+)\*\*/g,
+      (m) => [tpl.look.trueColour === true && demo.look.trueColour === true ? "true colour" : "Barnwright's warm light", m[1]], "companies/_template/company.json and companies/demo/company.json look.trueColour"],
     ["the OSB roof deck", /(\d+\/\d+) in OSB/g, (m) => [frac(con.roofDeck.sheathingIn), m[1]], "library/construction.json roofDeck.sheathingIn"],
     ["the purlins", /(\d+x\d+) purlins laid flat, (\d+) in apart/g,
       (m) => [con.roofDeck.purlins.size + " / " + con.roofDeck.purlins.spacingIn, m[1] + " / " + m[2]], "library/construction.json roofDeck.purlins"],

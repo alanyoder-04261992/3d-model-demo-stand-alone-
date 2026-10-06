@@ -13,14 +13,23 @@ His words (Sep 2026): he likes how Barnwright's 3D designer looks; he wants a
 3D model of **each part of a shed**, **a skill for each part**, and when there
 is a new design it **builds it like in real life**; and it must be **fast to
 set up new companies**. Build it here and **do not touch Barnwright**.
+His words (Oct 2026): "use the 3d configuration in yoder storage barns …
+change the building looks only" — the buildings are lit the way his own
+Yoder Storage Barns site lights them (true colour), and nothing else moved.
 
 ## The rules that matter most
 
 1. **Never modify Barnwright** (`alanyoder-04261992/boisterous-lokum-a737e0`).
    It is read only to record the golden fixtures.
-2. **The finished building must look exactly like Barnwright's.** The golden
-   test (`node tools/check-golden.mjs`) compares every triangle. A red golden
-   test is a look change — fix the code, or re-record on purpose with a reason.
+2. **The finished building is Barnwright's shape for shape, lit the way the
+   Yoder Storage Barns site lights it.** The golden test
+   (`node tools/check-golden.mjs`) compares every triangle with Barnwright's
+   (in Barnwright's warm light). A red golden test is a look change — fix the
+   code, or re-record on purpose with a reason. The light is the Yoder site's
+   true colour (`look.trueColour`, on for the demo and by default; its shader,
+   rooms and contact shadow are read against
+   `yoder-storage-barns/design.html` by `node tools/check-shaders.mjs`). The
+   Yoder site is read only too.
 3. **One real-life part = one module in `parts/` + one skill in
    `.claude/skills/part-<id>/SKILL.md`.** Before changing a part, read its
    skill. After changing a part, update its skill.

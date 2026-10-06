@@ -9,7 +9,7 @@
    only where the numbers come from -- Barnwright read the shed's size from
    page-wide variables, this is handed them.
 
-     const r = createRenderer(canvas, { trueColour: false, scene: "studio" });
+     const r = createRenderer(canvas, { trueColour: true, scene: "studio" });
      r.show(result);            // result = assemble(...): { build, bounds, gr, fitDist }
      r.startLoop({ fit: "fitref" });
 
@@ -31,6 +31,10 @@
      buildVisibility(order, k), liftFeet) make the tables for the views.
    * setScene(name) -- studio / yard / paper (true-colour when the renderer
      was made with trueColour).
+   * trueColour -- the Yoder site's look: its true-colour shader (FSTRUE),
+     its neutral rooms (TRUE_SCENES) and its darker contact shadow under the
+     building (engine/textures.js). The standard look; off only for the
+     Barnwright company the golden checks draw.
    * startLoop() / stopLoop() -- Barnwright's loop: draws only when something
      changed (r.needsDraw = true), turns the building slowly for its first 10
      seconds unless the customer prefers reduced motion or has touched it,
@@ -136,8 +140,9 @@ export function createRenderer(canvas, opts){
   }
   var shadowCan=hasShadow;   /* whether this device can draw shadows at all */
 
-  /* ---------- the eleven textures, all at once, in Barnwright's order ---------- */
-  var TEX=createTextures(gl,{randFor:opts.randFor||opts.rand,seeded:opts.seededTextures});
+  /* ---------- the eleven textures, all at once, in Barnwright's order
+     (with true colour, the contact shadow in the Yoder site's shade) ---------- */
+  var TEX=createTextures(gl,{randFor:opts.randFor||opts.rand,seeded:opts.seededTextures,trueColour:trueColour});
   var texFlat=TEX.flat;
 
   /* ---------- watchdog state (Barnwright 4092-4104) ---------- */

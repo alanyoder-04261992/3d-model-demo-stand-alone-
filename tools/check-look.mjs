@@ -27,12 +27,15 @@
    3. the comparison CAN fail: the same Utility Shed with its trim one step
       of blue different, or the camera turned a thousandth of a radian, is
       caught (test/out/look-control-diff.png shows the second);
-   4. the TRUE-COLOUR switch (a company's look.trueColour) changes colour and
-      nothing else: the demo company's opening building drawn both ways has
-      the same drawing to the last number (checked without a browser), the
-      same see-through outline to the last pixel (the alpha channel), and
+   4. the TRUE-COLOUR switch (a company's look.trueColour: the Yoder site's
+      look, the standard one since Oct 2026 -- its grey light, its neutral
+      room and its darker contact shadow) changes colour and nothing else:
+      the demo company's opening building drawn both ways has the same
+      drawing to the last number (checked without a browser), the same
+      see-through outline to the last pixel (the alpha channel), and
       different colours, with the warm cast gone
-      (test/out/look-truecolour.png: warm | true colour);
+      (test/out/look-truecolour.png: Barnwright's warm light | the Yoder
+      site's look);
    5. a Finished-view rebuild of the biggest Utility Shed (14x40) stays inside
       a loose time bound on this software-graphics machine (the phone budget
       in docs/ARCHITECTURE.md is 45 ms on real hardware; the time is printed);
@@ -293,7 +296,7 @@ try {
   }
 
   /* ---------- true colour changes colour only ---------- */
-  console.log("\nThe true-colour switch (look.trueColour) changes colour, not the building");
+  console.log("\nThe true-colour switch (look.trueColour, the Yoder site's look) changes colour, not the building");
   const demo = await h.useCompany("demo");
   const state = await h.defaultState("demo");
   const tc = { company: "demo", state, size: { w: 742, h: 803 }, fit: "fitref", scene: demo.look.scene || "studio", camera: { yaw: 0.62, pitch: 0.215, distOverFit: 1 }, stages: "finished" };
@@ -333,14 +336,14 @@ try {
     }
   }
   ok(`the see-through outline (every pixel's alpha, ${warmPic.width}x${warmPic.height}) is identical both ways -- same shape, same edges`, alphaSame && coverSame);
-  ok(`the colours differ: ${rgbDiff} of the ${cover} solid pixels changed colour`, cover > 100000 && rgbDiff > cover * 0.5);
+  ok(`the colours differ: ${rgbDiff} of the ${cover} solid pixels changed colour (the light, the room and the Yoder site's darker contact shadow)`, cover > 100000 && rgbDiff > cover * 0.5);
   const mw = cover ? warmRB / cover : 0, mt = cover ? trueRB / cover : 0;
   ok(`the warm cast is gone: red minus blue averages ${mw.toFixed(1)} warm, ${mt.toFixed(1)} true colour`, mw > mt + 3);
   /* each on its own scene's backdrop, as the designer page shows it (the true-colour studio's is neutral grey) */
   const backOf = (tcOn) => sceneFor(tc.scene, tcOn).fogC.map((v) => Math.round(v * 255));
   const tcPanels = [asPanel(warmPic, backOf(false)), asPanel(truePic, backOf(true))], tcAt = panelLefts(tcPanels, 2);
   writeFileSync(resolve(OUT, "look-truecolour.png"), await labelled(sideBySide(tcPanels, 2), [
-    { x: tcAt[0], y: 0, text: "true colour OFF (Barnwright's warm light)" }, { x: tcAt[1], y: 0, text: "true colour ON (look.trueColour: true)" }]));
+    { x: tcAt[0], y: 0, text: "true colour OFF (Barnwright's warm light, golden checks only)" }, { x: tcAt[1], y: 0, text: "true colour ON (the Yoder site's look, the standard)" }]));
 
   /* ---------- the cost of a rebuild ---------- */
   console.log("\nThe cost of a Finished-view rebuild");
