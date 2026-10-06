@@ -128,8 +128,12 @@ the skill.
   from the construction numbers) and, for anything in the roof,
   `node tools/check-framing-roof.mjs`.
 * In a browser: `node tools/check-views.mjs` (Framing and Watch it build) and
-  `node tools/check-gallery.mjs` (the gallery draws every part label on its own
-  at least once -- open `parts.html?company=demo&style=<a style that has it>`
-  and look at it too).
+  `node tools/check-gallery.mjs` (the gallery draws every part a building can
+  have on its own at least once -- open
+  `parts.html?company=demo&style=<a style that has it>` and look at it too).
+  A part only one of Alan's lessons draws says `lesson: "<page>"`
+  (`parts/README.md`); the check then wants it on no building, listed with a
+  link to that page, and drawn on its own from the plan the lesson builds:
+  add that plan to `LESSON_PLANS` in the check.
 * `node tools/check-docs.mjs` (every part has its skill) and finally
   `node tools/check-all.mjs --fast`.

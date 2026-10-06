@@ -1,7 +1,10 @@
 /* Alan's gable window box: the gable studs move to the opening's sides;
    horizontal 2x4s form its top and bottom. All 3.5-inch faces point outward.
    These two pieces fit between the full-height side studs (preview joint).
-   Clear opening dimensions belong to the selected window, not the shed size. */
+   Clear opening dimensions belong to the selected window, not the shed size.
+   A LESSON part (`lesson`, parts/README.md): only the truss lesson with a
+   gable window builds the windowOpening it needs, so no building in the
+   designer has one. */
 import { prismMember, drawMembers } from "./floor-frame.js";
 
 export function gableWindowFrameMembers(plan) {
@@ -21,7 +24,7 @@ export function gableWindowFrameMembers(plan) {
 }
 
 export default {
-  id:"gable-window-frame",name:"Gable window box",stage:"roof-frame",
+  id:"gable-window-frame",name:"Gable window box",stage:"roof-frame",lesson:"learn.html?step=truss&window=1",
   realLife:"Horizontal boards above and below the selected window opening, fitted between the moved gable studs with all wide faces outward.",
   appliesTo(plan) { return plan.trussStudy?.windowOpening?.kind === "window"; },
   members:gableWindowFrameMembers,

@@ -26,6 +26,10 @@ Stage `wall-frame`; opt-in `doorway-frame` after the window lessons in
 with optional contextual plate portions. It uses the measured end-wall
 coordinate frame for the detail. A later side-wall integration needs the
 proper wall basis.
+The module's `lesson: "doorway-framing.html"` marks it a lesson part: the parts
+gallery lists it under "Only in a lesson" with a link to that page, and
+`node tools/check-gallery.mjs` proves no building in the designer draws
+it and that it draws on its own from this lesson's plan.
 
 ## Construction settings
 
