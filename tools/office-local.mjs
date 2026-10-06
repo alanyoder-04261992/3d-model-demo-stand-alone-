@@ -7,9 +7,10 @@
          npm run office -- --port 8390  another port
          npm run office -- --control-room      as a business connected to a
                                         pretend Barnwright control room (3
-                                        open lots in its plan); add
-                                        --control-room-off to start with
-                                        the account switched off
+                                        open lots in its plan) and a
+                                        pretend Sales Inbox for the Help
+                                        screen; add --control-room-off to
+                                        start with the account switched off
 
    Then open http://127.0.0.1:8383/dealer
 
@@ -39,6 +40,7 @@ import { FileBlobs } from "./lib/file-blobs.mjs";
 import { seedSample, SAMPLE_PEOPLE } from "../server/office/sample.js";
 import { TenantLicenseClient, createLeaseStore } from "../server/office/control-room.js";
 import { fakeControlRoom } from "./lib/fake-control-room.mjs";
+import { fakeHelpInbox } from "./lib/fake-help-inbox.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -98,8 +100,17 @@ const deps = {
 /* --control-room: a pretend Barnwright control room in this process
    (tools/lib/fake-control-room.mjs). POST /__local/control-room with
    {status: "active" | "deactivated", down: true | false, dealerLimit: n}
-   changes it; POST /__local/control-room/check runs a support check. */
-const room = CONTROL_ROOM ? fakeControlRoom({ clock: { get t() { return (clock.at || new Date()).getTime(); } }, dealerLimit: 3 }) : null;
+   changes it; POST /__local/control-room/check runs a support check.
+   It comes with a pretend Sales Inbox for the Help screen
+   (tools/lib/fake-help-inbox.mjs): POST /__local/help-inbox with
+   {answer: "words"} answers the newest question still waiting (or the one
+   with {id}), {down: true | false} makes it unreachable or not; the answer
+   lists the questions and problem reports it holds.
+   Without --control-room the Dealer Center is not connected: Help shows
+   its answers and the email to write to. */
+const roomClock = { get t() { return (clock.at || new Date()).getTime(); } };
+const room = CONTROL_ROOM ? fakeControlRoom({ clock: roomClock, dealerLimit: 3 }) : null;
+const helpInbox = room ? fakeHelpInbox({ clock: roomClock, publicKeyPem: room.publicKeyPem }) : null;
 const office = createOffice({
   ...deps,
   license: room ? new TenantLicenseClient({
@@ -107,6 +118,7 @@ const office = createOffice({
     activationKey: room.business.key, publicKeyPem: room.publicKeyPem,
     store: createLeaseStore(room.business.id, room.business.siteId, blobs), fetch: room.fetch,
   }) : undefined,
+  help: helpInbox ? { url: helpInbox.origin, fetch: helpInbox.fetch } : null,
   appVersion: "dealer-center local",
 });
 
@@ -179,6 +191,16 @@ async function route(request) {
     let token;
     try { token = room.issueSupport("alan@barnwright.example"); } catch { return Response.json({ error: "Help from Barnwright is off." }, { status: 403 }); }
     return office.diagnostics(new Request(`http://127.0.0.1:${PORT}/.netlify/functions/tenant-diagnostics`, { method: "POST", headers: { authorization: `Bearer ${token}` } }));
+  }
+  if (helpInbox && path === "/__local/help-inbox" && request.method === "POST") {
+    const body = await request.json().catch(() => ({}));
+    if (typeof body.down === "boolean") helpInbox.down = body.down;
+    const answered = typeof body.answer === "string" && body.answer.trim() ? helpInbox.answer(typeof body.id === "string" ? body.id : null, body.answer.trim()) : null;
+    return Response.json({
+      down: helpInbox.down, answered: answered ? answered.id : null,
+      questions: helpInbox.questions.map((q) => ({ id: q.id, page: q.page, asker: { id: q.asker.id, role: q.asker.role }, status: q.status, details: Object.keys(q.details || {}) })),
+      problems: helpInbox.problems.map((x) => ({ signature: x.signature, area: x.area, where: x.where, page: x.page, count: x.count })),
+    });
   }
   if (path === "/.netlify/functions/tenant-diagnostics") return office.diagnostics(request);
   if (path === "/__local/people" && request.method === "GET") {

@@ -21,7 +21,16 @@
      6. designing a building for a customer inside the Dealer Center saves a
         quote on their file;
      7. the "try it" demo (/dealer?demo) works with made-up data and never
-        calls the real server.
+        calls the real server, Help included;
+     8. Help: every role has it in the menu (under More on a phone) and at
+        the top; not connected, it shows the short answers, the search and
+        the email to write to. Then a second local Dealer Center, connected
+        to a pretend control room and Sales Inbox (--control-room): a dealer
+        asks from Help, is told where the answer will come, and sees
+        Barnwright's answer; the owner sees the dealer's question, another
+        dealer doesn't; a problem on a screen or on a lot's 3D designer goes
+        to the site's own server (at most 3 a page, no query string), and a
+        designer whose site answers 404 there carries on.
 
    Pictures of every screen go to test/out/dealer-center/. --keep leaves the
    server running at the end (for a look by hand). */
@@ -38,6 +47,10 @@ const OUT = resolve(ROOT, "test/out/dealer-center");
 const DATA = "test/out/dealer-center-data";
 const PORT = 8370;
 const BASE = `http://127.0.0.1:${PORT}`;
+/* the second copy, connected to a pretend control room and Sales Inbox (section 8) */
+const DATA_CR = "test/out/dealer-center-data-connected";
+const PORT_CR = 8371;
+const BASE_CR = `http://127.0.0.1:${PORT_CR}`;
 const KEEP = process.argv.includes("--keep");
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "/opt/node22/lib/node_modules/playwright/index.js");
@@ -81,10 +94,10 @@ async function apiAs(email, path, { method = "GET", body } = {}) {
 
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 
-async function pageFor(email, { width = 1300, height = 860 } = {}) {
+async function pageFor(email, { width = 1300, height = 860, base = BASE } = {}) {
   const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: "reduce" });
   await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, (r) => r.abort());
-  if (email) await context.addCookies([{ name: "dealer_local_user", value: encodeURIComponent(email), url: BASE }]);
+  if (email) await context.addCookies([{ name: "dealer_local_user", value: encodeURIComponent(email), url: base }]);
   const page = await context.newPage();
   page.errors = [];
   page.on("console", (m) => { if (m.type() === "error" && !/status of 40[134]/.test(m.text())) page.errors.push(m.text()); });
@@ -92,8 +105,8 @@ async function pageFor(email, { width = 1300, height = 860 } = {}) {
   return page;
 }
 
-async function openScreen(page, hash) {
-  await page.goto(`${BASE}/dealer#${hash}`, { waitUntil: "load" });
+async function openScreen(page, hash, base = BASE) {
+  await page.goto(`${base}/dealer#${hash}`, { waitUntil: "load" });
   await page.waitForSelector("#main", { timeout: 20000 });
   await page.waitForFunction(() => !document.querySelector("#main .loading"), null, { timeout: 20000 }).catch(() => {});
   await page.waitForTimeout(400);
@@ -128,7 +141,7 @@ try {
     ["quote-sheet", `/customers/${pcCustomer.id}/quotes/${(await apiAs(PEOPLE.owner, `customers/${pcCustomer.id}`)).data.customer.quotes[0].id}`],
     ["price-list", "/price-list"], ["price-doors", "/price-list/doors"], ["price-options", "/price-list/options"],
     ["price-colors", "/price-list/colors"], ["price-history", "/price-list/history"],
-    ["lots", "/lots"], ["lot", "/lots/riverside"], ["team", "/team"], ["settings", "/settings"],
+    ["lots", "/lots"], ["lot", "/lots/riverside"], ["team", "/team"], ["settings", "/settings"], ["help", "/help"],
   ];
   for (const [role, email] of Object.entries(PEOPLE)) {
     for (const [label, size] of [["desktop", { width: 1300, height: 860 }], ["phone", { width: 390, height: 844 }]]) {
@@ -153,7 +166,12 @@ try {
         const nav = await page.$$eval(".sidenav .nav-item span", (els) => els.map((e) => e.textContent));
         if (role === "dealer") ok("a dealer's menu has no Team or Settings (" + nav.join(", ") + ")", !nav.includes("Team") && !nav.includes("Settings"));
         if (role === "owner") ok("the owner's menu has Team and Settings", nav.includes("Team") && nav.includes("Settings"));
+        ok(`the ${role}'s menu ends with Help`, nav[nav.length - 1] === "Help", nav.join(", "));
+      } else {
+        const more = await page.$$eval(".more-sheet .more-item span", (els) => els.map((e) => e.textContent));
+        ok(`on a phone, the ${role}'s Help is under More (${more.join(", ")})`, more.includes("Help"));
       }
+      ok(`the ${role} has a Help button at the top on a ${label}`, await page.$eval(".topbar-help", (a) => a.getAttribute("href") === "#/help" && a.getBoundingClientRect().width > 20));
       await page.context().close();
     }
   }
@@ -261,10 +279,145 @@ try {
     await page.waitForFunction(() => !document.querySelector("#main .loading"), null, { timeout: 20000 });
     const text = await page.textContent("#main");
     ok("the demo opens the made-up business's customers", /30 customers|Customers/.test(text));
+    await page.goto(`${BASE}/dealer?demo#/help`, { waitUntil: "load" });
+    await page.waitForSelector(".banner.demo", { timeout: 30000 });
+    await page.waitForFunction(() => document.querySelector(".hp-answer") && !document.querySelector("#main .loading"), null, { timeout: 20000 });
+    ok("the demo's Help shows the short answers, and the email to write to instead of the box",
+      (await page.$$eval(".hp-answer", (els) => els.length)) >= 10 && !(await page.$(".hp-ask textarea")) && /support@barnwrightsoftware\.com/.test(await page.textContent(".hp-ask")));
+    await page.screenshot({ path: `${OUT}/demo-help.png` });
     ok("the demo never called the real server (" + calls.length + " calls)", calls.length === 0, calls.slice(0, 3).join(" "));
     ok("no errors in the demo", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
     await page.screenshot({ path: `${OUT}/demo-customers.png` });
     await page.context().close();
+  }
+
+  /* ---- 8 ----------------------------------------------------------------- */
+  section("8. Help");
+  {
+    /* this computer isn't connected to Barnwright: the answers, and the email */
+    const page = await pageFor(PEOPLE.dealer, { width: 390, height: 844 });
+    await openScreen(page, "/price-list");
+    await page.click(".topbar-help");
+    await page.waitForFunction(() => location.hash === "#/help" && document.querySelector(".hp-answer") && !document.querySelector("#main .loading"), null, { timeout: 20000 });
+    const n = await page.$$eval(".hp-answer", (els) => els.length);
+    ok(`the Help button at the top opens Help, with the short answers (${n})`, n >= 10 && n <= 14);
+    await page.fill(".hp-search input", "website code");
+    await page.waitForTimeout(400);
+    const found = await page.$$eval(".hp-answer", (els) => els.map((e) => [e.querySelector(".hp-q").textContent, e.open]));
+    ok("the search finds the website answer and opens it", found.length === 1 && /website/.test(found[0][0]) && found[0][1] === true, JSON.stringify(found));
+    ok("not connected: no question box, one line with the email to write to", !(await page.$(".hp-ask textarea"))
+      && !!(await page.$('.hp-ask a[href="mailto:support@barnwrightsoftware.com"]')) && await page.$eval("#hp-questions", (el) => el.hidden));
+    ok("no errors on Help", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
+    await page.screenshot({ path: `${OUT}/help-not-connected-phone.png` });
+    await page.context().close();
+  }
+  rmSync(resolve(ROOT, DATA_CR), { recursive: true, force: true });
+  const connected = spawn(process.execPath, ["tools/office-local.mjs", "--reset", "--control-room", "--port", String(PORT_CR), "--data", DATA_CR], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+  let connectedLog = "";
+  connected.stdout.on("data", (d) => { connectedLog += d; });
+  connected.stderr.on("data", (d) => { connectedLog += d; });
+  try {
+    for (let i = 0; i < 120 && !/is running/.test(connectedLog); i++) await new Promise((r) => setTimeout(r, 250));
+    ok("a Dealer Center connected to a pretend control room and Sales Inbox starts", /is running/.test(connectedLog), connectedLog.slice(-300));
+    const inboxNow = async (body = {}) => (await fetch(`${BASE_CR}/__local/help-inbox`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) })).json();
+    {
+      const page = await pageFor(PEOPLE.dealer, { width: 1300, height: 900, base: BASE_CR });
+      await openScreen(page, "/price-list", BASE_CR);
+      await page.click(".topbar-help");
+      await page.waitForSelector(".hp-ask textarea", { timeout: 20000 });
+      await page.fill(".hp-ask textarea", "How do I add a 12×32 size to the Lofted Barn?");
+      await page.click(".hp-ask button[type=submit]");
+      await page.waitForFunction(() => /^Sent\./.test(document.querySelector(".hp-ask .form-status")?.textContent || ""), null, { timeout: 20000 }).catch(() => {});
+      const said = (await page.textContent(".hp-ask .form-status")).trim();
+      ok("Mike (a dealer) asks Barnwright from Help and is told where the answer will come", said === "Sent. Barnwright will answer here and by email at mike@samplebarns.example.", said);
+      await page.waitForFunction(() => document.querySelectorAll(".hp-item").length === 1, null, { timeout: 20000 }).catch(() => {});
+      ok("... and his question shows under Your questions, waiting for an answer", /Waiting for an answer/.test(await page.textContent("#hp-questions")) && (await page.inputValue(".hp-ask textarea")) === "");
+      const held = await inboxNow();
+      ok("Barnwright has it from Mike, with the screen he came from and the technical details", held.questions?.length === 1 && held.questions[0].asker.id === "sample-mike"
+        && held.questions[0].asker.role === "dealer" && held.questions[0].page === "#/price-list" && ["appVersion", "account", "lots", "errors"].every((k) => held.questions[0].details.includes(k)), JSON.stringify(held.questions));
+      await inboxNow({ answer: "Open Price list, tap the Lofted Barn, then Add a size: 12 ft wide, 32 long, and its price. The owner taps Save for all lots." });
+      await page.reload({ waitUntil: "load" });
+      await page.waitForFunction(() => document.querySelector("#main") && !document.querySelector("#main .loading"), null, { timeout: 20000 }).catch(() => {});
+      await page.waitForSelector(".hp-reply", { timeout: 20000 }).catch(() => {});
+      const mine = await page.textContent("#hp-questions");
+      ok("Barnwright's answer shows on his Help screen, marked Answered", /Answered/.test(mine) && /Add a size: 12 ft wide/.test(mine) && !/Waiting for an answer/.test(mine), mine.slice(0, 200));
+      ok("no errors while asking", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
+      await page.screenshot({ path: `${OUT}/help-answered-desktop.png`, fullPage: true });
+      /* from a customer's page: Barnwright learns it was a customer's page, never which customer */
+      await openScreen(page, "/customers", BASE_CR);
+      const row = await page.$eval('a[href^="#/customers/"]', (a) => a.getAttribute("href"));
+      await page.click(`a[href="${row}"]`);
+      await page.waitForFunction((h) => location.hash === h && !document.querySelector("#main .loading"), row, { timeout: 20000 }).catch(() => {});
+      await page.click(".topbar-help");
+      await page.waitForSelector(".hp-ask textarea", { timeout: 20000 });
+      const goes = await page.textContent(".hp-goes");
+      ok("opened from a customer's page, the form says that page goes with the question", /the page you came from \(a customer's page\)/.test(goes), goes);
+      await page.fill(".hp-ask textarea", "A question from a customer's page");
+      await page.click(".hp-ask button[type=submit]");
+      await page.waitForFunction(() => /^Sent\./.test(document.querySelector(".hp-ask .form-status")?.textContent || ""), null, { timeout: 20000 }).catch(() => {});
+      const heldNow = (await inboxNow()).questions || [];
+      ok("... and Barnwright gets the screen (#/customers/:id), never which customer", heldNow.length === 2 && heldNow[1].page === "#/customers/:id" && !heldNow[1].page.includes(row.split("/")[2]), JSON.stringify(heldNow.map((q) => q.page)));
+      await page.context().close();
+    }
+    {
+      const owner = await pageFor(PEOPLE.owner, { base: BASE_CR });
+      await openScreen(owner, "/help", BASE_CR);
+      await owner.waitForSelector(".hp-item", { timeout: 20000 }).catch(() => {});
+      ok("the owner sees Mike's questions (both of them)", (await owner.$$eval(".hp-item", (els) => els.length)) === 2 && /Mike Harper/.test(await owner.textContent("#hp-questions")));
+      await owner.context().close();
+      const dana = await pageFor("dana@samplebarns.example", { base: BASE_CR });
+      await openScreen(dana, "/help", BASE_CR);
+      await dana.waitForSelector("#hp-questions:not([hidden])", { timeout: 20000 }).catch(() => {});
+      ok("another dealer (Dana) doesn't", (await dana.$$eval(".hp-item", (els) => els.length)) === 0 && /No questions yet/.test(await dana.textContent("#hp-questions")));
+      await dana.context().close();
+    }
+    {
+      /* a problem nothing caught, on a Dealer Center screen and on a lot's 3D designer */
+      const page = await pageFor(PEOPLE.dealer, { base: BASE_CR });
+      const sent = [];
+      page.on("request", (rq) => { if (rq.url().endsWith("/api/office/problem")) sent.push({ url: rq.url(), body: JSON.parse(rq.postData() || "{}") }); });
+      await openScreen(page, "/", BASE_CR);
+      /* a real script of this site with a query string that can't run as a plain script, and some thrown errors */
+      const broken = (src) => page.evaluate((address) => new Promise((done) => {
+        const el = document.createElement("script");
+        el.src = address;
+        el.onload = el.onerror = () => setTimeout(done, 50);
+        document.head.append(el);
+      }), src);
+      await broken("/ui/problems.js?v=check");
+      await page.evaluate(() => { for (let i = 0; i < 4; i++) setTimeout(() => { throw new Error(`check: a test problem ${i}`); }, 20 * (i + 1)); });
+      await page.waitForTimeout(1500);
+      ok("problems on a Dealer Center screen go to this site's own server: at most 3 a page", sent.length === 3 && sent.every((x) => x.url === `${BASE_CR}/api/office/problem` && x.body.area === "dealer-center" && /^dealer-center:[0-9a-f]{16}$/.test(x.body.signature)), JSON.stringify(sent.map((x) => x.body.message)));
+      ok("... with where in the code and no query string, and the screen", sent[0]?.body.where && /^\/ui\/problems\.js:\d+:\d+$/.test(sent[0].body.where) && sent.every((x) => x.body.page === "/dealer#/" && !/\?/.test(x.body.where)), JSON.stringify(sent[0]?.body));
+      await page.goto(`${BASE_CR}/d/riverside/`, { waitUntil: "load" });
+      await page.waitForFunction(() => window.shedUI && window.shedUI.ready, null, { timeout: 60000 });
+      const before = sent.length;
+      await broken("ui/problems.js?v=designer");
+      await page.waitForTimeout(1000);
+      const designer = sent.slice(before);
+      ok("a problem on a lot's 3D designer goes too, as the designer's, with the page's path only", designer.length === 1 && designer[0].body.area === "designer" && designer[0].body.page === "/d/riverside/" && /^\/ui\/problems\.js:\d+:\d+$/.test(designer[0].body.where), JSON.stringify(designer.map((x) => x.body)));
+      await page.waitForTimeout(500);
+      const held = await inboxNow();
+      ok("the pretend Sales Inbox has them, one per kind", held.problems.some((x) => x.area === "designer") && held.problems.filter((x) => x.area === "dealer-center").length === 3, JSON.stringify(held.problems));
+      await page.context().close();
+    }
+    {
+      /* a static copy of the designer, where that address answers 404 */
+      const page = await pageFor(null);
+      await page.context().route("**/api/office/problem", (r) => r.fulfill({ status: 404, contentType: "text/plain", body: "Not found." }));
+      const tries = [];
+      page.on("request", (rq) => { if (rq.url().endsWith("/api/office/problem")) tries.push(rq.url()); });
+      await page.goto(`${BASE}/c/demo/`, { waitUntil: "load" });
+      await page.waitForFunction(() => window.shedUI && window.shedUI.ready, null, { timeout: 60000 });
+      await page.evaluate(() => { setTimeout(() => { throw new Error("check: a test problem on a static copy"); }, 10); });
+      await page.waitForTimeout(800);
+      const others = page.errors.filter((e) => !/a test problem on a static copy/.test(e));
+      ok("a site where that address answers 404: the report was tried once, the designer carries on, nothing else went wrong",
+        tries.length === 1 && others.length === 0 && await page.evaluate(() => window.shedUI.ready && window.shedUI.price().total > 0), others.join(" | "));
+      await page.context().close();
+    }
+  } finally {
+    connected.kill();
   }
 } catch (e) {
   ok("the check ran to the end", false, e.stack || String(e));
@@ -279,4 +432,4 @@ if (fail) {
   console.log(`FAIL: ${fail} of ${pass + fail} checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED: all ${pass} checks passed -- the Dealer Center opens every screen for the owner, a manager and a dealer on a desktop and a phone without errors; a dealer sees only their lot; a price change reaches all 3 lots' designers at once; a quote sent from a lot's designer lands on that lot's list priced by the server; designing for a customer saves a quote; the demo runs without the server. Pictures: test/out/dealer-center/.`);
+console.log(`PROVED: all ${pass} checks passed -- the Dealer Center opens every screen for the owner, a manager and a dealer on a desktop and a phone without errors; a dealer sees only their lot; a price change reaches all 3 lots' designers at once; a quote sent from a lot's designer lands on that lot's list priced by the server; designing for a customer saves a quote; the demo runs without the server; Help is in every menu and at the top, a dealer's question reaches Barnwright and the answer comes back to them, and a problem on a screen or a designer reaches the site's own server at most 3 times a page. Pictures: test/out/dealer-center/.`);

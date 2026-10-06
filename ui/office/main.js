@@ -16,11 +16,24 @@ import { app } from "./app.js";
 import { configureApi, signOut, post } from "./api.js";
 import { signInScreen, notOnTeam, handleEmailLink } from "./auth.js";
 import { ROLE_WORDS, initials, dayWords, todayKey } from "./words.js";
+import { watchProblems, reportProblem, screenOf } from "../problems.js";
 
 const root = document.getElementById("dealer-center");
 
+/* A problem on these screens that nothing caught goes to this site's own
+   server (ui/problems.js), which passes it on to Barnwright for a business
+   Barnwright set up. The page is the screen, never which customer. The
+   "try it" demo keeps them in the page. */
+watchProblems({
+  area: "dealer-center",
+  endpoint: "/api/office/problem",
+  page: () => location.pathname + screenOf(location.hash),
+  skip: () => app.demo || new URLSearchParams(location.search).has("demo"),
+});
+
 /* The screens, in the order of the menu. `roles` lists who sees the menu
-   item (the server checks every action again anyway). */
+   item (the server checks every action again anyway). On a phone the
+   first four are in the bar at the bottom and the rest under More. */
 const NAV = [
   { path: "/", label: "Today", icon: "today", roles: ["owner", "manager", "dealer"] },
   { path: "/customers", label: "Customers", icon: "customers", roles: ["owner", "manager", "dealer"] },
@@ -29,6 +42,7 @@ const NAV = [
   { path: "/lots", label: "Lots", icon: "lots", roles: ["owner", "manager", "dealer"] },
   { path: "/team", label: "Team", icon: "team", roles: ["owner", "manager"] },
   { path: "/settings", label: "Settings", icon: "settings", roles: ["owner"] },
+  { path: "/help", label: "Help", icon: "help", roles: ["owner", "manager", "dealer"] },
 ];
 
 const ROUTES = [
@@ -44,6 +58,7 @@ const ROUTES = [
   [/^\/lots\/([a-z0-9-]{2,40})$/, "lot"],
   [/^\/team$/, "team"],
   [/^\/settings$/, "settings"],
+  [/^\/help$/, "help"],
   [/^\/setup$/, "setup"],
 ];
 
@@ -61,6 +76,7 @@ const VIEWS = {
   lot: () => import("./views/lots.js"),
   team: () => import("./views/team.js"),
   settings: () => import("./views/settings.js"),
+  help: () => import("./views/help.js"),
   setup: () => import("./views/setup.js"),
 };
 
@@ -143,6 +159,7 @@ function frameUp() {
       h("div", { class: "topbar-tools" },
         lotPicker,
         h("a", { href: "#/customers?new=1", class: "btn btn-accent btn-small new-customer" }, icon("plus"), h("span", {}, "Customer")),
+        h("a", { href: "#/help", class: "topbar-help", title: "Help", "aria-label": "Help", dataset: { path: "/help" } }, icon("help"), h("span", {}, "Help")),
         personMenu())),
     h("nav", { class: "sidenav", "aria-label": "Dealer Center" }, navEls),
     main,
@@ -226,7 +243,7 @@ async function render() {
     const m = re.exec(path);
     if (m) { match = m.slice(1).filter((x) => x !== undefined); viewName = name; break; }
   }
-  for (const el of [...navEls, ...root.querySelectorAll(".tab-item[data-path], .more-item[data-path]")]) {
+  for (const el of [...navEls, ...root.querySelectorAll(".tab-item[data-path], .more-item[data-path], .topbar-help[data-path]")]) {
     const p = el.dataset.path;
     /* an order sheet lives under its customer's address but belongs to Orders */
     const section = /^\/customers\/[^/]+\/orders\//.test(path) ? "/orders" : "/" + (path.split("/")[1] || "");
@@ -256,10 +273,12 @@ async function render() {
   } catch (e) {
     if (seq !== renderSeq) return;
     console.error(e);
+    reportProblem(e);   /* passed on to Barnwright like one nothing caught (an answer from the server isn't) */
     clear(main, emptyState("This page didn't load", e.message || "Something went wrong.", button("Try again", () => render(), { kind: "primary" })));
   }
 }
 
+const HELP = /^#\/help(?:[?]|$)/;
 window.addEventListener("hashchange", () => {
   if (app.leaveGuard) {
     const question = app.leaveGuard();
@@ -268,6 +287,8 @@ window.addEventListener("hashchange", () => {
       return;
     }
   }
+  /* the screen someone was on when they opened Help goes with their question */
+  if (HELP.test(location.hash) && !HELP.test(lastHash || "")) app.helpFrom = screenOf(lastHash || "#/") || "#/";
   lastHash = location.hash;
   render();
 });

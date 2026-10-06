@@ -1,14 +1,21 @@
-/* A PRETEND BARNWRIGHT CONTROL ROOM, for tools/check-control-room.mjs.
+/* A PRETEND BARNWRIGHT CONTROL ROOM, for tools/check-control-room.mjs,
+   tools/check-help.mjs and the local Dealer Center (--control-room).
 
-   It answers the three calls a business's Dealer Center makes, the way the
+   It answers the four calls a business's Dealer Center makes, the way the
    real one does (alanyoder-04261992/control-room, commit be6b56e,
-   netlify/functions/control-room.ts and _shared/support.ts):
+   netlify/functions/control-room.ts and _shared/support.ts; the help pass
+   from the help pass spec v1, Oct 6 2026):
      POST /api/license          the activation key and business must match;
                                 answers a signed seven-day lease, active or
                                 read-only, with how many lots may be open,
                                 and remembers the reported lot count
      POST /api/support-consent  the owner's "help from Barnwright" switch
      POST /api/support-verify   checks a support pass it issued
+     POST /api/help-pass        a help pass good for 10 minutes for the
+                                Sales Inbox ("question", "thread" or
+                                "problem"), for every business whose key
+                                matches, switched off or not; a question is
+                                written in the business's audit list
    plus what Alan does in the real control room: switch a business on or
    off, change its lot limit, and start a support check (issueSupport).
 
@@ -16,7 +23,7 @@
    room's signatures read the same way is proved separately, with leases it
    signed itself (test/control-room/leases.json). */
 
-import { generateKeyPairSync, sign, verify, createPublicKey } from "node:crypto";
+import { generateKeyPairSync, sign, verify, createPublicKey, randomBytes } from "node:crypto";
 import { canonicalLease, LEASE_DURATION_MS } from "../../server/office/license-core.js";
 
 export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "site-yoder-1", activationKey = "bwk_" + "x".repeat(40), dealerLimit = 2 } = {}) {
@@ -25,8 +32,10 @@ export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "si
   const business = {
     id: customerId, siteId, key: activationKey, status: "active", dealerLimit, addons: [],
     support: null, lastSeenAt: null, dealerCount: null, appVersion: null,
+    name: "Sample Storage Barns", contact: "Chris Walker", email: "chris@samplebarns.example", siteUrl: "https://samplebarns.barnwrightsoftware.com", audit: [],
   };
-  const room = { down: false, calls: [], business, publicKeyPem, origin: "https://control-room.test" };
+  /* helpPasses: every help pass asked for ({kind, subject}), for the checks */
+  const room = { down: false, calls: [], helpPasses: [], business, publicKeyPem, origin: "https://control-room.test" };
   const now = () => clock.t;
 
   const answer = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -58,6 +67,25 @@ export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "si
     return claims;
   }
 
+  /* A help pass: base64url(claims) + "." + the signature over
+     "barnwright-help-pass/v1." + that, so it never reads as a lease or a
+     support pass. */
+  function helpPass(c, kind, t) {
+    const claims = {
+      v: 1, purpose: "help-pass", kind, id: randomBytes(16).toString("base64url"),
+      customerId: c.id, siteId: c.siteId, issuedAt: t, expiresAt: t + 10 * 60_000,
+      account: {
+        name: c.name, contact: c.contact, email: c.email, siteUrl: c.siteUrl,
+        status: c.status === "active" ? "active" : "deactivated", billingStatus: "active", licensed: c.status === "active",
+        dealerLimit: c.dealerLimit, dealerCount: c.dealerCount ?? 0, appVersion: c.appVersion || "",
+        lastSeenAt: c.lastSeenAt || "", plan: "", supportUntil: "", lastCheck: null,
+      },
+    };
+    const body = Buffer.from(JSON.stringify(claims)).toString("base64url");
+    const sig = sign("sha256", Buffer.from("barnwright-help-pass/v1." + body), { key: privateKey, dsaEncoding: "ieee-p1363" }).toString("base64url");
+    return { ok: true, pass: `${body}.${sig}`, expiresAt: new Date(claims.expiresAt).toISOString() };
+  }
+
   room.fetch = async (url, init = {}) => {
     const path = new URL(url).pathname;
     room.calls.push(path);
@@ -83,6 +111,15 @@ export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "si
     if (path === "/api/support-verify") {
       try { return answer({ ok: true, claims: verifySupport(body.token, c, t) }); }
       catch { return answer({ error: "Support access is not valid." }, 403); }
+    }
+    if (path === "/api/help-pass") {
+      const kinds = ["question", "thread", "problem"];
+      if (!kinds.includes(body.kind) || (body.subject !== undefined && (body.kind !== "question" || typeof body.subject !== "string" || body.subject.length > 120))) {
+        return answer({ error: "That help pass request isn't valid." }, 400);
+      }
+      room.helpPasses.push({ kind: body.kind, subject: body.subject ?? null });
+      if (body.kind === "question") c.audit.push({ at: new Date(t).toISOString(), what: "Help question from the Dealer Center", detail: body.subject || "" });
+      return answer(helpPass(c, body.kind, t));
     }
     return answer({ error: "Endpoint not found." }, 404);
   };

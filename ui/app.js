@@ -123,8 +123,19 @@ import { paintBackdrop } from "../engine/scene.js";
 import { createPanels } from "./panels.js";
 import { createSheet } from "./sheet.js";
 import { createInteraction, ftIn } from "./interaction.js";
+import { watchProblems, reportProblem } from "./problems.js";
 
 export const PLUGINS = Object.freeze(["views", "blueprint", "quote", "share"]);
+
+/* A problem on this page that nothing caught goes to this site's own
+   server (ui/problems.js), which passes it on to Barnwright for a business
+   Barnwright set up. Started first, so a problem while starting counts too.
+   The page is the path only: the part after # is the customer's building. */
+watchProblems({
+  area: "designer",
+  endpoint: () => new URL("../api/office/problem", import.meta.url).href,
+  page: () => location.pathname,
+});
 
 const el = (id) => document.getElementById(id);
 
@@ -249,12 +260,16 @@ async function boot() {
   try { loaded = lotMatch ? await loadLot(lotMatch[1]) : await loadCompany(companyId); }
   catch (e) {
     console.error("The designer could not load its settings:", e.message);
+    reportProblem(e);   /* a closed lot's answer (it carries its status) is not passed on */
     if (lotMatch) lotClosedMessage(e.status === 404, "");
     else bootMessage("This designer could not start", "<p>" + esc(e.message) + "</p>");
     return null;
   }
   if (lotMatch && loaded.problems.length) {
     console.error(`The price list for the lot "${lotMatch[1]}" has ${loaded.problems.length} problem(s):\n - ` + loaded.problems.join("\n - "));
+    /* how many only: the problems themselves name the business's prices */
+    const n = loaded.problems.length;
+    reportProblem(new Error(`This lot's price list has ${n} problem${n > 1 ? "s" : ""}, so its 3D designer shows customers it isn't open`));
     const lot = loaded.lot || {}, brand = (loaded.company && loaded.company.brand) || {};
     lotClosedMessage(false, lot.phone || brand.phone || "");
     return null;
@@ -470,7 +485,10 @@ async function boot() {
     } catch (e) {
       const missing = e && /Failed to fetch dynamically imported module|Importing a module script failed|error loading dynamically imported module|Cannot find module/i.test(String(e.message || e));
       api.plugins[name] = false;
-      if (!missing) console.error(`The ${name} plugin (ui/${name}.js) failed to start:`, e);
+      if (!missing) {
+        console.error(`The ${name} plugin (ui/${name}.js) failed to start:`, e);
+        reportProblem(e);
+      }
     }
   }
   api.ready = true;

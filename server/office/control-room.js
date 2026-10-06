@@ -19,6 +19,10 @@
      forwardSupportConsent() / verifySupportAccess()
                       "help from Barnwright": the owner's on/off sent to the
                       control room, and each support visit checked online
+     helpPass()       the Help screen (added here, not in the SDK): a pass
+                      good for 10 minutes that lets help.js ask Barnwright's
+                      Sales Inbox a question, read the answers or report a
+                      browser problem
 
    Never import this file into the browser (it uses node:crypto), and never
    into server/office/index.js (the in-browser demo runs that file). */
@@ -208,6 +212,36 @@ export class TenantLicenseClient {
       || claims.expiresAt > Date.parse(local.expiresAt)) throw new Error("Support scope or consent is invalid");
     return claims;
   }
+
+  /* Added in the Dealer Center (not in the SDK): the control room's POST
+     /api/help-pass, signed in like /api/license with the activation key.
+     kind: "question" (someone asks; subject is the question's first words,
+     at most 120 characters, and only for a question), "thread" (read the
+     business's questions and Barnwright's answers) or "problem" (a browser
+     error). The control room answers every business whose key and site
+     match, switched off or not -- a business whose changes stopped needs
+     help most. The pass is signed for Barnwright's Sales Inbox, which
+     checks it with the control room's public key; here it is only checked
+     for its shape and handed on (server/office/help.js). timeoutMs: how
+     long to wait this time (help.js gives what its request has left). A
+     refusal carries the control room's status (401: the key or site isn't
+     this business's). */
+  async helpPass(kind, subject, { timeoutMs } = {}) {
+    if (!["question", "thread", "problem"].includes(kind)) throw new Error("Invalid help pass kind");
+    if (subject !== undefined && (kind !== "question" || typeof subject !== "string" || subject.length > 120
+      || /[\u0000-\u001f\u007f]/.test(subject))) throw new Error("Invalid help pass subject");
+    const wait = Number.isInteger(timeoutMs) && timeoutMs > 0 ? timeoutMs : this.options.timeoutMs ?? 10_000;
+    const response = await this.request(`${this.origin}/api/help-pass`, {
+      method: "POST", redirect: "error", signal: AbortSignal.timeout(wait),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.options.activationKey}` },
+      body: JSON.stringify({ customerId: this.options.customerId, siteId: this.options.siteId, kind, ...(subject ? { subject } : {}) }),
+    });
+    if (!response.ok) throw Object.assign(new Error("Help pass unavailable"), { status: response.status });
+    const result = await response.json();
+    if (!result || result.ok !== true || typeof result.pass !== "string" || result.pass.length > 8_000
+      || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(result.pass)) throw new Error("Invalid help pass response");
+    return result.pass;
+  }
 }
 
 /* sdk/netlify-store.ts, with the blob store passed in (Netlify Blobs on the
@@ -232,7 +266,8 @@ export function createLeaseStore(customerId, siteId, blobs) {
 }
 
 /* A Dealer Center with some but not all of the control room settings:
-   nothing can be changed, and the support checks say it is not configured. */
+   nothing can be changed, the support checks say it is not configured,
+   and no help pass can be had (the Help screen says to email instead). */
 export function misconfiguredLicense() {
   const access = () => ({ ...evaluateVerifiedLease(null, Date.now(), "invalid_license"), checkedAt: null });
   const refuse = () => { throw new Error("The control room settings are incomplete"); };
@@ -245,5 +280,6 @@ export function misconfiguredLicense() {
     assertWritable: async () => { throw new LicenseAccessError("invalid_license"); },
     forwardSupportConsent: async () => refuse(),
     verifySupportAccess: async () => refuse(),
+    helpPass: async () => refuse(),
   };
 }

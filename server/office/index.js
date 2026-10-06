@@ -21,6 +21,11 @@
                     Left out, the Dealer Center is not connected and nothing
                     is limited (Alan's own business, this computer, the demo).
      appVersion     optional: what this copy reports to the control room
+     help           optional: Barnwright's Sales Inbox for the Help screen,
+                    {url, fetch?, timeoutMs?, budgetMs?, allowLocal?}
+                    (help.js; budgetMs: all of one request's calls). Used
+                    only with a license; left out, Help says to email
+                    Barnwright instead.
 
    The routes are listed in docs/OFFICE.md. */
 
@@ -34,6 +39,7 @@ import { createWebsite } from "./website.js";
 import { createEmail } from "./email.js";
 import { createAccount } from "./account.js";
 import { createTerms } from "./terms.js";
+import { createHelp } from "./help.js";
 
 export function createOffice(deps) {
   const now = deps.now || (() => new Date());
@@ -46,6 +52,10 @@ export function createOffice(deps) {
   const customers = createCustomers({ store, now, lots, priceList, log });
   const account = createAccount({ store, license: deps.license || null, lots, now, appVersion: deps.appVersion, log });
   const terms = createTerms({ store, account, now });
+  const help = createHelp({
+    store, license: deps.license || null, inbox: deps.help || null, account, lots, priceList,
+    emailOn: email.on, appVersion: deps.appVersion || "dealer-center", now, log,
+  });
   const businessName = async () => (await priceList.current())?.data.settings.brand?.name || "the business";
   const team = createTeam({
     store, now,
@@ -97,6 +107,9 @@ export function createOffice(deps) {
       account: who.person ? await account.status() : null,
       /* the Barnwright terms the owner agrees to: null when not connected */
       terms: who.person ? await terms.status() : null,
+      /* Help: connected to Barnwright, and whether questions can go (the
+         Help screen draws its Ask box from this at once) */
+      help: who.person ? { connected: help.connected, canAsk: help.canAsk } : null,
     });
   }
 
@@ -256,6 +269,27 @@ export function createOffice(deps) {
     return json({ help: await account.setHelp(who.person, await readBody(req)) });
   });
 
+  /* Help (help.js): everyone on the team can read the business's questions
+     (a dealer their own) and ask Barnwright -- also while changes are
+     stopped, so there is no account.mustWrite here. */
+  route("GET", /^\/api\/office\/help$/, async (req) => {
+    const who = await people.member(req);
+    return json(await help.thread(who));
+  });
+  route("POST", /^\/api\/office\/help$/, async (req) => {
+    const who = await people.member(req);
+    return json(await help.ask(who, await readBody(req)), 201);
+  });
+  /* One browser error from the Dealer Center or a 3D designer page: no
+     sign-in, same site only (handle() checks the Origin), and the answer is
+     always {ok: true}, so it never tells a stranger anything. */
+  route("POST", /^\/api\/office\/problem$/, async (req) => {
+    let data = null;
+    try { data = await readBody(req); } catch { data = null; }
+    try { await help.problem(req, data); } catch (error) { log("Help: a problem report failed:", error?.name || "Error"); }
+    return json({ ok: true });
+  });
+
   route("GET", /^\/api\/office\/customers$/, async (req) => {
     const who = await people.member(req);
     const lot = new URL(req.url).searchParams.get("lot") || undefined;
@@ -325,6 +359,6 @@ export function createOffice(deps) {
     /* for netlify/functions: the control room's support check, and the check-in every six hours */
     diagnostics: account.diagnostics,
     checkIn: account.checkIn,
-    parts: { store, people, lots, priceList, customers, team, website, account },
+    parts: { store, people, lots, priceList, customers, team, website, account, help },
   };
 }

@@ -12,7 +12,10 @@
    HOW. Leases signed by the control room's own code (test/control-room/
    leases.json) prove the copy reads them the same way. Then the real
    Dealer Center server runs against a pretend control room
-   (tools/lib/fake-control-room.mjs) with a clock this check moves. */
+   (tools/lib/fake-control-room.mjs) with a clock this check moves. Last,
+   the help pass the Help screen asks for (helpPass): what is sent, and
+   that only a well-formed answer is taken (what Help does with the pass
+   is tools/check-help.mjs). */
 
 import { readFileSync } from "node:fs";
 import { resolve as resolvePath, dirname } from "node:path";
@@ -299,9 +302,68 @@ ok("... and no Barnwright terms to agree to", m.terms === null && (await call("P
 d = await office.diagnostics(new Request("https://dealer.test/.netlify/functions/tenant-diagnostics", { method: "POST" }));
 ok("... and no support check address", d.status === 404);
 
+section("11. The help pass (the Help screen asks the control room for one)");
+{
+  /* every call the check-in code makes, with what it sent */
+  const sent = [];
+  const spyOn = (answer) => async (url, init = {}) => { sent.push({ url, init, body: JSON.parse(init.body || "{}") }); return answer(url, init); };
+  const clientWith = (fetchImpl, more = {}) => new TenantLicenseClient({
+    controlRoomUrl: room.origin, customerId: room.business.id, siteId: room.business.siteId,
+    activationKey: room.business.key, publicKeyPem: room.publicKeyPem,
+    store: createLeaseStore(room.business.id, room.business.siteId, new MemoryBlobs()), fetch: fetchImpl, now: () => clock.t, ...more,
+  });
+  const refused = (promise) => promise.then(() => false, () => true);
+  room.down = false;
+  room.business.status = "active";
+  const live = clientWith(spyOn(room.fetch));
+  const pass = await live.helpPass("question", "How do I add a 12x32 size?");
+  const q = sent.at(-1);
+  ok("a question's pass: POST /api/help-pass at the control room", q.url === `${room.origin}/api/help-pass` && q.init.method === "POST", q.url);
+  ok("... signed in with the activation key, as JSON", q.init.headers.Authorization === `Bearer ${room.business.key}` && q.init.headers["Content-Type"] === "application/json", JSON.stringify(q.init.headers));
+  ok("... never following a redirect, and given up after a while", q.init.redirect === "error" && q.init.signal instanceof AbortSignal);
+  ok("... sending exactly the business, the site, the kind and the question's first words",
+    JSON.stringify(q.body) === JSON.stringify({ customerId: room.business.id, siteId: room.business.siteId, kind: "question", subject: "How do I add a 12x32 size?" }), JSON.stringify(q.body));
+  ok("... and handing back the pass the control room signed", typeof pass === "string" && /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(pass)
+    && JSON.parse(Buffer.from(pass.split(".")[0], "base64url").toString()).purpose === "help-pass");
+  await live.helpPass("thread");
+  ok("reading the answers and reporting a problem send no subject at all", JSON.stringify(sent.at(-1).body) === JSON.stringify({ customerId: room.business.id, siteId: room.business.siteId, kind: "thread" }), JSON.stringify(sent.at(-1).body));
+  const before = sent.length;
+  ok("a kind the control room doesn't know is refused before anything is sent", await refused(live.helpPass("support")) && sent.length === before);
+  ok("so are first words for anything but a question, words over 120 characters, and words with control characters",
+    await refused(live.helpPass("thread", "Hi")) && await refused(live.helpPass("question", "x".repeat(121))) && await refused(live.helpPass("question", "line one\nline two")) && sent.length === before);
+  room.business.status = "deactivated";
+  ok("a business Barnwright switched off still gets a pass (it needs help most)", typeof (await live.helpPass("question", "Why is my account off?")) === "string");
+  room.business.status = "active";
+
+  const answering = (status, body) => clientWith(async () => new Response(typeof body === "string" ? body : JSON.stringify(body), { status, headers: { "content-type": "application/json" } }));
+  const good = "eyJ2IjoxfQ.c2lnbmF0dXJl";
+  ok("the strict answer check takes {ok: true, pass} as it is", (await answering(200, { ok: true, pass: good, expiresAt: "2026-10-06T14:10:00.000Z" }).helpPass("thread")) === good);
+  const bad = [
+    ["a refusal (401)", 401, { error: "The activation key is not valid for this business." }],
+    ["a failure (500)", 500, { ok: true, pass: good }],
+    ["ok that is not exactly true", 200, { ok: "true", pass: good }],
+    ["no ok at all", 200, { pass: good }],
+    ["no pass", 200, { ok: true }],
+    ["a pass that is not text", 200, { ok: true, pass: 12345 }],
+    ["a pass without its signature", 200, { ok: true, pass: "eyJ2IjoxfQ" }],
+    ["a pass with a space in it", 200, { ok: true, pass: "eyJ2Ijox fQ.c2ln" }],
+    ["a pass of three parts", 200, { ok: true, pass: "a.b.c" }],
+    ["a pass over 8,000 characters", 200, { ok: true, pass: "a".repeat(7999) + ".bb" }],
+    ["an answer that is not JSON", 200, "<html>Sign in</html>"],
+    ["an empty answer", 200, "null"],
+  ];
+  for (const [what, status, body] of bad) ok(`... and refuses ${what}`, await refused(answering(status, body).helpPass("thread")));
+  ok("... and a control room that can't be reached", await refused(clientWith(async () => { throw new TypeError("fetch failed"); }).helpPass("problem")));
+  const slow = clientWith(async (_url, init) => new Promise((_done, fail) => init.signal.addEventListener("abort", () => fail(init.signal.reason))), { timeoutMs: 50 });
+  const awake = setTimeout(() => {}, 5000);   /* Node's timeout signal alone doesn't keep a check running */
+  ok("... and one that doesn't answer in time", await refused(slow.helpPass("thread")));
+  clearTimeout(awake);
+  ok("with some control room settings missing, there is no help pass", await refused(misconfiguredLicense().helpPass("question", "Hi")));
+}
+
 console.log("");
 if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} control room checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): leases signed by the control room's own code read the same way; a Dealer Center never switched on, switched off, or out of touch for 7 days stops changes and closes its 3D designer links with the lot's number while reading and downloading still work; open lots never pass the plan's number, even when opened at the same moment; taking a person off always works; the owner agrees to the Barnwright terms before the business is made, again when they change, and every agreement is kept; help from Barnwright needs the owner's switch, ends when turned off or when time is up, and answers only how the Dealer Center runs, in the shape the control room accepts.`);
+console.log(`PROVED (${passed} checks): leases signed by the control room's own code read the same way; a Dealer Center never switched on, switched off, or out of touch for 7 days stops changes and closes its 3D designer links with the lot's number while reading and downloading still work; open lots never pass the plan's number, even when opened at the same moment; taking a person off always works; the owner agrees to the Barnwright terms before the business is made, again when they change, and every agreement is kept; help from Barnwright needs the owner's switch, ends when turned off or when time is up, and answers only how the Dealer Center runs, in the shape the control room accepts; a help pass is asked for with the activation key in exactly the shape the control room expects, switched off or not, and only a well-formed pass is ever taken.`);

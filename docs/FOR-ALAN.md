@@ -281,6 +281,21 @@ Your own business isn't connected to a control room, so none of this ever
 limits it. On your own computer, `npm run office -- --control-room` shows
 what a connected company sees.
 
+### Help inside the Dealer Center
+
+Every screen has a **Help** button (and Help is in the menu). It opens 14
+short answers to what people ask most, with a search box, and **Ask
+Barnwright**: a box and **Send**, with no phone number anywhere. The
+question lands in your Sales Inbox (inbox.barnwrightsoftware.com) with the
+page they were on and a few technical details, never their customers or
+prices. Claude drafts the reply, you approve it, and they get it by email
+and under **Your questions** on their Help screen. Their owner and managers
+see every question from the company; a dealer sees their own. It works
+even while their account is switched off. When something on their pages
+breaks, the error goes to your Sales Inbox by itself, each kind once a day
+and at most 10 a day. Your own business and the demo show the answers and
+say to email support@barnwrightsoftware.com instead.
+
 ### Older company links (without the Dealer Center)
 
 Existing static company links can still send quote requests wherever the
@@ -494,6 +509,11 @@ proved; the full list is in [the README](../README.md).
 * The control room's own screens and messages still say "HQ" (for example
   "enable support in HQ Setup"). For a Dealer Center company that switch is
   **Help from Barnwright** in their Settings.
+* **Claude's drafts in your Sales Inbox** start when you add the Claude key
+  (step 4 in the Sales Inbox's own instructions: a key named `Sales Inbox
+  Help` from platform.claude.com, put in Netlify as `ANTHROPIC_API_KEY`).
+  Until then a company's questions and problem reports still arrive in the
+  Help tab, and you write the answer yourself.
 * Some internal part descriptions still assume trusses and their framing
   description talks about gusset plates and a bottom chord. The rafters themselves are
   drawn and checked; only the words have not caught up.

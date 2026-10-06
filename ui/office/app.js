@@ -19,6 +19,9 @@ export const app = {
   priceListAt: 0,
   leaveGuard: null,
   demo: false,
+  /* the screen someone was on when they opened Help ("#/price-list"; main.js
+     keeps it, views/help.js sends it with a question) */
+  helpFrom: null,
 
   get person() { return this.me?.person || null; },
   get business() { return this.me?.business || null; },

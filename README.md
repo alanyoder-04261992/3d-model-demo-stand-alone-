@@ -30,7 +30,8 @@ company that only wants the designer.
 * **The Dealer Center** (`/dealer`) for each shed business: the owner sets
   the price list (sizes, styles, prices, options, colors) once and every lot
   uses it; each lot gets its own 3D designer link; dealers work their lots'
-  customers (stages, follow-ups, notes, quotes) and orders. Netlify
+  customers (stages, follow-ups, notes, quotes) and orders; a **Help**
+  button on every screen has short answers and asks Barnwright. Netlify
   Functions, Identity and Blobs. Try it with sample data: `npm run office`.
   See [the Dealer Center guide](docs/OFFICE.md).
 * **Client build.** `npm run build:client` packages the customer designer
@@ -237,7 +238,9 @@ ui/                 the screens: app.js (the page and its API, window.shedUI),
                     views.js (Outside / Inside), blueprint.js
                     (the floor plan), quote.js (quote requests), share.js
                     (share links), embed-mode.js, setup.js, parts-gallery.js,
-                    esc.js (every outside word is escaped here)
+                    esc.js (every outside word is escaped here), problems.js
+                    (an error nothing caught goes to the site's own server);
+                    ui/office/ is the Dealer Center
 fonts/              the two typefaces, served from this site (with their licence)
 tools/              the checks and the setup tools (below)
 test/golden/        Barnwright's own drawing of 148 buildings, recorded
@@ -308,8 +311,9 @@ Chromium's software graphics, each on its own port.
 | `check-customer-views.mjs` | no | Outside/Inside behavior, accessible selection, old flags unable to expose construction views, and no geometry access or rebuilds while switching |
 | `check-office.mjs` | no | the Dealer Center's server: first owner, invites, who sees which lot, the price list reaching every lot at once, server pricing, quote requests sent twice or at once, customers, orders, and safe answers |
 | `check-style-variants.mjs` | no | a business's own style built like a library style draws, comes with and prices exactly like it; named options; every mistake in plain words |
-| `check-dealer-center.mjs` | yes | the Dealer Center in Chromium: every screen for the owner, a manager and a dealer on a desktop and a phone, a price change reaching every lot's designer, a website quote landing on its lot, designing for a customer, and the "try it" demo |
-| `check-control-room.mjs` | no | a business's Dealer Center and Barnwright's control room: leases signed by the control room read the same way; changes stop and 3D designer links close when the account is off or out of touch for 7 days; open lots never pass the plan's number; help from Barnwright only while the owner allows it |
+| `check-dealer-center.mjs` | yes | the Dealer Center in Chromium: every screen for the owner, a manager and a dealer on a desktop and a phone, a price change reaching every lot's designer, a website quote landing on its lot, designing for a customer, the "try it" demo, and Help (asking Barnwright and seeing the answer, problem reports from a screen and a designer) |
+| `check-control-room.mjs` | no | a business's Dealer Center and Barnwright's control room: leases signed by the control room read the same way; changes stop and 3D designer links close when the account is off or out of touch for 7 days; open lots never pass the plan's number; help from Barnwright only while the owner allows it; the help pass is asked for in the control room's shape and only a well-formed one is taken |
+| `check-help.mjs` | no | Help, against a pretend control room and Sales Inbox: a question goes from the person signed in with only the promised facts (no customers, prices, orders or keys), also while changes are stopped; each person sees the right questions, a dealer's own however many the team asked; plain words for every failure (a refused key or question gives the email), within one time limit; the same words sent again make one question; problem reports once per kind a day and at most 10, cleaned on the server too; the browser's reporter, failures it caught itself included; each Dealer Center's short answers fit it and name only real buttons |
 | `check-dealer-demo.mjs` | no | the "try it" demo runs the real Dealer Center on made-up data with nothing sent anywhere, and only Alan's learning preview and his demo site (no lesson pages there) offer it (a client build has no demo file and no empty-boxes sign-in) |
 | `check-wording.mjs` | no | every sentence on the Dealer Center's screens, its server answers and emails uses the plain words in docs/OFFICE.md, none of the old ones |
 | `check-managed-client.mjs` | no | lot links and website code, shared-design lot preservation, safe retries, error handling and customer build exclusions |

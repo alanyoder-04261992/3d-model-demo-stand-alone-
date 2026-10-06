@@ -8,7 +8,9 @@
    * Nothing is sent anywhere: every /api/office/... call is answered by the
      copy of the server running in this page. The data lives in this tab
      (sessionStorage) so signing in as somebody else keeps it; closing the
-     tab, or "Start over", throws it away.
+     tab, or "Start over", throws it away. Like a business that is not
+     connected to Barnwright, Help shows its answers and the email to write
+     to instead of sending a question.
    * There are no passwords: pick who you are, like the local Dealer Center.
    * A lot's 3D designer link (/d/<lot>/) does not exist in the demo, so
      "See it in 3D" and "Design a building" use the example designer
@@ -77,6 +79,10 @@ export async function startDemo() {
     signIn: "local",
     checkOrigin: false,   /* every call is made inside this page */
     log: () => {},
+    /* not connected to Barnwright: Help shows its answers and the email to
+       write to, and browser problems go nowhere */
+    license: null,
+    help: null,
   });
   if (!had) {
     await seedSample({
