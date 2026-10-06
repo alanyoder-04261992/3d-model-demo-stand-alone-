@@ -26,7 +26,16 @@
      CONTROL_ROOM_SITE_ID         optional: this site's Netlify site ID
                                   (Netlify's own is used when left out)
    None of them set: not connected, nothing is limited (Alan's own site).
-   Some but not all: nothing can be changed until they are all there. */
+   Some but not all: nothing can be changed until they are all there.
+
+   The Help screen's questions go to Barnwright's Sales Inbox (help.js),
+   only for a business connected to the control room:
+     BARNWRIGHT_HELP_URL          optional: the Sales Inbox's address,
+                                  https://inbox.barnwrightsoftware.com when
+                                  left out. https only (plain http only for
+                                  localhost while running netlify dev on a
+                                  computer). Anything else: Help says to
+                                  email support@barnwrightsoftware.com. */
 
 import { getStore, getDeployStore } from "@netlify/blobs";
 import manufacturer from "../../library/manufacturers/standard.json" with { type: "json" };
@@ -37,8 +46,23 @@ import { createOffice } from "./index.js";
 import { resendSender } from "./email.js";
 import { netlifyIdentity } from "./identity.js";
 import { TenantLicenseClient, createLeaseStore, misconfiguredLicense } from "./control-room.js";
+import { HELP_INBOX, inboxOrigin } from "./help.js";
 
 const env = (name) => (globalThis.Netlify?.env.get(name) ?? process.env[name] ?? "").trim();
+
+/* Barnwright's Sales Inbox for the Help screen, or null when
+   BARNWRIGHT_HELP_URL is set wrong (written in the function log). */
+function helpInbox(context) {
+  const url = env("BARNWRIGHT_HELP_URL") || HELP_INBOX;
+  const allowLocal = context.deploy?.context === "dev" || env("NETLIFY_DEV") === "true";
+  try {
+    inboxOrigin(url, { allowLocal });
+  } catch (error) {
+    console.error(`${error.message}. Help questions can't reach Barnwright until it is fixed.`);
+    return null;
+  }
+  return { url, allowLocal, timeoutMs: 6000 };
+}
 
 /* The control room check-in, or null when this site is not connected. */
 function controlRoom(context) {
@@ -79,6 +103,7 @@ export function officeFor(context) {
     siteUrl: (context.site?.url || env("URL") || "").replace(/\/+$/, ""),
     signIn: "netlify",
     license: controlRoom(context),
+    help: helpInbox(context),
     appVersion: `dealer-center ${String(context.deploy?.id || "dev").slice(0, 24)}`,
   });
   officeContext = key;
