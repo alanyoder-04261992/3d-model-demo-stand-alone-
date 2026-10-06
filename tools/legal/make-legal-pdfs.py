@@ -463,6 +463,10 @@ def signup_pdf(path):
 # ================================================================ 3. SETUP STEPS
 # ================================================================ 3. NEW CUSTOMER SETUP (for Alan)
 CONTROL_ROOM = "barnwright-control-room.netlify.app"
+# Alan, Oct 6 2026: "add inbox.barnwrightsoftware.com and 3dsetup.barnwrightsoftware.com
+# to the links and pdf files or any file on how to add clients".
+SALES_INBOX = "inbox." + DOMAIN
+SETUP_3D = "3dsetup." + DOMAIN
 REPO = "alanyoder-04261992/3d-model-demo-stand-alone-"
 
 PARTS = [
@@ -571,6 +575,9 @@ def steps_pdf(path):
     s.append(Paragraph("Everything you do for a shed company that signs up for the Barnwright 3D designer, in order: the paperwork, the control room, "
                        "their Dealer Center site at their own ." + DOMAIN + " address, their owner's setup, the go-live, and adding a lot later. "
                        "The words in <b>bold</b> are the buttons and boxes you will see.", lead))
+    s.append(Paragraph("<b>Addresses you use:</b> your <b>Sales Inbox</b> at <b>" + SALES_INBOX + "</b> (your private inbox for "
+                       "Barnwright sales messages), and <b>3D Setup</b> at <b>" + SETUP_3D + "</b> (where you set up a new "
+                       "client's 3D designer).", body))
     n = 0
     for part, note, steps in PARTS:
         s.append(Spacer(1, 6))

@@ -18,6 +18,9 @@ business is at `<their name>.barnwrightsoftware.com`. To hand to a shed
 company: the one-page flyer (`docs/legal/Barnwright-Flyer.pdf`) and price
 sheet (`docs/legal/Barnwright-Price-Sheet.pdf`), both pointing at
 www.barnwrightsoftware.com/3d-configurator and sales@barnwrightsoftware.com.
+Your own Sales Inbox, for Barnwright sales messages, is at
+inbox.barnwrightsoftware.com, and a new client's 3D designer is set up at
+3D Setup, 3dsetup.barnwrightsoftware.com.
 
 **Signing up a company that said yes**, step by step (the Sign-Up Form,
 terms and Setup Questions, the control room, their Dealer Center site, their

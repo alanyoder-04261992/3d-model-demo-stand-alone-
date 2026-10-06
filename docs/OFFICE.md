@@ -388,6 +388,12 @@ the monthly fee. Every business lives at
 **`<their name>.barnwrightsoftware.com`** (once, before the first customer,
 `barnwrightsoftware.com` goes on Netlify DNS so each new address is one step).
 
+Two addresses Alan uses while adding a client (Alan, October 6, 2026): his
+**Sales Inbox** at **`inbox.barnwrightsoftware.com`**, his private inbox for
+Barnwright sales messages, and **3D Setup** at
+**`3dsetup.barnwrightsoftware.com`**, where a new client's 3D designer is set
+up. Both are on the control room's Links page too.
+
 1. **Paperwork.** Alan fills in Sections B and C of the Sign-Up Form
    (`docs/legal/Barnwright-Sign-Up-Form.pdf`, fillable, with Barnwright
    Software, sales@barnwrightsoftware.com and the $250 monthly fee typed in:

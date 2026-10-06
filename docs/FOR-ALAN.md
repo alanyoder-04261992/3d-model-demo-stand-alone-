@@ -219,7 +219,10 @@ site. One shed business runs everything from it:
   $250 one time, and every business gets its own
   `name.barnwrightsoftware.com` address. A one-page flyer and price sheet to
   hand to shed companies are with them. All the papers are also on the
-  **Papers** page of your control room, always the latest version.
+  **Papers** page of your control room, always the latest version. Your
+  Sales Inbox (your private inbox for Barnwright sales messages) is at
+  inbox.barnwrightsoftware.com, and you set up a new client's 3D designer at
+  3D Setup, 3dsetup.barnwrightsoftware.com.
 * **Designing for a customer.** "Design a building for them" opens the lot's
   3D designer inside the Dealer Center; "Save quote" puts the building and
   its price on the customer's file. "Copy link to this building" copies a

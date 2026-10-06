@@ -25,7 +25,10 @@ subscription, started with Start monthly subscription at go-live). Each lot
 after the first is $250 one time, charged with the control room's Collect lot
 fee, at sign-up or later, which raises the dealership cap when Stripe confirms
 the payment. The site's
-address is `<their name>.barnwrightsoftware.com`.
+address is `<their name>.barnwrightsoftware.com`. Alan's Sales Inbox is at
+`inbox.barnwrightsoftware.com` (his private inbox for Barnwright sales
+messages), and a new client's 3D designer is set up at 3D Setup,
+`3dsetup.barnwrightsoftware.com`.
 
 **The company's answers.** A new company fills in
 `docs/legal/Barnwright-Setup-Questions.pdf` (made by
