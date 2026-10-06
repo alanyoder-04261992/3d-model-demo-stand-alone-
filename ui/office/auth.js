@@ -8,9 +8,10 @@
    On the local Dealer Center (npm run office) there are no passwords: pick
    who you are from the sample team.
 
-   On Alan's learning preview the sign-in also opens the "try it" demo:
-   leave both boxes empty and tap Sign in. A client build leaves that out
-   (the build sets __DEALER_DEMO__ to false, see tools/build-site.mjs). */
+   On Alan's learning preview and his demo site the sign-in also opens the
+   "try it" demo: leave both boxes empty and tap Sign in. A client build
+   leaves that out (the build sets __DEALER_DEMO__ to false, see
+   tools/build-site.mjs). */
 
 import { h, clear, button, field, form, icon } from "./dom.js";
 import { identity } from "./api.js";

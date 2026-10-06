@@ -14,51 +14,51 @@ import { defaults, fromState } from "../../model/design.js";
 import { chooseType, chooseSize, setElec, setRamp, toggleOpt, setColour } from "../../ui/state.js";
 
 export const SAMPLE_PEOPLE = [
-  { id: "sample-alan", email: "alan@yoderbarns.example", name: "Alan Yoder", role: "owner", lots: [] },
-  { id: "sample-sarah", email: "sarah@yoderbarns.example", name: "Sarah Miller", role: "manager", lots: [] },
-  { id: "sample-mike", email: "mike@yoderbarns.example", name: "Mike Hostetler", role: "dealer", lots: ["port-charlotte"] },
-  { id: "sample-dana", email: "dana@yoderbarns.example", name: "Dana Ruiz", role: "dealer", lots: ["punta-gorda"] },
-  { id: "sample-lee", email: "lee@yoderbarns.example", name: "Lee Carter", role: "dealer", lots: ["arcadia", "punta-gorda"] },
+  { id: "sample-chris", email: "chris@samplebarns.example", name: "Chris Walker", role: "owner", lots: [] },
+  { id: "sample-sarah", email: "sarah@samplebarns.example", name: "Sarah Miller", role: "manager", lots: [] },
+  { id: "sample-mike", email: "mike@samplebarns.example", name: "Mike Harper", role: "dealer", lots: ["riverside"] },
+  { id: "sample-dana", email: "dana@samplebarns.example", name: "Dana Ruiz", role: "dealer", lots: ["springfield"] },
+  { id: "sample-lee", email: "lee@samplebarns.example", name: "Lee Carter", role: "dealer", lots: ["brookside", "springfield"] },
 ];
 
 const LOTS = [
-  { name: "Port Charlotte", address: "4250 Tamiami Trail", city: "Port Charlotte", state: "FL", zip: "33952", phone: "(941) 555-0140", email: "portcharlotte@yoderbarns.example", hours: "Mon–Fri 9–5\nSat 9–2", embedOrigins: ["https://yoderbarns.example"] },
-  { name: "Punta Gorda", address: "1180 Marion Ave", city: "Punta Gorda", state: "FL", zip: "33950", phone: "(941) 555-0172", email: "puntagorda@yoderbarns.example", hours: "Mon–Sat 9–5" },
-  { name: "Arcadia", address: "905 E Oak St", city: "Arcadia", state: "FL", zip: "34266", phone: "(863) 555-0119", email: "arcadia@yoderbarns.example", hours: "Tue–Sat 9–4" },
+  { name: "Riverside", address: "4250 River Rd", city: "Riverside", state: "FL", zip: "34950", phone: "(555) 010-0140", email: "riverside@samplebarns.example", hours: "Mon–Fri 9–5\nSat 9–2", embedOrigins: ["https://samplebarns.example"] },
+  { name: "Springfield", address: "1180 Main St", city: "Springfield", state: "FL", zip: "34952", phone: "(555) 010-0172", email: "springfield@samplebarns.example", hours: "Mon–Sat 9–5" },
+  { name: "Brookside", address: "905 Oak St", city: "Brookside", state: "FL", zip: "34953", phone: "(555) 010-0119", email: "brookside@samplebarns.example", hours: "Tue–Sat 9–4" },
 ];
 
 /* name, lot, how they came, building [style, size, extras], what happened */
 const CUSTOMERS = [
-  ["John Smith", "port-charlotte", "website", ["LB", "12x24", { elec: 1, ramp: "r4" }], "sold:sent", 41],
-  ["Maria Gonzalez", "port-charlotte", "website", ["UT", "10x16", {}], "quoted:followToday", 9],
-  ["Bob Whitaker", "port-charlotte", "walk-in", ["G", "12x24", { elec: 2 }], "sold:ready", 33],
-  ["Linda Park", "port-charlotte", "website", ["C", "12x24", { opts: ["dbl"] }], "new", 0],
-  ["Ray Johnson", "port-charlotte", "phone", ["SU", "10x16", {}], "contacted:followLate", 12],
-  ["Angela Brooks", "port-charlotte", "website", ["LBC", "12x20", {}], "lost:Bought from another dealer", 28],
-  ["Tom Becker", "port-charlotte", "website", ["LB", "10x16", {}], "delivered", 38],
-  ["Kelly Nguyen", "port-charlotte", "website", ["CS", "10x16", {}], "new", 1],
-  ["Dave Martin", "port-charlotte", "walk-in", ["MU", "10x20", {}], "quoted:followSoon", 6],
-  ["Susan Reed", "port-charlotte", "website", ["SLB", "12x24", { elec: 1 }], "sold:sold", 3],
-  ["Carlos Diaz", "punta-gorda", "website", ["LB", "12x32", { elec: 2, ramp: "r6" }], "sold:delivered", 36],
-  ["Patty Hall", "punta-gorda", "website", ["DS", "10x16", {}], "quoted:followToday", 7],
-  ["Greg Foster", "punta-gorda", "walk-in", ["UT", "8x12", {}], "contacted", 4],
-  ["Nancy Cole", "punta-gorda", "website", ["SC", "12x24", {}], "new", 0],
-  ["Ed Turner", "punta-gorda", "phone", ["G", "14x28", { elec: 3 }], "quoted:followLate", 15],
-  ["Rita Shaw", "punta-gorda", "website", ["BU", "6x10", {}], "lost:Decided not to buy this year", 25],
-  ["Jim O'Neal", "punta-gorda", "website", ["LBG", "12x24", {}], "sold:sent", 19],
-  ["Heather Lane", "punta-gorda", "website", ["GU", "6x12", {}], "new", 2],
-  ["Frank Moore", "punta-gorda", "walk-in", ["SS", "10x16", {}], "quoted", 10],
-  ["Amy Ross", "arcadia", "website", ["LB", "10x20", {}], "quoted:followToday", 8],
-  ["Bill Carter", "arcadia", "website", ["MLB", "12x24", {}], "sold:sold", 2],
-  ["Joyce Kim", "arcadia", "phone", ["UT", "12x20", {}], "new", 0],
-  ["Hank Wells", "arcadia", "walk-in", ["DK", "8x16", {}], "contacted:followSoon", 5],
-  ["Donna Price", "arcadia", "website", ["SLC", "12x24", { opts: ["dbl", "mbF"] }], "quoted:followLate", 18],
-  ["Wayne Ford", "arcadia", "website", ["LB", "14x32", { elec: 1, ramp: "r6" }], "delivered", 44],
-  ["Megan Hart", "arcadia", "website", ["SU", "10x14", {}], "new", 1],
-  ["Phil Grant", "port-charlotte", "website", ["MG", "12x24", {}], "contacted", 3],
-  ["Tina Lopez", "punta-gorda", "website", ["C", "10x16", {}], "quoted", 13],
-  ["Steve Adams", "arcadia", "walk-in", ["LBC", "12x24", {}], "lost:Price — went with a smaller building elsewhere", 30],
-  ["Rosa Vega", "port-charlotte", "website", ["DSC", "12x24", {}], "new", 0],
+  ["John Smith", "riverside", "website", ["LB", "12x24", { elec: 1, ramp: "r4" }], "sold:sent", 41],
+  ["Maria Gonzalez", "riverside", "website", ["UT", "10x16", {}], "quoted:followToday", 9],
+  ["Bob Whitaker", "riverside", "walk-in", ["G", "12x24", { elec: 2 }], "sold:ready", 33],
+  ["Linda Park", "riverside", "website", ["C", "12x24", { opts: ["dbl"] }], "new", 0],
+  ["Ray Johnson", "riverside", "phone", ["SU", "10x16", {}], "contacted:followLate", 12],
+  ["Angela Brooks", "riverside", "website", ["LBC", "12x20", {}], "lost:Bought from another dealer", 28],
+  ["Tom Becker", "riverside", "website", ["LB", "10x16", {}], "delivered", 38],
+  ["Kelly Nguyen", "riverside", "website", ["CS", "10x16", {}], "new", 1],
+  ["Dave Martin", "riverside", "walk-in", ["MU", "10x20", {}], "quoted:followSoon", 6],
+  ["Susan Reed", "riverside", "website", ["SLB", "12x24", { elec: 1 }], "sold:sold", 3],
+  ["Carlos Diaz", "springfield", "website", ["LB", "12x32", { elec: 2, ramp: "r6" }], "sold:delivered", 36],
+  ["Patty Hall", "springfield", "website", ["DS", "10x16", {}], "quoted:followToday", 7],
+  ["Greg Foster", "springfield", "walk-in", ["UT", "8x12", {}], "contacted", 4],
+  ["Nancy Cole", "springfield", "website", ["SC", "12x24", {}], "new", 0],
+  ["Ed Turner", "springfield", "phone", ["G", "14x28", { elec: 3 }], "quoted:followLate", 15],
+  ["Rita Shaw", "springfield", "website", ["BU", "6x10", {}], "lost:Decided not to buy this year", 25],
+  ["Jim O'Neal", "springfield", "website", ["LBG", "12x24", {}], "sold:sent", 19],
+  ["Heather Lane", "springfield", "website", ["GU", "6x12", {}], "new", 2],
+  ["Frank Moore", "springfield", "walk-in", ["SS", "10x16", {}], "quoted", 10],
+  ["Amy Ross", "brookside", "website", ["LB", "10x20", {}], "quoted:followToday", 8],
+  ["Bill Carter", "brookside", "website", ["MLB", "12x24", {}], "sold:sold", 2],
+  ["Joyce Kim", "brookside", "phone", ["UT", "12x20", {}], "new", 0],
+  ["Hank Wells", "brookside", "walk-in", ["DK", "8x16", {}], "contacted:followSoon", 5],
+  ["Donna Price", "brookside", "website", ["SLC", "12x24", { opts: ["dbl", "mbF"] }], "quoted:followLate", 18],
+  ["Wayne Ford", "brookside", "website", ["LB", "14x32", { elec: 1, ramp: "r6" }], "delivered", 44],
+  ["Megan Hart", "brookside", "website", ["SU", "10x14", {}], "new", 1],
+  ["Phil Grant", "riverside", "website", ["MG", "12x24", {}], "contacted", 3],
+  ["Tina Lopez", "springfield", "website", ["C", "10x16", {}], "quoted", 13],
+  ["Steve Adams", "brookside", "walk-in", ["LBC", "12x24", {}], "lost:Price — went with a smaller building elsewhere", 30],
+  ["Rosa Vega", "riverside", "website", ["DSC", "12x24", {}], "new", 0],
 ];
 
 const NOTES = [
@@ -96,7 +96,7 @@ export async function seedSample({ office, act, clock, manufacturer, library, bu
   act(owner);
   await call("GET", "/api/office/me");
   /* agreeTerms: the owner ticks "I agree" when the business is connected to a (pretend) control room */
-  await call("POST", "/api/office/setup", { yourName: owner.name, businessName: "Yoder Storage Barns", phone: "(941) 555-0100", email: "office@yoderbarns.example", start: "full", agreeTerms: true });
+  await call("POST", "/api/office/setup", { yourName: owner.name, businessName: "Sample Storage Barns", phone: "(555) 010-0100", email: "office@samplebarns.example", start: "full", agreeTerms: true });
   if (businessId) {
     /* the id never changes through the API, so the sample sets it in the store */
     await office.parts.store.change("price-list", (r) => { r.settings.id = businessId; });
@@ -104,7 +104,7 @@ export async function seedSample({ office, act, clock, manufacturer, library, bu
   const pl = await call("GET", "/api/office/price-list");
   const settings = structuredClone(pl.settings);
   settings.status = "active";
-  settings.brand.website = "https://yoderbarns.example";
+  settings.brand.website = "https://samplebarns.example";
   settings.brand.tagline = "Portable storage buildings, delivered and set up";
   /* rent to own the way Alan's own site shows it: 60 months by the price,
      and his words under the monthly figure */
@@ -136,12 +136,12 @@ export async function seedSample({ office, act, clock, manufacturer, library, bu
     if (n % 3 === 0 && paints.length > 8) setColour(state, "body", paints[8][1]);
     const design = fromState(state, cat, { priced: true, at: day(0, clock.at) });
     const first = name.split(" ")[0].toLowerCase().replace(/[^a-z]/g, "");
-    const contact = { name, phone: `(941) 555-${String(1000 + n * 37).slice(-4)}`, email: n % 4 === 1 ? "" : `${first}${n}@example.com`, zip: "33948" };
+    const contact = { name, phone: `(555) 010-${String(1000 + n * 37).slice(-4)}`, email: n % 4 === 1 ? "" : `${first}${n}@example.com`, zip: "34950" };
     const dealer = dealerFor(lot);
     let id;
     if (source === "website") {
       act(null);
-      await call("POST", `/api/lots/${lot}/quote-requests`, { design, contact: { ...contact, note: n % 5 === 0 ? "Do you deliver to Englewood?" : "" }, idempotencyKey: `sample-request-key-${String(n).padStart(4, "0")}` });
+      await call("POST", `/api/lots/${lot}/quote-requests`, { design, contact: { ...contact, note: n % 5 === 0 ? "Do you deliver to Lakeview?" : "" }, idempotencyKey: `sample-request-key-${String(n).padStart(4, "0")}` });
       act(dealer);
       const rows = (await call("GET", `/api/office/customers?lot=${lot}`)).rows;
       id = rows.find((r) => r.name === name).id;

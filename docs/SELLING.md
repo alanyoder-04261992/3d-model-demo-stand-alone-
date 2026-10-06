@@ -12,7 +12,8 @@
 designer and its Dealer Center). It stands on its own and works alongside the
 software the company already uses. **No setup fee and $250 a month from
 go-live, with the first lot included**; each lot after the first is **$250
-one time** and adds nothing to the monthly fee. Each
+one time** and adds nothing to the monthly fee. Barnwright's money-back
+promise is for custom work only, so it does not cover the 3D designer. Each
 business is at `<their name>.barnwrightsoftware.com`. To hand to a shed
 company: the one-page flyer (`docs/legal/Barnwright-Flyer.pdf`) and price
 sheet (`docs/legal/Barnwright-Price-Sheet.pdf`), both pointing at
@@ -41,6 +42,10 @@ learning-preview site's Netlify ID and preserves its public lesson pages.
 Other sites remain customer-only. `INCLUDE_LEARNING_PREVIEW=true` explicitly
 enables lessons for a local preview; `false` disables them on any site.
 Never enable lessons for clients. The explicit client build always excludes them.
+Alan's demo site for shed companies (`barnwright-demo`, recognized by its
+Netlify ID; `DEALER_DEMO=true` does the same elsewhere) adds the Dealer
+Center's "try it" demo and no lessons ([OFFICE.md](OFFICE.md), "Try it
+without signing in").
 
 * **Alan hosts one copy of the designer** (the files are ready for Netlify:
   `netlify.toml`). Every company runs on that one copy, at its own address:
@@ -71,8 +76,9 @@ Never enable lessons for clients. The explicit client build always excludes them
   **white-label** customer gets `"show": false` and no credit at all.
 * **Self-hosting** is recorded as a licence plan (`"self"`) but there is no
   packaged way for a company to run its own copy yet. Treat it as "ask Alan".
-* **What to charge** — for the licence, for white-label, for setup, for a
-  renewal — is Alan's decision and is not written anywhere in this repo.
+* **What to charge**: $250 a month from go-live, no build fee, and $250 one
+  time for each lot after the first (Alan, October 6, 2026; see the top of
+  this file). A price for white-label or self-hosting is still Alan's call.
 
 ## What the company gets
 

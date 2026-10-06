@@ -1,7 +1,7 @@
 /* "TRY IT": THE DEALER CENTER WITH MADE-UP DATA, ENTIRELY IN THIS BROWSER.
 
    /dealer?demo runs the Dealer Center's real server code (server/office/)
-   inside the page, on a sample business (Yoder Storage Barns: three lots,
+   inside the page, on a sample business (Sample Storage Barns: three lots,
    five people, thirty customers), so anybody -- Alan, a shed company
    thinking of buying -- can click through everything without a login.
 

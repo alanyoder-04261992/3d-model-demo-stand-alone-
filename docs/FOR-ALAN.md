@@ -198,9 +198,12 @@ site. One shed business runs everything from it:
 Every price a customer sees is worked out again by the server from the price
 list, so nobody can change a price by tampering with the page.
 
-To try it with a made-up business (three lots, five people, thirty
-customers), open `/dealer` on your learning preview site, leave the email
-and password empty and tap **Sign in**. Nothing you do there is saved or
+To try it with a made-up business (Sample Storage Barns: three lots, five
+people, thirty customers), open `/dealer` on your demo site
+(demo.barnwrightsoftware.com; barnwright-demo.netlify.app works too) or on
+your learning preview site, leave the email and
+password empty and tap **Sign in**. The demo site has no lessons, so it is
+the one to show shed companies. Nothing you do there is saved or
 sent anywhere. Sites you sell to a shed company never have this: their
 sign-in always needs a real email and password. On your own computer,
 `npm run office` does the same with the sample business. How it is put on a real website is in [the Dealer Center

@@ -314,9 +314,9 @@ window.addEventListener("dealer:lots", () => {
 const DEMO_MODULE = __DEALER_DEMO__ ? "/ui/office/demo.js" : "";
 
 /* __DEALER_DEMO__ (true or false) is written in by whatever bundles this
-   file: tools/build-site.mjs says true only for Alan's learning preview, so a
-   client build leaves every bit of the demo out; the local Dealer Center
-   (tools/office-local.mjs) says true. */
+   file: tools/build-site.mjs says true only for Alan's learning preview and
+   his demo site (tools/site-profiles.mjs), so a client build leaves every bit
+   of the demo out; the local Dealer Center (tools/office-local.mjs) says true. */
 
 async function start() {
   clear(root, h("div", { class: "boot" }, loading("Opening the Dealer Center…")));
