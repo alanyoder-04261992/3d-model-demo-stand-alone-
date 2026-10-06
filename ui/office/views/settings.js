@@ -730,7 +730,7 @@ function helpCard() {
         log);
       return;
     }
-    const reason = field("What should Barnwright look at?", { required: true, maxLength: 300, wide: true, placeholder: "Quotes from the Arcadia lot aren't showing up" });
+    const reason = field("What should Barnwright look at?", { required: true, maxLength: 300, wide: true, placeholder: "Quotes from the Riverside lot aren't showing up" });
     const hours = field("For how long", { type: "select", value: "4", options: [["1", "1 hour"], ["4", "4 hours"], ["8", "8 hours"], ["24", "24 hours"]] });
     clear(box,
       h("div", { class: "help-state" }, icon("alert"), h("span", {}, "Off. Barnwright can't run any checks on your Dealer Center.")),

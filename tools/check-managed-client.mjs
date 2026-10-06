@@ -46,7 +46,7 @@ import { designLink, businessName, priceNote } from "../ui/share.js";
 import { defaults, fromState, decode } from "../model/design.js";
 import { OFFICE_POLICY } from "../server/office/pages.js";
 import { inlineScriptHashes } from "./build-headers.mjs";
-import { includeLearningPreview, learningSiteId } from "./site-profiles.mjs";
+import { includeLearningPreview, includeDealerDemo, learningSiteId } from "./site-profiles.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BASE = "https://designer.example/product/";
@@ -101,13 +101,20 @@ async function bootOnLot(fetchFn) {
 
 let catalogue;
 try {
-  await check("only the established learning site opts in, and client packaging always overrides it", async () => {
+  await check("only the established learning site opts in (the demo site gets the \"try it\" demo alone), and client packaging always overrides it", async () => {
     assert.equal(includeLearningPreview({ env: {} }), false);
     assert.equal(includeLearningPreview({ env: { SITE_ID: "new-customer-site" } }), false);
     assert.equal(includeLearningPreview({ env: { SITE_ID: learningSiteId } }), true);
     assert.equal(includeLearningPreview({ env: { INCLUDE_LEARNING_PREVIEW: "true" } }), true);
     assert.equal(includeLearningPreview({ env: { SITE_ID: learningSiteId, INCLUDE_LEARNING_PREVIEW: "false" } }), false);
     assert.equal(includeLearningPreview({ client: true, env: { SITE_ID: learningSiteId, INCLUDE_LEARNING_PREVIEW: "true" } }), false);
+    /* the Dealer Center's "try it" demo: the learning preview and Alan's demo site, never a client build */
+    assert.equal(includeDealerDemo({ env: {} }), false);
+    assert.equal(includeDealerDemo({ env: { SITE_ID: "new-customer-site" } }), false);
+    assert.equal(includeDealerDemo({ env: { SITE_ID: learningSiteId } }), true);
+    assert.equal(includeDealerDemo({ env: { DEALER_DEMO: "true" } }), true);
+    assert.equal(includeLearningPreview({ env: { DEALER_DEMO: "true" } }), false, "the demo site gets no lessons");
+    assert.equal(includeDealerDemo({ client: true, env: { SITE_ID: learningSiteId, DEALER_DEMO: "true" } }), false);
   });
   await check("a lot's link loads the price list from the Dealer Center with the lot's phone, email and websites, and sends quotes to quote-requests", async () => {
     const calls = lotFetch();

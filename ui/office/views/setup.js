@@ -91,10 +91,10 @@ function stepCard(n, title, intro, ...content) {
 
 function business() {
   const d = wiz.data;
-  const yourName = field("Your name", { required: true, value: d.yourName, maxLength: 80, autocomplete: "name", placeholder: "Alan Yoder" });
+  const yourName = field("Your name", { required: true, value: d.yourName, maxLength: 80, autocomplete: "name", placeholder: "Chris Walker" });
   const businessName = field("Business name", { required: true, value: d.businessName, maxLength: 80, autocomplete: "organization",
-    placeholder: "Yoder Storage Barns", hint: "Customers see it at the top of your 3D designer and on their quotes." });
-  const phone = field("Business phone", { type: "tel", value: d.phone, maxLength: 40, autocomplete: "tel", placeholder: "(941) 555-0100" });
+    placeholder: "Sample Storage Barns", hint: "Customers see it at the top of your 3D designer and on their quotes." });
+  const phone = field("Business phone", { type: "tel", value: d.phone, maxLength: 40, autocomplete: "tel", placeholder: "(555) 010-0100" });
   const email = field("Business email", { type: "email", value: d.email, maxLength: 200, autocomplete: "email" });
   /* the Barnwright terms: only for a business connected to Barnwright */
   const terms = wiz.ctx.app.me?.terms || null;
@@ -164,7 +164,7 @@ function linkNameFrom(name) {
 function firstLot() {
   const { app } = wiz.ctx;
   const d = wiz.data;
-  const name = field("Lot name", { required: true, maxLength: 80, autocomplete: "off", placeholder: "Port Charlotte",
+  const name = field("Lot name", { required: true, maxLength: 80, autocomplete: "off", placeholder: "Riverside",
     hint: "Most businesses name a lot after its town." });
   const street = field("Street address", { maxLength: 200, autocomplete: "street-address", wide: true });
   const city = field("City", { maxLength: 80, autocomplete: "address-level2" });

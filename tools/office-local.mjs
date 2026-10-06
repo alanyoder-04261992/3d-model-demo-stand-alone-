@@ -17,7 +17,7 @@
      * the data in .office-local/ (a folder, never published);
      * sign-in replaced by "pick who you are" (only on this computer --
        the live site always uses Netlify Identity);
-     * the lot designer links (/d/port-charlotte/) served with the same
+     * the lot designer links (/d/riverside/) served with the same
        security policy as the live site, so a quote sent from a lot's 3D
        designer shows up in the Dealer Center;
      * the Dealer Center's script bundled on the fly (esbuild), as the
@@ -111,7 +111,7 @@ const office = createOffice({
 });
 
 if (!EMPTY && !existsSync(join(DATA, encodeURIComponent("price-list") + ".json"))) {
-  process.stdout.write("Making the sample business (Yoder Storage Barns, 3 lots, 30 customers)... ");
+  process.stdout.write("Making the sample business (Sample Storage Barns, 3 lots, 30 customers)... ");
   const t = Date.now();
   await seedSample({
     office: room ? createOffice(deps) : office, clock, manufacturer, library,
@@ -255,7 +255,7 @@ const server = http.createServer(async (req, res) => {
 
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`The Dealer Center is running: http://127.0.0.1:${PORT}/dealer`);
-  console.log(`A lot's 3D designer:          http://127.0.0.1:${PORT}/d/port-charlotte/`);
+  console.log(`A lot's 3D designer:          http://127.0.0.1:${PORT}/d/riverside/`);
   console.log(EMPTY ? `No sample data. Sign in as ${OWNER_EMAIL} to set up the business.` : "Sign in as anyone on the sample team. Press Ctrl+C to stop.");
 });
 

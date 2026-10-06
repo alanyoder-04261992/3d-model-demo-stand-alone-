@@ -378,13 +378,13 @@ function lotDialog(ctx, lot) {
   const { app } = ctx;
   const isNew = !lot;
   const v = lot || {};
-  const name = field("Lot name", { required: true, value: v.name || "", placeholder: "Port Charlotte", maxLength: 80, autocomplete: "off",
-    hint: isNew ? "Customers see it on the designer, like “Yoder Storage Barns — Port Charlotte”." : null });
+  const name = field("Lot name", { required: true, value: v.name || "", placeholder: "Riverside", maxLength: 80, autocomplete: "off",
+    hint: isNew ? "Customers see it on the designer, like “Sample Storage Barns — Riverside”." : null });
   const street = field("Street address", { value: v.address || "", maxLength: 200, autocomplete: "street-address", wide: true });
   const city = field("City", { value: v.city || "", maxLength: 80, autocomplete: "address-level2" });
   const state = field("State", { value: v.state || "", maxLength: 40, autocomplete: "address-level1", placeholder: "FL" });
   const zip = field("ZIP", { value: v.zip || "", maxLength: 12, inputmode: "numeric", autocomplete: "postal-code" });
-  const phone = field("Phone", { type: "tel", value: v.phone || "", maxLength: 40, autocomplete: "tel", placeholder: "(941) 555-0140" });
+  const phone = field("Phone", { type: "tel", value: v.phone || "", maxLength: 40, autocomplete: "tel", placeholder: "(555) 010-0140" });
   const email = field("Email", { type: "email", value: v.email || "", maxLength: 200, autocomplete: "email",
     hint: "New quotes from this lot's designer go here when email is set up." });
   const hours = field("Hours", { type: "textarea", rows: 3, value: v.hours || "", maxLength: 300, wide: true, placeholder: "Mon–Fri 9–5\nSat 9–2" });

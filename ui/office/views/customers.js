@@ -253,7 +253,7 @@ export function addCustomer(ctx) {
   const lot = field("Lot", { type: "select", options: lots.map((l) => [l.slug, l.name]), required: true });
   lot.input.value = picked;
   const name = field("Name", { required: true, autocomplete: "off", placeholder: "First and last name", maxLength: 100 });
-  const tel = field("Phone", { type: "tel", autocomplete: "off", inputmode: "tel", placeholder: "(941) 555-0123" });
+  const tel = field("Phone", { type: "tel", autocomplete: "off", inputmode: "tel", placeholder: "(555) 010-0123" });
   const mail = field("Email", { type: "email", autocomplete: "off", placeholder: "name@example.com" });
   const street = field("Street address", { autocomplete: "off", wide: true });
   const city = field("City", { autocomplete: "off" });

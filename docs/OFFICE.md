@@ -346,13 +346,13 @@ npm run office -- --reset   # start the sample data again
 
 This local Dealer Center keeps its data in `.office-local/` (never published) and
 replaces Netlify sign-in with a list of the sample people. It serves the lot
-designer links too (`/d/port-charlotte/`), so a quote sent from the designer
+designer links too (`/d/riverside/`), so a quote sent from the designer
 appears in the Dealer Center.
 
 ## Try it without signing in
 
-On Alan's learning preview, leave the email and password empty and tap
-**Sign in** (or open `/dealer?demo`). The Dealer Center opens with the
+On Alan's learning preview and on his demo site, leave the email and
+password empty and tap **Sign in** (or open `/dealer?demo`). The Dealer Center opens with the
 sample business, running entirely in the visitor's browser: the server
 code runs inside the page on made-up data that stays in that browser tab,
 and nothing is sent to the site's real data. Pick who to be (the owner,
@@ -362,11 +362,15 @@ demo, so "See it in 3D" and "Design a building" use the example designer
 (`/c/demo/`). Good for showing the Dealer Center to a shed company before
 they buy.
 
-Only the learning preview offers it. Every other site, and every client
-build (`npm run build:client`), leaves the demo out completely: no demo
-file and no empty-boxes sign-in, so a real login always needs both an email
-and a password. The build decides this (`__DEALER_DEMO__` in
-`tools/build-site.mjs`); `tools/check-dealer-demo.mjs` proves it.
+Only the learning preview and the demo site offer it. The demo site is an
+ordinary build whose Netlify settings say `DEALER_DEMO=true`: the 3D
+designer and the Dealer Center with the demo, and no lesson pages. Every
+other site, and every client build (`npm run build:client`, even with
+`DEALER_DEMO=true`), leaves the demo out completely: no demo file and no
+empty-boxes sign-in, so a real login always needs both an email and a
+password. The build decides this (`__DEALER_DEMO__` in
+`tools/build-site.mjs`, from `tools/site-profiles.mjs`);
+`tools/check-dealer-demo.mjs` proves it.
 
 ## Setting up a new company
 
@@ -476,8 +480,8 @@ script, and email every customer the new terms 30 days ahead.
 | `netlify/functions/office-api.mts` | serves `/api/office/*` and `/api/lots/*` |
 | `netlify/functions/lot-designer.mts` | serves `/d/:slug/` with that lot's allowed websites |
 | `dealer.html`, `ui/office/*` | the Dealer Center's screens (`ui/office/views/`), its frame and its look |
-| `ui/office/demo.js` | the "try it" demo: the server code running in the page on made-up data (`/dealer?demo`, learning preview only) |
-| `server/office/sample.js` | the sample business (Yoder Storage Barns, 3 lots, 30 customers) for the local Dealer Center, the demo and the checks |
+| `ui/office/demo.js` | the "try it" demo: the server code running in the page on made-up data (`/dealer?demo`, learning preview and demo site only) |
+| `server/office/sample.js` | the sample business (Sample Storage Barns, 3 lots, 30 customers) for the local Dealer Center, the demo and the checks |
 | `server/office/identity.js` | asks Netlify Identity who is signed in; the autoconfirm guard |
 | `server/office/hash.js` | SHA-256 and random ids in plain JavaScript (the same on Netlify and in a browser) |
 | `tools/office-local.mjs` | the local Dealer Center with sample data (`npm run office`) |
