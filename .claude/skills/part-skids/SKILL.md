@@ -164,7 +164,7 @@ The settings below describe the normal model's legacy path.
 ## Where it came from in Barnwright
 
 `boisterous-lokum-a737e0/public/3ddesign.html` (pinned SHA-256
-`0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c`):
+`85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36`):
 * `skidXs(w)`, lines 3826-3851 -- ported as `skidXs(w, skids)`;
 * `buildShed` floor loop, lines 3868-3875: `var SKX=skidXs(W);` and, per floor
   segment, `var fend=fl+(fi===0||fi===NF-1?0.2:0); for(...) box(mSk,SKX[sx],0,fzc,0.5,0.5,fend);`.

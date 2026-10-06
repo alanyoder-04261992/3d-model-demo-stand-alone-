@@ -21,7 +21,7 @@
    Stages: the posts are "trim"; the shadow strips are "shading" (contact
    shadows are only drawn in the finished view).
 
-   Ported from Barnwright's 3ddesign.html (pinned SHA-256 0bdcf663...),
+   Ported from Barnwright's 3ddesign.html (pinned SHA-256 85c4b022...),
    buildShed lines 3906-3945 (cornerPost9, cornerAO9 and the corner loop),
    numbers byte for byte. Porting edits (docs/ARCHITECTURE.md, Porting rules):
    * state.type==="DK" -> the kennel trait (plan.t.kennel); T() -> plan.t,

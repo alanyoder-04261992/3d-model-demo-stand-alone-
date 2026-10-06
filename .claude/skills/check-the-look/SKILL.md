@@ -144,6 +144,16 @@ So re-recording is right only when:
   `tools/lib/barnwright-blocks.mjs`, re-run
   `node tools/extract-barnwright-catalogue.mjs`, re-record, port the change,
   and say why in the commit; or
+* **Barnwright's file changed, but not its drawing** (Oct 6 2026: only its
+  saving code, after line 5792, changed): prove the lines the labelling
+  reads are byte for byte the same (in Barnwright, read only:
+  `diff <(git show <old>:public/3ddesign.html | head -N) <(git show <new>:public/3ddesign.html | head -N)`),
+  move the pin (`BARNWRIGHT_SHA256` in `tools/lib/barnwright-blocks.mjs`,
+  `PINNED_SHA256` in `tools/check-golden-labels.mjs`), re-run
+  `node tools/extract-barnwright-catalogue.mjs` and
+  `node tools/capture-golden.mjs`, and prove with `git diff` that only the
+  recorded `sha256` lines in `test/golden/` changed. If anything else
+  changed, it is a look change: stop and tell Alan; or
 * **new cases** are added in `tools/lib/golden-cases.mjs`.
 
 Re-recording can never bless a change in THIS engine -- it would record

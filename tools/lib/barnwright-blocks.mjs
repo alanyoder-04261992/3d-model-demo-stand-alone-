@@ -28,9 +28,18 @@ import { readFileSync } from "node:fs";
 export const BARNWRIGHT_PUBLIC = "/home/user/boisterous-lokum-a737e0/public";
 export const BARNWRIGHT_FILE = BARNWRIGHT_PUBLIC + "/3ddesign.html";
 
-/* The one copy of Barnwright's 3ddesign.html this table was written against
-   (read Sep 26 2026). test/golden/barnwright-catalogue.json carries the same. */
-export const BARNWRIGHT_SHA256 = "0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c";
+/* The one copy of Barnwright's 3ddesign.html this table is true of.
+   Written against the copy of Sep 26 2026 (SHA-256 0bdcf663..., Barnwright
+   commit e2e5a0a). Re-pinned Oct 6 2026 to Barnwright's current copy (commit
+   fb7e07d), on purpose: in between, only Barnwright's saving code changed --
+   a new order's sales tax (taxRuleReady and withLotTax, added after
+   saveErrText, and used by saveDesign and saveQuoteThen) and Headquarters'
+   dealer list (hqDealerOptions). All of that is at line 5793 or later; lines
+   1-5792 are byte for byte the same in both copies, so buildShed (3854-4078),
+   mkTex (1717), the ANCHORS and every line number below still read true.
+   Recording again on the new copy changed nothing but the recorded SHA-256.
+   test/golden/barnwright-catalogue.json carries the same. */
+export const BARNWRIGHT_SHA256 = "85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36";
 
 /* Every part id a Barnwright triangle can belong to (the finished-building
    parts of the PIPELINE; the framing parts are new and Barnwright draws none). */

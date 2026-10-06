@@ -23,7 +23,7 @@
    The kennel's inner BACK face (bodyIn on the B wall) is drawn by the siding
    loop itself and belongs to the siding (test/golden/README.md).
 
-   Ported from Barnwright's 3ddesign.html (pinned SHA-256 0bdcf663...):
+   Ported from Barnwright's 3ddesign.html (pinned SHA-256 85c4b022...):
    meshWall 3707-3717, kennelFront 3718-3755, kennelSide 3756-3780,
    kennelExtras 3782-3816. Numbers byte for byte. Porting edits
    (docs/ARCHITECTURE.md, Porting rules):

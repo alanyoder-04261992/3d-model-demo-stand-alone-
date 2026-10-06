@@ -44,7 +44,7 @@ with `frames: true`.
 
 New -- Barnwright drew none. It fits under the skids Barnwright draws
 (`3ddesign.html` skidXs 3826-3851 and the floor loop 3868-3875, pinned
-SHA-256 `0bdcf663...`; `parts/skids.js`), which stand on the ground at y 0.
+SHA-256 `85c4b022...`; `parts/skids.js`), which stand on the ground at y 0.
 
 ## The owner's facts
 

@@ -62,7 +62,7 @@ New -- Barnwright drew none. It lies directly under the roof Barnwright draws
 (`profileRoof`, `public/3ddesign.html` 2562-2976: the slab's underside at the
 profile line, run out over the eaves; the rake overhang passed in from
 `buildShed` 4035-4039; a gambrel's upper sheets reaching RAKE_STEP further).
-Pinned SHA-256 `0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c`.
+Pinned SHA-256 `85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36`.
 
 ## The owner's facts
 

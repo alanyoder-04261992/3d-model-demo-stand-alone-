@@ -70,7 +70,7 @@ Watch-it-build. A piece glows with its item when that item is selected
 
 New -- Barnwright drew none in 3D (renderItem skips `int` items). The
 positions are its floor plan's (`bpDraw`, `3ddesign.html` 4457-4480: benches
-first, then shelves on top; pinned SHA-256 `0bdcf663...`), kept by `clampPos`
+first, then shelves on top; pinned SHA-256 `85c4b022...`), kept by `clampPos`
 (`model/layout.js`, Barnwright 2296-2306). The fixtures come from the
 electrical packages (`pkFixtures`, 4651-4674).
 

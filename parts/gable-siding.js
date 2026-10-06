@@ -16,7 +16,7 @@
 
    Stage "gable-end".
 
-   Ported from Barnwright's 3ddesign.html (pinned SHA-256 0bdcf663...),
+   Ported from Barnwright's 3ddesign.html (pinned SHA-256 85c4b022...),
    buildShed's gable-ends loop, lines 3962-3979, numbers byte for byte.
    Barnwright does the fill, the band and the vent of F, then the same for B,
    in one loop; each goes into its own material, so this part (F then B), the

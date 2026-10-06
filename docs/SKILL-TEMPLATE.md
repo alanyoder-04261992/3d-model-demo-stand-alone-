@@ -48,7 +48,7 @@ and what a company changing it does to the drawing. "None" is a valid answer.
 ## Where it came from in Barnwright
 
 The Barnwright source it was ported from: `public/3ddesign.html` line numbers
-(pinned file SHA-256 `0bdcf663...`, see `tools/lib/barnwright-blocks.mjs`),
+(pinned file SHA-256 `85c4b022...`, see `tools/lib/barnwright-blocks.mjs`),
 the function names, and every porting edit made (only the ones in
 `docs/ARCHITECTURE.md` "Porting rules" are allowed). A NEW part (framing,
 ramp) says "new -- Barnwright drew none" and names what it fits into.

@@ -2,7 +2,7 @@
  "about": "One SHA-256 per procedural texture Barnwright paints when its page opens, with its random numbers seeded. See test/golden/README.md.",
  "barnwright": {
   "file": "boisterous-lokum-a737e0/public/3ddesign.html",
-  "sha256": "0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c"
+  "sha256": "85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36"
  },
  "seeding": "Math.random is replaced before Barnwright's scripts run. When mkTex creates its first canvas (line 1717, the entry of one mkTex call) it is restarted as mulberry32(textureSeed(i)) from engine/seeded.js, i = 0 for the first texture made. mkTex's painter and height painter draw from that one stream.",
  "read": "The bytes hashed are the ImageData mkTex hands to gl.texImage2D: width x height x RGBA, rows top to bottom, after its brightness normalising and height-in-alpha packing.",

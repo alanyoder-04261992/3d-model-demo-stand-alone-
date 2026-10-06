@@ -225,7 +225,7 @@ with `frames: true`.
 
 New -- Barnwright drew none (its walls are one flat face of siding each).
 It fits behind the siding (`buildShed` walls loop, `3ddesign.html` 3878-3905,
-pinned SHA-256 `0bdcf663...`; `parts/siding.js` -- the framed spans are the
+pinned SHA-256 `85c4b022...`; `parts/siding.js` -- the framed spans are the
 siding's own, cut round the porch notch), round the openings `renderItem`
 draws (3122-3236), and under the roof profile (`roofProfile` 2159-2175).
 docs/ARCHITECTURE.md "Framing datums" 2: bottom plate on y0, top of the upper

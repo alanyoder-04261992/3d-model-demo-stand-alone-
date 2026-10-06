@@ -40,8 +40,12 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const PORT = 8330;
 const JOBS = 3;
 
-/* The one copy of Barnwright's file this check was written against. */
-export const PINNED_SHA256 = "0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c";
+/* The one copy of Barnwright's file this check is true of: written against
+   the copy of Sep 26 2026 (0bdcf663...), re-pinned Oct 6 2026 to Barnwright's
+   current copy, whose lines 1-5792 are the same byte for byte (only its
+   saving code, after line 5792, changed), so every marked line below still
+   reads as it did. */
+export const PINNED_SHA256 = "85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36";
 
 /* Each item's part label, by its catalogue code -- this check's OWN copy,
    written from what each item is (a door with no glass, a steel door, a door

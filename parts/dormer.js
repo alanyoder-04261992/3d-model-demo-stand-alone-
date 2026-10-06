@@ -24,7 +24,7 @@
    Watch-it-build it lands after the roofing. Its framing is a separate NEW
    part (parts/dormer-frame.js).
 
-   Ported from Barnwright's 3ddesign.html (pinned SHA-256 0bdcf663...),
+   Ported from Barnwright's 3ddesign.html (pinned SHA-256 85c4b022...),
    dormer() lines 2978-3059 and its call in buildShed lines 4040-4041
    (`if(t.dormer && state.dormer!=="none") dormer(prof,W,L,+state.dormer);`),
    numbers byte for byte. Porting edits (docs/ARCHITECTURE.md, Porting rules),

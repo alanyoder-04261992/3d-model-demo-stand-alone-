@@ -274,7 +274,7 @@ used.
 
 New -- Barnwright drew none. It fits into the roof Barnwright draws, in
 `public/3ddesign.html` (pinned SHA-256
-`0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c`):
+`85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36`):
 `roofProfile` 2159-2175 (the cross-section, `plan.prof`), `profileRoof`
 2562-2976 (the slab's underside at the profile line, its eave extensions and
 eave drops, the gambrel's forced 0.10 rake), `cottageEave` 2198-2203, and

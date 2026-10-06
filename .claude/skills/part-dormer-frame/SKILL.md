@@ -79,7 +79,7 @@ a style with the `dormer` trait with a dormer chosen (`state.dormer` not
 New -- Barnwright drew none. It frames the dormer Barnwright draws:
 `dormer()`, `public/3ddesign.html` 2978-3059, called from `buildShed`
 4040-4041 (`parts/dormer.js`), pinned SHA-256
-`0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c`. Its
+`85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36`. Its
 numbers are repeated exactly by `dormerGeom` in `parts/roof-frame.js`: the
 face at W/2 - 0.50, the tie-in at x 0.12 just under the ridge, the face
 height (1.2 to 1.95 ft), the windows (two, three from 8 ft wide, with a

@@ -41,7 +41,7 @@ company's roof settings shape.)
 ## Where it came from in Barnwright
 
 `boisterous-lokum-a737e0/public/3ddesign.html` (pinned SHA-256
-`0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c`):
+`85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36`):
 `renderItem`'s light branch, lines **3142-3157** (`if(c.k==="light"){ ... }`),
 after the preamble (3122-3140, `common.js eachItem`).
 

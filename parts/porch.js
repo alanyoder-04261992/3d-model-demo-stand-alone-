@@ -46,7 +46,7 @@
    There is no separate porch deck here: the building's floor slab
    (parts/floor.js) runs under the porch, as in Barnwright.
 
-   Ported from Barnwright's 3ddesign.html (pinned SHA-256 0bdcf663...),
+   Ported from Barnwright's 3ddesign.html (pinned SHA-256 85c4b022...),
    numbers byte for byte:
    * railX, railZ, railAnchors, porchFront, porchSideCorner, porchCorner
      (lines 2443-2560: railX 2444, railZ 2451, railAnchors 2458, porchFront

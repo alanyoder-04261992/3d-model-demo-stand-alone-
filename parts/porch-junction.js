@@ -21,7 +21,7 @@
    Stage "trim" (kind "finish"): shown in the Finished view; in
    Watch-it-build it lands with the rest of the trim.
 
-   Ported from Barnwright's 3ddesign.html (pinned SHA-256 0bdcf663...),
+   Ported from Barnwright's 3ddesign.html (pinned SHA-256 85c4b022...),
    buildShed lines 3946-3960, numbers byte for byte. Porting edits
    (docs/ARCHITECTURE.md, Porting rules): pSpan() -> plan.span, T() ->
    plan.t, dims() W/L -> plan.W/plan.L, y0 from engine/constants.js (rule 1);
