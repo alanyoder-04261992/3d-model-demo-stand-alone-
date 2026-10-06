@@ -46,7 +46,7 @@ import { designLink, businessName, priceNote } from "../ui/share.js";
 import { defaults, fromState, decode } from "../model/design.js";
 import { OFFICE_POLICY } from "../server/office/pages.js";
 import { inlineScriptHashes } from "./build-headers.mjs";
-import { includeLearningPreview, includeDealerDemo, learningSiteId } from "./site-profiles.mjs";
+import { includeLearningPreview, includeDealerDemo, learningSiteId, demoSiteId } from "./site-profiles.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BASE = "https://designer.example/product/";
@@ -112,9 +112,11 @@ try {
     assert.equal(includeDealerDemo({ env: {} }), false);
     assert.equal(includeDealerDemo({ env: { SITE_ID: "new-customer-site" } }), false);
     assert.equal(includeDealerDemo({ env: { SITE_ID: learningSiteId } }), true);
+    assert.equal(includeDealerDemo({ env: { SITE_ID: demoSiteId } }), true);
     assert.equal(includeDealerDemo({ env: { DEALER_DEMO: "true" } }), true);
-    assert.equal(includeLearningPreview({ env: { DEALER_DEMO: "true" } }), false, "the demo site gets no lessons");
-    assert.equal(includeDealerDemo({ client: true, env: { SITE_ID: learningSiteId, DEALER_DEMO: "true" } }), false);
+    assert.equal(includeLearningPreview({ env: { SITE_ID: demoSiteId } }), false, "the demo site gets no lessons");
+    assert.equal(includeLearningPreview({ env: { DEALER_DEMO: "true" } }), false, "nor does DEALER_DEMO=true");
+    assert.equal(includeDealerDemo({ client: true, env: { SITE_ID: demoSiteId, DEALER_DEMO: "true" } }), false);
   });
   await check("a lot's link loads the price list from the Dealer Center with the lot's phone, email and websites, and sends quotes to quote-requests", async () => {
     const calls = lotFetch();

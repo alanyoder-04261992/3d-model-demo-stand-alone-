@@ -38,9 +38,10 @@ learning-preview site's Netlify ID and preserves its public lesson pages.
 Other sites remain customer-only. `INCLUDE_LEARNING_PREVIEW=true` explicitly
 enables lessons for a local preview; `false` disables them on any site.
 Never enable lessons for clients. The explicit client build always excludes them.
-Alan's demo site for shed companies says `DEALER_DEMO=true`: it adds the
-Dealer Center's "try it" demo and no lessons ([OFFICE.md](OFFICE.md), "Try
-it without signing in").
+Alan's demo site for shed companies (`barnwright-demo`, recognized by its
+Netlify ID; `DEALER_DEMO=true` does the same elsewhere) adds the Dealer
+Center's "try it" demo and no lessons ([OFFICE.md](OFFICE.md), "Try it
+without signing in").
 
 * **Alan hosts one copy of the designer** (the files are ready for Netlify:
   `netlify.toml`). Every company runs on that one copy, at its own address:

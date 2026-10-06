@@ -8,11 +8,14 @@ export function includeLearningPreview({ client = false, env = process.env } = {
   return env.INCLUDE_LEARNING_PREVIEW === "true" || env.SITE_ID === learningSiteId;
 }
 
+// Alan's demo site for shed companies (barnwright-demo on Netlify).
+export const demoSiteId = "27229ef6-91ad-4173-87b3-b35dfbe6546f";
+
 // The Dealer Center's "try it" demo (/dealer?demo: made-up data that stays in
-// the visitor's own browser tab). The learning preview has it, and so does the
-// site Alan shows to shed companies, which says DEALER_DEMO=true in its
-// Netlify settings and gets no lesson pages. A client build never has it.
+// the visitor's own browser tab). The learning preview has it, and so does
+// the demo site, which gets no lesson pages; DEALER_DEMO=true does the same
+// for any other site. A client build never has it.
 export function includeDealerDemo({ client = false, env = process.env } = {}) {
   if (client) return false;
-  return env.DEALER_DEMO === "true" || includeLearningPreview({ client, env });
+  return env.DEALER_DEMO === "true" || env.SITE_ID === demoSiteId || includeLearningPreview({ client, env });
 }

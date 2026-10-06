@@ -9,8 +9,8 @@
    lesson pages, skills, reference photos, tests, tools, docs, server code or
    source maps. Only Alan's learning preview adds the lesson pages. The
    Dealer Center's "try it" demo (ui/office/demo.js) is on the learning
-   preview and on Alan's demo site (DEALER_DEMO=true), never in a client
-   build (tools/site-profiles.mjs).
+   preview and on Alan's demo site (or with DEALER_DEMO=true), never in a
+   client build (tools/site-profiles.mjs).
 
    It also writes:
      <out>/_headers          the designer's rules (tools/build-headers.mjs)

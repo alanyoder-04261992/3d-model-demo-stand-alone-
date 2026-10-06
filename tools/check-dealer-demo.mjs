@@ -11,10 +11,11 @@
        every lot's price list, and a dealer sees only their own lot;
      * reloading the tab keeps what was done, "Start over" throws it away,
        and the example files it started from are not changed;
-     * only Alan's learning preview and his demo site (DEALER_DEMO=true)
-       offer it: those builds ship the demo's own file and the "leave both
-       boxes empty" sign-in, and the demo site has no lesson pages; a client
-       build (npm run build:client) ships neither, even on the learning site.
+     * only Alan's learning preview and his demo site (or a site that says
+       DEALER_DEMO=true) offer it: those builds ship the demo's own file and
+       the "leave both boxes empty" sign-in, and the demo site has no lesson
+       pages; a client build (npm run build:client) ships neither, even on
+       the learning site.
 
    The browser side (the banner, signing in as anyone, 0 calls to a real
    server) is in tools/check-dealer-center.mjs. */
@@ -24,7 +25,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
-import { learningSiteId } from "./site-profiles.mjs";
+import { learningSiteId, demoSiteId } from "./site-profiles.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const STATIC = ["/library/manufacturers/standard.json", "/library/construction.json", "/companies/demo/company.json", "/companies/starter/company.json"];
@@ -132,7 +133,8 @@ const LEARNING_SITE = { SITE_ID: learningSiteId, INCLUDE_LEARNING_PREVIEW: "true
 const LESSONS = ["learn.html", "parts.html", "setup.html", "ui/learn.js", "ui/learn.css", "images", "companies/learning-side-loft"];
 const BUILDS = [
   { what: "Alan's learning preview offers the demo: its own file and the empty-boxes sign-in", env: LEARNING_SITE, demo: true, lessons: true },
-  { what: "his demo site (DEALER_DEMO=true) offers it too, and has no lesson pages", env: { SITE_ID: "a-demo-site", DEALER_DEMO: "true" }, demo: true, lessons: false },
+  { what: "his demo site offers it too, and has no lesson pages", env: { SITE_ID: demoSiteId }, demo: true, lessons: false },
+  { what: "so does any site whose settings say DEALER_DEMO=true", env: { SITE_ID: "another-site", DEALER_DEMO: "true" }, demo: true, lessons: false },
   { what: "a client build (npm run build:client), even on the learning site with DEALER_DEMO=true, leaves the demo out: no demo file and no empty-boxes sign-in",
     env: { ...LEARNING_SITE, DEALER_DEMO: "true" }, client: true, demo: false, lessons: false },
 ];
