@@ -100,7 +100,9 @@ try {
     }));
     results[q] = R;
     const A = R.all;
-    ok("eleven textures painted; shadows and surface relief available", R.tex.length === 11 && R.shadow && R.deriv, JSON.stringify({ tex: R.tex.length, shadow: R.shadow, deriv: R.deriv }));
+    const nTex = q === "?true=1" ? 12 : 11;   /* true colour paints the contact shadow once more, in the Yoder site's shade */
+    ok(nTex === 12 ? "eleven textures and the Yoder site's contact shadow painted; shadows and surface relief available" : "eleven textures painted; shadows and surface relief available",
+      R.tex.length === nTex && R.shadow && R.deriv, JSON.stringify({ tex: R.tex.length, shadow: R.shadow, deriv: R.deriv }));
     ok("the picture is drawn and not blank (" + A.nonBlank + " of " + A.w * A.h + " pixels)", A.drew && A.nonBlank > 50000);
     ok("the red door (" + A.red + " px) and the blue roof (" + A.blue + " px) are in it", A.red > 2000 && A.blue > 2000);
     ok("hiding the 'doors' step removes every red pixel (" + R.hideDoors.red + " left)", R.hideDoors.red === 0);
@@ -132,6 +134,10 @@ try {
   ok("the true-colour shader is really in use (the pictures differ)", fs.hash !== ft.hash);
   ok("and it is less warm: red minus blue averages " + ft.warmth.toFixed(2) + " against " + fs.warmth.toFixed(2), ft.warmth < fs.warmth - 1);
   ok("the building steps work the same under both (same red and hidden-door counts)", fs.red === ft.red && results["?true=1"].hideDoors.red === 0);
+  const tw = results["?true=0"].tex, tt = results["?true=1"].tex;
+  ok("the true-colour look paints the same eleven textures (the same seeded randomness) and then one more contact shadow",
+    tt.length === 12 && tw.every((h, i) => h === tt[i]), JSON.stringify({ warm: tw, true: tt }));
+  ok("...whose picture is not Barnwright's contact shadow (the Yoder site's darker one)", tt[11] !== tw[8] && !tw.includes(tt[11]));
 
   console.log("\nRepeatable textures");
   const again = await open(ctx, "?true=0");

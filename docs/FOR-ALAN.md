@@ -8,9 +8,10 @@
      "What you still need to decide". -->
 
 This is Barnwright's 3D designer, on its own, so you can sell it to a shed
-company that wants the designer and not the rest of Barnwright. It looks exactly
-like Barnwright's (one check compares every triangle of 148 buildings,
-another every pixel of 24 finished pictures), every
+company that wants the designer and not the rest of Barnwright. Its buildings
+are Barnwright's shape for shape (one check compares every triangle of 148
+buildings, another every pixel of 24 finished pictures), lit the way your own
+Yoder Storage Barns website lights them (see "How the buildings look"). Every
 real part of a shed is its own piece with its own notes for Claude, and a new
 company is one settings file rather than new programming.
 
@@ -61,15 +62,52 @@ none.
 
 Two buttons sit over the top-left of the picture:
 
-* **Outside** — the finished building, drawn exactly as Barnwright draws it.
-  This is what opens first, and it turns slowly for ten seconds (not for a
-  visitor whose phone asks for less motion).
+* **Outside** — the finished building, drawn as Barnwright draws it and lit
+  as your website lights it (below). This is what opens first, and it turns
+  slowly for ten seconds (not for a visitor whose phone asks for less motion).
 * **Inside** — the floor plan, drawn like a builder's blueprint on navy paper:
   every wall, door (with its swing), window, roll-up, porch, outlet, light,
   bench, shelf and the ramp, with the width and length marked. Things can be
   picked, dragged and added on the plan too.
 A company can switch the floor plan off in its settings. The Framing and
 Build tabs are removed from every customer designer.
+
+## How the buildings look
+
+You asked in October 2026: "use the 3d configuration in yoder storage barns
+… change the building looks only". So every building is lit the way your
+website's 3D designer (yoder-storage-barns.com/design) lights it, called
+**true colour**:
+
+* **White daylight**, not Barnwright's gold late-afternoon sun, so a paint
+  colour looks like its chip on every wall (your Sep 20 2026 fix for "a
+  slight yellow tint").
+* **A plain white room** behind the building, with no warm cast in it.
+* **Every sheet of siding the same colour** as the one beside it (a few
+  percent lighter or darker, never bluer or yellower).
+* **Your site's darker soft shadow** on the ground under the building.
+
+The demo, every new company and any company that does not say otherwise
+start with **true colour**. Only colours changed: every door, window, trim
+board and roof is the same shape it was, and the prices, options and colour
+lists are untouched. A business already set up on the Dealer Center keeps the
+light it was saved with until its settings are changed.
+
+Barnwright's warm light is kept for one job: the golden check still draws
+Barnwright's 148 buildings in it, to prove every triangle and every pixel is
+still Barnwright's. A company that wants the warm light can have it; it is one
+setting (look.trueColour false).
+
+Your website's copy of the designer draws a few things differently that we
+did not copy, because Barnwright fixed them after it took your site's
+designer in August and your site never got the fixes:
+the door sill and the roll-up's floor plate show (your site's copy draws them
+inside out, so they never appear); a corner board casts a hairline shadow
+instead of a dark band; a door's side boards stop just under its head board;
+the octagon window shrinks to fit a small gable instead of being cut off; and
+a door made from a metal building's siding is steel like the walls.
+
+## Lessons and skills
 
 The construction lessons and reusable skills are our internal onboarding
 notes. We use them to understand how each company builds and prepare its
@@ -403,11 +441,11 @@ loft). Any company can build differently in its own settings.
 
 ### Choices about the product
 
-1. **The light for new companies.** New companies start with **true colour**
-   (grey daylight, so a paint colour looks like its chip — the look you chose
-   for the Yoder site on Sep 20 2026). The demo keeps **Barnwright's warm
-   late-afternoon sun**, which is the look the golden check proves. Which should
-   a new company get by default?
+1. **The demo's paint colours.** The light is now your website's (see "How
+   the buildings look"), but the demo still offers Barnwright's colour list.
+   Your website uses the exact Weather King chips (Barn Red, Dark
+   Green, Sea Green, Bellemont Blue …). Should the demo and new companies
+   offer those instead?
 2. **Where it lives on the web.** Everything is ready for you to host it on
    Netlify (the files say how), with each company at its own address. The site
    itself and its web address are yours to set up — the address goes into the

@@ -11,9 +11,15 @@ dimensioned floor plan, shares the design, and sends a quote request. It is the 
 (Alan Yoder's shed software), taken out on its own so it can be sold to a
 company that only wants the designer.
 
-* **It looks exactly like Barnwright's designer.** Every triangle of 148
-  recorded Barnwright buildings is compared by `node tools/check-golden.mjs`,
-  and every pixel of 24 finished pictures by `node tools/check-look.mjs`.
+* **Its buildings are Barnwright's, lit the way the Yoder Storage Barns
+  site lights them.** Every triangle of 148 recorded Barnwright buildings is
+  compared by `node tools/check-golden.mjs`, and every pixel of 24 finished
+  pictures (in Barnwright's warm light) by `node tools/check-look.mjs`. The
+  light every company gets unless it says otherwise is the Yoder site's
+  **true colour** (`look.trueColour`: white daylight, a neutral room, its
+  darker contact shadow), proved against the Yoder site's own file by
+  `node tools/check-shaders.mjs` (Alan, Oct 2026: "use the 3d configuration
+  in yoder storage barns … change the building looks only").
 * **Every real-life part of a shed is its own file** in `parts/` (skids,
   floor, siding, roofing, each kind of door and window, and the framing: floor
   joists, studs, trusses, the loft, the roof deck, blocks and anchors) and has
@@ -276,11 +282,11 @@ Chromium's software graphics, each on its own port.
 | `check-window-plate.mjs` | no | flat plate, support contact at both ends, retained wall layout, variable window-height cuts and vertical grain |
 | `check-doorway.mjs` | no | shop king-stud terms, header bearing, variable opening cuts, three arrangements, wall-height reuse and fit rejection |
 | `check-utility-framing.mjs` | no | 89-inch utility studs, confirmed 12.5-inch window-plate gap and derived elevations, real opening contacts, roof stock by sales width and horizontal-run pitch |
-| `check-look.mjs` | yes | the 24 finished pictures recorded from Barnwright, pixel for pixel; true colour changes the colour and nothing else; a rebuild stays inside its time budget |
+| `check-look.mjs` | yes | the 24 finished pictures recorded from Barnwright, pixel for pixel; true colour (the Yoder site's look, the standard) changes the colour and nothing else; a rebuild stays inside its time budget |
 | `check-golden-labels.mjs` | yes | the part label on every recorded triangle, proved a second, independent way |
 | `check-engine.mjs` | yes | the drawing kit, the maths, the camera fit, the 11 textures and five whole pictures match Barnwright's own page, byte for byte |
 | `check-engine-smoke.mjs` | yes | the engine really draws in a browser, and the building-step table hides and lifts steps (shadows included) |
-| `check-shaders.mjs` | yes | the shaders and texture painters are Barnwright's, character for character (the true-colour shader differs only in its six documented lines) |
+| `check-shaders.mjs` | yes | the shaders and texture painters are Barnwright's, character for character; the true-colour shader, rooms and contact shadow are the Yoder site's (the shader differs from Barnwright's only in its six documented lines) |
 | `check-imports.mjs` | no | every file meant to run without a browser really does; no JSON imports; no stray `Math.random` |
 | `check-parts.mjs` | no | every part is a valid part, its caption fills in, it has its skill, and every skill has its part |
 | `check-construction.mjs` | no | the construction settings are read, merged and settled per building the way the contract says |
@@ -319,9 +325,10 @@ Chromium's software graphics, each on its own port.
 
 1. **Never change Barnwright.** Its files are only ever read, by the golden
    capture and the live comparisons.
-2. **The finished building must look exactly like Barnwright's.** A red
-   `check-golden.mjs` is a look change: fix the code (see the `check-the-look`
-   skill).
+2. **The finished building is Barnwright's shape for shape, lit the way the
+   Yoder site lights it.** A red `check-golden.mjs` is a look change: fix the
+   code (see the `check-the-look` skill). True colour is the standard light;
+   Barnwright's warm light is kept for the golden and look checks.
 3. **One real-life part = one file in `parts/` + one skill.** Read the part's
    skill before changing it; update the skill after (the `add-a-part` skill
    for a new one).

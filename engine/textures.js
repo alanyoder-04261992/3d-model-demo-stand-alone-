@@ -4,9 +4,11 @@
    the roof pan, the ridge cap and three soft shadows. Browser file: it paints
    on 2D canvases and uploads the result to the graphics card.
 
-   createTextures(gl, { randFor }) -> { siding: <texture>, metal: ..., ... }
+   createTextures(gl, { randFor, trueColour }) -> { siding: <texture>, metal: ..., ... }
      keyed by the names in engine/tex-names.js. All eleven are made at once,
-     in Barnwright's order, before anything is drawn.
+     in Barnwright's order, before anything is drawn. With trueColour (the
+     Yoder site's look) the contact shadow is then painted once more in the
+     Yoder site's darker shade (see YODER CONTACT SHADOW at the bottom).
 
    THE PAINTERS ARE BARNWRIGHT'S, COPIED BYTE FOR BYTE (3ddesign.html
    1714-2058) between the BEGIN/END markers below -- the look depends on every
@@ -405,6 +407,26 @@ var texAOcorner=mkTex(function(x,s){
   x.fillStyle=g;x.fillRect(0,0,s,s);
 },64);
 /* ==== END PAINTERS ==== */
+/* THE YODER SITE'S CONTACT SHADOW, for a company with look.trueColour on
+   (Alan, Oct 2026: "use the 3d configuration in yoder storage barns ...
+   change the building looks only"). His own site draws the soft shadow under
+   the building darker than Barnwright does: Barnwright took the website's
+   designer on Aug 6 2026 with the lighter gradient above, and the website
+   has darkened it since. The six lines between the markers are the website's
+   texAO, character for character (tools/check-shaders.mjs reads them against
+   yoder-storage-barns/design.html). It is painted after the eleven, so the
+   test randomness of every other picture is untouched, and it takes the
+   place of Barnwright's. Only the ground's contact shadow wears it. */
+if(opts.trueColour){ gl.deleteTexture(texAO);
+/* ==== BEGIN YODER CONTACT SHADOW (yoder-storage-barns design.html 2397-2402) ==== */
+var texAO=mkTex(function(x,s){ /* multiply decal: elliptical contact shadow, white at the rim */
+  x.fillStyle="#ffffff";x.fillRect(0,0,s,s);
+  var g=x.createRadialGradient(s/2,s/2,0,s/2,s/2,s/2);
+  g.addColorStop(0,"#3f3f3f");g.addColorStop(0.42,"#525252");g.addColorStop(0.66,"#a8a8a8");g.addColorStop(0.86,"#ececec");g.addColorStop(1,"#ffffff");
+  x.fillStyle=g;x.fillRect(0,0,s,s);
+},256);
+/* ==== END YODER CONTACT SHADOW ==== */
+}
 var out={};
 out[TN.texSiding]=texSiding; out[TN.texMetal]=texMetal; out[TN.texTrim]=texTrim; out[TN.texFlat]=texFlat;
 out[TN.texGrass]=texGrass; out[TN.texGlass]=texGlass; out[TN.texRoofMetal]=texRoofMetal; out[TN.texRoofCap]=texRoofCap;
