@@ -377,20 +377,23 @@ live, with every button named, is
 
 Barnwright sells **one product**, the Barnwright 3D designer (the 3D designer
 and its Dealer Center), which works alongside whatever software the company
-already uses. The first lot comes with the plan; each lot after the first is
-**$250 one time** and the monthly fee stays the same. Every business lives at
+already uses. **The first lot is free: no setup fee and no monthly fee.**
+Each lot after the first is **$250 one time**. Every business lives at
 **`<their name>.barnwrightsoftware.com`** (once, before the first customer,
 `barnwrightsoftware.com` goes on Netlify DNS so each new address is one step).
 
 1. **Paperwork.** Alan fills in Sections B and C of the Sign-Up Form
-   (`docs/legal/Barnwright-Sign-Up-Form.pdf`, fillable: lots, build fee, lot
-   fees, monthly fee) and sends it with the terms (`legal/barnwright-terms.pdf`)
+   (`docs/legal/Barnwright-Sign-Up-Form.pdf`, fillable, with Barnwright
+   Software and sales@barnwrightsoftware.com typed in: lots, the lots after
+   the first, their lot fees and the total due now, which is nothing for one
+   lot) and sends it with the terms (`legal/barnwright-terms.pdf`)
    and the Setup Questions (`docs/legal/Barnwright-Setup-Questions.pdf`); the
    company fills in Section A, initials Section D and signs; Alan signs. The
    company sends back its answers with its logo, price sheet and photos.
-2. **Control room.** **Add customer** with the dealership cap (lots), the
-   one-time total (build fee plus lot fees) as the build fee, and the monthly
-   subscription; **Collect build fee** and wait until it is paid.
+2. **Control room.** **Add customer** with a dealership cap of 1 (the free
+   lot) and 0 for the build fee and the monthly subscription. More than one
+   lot: **Collect lot fee** for the lots after the first; when Stripe confirms
+   the payment the control room raises the cap by itself.
 3. **Their site.** A new Netlify project from this repository (named for the
    business) with the domain `<their name>.barnwrightsoftware.com`; its
    Project ID and that address go on the customer in the control room; **Identity** on (registration open: anyone can make a login, but
@@ -405,8 +408,8 @@ already uses. The first lot comes with the plan; each lot after the first is
    the Barnwright terms", a starting price list, the first lot. Then their
    prices, Settings, lots and team; Open to customers; the website code for
    each lot; a test quote.
-5. **Go live.** **Start monthly subscription** in the control room, and the
-   go-live email with the date the monthly fee starts.
+5. **Go live.** The go-live email ("ready to use as of (date)"), and the
+   date written on their signed Sign-Up Form. Nothing is charged.
 6. **Adding a lot later.** **Collect lot fee** on the customer in the
    control room ($250 for each new lot, one time) and email them the link.
    When Stripe confirms the payment, the control room raises the
@@ -427,8 +430,9 @@ which answer goes where.
 
 ### The papers in the control room
 
-The control room's **Papers** page lists the four papers (Sign-Up Form,
-terms, Setup Questions, Adding a New Customer) so Alan can open or download
+The control room's **Papers** page lists the papers (Sign-Up Form, terms,
+Setup Questions, Adding a New Customer, and the one-page Flyer and Price
+Sheet to hand to shed companies) so Alan can open or download
 them anywhere. It reads `docs/legal/papers.json` and each PDF from this
 repository's `main` branch on GitHub every time, so once a change to the papers
 is merged here, the control room has it: there is nothing to copy. The script

@@ -22,6 +22,7 @@ import { MemoryBlobs } from "../server/office/store.js";
 import { closedPage } from "../server/office/pages.js";
 import { TenantLicenseClient, createLeaseStore, verifyLease, misconfiguredLicense, LEASE_DURATION_MS } from "../server/office/control-room.js";
 import { parseLease } from "../server/office/license-core.js";
+import { TERMS } from "../server/office/terms.js";
 import { resolve as resolveCatalogue } from "../model/company.js";
 import { defaults, fromState } from "../model/design.js";
 import { fakeControlRoom, controlRoomRejects } from "./lib/fake-control-room.mjs";
@@ -106,13 +107,13 @@ room.down = false;
 m = await me();
 ok("opening the Dealer Center checks in with the control room", room.calls.includes("/api/license") && m.account?.canWrite === true && m.account.reason === "active", JSON.stringify(m.account));
 ok("... and reports this copy and its open lots", room.business.appVersion === "dealer-center check" && room.business.dealerCount === 0);
-ok("the owner is asked to agree to the Barnwright terms, with a link to read them", m.terms?.version === "1.0" && m.terms.url === "/legal/barnwright-terms.pdf" && m.terms.agreed === null, JSON.stringify(m.terms));
+ok("the owner is asked to agree to the Barnwright terms, with a link to read them", m.terms?.version === TERMS.version && m.terms.url === "/legal/barnwright-terms.pdf" && m.terms.agreed === null, JSON.stringify(m.terms));
 r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small" });
 ok("first setup without ticking \"I agree\" is refused in plain words, and no business is made", r.status === 422 && r.data.error === "Tick the box to agree to the Barnwright terms." && !(await office.parts.store.get("price-list")), JSON.stringify(r));
 r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small", agreeTerms: true });
 ok("first setup works", r.status === 201, JSON.stringify(r.data));
 m = await me();
-ok("the agreement is kept: version 1.0, when, and who (the owner's login)", m.terms.agreed?.version === "1.0" && m.terms.agreed.by.email === USERS.alan.email && m.terms.agreed.agreedAt === new Date(clock.t).toISOString(), JSON.stringify(m.terms));
+ok(`the agreement is kept: version ${TERMS.version}, when, and who (the owner's login)`, m.terms.agreed?.version === TERMS.version && m.terms.agreed.by.email === USERS.alan.email && m.terms.agreed.agreedAt === new Date(clock.t).toISOString(), JSON.stringify(m.terms));
 {
   /* the terms changed since the owner agreed: asked again, and both are kept */
   const kept = await office.parts.store.get("barnwright-terms");
@@ -124,7 +125,7 @@ ok("the agreement is kept: version 1.0, when, and who (the owner's login)", m.te
   ok("... not agreeing is refused in plain words", r.status === 422 && /Tick the box/.test(r.data.error));
   r = await call("POST", "/api/office/terms", { agree: true });
   const doc = await office.parts.store.get("barnwright-terms");
-  ok("... \"I agree\" saves the new version and keeps the old one", r.status === 200 && r.data.terms.agreed?.version === "1.0" && doc.history.length === 2 && doc.history[1].version === "0.9", JSON.stringify(doc));
+  ok("... \"I agree\" saves the new version and keeps the old one", r.status === 200 && r.data.terms.agreed?.version === TERMS.version && doc.history.length === 2 && doc.history[1].version === "0.9", JSON.stringify(doc));
   r = await call("POST", "/api/office/terms", { agree: true });
   ok("... agreeing again to the same version changes nothing", r.status === 200 && (await office.parts.store.get("barnwright-terms")).history.length === 2);
 }
