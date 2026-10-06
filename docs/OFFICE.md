@@ -365,8 +365,8 @@ they buy.
 Only the learning preview and the demo site offer it. The demo site
 (`barnwright-demo` on Netlify, recognized by its Netlify ID like the
 learning preview) is the 3D designer and the Dealer Center with the demo,
-and no lesson pages; `DEALER_DEMO=true` in a site's Netlify settings does
-the same for any other site. Every other site, and every client build
+and no lesson pages; a build run with `DEALER_DEMO=true` does the same
+anywhere else. Every other site, and every client build
 (`npm run build:client`, even with `DEALER_DEMO=true`), leaves the demo out
 completely: no demo file and no empty-boxes sign-in, so a real login always
 needs both an email and a password. The build decides this (`__DEALER_DEMO__` in

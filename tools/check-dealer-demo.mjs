@@ -11,7 +11,7 @@
        every lot's price list, and a dealer sees only their own lot;
      * reloading the tab keeps what was done, "Start over" throws it away,
        and the example files it started from are not changed;
-     * only Alan's learning preview and his demo site (or a site that says
+     * only Alan's learning preview and his demo site (or a build run with
        DEALER_DEMO=true) offer it: those builds ship the demo's own file and
        the "leave both boxes empty" sign-in, and the demo site has no lesson
        pages; a client build (npm run build:client) ships neither, even on
@@ -134,7 +134,7 @@ const LESSONS = ["learn.html", "parts.html", "setup.html", "ui/learn.js", "ui/le
 const BUILDS = [
   { what: "Alan's learning preview offers the demo: its own file and the empty-boxes sign-in", env: LEARNING_SITE, demo: true, lessons: true },
   { what: "his demo site offers it too, and has no lesson pages", env: { SITE_ID: demoSiteId }, demo: true, lessons: false },
-  { what: "so does any site whose settings say DEALER_DEMO=true", env: { SITE_ID: "another-site", DEALER_DEMO: "true" }, demo: true, lessons: false },
+  { what: "so does any build run with DEALER_DEMO=true", env: { SITE_ID: "another-site", DEALER_DEMO: "true" }, demo: true, lessons: false },
   { what: "a client build (npm run build:client), even on the learning site with DEALER_DEMO=true, leaves the demo out: no demo file and no empty-boxes sign-in",
     env: { ...LEARNING_SITE, DEALER_DEMO: "true" }, client: true, demo: false, lessons: false },
 ];
