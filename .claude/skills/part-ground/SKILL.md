@@ -36,6 +36,12 @@ None. What the ground looks like comes from the SCENE (`engine/scene-data.js`,
 shine, bump and the `turf` flag the shader uses to roll the lawn), which is
 the company's `look.scene` (and `look.trueColour`).
 
+The contact shadow's picture (`texAO`) comes from the renderer, not from
+this part: with `look.trueColour` on (the standard, the Yoder site's look)
+it is the Yoder site's darker gradient (`#3f3f3f` in the middle), otherwise
+Barnwright's (`#565656`) -- engine/textures.js, YODER CONTACT SHADOW. The
+part draws the same triangles either way; only the shade on them differs.
+
 ## Where it came from in Barnwright
 
 `boisterous-lokum-a737e0/public/3ddesign.html` (pinned SHA-256

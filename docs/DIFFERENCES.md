@@ -4,7 +4,8 @@ The finished building is drawn exactly like Barnwright's (the golden test proves
 it triangle for triangle). This list is everything ELSE that behaves
 differently on purpose, with the reason. Each change is either a real bug in
 Barnwright's designer that this product should not inherit, or something a
-standalone product needs. None of them changes how a finished building looks.
+standalone product needs. None of them changes the shape of a finished
+building; one (#25) changes its light, because Alan chose the Yoder site's.
 
 If you find a difference that is not on this list, it is a bug — or it belongs
 on this list with a reason.
@@ -146,3 +147,44 @@ finished designer retains the golden geometry.
     the Dealer Center's design page instead (he asked for it there, "not on
     the website link that customer would use"): it copies the lot's
     designer link with the exact building in it for the dealer to send.
+
+## The building's look (Oct 2026)
+
+25. **Buildings are lit the way the Yoder Storage Barns site lights them**
+    (Alan, Oct 6 2026: "use the 3d configuration in yoder storage barns and
+    update the rest of the repository", then "change the building looks
+    only"). True colour (`look.trueColour`) is now the standard: the demo,
+    the template, the starter and any company that leaves `look` out get it,
+    and so does a new Dealer Center business started from the demo. It is
+    the Yoder site's three look changes, each read against
+    `yoder-storage-barns/design.html` by `tools/check-shaders.mjs`:
+    * its fragment shader (`FSTRUE`): a white sun, glint and highlight at the
+      same brightness as Barnwright's gold ones, and no per-sheet colour
+      shift (each sheet of siding only a few percent lighter or darker);
+    * its rooms (`TRUE_SCENES`): the studio's light, floor, haze and backdrop
+      neutral grey;
+    * its darker contact shadow under the building (`texAO` from `#3f3f3f`
+      instead of Barnwright's `#565656`). Barnwright took the website's
+      designer on Aug 6 2026 with the lighter one; the website darkened it
+      after.
+    Only colours change: every triangle, the camera, the draw order and the
+    see-through outline are the same both ways (`tools/check-look.mjs`).
+    Barnwright's warm light stays for the Barnwright company the golden and
+    look checks draw, so they still prove every triangle and every pixel is
+    Barnwright's. A business set up on the Dealer Center before this keeps the
+    light it was saved with.
+
+    **Not taken from the Yoder site**, because Barnwright fixed them after it
+    took the site's designer on Aug 6 2026 (the site never got the fixes) and
+    the fix is the better building: the door
+    threshold and the roll-up's floor plate are drawn facing out (the site
+    draws them inside out, so they never show); the corner boards cast the
+    gentle hairline shadow (`texAOcorner`), not the eave's dark band; a
+    door's side casings stop under the head board with a shadow in the
+    reveal; the octagon gable window shrinks to fit a small gable; a door
+    made of a metal building's siding wears the steel texture; the roof
+    underside reads the roof shape before using it; and the double window's
+    shared middle board is Barnwright's. The site's paint colours (its exact
+    Weather King chips, `designer-colors.js`) are a company's colour list, not
+    the building's look, and are not changed; that question is with Alan
+    (docs/FOR-ALAN.md, Choices about the product).

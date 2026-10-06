@@ -10,7 +10,9 @@
       prices, styles, categories, items, options, colours, package texts.
    4. The demo: every standard style at every standard size, in Barnwright's
       order, with the documented example formula -- and not one of Barnwright's
-      real prices; its standard doors and windows are Barnwright's.
+      real prices; its standard doors and windows are Barnwright's; it wears
+      the Yoder site's look (true colour), which is also what a company that
+      leaves look out gets, while Barnwright as a company keeps its warm light.
    5. The starter: three styles, its own name and colours, true colour on,
       leads to a form.
    6. Broken copies give the RIGHT plain-English error (about 35 mistakes a
@@ -118,7 +120,13 @@ for (const k of Object.keys(G.CAT)) if (G.CAT[k].p && DEMO.CAT[k] && DEMO.CAT[k]
 }
 check("the demo company", realPriceHits === 0, `${realPriceHits} demo prices are Barnwright's real prices`);
 check("the demo company", DEMO.brand.name === "Portable Buildings" && DEMO.brand.initials === "PB", "the demo's brand is not Barnwright's default 'Portable Buildings'");
-check("the demo company", DEMO.look.trueColour === false && DEMO.leads.mode === "none", "the demo must have look.trueColour false and leads mode none");
+check("the demo company", DEMO.look.trueColour === true && DEMO.leads.mode === "none", "the demo must have look.trueColour true (the Yoder site's look, Alan Oct 2026) and leads mode none");
+{
+  /* the Yoder site's look is the standard: a company file that leaves look out gets it; only Barnwright (the golden checks) is warm */
+  const bare = copy(readJSON("companies/demo/company.json")); delete bare.look;
+  check("the demo company", resolve(bare, M, LIB).look.trueColour === true, "a company file with no look should get true colour (the Yoder site's look)");
+  check("the demo company", BW.look.trueColour === false, "the Barnwright company the golden checks draw must keep Barnwright's warm light");
+}
 check("the demo company", J(DEMO.COLORS) === J(G.COLORS), "the demo's colours are not Barnwright's (the golden test draws with them)");
 for (const k of Object.keys(G.P)) for (const z of Object.keys(G.P[k])) {
   const a = { type: k, size: z, pLen: 12, pFlip: false, pMid: false, items: [], opts: {}, elec: { pkg: 0 } };

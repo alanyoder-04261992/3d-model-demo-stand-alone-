@@ -86,7 +86,7 @@ parts/
   index.js            PIPELINE
   <part-id>.js        one real part each (openings/ holds the door/window family)
 companies/
-  demo/company.json   the sales demo: every standard style, example prices, look.trueColour false
+  demo/company.json   the sales demo: every standard style, example prices, look.trueColour true
   starter/company.json  a small made-up company: 3 styles, own brand and colours
   _template/company.json  what tools/new-company.mjs copies
 ui/                   the designer screens (browser)
@@ -190,6 +190,12 @@ Exactly Barnwright's 11, same identifiers, as strings:
 before anything else draws**, with painters copied byte for byte.
 `createTextures(gl, { rand })` lets a test hand each painter its own seeded
 generator (reset per texture). The renderer maps names to GL textures.
+`createTextures(gl, { trueColour: true })` (what the renderer passes for a
+true-colour company) then paints `ao` once more with the **Yoder site's**
+darker contact-shadow painter (yoder-storage-barns `design.html` 2397-2402,
+byte for byte, its own BEGIN/END block after the eleven) and uses that
+instead of Barnwright's: twelve paintings, the first eleven unchanged, so the
+seeded randomness of every other picture is untouched.
 
 ### Shaders (`engine/shaders.js`)
 
@@ -197,7 +203,14 @@ generator (reset per texture). The renderer maps names to GL textures.
   `vec3(1.32,1.24,1.06)`, per-sheet colour shift, lawn-green env).
 * `FSTRUE` — the Yoder site's Sep 20 2026 true-colour version (grey lights at
   equal Rec.709 luminance, no per-sheet colour shift; glass and the `yard`
-  scene keep their colour). Used when `company.look.trueColour` is true.
+  scene keep their colour). Used when `company.look.trueColour` is true,
+  which is **the standard** (Alan, Oct 2026: "use the 3d configuration in
+  yoder storage barns … change the building looks only"): the demo, the
+  template, the starter and any company that leaves `look` out. Only the
+  Barnwright company the golden and look checks draw uses `FS`. True colour =
+  `FSTRUE` + `TRUE_SCENES` (engine/scene-data.js) + the Yoder contact shadow
+  (engine/textures.js); all three are read against the Yoder site's own file
+  by `tools/check-shaders.mjs`.
 * `VS` and `VSD` gain the stage table:
   ```glsl
   attribute float aStage; uniform vec4 uStg[32];   // x = HIDDEN (1 = hidden), y = lift in ft
@@ -733,9 +746,9 @@ catalogue. Anything else is a behaviour change: list it in `docs/DIFFERENCES.md`
 
 `CASING = 0.27`; metal siding UVs divide by `GROOVE`; gambrel rake overhang
 forced to 0.10 in `profileRoof`; `roofRise` 0.45W for the mini barn; porch C
-adds 4 ft to `L`; the warm sun in `FS` (company option `look.trueColour`
-switches to `FSTRUE`); the floor slab is segmented and inset 0.03; resize keeps
-the built ground radius.
+adds 4 ft to `L`; the warm sun in `FS` (kept for the golden and look checks;
+`look.trueColour`, the standard, switches to `FSTRUE`); the floor slab is
+segmented and inset 0.03; resize keeps the built ground radius.
 
 ## Deliberate differences (`docs/DIFFERENCES.md`)
 
@@ -745,3 +758,5 @@ name; a hidden dormer not pickable; one per-square-foot price function for the
 label and the charge; `pkFixtures` order; size change re-lays the standard
 doors and windows only if the customer has not touched them; camera fit
 `fitref` in the product; one `visibilitychange` listener; full HTML escaping.
+One deliberate difference DOES change the picture, on purpose: the standard
+light is the Yoder site's true colour, with its darker contact shadow (#25).

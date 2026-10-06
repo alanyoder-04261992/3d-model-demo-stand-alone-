@@ -810,7 +810,10 @@ export function resolve(company, manufacturer, library) {
     leads: Object.assign({ mode: "none", url: "", fields: { name: "required", phone: "required", email: "optional", zip: "required", address: "optional", note: "optional" }, smsConsent: null, images: false },
       stripHelp(copy(c.leads || {}))),
     embed: Object.assign({ origins: [], shareUrl: "" }, stripHelp(copy(c.embed || {}))),
-    look: Object.assign({ trueColour: false, scene: "studio" }, stripHelp(copy(c.look || {}))),
+    /* the Yoder site's look (true colour) unless a company says otherwise
+       (Alan, Oct 2026); only the Barnwright company the golden checks draw
+       turns it off */
+    look: Object.assign({ trueColour: true, scene: "studio" }, stripHelp(copy(c.look || {}))),
     features: Object.assign({ framingView: true, buildPlayback: true, floorPlan: true }, stripHelp(copy(c.features || {}))),
     notes: Object.assign({ finePrint: "", sizeNotes: {} }, stripHelp(copy(c.notes || {}))),
     license: stripHelp(copy(c.license || {})),

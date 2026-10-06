@@ -1,6 +1,6 @@
 ---
 name: check-the-look
-description: Prove the finished building still looks exactly like Barnwright's 3D designer -- use before and after any change to a finished part, the engine, the shaders, the roof shapes, the standard doors and windows or the construction defaults, whenever check-golden goes red, and when Alan says something looks different from Barnwright.
+description: Prove the finished building is still Barnwright's shape for shape and lit the way the Yoder Storage Barns site lights it -- use before and after any change to a finished part, the engine, the shaders, the textures, the roof shapes, the standard doors and windows or the construction defaults, whenever check-golden goes red, and when Alan says something looks different from Barnwright or from his own website.
 ---
 
 # Prove the finished look is still Barnwright's
@@ -11,6 +11,18 @@ recorded from its real page (`test/golden/README.md` explains every file). The
 Outside view is held to it triangle for triangle. The Framing view, Watch it
 build, the ramp and the true-colour light are new and are proved separately;
 none of them may move a finished triangle.
+
+His later ask (Oct 2026: "use the 3d configuration in yoder storage barns ...
+change the building looks only"): the buildings are **lit the way his own
+Yoder Storage Barns site lights them**. That is true colour
+(`look.trueColour`), now the standard -- the demo, the template, the starter
+and any company that leaves `look` out. It is three things, each read against
+`/home/user/yoder-storage-barns/design.html` (read only) by
+`tools/check-shaders.mjs`: the site's fragment shader (`FSTRUE`), its rooms
+(`TRUE_SCENES`) and its darker contact shadow (the YODER CONTACT SHADOW block
+in `engine/textures.js`). It changes colours only. The golden and look
+fixtures stay Barnwright's, in Barnwright's warm light, drawn with the
+Barnwright company (`look.trueColour: false`).
 
 ## What can change the look
 
@@ -53,11 +65,14 @@ table, the roof numbers); and the Barnwright style entries in
    and five whole pictures (styles, scenes, a selected item, camera angles,
    the Finished step table on) byte for byte.
 4. **`node tools/check-shaders.mjs`** (browser). The fragment shader is
-   Barnwright's byte for byte; the true-colour one differs only in its six
-   documented colour lines; the vertex shaders only add the building-step
-   table; the texture painters are Barnwright's text.
+   Barnwright's byte for byte; the true-colour one is the Yoder site's and
+   differs from Barnwright's only in its six documented colour lines; the
+   true-colour rooms and contact shadow are the Yoder site's; the vertex
+   shaders only add the building-step table; the texture painters are
+   Barnwright's text.
 5. **`node tools/check-engine-smoke.mjs`** (browser). The first frame after a
-   rebuild has its shadows (docs/DIFFERENCES.md #1), and the Finished view of
+   rebuild has its shadows (docs/DIFFERENCES.md #1), true colour paints the
+   same eleven textures and then the Yoder contact shadow, and the Finished view of
    a building carrying framing is exactly the building without it.
 6. **`node tools/check-golden-labels.mjs`** (browser, a few minutes). Every
    recorded triangle's part label, proved a second, independent way -- so
@@ -102,9 +117,15 @@ with Chromium and `--use-angle=swiftshader --enable-unsafe-swiftshader
 --ignore-gpu-blocklist`, wait for `window.shedUI.ready`, and save into
 `test/out/`. That loader targets the original Linux environment; on another
 machine, use available browser tooling for visual inspection and report any
-automated checks that could not run. The demo company uses Barnwright's warm light
-(`look.trueColour: false`); a company with true colour on looks different
-on purpose (grey light), so never compare the look with one.
+automated checks that could not run. The demo company now uses the Yoder
+site's true colour (grey light, a neutral room, a darker contact shadow), so
+it looks different from Barnwright's page on purpose: to compare with
+Barnwright, open `?company=demo` with a copy of the demo whose
+`look.trueColour` is `false`, or use the checks (they draw the Barnwright
+company). To compare the light with the Yoder site, open
+`yoder-storage-barns/design.html` the same way (its 7171-line page carries
+Yoder's own colour list and standard doors, so pick the same colours and
+doors).
 
 ## Re-recording the fixtures, on purpose only
 
@@ -127,6 +148,16 @@ So re-recording is right only when:
 
 Re-recording can never bless a change in THIS engine -- it would record
 Barnwright's picture again. If Alan decides the finished look should differ
-from Barnwright's, that is a company setting that is off for the Barnwright
-and demo catalogues (the way `look.trueColour` is), listed in
-`docs/DIFFERENCES.md`, with check-golden still green with it off.
+from Barnwright's, that is a company setting (the way `look.trueColour` is)
+that is always off for the Barnwright company the checks draw, listed in
+`docs/DIFFERENCES.md`, with check-golden still green with it off. Whether the
+demo and new companies get it is Alan's call: for true colour he chose yes
+(docs/DIFFERENCES.md #25).
+
+The Yoder site's look is followed the same way: if Alan changes how his own
+site lights a building, re-read its `FS`, `SCENES` and `texAO` in
+`yoder-storage-barns/design.html`, copy them into `FSTRUE`,
+`TRUE_SCENES` and the YODER CONTACT SHADOW block, and run
+`node tools/check-shaders.mjs`. Things the site's copy draws worse than
+Barnwright does (DIFFERENCES #25, "Not taken from the Yoder site") stay
+Barnwright's.
