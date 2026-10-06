@@ -509,11 +509,11 @@ proved; the full list is in [the README](../README.md).
 * The control room's own screens and messages still say "HQ" (for example
   "enable support in HQ Setup"). For a Dealer Center company that switch is
   **Help from Barnwright** in their Settings.
-* **Ask Barnwright** in Help needs two pieces being built in their own
-  projects: the control room's help pass and the Help tab in your Sales
-  Inbox. Until both are live, a company's question says "Barnwright
-  couldn't be reached just now. Try again in a minute." and problem
-  reports don't arrive. The short answers work today.
+* **Claude's drafts in your Sales Inbox** start when you add the Claude key
+  (step 4 in the Sales Inbox's own instructions: a key named `Sales Inbox
+  Help` from platform.claude.com, put in Netlify as `ANTHROPIC_API_KEY`).
+  Until then a company's questions and problem reports still arrive in the
+  Help tab, and you write the answer yourself.
 * Some internal part descriptions still assume trusses and their framing
   description talks about gusset plates and a bottom chord. The rafters themselves are
   drawn and checked; only the words have not caught up.
