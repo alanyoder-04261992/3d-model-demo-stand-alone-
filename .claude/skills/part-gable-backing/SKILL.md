@@ -22,6 +22,10 @@ the gable and truss members. It draws only in the explicitly enabled learned
 truss assembly (`plan.trussStudy`); company settings alone do not change
 the ordinary designer or the earlier floor, wall and gable-board lessons.
 The learning view is `learn.html?step=truss`, with a **Gable backing** view.
+The module's `lesson: "learn.html?step=truss"` marks it a lesson part: the parts
+gallery lists it under "Only in a lesson" with a link to that page, and
+`node tools/check-gallery.mjs` proves no building in the designer draws
+it and that it draws on its own from this lesson's plan.
 
 ## Construction settings
 

@@ -44,7 +44,7 @@ The boards are 2x6 (5 1/2 in wide, 1/4 in apart: `RAMP_BOARD`).
 ## Where it came from in Barnwright
 
 New -- Barnwright drew no ramp in 3D. The placement is its blueprint's
-(`bpDraw`, `3ddesign.html` 4440-4456, pinned SHA-256 `0bdcf663...`: "ramp at
+(`bpDraw`, `3ddesign.html` 4440-4456, pinned SHA-256 `85c4b022...`: "ramp at
 the biggest door", `rlen=(state.ramp==="r4")?4:6`); the options are its
 RAMPS table (line 768: "4′ ramp", "6′ ramp", "DIY kit (no wood)"). The porch
 entry follows `porchSideCorner` (entryZ) and `railAnchors` (the widest gap),

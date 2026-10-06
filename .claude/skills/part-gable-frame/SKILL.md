@@ -324,7 +324,7 @@ openings it draws: the gable windows (`renderGableWin` 3575-3705, clipped with
 vent (4002-4013, `parts/gable-vent.js` `ventSpot`), and the end-wall doors
 that "rise into the gable up to the roofline" (`renderItem` 3175-3188).
 `public/3ddesign.html` pinned SHA-256
-`0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c`.
+`85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36`.
 The openings are gathered by `gableOpenings` in `parts/roof-frame.js`.
 
 ## The owner's facts

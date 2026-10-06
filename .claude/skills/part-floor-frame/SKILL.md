@@ -207,7 +207,7 @@ The fixed height datum below belongs to the normal model's legacy path.
 
 New -- Barnwright drew none. It fits into Barnwright's floor slab
 (`buildShed` floor loop, `3ddesign.html` lines 3868-3877, pinned SHA-256
-`0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c`; ported
+`85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36`; ported
 in `parts/floor.js`): the slab runs from the top of the skids (y 0.5) to the
 deck top y0 = 0.92 and is inset 0.03 ft inside the walls (0 on the kennel),
 so the frame is inset the same (`floorInset`). docs/ARCHITECTURE.md "Framing

@@ -19,6 +19,10 @@ this part owns the two horizontal pieces.
 `roof-frame`, framing only. PIPELINE entry `gable-window-frame` follows
 `gable-backing`. It is active only with a real `trussStudy.windowOpening`.
 The normal finished designer and no-window lesson remain unchanged.
+The module's `lesson: "learn.html?step=truss&window=1"` marks it a lesson part: the parts
+gallery lists it under "Only in a lesson" with a link to that page, and
+`node tools/check-gallery.mjs` proves no building in the designer draws
+it and that it draws on its own from this lesson's plan.
 
 ## Construction settings
 

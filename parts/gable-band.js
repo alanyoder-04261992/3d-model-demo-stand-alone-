@@ -27,7 +27,7 @@
 
    Stage "gable-end".
 
-   Ported from Barnwright's 3ddesign.html (pinned SHA-256 0bdcf663...),
+   Ported from Barnwright's 3ddesign.html (pinned SHA-256 85c4b022...),
    buildShed's gable-ends loop, lines 3980-4001 (bandRet and the end returns),
    numbers byte for byte; gableBandY itself is 2231-2252 (model/roof-shapes.js).
    Barnwright draws the fill, the band and the vent of F, then of B, in one

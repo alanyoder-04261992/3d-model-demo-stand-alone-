@@ -16,11 +16,20 @@
                                 few facts about how the Dealer Center runs.
                                 Works while changes are stopped: asking for
                                 help is never a change.
-     POST /api/office/problem   problem(request, data): one browser error
-                                (ui/problems.js), no sign-in. Each kind of
-                                error goes at most once in 24 hours, and at
-                                most 10 go a day for the whole site; the
-                                answer is always {ok: true}.
+     POST /api/office/problem   problem(request, data, from): one browser
+                                error (ui/problems.js), no sign-in needed;
+                                the answer is always {ok: true}. A new kind
+                                of error goes once in 24 hours; when it
+                                keeps happening, how many more times goes
+                                at most once an hour (so Barnwright sees
+                                "happened 40 times", not just once a day).
+                                A day's reports are shared out so a stranger
+                                can't use them all up: 10 new kinds from
+                                pages nobody signed in to (at most 3 from
+                                one visitor), 10 more of their own for the
+                                people signed in on the team, and 10 count
+                                updates -- 30, what the Sales Inbox takes
+                                from one business a day.
 
    How: the control room gives a pass good for 10 minutes (control-room.js
    helpPass, signed in with the activation key), and the pass goes with the
@@ -61,6 +70,7 @@
 
 import { fail, text as textField } from "./http.js";
 import { KEEP } from "./store.js";
+import { sha256Hex } from "./hash.js";
 import { tidyMessage } from "../../ui/problems.js";
 
 export const SUPPORT_EMAIL = "support@barnwrightsoftware.com";
@@ -78,8 +88,12 @@ export const HELP_WORDS = Object.freeze({
   listUnreachable: "Barnwright couldn't be reached just now, so your questions aren't showing. Try again in a minute.",
 });
 
-const PROBLEMS = "barnwright-help-problems";   /* {day, sent, seen: {signature: when sent}} */
-const PROBLEMS_A_DAY = 10;
+const PROBLEMS = "barnwright-help-problems";   /* reserve(): today's shares, and each kind passed on in the last 24 hours */
+const NEW_A_DAY = 10;                          /* new kinds a day from pages nobody signed in to */
+const PER_VISITOR = 3;                         /* ... from one visitor (one page load sends at most 3) */
+const TEAM_A_DAY = 10;                         /* new kinds a day from people signed in on the team */
+const REPEATS_A_DAY = 10;                      /* "it happened N more times" a day, for kinds already passed on */
+const REPEAT_EVERY_MS = 3600_000;              /* one kind's count goes at most once an hour */
 const ASKED = "barnwright-help-asked";         /* {key: {pass, at}}: the questions of the last 9 minutes */
 const SAME_QUESTION_MS = 9 * 60_000;           /* a pass is good for 10 */
 const BUDGET_MS = 12_000;                      /* all of one request's calls together */
@@ -417,29 +431,57 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
 
   /* ---- POST /api/office/problem ------------------------------------------------- */
 
-  /* Take a place for this kind of error: none when it went in the last 24
-     hours or 10 went today. -> true when this report may go. */
-  async function reserve(signature) {
+  /* Take a place for one report, or count it for later.
+     The store keeps {v: 2, day, team, public, repeats, visitors: {who: n},
+     seen: {signature: {at, last, extra}}}: today's shares used (who is a
+     visitor's address hashed with the day, never the address itself),
+     and for each kind passed on in the last 24 hours when it first went
+     (at), when its count last went (last), and how many more times it
+     happened since (extra).
+     -> {repeat: false, count} for a new kind that may go, {repeat: true,
+     count} for a kind's count that may go now, or null (counted for later,
+     or nothing left today). */
+  async function reserve(one, from = {}) {
     const t = now().getTime(), stamp = new Date(t).toISOString(), day = stamp.slice(0, 10);
-    let mine = false;
+    const visitor = sha256Hex(`${day}|${from.visitor || "unknown"}`).slice(0, 16);
+    let go = null;
     await store.change(PROBLEMS, (doc) => {
-      mine = false;                                       /* this may run more than once */
-      const seen = Object.create(null);
-      for (const [sig, at] of Object.entries(doc?.seen || {})) if (t - Date.parse(at) < DAY) seen[sig] = at;
-      const sent = doc?.day === day ? doc.sent || 0 : 0;
-      if (seen[signature] || sent >= PROBLEMS_A_DAY) return KEEP;
-      seen[signature] = stamp;
-      mine = true;
-      return { day, sent: sent + 1, seen };
+      go = null;                                          /* this may run more than once */
+      const today = doc?.v === 2 && doc.day === day;
+      const next = {
+        v: 2, day, team: today ? doc.team : 0, public: today ? doc.public : 0, repeats: today ? doc.repeats : 0,
+        visitors: today ? { ...doc.visitors } : {}, seen: Object.create(null),
+      };
+      for (const [sig, kind] of Object.entries(doc?.v === 2 ? doc.seen || {} : {})) if (t - Date.parse(kind.at) < DAY) next.seen[sig] = { ...kind };
+      const kind = next.seen[one.signature];
+      if (kind) {
+        kind.extra = Math.min(1_000_000, kind.extra + one.count);
+        if (t - Date.parse(kind.last) >= REPEAT_EVERY_MS && next.repeats < REPEATS_A_DAY) {
+          go = { repeat: true, count: kind.extra };
+          kind.extra = 0;
+          kind.last = stamp;
+          next.repeats++;
+        }
+        return next;
+      }
+      if (from.team ? next.team >= TEAM_A_DAY : (next.public >= NEW_A_DAY || (next.visitors[visitor] || 0) >= PER_VISITOR)) return KEEP;
+      next.seen[one.signature] = { at: stamp, last: stamp, extra: 0 };
+      if (from.team) next.team++;
+      else { next.public++; next.visitors[visitor] = (next.visitors[visitor] || 0) + 1; }
+      go = { repeat: false, count: one.count };
+      return next;
     });
-    return mine;
+    return go;
   }
-  /* It didn't reach Barnwright: the next one like it may try again (today's count stays). */
-  async function release(signature) {
+  /* It didn't reach Barnwright. A new kind: the next one like it may try
+     again (today's share stays used). A count: it goes with the next one. */
+  async function release(signature, go) {
     await store.change(PROBLEMS, (doc) => {
-      if (!doc?.seen || !Object.hasOwn(doc.seen, signature)) return KEEP;
+      const kind = doc?.v === 2 && doc.seen && Object.hasOwn(doc.seen, signature) ? doc.seen[signature] : null;
+      if (!kind) return KEEP;
       const seen = Object.create(null);
-      for (const [sig, at] of Object.entries(doc.seen)) if (sig !== signature) seen[sig] = at;
+      for (const [sig, k] of Object.entries(doc.seen)) if (sig !== signature) seen[sig] = k;
+      if (go.repeat) seen[signature] = { ...kind, extra: Math.min(1_000_000, kind.extra + go.count) };
       return { ...doc, seen };
     });
   }
@@ -463,20 +505,25 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
     };
   }
 
-  /* -> {sent}; index.js answers {ok: true} whatever this says */
-  async function problem(request, data) {
+  /* from: {team: true when someone on the team is signed in, visitor: the
+     browser's address}. -> {sent}; index.js answers {ok: true} whatever
+     this says */
+  async function problem(request, data, from = {}) {
     if (!canAsk) return { sent: false };
     const left = deadline();
     const one = report(data, request);
-    if (!one || !(await reserve(one.signature))) return { sent: false };
+    if (!one) return { sent: false };
+    const go = await reserve(one, from);
+    if (!go) return { sent: false };
     try {
-      const answer = await send("problem", { pass: await passFor("problem", undefined, left), problem: one }, left);
+      /* the Sales Inbox adds each report's count to the same kind's */
+      const answer = await send("problem", { pass: await passFor("problem", undefined, left), problem: { ...one, count: go.count } }, left);
       if ((answer.status === 200 || answer.status === 201) && answer.data?.ok === true) return { sent: true };
       log("Help: the Sales Inbox didn't take a problem report; it answered", answer.status, codeOf(answer.data));
     } catch (error) {
       log("Help: a problem report didn't reach Barnwright:", error?.status || error?.name || "Error");
     }
-    await release(one.signature);
+    await release(one.signature, go);
     return { sent: false };
   }
 

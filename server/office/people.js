@@ -101,7 +101,17 @@ export function createPeople({ store, identityUser, ownerEmail = "", now }) {
     return who;
   }
 
-  return { whoIsAsking, member };
+  /* -> the person on the team signed in on this request, or null. Changes
+     nothing (no invite claimed, no visit noted): for a problem report. */
+  async function signedIn(request) {
+    let user = null;
+    try { user = await identityUser(request); } catch { user = null; }
+    if (!confirmed(user)) return null;
+    const person = await store.get(`people/${user.id}`);
+    return person && person.active !== false ? person : null;
+  }
+
+  return { whoIsAsking, member, signedIn };
 }
 
 /* ---------------------------------------------------------------------- */

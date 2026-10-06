@@ -7,7 +7,9 @@
    This is specifically the LOFTED-WALL rule. The separate window plate
    below the opening is a flat 2x4 with studs underneath; it is not the
    flat board in this header. That lower assembly lives in window-plate.js;
-   its studs sit on the bottom plate and follow the wall layout. */
+   its studs sit on the bottom plate and follow the wall layout.
+   A LESSON part (`lesson`, parts/README.md): only window-framing.html builds
+   the windowHeaderStudy it needs, so no building in the designer has one. */
 import { prismMember, drawMembers } from "./floor-frame.js";
 
 export function windowHeaderMembers(plan) {
@@ -29,7 +31,7 @@ export function windowHeaderMembers(plan) {
 }
 
 export default {
-  id:"window-header",name:"Window header",stage:"wall-frame",
+  id:"window-header",name:"Window header",stage:"wall-frame",lesson:"window-framing.html",
   realLife:"Loft window header: touching boards on edge rest on a flat board, flush inside with a ledge outside. The assembly meets the underside of the top plate.",
   appliesTo(plan) {return Boolean(plan.windowHeaderStudy);},
   members:windowHeaderMembers,

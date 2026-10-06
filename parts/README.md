@@ -37,6 +37,15 @@ export default {
   `pending` may also be a list of the part tags still pending (e.g.
   `["roll-up"]`) while the rest of the module is done. Remove it when the part
   is finished and its golden check is green.
+* `lesson: "<page>"` marks a LESSON part: a construction detail Alan taught
+  that only that lesson page draws (`window-framing.html`,
+  `learn.html?step=truss` ...). It applies only to a plan the lesson builds
+  (a `windowHeaderStudy`, a `trussStudy` ...), so no building in the designer
+  has one (CLAUDE.md rule 5 keeps the designer apart from the lessons). The
+  parts gallery lists it under "Only in a lesson" with a link to that page,
+  and `tools/check-gallery.mjs` proves both halves: no building draws it,
+  and it draws on its own from the plan its lesson page builds (add that
+  plan to `LESSON_PLANS` in the check).
 * A module may export helpers another PIPELINE entry calls at Barnwright's
   position (the kennel's `front` and `side` are called from inside the siding
   loop). Wrap the helper's drawing in `kit.part("<owner id>", fn)` so the

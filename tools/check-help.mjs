@@ -31,8 +31,11 @@
        "too many today", and for the list; a dropped connection is retried
        with the same pass and makes one question; nothing typed is logged.
     6. Help not set up yet (some settings missing, a wrong inbox address).
-    7. Problem reports: one send per kind in 24 hours, at most 10 a day for
-       the site, always {ok: true}, same site only.
+    7. Problem reports: a new kind once in 24 hours, how many more times at
+       most once an hour (added up, a count that didn't arrive goes with the
+       next); a day's 30 shared out (10 new kinds from strangers, at most 3
+       from one visitor; 10 for the team signed in; 10 count updates);
+       always {ok: true}, same site only.
     8. The browser's reporter: at most 3 a page, trimmed, no query strings,
        nothing typed, same site only, quiet when the address answers 404.
     9. Every page's security policy lets a page talk to its own site.
@@ -92,13 +95,13 @@ const stray = [];
 globalThis.fetch = async (url) => { stray.push(String(url)); throw new TypeError("This check sends nothing anywhere"); };
 
 let office = createOffice({ ...base, appVersion: "dealer-center check" });
-async function call(method, path, body, { as = acting, origin = BASE, type, app = office } = {}) {
+async function call(method, path, body, { as = acting, origin = BASE, type, app = office, ip = "203.0.113.7" } = {}) {
   const was = acting;
   acting = as;
   const headers = {};
   if (origin) headers.origin = origin;
   if (body !== undefined) headers["content-type"] = type || "application/json";
-  const r = await app.handle(new Request(BASE + path, { method, headers, body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body) }), { clientIp: "203.0.113.7" });
+  const r = await app.handle(new Request(BASE + path, { method, headers, body: body === undefined ? undefined : typeof body === "string" ? body : JSON.stringify(body) }), { clientIp: ip });
   acting = was;
   const text = await r.text();
   let data;
@@ -336,11 +339,12 @@ ok("BARNWRIGHT_HELP_URL: https only, nothing after the name; plain http only for
     .every(([u, o]) => { try { inboxOrigin(u, o); return false; } catch { return true; } }));
 
 /* ---- 7 ---------------------------------------------------------------------------------- */
-section("7. Problem reports: once per kind in 24 hours, at most 10 a day, always {ok: true}");
+section("7. Problem reports: shared out so a stranger can't use them up, repeats counted, always {ok: true}");
 /* a fresh day, half an hour past midnight (UTC) */
 const nextDay = (t) => Math.ceil((t + 1) / DAY) * DAY + 30 * 60_000;
 shift += nextDay(Date.now() + shift) - (Date.now() + shift);
 const problem = (n, more = {}) => ({ signature: `designer:${String(n).padStart(16, "0")}`, message: `TypeError: thing ${n} is undefined`, where: "https://samplebarns.test/ui/app.js?v=9:120:7", page: "/d/riverside/", area: "designer", appVersion: "forged 9.9", browser: "Mozilla/5.0 (check)", count: 1, ...more });
+const visitor = (n) => `198.51.100.${n}`;
 let problemsSent = callsTo("/help/v1/problem");
 r = await report(problem(1));
 const sentProblem = lastCall("/help/v1/problem");
@@ -351,53 +355,90 @@ ok("... in the inbox's shape, the server's version (not the page's), no site nam
   p.signature === "designer:0000000000000001" && p.message === "TypeError: thing 1 is undefined" && p.where === "/ui/app.js:120:7" && p.page === "/d/riverside/"
   && p.area === "designer" && p.appVersion === "dealer-center check" && p.browser === "Mozilla/5.0 (check)" && p.count === 1
   && Number.isFinite(Date.parse(p.firstAt)) && Number.isFinite(Date.parse(p.lastAt)) && inbox.problems.at(-1).signature === p.signature, JSON.stringify(p));
+
+/* the same kind again: counted, and how many more times goes at most once an hour */
 problemsSent = callsTo("/help/v1/problem");
-r = await report(problem(1, { message: "TypeError: thing 1 is undefined", count: 3 }));
-ok("the same kind of problem again: {ok: true}, nothing sent (once in 24 hours)", r.data.ok === true && callsTo("/help/v1/problem") === problemsSent);
-for (let n = 2; n <= 15; n++) await report(problem(n));
-ok("15 kinds in one day: exactly 10 sent, the rest dropped quietly", callsTo("/help/v1/problem") === problemsSent + 9, String(callsTo("/help/v1/problem") - problemsSent + 1));
+r = await report(problem(1, { count: 3 }), { ip: visitor(1) });
+shift += 30 * 60_000;
+await report(problem(1, { count: 2 }), { ip: visitor(2) });
+ok("the same kind again within the hour, from anyone: {ok: true}, nothing sent yet (counted)", r.data.ok === true && callsTo("/help/v1/problem") === problemsSent);
+shift += 31 * 60_000;
+await report(problem(1), { ip: visitor(3) });
+ok("an hour after it went: one report with how many more times it happened (3 + 2 + 1)", callsTo("/help/v1/problem") === problemsSent + 1 && lastCall("/help/v1/problem").body.problem.count === 6, JSON.stringify(lastCall("/help/v1/problem").body.problem.count));
+ok("... and the Sales Inbox adds it to the same problem: happened 7 times", inbox.problems.filter((x) => x.signature === problem(1).signature).length === 1 && inbox.problems.find((x) => x.signature === problem(1).signature).count === 7);
+
+/* new kinds: a stranger's share, then the day's 10 for pages nobody signed in to */
+problemsSent = callsTo("/help/v1/problem");
+for (let n = 2; n <= 6; n++) await report(problem(n));
+ok("one visitor: at most 3 new kinds a day (problem 1 was theirs), the rest dropped quietly", callsTo("/help/v1/problem") === problemsSent + 2, String(callsTo("/help/v1/problem") - problemsSent));
+for (let n = 10; n <= 19; n++) await report(problem(n), { ip: visitor(10 + Math.floor((n - 10) / 2)) });
+ok("other visitors share what is left: 10 new kinds a day in all from pages nobody signed in to", callsTo("/help/v1/problem") === problemsSent + 2 + 7, String(callsTo("/help/v1/problem") - problemsSent));
+await report(problem(20), { ip: visitor(99) });
+ok("... so a new visitor's report waits for tomorrow", callsTo("/help/v1/problem") === problemsSent + 9);
+for (let n = 21; n <= 32; n++) await report(problem(n, { area: "dealer-center", page: "/dealer#/orders" }), { as: EMAIL.mike, ip: visitor(99) });
+ok("someone signed in on the team has 10 a day of their own, which no stranger can use", callsTo("/help/v1/problem") === problemsSent + 9 + 10, String(callsTo("/help/v1/problem") - problemsSent));
+
+/* how many more times: at most 10 updates a day, each kind at most once an hour */
+problemsSent = callsTo("/help/v1/problem");
+shift += 61 * 60_000;
+for (const n of [1, 2, 3, 10, 11, 12, 13, 14, 15, 16, 17, 18]) await report(problem(n, { count: 5 }), { ip: visitor(50 + n) });
+ok("count updates: at most 10 a day (one went already), the rest counted for later", callsTo("/help/v1/problem") === problemsSent + 9, String(callsTo("/help/v1/problem") - problemsSent));
+ok("30 a day in all at most: what the Sales Inbox takes from one business", inbox.calls.filter((c) => c.path === "/help/v1/problem" && c.status !== 400).length <= 30 + 1 && !inbox.calls.some((c) => c.path === "/help/v1/problem" && c.status === 429));
+
 problemsSent = callsTo("/help/v1/problem");
 shift += DAY;
-r = await report(problem(16));
+r = await report(problem(40));
 ok("the next day, reports go again", r.data.ok === true && callsTo("/help/v1/problem") === problemsSent + 1);
-r = await report(problem(1));
-ok("... and after 24 hours the same kind goes again", callsTo("/help/v1/problem") === problemsSent + 2);
+r = await report(problem(2));
+ok("... and after 24 hours the same kind goes again as a new report", callsTo("/help/v1/problem") === problemsSent + 2 && lastCall("/help/v1/problem").body.problem.count === 1);
 problemsSent = callsTo("/help/v1/problem");
 const dropped = [
-  ["a signature with other characters", problem(20, { signature: "designer:bad sig!" })],
-  ["a signature over 120 characters", problem(21, { signature: "d".repeat(121) })],
-  ["the signature __proto__", problem(22, { signature: "__proto__" })],
-  ["no message", problem(23, { message: "" })],
-  ["a page area it doesn't know", problem(24, { area: "control-room" })],
-  ["a list instead of a report", [problem(25)]],
+  ["a signature with other characters", problem(41, { signature: "designer:bad sig!" })],
+  ["a signature over 120 characters", problem(42, { signature: "d".repeat(121) })],
+  ["the signature __proto__", problem(43, { signature: "__proto__" })],
+  ["no message", problem(44, { message: "" })],
+  ["a page area it doesn't know", problem(45, { area: "control-room" })],
+  ["a list instead of a report", [problem(46)]],
 ];
 for (const [what, body] of dropped) {
-  r = await report(body);
+  r = await report(body, { ip: visitor(60) });
   ok(`${what}: {ok: true}, nothing sent`, r.status === 200 && r.data.ok === true && callsTo("/help/v1/problem") === problemsSent, JSON.stringify(r));
 }
-r = await report("signature=designer:1&message=x", { type: "application/x-www-form-urlencoded" });
+r = await report("signature=designer:1&message=x", { type: "application/x-www-form-urlencoded", ip: visitor(60) });
 ok("a form post instead of JSON: {ok: true}, nothing sent", r.status === 200 && r.data.ok === true && callsTo("/help/v1/problem") === problemsSent);
-r = await report("{\"signature\":", {});
+r = await report("{\"signature\":", { ip: visitor(60) });
 ok("a broken body: {ok: true}, nothing sent", r.status === 200 && r.data.ok === true && callsTo("/help/v1/problem") === problemsSent);
-r = await report(problem(26), { origin: "https://evil.example" });
+r = await report(problem(47), { origin: "https://evil.example", ip: visitor(60) });
 ok("from another website: refused (403), nothing sent", r.status === 403 && callsTo("/help/v1/problem") === problemsSent);
-r = await report(problem(27), { origin: null });
+r = await report(problem(48), { origin: null, ip: visitor(60) });
 ok("with no Origin at all: refused (403), nothing sent", r.status === 403 && callsTo("/help/v1/problem") === problemsSent);
+r = await report(problem(49, { signature: "designer:toString" }), { ip: visitor(61) });
+await report(problem(49, { signature: "designer:toString" }), { ip: visitor(61) });
+ok("a signature that is also a word the store knows (toString) is just a kind like any other", callsTo("/help/v1/problem") === problemsSent + 1);
+problemsSent = callsTo("/help/v1/problem");
 room.down = true;
-r = await report(problem(28));
+r = await report(problem(50), { ip: visitor(62) });
 ok("the control room down: {ok: true}, nothing reached the inbox", r.data.ok === true && callsTo("/help/v1/problem") === problemsSent);
 room.down = false;
-r = await report(problem(28));
+r = await report(problem(50), { ip: visitor(63) });
 ok("... and the same problem goes once it's back (a report that didn't arrive doesn't count as sent)", callsTo("/help/v1/problem") === problemsSent + 1);
 inbox.nextStatus = { path: "problem", status: 503 };
-r = await report(problem(29));
+r = await report(problem(51), { ip: visitor(64) });
 ok("the inbox busy (503): {ok: true}", r.data.ok === true);
-r = await report(problem(29));
-ok("... and the next one like it tries again", callsTo("/help/v1/problem") === problemsSent + 3 && inbox.problems.some((x) => x.signature === problem(29).signature));
-r = await report(problem(40, { page: "/dealer#confirmation_token=SECRET456def" }));
+r = await report(problem(51), { ip: visitor(65) });
+ok("... and the next one like it tries again", callsTo("/help/v1/problem") === problemsSent + 3 && inbox.problems.some((x) => x.signature === problem(51).signature));
+shift += 61 * 60_000;
+inbox.nextStatus = { path: "problem", status: 503 };
+await report(problem(51, { count: 4 }), { ip: visitor(66) });
+shift += 61 * 60_000;
+await report(problem(51, { count: 1 }), { ip: visitor(67) });
+ok("a count that didn't arrive goes with the next one (4 + 1)", lastCall("/help/v1/problem").body.problem.count === 5 && inbox.problems.find((x) => x.signature === problem(51).signature).count === 6, String(lastCall("/help/v1/problem").body.problem.count));
+r = await report(problem(52, { page: "/dealer#confirmation_token=SECRET456def" }), { ip: visitor(68) });
 ok("a problem's page keeps its path and drops a sign-in email's link", lastCall("/help/v1/problem").body.problem.page === "/dealer" && !JSON.stringify(lastCall("/help/v1/problem").body).includes("SECRET456def"), lastCall("/help/v1/problem").body.problem.page);
 const doc = await office.parts.store.get("barnwright-help-problems");
-ok("what was sent is kept in the business's own store (today's count and when each kind went)", doc && typeof doc.sent === "number" && doc.seen && Object.keys(doc.seen).includes(problem(28).signature), JSON.stringify(doc).slice(0, 200));
+ok("what was sent is kept in the business's own store: today's shares, each kind and its count still to tell, no visitor's address",
+  doc && doc.v === 2 && typeof doc.public === "number" && typeof doc.team === "number" && typeof doc.repeats === "number"
+  && doc.seen && doc.seen[problem(52).signature]?.extra === 0 && !JSON.stringify(doc).includes("198.51.100") && !JSON.stringify(doc).includes("203.0.113"), JSON.stringify(doc).slice(0, 300));
 ok("nothing sent in this check ever went anywhere but the pretend control room and inbox", stray.length === 0, stray.join(" "));
 
 /* ---- 8 ---------------------------------------------------------------------------------- */
@@ -442,13 +483,19 @@ fire("unhandledrejection", { reason: boom });
 answerWith = async () => { throw new TypeError("Failed to fetch"); };
 for (let n = 0; n < 5; n++) fire("error", { message: `ReferenceError: thing${n} is not defined`, filename: `${SITE}/ui/quote.js`, lineno: 10 + n, colno: 3 });
 await new Promise((done) => setTimeout(done, 20));
-ok("at most 3 reports a page load, however many errors", posts.length === 3, String(posts.length));
+ok("at most 3 kinds reported a page load, however many errors", posts.length === 3, String(posts.length));
+page.dispatchEvent(new Event("pagehide"));
+await new Promise((done) => setTimeout(done, 10));
+ok("when the page is put away, how many more times the first one happened goes as one report (4 more)", posts.length === 4 && posts[3].body.signature === first.body.signature && posts[3].body.count === 4 && posts[3].body.message === first.body.message, JSON.stringify(posts.slice(3).map((x) => x.body.count)));
+page.dispatchEvent(new Event("pagehide"));
+await new Promise((done) => setTimeout(done, 10));
+ok("... once: nothing new since, nothing more sent; the kinds that didn't happen again send nothing", posts.length === 4);
 ok("a promise that failed: its name and words, where its stack says, no email", posts[1].body.message === "Error: boom at (email)" && posts[1].body.where === "/ui/views.js:12:5", JSON.stringify(posts[1].body));
 ok("a site that answers 404, or can't be reached, changes nothing: no error, no unhandled promise", unhandled.length === 0, String(unhandled[0]));
 ok("the page remembers what it saw for a question to Barnwright (at most 10, with counts)", reporter.recentProblems().length === 7 && reporter.recentProblems().every((x) => x.message && typeof x.count === "number"), JSON.stringify(reporter.recentProblems().map((x) => x.count)));
 ok("the Dealer Center's page is its screen, never which customer", reporter.screenOf("#/customers/AbC123xyZ9/orders/Ord987654?new=1") === "#/customers/:id/orders/:id" && reporter.screenOf("#/price-list/doors") === "#/price-list/doors");
 ok("... and never a sign-in email's link or a saved building", reporter.screenOf("#invite_token=Abc123Def456") === "" && reporter.screenOf("#recovery_token=x") === "" && reporter.screenOf("#d=AbcDef") === "");
-r = await report(first.body);
+r = await report(first.body, { ip: visitor(80) });
 ok("what the reporter sends is what the server takes: it reaches the inbox", r.data.ok === true && inbox.problems.some((x) => x.signature === first.body.signature && x.where === "/ui/app.js:120:7"));
 {
   /* another page load: a report bound for another website is never sent; a demo keeps them */
@@ -462,6 +509,25 @@ ok("what the reporter sends is what the server takes: it reaches the inbox", r.d
   await new Promise((done) => setTimeout(done, 10));
   ok("a report is only ever sent to this same site", !posts.some((x) => x.url.startsWith("https://evil.example")));
   ok("the \"try it\" demo keeps its problems on the page", !posts.some((x) => /in the demo/.test(x.body.message)) && demo.recentProblems().some((x) => /in the demo/.test(x.message)));
+  /* a page left open (the Dealer Center all day): how many more times goes a while after it came back */
+  posts.length = 0;
+  answerWith = async () => new Response("{}", { status: 200 });
+  const open = await import(pathToFileURL(resolvePath(ROOT, "ui/problems.js")).href + "?page-left-open");
+  open.watchProblems({ area: "dealer-center", endpoint: "/api/office/problem", page: () => "/dealer#/orders", followUpMs: 40 });
+  const again = () => page.dispatchEvent(Object.assign(new Event("error"), { message: "TypeError: the list broke", filename: `${SITE}/ui/office/main.js`, lineno: 7, colno: 1 }));
+  again();
+  await new Promise((done) => setTimeout(done, 5));
+  again(); again(); again();
+  await new Promise((done) => setTimeout(done, 15));
+  const sentFirst = posts.filter((x) => /the list broke/.test(x.body.message)).length;
+  await new Promise((done) => setTimeout(done, 60));
+  const ones = posts.filter((x) => /the list broke/.test(x.body.message));
+  ok("on a page left open, the times it came back go a while later, as one report (3 more)", sentFirst === 1 && ones.length === 2 && ones[1].body.count === 3 && ones[1].body.signature === ones[0].body.signature, JSON.stringify(ones.map((x) => x.body.count)));
+  r = await report(ones[0].body, { as: EMAIL.mike, ip: visitor(82) });
+  await report(ones[1].body, { as: EMAIL.mike, ip: visitor(82) });
+  ok("... which the server takes as the same kind's count", r.data.ok === true && lastCall("/help/v1/problem").body.problem.signature === ones[0].body.signature);
+  open.watchProblems({ area: "designer" });
+  page.dispatchEvent(new Event("pagehide"));   /* this pretend page is done: nothing left to tell */
   globalThis.window = {};
   const bare = await import(pathToFileURL(resolvePath(ROOT, "ui/problems.js")).href + "?page-4");
   ok("with no real window (the checks that load the designer in Node), it does nothing", bare.watchProblems({ area: "designer" }) === false);
@@ -623,7 +689,7 @@ const pause = (ms) => new Promise((done) => setTimeout(done, ms));
 }
 {
   /* the words of an error are cleaned on the server too, whatever the browser sent */
-  r = await report({ signature: "designer:00000000000000aa", message: `TypeError: failed for pat.customer@example.com (555) 010-7788 https://samplebarns.test/d/riverside/?token=SECRET789 ${"A".repeat(50)}`, where: "/ui/app.js:1:1", page: "/d/riverside/", area: "designer" });
+  r = await report({ signature: "designer:00000000000000aa", message: `TypeError: failed for pat.customer@example.com (555) 010-7788 https://samplebarns.test/d/riverside/?token=SECRET789 ${"A".repeat(50)}`, where: "/ui/app.js:1:1", page: "/d/riverside/", area: "designer" }, { as: EMAIL.owner, ip: visitor(81) });
   const words = lastCall("/help/v1/problem").body.problem.message;
   ok("a problem's words are cleaned on the server too: no email, phone number, query string or long code", r.data.ok === true && !/pat\.customer|010-7788|SECRET789|AAAAAAAAAA/.test(words) && /\(email\)/.test(words) && /\(number\)/.test(words), words);
   r = await ask(EMAIL.mike, "Errors with private words (zebra-question)", { details: { errors: [{ message: "Error: chris@samplebarns.example called (555) 010-0100", where: "/ui/office/main.js:1:1", count: 1 }] } });
@@ -676,4 +742,4 @@ if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} Help checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): a question goes to Barnwright with the control room's pass, from the person signed in, with only the promised facts (no customers, prices, orders or keys), also while changes are stopped; owners and managers see every question and a dealer their own, however many the team asked; every failure says so in plain words (a refused key or question gives the email, never "try again"), within one time limit, and nothing typed is logged; a dropped connection or the same words sent again make one question; problem reports go once per kind in 24 hours and at most 10 a day, cleaned on the server too, always answered {ok: true}; the browser sends at most 3, trimmed, to its own site only, failures it caught itself included; not connected, nothing is sent; every page may talk to its own site; each Dealer Center's short answers fit it and name only real buttons.`);
+console.log(`PROVED (${passed} checks): a question goes to Barnwright with the control room's pass, from the person signed in, with only the promised facts (no customers, prices, orders or keys), also while changes are stopped; owners and managers see every question and a dealer their own, however many the team asked; every failure says so in plain words (a refused key or question gives the email, never "try again"), within one time limit, and nothing typed is logged; a dropped connection or the same words sent again make one question; problem reports go once per kind in 24 hours with how many more times at most once an hour, a day's 30 shared out so a stranger can't use them up (3 for one visitor, 10 for strangers, 10 for the team, 10 count updates), cleaned on the server too, always answered {ok: true}; the browser sends at most 3 kinds and later how many more times, trimmed, to its own site only, failures it caught itself included; not connected, nothing is sent; every page may talk to its own site; each Dealer Center's short answers fit it and name only real buttons.`);

@@ -484,8 +484,10 @@ loft). Any company can build differently in its own settings.
   first, then …"* — the skill says what the part is in real life, which
   numbers come from you, what must not move so the finished look stays
   Barnwright's, and which checks prove it. Claude updates the notes after the
-  change. The parts gallery (parts.html) shows every part on its own and names
-  its skill.
+  change. The parts gallery (parts.html) shows every part of a building on its
+  own and names its skill; the details you taught in a lesson (the window
+  header, the doorway framing, the gable backing ...) are listed there with a
+  link to the lesson page that draws them.
 * **How a company builds** (24 in stud spacing, 12 in joists as standard,
   rafters instead of trusses): that is a settings change, not a part change —
   *"Use the change-construction skill: Acme builds with 2x6 studs at 24 in."*

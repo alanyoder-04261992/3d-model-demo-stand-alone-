@@ -16,7 +16,10 @@
    The cards come in the order the shop puts the building together (the
    company's build order), each part at its first step.
    Parts the building does not have (a dormer on a utility shed, a porch...)
-   are listed at the bottom by name.
+   are listed at the bottom by name. The parts Alan learned in a lesson (a
+   part module with `lesson`, parts/README.md) are listed apart, each a link
+   to the lesson page that draws it: no building in the designer has them
+   (CLAUDE.md rule 5, the designer is kept apart from the lessons).
 
    HOW THE PICTURES ARE MADE, cheaply:
    * ONE renderer (one WebGL context) for the whole page -- a browser allows
@@ -269,7 +272,8 @@ export function framePart(sub, full, size) {
    parts come in the order the shop puts them together -- each part at its
    earliest step in that order -- which is what the page promises; parts on
    no step of the order (the finished floor slab) come last. Without it, and
-   between parts on the same step, PIPELINE order. */
+   between parts on the same step, PIPELINE order. The rest are `off` (not on
+   this building) or, for a lesson part, `lessons` (only on its lesson page). */
 export function partsOnBuilding(build, buildOrder) {
   const present = stagesPresent(build);
   const stagesByLabel = new Map();
@@ -289,7 +293,8 @@ export function partsOnBuilding(build, buildOrder) {
     const at = new Map(on.map((p, i) => [p, [when(p), i]]));
     on.sort((a, b) => (at.get(a)[0] - at.get(b)[0]) || (at.get(a)[1] - at.get(b)[1]));
   }
-  return { on, off: pc.order.filter((l) => !stagesByLabel.has(l)) };
+  const rest = pc.order.filter((l) => !stagesByLabel.has(l));
+  return { on, off: rest.filter((l) => !pc.lessons[l]), lessons: rest.filter((l) => pc.lessons[l]) };
 }
 
 /* A skill is a file among the designer's own notes (.claude/skills/...),
@@ -321,7 +326,7 @@ const frameNow = () => new Promise((r) => (typeof requestAnimationFrame === "fun
 
 export async function startGallery() {
   const $ = (id) => document.getElementById(id);
-  const out = { ready: false, parts: [], off: [], error: null };
+  const out = { ready: false, parts: [], off: [], lessons: [], error: null };
   window.partsGallery = out;
   const id = companyFromAddress();
   let loaded;
@@ -361,13 +366,13 @@ export async function startGallery() {
   let run = 0;
   async function draw() {
     const my = ++run;
-    out.ready = false; out.parts = []; out.off = [];
+    out.ready = false; out.parts = []; out.off = []; out.lessons = [];
     const grid = $("pg-grid"), offBox = $("pg-off"), status = $("pg-status");
     grid.innerHTML = ""; offBox.innerHTML = "";
     const plan = makePlan(state, cat);
     const size = { w: PART_PIC.w, h: PART_PIC.h };
     const full = assemble(plan, { viewport: size, fit: "fitref", frames: true });
-    const { on, off } = partsOnBuilding(full.build, plan.construction && plan.construction.buildOrder);
+    const { on, off, lessons } = partsOnBuilding(full.build, plan.construction && plan.construction.buildOrder);
     const T = cat.TYPES[state.type];
     $("pg-building").textContent = state.size.replace("x", " × ") + " " + T.name;
     status.textContent = "Drawing " + on.length + " parts…";
@@ -394,11 +399,21 @@ export async function startGallery() {
     });
     const pc = partCatalogue();
     out.off = off.slice();
+    out.lessons = lessons.map((l) => ({ label: l, page: pc.lessons[l] }));
+    let offHtml = "";
     if (off.length) {
       const names = [];
       for (const l of off) { const m = (pc.byLabel[l] || [])[0]; const n = m ? m.name : l; if (names.indexOf(n) < 0) names.push(n); }
-      offBox.innerHTML = "<h2>Not on this building</h2><p>" + names.map(esc).join(" · ") + "</p>";
+      offHtml += "<h2>Not on this building</h2><p>" + names.map(esc).join(" · ") + "</p>";
     }
+    /* the lesson parts: a link to the lesson page that draws each one (the
+       lesson pages ship wherever this page does -- Alan's own computer and
+       his learning preview, tools/build-site.mjs) */
+    if (lessons.length) {
+      offHtml += "<h2>Only in a lesson</h2><p>Construction details learned in a lesson, each drawn on its lesson page: " +
+        out.lessons.map((x) => '<a class="pg-lesson" href="' + esc(x.page) + '">' + esc(pc.byLabel[x.label][0].name) + "</a>").join(" · ") + "</p>";
+    }
+    offBox.innerHTML = offHtml;
     const dpr = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
     for (let i = 0; i < cards.length; i++) {
       if (my !== run) return out;                  /* a newer choice has started over */

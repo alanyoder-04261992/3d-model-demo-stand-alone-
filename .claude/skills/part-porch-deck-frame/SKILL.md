@@ -41,7 +41,7 @@ the settings have no porch deck board yet.
 ## Where it came from in Barnwright
 
 New -- Barnwright drew none (its porch floor is part of the one floor slab,
-`buildShed` 3868-3877, pinned SHA-256 `0bdcf663...`). It fits under the
+`buildShed` 3868-3877, pinned SHA-256 `85c4b022...`). It fits under the
 porches Barnwright draws (`porchFront` 2465, `porchSideCorner` 2488,
 `porchCorner` 2525; `parts/porch.js`), whose posts and railings stand on it.
 The porch outlines are `porchOutlines` in `parts/floor-frame.js`, read off

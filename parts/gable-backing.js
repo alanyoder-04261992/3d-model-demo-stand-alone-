@@ -5,7 +5,9 @@
    outward with the wide faces of the gable studs.
    Fill internal stud bays AND the outer bays, right out to the truss.
    Outer ends follow the existing behind-truss-face preview joint.
-   This rule is enabled only in the learned truss/gable assembly. */
+   This rule is enabled only in the learned truss/gable assembly.
+   A LESSON part (`lesson`, parts/README.md): only the truss lesson builds the
+   trussStudy it needs, so no building in the designer has one. */
 import { prismMember, drawMembers, clipHalf, cleanPoly, polyArea } from "./floor-frame.js";
 import { trussGableStudMembers } from "../model/truss-study.js";
 
@@ -93,7 +95,7 @@ export function gableBackingMembers(plan) {
 }
 
 export default {
-  id: "gable-backing", name: "Gable backing", stage: "roof-frame",
+  id: "gable-backing", name: "Gable backing", stage: "roof-frame", lesson: "learn.html?step=truss",
   realLife: "Horizontal backing across the gable to the outer truss supports siding seams. Used with no gable window or fake window; its bottom is measured from the upper-plate top.",
   appliesTo(plan) { return Boolean(gableBackingRule(plan)?.enabled); },
   members: gableBackingMembers,

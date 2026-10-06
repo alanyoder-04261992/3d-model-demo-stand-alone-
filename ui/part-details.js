@@ -48,14 +48,17 @@ export function stagesPresent(build, counts) {
 }
 
 /* Every part module and the part labels triangles carry, in PIPELINE order:
-   { order: [label...], byId: {id: module}, byLabel: {label: [module...]} }.
+   { order: [label...], byId: {id: module}, byLabel: {label: [module...]},
+     lessons: {label: page} }.
    A label is usually a module's own id; the porch label is also drawn by the
    porch-junction entry, and the door/window labels by the draw modules of
-   parts/openings/. */
+   parts/openings/. A label is a LESSON part's when every module that draws
+   it says `lesson` (parts/README.md): only that lesson page draws it, so
+   `lessons` maps it to the page. */
 let PARTCAT = null;
 export function partCatalogue() {
   if (PARTCAT) return PARTCAT;
-  const byId = {}, byLabel = {}, order = [];
+  const byId = {}, byLabel = {}, order = [], lessons = {};
   for (const en of PIPELINE) if (en.module && en.module.id) byId[en.module.id] = en.module;
   for (const m of DRAW_MODULES) byId[m.id] = m;
   for (const en of PIPELINE) for (const tag of en.tags) if (order.indexOf(tag) < 0) order.push(tag);
@@ -64,7 +67,8 @@ export function partCatalogue() {
     if (byId[tag] && tag !== "openings") list.push(byId[tag]);
     for (const en of PIPELINE) if (en.part === tag && en.module && list.indexOf(en.module) < 0) list.push(en.module);
     byLabel[tag] = list;
+    if (list.length && list.every((m) => typeof m.lesson === "string" && m.lesson)) lessons[tag] = list[0].lesson;
   }
-  PARTCAT = Object.freeze({ order: Object.freeze(order), byId: Object.freeze(byId), byLabel: Object.freeze(byLabel) });
+  PARTCAT = Object.freeze({ order: Object.freeze(order), byId: Object.freeze(byId), byLabel: Object.freeze(byLabel), lessons: Object.freeze(lessons) });
   return PARTCAT;
 }

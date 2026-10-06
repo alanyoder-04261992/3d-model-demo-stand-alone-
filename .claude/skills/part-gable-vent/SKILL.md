@@ -57,7 +57,7 @@ makes them (its gable loop draws fill, band and vent of F, then of B).
 ## Where it came from in Barnwright
 
 `boisterous-lokum-a737e0/public/3ddesign.html` (pinned SHA-256
-`0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c`),
+`85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36`),
 `buildShed`'s gable-ends loop: the ridge search on line 3980
 (`var rx=0,ry=-1; for(...)`) and the vent, lines 4002-4014.
 

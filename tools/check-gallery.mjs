@@ -14,14 +14,33 @@
       own triangles, framing included), each with a picture that is not blank
       and not the same as any other part's, its building step(s), a caption
       with every {placeholder} filled, and a link to its skill that the
-      server really serves; everything else is listed as "not on this
-      building". The whole page uses ONE 3D drawing surface (one WebGL
-      context), not one per picture.
+      server really serves; every other part a building can have is listed
+      as "not on this building", and the LESSON parts (see 2) are listed
+      apart, "only in a lesson", each a link to the lesson page that draws
+      it, a page the server really serves. The whole page uses ONE 3D
+      drawing surface (one WebGL context), not one per picture.
    2. Picking each of the demo's styles in the style list, with "Show the
       optional parts too" ticked, draws every part of that building, none
-      blank -- and across the styles EVERY part label of the shed (every
+      blank -- and across the styles EVERY part a building can have (every
       part in parts/, the doors and windows one by one) has been drawn on its
       own at least once.
+      The LESSON parts are the exception, by design. They are construction
+      details Alan taught in his lessons (today: the window header and the
+      window plate, the doorway framing, the utility top window plate, the
+      gable backing and the gable window box), marked `lesson` in their
+      modules (parts/README.md). Each applies only to a plan its lesson page
+      builds (a windowHeaderStudy, a doorwayStudy, a trussStudy ...), never
+      to a building the designer offers -- CLAUDE.md rule 5 keeps the
+      customer designer apart from the lessons -- so the gallery can never
+      draw one. For them the check proves instead that none was drawn on any
+      of the styles, and that each one DOES draw on its own (assemble
+      { only }, the gallery's own filter) from the plan its lesson page
+      builds with the learning company's example numbers (LESSON_PLANS
+      below), and nothing of it on that same building without the lesson.
+      A part marked `lesson` that a building draws, or that has no lesson
+      plan here, fails. Their measurements are proved by their own checks:
+      check-window-header, check-window-plate, check-doorway,
+      check-utility-framing, check-gable-backing and check-gable-window.
    3. A company whose stud spacing is 24 in reads "24 in on centre" on the
       wall-framing card.
    THE CONTACT SHEET
@@ -60,6 +79,15 @@ import { assemble } from "../engine/assemble.js";
 import * as S from "../ui/state.js";
 import { STAGES } from "../parts/stages.js";
 import { PIPELINE } from "../parts/index.js";
+import { partCatalogue } from "../ui/part-details.js";
+import { floorStudyPlan } from "../model/floor-study.js";
+import { wallStudyPlan } from "../model/wall-study.js";
+import { gableStudyPlan } from "../model/gable-study.js";
+import { trussStudyPlan } from "../model/truss-study.js";
+import { windowHeaderStudyPlan } from "../model/window-header-study.js";
+import { windowPlateStudyPlan } from "../model/window-plate-study.js";
+import { doorwayStudyPlan } from "../model/doorway-study.js";
+import { utilityWallStudyPlan, utilityWindowStudyPlan } from "../model/utility-study.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = resolve(ROOT, "test/out");
@@ -84,6 +112,36 @@ const STARTER_FILE = JSON.parse(readFileSync(resolve(ROOT, "companies/starter/co
 /* every part label a triangle can carry (the PIPELINE's own list) */
 const ALL_LABELS = [];
 for (const en of PIPELINE) for (const t of en.tags) if (ALL_LABELS.indexOf(t) < 0) ALL_LABELS.push(t);
+
+/* the LESSON parts (label -> the lesson page that draws it: a part module
+   with `lesson`, parts/README.md), and the rest, the parts a building can have */
+const LESSONS = partCatalogue().lessons;
+const LESSON_LABELS = ALL_LABELS.filter((l) => LESSONS[l]);
+const BUILDING_LABELS = ALL_LABELS.filter((l) => !LESSONS[l]);
+
+/* How each lesson page builds the plan its lesson part needs, with the
+   learning company's example numbers: the same calls as the page's own
+   script (named on each line). A new lesson part needs its line here. */
+const LEARN = loadCatalogue("learning-side-loft"), LC = LEARN.construction;
+const LEARN_PLAN = makePlan(defaults(LEARN), LEARN);
+const endWall = () => wallStudyPlan(floorStudyPlan(LEARN_PLAN), { wall: "end" });
+const loftHeader = () => windowHeaderStudyPlan(endWall(), { lengthIn: LC.windowHeader.exampleLengthIn });
+const trussLesson = (windowOpening) => trussStudyPlan(gableStudyPlan(endWall(), { gable: true }), { truss: true, windowOpening });
+const LESSON_PLANS = {
+  "window-header": loftHeader,                                                       /* window-framing.html: ui/learn-window-header.js */
+  "window-plate": () => windowPlateStudyPlan(loftHeader(), { lengthIn: LC.windowHeader.exampleLengthIn, clearHeightIn: LC.windowPlateLesson.exampleClearHeightIn }),   /* the same page */
+  "doorway-frame": () => doorwayStudyPlan(endWall(), { widthIn: LC.doorwayLesson.exampleWidthIn, kingCutIn: LC.doorwayLesson.exampleKingCutIn, headerMode: "loft" }),   /* ui/learn-doorway.js */
+  "utility-window-frame": () => utilityWindowStudyPlan(utilityWallStudyPlan(LEARN_PLAN), { lengthIn: LC.utilityStudy.examplePlateCutIn }),   /* ui/learn-utility.js */
+  "gable-backing": () => trussLesson(null),                                          /* learn.html?step=truss, no gable window: ui/learn-wall.js */
+  "gable-window-frame": () => trussLesson({ kind: "window", widthIn: LC.trussStudy.windowExample.widthIn, heightIn: LC.trussStudy.windowExample.heightIn, centerIn: 0, bottomIn: null }),   /* &window=1: ui/learn-gable-window.js */
+};
+
+/* triangles per part label in a drawing */
+function trianglesOf(build) {
+  const out = new Map();
+  for (const k of build.ORDER) for (const sg of build.tags[k] || []) if (sg.count > 0) out.set(sg.part, (out.get(sg.part) || 0) + sg.count);
+  return out;
+}
 
 /* the part labels a building really has: every label with triangles, read
    straight from the drawing's tags */
@@ -215,6 +273,8 @@ try {
       })),
       off: document.getElementById("pg-off").textContent, building: document.getElementById("pg-building").textContent,
       gl: window.__glCanvases, style: document.getElementById("pg-style").value, size: document.getElementById("pg-size").value,
+      offList: window.partsGallery.off.slice(), lessons: window.partsGallery.lessons.map((x) => ({ label: x.label, page: x.page })),
+      lessonLinks: Array.from(document.querySelectorAll("#pg-off a.pg-lesson")).map((a) => ({ text: a.textContent, href: a.getAttribute("href") })),
     }));
     const got = g.cards.map((c) => c.part);
     /* the page says "in the order the shop puts them together": each part at
@@ -245,8 +305,21 @@ try {
       if (!r.ok || !/^---/.test(await r.text())) linkBad.push(l.href + " -> " + r.status);
     }
     ok(`every card names its skill, and all ${links.length} skill links open the skill file`, links.length >= got.length && g.cards.every((c) => c.skills.length > 0) && linkBad.length === 0, linkBad.join(", "));
-    const offLabels = ALL_LABELS.filter((l) => !want.has(l));
-    ok(`the parts this building does not have are listed as "not on this building" (${offLabels.length} labels)`, offLabels.length === 0 || /Not on this building/.test(g.off), g.off);
+    const offLabels = BUILDING_LABELS.filter((l) => !want.has(l));
+    ok(`the parts this building does not have are listed as "not on this building" (${offLabels.length} labels)`,
+      J(g.offList) === J(offLabels) && (offLabels.length === 0 || /Not on this building/.test(g.off)), J({ got: g.offList, want: offLabels }));
+    /* the lesson parts: listed apart, each a link to the lesson page that draws it */
+    const lessonWant = LESSON_LABELS.filter((l) => !want.has(l)).map((l) => ({ label: l, page: LESSONS[l] }));
+    const lessonBad = [];
+    for (const x of lessonWant) {
+      const name = partCatalogue().byLabel[x.label][0].name;
+      if (!g.lessonLinks.some((a) => a.href === x.page && a.text === name)) { lessonBad.push(`${x.label}: no link "${name}" to ${x.page}`); continue; }
+      const r = await fetch(BASE + "/" + x.page);
+      if (!r.ok) lessonBad.push(`${x.page} -> ${r.status}`);
+    }
+    ok(`the ${lessonWant.length} parts learned in a lesson are listed apart, "only in a lesson", each a link to the lesson page that draws it (${[...new Set(lessonWant.map((x) => x.page))].join(", ")}), and the server serves every one`,
+      J(g.lessons) === J(lessonWant) && g.lessonLinks.length === lessonWant.length && (lessonWant.length === 0 || /Only in a lesson/.test(g.off)) && lessonBad.length === 0,
+      lessonBad.join("; ") || J({ got: g.lessons, want: lessonWant }));
     ok(`the whole page used ONE 3D drawing surface for all ${stats.length} pictures`, g.gl === 1, "WebGL canvases: " + g.gl);
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
     await page.screenshot({ path: resolve(OUT, "gallery-demo.png"), fullPage: true });
@@ -277,8 +350,27 @@ try {
       if (t === "C") await page.screenshot({ path: resolve(OUT, "gallery-cabin-extras.png"), fullPage: true });
     }
     ok(`all ${Object.keys(DEMO.TYPES).length} styles drew every part they have (${pictures} pictures, none blank)`, problems.length === 0, problems.slice(0, 5).join("\n       "));
-    const missing = ALL_LABELS.filter((l) => !drawnLabels.has(l));
-    ok(`every one of the ${ALL_LABELS.length} parts of the shed was drawn on its own at least once (${ALL_LABELS.join(", ")})`, missing.length === 0, "never drawn: " + missing.join(", "));
+    const missing = BUILDING_LABELS.filter((l) => !drawnLabels.has(l));
+    ok(`every one of the ${BUILDING_LABELS.length} parts a building can have was drawn on its own at least once (${BUILDING_LABELS.join(", ")})`, missing.length === 0, "never drawn: " + missing.join(", "));
+    const leaked = LESSON_LABELS.filter((l) => drawnLabels.has(l));
+    ok(`none of the ${LESSON_LABELS.length} lesson parts (${LESSON_LABELS.join(", ")}) was drawn on a building: they are Alan's lessons, kept apart from the designer (CLAUDE.md rule 5)`,
+      leaked.length === 0, "drawn on a building: " + leaked.join(", "));
+    /* the lesson parts, each drawn on its own where Alan sees it: from the
+       plan its lesson page builds -- and nothing of it on the same building
+       without the lesson (the learning company's own default building) */
+    const lessonBad = [], lessonDrawn = [];
+    for (const l of LESSON_LABELS) {
+      if (!LESSON_PLANS[l]) { lessonBad.push(`${l}: no lesson plan in LESSON_PLANS -- add how ${LESSONS[l]} builds it`); continue; }
+      try {
+        const own = trianglesOf(assemble(LESSON_PLANS[l](), { viewport: { w: 320, h: 240 }, fit: "fitref", frames: true, only: [l] }).build);
+        const without = trianglesOf(assemble(LEARN_PLAN, { viewport: { w: 320, h: 240 }, fit: "fitref", frames: true, only: [l] }).build);
+        if (!(own.get(l) > 0) || own.size !== 1) lessonBad.push(`${l}: its lesson plan drew ${J(Object.fromEntries(own))}`);
+        else if (without.size) lessonBad.push(`${l}: drawn on the building without the lesson too (${J(Object.fromEntries(without))})`);
+        else lessonDrawn.push(`${l} ${own.get(l)}`);
+      } catch (e) { lessonBad.push(`${l}: ${e && e.message || e}`); }
+    }
+    ok(`each lesson part draws on its own from the plan its lesson page builds, and nothing of it on that building without the lesson (triangles: ${lessonDrawn.join(", ")})`,
+      lessonBad.length === 0, lessonBad.join("; "));
     const gl = await page.evaluate(() => window.__glCanvases);
     ok("still ONE 3D drawing surface after all of that", gl === 1, "WebGL canvases: " + gl);
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
@@ -440,7 +532,9 @@ try {
 console.log(`\ncheck-gallery: ${pass} passed, ${fail} failed`);
 if (fail) { console.log("FAILED:\n - " + failures.join("\n - ")); process.exit(1); }
 console.log(`PROVED: the parts gallery draws every part a building has on its own (one WebGL context), with its step, a caption in the company's own numbers and a working link to its skill, ` +
-  `and across the demo's styles every one of the ${ALL_LABELS.length} parts of the shed is drawn at least once; the contact sheet shows every offered style and size of the starter company ` +
+  `and across the demo's styles every one of the ${BUILDING_LABELS.length} parts a building can have is drawn at least once; the ${LESSON_LABELS.length} parts learned in a lesson ` +
+  "are on no building, are listed with a working link to their lesson page, and each draws on its own from the plan that lesson builds; " +
+  "the contact sheet shows every offered style and size of the starter company " +
   "with its picture, the designer's own price, its standard doors and windows and its size notes, draws the demo's whole sheet as you scroll (every one of its prices the designer's too), prints without its buttons, and shows company words as text; " +
   "the gallery's cards follow the company's build order, and on the hosted website skill names are text, not links that go nowhere. " +
   "Pictures in test/out/gallery-*.png and contact-sheet-starter.png.");

@@ -154,7 +154,7 @@ each other.
 | `counters/quote-number` | `{next}` — one counter for quote numbers, from 1001; an order keeps its quote's number |
 | `website-requests/<hash>` | `{customerId, quoteId, fingerprint, receipt}` — makes a retried send safe |
 | `limits/<slug>/<bucket>` | website send counts per lot (and per visitor) |
-| `barnwright-help-problems` | `{day, sent, seen: {signature: when}}` — the browser problems sent to Barnwright today, and when each kind last went (connected businesses only; see "Help") |
+| `barnwright-help-problems` | `{v: 2, day, team, public, repeats, visitors: {who: n}, seen: {signature: {at, last, extra}}}` — today's shares of the problem reports used (`who` is a visitor's address hashed with the day, never the address), and each kind passed on in the last 24 hours: when it first went, when its count last went, and how many more times it happened since (connected businesses only; see "Help") |
 
 A **customer**:
 
@@ -237,7 +237,7 @@ Public routes (no sign-in):
 | `GET /d/:slug/` | the lot's 3D designer page; when closed, a short "Our 3D designer isn't open right now" page that says who to call — the lot's phone when the owner closed the whole designer, the business's phone when only that lot is closed (`pages.js` `closedPage`) |
 | `POST /api/lots/:slug/quote-requests` | `{design, contact, idempotencyKey}` → `{id, number, total, price, receivedAt, repriced}` (201; the same send again → the same receipt, 200) |
 | `POST /.netlify/functions/tenant-diagnostics` | Barnwright's support check (control room only, with a support pass, while the owner has help turned on) |
-| `POST /api/office/problem` | one browser error from a page on this site (`ui/problems.js`), same site only; passed on to Barnwright once per kind in 24 hours, at most 10 a day; always `{ok: true}` (see "Help") |
+| `POST /api/office/problem` | one browser error from a page on this site (`ui/problems.js`), same site only; a new kind passed on to Barnwright once in 24 hours, how many more times at most once an hour; a day's 30 shared out (10 new kinds from strangers, at most 3 from one visitor; 10 for the team signed in; 10 count updates); always `{ok: true}` (see "Help") |
 
 A website quote request is matched to an existing customer of that lot by
 email or phone (digits compared); otherwise a new customer is made. A
@@ -378,16 +378,28 @@ reply with Claude, and Alan approves it in his Sales Inbox.
   `POST /api/office/problem` on their own site, and so do the failures a
   page catches to show its own words (`reportProblem`: "This page didn't
   load", a 3D designer whose settings or lot price list didn't load, a part
-  that didn't start; an answer from the server is never one): at most 3 a
-  page load; the message cut to 300 characters (only its first 1,000 read),
+  that didn't start; an answer from the server is never one). The 3D
+  designer starts watching before anything else (`ui/problems-start.js`,
+  loaded by `index.html` just before `ui/app.js`, which imports it first
+  too), so a script that didn't arrive, or one that broke as it started, is
+  reported while the designer is still loading. At most 3 kinds a page
+  load; a kind that keeps happening sends how many more times later, as
+  its own report (when the page is put away or closed, or 10 minutes after
+  it came back on a page left open); the message cut to 300 characters (only its first 1,000 read),
   with any email address, phone number, long code or query string taken
   out, in the browser and again on the server; where in the code (the script's
   path, line and column, no query string); the page's path (the screen on
   the Dealer Center; never the part after # on a 3D designer, which holds
   the customer's building); never anything a customer typed. The server
-  sends each kind (its `signature`) at most once in 24 hours and at most 10
-  a day for the whole site (`barnwright-help-problems`), and always answers
-  `{ok: true}`. A copy without that address (a 404) changes nothing for
+  sends a new kind (its `signature`) once in 24 hours; later reports of it
+  are added up and their count goes at most once an hour (the Sales Inbox
+  adds it to the same problem: "happened 40 times"), a count that didn't
+  arrive going with the next. A day's reports are shared out so a stranger
+  can't use them up: 10 new kinds from pages nobody signed in to, at most
+  3 from one visitor (by address, hashed with the day); 10 more for the
+  people signed in on the team; 10 count updates -- 30, what the Sales
+  Inbox takes from one business a day (`barnwright-help-problems`). It
+  always answers `{ok: true}`. A copy without that address (a 404) changes nothing for
   the page. Every page's security policy already allows it
   (`connect-src 'self'`).
 * **Not connected** (Alan's own business, the local copy, the demo): its
@@ -608,6 +620,7 @@ script, and email every customer the new terms 30 days ahead.
 | `server/office/help.js` | Help: questions to Barnwright, Barnwright's answers, problem reports |
 | `ui/office/views/help.js`, `ui/office/help-answers.js`, `ui/office/help.css` | the Help screen, its short answers and its look |
 | `ui/problems.js` | reports an error nothing caught to the site's own server (the Dealer Center and every 3D designer page) |
+| `ui/problems-start.js` | starts it on a 3D designer page before anything else, so a problem while the designer is still loading is reported too |
 | `tools/check-help.mjs` | Help's rules, against a pretend control room and Sales Inbox |
 | `tools/lib/fake-help-inbox.mjs` | the pretend Sales Inbox (the checks and `--control-room`) |
 

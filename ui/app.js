@@ -109,6 +109,10 @@
    plugin that throws is reported with console.error and the page carries on.
    ------------------------------------------------------------------------- */
 
+/* first: a problem in any file below, as it starts, is passed on to
+   Barnwright too (ui/problems-start.js; index.html also loads it on its own,
+   for a file that doesn't arrive at all) */
+import "./problems-start.js";
 import { loadCompany, loadLot } from "./load.js";
 import { esc, safeUrl, telHref } from "./esc.js";
 import { defaults, normalize, toState, fromState, decode } from "../model/design.js";
@@ -123,19 +127,9 @@ import { paintBackdrop } from "../engine/scene.js";
 import { createPanels } from "./panels.js";
 import { createSheet } from "./sheet.js";
 import { createInteraction, ftIn } from "./interaction.js";
-import { watchProblems, reportProblem } from "./problems.js";
+import { reportProblem } from "./problems.js";
 
 export const PLUGINS = Object.freeze(["views", "blueprint", "quote", "share"]);
-
-/* A problem on this page that nothing caught goes to this site's own
-   server (ui/problems.js), which passes it on to Barnwright for a business
-   Barnwright set up. Started first, so a problem while starting counts too.
-   The page is the path only: the part after # is the customer's building. */
-watchProblems({
-  area: "designer",
-  endpoint: () => new URL("../api/office/problem", import.meta.url).href,
-  page: () => location.pathname,
-});
 
 const el = (id) => document.getElementById(id);
 

@@ -3,7 +3,9 @@
    underneath sit on the bottom plate and retain the wall's 16-inch
    layout, including its learned double studs. Their tops touch the
    window plate's underside; window height determines their cut length.
-   Sample plate cuts do not establish its side joints or opening width. */
+   Sample plate cuts do not establish its side joints or opening width.
+   A LESSON part (`lesson`, parts/README.md): only window-framing.html builds
+   the windowPlateStudy it needs, so no building in the designer has one. */
 import {prismMember,drawMembers} from "./floor-frame.js";
 
 export function windowPlateMembers(plan) {
@@ -21,7 +23,7 @@ export function windowPlateMembers(plan) {
 }
 
 export default {
-  id:"window-plate",name:"Window plate and studs",stage:"wall-frame",
+  id:"window-plate",name:"Window plate and studs",stage:"wall-frame",lesson:"window-framing.html",
   realLife:"Flat window plate below a lofted-wall window, with supporting studs on the bottom plate following the wall layout.",
   appliesTo(plan){return Boolean(plan.windowPlateStudy);},
   members:windowPlateMembers,

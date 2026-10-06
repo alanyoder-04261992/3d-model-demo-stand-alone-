@@ -43,7 +43,7 @@ then the vent gives every material the same triangles in the same order.
 ## Where it came from in Barnwright
 
 `boisterous-lokum-a737e0/public/3ddesign.html` (pinned SHA-256
-`0bdcf663c5cb988623d2cb0dd271156fb690564072b301b0a15b917fd921ac6c`),
+`85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36`),
 `buildShed`'s gable-ends loop, lines 3962-3979 (`pp`, the cottage branch and
 `gq2(mB,pp,gz,sgn,gob,"sid")`). `cottageEave` is 2185-2202 (ported in
 `model/roof-shapes.js`).

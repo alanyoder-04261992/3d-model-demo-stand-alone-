@@ -276,6 +276,12 @@ export default {
   `plan.construction` (so a caption never contradicts a company's numbers).
   `check-parts` fails on a digit outside a placeholder in a frame part's template.
 * A part reads only `plan` and `kit` — no globals, no DOM.
+* A **lesson part** says `lesson: "<page>"` (today `window-header`,
+  `window-plate`, `doorway-frame`, `utility-window-frame`, `gable-backing`
+  and `gable-window-frame`, all described below): it applies only to a plan
+  its lesson page builds, never to a building the designer offers. The parts
+  gallery lists it with a link to that page; `check-gallery` proves no
+  building draws it and that it draws on its own from its lesson's plan.
 * **A PIPELINE entry is a Barnwright call site, not a part boundary.** A part may
   export helpers another entry calls at Barnwright's position, wrapped in
   `kit.part("<owner id>", fn)` so the triangles are attributed to their owner.

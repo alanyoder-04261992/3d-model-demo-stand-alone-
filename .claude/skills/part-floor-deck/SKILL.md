@@ -128,7 +128,7 @@ separate from these legacy settings.
 ## Where it came from in Barnwright
 
 New -- Barnwright drew none (its floor is one solid slab, `parts/floor.js`,
-`3ddesign.html` 3868-3877, pinned SHA-256 `0bdcf663...`). It fits the top of
+`3ddesign.html` 3868-3877, pinned SHA-256 `85c4b022...`). It fits the top of
 that slab's envelope and the shop's floor note (2147-2150). The area decked
 is the room's outline (`roomOutline` in `parts/floor-frame.js`, the same walls
 `parts/siding.js` draws), inset to the slab.

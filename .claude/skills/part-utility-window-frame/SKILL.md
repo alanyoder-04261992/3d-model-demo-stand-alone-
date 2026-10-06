@@ -22,6 +22,10 @@ created by `utilityWindowStudyPlan` in `model/utility-study.js` after
 the loft lesson. The measured window detail shows contextual top/upper
 plate portions, not a full framed opening. Window side supports, end
 bearing and cut-to-opening-width allowances remain unconfirmed.
+The module's `lesson: "utility-framing.html"` marks it a lesson part: the parts
+gallery lists it under "Only in a lesson" with a link to that page, and
+`node tools/check-gallery.mjs` proves no building in the designer draws
+it and that it draws on its own from this lesson's plan.
 
 ## Construction settings
 

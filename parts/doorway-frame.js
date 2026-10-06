@@ -6,7 +6,9 @@
    nominal 2x4s on edge on a flat 2x4, with the half-inch ledge outside.
    For taller doors, two flat 2x4s stack to a 3-inch header. For garage
    doors the king studs can reach the top-plate underside directly, with
-   no separate header below it. These are Alan's shop terms and fits. */
+   no separate header below it. These are Alan's shop terms and fits.
+   A LESSON part (`lesson`, parts/README.md): only doorway-framing.html builds
+   the doorwayStudy it needs, so no building in the designer has one. */
 import {prismMember,drawMembers} from "./floor-frame.js";
 
 export function doorwayMembers(plan) {
@@ -39,7 +41,7 @@ export function doorwayMembers(plan) {
 }
 
 export default {
-  id:"doorway-frame",name:"Doorway framing",stage:"wall-frame",
+  id:"doorway-frame",name:"Doorway framing",stage:"wall-frame",lesson:"doorway-framing.html",
   realLife:"A full-height stud beside each king stud. The king studs stand on the bottom plate and support the selected header, or meet the top plate directly.",
   appliesTo(plan){return Boolean(plan.doorwayStudy);},
   members:doorwayMembers,

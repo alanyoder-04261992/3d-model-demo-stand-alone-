@@ -12,7 +12,7 @@
 
    Stage "trim".
 
-   Ported from Barnwright's 3ddesign.html (pinned SHA-256 0bdcf663...),
+   Ported from Barnwright's 3ddesign.html (pinned SHA-256 85c4b022...),
    buildShed lines 4015-4019, numbers byte for byte. Porting edits
    (docs/ARCHITECTURE.md, Porting rules): T() -> plan.t, wallDefs() ->
    plan.ws, y0 from engine/constants.js, mT is core.mT (rule 1); setStage

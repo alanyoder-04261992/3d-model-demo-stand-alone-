@@ -13,7 +13,7 @@
 
    Stage "gable-end".
 
-   Ported from Barnwright's 3ddesign.html (pinned SHA-256 0bdcf663...),
+   Ported from Barnwright's 3ddesign.html (pinned SHA-256 85c4b022...),
    buildShed's gable-ends loop: the ridge search on line 3980 and the vent,
    lines 4002-4014, numbers byte for byte. Barnwright draws the fill, band and
    vent of F, then of B, in one loop; the three parts in turn give each

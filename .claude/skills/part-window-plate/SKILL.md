@@ -17,6 +17,10 @@ This assembly is separate from the flat board belonging to the header.
 Stage `wall-frame`; opt-in `window-plate` entry after `window-header`.
 `window-framing.html` starts with this assembly. It can show all learned
 pieces or return to the header views. Side framing is still unfinished.
+The module's `lesson: "window-framing.html"` marks it a lesson part: the parts
+gallery lists it under "Only in a lesson" with a link to that page, and
+`node tools/check-gallery.mjs` proves no building in the designer draws
+it and that it draws on its own from this lesson's plan.
 
 ## Construction settings
 

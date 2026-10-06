@@ -21,7 +21,7 @@
    thickness: the real studs are the NEW wall-frame part). The siding
    texture carries the grooves.
 
-   Ported from Barnwright's 3ddesign.html (pinned SHA-256 0bdcf663...),
+   Ported from Barnwright's 3ddesign.html (pinned SHA-256 85c4b022...),
    buildShed's walls loop, lines 3878-3905, numbers byte for byte:
    * which walls: F B R L, plus P1-P3 on a corner porch or S1-S2 (S3 when the
      notch is in the middle) on a side porch;

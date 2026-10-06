@@ -1,5 +1,7 @@
 /* Alan's utility top window plate: one flat 2x4 with short studs above it.
-   This isolated detail does not invent the window's side-support joints. */
+   This isolated detail does not invent the window's side-support joints.
+   A LESSON part (`lesson`, parts/README.md): only utility-framing.html builds
+   the utilityWindowStudy it needs, so no building in the designer has one. */
 import {prismMember,drawMembers} from "./floor-frame.js";
 
 export function utilityWindowMembers(plan) {
@@ -16,7 +18,7 @@ export function utilityWindowMembers(plan) {
 }
 
 export default {
-  id:"utility-window-frame",name:"Utility top window plate",stage:"wall-frame",
+  id:"utility-window-frame",name:"Utility top window plate",stage:"wall-frame",lesson:"utility-framing.html",
   realLife:"A flat top window plate crosses a utility window, with studs filling the space above it to the wall's top plate.",
   appliesTo(plan){return Boolean(plan.utilityWindowStudy);},
   members:utilityWindowMembers,
