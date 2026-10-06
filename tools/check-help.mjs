@@ -170,6 +170,11 @@ const q = sentAsk.body.question;
 ok("the question is what the person typed", q.text === words);
 ok("the asker is the person signed in (Chris, the owner), never what the browser said", JSON.stringify(q.asker) === JSON.stringify({ id: "sample-chris", name: "Chris Walker", email: EMAIL.owner, role: "owner" }), JSON.stringify(q.asker));
 ok("the page is the screen only: no customer or order id, no query string", q.page === "#/customers/:id/orders/:id", q.page);
+{
+  const before = inbox.questions.length;
+  await call("POST", "/api/office/help", { text: "A question from a sign-in link's page", page: "#invite_token=SECRET123abc" }, { as: EMAIL.owner });
+  ok("a page that isn't a screen (a sign-in email's link) goes as nothing at all", inbox.questions.length === before + 1 && inbox.questions.at(-1).page === "" && !JSON.stringify(lastCall("/help/v1/ask").body).includes("SECRET123abc"), inbox.questions.at(-1).page);
+}
 const ALLOWED = ["appVersion", "business", "account", "lots", "team", "emailOn", "priceList", "designerOpen", "browser", "screen", "language", "timezone", "errors"];
 const d = q.details;
 ok("the details hold only the promised facts", Object.keys(d).every((k) => ALLOWED.includes(k)) && Object.keys(d.account).every((k) => ["canWrite", "reason", "lotLimit", "openLots", "checkedAt", "expiresAt"].includes(k))
@@ -217,7 +222,8 @@ const danas = await list(EMAIL.dana);
 ok("Dana (another dealer) sees only hers", danas.data.items.length === 1 && danas.data.items[0].asker.id === "sample-dana");
 for (const role of ["owner", "manager"]) {
   const all = await list(EMAIL[role]);
-  ok(`the ${role} sees every question from the business, newest first (${all.data.items.length})`, all.data.items.length === 4
+  /* Chris asked 2, Mike, Dana and Sarah 1 each */
+  ok(`the ${role} sees every question from the business, newest first (${all.data.items.length})`, all.data.items.length === inbox.questions.length && inbox.questions.length === 5
     && all.data.items.every((x, i, a) => i === 0 || a[i - 1].at >= x.at) && new Set(all.data.items.map((x) => x.asker.id)).size === 4, JSON.stringify(all.data.items.map((x) => x.asker.id)));
 }
 r = await list(null);
@@ -376,6 +382,8 @@ r = await report(problem(29));
 ok("the inbox busy (503): {ok: true}", r.data.ok === true);
 r = await report(problem(29));
 ok("... and the next one like it tries again", callsTo("/help/v1/problem") === problemsSent + 3 && inbox.problems.some((x) => x.signature === problem(29).signature));
+r = await report(problem(40, { page: "/dealer#confirmation_token=SECRET456def" }));
+ok("a problem's page keeps its path and drops a sign-in email's link", lastCall("/help/v1/problem").body.problem.page === "/dealer" && !JSON.stringify(lastCall("/help/v1/problem").body).includes("SECRET456def"), lastCall("/help/v1/problem").body.problem.page);
 const doc = await office.parts.store.get("barnwright-help-problems");
 ok("what was sent is kept in the business's own store (today's count and when each kind went)", doc && typeof doc.sent === "number" && doc.seen && Object.keys(doc.seen).includes(problem(28).signature), JSON.stringify(doc).slice(0, 200));
 ok("nothing sent in this check ever went anywhere but the pretend control room and inbox", stray.length === 0, stray.join(" "));
@@ -427,6 +435,7 @@ ok("a promise that failed: its name and words, where its stack says, no email", 
 ok("a site that answers 404, or can't be reached, changes nothing: no error, no unhandled promise", unhandled.length === 0, String(unhandled[0]));
 ok("the page remembers what it saw for a question to Barnwright (at most 10, with counts)", reporter.recentProblems().length === 7 && reporter.recentProblems().every((x) => x.message && typeof x.count === "number"), JSON.stringify(reporter.recentProblems().map((x) => x.count)));
 ok("the Dealer Center's page is its screen, never which customer", reporter.screenOf("#/customers/AbC123xyZ9/orders/Ord987654?new=1") === "#/customers/:id/orders/:id" && reporter.screenOf("#/price-list/doors") === "#/price-list/doors");
+ok("... and never a sign-in email's link or a saved building", reporter.screenOf("#invite_token=Abc123Def456") === "" && reporter.screenOf("#recovery_token=x") === "" && reporter.screenOf("#d=AbcDef") === "");
 r = await report(first.body);
 ok("what the reporter sends is what the server takes: it reaches the inbox", r.data.ok === true && inbox.problems.some((x) => x.signature === first.body.signature && x.where === "/ui/app.js:120:7"));
 {

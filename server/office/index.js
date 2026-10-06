@@ -270,7 +270,7 @@ export function createOffice(deps) {
      stopped, so there is no account.mustWrite here. */
   route("GET", /^\/api\/office\/help$/, async (req) => {
     const who = await people.member(req);
-    return json(await help.list(who));
+    return json(await help.thread(who));
   });
   route("POST", /^\/api\/office\/help$/, async (req) => {
     const who = await people.member(req);

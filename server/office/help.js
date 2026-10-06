@@ -6,7 +6,7 @@
    the part that talks to Barnwright, for a business connected to
    Barnwright's control room:
 
-     GET  /api/office/help      list(who): the business's questions and
+     GET  /api/office/help      thread(who): the business's questions and
                                 Barnwright's answers, newest first. The
                                 owner and managers see every question; a
                                 dealer sees the ones they asked.
@@ -96,13 +96,17 @@ function isoOr(value, fallback) {
   return Number.isFinite(t) ? new Date(t).toISOString() : fallback;
 }
 
-/* "#/customers/Ab12Cd34/orders/Ef56?x=1" -> "#/customers/:id/orders/:id":
-   which screen, never which customer, order or quote, and no query string. */
+/* "/dealer#/customers/Ab12Cd34/orders/Ef56?x=1" -> "/dealer#/customers/:id/orders/:id":
+   the page's path and which screen, never which customer, order or quote,
+   no query string, and nothing after # that isn't a screen (a sign-in
+   email's link, a customer's saved building). */
 export function cleanPage(value) {
   if (typeof value !== "string") return "";
-  return value.split("?")[0]
-    .replace(/(\/(?:customers|orders|quotes|design))\/[^/#]+/g, "$1/:id")
-    .replace(/[^A-Za-z0-9#/:._-]/g, "").slice(0, 200);
+  const at = value.indexOf("#");
+  const path = (at < 0 ? value : value.slice(0, at)).split("?")[0].replace(/[^A-Za-z0-9/._-]/g, "");
+  const hash = at < 0 ? "" : value.slice(at + 1).split("?")[0];
+  const screen = /^\/[A-Za-z0-9/:._-]*$/.test(hash) ? "#" + hash.replace(/(\/(?:customers|orders|quotes|design))\/[^/#]+/g, "$1/:id") : "";
+  return (path + screen).slice(0, 200);
 }
 
 /* "https://site/ui/app.js?v=2:120:7" -> "/ui/app.js:120:7": the script's
@@ -110,7 +114,7 @@ export function cleanPage(value) {
 export function cleanWhere(value) {
   if (typeof value !== "string" || !value.trim()) return "";
   const m = /^(.*?)(?::(\d{1,7}))?(?::(\d{1,7}))?$/.exec(value.trim());
-  const path = m[1].split(/[?#]/)[0].replace(/^.*?:\/\/[^/]*/, "").replace(/[^A-Za-z0-9/._~%@+-]/g, "");
+  const path = m[1].split(/[?#]/)[0].replace(/^.*?:\/\/[^/]*/, "").replace(/[^A-Za-z0-9/._~+-]/g, "");
   return [path, m[2], m[3]].filter((x) => x !== undefined && x !== "").join(":").slice(0, 200);
 }
 
@@ -234,7 +238,7 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
 
   /* ---- GET /api/office/help ---------------------------------------------------- */
 
-  async function list(who) {
+  async function thread(who) {
     if (!connected) return { connected: false, canAsk: false, items: [] };
     if (!canAsk) return { connected: true, canAsk: false, items: [] };
     let answer;
@@ -356,5 +360,5 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
     return { sent: false };
   }
 
-  return { connected, canAsk, list, ask, problem };
+  return { connected, canAsk, ask, thread, problem };
 }

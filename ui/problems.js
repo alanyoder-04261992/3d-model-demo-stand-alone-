@@ -51,11 +51,12 @@ export function recentProblems() {
 }
 
 /* "#/customers/Ab12Cd34/orders/Ef56?new=1" -> "#/customers/:id/orders/:id":
-   the Dealer Center's screen, never which customer, order or quote. */
+   the Dealer Center's screen, never which customer, order or quote; and ""
+   for anything after # that isn't a screen (a sign-in email's link). */
 export function screenOf(hash) {
-  return String(hash || "").split("?")[0]
-    .replace(/(\/(?:customers|orders|quotes|design))\/[^/#]+/g, "$1/:id")
-    .replace(/[^A-Za-z0-9#/:._-]/g, "").slice(0, 200);
+  const h = String(hash || "").split("?")[0];
+  if (!/^#\/[A-Za-z0-9/._-]*$/.test(h)) return "";
+  return h.replace(/(\/(?:customers|orders|quotes|design))\/[^/#]+/g, "$1/:id").slice(0, 200);
 }
 
 /* An error's words, safe to send: no email addresses, phone numbers, long
