@@ -1,11 +1,14 @@
 /* BROWSER PROBLEMS, PASSED ON TO BARNWRIGHT. Browser file: the 3D designer
-   (ui/app.js) and the Dealer Center (ui/office/main.js) start it.
+   starts it first of all (ui/problems-start.js, loaded by index.html before
+   ui/app.js) and the Dealer Center from ui/office/main.js.
 
    When something on the page goes wrong that nothing caught (the window's
-   "error" and "unhandledrejection"), this tells the site's own server
-   (POST api/office/problem, server/office/help.js). A business connected
-   to Barnwright passes it on to Barnwright's Sales Inbox; everywhere else
-   the server drops it. What goes:
+   "error" and "unhandledrejection"), or one of the page's own scripts
+   doesn't arrive (the designer is still loading, so nothing else can say
+   so), this tells the site's own server (POST api/office/problem,
+   server/office/help.js). A business connected to Barnwright passes it on
+   to Barnwright's Sales Inbox; everywhere else the server drops it. What
+   goes:
      signature  the same short code for the same error in the same place
                 ("designer:" or "dealer-center:" and 16 letters and digits),
                 so Barnwright sees one problem with a count, not a pile
@@ -17,9 +20,11 @@
                 (it holds the customer's building); on the Dealer Center the
                 screen, never which customer, order or quote (screenOf)
      area, browser, count, firstAt, lastAt
-   Never anything a customer typed. At most 3 reports per page load, each
-   kind of error once (repeats only add to its count here). The Dealer
-   Center's Help screen sends the recent ones with a question
+   Never anything a customer typed. At most 3 kinds of error a page load. A
+   kind that keeps happening sends how many more times later, as its own
+   report: when the page is closed or put away, or 10 minutes after it came
+   back on a page left open (count is always the times not yet told). The
+   Dealer Center's Help screen sends the recent ones with a question
    (recentProblems). A failure the page catches itself, so it can show its
    own words ("This page didn't load"), is passed on the same way
    (reportProblem).
@@ -28,21 +33,33 @@
    site, and doesn't mind a site that has no such address (a static copy
    answers 404): the answer is never read. */
 
-const MAX_SENT = 3;     /* reports per page load */
+const MAX_SENT = 3;     /* kinds of error reported per page load */
 const KEEP = 20;        /* kinds of error remembered for the Help screen */
+const FOLLOW_UP_MS = 10 * 60_000;   /* how many more times, on a page left open */
 
-const state = { on: false, sent: 0, seen: new Map(), options: null };
+const state = { on: false, sent: 0, seen: new Map(), options: null, timer: null };
 
 /* options: {area: "designer" | "dealer-center", endpoint: an address on this
    site or () => one, page: () => the page's path, skip: () => true to keep
-   reports here (the "try it" demo)}. -> true when it is watching. */
+   reports here (the "try it" demo), followUpMs}. -> true when it is
+   watching (a second call changes nothing). */
 export function watchProblems(options = {}) {
   const w = typeof window === "undefined" ? null : window;
   if (state.on || !w || typeof w.addEventListener !== "function") return false;
   state.on = true;
-  state.options = { area: "designer", endpoint: "/api/office/problem", page: () => location.pathname, skip: () => false, ...options };
-  w.addEventListener("error", (event) => { try { note(fromError(event)); } catch { /* never in the way */ } });
+  state.options = { area: "designer", endpoint: "/api/office/problem", page: () => location.pathname, skip: () => false, followUpMs: FOLLOW_UP_MS, ...options };
+  /* while capturing, so one of this site's scripts that didn't load (its
+     "error" goes to the script, not the window) is heard too */
+  w.addEventListener("error", (event) => {
+    try { note(event && event.target && event.target !== w && event.target.tagName ? fromScript(event.target) : fromError(event)); } catch { /* never in the way */ }
+  }, true);
   w.addEventListener("unhandledrejection", (event) => { try { note(fromRejection(event)); } catch { /* never in the way */ } });
+  /* how many more times goes before the page is gone */
+  w.addEventListener("pagehide", () => { try { followUp(); } catch { /* never in the way */ } });
+  const d = typeof document === "undefined" ? null : document;
+  if (d && typeof d.addEventListener === "function") {
+    d.addEventListener("visibilitychange", () => { try { if (d.visibilityState === "hidden") followUp(); } catch { /* never in the way */ } });
+  }
   return true;
 }
 
@@ -133,6 +150,17 @@ function fromError(e) {
   return made(message, whereOf(e.filename, e.lineno, e.colno));
 }
 
+/* one of this site's scripts that didn't arrive (for a module, it or a
+   file it needs): the browser says nothing more than which */
+function fromScript(el) {
+  if (String(el.tagName).toUpperCase() !== "SCRIPT" || !el.src) return null;
+  let url;
+  try { url = new URL(el.src, location.href); } catch { return null; }
+  if (url.origin !== location.origin) return null;
+  const path = url.pathname.slice(0, 200);
+  return made(`This page's script didn't load: ${path} (or a file it needs)`, path);
+}
+
 function fromRejection(e) {
   const r = e ? e.reason : undefined;
   /* an answer from the server (the Dealer Center's ApiError carries its
@@ -147,16 +175,34 @@ function note(problem) {
   if (!problem) return;
   const at = new Date().toISOString();
   const known = state.seen.get(problem.signature);
-  if (known) { known.count++; known.lastAt = at; return; }
-  const entry = { ...problem, count: 1, firstAt: at, lastAt: at };
+  if (known) {
+    known.count++;
+    known.lastAt = at;
+    /* told once already: how many more times goes later, in one report */
+    if (known.told && !state.timer) state.timer = setTimeout(followUp, state.options.followUpMs);
+    return;
+  }
+  const entry = { ...problem, count: 1, firstAt: at, lastAt: at, told: 0 };
   state.seen.set(problem.signature, entry);
   while (state.seen.size > KEEP) state.seen.delete(state.seen.keys().next().value);
   if (state.sent >= MAX_SENT || state.options.skip()) return;
   state.sent++;
-  send(entry);
+  send(entry, entry.count);
+  entry.told = entry.count;
 }
 
-function send(entry) {
+/* Each kind already told that happened again since: how many more times. */
+function followUp() {
+  if (state.timer) { clearTimeout(state.timer); state.timer = null; }
+  if (state.options.skip()) return;
+  for (const entry of state.seen.values()) {
+    if (!entry.told || entry.count <= entry.told) continue;
+    send(entry, entry.count - entry.told);
+    entry.told = entry.count;
+  }
+}
+
+function send(entry, count) {
   const o = state.options;
   let address;
   try {
@@ -168,7 +214,7 @@ function send(entry) {
   const body = JSON.stringify({
     signature: entry.signature, message: entry.message, where: entry.where, page, area: o.area,
     browser: String((typeof navigator !== "undefined" && navigator.userAgent) || "").slice(0, 300),
-    count: entry.count, firstAt: entry.firstAt, lastAt: entry.lastAt,
+    count: Math.min(count, 1000), firstAt: entry.firstAt, lastAt: entry.lastAt,
   });
   try {
     const go = window.fetch;   /* looked up now: the "try it" demo answers inside the page */

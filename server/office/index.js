@@ -282,11 +282,15 @@ export function createOffice(deps) {
   });
   /* One browser error from the Dealer Center or a 3D designer page: no
      sign-in, same site only (handle() checks the Origin), and the answer is
-     always {ok: true}, so it never tells a stranger anything. */
-  route("POST", /^\/api\/office\/problem$/, async (req) => {
+     always {ok: true}, so it never tells a stranger anything. Someone
+     signed in on the team has their own share of the day's reports, and a
+     stranger's share is counted by their address (help.js reserve). */
+  route("POST", /^\/api\/office\/problem$/, async (req, _m, ctx) => {
     let data = null;
     try { data = await readBody(req); } catch { data = null; }
-    try { await help.problem(req, data); } catch (error) { log("Help: a problem report failed:", error?.name || "Error"); }
+    let team = false;
+    if (help.canAsk) try { team = !!(await people.signedIn(req)); } catch { team = false; }
+    try { await help.problem(req, data, { team, visitor: ctx.clientIp }); } catch (error) { log("Help: a problem report failed:", error?.name || "Error"); }
     return json({ ok: true });
   });
 
