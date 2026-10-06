@@ -77,6 +77,8 @@ any). Dates are "Oct 3" this year, "Oct 3, 2025" otherwise. Sizes are
 | Add, change and remove people | ✓ | — | — |
 | Business settings | ✓ | — | — |
 | Download customers as a spreadsheet | ✓ | ✓ | — |
+| Ask Barnwright (Help) | ✓ | ✓ | ✓ |
+| See the questions asked and Barnwright's answers | every one | every one | their own |
 
 There can be more than one owner. The last active owner cannot be removed or
 demoted. Every rule above is checked on the server; the screens only hide
@@ -152,6 +154,7 @@ each other.
 | `counters/quote-number` | `{next}` — one counter for quote numbers, from 1001; an order keeps its quote's number |
 | `website-requests/<hash>` | `{customerId, quoteId, fingerprint, receipt}` — makes a retried send safe |
 | `limits/<slug>/<bucket>` | website send counts per lot (and per visitor) |
+| `barnwright-help-problems` | `{day, sent, seen: {signature: when}}` — the browser problems sent to Barnwright today, and when each kind last went (connected businesses only; see "Help") |
 
 A **customer**:
 
@@ -223,6 +226,8 @@ Responses are `Cache-Control: private, no-store`.
 | `GET customers.csv` | owner, manager | a spreadsheet of the visible customers |
 | `GET barnwright-help` | owner | `{help: {on, until, reason, log}}`, or `help: null` when not connected to the control room |
 | `POST barnwright-help` | owner | `{on: true, reason, hours: 1–24}` lets Barnwright run checks; `{on: false}` stops them at once |
+| `GET help` | everyone | `{connected, canAsk, items}`: the questions asked of Barnwright and Barnwright's answers, newest first (owner and managers every question from the business, a dealer their own); `items: null` with `problem` (plain words) when Barnwright can't be reached; `connected: false` when not connected to the control room |
+| `POST help` | everyone | `{text, page, details: {browser, screen, language, timezone, errors}}` asks Barnwright (see "Help"); the asker is the person signed in, never the body; works while changes are stopped → `{ok, id, at, email}` (201) |
 
 Public routes (no sign-in):
 
@@ -232,6 +237,7 @@ Public routes (no sign-in):
 | `GET /d/:slug/` | the lot's 3D designer page; when closed, a short "Our 3D designer isn't open right now" page that says who to call — the lot's phone when the owner closed the whole designer, the business's phone when only that lot is closed (`pages.js` `closedPage`) |
 | `POST /api/lots/:slug/quote-requests` | `{design, contact, idempotencyKey}` → `{id, number, total, price, receivedAt, repriced}` (201; the same send again → the same receipt, 200) |
 | `POST /.netlify/functions/tenant-diagnostics` | Barnwright's support check (control room only, with a support pass, while the owner has help turned on) |
+| `POST /api/office/problem` | one browser error from a page on this site (`ui/problems.js`), same site only; passed on to Barnwright once per kind in 24 hours, at most 10 a day; always `{ok: true}` (see "Help") |
 
 A website quote request is matched to an existing customer of that lot by
 email or phone (digits compared); otherwise a new customer is made. A
@@ -303,13 +309,81 @@ Alan makes the activation key): `CONTROL_ROOM_URL`,
 Functions scope only), `CONTROL_ROOM_PUBLIC_KEY`, and optionally
 `CONTROL_ROOM_SITE_ID` (Netlify's own site ID otherwise). None set: not
 connected. Some but not all: nothing can be changed until they are all
-there.
+there. One more, optional and normally left out: `BARNWRIGHT_HELP_URL`
+(see "Help").
 
 `npm run office -- --control-room` runs the local copy against a pretend
 control room (`tools/lib/fake-control-room.mjs`, 3 open lots in its plan);
 `tools/check-control-room.mjs` proves every rule above, and that leases
 signed by the control room's own code (`test/control-room/leases.json`)
 read the same way.
+
+## Help
+
+Alan's words (October 2026): a Help button inside the software (no phone
+number), short help answers, and problem alerts. Barnwright drafts each
+reply with Claude, and Alan approves it in his Sales Inbox.
+
+* **The Help screen** (`#/help`): **Help** is in everyone's menu (under
+  **More** on a phone) and at the top of every screen. It has 14 short
+  answers with a search box (`ui/office/help-answers.js`: every button an
+  answer names is checked against the screens), **Ask Barnwright** (a box
+  and **Send**, saying what goes with the question), and **Your questions**,
+  each "Waiting for an answer" or "Answered" with Barnwright's answers,
+  newest first. The owner and managers see every question from the
+  business; a dealer sees their own. After sending: "Sent. Barnwright will
+  answer here and by email at <their email>."
+* **A question** goes from the business's own server, never the browser:
+  the control room gives a pass good for 10 minutes (`POST /api/help-pass`
+  with the activation key; `control-room.js` `helpPass`), and the pass goes
+  with the question to Barnwright's Sales Inbox (`POST /help/v1/ask`;
+  `/thread` reads the answers, `/problem` takes a problem report), which
+  checks it with the control room's public key. The asker is always the
+  person signed in. With the question go only the page they came from (the
+  screen, never which customer, order or quote) and these facts: the
+  version, the business's name, its Barnwright account (on or off, why,
+  lots allowed and open, the last check-in), how many lots are open and
+  closed, how many people are on the team, whether email is set up,
+  whether the price list is saved (and when), whether the 3D designer is
+  open, and the browser's name, screen size, language, time zone and
+  recent errors. Never customers, prices, the price list itself, orders,
+  keys or passwords. Asking works while changes are stopped, and nothing a
+  person typed is written to the log.
+* **When Barnwright can't be reached:** "Barnwright couldn't be reached
+  just now. Try again in a minute." Too many in one day: "You've sent a
+  lot of questions today. To ask more, email
+  support@barnwrightsoftware.com." The list says calmly that the questions
+  aren't showing, with **Try again**.
+* **Problem alerts.** The Dealer Center's screens and every 3D designer
+  page (`ui/problems.js`) report an error nothing caught to
+  `POST /api/office/problem` on their own site: at most 3 a page load; the
+  message cut to 300 characters, with any email address, phone number,
+  long code or query string taken out; where in the code (the script's
+  path, line and column, no query string); the page's path (the screen on
+  the Dealer Center; never the part after # on a 3D designer, which holds
+  the customer's building); never anything a customer typed. The server
+  sends each kind (its `signature`) at most once in 24 hours and at most 10
+  a day for the whole site (`barnwright-help-problems`), and always answers
+  `{ok: true}`. A copy without that address (a 404) changes nothing for
+  the page. Every page's security policy already allows it
+  (`connect-src 'self'`).
+* **Not connected** (Alan's own business, the local copy, the demo): the
+  answers, and instead of the box "Questions go straight to Barnwright from
+  a Dealer Center Barnwright sets up. To ask from here, email
+  support@barnwrightsoftware.com." Problem reports are dropped. A connected
+  business with some settings missing is told Barnwright hasn't finished
+  setting up Help yet, with the same email.
+* **The setting** (optional, normally left out): `BARNWRIGHT_HELP_URL`, the
+  Sales Inbox's address, `https://inbox.barnwrightsoftware.com` when left
+  out. https only, with nothing after the name; plain http only for
+  localhost while running `netlify dev` on a computer.
+
+`npm run office -- --control-room` comes with a pretend Sales Inbox
+(`tools/lib/fake-help-inbox.mjs`); `POST /__local/help-inbox` with
+`{answer: "words"}` answers the newest question still waiting.
+`tools/check-help.mjs` proves every rule above against a pretend control
+room and inbox; `tools/check-dealer-center.mjs` asks and answers in
+Chromium.
 
 ## Security rules that never bend
 
@@ -347,7 +421,10 @@ npm run office -- --reset   # start the sample data again
 This local Dealer Center keeps its data in `.office-local/` (never published) and
 replaces Netlify sign-in with a list of the sample people. It serves the lot
 designer links too (`/d/riverside/`), so a quote sent from the designer
-appears in the Dealer Center.
+appears in the Dealer Center. It isn't connected to Barnwright, so Help
+shows its answers and the email to write to;
+`npm run office -- --control-room` connects it to a pretend control room
+and Sales Inbox, so questions and answers work too.
 
 ## Try it without signing in
 
@@ -503,6 +580,11 @@ script, and email every customer the new terms 30 days ahead.
 | `tools/check-wording.mjs` | keeps the old words out of every screen and answer |
 | `tools/check-style-variants.mjs` | a business's own style draws and prices exactly like its library style |
 | `tools/check-control-room.mjs` | the Barnwright account rules, against a pretend control room |
+| `server/office/help.js` | Help: questions to Barnwright, Barnwright's answers, problem reports |
+| `ui/office/views/help.js`, `ui/office/help-answers.js`, `ui/office/help.css` | the Help screen, its short answers and its look |
+| `ui/problems.js` | reports an error nothing caught to the site's own server (the Dealer Center and every 3D designer page) |
+| `tools/check-help.mjs` | Help's rules, against a pretend control room and Sales Inbox |
+| `tools/lib/fake-help-inbox.mjs` | the pretend Sales Inbox (the checks and `--control-room`) |
 
 ## The screens
 
@@ -520,8 +602,9 @@ least 44 px tall; phone numbers and emails are tap-to-call, tap-to-text and
 tap-to-email links.
 
 Frame: header (business logo/name, "Dealer Center", the lot picker for people with
-more than one lot, the person's menu with Sign out). Navigation: a left
-column on wide screens, a bottom bar on phones.
+more than one lot, **+ Customer**, **Help**, the person's menu with Sign out).
+Navigation: a left column on wide screens, a bottom bar on phones (the first
+four screens, the rest under **More**).
 
 **Today** (`#/`) — "Good morning, Alan." Follow-ups due today and overdue
 (overdue in red), new customers nobody has contacted, numbers for this month
@@ -627,6 +710,14 @@ permission sentence, empty = don't ask). It all
 saves into the price list record with one bar at the bottom ("3 changes",
 "Undo changes", "Save settings"); someone saving first is told to reload.
 Managers and dealers see "Only the owner can change settings".
+
+**Help** (`#/help`, everyone) — short answers with a search box ("website",
+"price"); **Ask Barnwright**: "Your question", a line saying what goes with
+it (the page you came from and a few technical details, never your
+customers or prices) and **Send**; **Your questions** with each one's
+"Waiting for an answer" or "Answered" and Barnwright's answers. Not
+connected (and in the demo): the answers and one line with
+support@barnwrightsoftware.com instead of the box. See "Help" above.
 
 **Sign in** — email and password; "Make your login" (for people the owner
 added); "Forgot your password?"; links from Netlify emails (confirm, invite,

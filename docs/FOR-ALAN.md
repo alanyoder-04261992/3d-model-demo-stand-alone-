@@ -281,6 +281,21 @@ Your own business isn't connected to a control room, so none of this ever
 limits it. On your own computer, `npm run office -- --control-room` shows
 what a connected company sees.
 
+### Help inside the Dealer Center
+
+Every screen has a **Help** button (and Help is in the menu). It opens 14
+short answers to what people ask most, with a search box, and **Ask
+Barnwright**: a box and **Send**, with no phone number anywhere. The
+question lands in your Sales Inbox (inbox.barnwrightsoftware.com) with the
+page they were on and a few technical details, never their customers or
+prices. Claude drafts the reply, you approve it, and they get it by email
+and under **Your questions** on their Help screen. Their owner and managers
+see every question from the company; a dealer sees their own. It works
+even while their account is switched off. When something on their pages
+breaks, the error goes to your Sales Inbox by itself, each kind once a day
+and at most 10 a day. Your own business and the demo show the answers and
+say to email support@barnwrightsoftware.com instead.
+
 ### Older company links (without the Dealer Center)
 
 Existing static company links can still send quote requests wherever the
