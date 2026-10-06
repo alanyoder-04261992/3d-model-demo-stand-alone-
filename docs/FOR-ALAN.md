@@ -199,8 +199,8 @@ list, so nobody can change a price by tampering with the page.
 
 To try it with a made-up business (Sample Storage Barns: three lots, five
 people, thirty customers), open `/dealer` on your demo site
-(barnwright-demo.netlify.app, or demo.barnwrightsoftware.com once that
-address is connected) or on your learning preview site, leave the email and
+(3ddemo.barnwrightsoftware.com; barnwright-demo.netlify.app works too) or on
+your learning preview site, leave the email and
 password empty and tap **Sign in**. The demo site has no lessons, so it is
 the one to show shed companies. Nothing you do there is saved or
 sent anywhere. Sites you sell to a shed company never have this: their
