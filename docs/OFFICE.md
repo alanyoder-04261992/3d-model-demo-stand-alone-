@@ -382,8 +382,10 @@ live, with every button named, is
 
 Barnwright sells **one product**, the Barnwright 3D designer (the 3D designer
 and its Dealer Center), which works alongside whatever software the company
-already uses. The first lot comes with the plan; each lot after the first is
-**$250 one time** and the monthly fee stays the same. Every business lives at
+already uses: **$250 a month** from go-live, with **no build fee** (Alan's
+prices, October 6, 2026). The first lot comes with the plan; each lot after
+the first is **$250 one time** and the monthly fee stays the same. Every
+business lives at
 **`<their name>.barnwrightsoftware.com`** (once, before the first customer,
 `barnwrightsoftware.com` goes on Netlify DNS so each new address is one step).
 
@@ -394,8 +396,10 @@ already uses. The first lot comes with the plan; each lot after the first is
    company fills in Section A, initials Section D and signs; Alan signs. The
    company sends back its answers with its logo, price sheet and photos.
 2. **Control room.** **Add customer** with the dealership cap (lots), the
-   one-time total (build fee plus lot fees) as the build fee, and the monthly
-   subscription; **Collect build fee** and wait until it is paid.
+   one-time total (build fee plus lot fees: 0.00 for one lot) as the build
+   fee, and the monthly subscription. If the one-time total is more than $0,
+   **Collect build fee** and wait until it is paid; with one lot there is
+   nothing to collect.
 3. **Their site.** A new Netlify project from this repository (named for the
    business) with the domain `<their name>.barnwrightsoftware.com`; its
    Project ID and that address go on the customer in the control room; **Identity** on (registration open: anyone can make a login, but

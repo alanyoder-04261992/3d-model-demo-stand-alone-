@@ -10,9 +10,11 @@
 
 **What Barnwright sells: one product**, the Barnwright 3D designer (the 3D
 designer and its Dealer Center). It stands on its own and works alongside the
-software the company already uses. A one-time build fee and a monthly fee
-from go-live; the first lot comes with it, and each lot after the first is
-**$250 one time** with no change to the monthly fee. Each business is at
+software the company already uses. **$250 a month** from go-live and **no
+build fee** (Alan's prices, October 6, 2026); the first lot comes with it, and
+each lot after the first is **$250 one time** with no change to the monthly
+fee. Barnwright's money-back promise is for custom work only, so it does not
+cover the 3D designer. Each business is at
 `<their name>.barnwrightsoftware.com`.
 
 **Signing up a company that said yes**, step by step (the Sign-Up Form,
@@ -72,8 +74,9 @@ without signing in").
   **white-label** customer gets `"show": false` and no credit at all.
 * **Self-hosting** is recorded as a licence plan (`"self"`) but there is no
   packaged way for a company to run its own copy yet. Treat it as "ask Alan".
-* **What to charge** — for the licence, for white-label, for setup, for a
-  renewal — is Alan's decision and is not written anywhere in this repo.
+* **What to charge**: $250 a month from go-live, no build fee, and $250 one
+  time for each lot after the first (Alan, October 6, 2026; see the top of
+  this file). A price for white-label or self-hosting is still Alan's call.
 
 ## What the company gets
 

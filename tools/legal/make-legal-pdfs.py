@@ -41,6 +41,7 @@ if OUT: os.makedirs(OUT, exist_ok=True)
 VERSION = "Version 1.0, October 2026"
 DOMAIN = "barnwrightsoftware.com"   # every business's web address is <their name>.barnwrightsoftware.com
 LOT_FEE = 250                       # one time, for each lot after the first (the monthly fee stays the same)
+MONTHLY_FEE = 250                   # a month from go-live, with no build fee (Alan's prices, Oct 6 2026)
 BLACK = colors.HexColor("#16130E")
 INK = colors.HexColor("#1D1A15")
 MUTED = colors.HexColor("#635D52")
@@ -464,7 +465,7 @@ PARTS = [
     ("Part 1. The paperwork", "The day they say yes.", [
         ("Fill in their Sign-Up Form", [
             "Open your <b>Sign-Up Form (blank).pdf</b> template (Barnwright's details already typed in the provider box).",
-            "Fill in <b>Section B</b> (how many lots, white-label) and <b>Section C</b>: the build fee, the lot fees ($" + str(LOT_FEE) + " for each lot after the first), the one-time total, the monthly fee (the same for any number of lots) and how they pay. Save it as <b>Sign-Up Form - (their business).pdf</b>.",
+            "Fill in <b>Section B</b> (how many lots, white-label) and <b>Section C</b>: the build fee (<b>$0</b>: there is no build fee), the lot fees ($" + str(LOT_FEE) + " for each lot after the first), the one-time total, the monthly fee (<b>$" + str(MONTHLY_FEE) + "</b>, the same for any number of lots) and how they pay. Save it as <b>Sign-Up Form - (their business).pdf</b>.",
             "Pick their web address with them, for example <b>cedar-ridge-sheds</b>." + DOMAIN + ", and type it in Section A.",
         ]),
         ("Send it with the terms and the questions", [
@@ -478,11 +479,12 @@ PARTS = [
         ("Add the customer", [
             "Sign in to the control room and tap <b>Add customer</b>.",
             "Type the <b>Business name</b>, <b>Contact person</b>, <b>Email address</b> and <b>Phone</b> from their Sign-Up Form.",
-            "<b>Dealership cap</b> is how many lots from Section B (the control room says dealerships; the Dealer Center says lots). <b>One-time build fee (USD)</b> is the one-time total from Section C (the build fee plus the lot fees). <b>Monthly subscription (USD)</b> is the monthly fee.",
+            "<b>Dealership cap</b> is how many lots from Section B (the control room says dealerships; the Dealer Center says lots). <b>One-time build fee (USD)</b> is the one-time total from Section C (the build fee plus the lot fees: 0.00 for one lot). <b>Monthly subscription (USD)</b> is the monthly fee.",
             "Leave <b>Application URL</b> and <b>Netlify site ID</b> empty for now (you get them in Part 3). Save.",
         ]),
         ("Collect the build fee", [
-            "On the customer, tap <b>Collect build fee</b> and copy the payment link. Email it to them.",
+            "With one lot the one-time total is $0, so there is nothing to collect: go on to Part 3.",
+            "With more lots, tap <b>Collect build fee</b> on the customer and copy the payment link. Email it to them.",
             "Wait until the control room shows the build fee as paid before you start building. The monthly fee does <b>not</b> start yet.",
         ]),
     ]),

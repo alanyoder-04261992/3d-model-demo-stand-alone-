@@ -176,10 +176,11 @@ site. One shed business runs everything from it:
   up and build their buildings their way:
   `docs/legal/Barnwright-Setup-Questions.pdf`. Their owner ticks
   "I agree to the Barnwright terms" in the Dealer Center's first setup, and
-  Settings shows who agreed and when. It's one product; each lot after the
-  first is $250 one time, and every business gets its own
-  `name.barnwrightsoftware.com` address. All four papers are also on the
-  **Papers** page of your control room, always the latest version.
+  Settings shows who agreed and when. It's one product: $250 a month from
+  go-live, no build fee, and each lot after the first is $250 one time.
+  Every business gets its own `name.barnwrightsoftware.com` address. All
+  four papers are also on the **Papers** page of your control room, always
+  the latest version.
 * **Designing for a customer.** "Design a building for them" opens the lot's
   3D designer inside the Dealer Center; "Save quote" puts the building and
   its price on the customer's file. "Copy link to this building" copies a
