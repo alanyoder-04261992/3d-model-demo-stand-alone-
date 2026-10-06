@@ -176,8 +176,8 @@ site. One shed business runs everything from it:
   up and build their buildings their way:
   `docs/legal/Barnwright-Setup-Questions.pdf`. Their owner ticks
   "I agree to the Barnwright terms" in the Dealer Center's first setup, and
-  Settings shows who agreed and when. It's one product: the first lot is
-  free, with no setup fee and no monthly fee, each lot after the first is
+  Settings shows who agreed and when. It's one product: no setup fee, $250
+  a month from go-live with the first lot included, each lot after the first
   $250 one time, and every business gets its own
   `name.barnwrightsoftware.com` address. A one-page flyer and price sheet to
   hand to shed companies are with them. All the papers are also on the

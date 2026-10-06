@@ -22,7 +22,7 @@ import { KEEP } from "./store.js";
 
 /* Change VERSION (and the PDF) when the terms change: every owner is asked again. */
 export const TERMS = Object.freeze({
-  version: "1.1",
+  version: "1.2",
   date: "October 2026",
   url: "/legal/barnwright-terms.pdf",
   title: "Barnwright Software Terms and Conditions",

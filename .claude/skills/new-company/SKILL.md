@@ -18,11 +18,13 @@ the price list (sizes, styles, prices, options, colors), the lots (each gets
 file is written by hand for these businesses; the price list is the same
 validated settings object a `companies/<id>/company.json` file holds. Dealers
 never change prices or options. Barnwright sells one product (the 3D designer
-with its Dealer Center). The first lot is free: no setup fee and no monthly
-fee (the control room customer has a dealership cap of 1 and 0 for the build fee
-and the monthly subscription). Each lot after the first is $250 one time,
-charged with the control room's Collect lot fee, at sign-up or later, which
-raises the dealership cap when Stripe confirms the payment. The site's
+with its Dealer Center). No setup fee; $250 a month from go-live, the same for
+any number of lots, with the first lot included (the control room customer has
+a dealership cap of 1, 0 for the build fee and 250 for the monthly
+subscription, started with Start monthly subscription at go-live). Each lot
+after the first is $250 one time, charged with the control room's Collect lot
+fee, at sign-up or later, which raises the dealership cap when Stripe confirms
+the payment. The site's
 address is `<their name>.barnwrightsoftware.com`.
 
 **The company's answers.** A new company fills in

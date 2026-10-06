@@ -18,8 +18,8 @@ conditions for me to have them sign when I sign them up").
                                              its lists come from library/)
   docs/legal/Barnwright-Flyer.pdf            one page to hand out or email to a
                                              shed company (picture: designer.jpg)
-  docs/legal/Barnwright-Price-Sheet.pdf      one page: first lot free, no setup or
-                                             monthly fee, $250 each lot after
+  docs/legal/Barnwright-Price-Sheet.pdf      one page: no setup fee, $250 a month
+                                             with the first lot, $250 each lot after
 
 Run:  python3 tools/legal/make-legal-pdfs.py            (into the repository)
       python3 tools/legal/make-legal-pdfs.py <folder>   (all of them there, to look at)
@@ -42,9 +42,10 @@ from reportlab.pdfgen import canvas as rl_canvas
 OUT = sys.argv[1] if len(sys.argv) > 1 else None
 if OUT: os.makedirs(OUT, exist_ok=True)
 
-VERSION = "Version 1.1, October 2026"
+VERSION = "Version 1.2, October 2026"
 DOMAIN = "barnwrightsoftware.com"   # every business's web address is <their name>.barnwrightsoftware.com
-LOT_FEE = 250                       # one time, for each lot after the first. The first lot is free: no setup fee, no monthly fee
+MONTHLY_FEE = 250                   # a month from go-live, for any number of lots; it includes the first lot. No setup fee
+LOT_FEE = 250                       # one time, for each lot after the first
 PROVIDER = "Barnwright Software"
 SALES = "sales@" + DOMAIN
 BLACK = colors.HexColor("#16130E")
@@ -222,7 +223,7 @@ TERMS = [
         ("(c)", "your web address, hosting, updates and fixes for as long as this agreement is in place.", "sub"),
         ("1.2", "The 3D designer stands on its own. It works alongside the software you already use, such as your website, your accounting and your rent-to-own company, and does not replace it. You keep using your own software for contracts, payments, inventory and delivery."),
         ("1.3", "We may improve, change or replace features over time. We will not take away a main feature you use without telling you at least 30 days ahead."),
-        ("1.4", "<b>Lots.</b> Your first lot is free. Each lot after the first has a one-time lot fee (section 3). To open another lot later, ask us: we add it to your plan once its lot fee is paid."),
+        ("1.4", "<b>Lots.</b> Your monthly fee includes your first lot. Each lot after the first has a one-time lot fee (section 3) and adds nothing to your monthly fee. To open another lot later, ask us: we add it to your plan once its lot fee is paid."),
         ("1.5", "<b>Your web address.</b> Your 3D designer and Dealer Center are at a web address under " + DOMAIN + ", such as yourbusiness." + DOMAIN + ", which we choose with you. Barnwright owns " + DOMAIN + " and the addresses under it. You may use yours while this agreement is in place, and you may also show your 3D designer on your own websites."),
     ]),
     ("2. Setting up your software", [
@@ -231,16 +232,18 @@ TERMS = [
         ("2.3", "Before your 3D designer goes live, we show you your buildings and prices. You check them and tell us they are right. You are responsible for the prices and choices you approve."),
     ]),
     ("3. Fees and payment", [
-        ("3.1", "Your first lot is free. There is no setup fee and no monthly fee."),
-        ("3.2", f"Each lot after the first has a <b>one-time lot fee of ${LOT_FEE}</b>, shown on your Sign-Up Form. You pay it before we open that lot, by the payment method on your Sign-Up Form, for example a card or bank payment through our payment processor, or an invoice. A lot fee is not refundable once the lot is open."),
-        ("3.3", "If a lot fee you owe is still unpaid 15 days after we tell you, we may switch your account off as described in section 9 until it is paid."),
-        ("3.4", "Fees do not include sales tax or other taxes. You pay any that apply."),
-        ("3.5", "We may add or change fees by telling you at least 30 days before the change. A change never charges again for a lot you already paid for. If you don't agree, you may end this agreement before the change takes effect."),
+        ("3.1", "There is no setup fee."),
+        ("3.2", f"Your <b>monthly fee</b>, shown on your Sign-Up Form (${MONTHLY_FEE} a month unless the form says otherwise), starts on your <b>go-live date</b>: the day we tell you in writing (an email is enough) that your software is finished and ready to use. It includes your first lot, and it is the same for any number of lots."),
+        ("3.3", "The monthly fee is charged ahead of each month by the payment method on your Sign-Up Form, for example a card or bank payment through our payment processor, or an invoice."),
+        ("3.4", f"Each lot after the first has a <b>one-time lot fee of ${LOT_FEE}</b>, shown on your Sign-Up Form. You pay it before we open that lot. A lot fee is not refundable once the lot is open."),
+        ("3.5", "If a payment fails, we try again and tell you. If a fee is still unpaid 15 days after we tell you, we may switch your account off as described in section 9 until it is paid."),
+        ("3.6", "Fees do not include sales tax or other taxes. You pay any that apply."),
+        ("3.7", "We may change the fees by telling you at least 30 days before the change. A change never charges again for a lot you already paid for. If you don't agree, you may end this agreement before the change takes effect."),
     ]),
     ("4. How long this agreement lasts", [
-        ("4.1", "This agreement starts when both of us sign the Sign-Up Form. It continues until you or we end it."),
+        ("4.1", "This agreement starts when both of us sign the Sign-Up Form. It continues month to month until you or we end it."),
         ("4.2", "Either of us may end it for any reason by giving the other 30 days' written notice. An email to the address on the Sign-Up Form is written notice."),
-        ("4.3", "We may end it sooner, or switch your account off, if a lot fee is not paid (section 3.3), if you seriously break these terms and don't fix it within 10 days after we tell you, or if the software is used against the law."),
+        ("4.3", "We may end it sooner, or switch your account off, if a fee is not paid (section 3.5), if you seriously break these terms and don't fix it within 10 days after we tell you, or if the software is used against the law."),
     ]),
     ("5. Your account and your team", [
         ("5.1", "Your owner controls your account: who is on your team, which lots each person sees, and your settings. Your owner is responsible for the people they add."),
@@ -267,9 +270,9 @@ TERMS = [
     ]),
     ("9. Check-ins, switching off and read-only", [
         ("9.1", "Your software checks in with Barnwright's control room to confirm that your account is on and how many lots you may have open."),
-        ("9.2", "Your account is switched off when we switch it off under section 3.3 or 4.3, or when this agreement ends. It also stops taking changes if it cannot check in for 7 days in a row."),
+        ("9.2", "Your account is switched off when we switch it off under section 3.5 or 4.3, or when this agreement ends. It also stops taking changes if it cannot check in for 7 days in a row."),
         ("9.3", "While it is switched off, changes can't be saved, your 3D designer links show a short message with your lot's phone number instead of the designer, and quote requests can't be sent. You and your team can still look at and download everything, and taking a person off your team still works."),
-        ("9.4", "When the reason is fixed, for example a lot fee owed is paid, we switch your account back on. Nothing is deleted while an account is switched off."),
+        ("9.4", "When the reason is fixed, for example the fee is paid, we switch your account back on. Nothing is deleted while an account is switched off."),
         ("9.5", "You agree not to try to get around the check-ins, the lot limit or the switch."),
     ]),
     ("10. Help from Barnwright", [
@@ -307,12 +310,12 @@ TERMS = [
     ]),
     ("17. Limits on responsibility", [
         ("17.1", "Neither of us is responsible to the other for lost profits, lost sales, lost data that could have been downloaded, or indirect or special damages, even if warned they could happen."),
-        ("17.2", "Our total responsibility for all claims under this agreement is limited to the fees you paid us in the 12 months before the claim, or $100, whichever is more."),
+        ("17.2", "Our total responsibility for all claims under this agreement is limited to the fees you paid us in the 12 months before the claim."),
         ("17.3", "These limits do not apply to fraud or intentional wrongdoing, to amounts you owe us, or to section 18."),
     ]),
     ("18. Covering claims", [
         ("18.1", "You will defend and pay for claims by others that come from your prices, your buildings or their delivery, your contracts with your customers, rent-to-own or financing, your calls, texts or emails, or your breaking this agreement or the law."),
-        ("18.2", "We will defend and pay for claims by others that the software, as we provide it, breaks their copyright or patent. If that happens, we may change the software, get the right for you to keep using it, or end this agreement and refund the lot fees you paid in the 12 months before."),
+        ("18.2", "We will defend and pay for claims by others that the software, as we provide it, breaks their copyright or patent. If that happens, we may change the software, get the right for you to keep using it, or end this agreement and refund fees you paid ahead for time not used."),
         ("18.3", "The one asking to be covered must tell the other promptly and help with the defense."),
     ]),
     ("19. Changes to these terms", [
@@ -397,8 +400,8 @@ def signup_pdf(path):
                        "It works alongside the software you already use (terms section 1).", body))
     s.append(Spacer(1, 4))
     s.append(row(Field("lots", "How many lots", third),
-                 Paragraph(f"Your first lot is free. Each lot after the first is <b>${LOT_FEE} one time</b> "
-                           "(terms section 3).", small),
+                 Paragraph(f"Your monthly fee includes your first lot. Each lot after the first is <b>${LOT_FEE} one time</b> "
+                           "and adds nothing to the monthly fee (terms section 3).", small),
                  Check("white_label", "<b>White-label</b> (no \"3D designer by Barnwright\" line)", third), widths=[third + 12, third + 12, third]))
     s.append(Field("other_items", "Anything else included", FW))
     s.append(Spacer(1, 4))
@@ -408,15 +411,17 @@ def signup_pdf(path):
     s.append(PageBreak())
     s.append(section_band("C.  FEES AND PAYMENT"))
     s.append(Spacer(1, 6))
-    s.append(Paragraph(f"<b>Your first lot is free. There is no setup fee and no monthly fee.</b> Each lot after the first is ${LOT_FEE} one time, "
-                       "paid before that lot opens (terms section 3).", body))
+    s.append(Paragraph(f"<b>There is no setup fee.</b> The monthly fee starts on your go-live date and includes your first lot. "
+                       f"Each lot after the first is ${LOT_FEE} one time, paid before that lot opens (terms section 3).", body))
     s.append(Spacer(1, 4))
+    s.append(row(Field("monthly_fee", "Monthly fee ($), from the go-live date", half, value=str(MONTHLY_FEE)),
+                 Paragraph("The same for any number of lots.", small), widths=[half + 12, half]))
     s.append(row(Field("extra_lots", "Lots after the first", third), Field("lot_fees", f"Lot fees (${LOT_FEE} each, $)", third),
-                 Field("total_due", "Total due now ($)", third), widths=[third + 12, third + 12, third]))
+                 Field("total_due", "Due now: the lot fees ($)", third), widths=[third + 12, third + 12, third]))
     s.append(Paragraph("<b>Payment method</b>", label))
     s.append(Spacer(1, 3))
     s.append(row(Check("pay_card", "Card", third), Check("pay_bank", "Bank payment (ACH)", third), Check("pay_invoice", "Invoice, due in the days below", third), widths=[third + 12, third + 12, third]))
-    s.append(row(Field("invoice_days", "Invoice due in (days)", third), Paragraph("Leave the payment boxes empty when you have one lot: nothing is due.", small),
+    s.append(row(Field("invoice_days", "Invoice due in (days)", third), Paragraph("With one lot, nothing is due now: the first payment is the monthly fee on the go-live date.", small),
                  widths=[third + 12, third * 2 + 12]))
 
     s.append(Spacer(1, 6))
@@ -427,7 +432,7 @@ def signup_pdf(path):
         ("init_drawings", "The 3D pictures and floor plans are not construction drawings, engineered plans or permit documents (section 6.3)."),
         ("init_rto", "Rent-to-own figures are estimates. Barnwright is not a lender, and our rent-to-own contracts are our responsibility (section 6.4)."),
         ("init_texting", "My business is responsible for texting and emailing customers lawfully, with their permission (section 7)."),
-        ("init_readonly", "If a lot fee we owe isn't paid, or the software can't check in for 7 days, changes stop and our 3D designer links close until it is fixed. We can still look at and download everything (section 9)."),
+        ("init_readonly", "If a fee isn't paid, or the software can't check in for 7 days, changes stop and our 3D designer links close until it is fixed. We can still look at and download everything (section 9)."),
     ]:
         s.append(Initial(name, words, FW))
         s.append(Spacer(1, 2))
@@ -450,7 +455,7 @@ def signup_pdf(path):
     t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 12)]))
     sig.append(t)
     sig.append(Spacer(1, 8))
-    sig.append(Paragraph("<b>For Barnwright's records:</b> go-live date ______________  (the day we told you your 3D designer is ready)", small))
+    sig.append(Paragraph("<b>For Barnwright's records:</b> go-live date ______________  (the monthly fee starts on this date, section 3.2)", small))
     s.append(KeepTogether(sig))
     build(path, s, "Sign-Up Form", "Barnwright Sign-Up Form")
 
@@ -470,7 +475,7 @@ PARTS = [
     ("Part 1. The paperwork", "The day they say yes.", [
         ("Fill in their Sign-Up Form", [
             "Open the <b>Sign-Up Form</b>. Barnwright Software and " + SALES + " are already typed in the provider box; add your mailing address, phone and support hours once and keep that copy as your template.",
-            "Fill in <b>Section B</b> (how many lots, white-label) and <b>Section C</b>: the lots after the first, the lot fees ($" + str(LOT_FEE) + " each) and the total due now. One lot means nothing is due: leave the payment boxes empty. There is no setup fee and no monthly fee. Save it as <b>Sign-Up Form - (their business).pdf</b>.",
+            "Fill in <b>Section B</b> (how many lots, white-label) and <b>Section C</b>: the lots after the first, the lot fees ($" + str(LOT_FEE) + " each), the monthly fee ($" + str(MONTHLY_FEE) + ", already typed in) and how they pay. One lot means nothing is due before go-live. There is no setup fee. Save it as <b>Sign-Up Form - (their business).pdf</b>.",
             "Pick their web address with them, for example <b>cedar-ridge-sheds</b>." + DOMAIN + ", and type it in Section A.",
         ]),
         ("Send it with the terms and the questions", [
@@ -484,13 +489,13 @@ PARTS = [
         ("Add the customer", [
             "Sign in to the control room and tap <b>Add customer</b>.",
             "Type the <b>Business name</b>, <b>Contact person</b>, <b>Email address</b> and <b>Phone</b> from their Sign-Up Form.",
-            "<b>Dealership cap</b> is <b>1</b>, their free lot (the control room says dealerships; the Dealer Center says lots). It goes up by itself when they pay for more lots. Put <b>0</b> in <b>One-time build fee (USD)</b> and <b>Monthly subscription (USD)</b>: there is no setup fee and no monthly fee.",
+            "<b>Dealership cap</b> is <b>1</b>, the lot their monthly fee includes (the control room says dealerships; the Dealer Center says lots). It goes up by itself when they pay for more lots. Put <b>0</b> in <b>One-time build fee (USD)</b> (there is no setup fee) and <b>" + str(MONTHLY_FEE) + "</b> in <b>Monthly subscription (USD)</b>.",
             "Leave <b>Application URL</b> and <b>Netlify site ID</b> empty for now (you get them in Part 3). Save.",
         ]),
         ("Collect the lot fees (more than one lot only)", [
             "One lot: skip this step. Nothing is due.",
             "More lots: on the customer, tap <b>Collect lot fee</b>, type the lots after the first (each is <b>$" + str(LOT_FEE) + "</b>, one time), copy the payment link and email it to them.",
-            "When Stripe confirms the payment, the control room raises their <b>Dealership cap</b> by that many lots by itself. You can start building before it is paid; their extra lots open once it is.",
+            "When Stripe confirms the payment, the control room raises their <b>Dealership cap</b> by that many lots by itself. You can start building before it is paid; their extra lots open once it is. The monthly fee does <b>not</b> start yet.",
         ]),
     ]),
     ("Part 3. Their Dealer Center site", "On netlify.com, about 15 minutes.", [
@@ -540,8 +545,9 @@ PARTS = [
         ]),
     ]),
     ("Part 5. Go live", "When everything works.", [
-        ("Tell them it is live", [
-            "Email them: \"Your Barnwright 3D designer is finished and ready to use as of (date). Your customers can design their building at (their web address).\"",
+        ("Start the monthly fee", [
+            "In the control room, on the customer, tap <b>Start monthly subscription</b>, confirm, and copy the payment link.",
+            "Email it to them with their go-live date: \"Your Barnwright 3D designer is finished and ready to use as of (date). Your monthly fee of $" + str(MONTHLY_FEE) + " starts today. Here is the link to set up the payment.\"",
             "Write the go-live date at the bottom of their signed Sign-Up Form.",
         ]),
         ("Follow up", [
@@ -552,7 +558,7 @@ PARTS = [
     ("Later. Adding a lot", "When they open another lot.", [
         ("Collect the lot fee", [
             "In the control room, open the customer and tap <b>Collect lot fee</b>. Type how many new lots (each is <b>$" + str(LOT_FEE) + "</b>, one time), then copy the payment link and email it to them.",
-            "When Stripe confirms the payment, the control room raises their <b>Dealership cap</b> by that many lots by itself.",
+            "When Stripe confirms the payment, the control room raises their <b>Dealership cap</b> by that many lots by itself. The monthly fee stays the same.",
             "Their Dealer Center picks up the new number within six hours. Their owner then adds the lot under <b>Lots</b>.",
         ]),
     ]),
@@ -953,8 +959,8 @@ def hero(head, words, FW):
 
 
 def price_strip(FW):
-    """First lot free, no setup fee, no monthly fee, $250 a lot after that."""
-    cells = [("Free", "your first lot"), ("$0", "setup"), ("$0", "a month"), (f"${LOT_FEE}", "one time, each lot after the first")]
+    """No setup fee, $250 a month with the first lot included, $250 one time a lot after that."""
+    cells = [("$0", "setup"), (f"${MONTHLY_FEE}", "a month, from go-live"), ("Included", "your first lot"), (f"${LOT_FEE}", "one time, each lot after the first")]
     w = FW / 4
     t = Table([[[Paragraph(a, price_big), Spacer(1, 2), Paragraph(b, price_cap)] for a, b in cells]], colWidths=[w] * 4, hAlign="LEFT")
     t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), GOLD_SOFT), ("LINEABOVE", (0, 0), (-1, 0), 2, GOLD),
@@ -1009,9 +1015,8 @@ def price_pdf(path):
     cell_b = ParagraphStyle("cell_b", parent=cell, fontName="Helvetica-Bold")
     money = ParagraphStyle("money", parent=cell_b, alignment=2)
     rows = [
-        ("Your first lot", "Your 3D designer and Dealer Center, on your own web address.", "Free"),
         ("Setup", "Your price list, styles, sizes, colors, logo, web address and website code, set up by us from your answers to our Setup Questions.", "$0"),
-        ("Monthly fee", "Hosting, updates, fixes and help are included.", "None"),
+        ("Monthly fee", "Your 3D designer and Dealer Center for your first lot, on your own web address, with hosting, updates, fixes and help. Starts on your go-live date.", f"${MONTHLY_FEE} a month"),
         ("Each extra lot", "Its own 3D designer link, its own customers and its own team. Paid once, before the lot opens.", f"${LOT_FEE} one time"),
     ]
     t = Table([[Paragraph(a, cell_b), Paragraph(b, cell), Paragraph(c, money)] for a, b, c in rows],
@@ -1024,7 +1029,7 @@ def price_pdf(path):
     lots = [1, 2, 3, 5, 10]
     head = [Paragraph("Your lots", cell_b)] + [Paragraph(str(n), ParagraphStyle("n", parent=cell_b, alignment=TA_CENTER)) for n in lots]
     pay = [Paragraph("You pay, one time", cell_b)] + [Paragraph("$0" if n == 1 else f"${LOT_FEE * (n - 1):,}", ParagraphStyle("p", parent=cell, alignment=TA_CENTER)) for n in lots]
-    month = [Paragraph("Then each month", cell_b)] + [Paragraph("$0", ParagraphStyle("m", parent=cell, alignment=TA_CENTER)) for _ in lots]
+    month = [Paragraph("Then each month", cell_b)] + [Paragraph(f"${MONTHLY_FEE}", ParagraphStyle("m", parent=cell, alignment=TA_CENTER)) for _ in lots]
     first = 1.55 * inch
     ex = Table([head, pay, month], colWidths=[first] + [(FW - first) / len(lots)] * len(lots), hAlign="LEFT")
     ex.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, 0), GOLD_SOFT), ("LINEBELOW", (0, 0), (-1, -1), 0.5, LINE),
@@ -1043,7 +1048,7 @@ def price_pdf(path):
         "We build your 3D designer and show you your buildings and prices. You check them.",
         "You open it to your customers.",
     ], 1)]
-    s += [Spacer(1, 6), Paragraph("Fees do not include sales tax. Lot fees are paid by card, bank payment or invoice. "
+    s += [Spacer(1, 6), Paragraph("Fees do not include sales tax. Fees are paid by card, bank payment or invoice. "
                                   "The Barnwright Software Terms and Conditions apply.", small),
           Spacer(1, 8), Paragraph("Try it at " + WEB_PAGE + "&nbsp;&nbsp;·&nbsp;&nbsp;" + SALES, contact)]
     sheet(path, s, "Price Sheet", "Barnwright 3D designer pricing")
@@ -1103,7 +1108,7 @@ if len(sys.argv) == 1:
          "Hand it out or email it to shed companies. It shows the 3D designer, what they get and the price, with your email and web page.",
          "docs/legal/Barnwright-Flyer.pdf", "Barnwright Flyer.pdf"),
         ("price-sheet", "Price Sheet", "customer", "Price Sheet",
-         "What it costs: the first lot free, no setup fee, no monthly fee, $" + str(LOT_FEE) + " one time for each lot after the first, with examples and how to start.",
+         "What it costs: no setup fee, $" + str(MONTHLY_FEE) + " a month with the first lot included, $" + str(LOT_FEE) + " one time for each lot after the first, with examples and how to start.",
          "docs/legal/Barnwright-Price-Sheet.pdf", "Barnwright Price Sheet.pdf"),
     ]
     manifest = {

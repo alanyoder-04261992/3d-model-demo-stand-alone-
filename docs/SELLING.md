@@ -10,8 +10,9 @@
 
 **What Barnwright sells: one product**, the Barnwright 3D designer (the 3D
 designer and its Dealer Center). It stands on its own and works alongside the
-software the company already uses. **The first lot is free, with no setup
-fee and no monthly fee**; each lot after the first is **$250 one time**. Each
+software the company already uses. **No setup fee and $250 a month from
+go-live, with the first lot included**; each lot after the first is **$250
+one time** and adds nothing to the monthly fee. Each
 business is at `<their name>.barnwrightsoftware.com`. To hand to a shed
 company: the one-page flyer (`docs/legal/Barnwright-Flyer.pdf`) and price
 sheet (`docs/legal/Barnwright-Price-Sheet.pdf`), both pointing at
