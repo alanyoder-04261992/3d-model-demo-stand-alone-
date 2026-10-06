@@ -16,7 +16,7 @@ import { app } from "./app.js";
 import { configureApi, signOut, post } from "./api.js";
 import { signInScreen, notOnTeam, handleEmailLink } from "./auth.js";
 import { ROLE_WORDS, initials, dayWords, todayKey } from "./words.js";
-import { watchProblems, screenOf } from "../problems.js";
+import { watchProblems, reportProblem, screenOf } from "../problems.js";
 
 const root = document.getElementById("dealer-center");
 
@@ -273,6 +273,7 @@ async function render() {
   } catch (e) {
     if (seq !== renderSeq) return;
     console.error(e);
+    reportProblem(e);   /* passed on to Barnwright like one nothing caught (an answer from the server isn't) */
     clear(main, emptyState("This page didn't load", e.message || "Something went wrong.", button("Try again", () => render(), { kind: "primary" })));
   }
 }

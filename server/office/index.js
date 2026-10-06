@@ -22,7 +22,8 @@
                     is limited (Alan's own business, this computer, the demo).
      appVersion     optional: what this copy reports to the control room
      help           optional: Barnwright's Sales Inbox for the Help screen,
-                    {url, fetch?, timeoutMs?, allowLocal?} (help.js). Used
+                    {url, fetch?, timeoutMs?, budgetMs?, allowLocal?}
+                    (help.js; budgetMs: all of one request's calls). Used
                     only with a license; left out, Help says to email
                     Barnwright instead.
 
@@ -106,6 +107,9 @@ export function createOffice(deps) {
       account: who.person ? await account.status() : null,
       /* the Barnwright terms the owner agrees to: null when not connected */
       terms: who.person ? await terms.status() : null,
+      /* Help: connected to Barnwright, and whether questions can go (the
+         Help screen draws its Ask box from this at once) */
+      help: who.person ? { connected: help.connected, canAsk: help.canAsk } : null,
     });
   }
 

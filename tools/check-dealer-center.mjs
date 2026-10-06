@@ -343,6 +343,20 @@ try {
       ok("Barnwright's answer shows on his Help screen, marked Answered", /Answered/.test(mine) && /Add a size: 12 ft wide/.test(mine) && !/Waiting for an answer/.test(mine), mine.slice(0, 200));
       ok("no errors while asking", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
       await page.screenshot({ path: `${OUT}/help-answered-desktop.png`, fullPage: true });
+      /* from a customer's page: Barnwright learns it was a customer's page, never which customer */
+      await openScreen(page, "/customers", BASE_CR);
+      const row = await page.$eval('a[href^="#/customers/"]', (a) => a.getAttribute("href"));
+      await page.click(`a[href="${row}"]`);
+      await page.waitForFunction((h) => location.hash === h && !document.querySelector("#main .loading"), row, { timeout: 20000 }).catch(() => {});
+      await page.click(".topbar-help");
+      await page.waitForSelector(".hp-ask textarea", { timeout: 20000 });
+      const goes = await page.textContent(".hp-goes");
+      ok("opened from a customer's page, the form says that page goes with the question", /the page you came from \(a customer's page\)/.test(goes), goes);
+      await page.fill(".hp-ask textarea", "A question from a customer's page");
+      await page.click(".hp-ask button[type=submit]");
+      await page.waitForFunction(() => /^Sent\./.test(document.querySelector(".hp-ask .form-status")?.textContent || ""), null, { timeout: 20000 }).catch(() => {});
+      const heldNow = (await inboxNow()).questions || [];
+      ok("... and Barnwright gets the screen (#/customers/:id), never which customer", heldNow.length === 2 && heldNow[1].page === "#/customers/:id" && !heldNow[1].page.includes(row.split("/")[2]), JSON.stringify(heldNow.map((q) => q.page)));
       await page.context().close();
     }
     {

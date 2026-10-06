@@ -201,7 +201,7 @@ Responses are `Cache-Control: private, no-store`.
 
 | Route | Who | Does |
 |---|---|---|
-| `GET me` | anyone | `{person, business, lots, signIn, account, terms}`; `person` is null until the person has access; `business` is null before setup; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version |
+| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once |
 | `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright terms.") and the agreement is kept |
 | `POST terms` | owner | `{agree: true}` agrees to the current Barnwright terms (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
@@ -226,7 +226,7 @@ Responses are `Cache-Control: private, no-store`.
 | `GET customers.csv` | owner, manager | a spreadsheet of the visible customers |
 | `GET barnwright-help` | owner | `{help: {on, until, reason, log}}`, or `help: null` when not connected to the control room |
 | `POST barnwright-help` | owner | `{on: true, reason, hours: 1–24}` lets Barnwright run checks; `{on: false}` stops them at once |
-| `GET help` | everyone | `{connected, canAsk, items}`: the questions asked of Barnwright and Barnwright's answers, newest first (owner and managers every question from the business, a dealer their own); `items: null` with `problem` (plain words) when Barnwright can't be reached; `connected: false` when not connected to the control room |
+| `GET help` | everyone | `{connected, canAsk, items}`: the questions asked of Barnwright and Barnwright's answers, newest first (owner and managers every question from the business, a dealer their own); `items: null` with `problem` (plain words) when Barnwright can't be reached; `connected: false` when not connected to the control room; `canAsk: false` when Help isn't set up for it (the control room refusing its key included) |
 | `POST help` | everyone | `{text, page, details: {browser, screen, language, timezone, errors}}` asks Barnwright (see "Help"); the asker is the person signed in, never the body; works while changes are stopped → `{ok, id, at, email}` (201) |
 
 Public routes (no sign-in):
@@ -349,16 +349,39 @@ reply with Claude, and Alan approves it in his Sales Inbox.
   recent errors. Never customers, prices, the price list itself, orders,
   keys or passwords. Asking works while changes are stopped, and nothing a
   person typed is written to the log.
-* **When Barnwright can't be reached:** "Barnwright couldn't be reached
-  just now. Try again in a minute." Too many in one day: "You've sent a
-  lot of questions today. To ask more, email
+* **When it doesn't work**, the person reads why and what to do. Barnwright
+  can't be reached (no answer, a 5xx, busy): "Barnwright couldn't be
+  reached just now. Try again in a minute." The control room refuses the
+  Dealer Center's key: "Barnwright hasn't finished setting up Help for your
+  Dealer Center yet. Until then, email support@barnwrightsoftware.com."
+  (and the Help screen shows that line instead of the box). The inbox
+  refuses the question (another 4xx): "Barnwright couldn't take this
+  question. Email it to support@barnwrightsoftware.com instead." An email
+  the inbox can't write to: "Barnwright can't write back to the email you
+  sign in with. Email your question to support@barnwrightsoftware.com
+  instead." (a domain in other letters goes as the internet writes it,
+  xn--…). Too many in one day for the business: "Barnwright has had a lot
+  of questions from your business today. To ask more, email
   support@barnwrightsoftware.com." The list says calmly that the questions
   aren't showing, with **Try again**.
+* **One time limit** (12 seconds) covers all of a request's calls
+  together, so a slow control room and a slow inbox never add up; a
+  dropped connection is tried again only with 2 seconds or more left. The
+  same person sending the same words again within 9 minutes goes with the
+  same pass (`barnwright-help-asked` keeps a short code, never the words),
+  so a lost answer never makes a second question. A dealer's list asks the
+  inbox for their own questions only (`askerId`), so theirs never drop out
+  behind the team's. `GET me` says `help: {connected, canAsk}`, so the box
+  shows at once and only the list waits.
 * **Problem alerts.** The Dealer Center's screens and every 3D designer
   page (`ui/problems.js`) report an error nothing caught to
-  `POST /api/office/problem` on their own site: at most 3 a page load; the
-  message cut to 300 characters, with any email address, phone number,
-  long code or query string taken out; where in the code (the script's
+  `POST /api/office/problem` on their own site, and so do the failures a
+  page catches to show its own words (`reportProblem`: "This page didn't
+  load", a 3D designer whose settings or lot price list didn't load, a part
+  that didn't start; an answer from the server is never one): at most 3 a
+  page load; the message cut to 300 characters (only its first 1,000 read),
+  with any email address, phone number, long code or query string taken
+  out, in the browser and again on the server; where in the code (the script's
   path, line and column, no query string); the page's path (the screen on
   the Dealer Center; never the part after # on a 3D designer, which holds
   the customer's building); never anything a customer typed. The server
@@ -367,8 +390,10 @@ reply with Claude, and Alan approves it in his Sales Inbox.
   `{ok: true}`. A copy without that address (a 404) changes nothing for
   the page. Every page's security policy already allows it
   (`connect-src 'self'`).
-* **Not connected** (Alan's own business, the local copy, the demo): the
-  answers, and instead of the box "Questions go straight to Barnwright from
+* **Not connected** (Alan's own business, the local copy, the demo): its
+  answers (those about a Barnwright plan, its notes and Help from Barnwright
+  show only when connected; `help-answers.js` `when`), and instead of the
+  box "Questions go straight to Barnwright from
   a Dealer Center Barnwright sets up. To ask from here, email
   support@barnwrightsoftware.com." Problem reports are dropped. A connected
   business with some settings missing is told Barnwright hasn't finished

@@ -20,7 +20,9 @@
    Never anything a customer typed. At most 3 reports per page load, each
    kind of error once (repeats only add to its count here). The Dealer
    Center's Help screen sends the recent ones with a question
-   (recentProblems).
+   (recentProblems). A failure the page catches itself, so it can show its
+   own words ("This page didn't load"), is passed on the same way
+   (reportProblem).
 
    It never shows anything, never throws, only ever sends to this same
    site, and doesn't mind a site that has no such address (a static copy
@@ -44,6 +46,14 @@ export function watchProblems(options = {}) {
   return true;
 }
 
+/* A failure the page caught itself (it shows its own words, like "This page
+   didn't load"), passed on like one nothing caught. An answer from the
+   server (it carries its status) is not a problem in the code. Never
+   throws. */
+export function reportProblem(error) {
+  try { if (state.on) note(fromRejection({ reason: error })); } catch { /* never in the way */ }
+}
+
 /* The errors seen on this page so far, newest last (at most 10), for a
    question to Barnwright. */
 export function recentProblems() {
@@ -52,18 +62,24 @@ export function recentProblems() {
 
 /* "#/customers/Ab12Cd34/orders/Ef56?new=1" -> "#/customers/:id/orders/:id":
    the Dealer Center's screen, never which customer, order or quote; and ""
-   for anything after # that isn't a screen (a sign-in email's link). */
+   for anything after # that isn't a screen (a sign-in email's link). A
+   screen already made this way stays the same. */
 export function screenOf(hash) {
   const h = String(hash || "").split("?")[0];
-  if (!/^#\/[A-Za-z0-9/._-]*$/.test(h)) return "";
+  if (!/^#\/[A-Za-z0-9/:._-]*$/.test(h)) return "";
   return h.replace(/(\/(?:customers|orders|quotes|design))\/[^/#]+/g, "$1/:id").slice(0, 200);
 }
 
 /* An error's words, safe to send: no email addresses, phone numbers, long
    codes (a saved design, a sign-in) or what follows ? or # in a web
-   address; one line, at most 300 characters. */
+   address; one line, at most 300 characters. Only the first 1,000
+   characters are read, so a huge message costs no time (an email address
+   cut there still goes as "(email)"). The server cleans what it passes on
+   the same way (server/office/help.js). */
 export function tidyMessage(value) {
-  return String(value ?? "")
+  const all = String(value ?? "");
+  const start = all.length > 1000 ? all.slice(0, 1000).replace(/\S*@\S*$/, "(email)") : all;
+  return start
     .replace(/\b([a-z][a-z0-9+.-]*:\/\/[^\s?#'"<>()]*)[?#][^\s'"<>()]*/gi, "$1")
     .replace(/[^\s@'"<>()[\]{},;:]+@[^\s@'"<>()[\]{},;:]+\.[a-z]{2,}/gi, "(email)")
     .replace(/[A-Za-z0-9_-]{40,}/g, "(code)")

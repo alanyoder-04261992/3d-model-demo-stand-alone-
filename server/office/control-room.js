@@ -222,17 +222,21 @@ export class TenantLicenseClient {
      match, switched off or not -- a business whose changes stopped needs
      help most. The pass is signed for Barnwright's Sales Inbox, which
      checks it with the control room's public key; here it is only checked
-     for its shape and handed on (server/office/help.js). */
-  async helpPass(kind, subject) {
+     for its shape and handed on (server/office/help.js). timeoutMs: how
+     long to wait this time (help.js gives what its request has left). A
+     refusal carries the control room's status (401: the key or site isn't
+     this business's). */
+  async helpPass(kind, subject, { timeoutMs } = {}) {
     if (!["question", "thread", "problem"].includes(kind)) throw new Error("Invalid help pass kind");
     if (subject !== undefined && (kind !== "question" || typeof subject !== "string" || subject.length > 120
       || /[\u0000-\u001f\u007f]/.test(subject))) throw new Error("Invalid help pass subject");
+    const wait = Number.isInteger(timeoutMs) && timeoutMs > 0 ? timeoutMs : this.options.timeoutMs ?? 10_000;
     const response = await this.request(`${this.origin}/api/help-pass`, {
-      method: "POST", redirect: "error", signal: AbortSignal.timeout(this.options.timeoutMs ?? 10_000),
+      method: "POST", redirect: "error", signal: AbortSignal.timeout(wait),
       headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.options.activationKey}` },
       body: JSON.stringify({ customerId: this.options.customerId, siteId: this.options.siteId, kind, ...(subject ? { subject } : {}) }),
     });
-    if (!response.ok) throw new Error("Help pass unavailable");
+    if (!response.ok) throw Object.assign(new Error("Help pass unavailable"), { status: response.status });
     const result = await response.json();
     if (!result || result.ok !== true || typeof result.pass !== "string" || result.pass.length > 8_000
       || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(result.pass)) throw new Error("Invalid help pass response");

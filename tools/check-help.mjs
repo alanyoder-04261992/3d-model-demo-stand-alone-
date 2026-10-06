@@ -47,12 +47,12 @@ import { createOffice } from "../server/office/index.js";
 import { MemoryBlobs } from "../server/office/store.js";
 import { seedSample, SAMPLE_PEOPLE } from "../server/office/sample.js";
 import { TenantLicenseClient, createLeaseStore, misconfiguredLicense } from "../server/office/control-room.js";
-import { HELP_WORDS, SUPPORT_EMAIL, inboxOrigin } from "../server/office/help.js";
+import { HELP_WORDS, SUPPORT_EMAIL, inboxOrigin, mailbox } from "../server/office/help.js";
 import { OFFICE_POLICY, lotDesignerPolicy } from "../server/office/pages.js";
 import { parseHeaders, designerCsp } from "./build-headers.mjs";
 import { fakeControlRoom } from "./lib/fake-control-room.mjs";
 import { fakeHelpInbox } from "./lib/fake-help-inbox.mjs";
-import { ANSWERS, HELP_SCREEN, SUPPORT_EMAIL as SCREEN_EMAIL, findAnswers } from "../ui/office/help-answers.js";
+import { ANSWERS, HELP_SCREEN, SUPPORT_EMAIL as SCREEN_EMAIL, answersFor, findAnswers } from "../ui/office/help-answers.js";
 
 const ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), "..");
 const J = (p) => JSON.parse(readFileSync(resolvePath(ROOT, p), "utf8"));
@@ -129,6 +129,12 @@ const license = new TenantLicenseClient({
   store: createLeaseStore(room.business.id, room.business.siteId, blobs), fetch: room.fetch, now: () => now().getTime(),
 });
 const connectedWith = (more) => createOffice({ ...base, license, help: { url: inbox.origin, fetch: inbox.fetch }, appVersion: "dealer-center check", ...more });
+/* the same business's check-in, reaching the control room through `fetch` */
+const licenseWith = (fetch) => new TenantLicenseClient({
+  controlRoomUrl: room.origin, customerId: room.business.id, siteId: room.business.siteId,
+  activationKey: room.business.key, publicKeyPem: room.publicKeyPem,
+  store: createLeaseStore(room.business.id, room.business.siteId, blobs), fetch, now: () => now().getTime(),
+});
 office = connectedWith();
 await call("GET", "/api/office/me", undefined, { as: EMAIL.owner });   /* the first check-in */
 const decode = (pass) => JSON.parse(Buffer.from(pass.split(".")[0], "base64url").toString("utf8"));
@@ -262,14 +268,20 @@ ok("the inbox can't be reached: the same plain words", r.status === 503 && r.dat
 r = await list(EMAIL.owner);
 ok("... and the list: items null and the words", r.status === 200 && r.data.connected === true && r.data.items === null && r.data.problem === HELP_WORDS.listUnreachable);
 inbox.down = false;
-for (const [status, what] of [[503, "busy"], [500, "broken"], [401, "refusing the pass"], [400, "refusing the question"]]) {
+for (const [status, what] of [[503, "busy"], [500, "broken"]]) {
   inbox.nextStatus = { path: "ask", status };
   r = await ask(EMAIL.mike, `Inbox ${what} (zebra-question)`);
   ok(`the inbox ${what} (${status}): the same plain words`, r.status === 503 && r.data.error === HELP_WORDS.unreachable, JSON.stringify(r));
 }
+/* a refusal it will give every time: never "try again", always the email */
+for (const [status, what] of [[401, "refusing the pass"], [400, "refusing the question"], [413, "finding it too big"]]) {
+  inbox.nextStatus = { path: "ask", status };
+  r = await ask(EMAIL.mike, `Inbox ${what} (zebra-question)`);
+  ok(`the inbox ${what} (${status}): "${HELP_WORDS.refused}"`, r.status === 422 && r.data.error === HELP_WORDS.refused && r.data.error.includes(SUPPORT_EMAIL), JSON.stringify(r));
+}
 inbox.nextStatus = { path: "ask", status: 429 };
 r = await ask(EMAIL.mike, "One more question (zebra-question)");
-ok(`too many questions today (429): "${HELP_WORDS.tooMany}"`, r.status === 429 && r.data.error === HELP_WORDS.tooMany && /a lot of questions today/.test(r.data.error) && r.data.error.includes(SUPPORT_EMAIL), JSON.stringify(r.data));
+ok(`too many questions today (429): "${HELP_WORDS.tooMany}"`, r.status === 429 && r.data.error === HELP_WORDS.tooMany && /from your business today/.test(r.data.error) && r.data.error.includes(SUPPORT_EMAIL), JSON.stringify(r.data));
 inbox.nextStatus = { path: "thread", status: 500 };
 r = await list(EMAIL.owner);
 ok("a broken list answer: items null and the words", r.data.items === null && r.data.problem === HELP_WORDS.listUnreachable);
@@ -282,11 +294,11 @@ ok("a connection that drops after the inbox took the question is tried once more
   && callsTo("/help/v1/ask") === inboxCalls + 2 && twoTries[0].body.pass === twoTries[1].body.pass, JSON.stringify(r.data));
 ok("... and it is one question, not two", inbox.questions.length === askedBefore + 1 && inbox.questions.at(-1).id === r.data.id);
 let limitHit = null;
-for (let i = 0; i < 25 && !limitHit; i++) {
+for (let i = 0; i < 60 && !limitHit; i++) {
   const x = await ask(EMAIL.lee, `Question number ${i + 1} today`);
   if (x.status !== 201) limitHit = x;
 }
-ok("the inbox's own daily limit (20 questions a business) comes back in the same plain words", limitHit?.status === 429 && limitHit.data.error === HELP_WORDS.tooMany, JSON.stringify(limitHit));
+ok("the inbox's own daily limit (50 questions a business) comes back in the same plain words", limitHit?.status === 429 && limitHit.data.error === HELP_WORDS.tooMany && inbox.questions.filter((x) => x.at.slice(0, 10) === inbox.questions.at(-1).at.slice(0, 10)).length === 50, JSON.stringify(limitHit));
 r = await ask(EMAIL.mike, "");
 ok("an empty question: \"Your question is needed.\"", r.status === 422 && r.data.error === "Your question is needed.", JSON.stringify(r.data));
 r = await ask(EMAIL.mike, "x".repeat(4001));
@@ -469,7 +481,17 @@ ok(`every designer page in _headers (${csps.length})`, csps.length > 3 && csps.e
 
 /* ---- 10 --------------------------------------------------------------------------------- */
 section("10. The short answers");
-ok(`there are 10 to 14 answers (${ANSWERS.length}), each with its own id`, ANSWERS.length >= 10 && ANSWERS.length <= 14 && new Set(ANSWERS.map((a) => a.id)).size === ANSWERS.length);
+ok(`each Dealer Center shows 10 to 14 answers (connected ${answersFor(true).length}, not connected ${answersFor(false).length}), each with its own id`,
+  [answersFor(true), answersFor(false)].every((l) => l.length >= 10 && l.length <= 14) && new Set(ANSWERS.map((a) => a.id)).size === ANSWERS.length
+  && ANSWERS.every((a) => a.when === undefined || a.when === "connected" || a.when === "not-connected"));
+{
+  const ids = (connected) => answersFor(connected).map((a) => a.id);
+  ok("what exists only when connected (a plan, its notes at the top, Help from Barnwright) shows only there; the demo and Alan's own business get their own way to open a lot",
+    ["another-lot", "stopped", "barnwright-look"].every((id) => ids(true).includes(id) && !ids(false).includes(id))
+    && ids(false).includes("another-lot-own") && !ids(true).includes("another-lot-own"), JSON.stringify([ids(true), ids(false)]));
+  const all = ANSWERS.map((a) => `${a.title} ${a.lines.join(" ")}`).join(" ");
+  ok("no answer names a price (a business's lot fee is its own) or says \"below\" (on a computer the box is beside them)", !/\$\s?\d/.test(all) && !/\bbelow\b/i.test(all), (all.match(/.{30}(?:\$\s?\d|below).{20}/i) || [""])[0]);
+}
 /* every sentence on the Dealer Center's screens and the customer's designer:
    the text itself, or a template literal with real words in it, where each
    ${...} stands for one word ("Add your own ${WORD[g]} color") */
@@ -496,14 +518,162 @@ const badLinks = ANSWERS.filter((a) => a.link && !routeRes.some((re) => re.test(
 ok("every answer's link opens a real screen", routeRes.length > 10 && badLinks.length === 0, badLinks.map((a) => a.link[0]).join(", "));
 ok("no slashes in the words (the Dealer Center's writing style)", ANSWERS.every((a) => !/\//.test(a.title + a.lines.join(" "))));
 ok("the search finds by any word, and nothing for nonsense", findAnswers("website").some((a) => a.id === "website") && findAnswers("password").some((a) => a.id === "sign-in")
-  && findAnswers("PRICE").some((a) => a.id === "price") && findAnswers("qwertyzzz").length === 0 && findAnswers("").length === ANSWERS.length);
+  && findAnswers("PRICE").some((a) => a.id === "price") && findAnswers("qwertyzzz").length === 0 && findAnswers("").length === answersFor(true).length
+  && findAnswers("", false).length === answersFor(false).length && findAnswers("lot", false).every((a) => a.when !== "connected"));
 ok("after sending: \"Sent. Barnwright will answer here and by email at <their email>.\"", HELP_SCREEN.sent("mike@samplebarns.example") === "Sent. Barnwright will answer here and by email at mike@samplebarns.example.");
-ok("the form says what goes with a question, and never customers or prices", /the page you came from \(Price list\)/.test(HELP_SCREEN.whatGoes("Price list")) && /version/.test(HELP_SCREEN.whatGoes("")) && /Never your customers or prices\./.test(HELP_SCREEN.whatGoes("")));
+{
+  const goes = HELP_SCREEN.whatGoes("");
+  ok("the form says what goes with a question: every kind of fact the server sends, and never customers or prices", /the page you came from \(Price list\)/.test(HELP_SCREEN.whatGoes("Price list"))
+    && ["your name, email and job", "how your Dealer Center is set up", "Barnwright account", "browser and screen", "recent errors"].every((w) => goes.includes(w))
+    && /Never your customers or prices\./.test(goes), goes);
+}
 ok("Help is in the menu for every role, and at the top of every screen", /\{ path: "\/help", label: "Help", icon: "help", roles: \["owner", "manager", "dealer"\] \}/.test(routes) && /href: "#\/help", class: "topbar-help"/.test(routes));
+
+/* ---- 11 --------------------------------------------------------------------------------- */
+section("11. What the review of Help found, each fixed");
+const pause = (ms) => new Promise((done) => setTimeout(done, ms));
+{
+  /* main.js keeps the screen someone came from (screenOf), and the Help screen reads it with screenOf again */
+  const ids = ["#/customers/AbC123xyZ9/orders/Ord987654?new=1", "#/customers/AbC123xyZ9", "#/orders/Ord987654", "#/price-list/doors", "#/lots/riverside"];
+  ok("the page someone came from survives being read twice (a customer's or an order's page stays that page, never which one)",
+    ids.every((h) => reporter.screenOf(reporter.screenOf(h)) === reporter.screenOf(h) && reporter.screenOf(h) !== "")
+    && reporter.screenOf(reporter.screenOf(ids[0])) === "#/customers/:id/orders/:id", ids.map((h) => reporter.screenOf(reporter.screenOf(h))).join(" "));
+  r = await call("POST", "/api/office/help", { text: "Asked from a customer's order (zebra-question)", page: reporter.screenOf(reporter.screenOf(ids[0])) }, { as: EMAIL.mike });
+  ok("... and goes to Barnwright as that screen", r.status === 201 && inbox.questions.at(-1).page === "#/customers/:id/orders/:id", inbox.questions.at(-1).page);
+}
+{
+  /* the control room refusing this Dealer Center's key: Help isn't set up for it, and saying "try again" would be wrong */
+  const realKey = room.business.key;
+  room.business.key = "bwk_" + "q".repeat(40);
+  const before = inbox.calls.length;
+  r = await ask(EMAIL.mike, "Is Help set up for us? (zebra-question)");
+  ok(`the control room refusing this Dealer Center's key (401): "${HELP_WORDS.notSetUp}", nothing sent`, r.status === 503 && r.data.error === HELP_WORDS.notSetUp && r.data.error.includes(SUPPORT_EMAIL) && inbox.calls.length === before, JSON.stringify(r.data));
+  r = await list(EMAIL.mike);
+  ok("... and the Help screen shows that line instead of the box (connected, can't ask)", r.status === 200 && r.data.connected === true && r.data.canAsk === false && Array.isArray(r.data.items) && r.data.items.length === 0, JSON.stringify(r.data));
+  room.business.key = realKey;
+  const broken = connectedWith({ license: licenseWith(async (url, init) => (new URL(url).pathname === "/api/help-pass" ? new Response("{}", { status: 500 }) : room.fetch(url, init))) });
+  r = await call("POST", "/api/office/help", { text: "Control room broken (zebra-question)" }, { as: EMAIL.mike, app: broken });
+  ok("the control room broken (500): try again in a minute", r.status === 503 && r.data.error === HELP_WORDS.unreachable, JSON.stringify(r.data));
+}
+{
+  /* one time limit for all of a request's calls */
+  const slowRoom = licenseWith(async (url, init) => { await pause(300); return room.fetch(url, init); });
+  const slowInbox = (url, init) => new Promise((done, fail) => {
+    const timer = setTimeout(() => done(inbox.fetch(url, init)), 400);
+    init.signal.addEventListener("abort", () => { clearTimeout(timer); fail(init.signal.reason); });
+  });
+  const app = connectedWith({ license: slowRoom, help: { url: inbox.origin, fetch: slowInbox, timeoutMs: 1000, budgetMs: 500 } });
+  const before = inbox.questions.length;
+  const t0 = Date.now();
+  r = await call("POST", "/api/office/help", { text: "Slow everywhere (zebra-question)" }, { as: EMAIL.mike, app });
+  const took = Date.now() - t0;
+  ok(`one time limit for the whole request: a slow control room (0.3 s) and a slow inbox (0.4 s), with 0.5 s for both, is given up on within it (${took} ms, not 0.7 s)`,
+    r.status === 503 && r.data.error === HELP_WORDS.unreachable && took >= 290 && took < 600 && inbox.questions.length === before, `${took} ms ${JSON.stringify(r.data)}`);
+  let tries = 0;
+  const dropsLate = async () => { tries++; await pause(700); throw new TypeError("fetch failed: the connection dropped"); };
+  const late = connectedWith({ help: { url: inbox.origin, fetch: dropsLate, timeoutMs: 2000, budgetMs: 2500 } });
+  r = await call("POST", "/api/office/help", { text: "Dropped late (zebra-question)" }, { as: EMAIL.mike, app: late });
+  ok("a connection that drops with under 2 seconds left isn't tried again (one that drops at once is, in section 5)", r.status === 503 && tries === 1, String(tries));
+  const wasDealer = connectedWith({ license: slowRoom, help: { url: inbox.origin, fetch: inbox.fetch, budgetMs: 200 } });
+  r = await list(EMAIL.mike, wasDealer);
+  ok("the list has the same time limit: a slow control room past it says the questions aren't showing", r.status === 200 && r.data.items === null && r.data.problem === HELP_WORDS.listUnreachable, JSON.stringify(r.data));
+}
+{
+  /* the same person sending the same words again (the answer got lost on the way back) */
+  const passesBefore = room.helpPasses.length;
+  const words = "The same words twice (zebra-question)";
+  const first = await ask(EMAIL.dana, words);
+  const asked = inbox.questions.length;
+  const again = await ask(EMAIL.dana, words);
+  ok("the same person sending the same words again makes one question: the same pass, and the first one's id back", first.status === 201 && again.status === 201
+    && again.data.id === first.data.id && inbox.questions.length === asked && room.helpPasses.length === passesBefore + 1, JSON.stringify([first.data, again.data, room.helpPasses.length - passesBefore]));
+  const other = await ask(EMAIL.mike, words);
+  ok("... someone else with the same words asks their own question", other.status === 201 && other.data.id !== first.data.id && inbox.questions.length === asked + 1);
+  shift += 10 * 60_000;
+  const later = await ask(EMAIL.dana, words);
+  ok("... and the same words after 9 minutes are a new question", later.status === 201 && later.data.id !== first.data.id && inbox.questions.length === asked + 2);
+  const kept = await office.parts.store.get("barnwright-help-asked");
+  ok("what's kept to know a question again holds no words and only the last 9 minutes", !!kept && !/same words|zebra/i.test(JSON.stringify(kept)) && Object.keys(kept).length === 1, String(JSON.stringify(kept)).slice(0, 200));
+}
+{
+  /* an address the inbox can't write to */
+  ok("an address in other letters goes as the internet writes it; one the inbox can't write to is caught here",
+    mailbox("ines@müller.example") === "ines@xn--mller-kva.example" && mailbox("Bob.Smith+tag@Example.COM") === "Bob.Smith+tag@example.com" && mailbox(EMAIL.mike) === EMAIL.mike
+    && ["pat@bad_domain.example", "pat@x.example:80", "pat@x.example/y", "nobody", "@x.example", "pat@", "pat@localhost"].every((x) => mailbox(x) === ""),
+    JSON.stringify(["ines@müller.example", "pat@bad_domain.example", "pat@localhost"].map(mailbox)));
+  for (const [id, email, name] of [["sample-ines", "ines@müller.example", "Ines Müller"], ["sample-pat", "pat@bad_domain.example", "Pat Shore"]]) {
+    USERS[email] = { id, email, name, confirmedAt: "2026-01-01T00:00:00Z", emailVerified: true };
+    await office.parts.store.put(`people/${id}`, { userId: id, email, name, role: "dealer", lots: ["riverside"], active: true });
+  }
+  r = await ask("ines@müller.example", "From a domain in other letters (zebra-question)");
+  ok("... Ines (müller.example) asks, and Barnwright writes back to xn--mller-kva.example", r.status === 201 && inbox.questions.at(-1).asker.email === "ines@xn--mller-kva.example", JSON.stringify([r.data, inbox.questions.at(-1).asker]));
+  const before = inbox.calls.length;
+  r = await ask("pat@bad_domain.example", "From an address the inbox can't write to (zebra-question)");
+  ok(`... Pat (bad_domain.example) is told at once: "${HELP_WORDS.badEmail}", nothing sent`, r.status === 422 && r.data.error === HELP_WORDS.badEmail && inbox.calls.length === before, JSON.stringify(r.data));
+}
+{
+  /* a dealer's own questions never drop out behind the team's newest */
+  for (let i = 0; i < 31; i++) await ask(EMAIL.lee, `Team question ${i} (zebra-question)`);
+  const mikes = await list(EMAIL.mike);
+  const sent = lastCall("/help/v1/thread");
+  ok("a dealer's list asks the inbox for their own questions only (askerId), so an older one still shows behind the team's 31 newer ones",
+    sent.body.askerId === "sample-mike" && mikes.data.items.some((x) => x.id === mikeQ) && mikes.data.items.every((x) => x.asker.id === "sample-mike"), JSON.stringify(sent.body).slice(0, 80));
+  const owners = await list(EMAIL.owner);
+  ok("... while the owner's list asks for the whole business's (the 30 newest)", !("askerId" in lastCall("/help/v1/thread").body) && owners.data.items.length === 30);
+}
+{
+  /* the words of an error are cleaned on the server too, whatever the browser sent */
+  r = await report({ signature: "designer:00000000000000aa", message: `TypeError: failed for pat.customer@example.com (555) 010-7788 https://samplebarns.test/d/riverside/?token=SECRET789 ${"A".repeat(50)}`, where: "/ui/app.js:1:1", page: "/d/riverside/", area: "designer" });
+  const words = lastCall("/help/v1/problem").body.problem.message;
+  ok("a problem's words are cleaned on the server too: no email, phone number, query string or long code", r.data.ok === true && !/pat\.customer|010-7788|SECRET789|AAAAAAAAAA/.test(words) && /\(email\)/.test(words) && /\(number\)/.test(words), words);
+  r = await ask(EMAIL.mike, "Errors with private words (zebra-question)", { details: { errors: [{ message: "Error: chris@samplebarns.example called (555) 010-0100", where: "/ui/office/main.js:1:1", count: 1 }] } });
+  const errs = lastCall("/help/v1/ask").body.question.details.errors;
+  ok("... and so are the recent errors that go with a question", r.status === 201 && errs.length === 1 && !/@|010-0100/.test(errs[0].message) && /\(email\)/.test(errs[0].message), JSON.stringify(errs));
+  const timings = [`TypeError: bad value ${"a".repeat(60000)}`, `Error: ${"1.".repeat(30000)}`].map((m) => { const t = performance.now(); reporter.tidyMessage(m); return performance.now() - t; });
+  ok(`a 60,000-character error is cleaned at once (${timings.map((t) => t.toFixed(1)).join(" and ")} ms): only its first 1,000 characters are read`, timings.every((t) => t < 50), timings.join(" "));
+  ok("... and an email address cut at 1,000 characters still goes as (email)", !/pat@exam/.test(reporter.tidyMessage(`${"x ".repeat(496)}pat@example.com`)) && reporter.tidyMessage(`${"x ".repeat(496)}pat@example.com`).length <= 300);
+}
+{
+  /* long answers */
+  const long = "Here is how. " + "Step after step. ".repeat(1100);
+  inbox.answer(mikeQ, long);
+  const shown = (await list(EMAIL.mike)).data.items.find((x) => x.id === mikeQ);
+  ok(`a long answer (${long.length.toLocaleString("en-US")} characters, the inbox sends up to 20,000) shows in full on the Help screen`, shown?.replies.at(-1)?.text === long, String(shown?.replies.at(-1)?.text.length));
+}
+{
+  /* GET me says at once whether questions can go */
+  const helpOf = async (app) => (await call("GET", "/api/office/me", undefined, { as: EMAIL.mike, app })).data.help;
+  const states = [await helpOf(office), await helpOf(createOffice({ ...base })), await helpOf(connectedWith({ help: null }))];
+  ok("GET me says whether questions can go, so the Help screen draws its box without waiting for the list",
+    JSON.stringify(states) === JSON.stringify([{ connected: true, canAsk: true }, { connected: false, canAsk: false }, { connected: true, canAsk: false }]), JSON.stringify(states));
+}
+{
+  /* a failure the page caught itself */
+  posts.length = 0;
+  answerWith = async () => new Response("{}", { status: 200 });
+  globalThis.window = page;
+  globalThis.location = { href: `${SITE}/dealer#/customers/AbC123`, origin: SITE, protocol: "https:", pathname: "/dealer", hash: "#/customers/AbC123" };
+  const caught = await import(pathToFileURL(resolvePath(ROOT, "ui/problems.js")).href + "?page-5");
+  caught.watchProblems({ area: "dealer-center", endpoint: "/api/office/problem", page: () => location.pathname + caught.screenOf(location.hash) });
+  caught.reportProblem(Object.assign(new Error("You were signed out. Sign in again."), { status: 401 }));
+  caught.reportProblem(new TypeError("Cannot read properties of undefined (reading 'lots')"));
+  await pause(20);
+  ok("a failure the page caught itself is passed on like one nothing caught; an answer from the server isn't", posts.length === 1 && /^TypeError: Cannot read properties/.test(posts[0].body.message)
+    && posts[0].body.area === "dealer-center" && posts[0].body.page === "/dealer#/customers/:id", JSON.stringify(posts.map((x) => x.body.message)));
+  delete globalThis.window;
+  delete globalThis.location;
+  const mainSrc = readFileSync(resolvePath(ROOT, "ui/office/main.js"), "utf8");
+  const appSrc = readFileSync(resolvePath(ROOT, "ui/app.js"), "utf8");
+  ok("the Dealer Center's \"This page didn't load\", and the 3D designer's settings that didn't load, a lot's price list with problems and a part that didn't start, each pass theirs on",
+    /reportProblem\(e\);[^\n]*\n\s*clear\(main, emptyState\("This page didn't load"/.test(mainSrc)
+    && /could not load its settings:", e\.message\);\n\s*reportProblem\(e\);/.test(appSrc)
+    && /reportProblem\(new Error\(`This lot's price list has \$\{n\} problem/.test(appSrc)
+    && /failed to start:`, e\);\n\s*reportProblem\(e\);/.test(appSrc));
+}
 
 console.log("");
 if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} Help checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): a question goes to Barnwright with the control room's pass, from the person signed in, with only the promised facts (no customers, prices, orders or keys), also while changes are stopped; owners and managers see every question and a dealer their own; every failure says so in plain words and nothing typed is logged; a dropped connection makes one question; problem reports go once per kind in 24 hours and at most 10 a day, always answered {ok: true}; the browser sends at most 3, trimmed, to its own site only; not connected, nothing is sent; every page may talk to its own site; the 14 short answers name only real buttons.`);
+console.log(`PROVED (${passed} checks): a question goes to Barnwright with the control room's pass, from the person signed in, with only the promised facts (no customers, prices, orders or keys), also while changes are stopped; owners and managers see every question and a dealer their own, however many the team asked; every failure says so in plain words (a refused key or question gives the email, never "try again"), within one time limit, and nothing typed is logged; a dropped connection or the same words sent again make one question; problem reports go once per kind in 24 hours and at most 10 a day, cleaned on the server too, always answered {ok: true}; the browser sends at most 3, trimmed, to its own site only, failures it caught itself included; not connected, nothing is sent; every page may talk to its own site; each Dealer Center's short answers fit it and name only real buttons.`);

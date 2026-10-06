@@ -7,15 +7,17 @@
      POST /help/v1/ask      a question -> 201 {ok, id, at}; the same pass
                             again -> 200 with the same id, nothing new stored
      POST /help/v1/thread   the business's questions, newest first, at most
-                            30, with Barnwright's replies
+                            30, with Barnwright's replies; with askerId, that
+                            person's only
      POST /help/v1/problem  a browser problem -> {ok, id, new}; the same
                             signature from the same business within 24 hours
                             adds to the first one's count
    Every pass is checked the way the inbox checks it: its shape, the control
    room's signature (with the control room's public key, over
    "barnwright-help-pass/v1." + its body), v, purpose, the kind for that
-   address, its id and its times. Limits per day (UTC), per business: 20
-   questions and 30 problem reports (then 429 with Retry-After).
+   address, its id and its times. Limits per day (UTC), per business: 50
+   questions and 30 problem reports (then 429 with Retry-After). An asker's
+   email must pass the inbox's own rule (lib/mail.mjs isEmail).
 
    What Alan does in the real inbox: answer(id, words) -- the newest waiting
    question when id is left out.
@@ -28,7 +30,8 @@
 import { createPublicKey, verify, randomBytes } from "node:crypto";
 
 const PASS_RE = /^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/;
-const EMAIL_RE = /^[^\s@<>()",;]+@[^\s@<>()",;]+\.[^\s@<>()",;]+$/;
+/* the real inbox's rule, lib/mail.mjs */
+const EMAIL_RE = /^[^\s@<>()",;:\\[\]]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/;
 const KINDS = { "/help/v1/ask": "question", "/help/v1/thread": "thread", "/help/v1/problem": "problem" };
 
 export function fakeHelpInbox({ clock, publicKeyPem, origin = "https://help-inbox.test" }) {
@@ -71,7 +74,7 @@ export function fakeHelpInbox({ clock, publicKeyPem, origin = "https://help-inbo
     }
     const again = inbox.questions.find((x) => x.passId === c.id);
     if (again) return answer({ ok: true, id: again.id, at: again.at }, 200);
-    if (today(inbox.questions, c.customerId) >= 20) return refuse(429, "too_many", "Too many questions today.");
+    if (today(inbox.questions, c.customerId) >= 50) return refuse(429, "too_many", "Too many questions today.");
     const item = {
       id: newId(), at: iso(now()), passId: c.id, customerId: c.customerId, text: q.text, page: q.page || "",
       asker: { id: a.id, name: a.name || "", email: a.email, role: a.role }, details: q.details ?? null,
@@ -85,8 +88,9 @@ export function fakeHelpInbox({ clock, publicKeyPem, origin = "https://help-inbo
     return answer({ ok: true, id: item.id, at: item.at }, 201);
   }
 
-  function thread(c) {
-    const items = inbox.questions.filter((x) => x.customerId === c.customerId)
+  function thread(c, askerId) {
+    if (askerId !== undefined && !str(askerId, 128, 1)) return refuse(400, "bad_request", "That asker isn't right.");
+    const items = inbox.questions.filter((x) => x.customerId === c.customerId && (askerId === undefined || x.asker.id === askerId))
       .sort((x, y) => y.at.localeCompare(x.at) || inbox.questions.indexOf(y) - inbox.questions.indexOf(x)).slice(0, 30)
       .map((x) => ({ id: x.id, at: x.at, text: x.text, page: x.page, asker: { id: x.asker.id, name: x.asker.name }, status: x.status, replies: x.replies.map((r) => ({ at: r.at, text: r.text })) }));
     return answer({ ok: true, items });
@@ -135,7 +139,7 @@ export function fakeHelpInbox({ clock, publicKeyPem, origin = "https://help-inbo
     const claims = checkPass(body.pass, kind);
     if (!claims) return refuse(401, "bad_pass", "That pass isn't valid.");
     if (kind === "question") return ask(claims, body.question);
-    if (kind === "thread") return thread(claims);
+    if (kind === "thread") return thread(claims, body.askerId);
     return problem(claims, body.problem);
   };
 

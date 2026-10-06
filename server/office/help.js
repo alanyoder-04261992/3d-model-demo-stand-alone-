@@ -29,6 +29,18 @@
    with the control room's public key; Claude drafts each answer, Alan sends
    it, and it reaches the person by email and on their Help screen.
 
+   One time limit (12 seconds) covers all of a request's calls together,
+   so a slow control room and a slow inbox never add up to a long wait.
+   The same person sending the same words again within 9 minutes (the
+   answer got lost, or they tapped Send again) goes with the same pass, and
+   the inbox answers with the first one: one question, never two.
+
+   When it doesn't work, the person reads why and what to do: the control
+   room refusing this Dealer Center's key means Help isn't set up for it
+   yet, the inbox refusing the question means it never will take it (both
+   give the email to write to), and anything else is "try again in a
+   minute".
+
    What goes with a question: what the person typed, the page they came
    from (the screen only: never which customer, order or quote), who they
    are (name, email, job), and these facts only: this copy's version, the
@@ -49,6 +61,7 @@
 
 import { fail, text as textField } from "./http.js";
 import { KEEP } from "./store.js";
+import { tidyMessage } from "../../ui/problems.js";
 
 export const SUPPORT_EMAIL = "support@barnwrightsoftware.com";
 export const HELP_INBOX = "https://inbox.barnwrightsoftware.com";
@@ -57,16 +70,24 @@ export const HELP_INBOX = "https://inbox.barnwrightsoftware.com";
    line in ui/office/help-answers.js; tools/check-help.mjs keeps them equal). */
 export const HELP_WORDS = Object.freeze({
   unreachable: "Barnwright couldn't be reached just now. Try again in a minute.",
-  tooMany: `You've sent a lot of questions today. To ask more, email ${SUPPORT_EMAIL}.`,
+  tooMany: `Barnwright has had a lot of questions from your business today. To ask more, email ${SUPPORT_EMAIL}.`,
   notConnected: `Questions go straight to Barnwright from a Dealer Center Barnwright sets up. To ask from here, email ${SUPPORT_EMAIL}.`,
   notSetUp: `Barnwright hasn't finished setting up Help for your Dealer Center yet. Until then, email ${SUPPORT_EMAIL}.`,
+  refused: `Barnwright couldn't take this question. Email it to ${SUPPORT_EMAIL} instead.`,
+  badEmail: `Barnwright can't write back to the email you sign in with. Email your question to ${SUPPORT_EMAIL} instead.`,
   listUnreachable: "Barnwright couldn't be reached just now, so your questions aren't showing. Try again in a minute.",
 });
 
 const PROBLEMS = "barnwright-help-problems";   /* {day, sent, seen: {signature: when sent}} */
 const PROBLEMS_A_DAY = 10;
+const ASKED = "barnwright-help-asked";         /* {key: {pass, at}}: the questions of the last 9 minutes */
+const SAME_QUESTION_MS = 9 * 60_000;           /* a pass is good for 10 */
+const BUDGET_MS = 12_000;                      /* all of one request's calls together */
 const DAY = 24 * 3600_000;
 const DETAILS_MAX = 8000;                      /* bytes of JSON the inbox keeps */
+const REPLY_MAX = 20_000;                      /* the longest answer the inbox sends */
+/* an address the Sales Inbox can write to (its lib/mail.mjs isEmail) */
+const INBOX_EMAIL = /^[^\s@<>()",;:\\[\]]+@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/;
 const SIGNATURE_RE = /^[A-Za-z0-9:._/-]{1,120}$/;
 const RESERVED = new Set(["__proto__", "constructor", "prototype"]);
 const CONTROL = /[\u0000-\u001f\u007f]+/g;
@@ -96,6 +117,30 @@ function isoOr(value, fallback) {
   return Number.isFinite(t) ? new Date(t).toISOString() : fallback;
 }
 
+/* The address Barnwright writes back to, the way the Sales Inbox reads
+   addresses: a domain in other letters (bob@müller.de) as the internet
+   writes it (bob@xn--mller-kva.de). "" when the inbox can't write to it. */
+export function mailbox(email) {
+  const value = String(email || "");
+  const at = value.lastIndexOf("@");
+  if (at < 1) return "";
+  let domain = value.slice(at + 1);
+  if (!domain || /[\s:/?#[\]@\\%]/.test(domain)) return "";
+  try { domain = new URL(`http://${domain}`).hostname; } catch { return ""; }
+  const out = `${value.slice(0, at)}@${domain}`;
+  return out.length <= 254 && INBOX_EMAIL.test(out) ? out : "";
+}
+
+/* What a refusal means for the person: the control room refusing this
+   Dealer Center's key (401, 403) -> Help isn't set up for it yet; the
+   inbox refusing what was sent (a 4xx other than 429) -> it never will take
+   it; anything else (no answer, 5xx, busy) -> try again in a minute. */
+const passTrouble = (error) => (error?.status === 401 || error?.status === 403 ? "notSetUp"
+  : error?.status >= 400 && error?.status < 500 && error?.status !== 409 && error?.status !== 429 ? "refused" : "unreachable");
+const inboxTrouble = (status) => (status === 429 ? "tooMany"
+  : status >= 400 && status < 500 && status !== 408 && status !== 409 ? "refused" : "unreachable");
+const STATUS_OF = { notSetUp: 503, refused: 422, unreachable: 503, tooMany: 429 };
+
 /* "/dealer#/customers/Ab12Cd34/orders/Ef56?x=1" -> "/dealer#/customers/:id/orders/:id":
    the page's path and which screen, never which customer, order or quote,
    no query string, and nothing after # that isn't a screen (a sign-in
@@ -118,6 +163,9 @@ export function cleanWhere(value) {
   return [path, m[2], m[3]].filter((x) => x !== undefined && x !== "").join(":").slice(0, 200);
 }
 
+/* The inbox's short code for a refusal ("bad_pass"), for the log only. */
+const codeOf = (data) => (typeof data?.error === "string" && /^[a-z_]{1,40}$/.test(data.error) ? data.error : "");
+
 /* The first words of a question, for the control room's log (at most 120). */
 function subjectOf(words) {
   const flat = words.replace(/\s+/g, " ").trim();
@@ -133,7 +181,7 @@ function cleanErrors(list) {
   const out = [];
   for (const e of list.slice(0, 10)) {
     if (!e || typeof e !== "object") continue;
-    const message = line(e.message, 300);
+    const message = typeof e.message === "string" ? tidyMessage(e.message) : "";
     if (!message) continue;
     const entry = { message, where: cleanWhere(line(e.where, 400)) };
     const at = isoOr(e.at, "");
@@ -169,7 +217,7 @@ function cleanItem(x) {
     status: ["waiting", "answered", "closed"].includes(x.status) ? x.status : "waiting",
     replies: (Array.isArray(x.replies) ? x.replies : []).slice(0, 50)
       .filter((r) => r && typeof r.text === "string" && r.text.trim())
-      .map((r) => ({ at: isoOr(r.at, ""), text: r.text.replace(CONTROL_KEEP_LINES, "").slice(0, 8000) })),
+      .map((r) => ({ at: isoOr(r.at, ""), text: r.text.replace(CONTROL_KEEP_LINES, "").slice(0, REPLY_MAX) })),
   };
 }
 
@@ -184,26 +232,76 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
   const canAsk = connected && !license.misconfigured && !!origin;
   const request = inbox?.fetch || ((url, init) => globalThis.fetch(url, init));
   const timeoutMs = Number.isInteger(inbox?.timeoutMs) && inbox.timeoutMs > 0 ? inbox.timeoutMs : 8000;
+  const budgetMs = Number.isInteger(inbox?.budgetMs) && inbox.budgetMs > 0 ? inbox.budgetMs : BUDGET_MS;
+
+  /* The time one request has left for its calls (real time, whatever the
+     clock in the checks says). ms(most): what the next call may wait, at
+     most `most`; 0 when it's used up. */
+  function deadline() {
+    const until = Date.now() + budgetMs;
+    return { ms: (most) => Math.max(0, Math.min(most, until - Date.now())) };
+  }
+  const outOfTime = () => Object.assign(new Error("No time left for this request"), { name: "TimeoutError" });
 
   /* POST to the Sales Inbox -> {status, data}. Throws when it can't be reached.
      retry: once more with the same pass after a dropped connection (never
-     after a timeout); the inbox answers a pass it has seen with the first
-     answer's id and stores nothing new, so a question is never sent twice. */
-  async function send(path, body, { retry = false } = {}) {
-    const init = () => ({
-      method: "POST", redirect: "error", signal: AbortSignal.timeout(timeoutMs),
+     after a timeout, nor with under 2 seconds left); the inbox answers a
+     pass it has seen with the first answer's id and stores nothing new, so a
+     question is never sent twice. */
+  async function send(path, body, left, { retry = false } = {}) {
+    const init = (ms) => ({
+      method: "POST", redirect: "error", signal: AbortSignal.timeout(ms),
       headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
     });
+    const once = () => {
+      const ms = left.ms(timeoutMs);
+      if (ms < 250) throw outOfTime();
+      return request(`${origin}/help/v1/${path}`, init(ms));
+    };
     let response;
     try {
-      response = await request(`${origin}/help/v1/${path}`, init());
+      response = await once();
     } catch (error) {
-      if (!retry || error?.name === "TimeoutError" || error?.name === "AbortError") throw error;
-      response = await request(`${origin}/help/v1/${path}`, init());
+      if (!retry || error?.name === "TimeoutError" || error?.name === "AbortError" || left.ms(timeoutMs) < 2000) throw error;
+      response = await once();
     }
     let data = null;
     try { data = await response.json(); } catch { data = null; }
     return { status: response.status, data };
+  }
+
+  /* A pass from the control room, within the request's time. Throws (with
+     the control room's status when it answered). */
+  async function passFor(kind, subject, left) {
+    const ms = left.ms(timeoutMs);
+    if (ms < 250) throw outOfTime();
+    return license.helpPass(kind, subject, { timeoutMs: ms });
+  }
+
+  /* The same person asking the same words within 9 minutes goes with the
+     same pass (see the top of this file). Kept: a short code for who and
+     what (never the words), the pass and when. */
+  async function sameQuestionKey(userId, words) {
+    const subtle = globalThis.crypto?.subtle;
+    if (!subtle) return "";
+    const digest = await subtle.digest("SHA-256", new TextEncoder().encode(`${userId}\n${words}`));
+    return [...new Uint8Array(digest)].slice(0, 16).map((b) => b.toString(16).padStart(2, "0")).join("");
+  }
+  async function passAskedBefore(key) {
+    if (!key) return "";
+    const t = now().getTime();
+    const seen = (await store.get(ASKED))?.[key];
+    return seen && typeof seen.pass === "string" && t - Date.parse(seen.at) < SAME_QUESTION_MS && t >= Date.parse(seen.at) ? seen.pass : "";
+  }
+  async function rememberPass(key, pass) {
+    if (!key) return;
+    const t = now().getTime(), at = new Date(t).toISOString();
+    await store.change(ASKED, (doc) => {
+      const kept = Object.create(null);
+      for (const [k, v] of Object.entries(doc || {})) if (v && t - Date.parse(v.at) < SAME_QUESTION_MS) kept[k] = v;
+      kept[key] = { pass, at };
+      return kept;
+    });
   }
 
   /* The facts the server adds to a question (the list at the top of this file). */
@@ -241,19 +339,30 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
   async function thread(who) {
     if (!connected) return { connected: false, canAsk: false, items: [] };
     if (!canAsk) return { connected: true, canAsk: false, items: [] };
+    const left = deadline();
+    const person = who.person;
+    const seesAll = person.role === "owner" || person.role === "manager";
+    let pass;
+    try {
+      pass = await passFor("thread", undefined, left);
+    } catch (error) {
+      log("Help: the control room gave no pass for the questions:", error?.status || error?.name || "Error");
+      /* the control room refuses this Dealer Center's key: Help isn't set up for it */
+      if (passTrouble(error) === "notSetUp") return { connected: true, canAsk: false, items: [] };
+      return { connected: true, canAsk: true, items: null, problem: HELP_WORDS.listUnreachable };
+    }
     let answer;
     try {
-      answer = await send("thread", { pass: await license.helpPass("thread") });
+      /* a dealer's own questions only (the inbox picks them; checked again below) */
+      answer = await send("thread", { pass, ...(seesAll ? {} : { askerId: person.userId }) }, left);
     } catch (error) {
       log("Help: Barnwright couldn't be reached for the questions:", error?.name || "Error");
       return { connected: true, canAsk: true, items: null, problem: HELP_WORDS.listUnreachable };
     }
     if (answer.status !== 200 || answer.data?.ok !== true || !Array.isArray(answer.data.items)) {
-      log("Help: the Sales Inbox didn't give the questions; it answered", answer.status);
+      log("Help: the Sales Inbox didn't give the questions; it answered", answer.status, codeOf(answer.data));
       return { connected: true, canAsk: true, items: null, problem: HELP_WORDS.listUnreachable };
     }
-    const person = who.person;
-    const seesAll = person.role === "owner" || person.role === "manager";
     const items = answer.data.items.slice(0, 30).map(cleanItem)
       .filter((item) => item && (seesAll || item.asker.id === person.userId))
       .sort((a, b) => String(b.at).localeCompare(String(a.at)));
@@ -266,33 +375,42 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
   async function ask(who, data) {
     if (!connected) fail(409, HELP_WORDS.notConnected);
     if (!canAsk) fail(503, HELP_WORDS.notSetUp);
+    const left = deadline();
     const words = textField(data?.text, 4000, "Your question", { required: true, multiline: true });
     const person = who.person;
+    const replyTo = mailbox(person.email);
+    if (!replyTo) fail(422, HELP_WORDS.badEmail);
     const question = {
       text: words,
       page: cleanPage(data?.page),
-      asker: { id: person.userId, name: line(person.name || "", 80), email: person.email, role: person.role },
+      asker: { id: person.userId, name: line(person.name || "", 80), email: replyTo, role: person.role },
       details: await detailsFor(data?.details),
     };
-    let pass;
-    try {
-      pass = await license.helpPass("question", subjectOf(words));
-    } catch (error) {
-      log("Help: the control room gave no pass for a question:", error?.name || "Error");
-      fail(503, HELP_WORDS.unreachable);
+    const key = await sameQuestionKey(person.userId, words);
+    let pass = await passAskedBefore(key);
+    if (!pass) {
+      try {
+        pass = await passFor("question", subjectOf(words), left);
+      } catch (error) {
+        log("Help: the control room gave no pass for a question:", error?.status || error?.name || "Error");
+        const why = passTrouble(error);
+        fail(STATUS_OF[why], HELP_WORDS[why]);
+      }
+      /* not remembered (the store busy): the question still goes */
+      try { await rememberPass(key, pass); } catch { /* only a repeat could make a second one */ }
     }
     let answer;
     try {
-      answer = await send("ask", { pass, question }, { retry: true });
+      answer = await send("ask", { pass, question }, left, { retry: true });
     } catch (error) {
       log("Help: the Sales Inbox couldn't be reached for a question:", error?.name || "Error");
       fail(503, HELP_WORDS.unreachable);
     }
-    if (answer.status === 429) fail(429, HELP_WORDS.tooMany);
     const d = answer.data;
     if ((answer.status !== 201 && answer.status !== 200) || d?.ok !== true || typeof d.id !== "string" || !d.id || d.id.length > 100) {
-      log("Help: the Sales Inbox didn't take a question; it answered", answer.status);
-      fail(503, HELP_WORDS.unreachable);
+      log("Help: the Sales Inbox didn't take a question; it answered", answer.status, codeOf(d));
+      const why = inboxTrouble(answer.status);
+      fail(STATUS_OF[why], HELP_WORDS[why]);
     }
     return { ok: true, id: d.id, at: isoOr(d.at, now().toISOString()), email: person.email };
   }
@@ -330,7 +448,8 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
     if (!data || typeof data !== "object" || Array.isArray(data)) return null;
     if (typeof data.signature !== "string" || !SIGNATURE_RE.test(data.signature) || RESERVED.has(data.signature)) return null;
     if (data.area !== "designer" && data.area !== "dealer-center") return null;
-    const message = line(data.message, 300);
+    /* cleaned here too: no email, phone number, long code or query string, whatever the browser sent */
+    const message = typeof data.message === "string" ? tidyMessage(data.message) : "";
     if (!message) return null;
     const t = now().getTime(), stamp = new Date(t).toISOString();
     /* a browser's clock can be wrong: a time more than a week old or in the future reads as now */
@@ -347,14 +466,15 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
   /* -> {sent}; index.js answers {ok: true} whatever this says */
   async function problem(request, data) {
     if (!canAsk) return { sent: false };
+    const left = deadline();
     const one = report(data, request);
     if (!one || !(await reserve(one.signature))) return { sent: false };
     try {
-      const answer = await send("problem", { pass: await license.helpPass("problem"), problem: one });
+      const answer = await send("problem", { pass: await passFor("problem", undefined, left), problem: one }, left);
       if ((answer.status === 200 || answer.status === 201) && answer.data?.ok === true) return { sent: true };
-      log("Help: the Sales Inbox didn't take a problem report; it answered", answer.status);
+      log("Help: the Sales Inbox didn't take a problem report; it answered", answer.status, codeOf(answer.data));
     } catch (error) {
-      log("Help: a problem report didn't reach Barnwright:", error?.name || "Error");
+      log("Help: a problem report didn't reach Barnwright:", error?.status || error?.name || "Error");
     }
     await release(one.signature);
     return { sent: false };

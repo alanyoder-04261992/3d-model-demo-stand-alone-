@@ -14,13 +14,15 @@
                      whole team's; a dealer sees their own.
 
    A Dealer Center that isn't connected to Barnwright (Alan's own business,
-   this computer, the demo) shows the answers and, instead of the box, one
-   line with the email to write to. The server says which (GET help). */
+   this computer, the demo) shows its answers and, instead of the box, one
+   line with the email to write to. The server says which in GET me (so the
+   box shows at once) and again in GET help (the control room refusing this
+   Dealer Center's key turns the box into that line). */
 
 import { h, clear, icon, button, field, form, pageHead, loading } from "../dom.js";
 import { get, post } from "../api.js";
 import { when, plural } from "../words.js";
-import { ANSWERS, HELP_SCREEN, SUPPORT_EMAIL, findAnswers } from "../help-answers.js";
+import { HELP_SCREEN, SUPPORT_EMAIL, answersFor, findAnswers } from "../help-answers.js";
 import { recentProblems, screenOf } from "../../problems.js";
 
 /* which screen a page is, in the menu's words */
@@ -45,8 +47,11 @@ export async function render(ctx) {
   ctx.setTitle("Help");
   /* the screen they came from (main.js keeps it), never which customer */
   const page = screenOf(app.helpFrom || location.hash || "#/help") || "#/help";
+  /* {connected, canAsk} from GET me: the box needs no wait */
+  const known = app.me?.help || null;
+  const connected = known ? known.connected : !!app.account;
 
-  const answers = answersCard(app);
+  const answers = answersCard(app, connected);
   const ask = h("section", { class: "card hp-ask", id: "hp-ask" },
     h("h2", { class: "card-title" }, icon("send"), "Ask Barnwright"), h("div", { class: "hp-ask-body" }, loading()));
   const questions = h("section", { class: "card flush hp-questions", id: "hp-questions", hidden: true });
@@ -63,42 +68,68 @@ export async function render(ctx) {
     jump,
     h("div", { class: "hp-grid" }, answers, h("div", { class: "hp-side" }, ask, questions)));
 
-  /* The answers show at once; Barnwright's side fills in when the server
-     answers. Sending a question, or "Try again", draws only the list again,
-     so nothing typed in the box is lost. */
+  /* The answers and the box show at once; the list fills in when the
+     server answers. Sending a question, or "Try again", draws only the list
+     again, so nothing typed in the box is lost. */
+  const toQuestions = jump.querySelector('[data-to="hp-questions"]');
+  let shown = "";   /* what the Ask card shows: "box" or "line" */
+  const showAsk = (state) => {
+    if (state.canAsk) {
+      if (shown !== "box") drawAsk(ctx, ask, state, page, questionsAgain);
+      shown = "box";
+      return;
+    }
+    /* questions can't go from here: the line with the email, unless someone already typed in the box */
+    if (shown === "box" && ask.querySelector("textarea")?.value.trim()) return;
+    drawAsk(ctx, ask, state, page, questionsAgain);
+    shown = "line";
+  };
+  const showList = (state) => {
+    drawQuestions(app, questions, state, questionsAgain);
+    toQuestions.hidden = !state.canAsk;
+  };
   const questionsAgain = async () => {
     let state;
     try { state = await get("help"); } catch (e) { state = { canAsk: true, items: null, problem: e.message }; }
-    drawQuestions(app, questions, state, questionsAgain);
+    if (!state.canAsk) showAsk(state);
+    showList(state);
   };
   const fill = async () => {
     let state;
     try {
       state = await get("help");
     } catch (e) {
+      if (shown) { showList({ canAsk: true, items: null, problem: e.message }); return; }
       clear(ask.querySelector(".hp-ask-body"), h("div", { class: "hp-note warn" }, icon("alert"),
         h("div", {}, h("p", {}, e.message), button("Try again", () => fill(), { small: true }))));
       return;
     }
-    drawAsk(ctx, ask, state, page, questionsAgain);
-    drawQuestions(app, questions, state, questionsAgain);
-    jump.querySelector('[data-to="hp-questions"]').hidden = !state.canAsk;
+    showAsk(state);
+    showList(state);
   };
-  jump.querySelector('[data-to="hp-questions"]').hidden = true;
+  toQuestions.hidden = true;
+  if (known) {
+    showAsk(known);
+    /* nothing to list where questions can't go */
+    if (!known.canAsk) return root;
+    showList({ canAsk: true, items: undefined });
+  }
   fill().catch((e) => console.error(e));
   return root;
 }
 
 /* ---- the short answers ---------------------------------------------------------- */
 
-function answersCard(app) {
+function answersCard(app, connected) {
   const search = h("input", { type: "search", placeholder: "Search, like website or price", "aria-label": "Search the answers", autocomplete: "off", enterKeyHint: "search" });
   const list = h("div", { class: "hp-list" });
   const none = h("div", { class: "hp-none", hidden: true });
+  const count = h("span", { class: "crm-count" }, String(answersFor(connected).length));
   const draw = () => {
     const typed = search.value.trim();
-    const found = findAnswers(typed);
+    const found = findAnswers(typed, connected);
     clear(list, found.map((a) => answerItem(app, a, !!typed && found.length === 1)));
+    count.textContent = String(found.length);
     none.hidden = found.length > 0;
     if (!found.length) {
       clear(none, h("p", {}, `No answer has “${typed}” in it. Try another word, or ask Barnwright.`),
@@ -114,8 +145,7 @@ function answersCard(app) {
   draw();
   return h("section", { class: "card hp-answers", id: "hp-answers" },
     h("div", { class: "hp-answers-head" },
-      h("h2", { class: "card-title" }, icon("help"), "Short answers"),
-      h("span", { class: "crm-count" }, String(ANSWERS.length))),
+      h("h2", { class: "card-title" }, icon("help"), "Short answers"), count),
     h("div", { class: "search hp-search" }, icon("search"), search),
     list, none);
 }
@@ -183,6 +213,11 @@ function drawQuestions(app, card, state, again) {
   const head = h("div", { class: "card-head" },
     h("h2", { class: "card-title" }, icon("text"), "Your questions"),
     Array.isArray(items) && items.length ? h("span", { class: "crm-count" }, String(items.length)) : null);
+  /* still on its way from Barnwright */
+  if (items === undefined) {
+    clear(card, head, h("div", { class: "hp-quiet" }, loading()));
+    return;
+  }
   if (!Array.isArray(items)) {
     clear(card, head, h("div", { class: "hp-quiet warn" }, icon("alert"),
       h("div", {}, h("p", {}, state.problem || "Barnwright couldn't be reached just now. Try again in a minute."),

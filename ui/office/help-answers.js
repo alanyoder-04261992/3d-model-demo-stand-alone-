@@ -9,8 +9,12 @@
    here too.
 
    An answer: {id, title, lines: [sentences], find: more words for the
-   search box, link: [address, words]}. A link shows only to the people who
-   can open that screen. */
+   search box, link: [address, words], when}. A link shows only to the
+   people who can open that screen. `when: "connected"` is for a Dealer
+   Center connected to Barnwright's control room only (a plan, its notes at
+   the top, Help from Barnwright), `when: "not-connected"` for one that
+   isn't (Alan's own business, the demo); no `when` fits both. Each Dealer
+   Center shows at most 14. */
 
 export const SUPPORT_EMAIL = "support@barnwrightsoftware.com";
 
@@ -21,7 +25,7 @@ export const HELP_SCREEN = Object.freeze({
   notSetUp: `Barnwright hasn't finished setting up Help for your Dealer Center yet. Until then, email ${SUPPORT_EMAIL}.`,
   sent: (email) => `Sent. Barnwright will answer here and by email at ${email}.`,
   /* screen: the menu's name for the page they came from ("" when they opened Help itself) */
-  whatGoes: (screen) => `Barnwright also gets ${screen ? `the page you came from (${screen})` : "this page"} and a few technical details: the Dealer Center's version, your account and any recent errors. Never your customers or prices.`,
+  whatGoes: (screen) => `Barnwright also gets ${screen ? `the page you came from (${screen})` : "this page"}, your name, email and job, and what helps find a problem: how your Dealer Center is set up, its Barnwright account, your browser and screen, and any recent errors. Never your customers or prices.`,
 });
 
 export const ANSWERS = Object.freeze([
@@ -50,14 +54,27 @@ export const ANSWERS = Object.freeze([
   },
   {
     id: "another-lot",
+    when: "connected",
     title: "Open another lot",
     lines: [
       "Your Barnwright plan includes a set number of open lots. **Lots** says how many are open, like “1 of 1 open lot in your Barnwright plan”.",
-      "To open one more, ask Barnwright to add a lot. Each extra lot is $250, one time, and Barnwright emails you a link to pay.",
+      "To open one more, ask Barnwright to add a lot. Each extra lot is a one-time fee, and Barnwright emails you a link to pay.",
       "Once it's paid, your Dealer Center picks it up within six hours. Then the owner taps **Add a lot** on **Lots**.",
       "Closing a lot you don't use frees its place for another one.",
     ],
     find: "new lot location add more plan limit cost pay",
+    link: ["#/lots", "Open your lots"],
+  },
+  {
+    id: "another-lot-own",
+    when: "not-connected",
+    title: "Open another lot",
+    lines: [
+      "Only the owner adds lots. Tap **Lots**, then **Add a lot**.",
+      "Type the lot's name, address, phone and hours, then tap **Add lot**. Its 3D designer link is ready at once.",
+      "A lot you don't use can be closed with **Close lot**. Its 3D designer link closes too, and **Open lot** opens both again.",
+    ],
+    find: "new lot location add more",
     link: ["#/lots", "Open your lots"],
   },
   {
@@ -84,10 +101,11 @@ export const ANSWERS = Object.freeze([
   },
   {
     id: "stopped",
+    when: "connected",
     title: "Why changes can't be saved",
     lines: [
       "The note at the top of every screen says why:",
-      "**Isn't switched on yet**: Barnwright is still setting up your account. Ask Barnwright below.",
+      "**Isn't switched on yet**: Barnwright is still setting up your account. Ask Barnwright on this screen.",
       "**Can't confirm its Barnwright account**: your Dealer Center's Barnwright settings need a look. Ask Barnwright.",
       "**Your Barnwright account is switched off**: ask Barnwright to switch it back on.",
       "**Hasn't reached Barnwright in 7 days**: it sets itself right the next time it reaches Barnwright. If the note stays, ask Barnwright.",
@@ -141,6 +159,7 @@ export const ANSWERS = Object.freeze([
   },
   {
     id: "barnwright-look",
+    when: "connected",
     title: "Let Barnwright look at your Dealer Center",
     lines: [
       "Only the owner can turn this on. Tap **Settings**, then **Help from Barnwright** at the bottom.",
@@ -184,12 +203,19 @@ export const ANSWERS = Object.freeze([
   },
 ]);
 
+/* The answers for this Dealer Center: connected to Barnwright's control
+   room or not (see `when` above). */
+export function answersFor(connected) {
+  return ANSWERS.filter((a) => !a.when || a.when === (connected ? "connected" : "not-connected"));
+}
+
 /* The answers that match what someone typed (every word, anywhere in an
    answer), in the order above. */
-export function findAnswers(typed) {
+export function findAnswers(typed, connected = true) {
+  const mine = answersFor(connected);
   const words = String(typed || "").toLowerCase().replace(/[^a-z0-9$ ]+/g, " ").split(/\s+/).filter(Boolean);
-  if (!words.length) return ANSWERS;
-  return ANSWERS.filter((a) => {
+  if (!words.length) return mine;
+  return mine.filter((a) => {
     const hay = `${a.title} ${a.lines.join(" ")} ${a.find || ""}`.toLowerCase().replace(/\*\*/g, "");
     return words.every((w) => hay.includes(w));
   });
