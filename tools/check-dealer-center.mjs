@@ -363,7 +363,7 @@ try {
       const owner = await pageFor(PEOPLE.owner, { base: BASE_CR });
       await openScreen(owner, "/help", BASE_CR);
       await owner.waitForSelector(".hp-item", { timeout: 20000 }).catch(() => {});
-      ok("the owner sees Mike's question", (await owner.$$eval(".hp-item", (els) => els.length)) === 1 && /Mike Harper/.test(await owner.textContent("#hp-questions")));
+      ok("the owner sees Mike's questions (both of them)", (await owner.$$eval(".hp-item", (els) => els.length)) === 2 && /Mike Harper/.test(await owner.textContent("#hp-questions")));
       await owner.context().close();
       const dana = await pageFor("dana@samplebarns.example", { base: BASE_CR });
       await openScreen(dana, "/help", BASE_CR);
