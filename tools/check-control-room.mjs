@@ -110,9 +110,20 @@ room.down = false;
 m = await me();
 ok("opening the Dealer Center checks in with the control room", room.calls.includes("/api/license") && m.account?.canWrite === true && m.account.reason === "active", JSON.stringify(m.account));
 ok("... and reports this copy and its open lots", room.business.appVersion === "dealer-center check" && room.business.dealerCount === 0);
-ok("the owner is asked to agree to the Barnwright terms, with a link to read them", m.terms?.version === TERMS.version && m.terms.url === "/legal/barnwright-terms.pdf" && m.terms.agreed === null, JSON.stringify(m.terms));
+ok("the owner is asked to agree to the Barnwright Terms and Conditions (version 2.0, October 2026), with a link to read them",
+  m.terms?.version === "2.0" && m.terms.version === TERMS.version && m.terms.title === "Barnwright Terms and Conditions" && m.terms.date === "October 2026"
+  && m.terms.url === "/legal/barnwright-terms.pdf" && m.terms.agreed === null, JSON.stringify(m.terms));
+{
+  /* the version asked for is the one on the papers: the PDF the link opens and the
+     sign-up page's terms (docs/legal/terms.json), both made by tools/legal/make-legal-pdfs.py */
+  const paper = J("docs/legal/terms.json");
+  const pdf = readFileSync(resolvePath(ROOT, "legal/barnwright-terms.pdf"), "latin1");
+  ok("... the same title, version and date as the sign-up page's terms and the PDF the link opens",
+    paper.title === TERMS.title && paper.version === TERMS.version && paper.date === TERMS.date && paper.pdf === TERMS.url.slice(1)
+    && pdf.includes(`/Title (${TERMS.title})`), JSON.stringify({ title: paper.title, version: paper.version, date: paper.date, pdf: paper.pdf }));
+}
 r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small" });
-ok("first setup without ticking \"I agree\" is refused in plain words, and no business is made", r.status === 422 && r.data.error === "Tick the box to agree to the Barnwright terms." && !(await office.parts.store.get("price-list")), JSON.stringify(r));
+ok("first setup without ticking \"I agree\" is refused in plain words, and no business is made", r.status === 422 && r.data.error === "Tick the box to agree to the Barnwright Terms and Conditions." && !(await office.parts.store.get("price-list")), JSON.stringify(r));
 r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small", agreeTerms: true });
 ok("first setup works", r.status === 201, JSON.stringify(r.data));
 m = await me();
@@ -125,7 +136,7 @@ ok(`the agreement is kept: version ${TERMS.version}, when, and who (the owner's 
   m = await me();
   ok("after the terms change, the owner is asked again", m.terms.agreed === null);
   r = await call("POST", "/api/office/terms", { agree: false });
-  ok("... not agreeing is refused in plain words", r.status === 422 && /Tick the box/.test(r.data.error));
+  ok("... not agreeing is refused in plain words", r.status === 422 && r.data.error === "Tick the box to agree to the Barnwright Terms and Conditions.", JSON.stringify(r));
   r = await call("POST", "/api/office/terms", { agree: true });
   const doc = await office.parts.store.get("barnwright-terms");
   ok("... \"I agree\" saves the new version and keeps the old one", r.status === 200 && r.data.terms.agreed?.version === TERMS.version && doc.history.length === 2 && doc.history[1].version === "0.9", JSON.stringify(doc));
@@ -180,7 +191,7 @@ r = await call("POST", "/api/office/team", { email: USERS.mike.email, name: "Mik
 ok("adding a person works", r.status === 201 || r.status === 200, JSON.stringify(r));
 await me("mike");
 r = await call("POST", "/api/office/terms", { agree: true }, { as: "mike" });
-ok("a dealer can't agree to the Barnwright terms for the business", r.status === 403, JSON.stringify(r));
+ok("a dealer can't agree to the Barnwright Terms and Conditions for the business", r.status === 403 && r.data.error === "Only the owner can agree to the Barnwright Terms and Conditions.", JSON.stringify(r));
 
 section("6. Switched off by Barnwright: read-only at the next check-in");
 room.business.status = "deactivated";

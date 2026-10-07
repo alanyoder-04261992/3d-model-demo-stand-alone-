@@ -38,7 +38,7 @@ import { createCustomers } from "./customers.js";
 import { createWebsite } from "./website.js";
 import { createEmail } from "./email.js";
 import { createAccount } from "./account.js";
-import { createTerms } from "./terms.js";
+import { createTerms, TERMS, AGREE_FIRST } from "./terms.js";
 import { createHelp } from "./help.js";
 
 export function createOffice(deps) {
@@ -162,9 +162,9 @@ export function createOffice(deps) {
      agreeing is never what a switched-off account is waiting for. */
   route("POST", /^\/api\/office\/terms$/, async (req) => {
     const who = await people.member(req);
-    must(who.person.role === "owner", "Only the owner can agree to the Barnwright terms.");
+    must(who.person.role === "owner", `Only the owner can agree to the ${TERMS.title}.`);
     const data = await readBody(req);
-    if (data.agree !== true) fail(422, "Tick the box to agree to the Barnwright terms.");
+    if (data.agree !== true) fail(422, AGREE_FIRST);
     return json({ terms: await terms.agree(who.person) });
   });
 

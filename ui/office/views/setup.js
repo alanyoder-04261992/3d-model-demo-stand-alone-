@@ -2,9 +2,10 @@
    business exists. Three short steps:
 
      1  Your business       your name, the business name, phone, email,
-                            and (a business Barnwright sells to) "I agree to
-                            the Barnwright terms" -- the business is not
-                            made without it (server/office/terms.js)
+                            and (a business Barnwright sells to) "I have
+                            read and agree to the Barnwright Terms and
+                            Conditions" -- the business is not made
+                            without it (server/office/terms.js)
      2  Your price list     every standard building at example prices, or
                             three buildings to start small
                             -> POST setup (the price list is made, closed
@@ -101,8 +102,7 @@ function business() {
   const agree = h("input", { type: "checkbox", checked: !!d.agreeTerms, "aria-describedby": "setup-terms-words" });
   const termsBox = terms ? h("label", { class: "check setup-terms" }, agree,
     h("span", { id: "setup-terms-words" }, "I have read and agree to the ",
-      h("a", { href: terms.url, target: "_blank", rel: "noopener" }, terms.title),
-      ` (version ${terms.version}) for my business.`)) : null;
+      h("a", { href: terms.url, target: "_blank", rel: "noopener" }, terms.title))) : null;
   return stepCard(1, "Your business", "Who you are and how customers reach the business.",
     form([
       h("div", { class: "form-grid" }, yourName.wrap, businessName.wrap, phone.wrap, email.wrap),
@@ -118,7 +118,7 @@ function business() {
       if (!d.businessName) throw new Error("Type the business name.");
       if (terms) {
         d.agreeTerms = agree.checked;
-        if (!d.agreeTerms) throw new Error("Tick the box to agree to the Barnwright terms.");
+        if (!d.agreeTerms) throw new Error(`Tick the box to agree to the ${terms.title}.`);
       }
       wiz.step = 2;
       draw();

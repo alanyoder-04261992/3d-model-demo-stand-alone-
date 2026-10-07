@@ -396,7 +396,7 @@ try {
     assert.ok(officeCss.includes("ui/office/closed.css"));
     for (const file of ["index.html", "embed.js", "dealer.html", "ui/app.js", "ui/views.js", "ui/managed-order.js", "ui/quote.js", "ui/share.js", "ui/office/main.js", ...officeCss, "_headers",
       "legal/barnwright-terms.pdf"]) assert.ok(files.includes(file), "Missing client file " + file);   /* the terms the owner's "I agree" links to (server/office/terms.js) */
-    assert.deepEqual(files.filter(file => file.startsWith("legal/")), ["legal/barnwright-terms.pdf"], "legal/ ships the terms only, never Alan's Sign-Up Form or steps");
+    assert.deepEqual(files.filter(file => file.startsWith("legal/")), ["legal/barnwright-terms.pdf"], "legal/ ships the terms only, never Alan's other papers (docs/legal/)");
     const forbidden = files.filter(file => /(^|\/)(\.agents|\.claude|\.office-local|docs|tools|test|server|netlify|node_modules|images)(\/|$)|(^|\/)learning-[^/]+|^ui\/(learn[^/]*|parts-gallery|part-details|setup)\.|(^|\/)portal\.|\.(md|tsx|ts|mts|toml|map)$/i.test(file));
     assert.deepEqual(forbidden, []);
     assert.deepEqual(files.filter(file => file.endsWith(".html")).sort(), ["404.html", "dealer.html", "index.html"]);

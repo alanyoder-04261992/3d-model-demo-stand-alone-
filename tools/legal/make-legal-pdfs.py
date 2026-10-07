@@ -1,34 +1,48 @@
-"""THE BARNWRIGHT SIGN-UP PAPERS, as PDFs (Alan, Oct 2026: "Write terms and
-conditions for me to have them sign when I sign them up").
+"""THE BARNWRIGHT PAPERS, as PDFs (Alan, Oct 2026: "Write terms and conditions
+for me to have them sign when I sign them up"; Oct 7 2026: "redo the terms and
+conditions and redo sign up let me sent sign up link, i dont like the
+terminology ... lets steam line it as fast as possible").
 
-  legal/barnwright-terms.pdf                 the Software Terms and Conditions.
+An owner signs up on the sign-up page Alan texts them from the Control Room
+(there is no paper form): it shows the short version of the terms, the owner
+ticks "I agree" and types their name.
+
+  legal/barnwright-terms.pdf                 the Barnwright Terms and Conditions.
                                              Published on every business's site
                                              (tools/build-site.mjs): the Dealer
                                              Center's "I agree" box links to it
                                              (server/office/terms.js)
-  docs/legal/Barnwright-Sign-Up-Form.pdf     the form a new company fills in,
-                                             initials and signs (fillable boxes)
+  docs/legal/terms.json                      the same terms as plain text, with
+                                             the short version: the Control
+                                             Room's sign-up page reads it (from
+                                             main on GitHub)
   docs/legal/Barnwright-Adding-a-New-Customer.pdf
-                                             Alan's steps from "yes" to live
-  docs/legal/papers.json                     the list the control room's Papers
-                                             page reads (from main on GitHub)
-  docs/legal/Barnwright-Setup-Questions.pdf  what a new company answers so its
-                                             3D designer, lots, prices and
+                                             Alan's steps, from saying hello at
+                                             their lot to their first quote
+  docs/legal/Barnwright-Welcome-Sheet.pdf    one page for the owner: signing in,
+                                             their computer and phone, prices,
+                                             lots, team, website and help
+  docs/legal/Barnwright-Setup-Questions.pdf  only when Alan can't visit: what a
+                                             new company answers so its 3D
+                                             designer, lots, prices and
                                              buildings can be set up (fillable;
                                              its lists come from library/)
   docs/legal/Barnwright-Flyer.pdf            one page to hand out or email to a
                                              shed company (picture: designer.jpg)
   docs/legal/Barnwright-Price-Sheet.pdf      one page: no setup fee, $250 a month
                                              with the first lot, $250 each lot after
+  docs/legal/papers.json                     the list the Control Room's Papers
+                                             page reads (from main on GitHub)
 
 Run:  python3 tools/legal/make-legal-pdfs.py            (into the repository)
       python3 tools/legal/make-legal-pdfs.py <folder>   (all of them there, to look at)
 Needs: pip install reportlab
 
-When the terms change: change VERSION here and TERMS.version in
-server/office/terms.js together, so every owner is asked to agree again."""
+When the terms change: change TERMS_VERSION (and TERMS_DATE) here and
+TERMS.version in server/office/terms.js together, so every owner is asked to
+agree again."""
 
-import sys, os, re, json
+import sys, os, re, json, html
 from xml.sax.saxutils import escape
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.units import inch
@@ -42,12 +56,15 @@ from reportlab.pdfgen import canvas as rl_canvas
 OUT = sys.argv[1] if len(sys.argv) > 1 else None
 if OUT: os.makedirs(OUT, exist_ok=True)
 
-VERSION = "Version 1.2, October 2026"
+TERMS_TITLE = "Barnwright Terms and Conditions"
+TERMS_VERSION = "2.0"               # server/office/terms.js TERMS.version says the same
+TERMS_DATE = "October 2026"
+VERSION = f"Version {TERMS_VERSION}, {TERMS_DATE}"   # at the top of every paper, and in papers.json
 DOMAIN = "barnwrightsoftware.com"   # every business's web address is <their name>.barnwrightsoftware.com
 MONTHLY_FEE = 250                   # a month from go-live, for any number of lots; it includes the first lot. No setup fee
 LOT_FEE = 250                       # one time, for each lot after the first
-PROVIDER = "Barnwright Software"
 SALES = "sales@" + DOMAIN
+SUPPORT = "support@" + DOMAIN
 BLACK = colors.HexColor("#16130E")
 INK = colors.HexColor("#1D1A15")
 MUTED = colors.HexColor("#635D52")
@@ -142,30 +159,24 @@ class GoldRule(Flowable):
 
 # ---------------------------------------------------------------- fillable fields
 class Field(Flowable):
-    """A labelled box someone can type in (a PDF form field), or a plain line
-    to sign on (sign=True: e-signature tools and Fill & Sign put the
-    signature there)."""
-    def __init__(self, name, caption, width, height=20, multiline=False, sign=False, tip=None, suffix=None, value=""):
+    """A labelled box someone can type in (a PDF form field)."""
+    def __init__(self, name, caption, width, height=20, multiline=False, tip=None, suffix=None):
         super().__init__()
-        self.name, self.caption, self.w, self.h, self.value = name, caption, width, height, value
-        self.multiline, self.sign, self.tip, self.suffix = multiline, sign, tip or caption, suffix
+        self.name, self.caption, self.w, self.h = name, caption, width, height
+        self.multiline, self.tip, self.suffix = multiline, tip or caption, suffix
     def wrap(self, aw, ah):
         return self.w, self.h + 13
     def draw(self):
         c = self.canv
         c.setFont("Helvetica-Bold", 7.6); c.setFillColor(MUTED)
         c.drawString(0, self.h + 4, self.caption.upper())
-        if self.sign:
-            c.setStrokeColor(INK); c.setLineWidth(0.8); c.line(0, 2, self.w, 2)
-            c.setFont("Helvetica", 7); c.setFillColor(MUTED); c.drawString(2, 5, "Sign here")
-            return
         box = self.w
         if self.suffix:   # words printed after the box, like ".barnwrightsoftware.com"
             c.setFont("Helvetica", 10); c.setFillColor(INK)
             box = self.w - c.stringWidth(self.suffix, "Helvetica", 10) - 3
             c.drawString(box + 3, 6, self.suffix)
         c.acroForm.textfield(name=self.name, tooltip=self.tip, x=0, y=0, width=box, height=self.h,
-                             relative=True, borderStyle="underlined", borderColor=LINE, fillColor=FIELD_BG, value=self.value,
+                             relative=True, borderStyle="underlined", borderColor=LINE, fillColor=FIELD_BG, value="",
                              textColor=INK, fontName="Helvetica", fontSize=0 if self.multiline else 10,
                              borderWidth=1, fieldFlags="multiline" if self.multiline else "", maxlen=400 if self.multiline else 120)
 
@@ -185,20 +196,6 @@ class Check(Flowable):
         self.p.drawOn(self.canv, 18, top - self.ph)
 
 
-class Initial(Flowable):
-    """A short box for initials, with the sentence it confirms."""
-    def __init__(self, name, words, width):
-        super().__init__(); self.name, self.w = name, width; self.p = Paragraph(words, body)
-    def wrap(self, aw, ah):
-        _, ph = self.p.wrap(self.w - 62, ah); self.ph = ph; return self.w, max(20, ph) + 6
-    def draw(self):
-        top = max(20, self.ph)
-        self.canv.acroForm.textfield(name=self.name, tooltip="Initials", x=0, y=top - 18, width=44, height=18, relative=True,
-                                     borderStyle="underlined", borderColor=INK, fillColor=FIELD_BG, textColor=INK,
-                                     fontName="Helvetica-Bold", fontSize=10, borderWidth=1, maxlen=6)
-        self.p.drawOn(self.canv, 56, top - self.ph)
-
-
 def row(*cells, widths):
     t = Table([list(cells)], colWidths=widths, hAlign="LEFT")
     t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0),
@@ -215,135 +212,151 @@ def section_band(text):
 
 
 # ================================================================ 1. TERMS
+# Version 2.0 (Alan, Oct 7 2026: "redo the terms and conditions ... i dont like
+# the terminology"): the same protections as version 1.2, in plain words, and
+# signed on the sign-up page (no paper form). TERMS_INTRO goes at the top of
+# the PDF and of docs/legal/terms.json; TERMS_SUMMARY is the short version the
+# sign-up page shows above "I agree". TERMS_TITLE, TERMS_VERSION and
+# TERMS_DATE are at the top of this file.
+
+TERMS_INTRO = [
+    "These are the rules for using the Barnwright 3D designer. \"We\" and \"us\" means Barnwright Software. \"You\" means the business that signs up.",
+    "You agree to them by ticking \"I agree\" and typing your name on your sign-up page. That is your signature, the same as signing on paper.",
+]
+
 TERMS = [
     ("1. What you get", [
-        ("1.1", "Barnwright provides one product: the <b>Barnwright 3D designer</b>. It includes:"),
-        ("(a)", "your <b>3D designer</b>, where your customers pick a building, size, colors, doors, windows and options, see a price, and send you a quote request;", "sub"),
-        ("(b)", "your <b>Dealer Center</b>, where you set your price list, styles, sizes and options once for every lot, add your lots and your team, and keep your customers, quotes, follow-ups and orders; and", "sub"),
-        ("(c)", "your web address, hosting, updates and fixes for as long as this agreement is in place.", "sub"),
-        ("1.2", "The 3D designer stands on its own. It works alongside the software you already use, such as your website, your accounting and your rent-to-own company, and does not replace it. You keep using your own software for contracts, payments, inventory and delivery."),
-        ("1.3", "We may improve, change or replace features over time. We will not take away a main feature you use without telling you at least 30 days ahead."),
-        ("1.4", "<b>Lots.</b> Your monthly fee includes your first lot. Each lot after the first has a one-time lot fee (section 3) and adds nothing to your monthly fee. To open another lot later, ask us: we add it to your plan once its lot fee is paid."),
-        ("1.5", "<b>Your web address.</b> Your 3D designer and Dealer Center are at a web address under " + DOMAIN + ", such as yourbusiness." + DOMAIN + ", which we choose with you. Barnwright owns " + DOMAIN + " and the addresses under it. You may use yours while this agreement is in place, and you may also show your 3D designer on your own websites."),
+        ("1.1", "The <b>Barnwright 3D designer</b>. It includes:"),
+        ("(a)", "your <b>3D designer</b>, where your customers pick a building, its size, colors, doors, windows and options, see the price, and send you a quote request;", "sub"),
+        ("(b)", "your <b>Dealer Center</b>, where you keep your price list, your lots, your team, and your customers, quotes and orders; and", "sub"),
+        ("(c)", "your own web address, hosting, updates and fixes, for as long as you use it.", "sub"),
+        ("1.2", "It works alongside the software you already use, such as your website, your accounting and your rent-to-own company. It does not replace them."),
+        ("1.3", "We may add, change or improve features. We will tell you at least 30 days before we take away a main feature you use."),
+        ("1.4", "<b>Your web address</b> is under " + DOMAIN + ", such as yourbusiness." + DOMAIN + ". We pick it with you. Barnwright owns " + DOMAIN + ". You can use your address while you use the 3D designer, and you can also show your 3D designer on your own websites."),
     ]),
-    ("2. Setting up your software", [
-        ("2.1", "We set up your 3D designer at no charge: your price list, your styles and sizes, your colors and logo, your lots, your web address, and the code for your website."),
-        ("2.2", "You agree to send us, on time and correct, what we need to set you up, such as your answers to the <b>Barnwright Setup Questions</b>: your prices, the styles and sizes you sell and how you build them, your colors, your logo, your lots, your contact details, your website addresses and where quote requests should go."),
-        ("2.3", "Before your 3D designer goes live, we show you your buildings and prices. You check them and tell us they are right. You are responsible for the prices and choices you approve."),
+    ("2. Getting set up", [
+        ("2.1", "We set up your 3D designer for you at no charge: your buildings, sizes, prices, options, colors, logo, lots and web address."),
+        ("2.2", "To do that we need your price list, photos of your buildings, and your options and colors. Please get them to us correct and on time."),
+        ("2.3", "Before your customers can use it, we show you your buildings and prices. You check them and tell us they are right. You are responsible for the prices you approve."),
     ]),
-    ("3. Fees and payment", [
+    ("3. What it costs", [
         ("3.1", "There is no setup fee."),
-        ("3.2", f"Your <b>monthly fee</b>, shown on your Sign-Up Form (${MONTHLY_FEE} a month unless the form says otherwise), starts on your <b>go-live date</b>: the day we tell you in writing (an email is enough) that your software is finished and ready to use. It includes your first lot, and it is the same for any number of lots."),
-        ("3.3", "The monthly fee is charged ahead of each month by the payment method on your Sign-Up Form, for example a card or bank payment through our payment processor, or an invoice."),
-        ("3.4", f"Each lot after the first has a <b>one-time lot fee of ${LOT_FEE}</b>, shown on your Sign-Up Form. You pay it before we open that lot. A lot fee is not refundable once the lot is open."),
-        ("3.5", "If a payment fails, we try again and tell you. If a fee is still unpaid 15 days after we tell you, we may switch your account off as described in section 9 until it is paid."),
-        ("3.6", "Fees do not include sales tax or other taxes. You pay any that apply."),
-        ("3.7", "We may change the fees by telling you at least 30 days before the change. A change never charges again for a lot you already paid for. If you don't agree, you may end this agreement before the change takes effect."),
+        ("3.2", f"<b>${MONTHLY_FEE} a month</b>, or the amount on your sign-up page. It starts on your <b>start date</b>: the day we tell you, by email or text, that your 3D designer is ready to use. It includes your first lot, and it stays the same no matter how many lots you have."),
+        ("3.3", f"<b>Each lot after your first is ${LOT_FEE} one time</b>, or the amount on your sign-up page. You pay it before that lot opens. It is not refunded once the lot is open."),
+        ("3.4", "<b>Your card.</b> When you sign up, you save a card with our payment company, Stripe. Nothing is charged that day except the one-time fees for any extra lots. You allow us to charge that card for the monthly fee on your start date and on the same day each month after, and for any extra lots you ask for, until this agreement ends. You can change the card any time: ask us for the link. If we agree, you can pay by invoice instead."),
+        ("3.5", "If a payment doesn't go through, we try again and let you know. If it is still unpaid 15 days after we tell you, we may pause your account (section 8) until it is paid."),
+        ("3.6", "Prices don't include sales tax. You pay any tax that applies."),
+        ("3.7", "We may change our prices. We will tell you at least 30 days before. A change never charges you again for a lot you already paid for. If you don't agree, you can stop before the change starts."),
     ]),
-    ("4. How long this agreement lasts", [
-        ("4.1", "This agreement starts when both of us sign the Sign-Up Form. It continues month to month until you or we end it."),
-        ("4.2", "Either of us may end it for any reason by giving the other 30 days' written notice. An email to the address on the Sign-Up Form is written notice."),
-        ("4.3", "We may end it sooner, or switch your account off, if a fee is not paid (section 3.5), if you seriously break these terms and don't fix it within 10 days after we tell you, or if the software is used against the law."),
+    ("4. Starting and stopping", [
+        ("4.1", "This agreement starts when you sign up and continues month to month."),
+        ("4.2", "You or we can stop it at any time, for any reason, by telling the other 30 days ahead. An email is enough."),
+        ("4.3", "We can stop it sooner, or pause your account, if a payment is not made (3.5), if you seriously break these terms and don't fix it within 10 days after we tell you, or if the software is used against the law."),
     ]),
-    ("5. Your account and your team", [
-        ("5.1", "Your owner controls your account: who is on your team, which lots each person sees, and your settings. Your owner is responsible for the people they add."),
-        ("5.2", "Keep logins private. Each person uses their own login. Take people off your team when they leave."),
+    ("5. Your login and your team", [
+        ("5.1", "Your owner is in charge of your account: who is on your team, which lots each person sees, and your settings. Your owner is responsible for the people they add."),
+        ("5.2", "Everyone uses their own login and keeps it private. Take people off your team when they leave."),
         ("5.3", "Tell us right away if you think someone got into your account who shouldn't have."),
     ]),
-    ("6. Your prices, quotes and buildings", [
-        ("6.1", "You set your prices, options, rent-to-own terms and the words your customers see. Quotes the software makes use your price list. You are responsible for checking that your price list is correct and for every price you give a customer."),
-        ("6.2", "A price shown in the 3D designer is an estimate until you confirm the order with your customer. Tell your customers so, for example in the line under the price."),
-        ("6.3", "The 3D pictures and floor plans are drawings to help your customers choose. They are not construction drawings, engineered plans or permit documents. You are responsible for how your buildings are built and delivered, and for building codes, permits, wind and engineering requirements, and the delivery site."),
-        ("6.4", "Rent-to-own and other monthly figures are estimates worked out from the numbers you give us. Barnwright is not a lender or a rent-to-own company. Your rent-to-own and financing contracts, the disclosures they need and the laws that apply to them are your responsibility."),
+    ("6. Your prices and your buildings", [
+        ("6.1", "You set your prices, options and the words your customers see. You are responsible for checking your price list and for every price and quote you give."),
+        ("6.2", "A price in the 3D designer is an estimate until you confirm the order with your customer. Say so in the line under the price."),
+        ("6.3", "The 3D pictures and floor plans help your customers choose. They are not construction drawings, engineered plans or permit papers. How your buildings are built and delivered is your responsibility, including building codes, permits, wind ratings and the delivery site."),
+        ("6.4", "Rent-to-own and other monthly payment figures are estimates from the numbers you give us. Barnwright is not a lender or a rent-to-own company. Your rent-to-own and financing contracts, and the laws about them, are your responsibility."),
     ]),
-    ("7. Texting, email and your customers", [
-        ("7.1", "The software can ask your customers for permission to text them, in the words you choose, and shows their phone number and email to your team. You are responsible for following the laws on calling, texting and emailing customers, including getting and keeping their permission and honoring requests to stop (such as a reply of STOP), and including the Telephone Consumer Protection Act, the CAN-SPAM Act and the Florida Telephone Solicitation Act where they apply."),
+    ("7. Texting and emailing your customers", [
+        ("7.1", "Your 3D designer can ask your customers if you may text them, in words you choose. You must follow the laws about calling, texting and emailing customers: get their permission, keep a record of it, and stop when they ask, such as a reply of STOP. These laws include the Telephone Consumer Protection Act, the CAN-SPAM Act and the Florida Telephone Solicitation Act."),
         ("7.2", "You are responsible for what you and your team send to customers, and for any texting or email service you connect."),
     ]),
-    ("8. Your data", [
-        ("8.1", "Your data belongs to you: your customers, quotes, orders, notes, price list, logo and settings."),
-        ("8.2", "We use your data only to run, support, back up and improve the software for you, and when the law requires it. We do not sell your data, and we do not use your customers' details to market to them."),
-        ("8.3", "You can look at and download your data at any time, including while your account is switched off."),
-        ("8.4", "You confirm that you have the right to give us the data you put in, including your customers' details."),
-        ("8.5", "After this agreement ends we keep your data for 30 days so you can download it. After that we may delete it. Copies in our backups are deleted as those backups are replaced."),
-        ("8.6", "We use reasonable security to protect your data. If we learn that someone got into your data without permission, we will tell you without delay and help you with what the law requires."),
+    ("8. If your account is paused", [
+        ("8.1", "Your Dealer Center connects to Barnwright to confirm that your account is active and how many lots you have."),
+        ("8.2", "We pause your account if a payment is still unpaid 15 days after we tell you (3.5), if we stop under 4.3, or when this agreement ends. It also pauses by itself if your Dealer Center can't connect to Barnwright for 7 days in a row."),
+        ("8.3", "While it is paused, nothing new can be saved, quote requests can't be sent, and your 3D designer shows your phone number instead of the designer. You and your team can still look at and download everything."),
+        ("8.4", "When the reason is fixed, for example the payment goes through, we turn it back on. Nothing is deleted while it is paused."),
+        ("8.5", "Please don't try to get around the lot limit or the pause."),
     ]),
-    ("9. Check-ins, switching off and read-only", [
-        ("9.1", "Your software checks in with Barnwright's control room to confirm that your account is on and how many lots you may have open."),
-        ("9.2", "Your account is switched off when we switch it off under section 3.5 or 4.3, or when this agreement ends. It also stops taking changes if it cannot check in for 7 days in a row."),
-        ("9.3", "While it is switched off, changes can't be saved, your 3D designer links show a short message with your lot's phone number instead of the designer, and quote requests can't be sent. You and your team can still look at and download everything, and taking a person off your team still works."),
-        ("9.4", "When the reason is fixed, for example the fee is paid, we switch your account back on. Nothing is deleted while an account is switched off."),
-        ("9.5", "You agree not to try to get around the check-ins, the lot limit or the switch."),
+    ("9. Your information", [
+        ("9.1", "Your information belongs to you: your customers, quotes, orders, notes, prices, logo and settings."),
+        ("9.2", "We use it only to run, support, back up and improve your 3D designer, and when the law requires. We never sell it, and we never use your customers' details to market to them."),
+        ("9.3", "You can look at and download your information at any time, even while your account is paused."),
+        ("9.4", "You confirm that you have the right to give us the information you put in, including your customers' details."),
+        ("9.5", "When this agreement ends, we keep your information for 30 days so you can download it. After that we may delete it. Backup copies are deleted as the backups are replaced."),
+        ("9.6", "We keep your information safe with reasonable security. If someone gets into it without permission, we tell you right away and help you with what the law requires."),
     ]),
     ("10. Help from Barnwright", [
-        ("10.1", "Barnwright can't look into your Dealer Center unless your owner turns on <b>Help from Barnwright</b> in Settings, for 1 to 24 hours, with a reason. It turns off by itself when the time is up, and your owner can turn it off sooner."),
-        ("10.2", "While it is on, we can run checks that show how your Dealer Center is running. Those checks don't show us your customers, prices or settings. Every visit is written in a log your owner can see."),
-        ("10.3", "Support is by the ways and at the hours shown on your Sign-Up Form."),
+        ("10.1", "We can't look inside your Dealer Center unless your owner turns on <b>Help from Barnwright</b> in Settings, for 1 to 24 hours. It turns off by itself, and your owner can turn it off sooner."),
+        ("10.2", "While it is on, we can run checks on how your Dealer Center is working. Every visit is written in a log your owner can see."),
+        ("10.3", "For help, tap <b>Help</b> in your Dealer Center or email support@" + DOMAIN + "."),
     ]),
-    ("11. Using the software the right way", [
-        ("", "You agree not to:"),
-        ("(a)", "copy, sell, rent or share the software, or give your activation key to anyone else;", "sub"),
-        ("(b)", "try to take the software apart or copy how it works;", "sub"),
+    ("11. Please don't", [
+        ("(a)", "copy, sell, rent or share the software;", "sub"),
+        ("(b)", "try to take it apart or copy how it works;", "sub"),
         ("(c)", "put your 3D designer on websites you don't own or haven't told us about;", "sub"),
         ("(d)", "use it to send spam or to break any law;", "sub"),
         ("(e)", "put in anything that harms the software or other users; or", "sub"),
         ("(f)", "let anyone outside your team use your account.", "sub"),
     ]),
     ("12. Who owns what", [
-        ("12.1", "Barnwright owns the software and everything we make for it, including the 3D models, drawings, designs and code, and improvements to them, even when they came from your ideas. You may use the software for your business while this agreement is in place. That right ends when the agreement ends."),
-        ("12.2", "You keep owning your business name, your logo and your own content. You let us use them to run your software, for example to show your name and logo in your 3D designer."),
-        ("12.3", "Your 3D designer shows a small \"3D designer by Barnwright\" line unless your Sign-Up Form includes white-label."),
-        ("12.4", "If you say yes on your Sign-Up Form, we may name your business as a Barnwright customer."),
+        ("12.1", "Barnwright owns the software and everything we make for it: the 3D models, drawings, designs and code, and improvements to them, even ones that came from your ideas. You may use it for your business while this agreement is in place."),
+        ("12.2", "You keep owning your business name, your logo and your own content. You let us use them to run your 3D designer, for example to show your logo."),
+        ("12.3", "Your 3D designer shows a small \"3D designer by Barnwright\" line unless we agree otherwise."),
+        ("12.4", "We name your business as a Barnwright customer only if you say yes on your sign-up page."),
     ]),
-    ("13. Other companies' services", [
-        ("", "The software runs on, or connects to, services run by other companies, such as web hosting, email delivery, payment processing, and any form or texting service you connect. Their terms apply to those services. We are not responsible for their outages or changes, but we will work to keep your software running if one of them has a problem."),
+    ("13. Other companies", [
+        ("", "The software runs on, and connects to, services from other companies, such as web hosting, email, payments, and any form or texting service you connect. Their own terms apply to those services. We are not responsible for their outages or changes, but we will work to keep your 3D designer running."),
     ]),
-    ("14. Keeping things running", [
-        ("", "We work to keep the software running at all hours, but we can't promise it will never be down, slow or wrong. We may take it down briefly for updates, and we try to do that outside business hours. We fix problems we are responsible for as soon as we reasonably can."),
+    ("14. Keeping it running", [
+        ("", "We work to keep it running day and night, but we can't promise it will never be down, slow or wrong. We may take it down briefly for updates, outside business hours when we can. We fix problems that are ours to fix as soon as we reasonably can."),
     ]),
-    ("15. Confidential information", [
-        ("", "Each of us keeps private the other's business information that isn't public: for you, your prices, customers and sales; for us, the software and our pricing. Each of us uses it only for this agreement and shares it only with people who need it for this agreement and keep it private too. This doesn't cover information that is already public, or that the law requires a party to share."),
+    ("15. Keeping each other's business private", [
+        ("", "We each keep the other's private business information private: for you, your prices, customers and sales; for us, the software and our pricing. We each use it only for this agreement and share it only with people who need it and keep it private too. This doesn't cover information that is already public, or that the law requires us to share."),
     ]),
-    ("16. Warranty", [
+    ("16. Our promise", [
         ("16.1", "We will provide the software with reasonable care and skill."),
-        ("16.2", "Apart from that, the software is provided \"as is\" and \"as available\". As far as the law allows, we make no other promises, including that it is fit for a particular purpose, that it will run without interruption or errors, or that it will bring you any number of sales."),
+        ("16.2", "Other than that, the software is provided \"as is\". As far as the law allows, we make no other promises, including that it fits a particular purpose, that it will never stop or have errors, or that it will bring you a certain number of sales."),
     ]),
-    ("17. Limits on responsibility", [
-        ("17.1", "Neither of us is responsible to the other for lost profits, lost sales, lost data that could have been downloaded, or indirect or special damages, even if warned they could happen."),
-        ("17.2", "Our total responsibility for all claims under this agreement is limited to the fees you paid us in the 12 months before the claim."),
-        ("17.3", "These limits do not apply to fraud or intentional wrongdoing, to amounts you owe us, or to section 18."),
+    ("17. Limits", [
+        ("17.1", "Neither of us is responsible to the other for lost profits, lost sales, lost information that could have been downloaded, or indirect damages, even if warned they could happen."),
+        ("17.2", "Our total responsibility for all claims is limited to what you paid us in the 12 months before the claim."),
+        ("17.3", "These limits don't apply to fraud, intentional wrongdoing, money you owe us, or section 18."),
     ]),
-    ("18. Covering claims", [
-        ("18.1", "You will defend and pay for claims by others that come from your prices, your buildings or their delivery, your contracts with your customers, rent-to-own or financing, your calls, texts or emails, or your breaking this agreement or the law."),
-        ("18.2", "We will defend and pay for claims by others that the software, as we provide it, breaks their copyright or patent. If that happens, we may change the software, get the right for you to keep using it, or end this agreement and refund fees you paid ahead for time not used."),
-        ("18.3", "The one asking to be covered must tell the other promptly and help with the defense."),
+    ("18. Claims from other people", [
+        ("18.1", "You will defend us against, and pay for, claims by others that come from your prices, your buildings or their delivery, your contracts with your customers, rent-to-own or financing, your calls, texts or emails, or your breaking these terms or the law."),
+        ("18.2", "We will defend you against, and pay for, claims by others that the software, as we provide it, copies their work (copyright) or their invention (patent). If that happens, we may change the software, get the right for you to keep using it, or end this agreement and refund what you paid ahead for time not used."),
+        ("18.3", "The one asking to be covered must tell the other quickly and help with the defense."),
     ]),
     ("19. Changes to these terms", [
-        ("", "We may update these terms. We will tell you at least 30 days before a change takes effect and put the new version and date at the top. If you don't agree, you may end this agreement before the change takes effect. Using the software after that date means you accept the change."),
+        ("", "We may update these terms. We will tell you at least 30 days before a change takes effect, and put the new version and date at the top. If you don't agree, you can stop before the change starts. Using the software after that date means you accept the change."),
     ]),
-    ("20. General", [
-        ("20.1", "Florida law governs this agreement. Any lawsuit about it will be brought in the state or federal courts for Charlotte County, Florida, and both of us agree to those courts."),
-        ("20.2", "These terms and your signed Sign-Up Form are the whole agreement between us about the software. They replace earlier talks and proposals. If they say different things, the Sign-Up Form wins."),
-        ("20.3", "Notices are given by email to the addresses on the Sign-Up Form, or by mail. Keep your contact details up to date."),
-        ("20.4", "You may not transfer this agreement without our written permission, which we won't hold back unreasonably if you sell your business. We may transfer it to a company that takes over our business and these terms."),
-        ("20.5", "Neither of us is responsible for delays caused by things outside our reasonable control, such as storms, power or internet outages, or outages at other companies' services."),
-        ("20.6", "If any part of this agreement can't be enforced, the rest still applies. Not enforcing a part of it is not giving it up."),
-        ("20.7", "Electronic signatures, and signed copies sent by email, count as originals. The Sign-Up Form may be signed in separate copies."),
-        ("20.8", "Parts that by their nature should continue after the agreement ends, such as fees owed, your data, who owns what, confidential information, limits on responsibility and covering claims, keep applying."),
+    ("20. The fine print", [
+        ("20.1", "Florida law applies. Any lawsuit about this agreement will be in the state or federal courts for Charlotte County, Florida, and we both agree to those courts."),
+        ("20.2", "These terms and your sign-up page are our whole agreement about the software. They replace anything said or written before. If they say different things, your sign-up page wins."),
+        ("20.3", "We send notices by email, or by mail, to the address on your sign-up page. Please keep your details up to date."),
+        ("20.4", "You can't transfer this agreement to someone else without our written okay, which we won't unreasonably refuse if you sell your business. We can transfer it to a company that takes over our business."),
+        ("20.5", "Neither of us is responsible for delays caused by things we can't control, such as storms, power or internet outages, or outages at other companies."),
+        ("20.6", "If part of these terms can't be enforced, the rest still applies. Not enforcing a part is not giving it up."),
+        ("20.7", "Ticking \"I agree\" and typing your name on your sign-up page is your signature, the same as signing on paper."),
+        ("20.8", "Parts that should continue after this agreement ends keep applying, such as money owed, your information, who owns what, keeping things private, limits and claims."),
     ]),
+]
+
+# The short version the sign-up page shows above "I agree" (the full terms are
+# one tap away). Each line points at the section it sums up.
+TERMS_SUMMARY = [
+    ("What you get", "Your 3D designer and your Dealer Center, on your own web address. We set it up for you (sections 1 and 2)."),
+    ("What it costs", "No setup fee. You save a card when you sign up; nothing is charged that day except one-time fees for any extra lots. The monthly fee is charged to your card from the day your 3D designer is ready, and it includes your first lot (section 3)."),
+    ("Stopping", "Month to month. Either of us can stop with 30 days' notice by email (section 4)."),
+    ("Your prices", "You check your price list and you are responsible for your prices, your buildings and your rent-to-own contracts. The 3D pictures are not construction drawings (section 6)."),
+    ("Texting customers", "You follow the texting and email laws, with your customers' permission (section 7)."),
+    ("If a payment is missed", "Your account pauses until it is paid. You can still see and download everything (section 8)."),
+    ("Your information", "It belongs to you. We never sell it (section 9)."),
 ]
 
 
 def terms_pdf(path):
-    s = []
-    s.append(Paragraph("Software Terms and Conditions", title))
-    s.append(Paragraph("For the Barnwright 3D designer", subtitle))
-    s.append(GoldRule())
-    s.append(Paragraph(
-        "These terms are the agreement between <b>Barnwright Software</b> (" + DOMAIN + ") and the business named on the "
-        "<b>Barnwright Sign-Up Form</b> (\"you\"). They apply together with your signed Sign-Up Form, which lists what "
-        "you get and any fees. \"Barnwright\", \"we\" and \"us\" mean Barnwright Software, the provider named on "
-        "your Sign-Up Form. If the Sign-Up Form and these terms say different things, the Sign-Up Form wins.", lead))
+    s = [Paragraph(TERMS_TITLE, title), Paragraph(VERSION, subtitle), GoldRule()]
+    for words in TERMS_INTRO:
+        s.append(Paragraph(words, lead))
     s.append(Spacer(1, 4))
     for head, items in TERMS:
         block = [Paragraph(head, h1)]
@@ -358,223 +371,157 @@ def terms_pdf(path):
                 block.append(Paragraph(f"<b>{num}</b>&nbsp;&nbsp;{text}", clause))
         s.append(KeepTogether(block[:2]))
         s.extend(block[2:])
-    s.append(Spacer(1, 10))
-    s.append(GoldRule())
-    s.append(Paragraph("You sign these terms by signing the Barnwright Sign-Up Form. Keep a copy of both.", small))
-    build(path, s, "Software Terms and Conditions", "Barnwright Software Terms and Conditions")
+    s += [Spacer(1, 10), GoldRule()]
+    build(path, s, "Terms and Conditions", TERMS_TITLE)
 
 
-# ================================================================ 2. SIGN-UP FORM
-def signup_pdf(path):
-    FW = W - 2 * MARGIN
-    half = (FW - 12) / 2
-    third = (FW - 24) / 3
-    s = []
-    s.append(Paragraph("Sign-Up Form", title))
-    s.append(Paragraph("The Barnwright 3D designer", subtitle))
-    s.append(GoldRule())
-    s.append(Paragraph("Fill in the boxes on screen (any PDF reader with forms, such as the free Adobe Acrobat Reader) or print it and write in them. "
-                       "Both of us sign at the end. This form and the <b>Barnwright Software Terms and Conditions</b> (" + VERSION + ") make up our agreement.", small))
-    s.append(Spacer(1, 8))
-
-    s.append(section_band("THE PROVIDER: BARNWRIGHT SOFTWARE  ·  " + DOMAIN))
-    s.append(Spacer(1, 6))
-    s.append(row(Field("provider_name", "Legal name", half, value=PROVIDER), Field("provider_email", "Email", half, value=SALES), widths=[half + 12, half]))
-    s.append(row(Field("provider_address", "Mailing address", half), Field("provider_phone", "Phone", half), widths=[half + 12, half]))
-    s.append(row(Field("support_how", "How to reach Barnwright for help", half), Field("support_hours", "Support hours", half), widths=[half + 12, half]))
-
-    s.append(Spacer(1, 4))
-    s.append(section_band("A.  YOUR BUSINESS"))
-    s.append(Spacer(1, 6))
-    s.append(row(Field("business_legal_name", "Legal business name", half), Field("business_dba", "Doing business as (if different)", half), widths=[half + 12, half]))
-    s.append(row(Field("business_address", "Business address", half), Field("business_city_state_zip", "City, state and ZIP", half), widths=[half + 12, half]))
-    s.append(row(Field("owner_name", "Owner's name", third), Field("owner_title", "Title", third), Field("owner_phone", "Phone", third), widths=[third + 12, third + 12, third]))
-    s.append(row(Field("owner_email", "Owner's email (their Dealer Center login)", half), Field("billing_contact", "Billing contact and email", half), widths=[half + 12, half]))
-    s.append(row(Field("web_name", "Your web address (we choose it with you)", half, suffix="." + DOMAIN),
-                 Field("websites", "Your websites that will show your 3D designer", half), widths=[half + 12, half]))
-
-    s.append(Spacer(1, 6))
-    s.append(section_band("B.  WHAT YOU GET"))
-    s.append(Spacer(1, 6))
-    s.append(Paragraph("<b>The Barnwright 3D designer</b>, one product: your 3D designer and your Dealer Center, on your own web address. "
-                       "It works alongside the software you already use (terms section 1).", body))
-    s.append(Spacer(1, 4))
-    s.append(row(Field("lots", "How many lots", third),
-                 Paragraph(f"Your monthly fee includes your first lot. Each lot after the first is <b>${LOT_FEE} one time</b> "
-                           "and adds nothing to the monthly fee (terms section 3).", small),
-                 Check("white_label", "<b>White-label</b> (no \"3D designer by Barnwright\" line)", third), widths=[third + 12, third + 12, third]))
-    s.append(Field("other_items", "Anything else included", FW))
-    s.append(Spacer(1, 4))
-    s.append(row(Paragraph("<b>May Barnwright name your business as a customer?</b>", body), Check("name_yes", "Yes", 60), Check("name_no", "No", 60),
-                 widths=[half + 12, 80, 80]))
-
-    s.append(PageBreak())
-    s.append(section_band("C.  FEES AND PAYMENT"))
-    s.append(Spacer(1, 6))
-    s.append(Paragraph(f"<b>There is no setup fee.</b> The monthly fee starts on your go-live date and includes your first lot. "
-                       f"Each lot after the first is ${LOT_FEE} one time, paid before that lot opens (terms section 3).", body))
-    s.append(Spacer(1, 4))
-    s.append(row(Field("monthly_fee", "Monthly fee ($), from the go-live date", half, value=str(MONTHLY_FEE)),
-                 Paragraph("The same for any number of lots.", small), widths=[half + 12, half]))
-    s.append(row(Field("extra_lots", "Lots after the first", third), Field("lot_fees", f"Lot fees (${LOT_FEE} each, $)", third),
-                 Field("total_due", "Due now: the lot fees ($)", third), widths=[third + 12, third + 12, third]))
-    s.append(Paragraph("<b>Payment method</b>", label))
-    s.append(Spacer(1, 3))
-    s.append(row(Check("pay_card", "Card", third), Check("pay_bank", "Bank payment (ACH)", third), Check("pay_invoice", "Invoice, due in the days below", third), widths=[third + 12, third + 12, third]))
-    s.append(row(Field("invoice_days", "Invoice due in (days)", third), Paragraph("With one lot, nothing is due now: the first payment is the monthly fee on the go-live date.", small),
-                 widths=[third + 12, third * 2 + 12]))
-
-    s.append(Spacer(1, 6))
-    s.append(section_band("D.  PLEASE INITIAL EACH ONE"))
-    s.append(Spacer(1, 8))
-    for name, words in [  # each with a little space after
-        ("init_prices", "I will check my price list. My business is responsible for every price our customers see and every quote we give (section 6)."),
-        ("init_drawings", "The 3D pictures and floor plans are not construction drawings, engineered plans or permit documents (section 6.3)."),
-        ("init_rto", "Rent-to-own figures are estimates. Barnwright is not a lender, and our rent-to-own contracts are our responsibility (section 6.4)."),
-        ("init_texting", "My business is responsible for texting and emailing customers lawfully, with their permission (section 7)."),
-        ("init_readonly", "If a fee isn't paid, or the software can't check in for 7 days, changes stop and our 3D designer links close until it is fixed. We can still look at and download everything (section 9)."),
-    ]:
-        s.append(Initial(name, words, FW))
-        s.append(Spacer(1, 2))
-
-    sig = []
-    sig.append(Spacer(1, 6))
-    sig.append(section_band("SIGNATURES"))
-    sig.append(Spacer(1, 6))
-    sig.append(Paragraph("By signing, both of us agree to this Sign-Up Form and the Barnwright Software Terms and Conditions (" + VERSION + "). "
-                       "The customer confirms they received and read the terms. Electronic signatures count as originals.", body))
-    sig.append(Spacer(1, 8))
-    col = half
-    hw = (col - 10) / 2
-    def party(who, key):
-        return [Paragraph(f"<b>{who}</b>", body), Spacer(1, 2), Field(f"{key}_sign", "Signature", col, sign=True), Spacer(1, 4),
-                Field(f"{key}_print", "Printed name", col),
-                row(Field(f"{key}_title", "Title", hw), Field(f"{key}_date", "Date", hw), widths=[hw + 10, hw])]
-    left, right = party("For the customer", "cust"), party("For Barnwright", "bw")
-    t = Table([[left, right]], colWidths=[col + 12, col], hAlign="LEFT")
-    t.setStyle(TableStyle([("VALIGN", (0, 0), (-1, -1), "TOP"), ("LEFTPADDING", (0, 0), (-1, -1), 0), ("RIGHTPADDING", (0, 0), (-1, -1), 12)]))
-    sig.append(t)
-    sig.append(Spacer(1, 8))
-    sig.append(Paragraph("<b>For Barnwright's records:</b> go-live date ______________  (the monthly fee starts on this date, section 3.2)", small))
-    s.append(KeepTogether(sig))
-    build(path, s, "Sign-Up Form", "Barnwright Sign-Up Form")
+def plain_text(words):
+    """A paragraph's words as plain text: no <b> tags, and &amp;, &nbsp; and
+    the like back to the characters they stand for."""
+    text = html.unescape(re.sub(r"<[^>]+>", "", words)).replace("\u00a0", " ")
+    text = re.sub(r"\s+", " ", text).strip()
+    assert text and not re.search(r"[<>]|&[#A-Za-z0-9]+;", text), words
+    return text
 
 
-# ================================================================ 3. SETUP STEPS
-# ================================================================ 3. NEW CUSTOMER SETUP (for Alan)
-CONTROL_ROOM = "barnwright-control-room.netlify.app"
+def terms_json():
+    """The terms the Control Room's sign-up page shows (it reads
+    docs/legal/terms.json from main on GitHub): plain text, keys always in
+    this order, so the same terms give the same file byte for byte."""
+    sections = [{"heading": plain_text(head),
+                 "items": [{"n": it[0], "text": plain_text(it[1]), "sub": len(it) > 2 and it[2] == "sub"} for it in items]}
+                for head, items in TERMS]
+    # every section a sentence points at ("section 8", "sections 1 and 2", "(3.5)", "under 4.3") is there
+    numbers = {s["heading"].split(".")[0] for s in sections} | {it["n"] for s in sections for it in s["items"]}
+    words = " ".join([plain_text(p) for p in TERMS_INTRO] + [plain_text(t) for _, t in TERMS_SUMMARY]
+                     + [it["text"] for s in sections for it in s["items"]])
+    pointed = re.findall(r"\bsections? (\d+)(?: and (\d+))?|\((\d+\.\d+)\)|\bunder (\d+\.\d+)", words)
+    missing = sorted({n for found in pointed for n in found if n and n not in numbers})
+    assert pointed and not missing, f"the terms point at sections that aren't there: {missing}"
+    return {
+        "title": TERMS_TITLE, "version": TERMS_VERSION, "date": TERMS_DATE,
+        "pdf": "legal/barnwright-terms.pdf",
+        "intro": [plain_text(p) for p in TERMS_INTRO],
+        "summary": [{"title": plain_text(t), "text": plain_text(x)} for t, x in TERMS_SUMMARY],
+        "sections": sections,
+    }
+
+
+def write_json(path, value):
+    """UTF-8, two-space indent, a newline at the end: the same value gives the same bytes."""
+    with open(path, "w", encoding="utf-8", newline="\n") as f:
+        f.write(json.dumps(value, indent=2, ensure_ascii=False) + "\n")
+
+
+# ================================================================ 2. ADDING A NEW CUSTOMER (for Alan)
+# Version 2 (Alan, Oct 7 2026: "lets steam line it as fast as possible ... keep
+# in mind i need to take picture of there building and prices and option and
+# sign up the owner and help him set up on his computer and other lots if he as
+# any. write instructions very easy to understand"). Bold words are the exact
+# button and box names on the screens: the Control Room and the Dealer Center
+# use these same words.
+CONTROL_ROOM = "control." + DOMAIN
 # Alan, Oct 6 2026: "add inbox.barnwrightsoftware.com and 3dsetup.barnwrightsoftware.com
 # to the links and pdf files or any file on how to add clients".
 SALES_INBOX = "inbox." + DOMAIN
 SETUP_3D = "3dsetup." + DOMAIN
-REPO = "alanyoder-04261992/3d-model-demo-stand-alone-"
+
+GUIDE_TITLE = "Adding a new customer"
+GUIDE_SUBTITLE = "From saying hello to their first quote, step by step"
+GUIDE_INTRO = [
+    "You need your phone with your Control Room open (<b>" + CONTROL_ROOM + "</b>) and about an hour at their lot. "
+    "The words in <b>bold</b> are the buttons you tap.",
+    "<b>First time? Practice first.</b> On your Control Room's first page, tap <b>Practice adding a customer</b>. "
+    "Everything works the same, but nothing is real: no texts, no emails, no payments.",
+]
 
 PARTS = [
-    ("Before your first customer", "Once.", [
-        ("Set up " + DOMAIN, [
-            "Add <b>" + DOMAIN + "</b> to the Netlify project for your Barnwright website: <b>Domain management, Add a domain</b> (<b>Buy a new domain</b>, or <b>Add a domain you already own</b>).",
-            "Next to it, tap <b>Options, Set up Netlify DNS</b> and follow the steps. After that, each customer's web address takes one step (step 6), and Netlify makes the address and its https lock by itself.",
+    ("Before your first customer", "Once, about 10 minutes, on a computer.", [
+        ("Give your Control Room a Netlify key", [
+            "In Netlify: your picture at the top right, <b>User settings</b>, <b>Applications</b>, <b>Personal access tokens</b>, <b>New access token</b>. Name it <b>Control Room</b>, choose <b>No expiration</b>, tap <b>Generate token</b> and copy it.",
+            "Open your Control Room's project in Netlify: <b>Project configuration</b>, <b>Environment variables</b>, <b>Add a variable</b>. Key: <b>NETLIFY_API_TOKEN</b>. Paste the token as the value, tick <b>Contains secret values</b>, and save. Then <b>Deploys</b>, <b>Trigger deploy</b>.",
+            "Now <b>Make their Dealer Center</b> is one button. Without the key, your Control Room shows the steps to do by hand instead.",
+        ]),
+        ("Let Stripe save cards", [
+            "STRIPE_PERMISSIONS_PLACEHOLDER",
         ]),
     ]),
-    ("Part 1. The paperwork", "The day they say yes.", [
-        ("Fill in their Sign-Up Form", [
-            "Open the <b>Sign-Up Form</b>. Barnwright Software and " + SALES + " are already typed in the provider box; add your mailing address, phone and support hours once and keep that copy as your template.",
-            "Fill in <b>Section B</b> (how many lots, white-label) and <b>Section C</b>: the lots after the first, the lot fees ($" + str(LOT_FEE) + " each), the monthly fee ($" + str(MONTHLY_FEE) + ", already typed in) and how they pay. One lot means nothing is due before go-live. There is no setup fee. Save it as <b>Sign-Up Form - (their business).pdf</b>.",
-            "Pick their web address with them, for example <b>cedar-ridge-sheds</b>." + DOMAIN + ", and type it in Section A.",
+    ("Part 1. At their lot", "About 30 minutes, on your phone.", [
+        ("Add them", [
+            "In your Control Room, tap <b>New customer</b>.",
+            "Type what you know: at least the owner's <b>phone</b> (to text the link) or <b>email</b>. Their <b>business name</b>, the <b>owner's name</b> and <b>how many lots</b> help too. Tap <b>Save</b>. The owner fills in the rest on the sign-up page, and it fills into your Control Room by itself.",
         ]),
-        ("Send it with the terms and the questions", [
-            "Email them the Sign-Up Form, the <b>Barnwright Terms and Conditions.pdf</b> and the <b>Barnwright Setup Questions.pdf</b> together.",
-            "They type in Section A (their business and the <b>owner's email</b>, which becomes their Dealer Center login), initial Section D, sign with <b>Fill and Sign</b> and email it back. You sign it for Barnwright and send them the finished copy.",
-            "They send back the Setup Questions with their logo, their price sheet and photos of their buildings. You need them for Part 4.",
-            "Save the signed form and their answers in a folder for that company.",
+        ("Send the owner the sign-up link", [
+            "Tap <b>Send sign-up link</b>, then <b>Text it</b> (or <b>Email it</b>). Your phone's messages open with the link already written. Tap Send.",
+            "The owner opens it on their phone, fills in or checks their details and their web address, reads the short version of the terms, ticks <b>I agree</b>, types their name and taps <b>Sign up and save my card</b>. Stripe's page asks for their card. Nothing is charged that day, except their extra lots if they have more than one. It takes about three minutes.",
+            "Your Control Room fills in everything they typed and shows <b>Signed</b> and <b>Card saved</b>, with their name and the time.",
         ]),
-    ]),
-    ("Part 2. The control room", CONTROL_ROOM, [
-        ("Add the customer", [
-            "Sign in to the control room and tap <b>Add customer</b>.",
-            "Type the <b>Business name</b>, <b>Contact person</b>, <b>Email address</b> and <b>Phone</b> from their Sign-Up Form.",
-            "<b>Dealership cap</b> is <b>1</b>, the lot their monthly fee includes (the control room says dealerships; the Dealer Center says lots). It goes up by itself when they pay for more lots. Put <b>0</b> in <b>One-time build fee (USD)</b> (there is no setup fee) and <b>" + str(MONTHLY_FEE) + "</b> in <b>Monthly subscription (USD)</b>.",
-            "Leave <b>Application URL</b> and <b>Netlify site ID</b> empty for now (you get them in Part 3). Save.",
-        ]),
-        ("Collect the lot fees (more than one lot only)", [
-            "One lot: skip this step. Nothing is due.",
-            "More lots: on the customer, tap <b>Collect lot fee</b>, type the lots after the first (each is <b>$" + str(LOT_FEE) + "</b>, one time), copy the payment link and email it to them.",
-            "When Stripe confirms the payment, the control room raises their <b>Dealership cap</b> by that many lots by itself. You can start building before it is paid; their extra lots open once it is. The monthly fee does <b>not</b> start yet.",
+        ("Take the photos", [
+            "On the customer, tap <b>Take photos</b> and pick what you are shooting: <b>Buildings</b>, <b>Price list</b>, <b>Options and colors</b> or <b>Other</b>. Your camera opens. Take as many as you like.",
+            "<b>Buildings</b>: each style they sell, the front and the side, and the inside if they show it.",
+            "<b>Price list</b>: every page, flat, in good light, close enough that every number is easy to read.",
+            "<b>Options and colors</b>: their doors, windows and options with prices, their color cards (siding, trim, roof), and their logo or sign.",
+            "The photos are kept with the customer. Tap one to see it big.",
         ]),
     ]),
-    ("Part 3. Their Dealer Center site", "On netlify.com, about 15 minutes.", [
-        ("Make their site", [
-            "In Netlify: <b>Add new project</b>, <b>Import an existing project</b>, <b>GitHub</b>, then pick <b>" + REPO + "</b>. Keep the build settings it fills in and tap <b>Deploy</b>.",
-            "<b>Project configuration, Change project name</b>: use their web address name, for example <b>cedar-ridge-sheds</b>.",
-            "<b>Domain management, Add a domain, Add a domain you already own</b>: type <b>cedar-ridge-sheds." + DOMAIN + "</b> and confirm. Their Dealer Center is then https://cedar-ridge-sheds." + DOMAIN + "/dealer.",
-            "Copy the <b>Project ID</b> (also called Site ID) from <b>Project configuration, General</b>. In the control room, open the customer and paste it in <b>Netlify site ID</b>, and put https://cedar-ridge-sheds." + DOMAIN + " in <b>Application URL</b>. Save.",
-        ]),
-        ("Turn on sign-in", [
-            "In Netlify: <b>Project configuration, Identity</b>, tap <b>Enable Identity</b>. Leave registration <b>Open</b>: anybody can make a login, but only people their owner adds can see anything.",
-        ]),
-        ("Make their activation key", [
-            "In the control room, on the customer, tap <b>Create activation key</b>. It shows the key <b>once</b>, with the customer ID, the control room address and the public key. Keep the page open for the next step.",
-        ]),
-        ("Put the settings on their site", [
-            "In Netlify: <b>Project configuration, Environment variables, Add a variable</b>. Add each of these:",
-            "<b>OWNER_EMAIL</b>: the owner's email from Section A of their Sign-Up Form.",
-            "<b>CONTROL_ROOM_URL</b>: https://" + CONTROL_ROOM,
-            "<b>CONTROL_ROOM_CUSTOMER_ID</b>: the customer ID the control room showed.",
-            "<b>CONTROL_ROOM_PUBLIC_KEY</b>: the public key, every line of it.",
-            "<b>CONTROL_ROOM_ACTIVATION_KEY</b>: the activation key. Tick <b>Contains secret values</b> and choose the <b>Functions</b> scope only.",
-            "If you want the Dealer Center to email lots about new quotes and send team invites: <b>RESEND_API_KEY</b> and <b>EMAIL_FROM</b>.",
-            "Then <b>Deploys, Trigger deploy, Deploy project</b>, so the settings take effect.",
-        ]),
-        ("Check it", [
-            "Open https://cedar-ridge-sheds." + DOMAIN + "/dealer. The sign-in page shows, black and gold.",
-            "In the control room, the customer's <b>Software connection</b> fills in after the owner first opens the Dealer Center. <b>Run check</b> confirms it.",
+    ("Part 2. Make their Dealer Center", "One button, about 3 minutes.", [
+        ("Make their Dealer Center", [
+            "On the customer, tap <b>Make their Dealer Center</b>. Check their web address name (for example <b>cedar-ridge-sheds</b>) and tap <b>Make it</b>.",
+            "Your Control Room makes their site in Netlify, gives it their web address, turns on sign-in, connects it to your Control Room and starts it. It takes about 3 minutes.",
+            "If it says <b>One more step</b>, tap the link it shows, then <b>Enable Identity</b> in Netlify.",
+            "When their Dealer Center first opens, your Control Room shows <b>Connected</b>.",
         ]),
     ]),
-    ("Part 4. Their owner sets up", "With them on the phone or a screen share, about 30 minutes.", [
-        ("Their first sign-in", [
-            "Send the owner their link: https://(their name)." + DOMAIN + "/dealer. They tap <b>Make your login</b> with the owner's email, confirm it from their email, and sign in.",
-            "<b>Step 1, Your business</b>: their name, business name, phone and email, and the box <b>I have read and agree to the Barnwright Software Terms and Conditions</b>. The Dealer Center records who ticked it and when; it shows in <b>Settings, Help from Barnwright</b>.",
-            "<b>Step 2</b>: a starting price list. <b>Step 3</b>: their first lot.",
+    ("Part 3. At the owner's computer", "About 30 minutes, with the owner.", [
+        ("The owner's login", [
+            "On the owner's computer, open <b>https://(their web address)/dealer</b>, for example https://cedar-ridge-sheds." + DOMAIN + "/dealer.",
+            "They tap <b>Make your login</b>, type the email from their sign-up and a password, then open the email that comes and tap the link in it.",
+            "They sign in. The first setup asks for their business, has them tick <b>I agree</b> to the terms, makes a starting price list and their first lot.",
         ]),
-        ("Their prices, look and lots, from their Setup Questions", [
-            "<b>Price list</b>: turn off the styles they don't sell and type their prices for every size, door, window and option.",
-            "<b>Settings</b>: their logo, colors, the line under the price, rent to own, and what the quote form asks.",
-            "<b>Lots</b>: add their other lots, up to the lots in their plan. <b>Team</b>: add their managers and dealers; each gets a message saying how to sign in.",
-            "If they build differently from the standard (section 6 of their answers), ask Claude to set that up for their business before you open it.",
+        ("Keep it on their computer and their phone", [
+            "<b>Computer</b> (Chrome or Edge): click the <b>Install</b> button at the right end of the address bar, then <b>Install</b>. The Dealer Center gets its own icon on their desktop.",
+            "No Install button? Bookmark the page, or in Chrome use the menu, <b>Cast, save and share</b>, <b>Create shortcut</b>.",
+            "<b>Phone</b>: open the same address, tap <b>Share</b>, then <b>Add to Home Screen</b>.",
+        ]),
+        ("Their prices and options, from your photos", [
+            "<b>Price list</b>: turn off the styles they don't sell and type their price for each size, door, window and option, using your <b>Price list</b> and <b>Options and colors</b> photos.",
+            "<b>Settings</b>: their logo, their colors and the line under the price.",
+        ]),
+        ("Their other lots and their team", [
+            "<b>Lots</b>, <b>Add lot</b>: one for each of their other lots. They can open as many as they have paid for.",
+            "<b>Team</b>, <b>Add person</b>: their managers and dealers. Each one gets a message saying how to make their login.",
         ]),
         ("Open it to customers", [
-            "They open each lot's <b>3D designer link</b> and check the buildings and prices. Then <b>Settings, 3D designer, Open to customers</b>, and save.",
-            "<b>Lots</b>, each lot, <b>Put the designer on your website</b>: add their website address, then <b>Copy website code</b> and send it to whoever runs their website.",
-            "Send a test quote from a lot's designer link. It shows up in <b>Customers</b> as New.",
+            "Open each lot's <b>3D designer link</b> and check the buildings and prices with the owner.",
+            "<b>Settings</b>, <b>3D designer</b>, <b>Open to customers</b>, <b>Save</b>.",
+            "<b>Lots</b>, each lot, <b>Put the designer on your website</b>, <b>Copy website code</b>: send it to whoever runs their website.",
+            "Send a test quote from a lot's 3D designer link. It shows up in <b>Customers</b> as New.",
+            "Give the owner the <b>Welcome Sheet</b> (on your Papers page). It has all of this for them.",
         ]),
     ]),
-    ("Part 5. Go live", "When everything works.", [
+    ("Part 4. Start", "When everything works.", [
         ("Start the monthly fee", [
-            "In the control room, on the customer, tap <b>Start monthly subscription</b>, confirm, and copy the payment link.",
-            "Email it to them with their go-live date: \"Your Barnwright 3D designer is finished and ready to use as of (date). Your monthly fee of $" + str(MONTHLY_FEE) + " starts today. Here is the link to set up the payment.\"",
-            "Write the go-live date at the bottom of their signed Sign-Up Form.",
-        ]),
-        ("Follow up", [
-            "Add a reminder in the control room to call them in two weeks.",
-            "If something isn't working later, ask them to turn on <b>Help from Barnwright</b> in Settings, then use <b>Run check</b> on their customer in the control room.",
+            "In your Control Room, on the customer, tap <b>Start monthly fee</b>. Check the amount and the card, then tap <b>Start and charge the card</b>. Their card is charged that day and on the same day every month after.",
+            "No card saved? Then <b>Start monthly fee</b> gives you a payment link instead: <b>Text it</b> or <b>Email it</b>.",
+            "Add a reminder to call them in two weeks.",
         ]),
     ]),
-    ("Later. Adding a lot", "When they open another lot.", [
+    ("Later. When they open another lot", "", [
         ("Collect the lot fee", [
-            "In the control room, open the customer and tap <b>Collect lot fee</b>. Type how many new lots (each is <b>$" + str(LOT_FEE) + "</b>, one time), then copy the payment link and email it to them.",
-            "When Stripe confirms the payment, the control room raises their <b>Dealership cap</b> by that many lots by itself. The monthly fee stays the same.",
-            "Their Dealer Center picks up the new number within six hours. Their owner then adds the lot under <b>Lots</b>.",
+            "On the customer, tap <b>Get extra lot payment link</b>, choose how many new lots, then <b>Text it</b> or <b>Email it</b>.",
+            "When they have paid, their Dealer Center lets them add the lot within a few hours: <b>Lots</b>, <b>Add lot</b>.",
         ]),
     ]),
 ]
 
+GUIDE_FOOTER = ("Changing the terms later: make a new version, tell every customer at least 30 days before it starts (terms section 19), "
+                "and each owner is asked to agree again the next time they open their Dealer Center.")
+
 
 def steps_pdf(path):
-    s = [Paragraph("Adding a new customer", title),
-         Paragraph("From the day they say yes to the day they go live", subtitle), GoldRule()]
-    s.append(Paragraph("Everything you do for a shed company that signs up for the Barnwright 3D designer, in order: the paperwork, the control room, "
-                       "their Dealer Center site at their own ." + DOMAIN + " address, their owner's setup, the go-live, and adding a lot later. "
-                       "The words in <b>bold</b> are the buttons and boxes you will see.", lead))
+    s = [Paragraph(GUIDE_TITLE, title), Paragraph(GUIDE_SUBTITLE, subtitle), GoldRule()]
+    for words in GUIDE_INTRO:
+        s.append(Paragraph(words, lead))
     s.append(Paragraph("<b>Addresses you use:</b> your <b>Sales Inbox</b> at <b>" + SALES_INBOX + "</b> (your private inbox for "
                        "Barnwright sales messages), and <b>3D Setup</b> at <b>" + SETUP_3D + "</b> (where you set up a new "
                        "client's 3D designer).", body))
@@ -596,19 +543,20 @@ def steps_pdf(path):
             s.append(KeepTogether(([band] if k == 0 else []) + block))   # a part's heading never ends a page alone
     s.append(Spacer(1, 10))
     s.append(GoldRule())
-    s.append(Paragraph("Changing the terms later: make a new version, email every customer at least 30 days before it takes effect (section 19), "
-                       "and their owner is asked to agree again the next time they open the Dealer Center.", small))
-    build(path, s, "Adding a new customer", "Barnwright: adding a new customer")
+    s.append(Paragraph(GUIDE_FOOTER, small))
+    build(path, s, GUIDE_TITLE, "Barnwright: " + GUIDE_TITLE.lower())
 
 
-# ================================================================ 4. SETUP QUESTIONS (for the customer)
+# ================================================================ 3. SETUP QUESTIONS (for the customer)
 # What a new company answers so their 3D designer and Dealer Center can be
 # set up, and their buildings drawn the way they really build them (Alan,
 # Oct 2026: "a list of questions to give to my customers to set up the
 # software to their needs ... their barn and their size so we can build the
-# barn"). The styles, doors, windows, options, colors and the "how we draw it"
-# column come from the designer's own files (library/manufacturers/standard.json
-# and library/construction.json), so the questions stay in step with them.
+# barn"). Since Oct 7 2026 Alan takes photos at their lot instead; this is for
+# a company he can't visit. The styles, doors, windows, options, colors and
+# the "how we draw it" column come from the designer's own files
+# (library/manufacturers/standard.json and library/construction.json), so the
+# questions stay in step with them.
 
 def _json(rel):
     with open(os.path.join(ROOT, rel)) as f:
@@ -906,7 +854,7 @@ def questions_pdf(path):
     build(path, s, "Setup Questions", "Barnwright Setup Questions")
 
 
-# ================================================================ 5. FLYER AND PRICE SHEET
+# ================================================================ 4. FLYER AND PRICE SHEET
 # What Alan hands or emails to a shed company before it signs up (Alan, Oct
 # 2026: "yes" to a flyer and a price sheet). One page each, no page numbers.
 # The picture is the demo company's 3D designer (tools/legal/designer.jpg,
@@ -924,8 +872,10 @@ price_cap = ParagraphStyle("price_cap", fontName="Helvetica", fontSize=8.6, lead
 contact = ParagraphStyle("contact", fontName="Helvetica-Bold", fontSize=11, leading=15, textColor=BLACK, alignment=TA_CENTER)
 
 
-def sheet(path, story, doc_name, pdf_title):
-    """A one-page sales sheet: the black and gold band, the address at the foot, no page numbers."""
+def sheet(path, story, doc_name, pdf_title, foot=("Barnwright Software", SALES, WEB_PAGE)):
+    """A one-page sheet: the black and gold band, three words at the foot
+    (left, middle, right: the sales email and web page unless foot says
+    otherwise), no page numbers."""
     def page(c, doc):
         c.saveState()
         c.setFillColor(BLACK); c.rect(0, H - 0.42 * inch, W, 0.42 * inch, stroke=0, fill=1)
@@ -935,9 +885,9 @@ def sheet(path, story, doc_name, pdf_title):
         c.drawRightString(W - MARGIN, H - 0.27 * inch, DOMAIN)
         c.setStrokeColor(LINE); c.setLineWidth(0.5); c.line(MARGIN, 0.6 * inch, W - MARGIN, 0.6 * inch)
         c.setFont("Helvetica", 8); c.setFillColor(MUTED)
-        c.drawString(MARGIN, 0.42 * inch, "Barnwright Software")
-        c.drawCentredString(W / 2, 0.42 * inch, SALES)
-        c.drawRightString(W - MARGIN, 0.42 * inch, WEB_PAGE)
+        c.drawString(MARGIN, 0.42 * inch, foot[0])
+        c.drawCentredString(W / 2, 0.42 * inch, foot[1])
+        c.drawRightString(W - MARGIN, 0.42 * inch, foot[2])
         c.restoreState()
     doc = BaseDocTemplate(path, pagesize=letter, leftMargin=MARGIN, rightMargin=MARGIN, topMargin=0.7 * inch, bottomMargin=0.8 * inch,
                           title=pdf_title, author="Barnwright", subject=doc_name, creator="Barnwright")
@@ -1022,7 +972,7 @@ def price_pdf(path):
     cell_b = ParagraphStyle("cell_b", parent=cell, fontName="Helvetica-Bold")
     money = ParagraphStyle("money", parent=cell_b, alignment=2)
     rows = [
-        ("Setup", "Your price list, styles, sizes, colors, logo, web address and website code, set up by us from your answers to our Setup Questions.", "$0"),
+        ("Setup", "Your price list, styles, sizes, colors, logo, web address and website code, set up by us from photos of your buildings, price list and options.", "$0"),
         ("Monthly fee", "Your 3D designer and Dealer Center for your first lot, on your own web address, with hosting, updates, fixes and help. Starts on your go-live date.", f"${MONTHLY_FEE} a month"),
         ("Each extra lot", "Its own 3D designer link, its own customers and its own team. Paid once, before the lot opens.", f"${LOT_FEE} one time"),
     ]
@@ -1050,15 +1000,52 @@ def price_pdf(path):
         "Hosting, updates, fixes and help.",
     ])
     s += [Paragraph("How to start", h1)] + [Paragraph(f"<b>{i}.</b>&nbsp; {x}", tick_line) for i, x in enumerate([
-        "Email " + SALES + ". We send you the Sign-Up Form, the terms and the Setup Questions.",
-        "Sign the form and answer the questions. Send your logo, price sheet and photos of your buildings.",
+        "Alan sends you a sign-up link. Two minutes on your phone.",
         "We build your 3D designer and show you your buildings and prices. You check them.",
         "You open it to your customers.",
     ], 1)]
-    s += [Spacer(1, 6), Paragraph("Fees do not include sales tax. Fees are paid by card, bank payment or invoice. "
-                                  "The Barnwright Software Terms and Conditions apply.", small),
+    s += [Spacer(1, 6), Paragraph("Fees do not include sales tax. Fees are charged to the card you save when you sign up, or paid by invoice if we agree. "
+                                  "The " + TERMS_TITLE + " apply.", small),
           Spacer(1, 8), Paragraph("Try it at " + WEB_PAGE + "&nbsp;&nbsp;·&nbsp;&nbsp;" + SALES, contact)]
     sheet(path, s, "Price Sheet", "Barnwright 3D designer pricing")
+
+
+# ================================================================ 5. WELCOME SHEET (for the owner)
+# One page Alan gives the owner when he sets up their computer (Alan, Oct 7
+# 2026: "sign up the owner and help him set up on his computer and other
+# lots"): signing in, their computer and phone, prices, lots, team, their
+# website and help. Big type, black on white with gold marks, so it reads
+# well printed.
+WELCOME_TITLE = "Welcome to your Barnwright 3D designer"
+WELCOME_SUBTITLE = "Everything you need to get started, on one page"
+WELCOME = [
+    ("Your Dealer Center", "Open <b>https://(your web address)/dealer</b> and sign in with your email and password. Your web address: ____________________." + DOMAIN),
+    ("Keep it on your computer", "In Chrome or Edge, click <b>Install</b> at the right end of the address bar. On your phone: <b>Share</b>, <b>Add to Home Screen</b>."),
+    ("Your prices", "<b>Price list</b>: your styles, sizes, doors, windows and options. Change a price and every lot has it at once."),
+    ("Your lots", "<b>Lots</b>, <b>Add lot</b>. Each lot has its own 3D designer link and its own customer list."),
+    ("Your team", "<b>Team</b>, <b>Add person</b>: your managers and dealers. Each one makes their own login with the email you add."),
+    ("Your website", "<b>Lots</b>, pick a lot, <b>Put the designer on your website</b>, <b>Copy website code</b>, and send it to whoever runs your website."),
+    ("New quotes", "Every quote a customer sends shows up in <b>Customers</b> as New, and you get an email."),
+    ("Your card", "Your monthly fee is charged to the card you saved when you signed up. To use a different card, ask Alan for a new card link."),
+    ("Help", "Tap <b>Help</b> in your Dealer Center, or email <b>support@" + DOMAIN + "</b>."),
+]
+
+
+def welcome_pdf(path):
+    FW = W - 2 * MARGIN
+    big_title = ParagraphStyle("w_title", parent=title, fontSize=24, leading=29, spaceAfter=3)
+    big_sub = ParagraphStyle("w_sub", parent=subtitle, fontSize=12.5, leading=16.5, spaceAfter=10)
+    num = ParagraphStyle("w_num", fontName="Helvetica-Bold", fontSize=12.5, leading=16, alignment=TA_CENTER, textColor=BLACK)
+    head = ParagraphStyle("w_head", fontName="Helvetica-Bold", fontSize=13, leading=16, textColor=BLACK)
+    words = ParagraphStyle("w_words", parent=body, fontSize=11.5, leading=15.6, leftIndent=40, spaceAfter=0)
+    s = [Paragraph(WELCOME_TITLE, big_title), Paragraph(WELCOME_SUBTITLE, big_sub), GoldRule()]
+    for i, (topic, text) in enumerate(WELCOME, 1):
+        top = Table([[Paragraph(str(i), num), Paragraph(topic, head)]], colWidths=[28, FW - 28], hAlign="LEFT")
+        top.setStyle(TableStyle([("BACKGROUND", (0, 0), (0, 0), GOLD), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
+                                 ("LEFTPADDING", (0, 0), (0, 0), 0), ("RIGHTPADDING", (0, 0), (0, 0), 0), ("LEFTPADDING", (1, 0), (1, 0), 12),
+                                 ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
+        s.append(KeepTogether([Spacer(1, 11), top, Spacer(1, 5), Paragraph(text, words)]))
+    sheet(path, s, "Welcome Sheet", WELCOME_TITLE, foot=("Barnwright Software", SUPPORT, DOMAIN))
 
 
 # ---------------------------------------------------------------- where the files go
@@ -1069,8 +1056,9 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.abspath(os.path.join(HERE, "..", ".."))
 if len(sys.argv) > 1:
     terms_out = os.path.join(OUT, "Barnwright Terms and Conditions.pdf")
-    form_out = os.path.join(OUT, "Barnwright Sign-Up Form.pdf")
+    terms_json_out = os.path.join(OUT, "terms.json")
     steps_out = os.path.join(OUT, "Barnwright Adding a New Customer.pdf")
+    welcome_out = os.path.join(OUT, "Barnwright Welcome Sheet.pdf")
     questions_out = os.path.join(OUT, "Barnwright Setup Questions.pdf")
     flyer_out = os.path.join(OUT, "Barnwright Flyer.pdf")
     price_out = os.path.join(OUT, "Barnwright Price Sheet.pdf")
@@ -1078,56 +1066,66 @@ else:
     os.makedirs(os.path.join(ROOT, "legal"), exist_ok=True)
     os.makedirs(os.path.join(ROOT, "docs", "legal"), exist_ok=True)
     terms_out = os.path.join(ROOT, "legal", "barnwright-terms.pdf")
-    form_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Sign-Up-Form.pdf")
+    terms_json_out = os.path.join(ROOT, "docs", "legal", "terms.json")
     steps_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Adding-a-New-Customer.pdf")
+    welcome_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Welcome-Sheet.pdf")
     questions_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Setup-Questions.pdf")
     flyer_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Flyer.pdf")
     price_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Price-Sheet.pdf")
 terms_pdf(terms_out)
-signup_pdf(form_out)
+write_json(terms_json_out, terms_json())
 steps_pdf(steps_out)
+welcome_pdf(welcome_out)
 questions_pdf(questions_out)
 flyer_pdf(flyer_out)
 price_pdf(price_out)
-print("written:", terms_out, form_out, steps_out, questions_out, flyer_out, price_out, sep="\n  ")
+print("written:", terms_out, terms_json_out, steps_out, welcome_out, questions_out, flyer_out, price_out, sep="\n  ")
 
-# THE PAPERS LIST the control room's Papers page reads (Alan, Oct 2026: "Add
+# THE PAPERS LIST the Control Room's Papers page reads (Alan, Oct 2026: "Add
 # all these files in control room so I can access them and keep them up to
-# date"). The control room fetches this file and each PDF from this
+# date"). The Control Room fetches this file and each PDF from this
 # repository's main branch whenever Alan opens them, so a change merged here
 # is what he sees there. Paths are repository paths; nothing here is dated, so
-# running the script again changes the list only when a paper changes.
+# running the script again changes the list only when a paper changes. The
+# Control Room refuses the whole list if one paper breaks its rules
+# (control-room netlify/functions/_shared/papers.ts), so they are checked here.
 if len(sys.argv) == 1:
     PAPERS = [
-        ("sign-up-form", "Sign-Up Form", "customer", "Sign-Up Form",
-         "Fill in sections B and C (lots and fees), then send it with the terms and the Setup Questions. They fill in section A, initial and sign; you sign for Barnwright.",
-         "docs/legal/Barnwright-Sign-Up-Form.pdf", "Barnwright Sign-Up Form.pdf"),
-        ("terms", "Terms and Conditions", "customer", "Software Terms and Conditions",
-         "Send it with the Sign-Up Form. Their owner also ticks I agree to it in the Dealer Center's first setup.",
-         "legal/barnwright-terms.pdf", "Barnwright Terms and Conditions.pdf"),
-        ("setup-questions", "Setup Questions", "customer", "Setup Questions",
-         "Send it with the Sign-Up Form. They answer it and send it back with their logo, price sheet and photos, so you can set them up and build their buildings their way.",
-         "docs/legal/Barnwright-Setup-Questions.pdf", "Barnwright Setup Questions.pdf"),
-        ("adding-a-new-customer", "Adding a New Customer", "you", "Adding a new customer",
-         "Your steps from the day they say yes to the day they go live, and adding a lot later.",
+        ("adding-a-new-customer", "Adding a New Customer", "you", GUIDE_TITLE,
+         "Your steps, from saying hello at their lot to their first quote: the sign-up link, the photos, their Dealer Center, their computer, their other lots and the monthly fee.",
          "docs/legal/Barnwright-Adding-a-New-Customer.pdf", "Barnwright Adding a New Customer.pdf"),
+        ("welcome-sheet", "Welcome Sheet", "customer", "Welcome Sheet",
+         "Give it to the owner when you set up their computer: signing in, putting it on their computer and phone, prices, lots, team, their website and help.",
+         "docs/legal/Barnwright-Welcome-Sheet.pdf", "Barnwright Welcome Sheet.pdf"),
+        ("terms", "Terms and Conditions", "customer", "Terms and Conditions",
+         "What every owner agrees to on their sign-up page. They also tick I agree in their Dealer Center the first time they sign in.",
+         "legal/barnwright-terms.pdf", "Barnwright Terms and Conditions.pdf"),
         ("flyer", "Flyer", "customer", "Flyer",
          "Hand it out or email it to shed companies. It shows the 3D designer, what they get and the price, with your email and web page.",
          "docs/legal/Barnwright-Flyer.pdf", "Barnwright Flyer.pdf"),
         ("price-sheet", "Price Sheet", "customer", "Price Sheet",
          "What it costs: no setup fee, $" + str(MONTHLY_FEE) + " a month with the first lot included, $" + str(LOT_FEE) + " one time for each lot after the first, with examples and how to start.",
          "docs/legal/Barnwright-Price-Sheet.pdf", "Barnwright Price Sheet.pdf"),
+        ("setup-questions", "Setup Questions", "customer", "Setup Questions",
+         "Only if you can't visit them: they answer it and send it back with photos of their buildings, price list and options.",
+         "docs/legal/Barnwright-Setup-Questions.pdf", "Barnwright Setup Questions.pdf"),
     ]
     manifest = {
-        "_about": "The papers the control room's Papers page shows. Made by tools/legal/make-legal-pdfs.py; "
-                  "the control room reads this file and each PDF from this repository's main branch.",
+        "_about": "The papers the Control Room's Papers page shows. Made by tools/legal/make-legal-pdfs.py; "
+                  "the Control Room reads this file and each PDF from this repository's main branch.",
         "version": VERSION,
         "papers": [{"id": i, "title": t, "for": who, "about": about, "path": path, "download": dl, "pages": PAGES[doc]}
                    for i, t, who, doc, about, path, dl in PAPERS],
     }
+    words_ok = lambda v, most: isinstance(v, str) and v.strip() == v and 0 < len(v) <= most and not re.search(r"[\x00-\x1f\x7f<>]", v)
+    assert 0 < len(manifest["papers"]) <= 20 and words_ok(manifest["version"], 100)
+    assert len({p["id"] for p in manifest["papers"]}) == len(manifest["papers"]), "two papers have the same id"
     for paper in manifest["papers"]:
+        assert re.fullmatch(r"[a-z0-9][a-z0-9-]{0,39}", paper["id"]), paper["id"]
+        assert re.fullmatch(r"(legal|docs/legal)/[A-Za-z0-9][A-Za-z0-9-]{0,80}\.pdf", paper["path"]), paper["path"]
+        assert re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9 -]{0,80}\.pdf", paper["download"]), paper["download"]
+        assert words_ok(paper["title"], 80) and words_ok(paper["about"], 400), paper["id"]
+        assert paper["for"] in ("customer", "you") and 0 < paper["pages"] < 1000, paper["id"]
         assert os.path.isfile(os.path.join(ROOT, paper["path"])), paper["path"]
-    with open(os.path.join(ROOT, "docs", "legal", "papers.json"), "w") as f:
-        json.dump(manifest, f, indent=2)
-        f.write("\n")
+    write_json(os.path.join(ROOT, "docs", "legal", "papers.json"), manifest)
     print("  " + os.path.join(ROOT, "docs", "legal", "papers.json"))

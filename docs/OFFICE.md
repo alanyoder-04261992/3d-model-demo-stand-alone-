@@ -202,8 +202,8 @@ Responses are `Cache-Control: private, no-store`.
 | Route | Who | Does |
 |---|---|---|
 | `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once |
-| `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright terms.") and the agreement is kept |
-| `POST terms` | owner | `{agree: true}` agrees to the current Barnwright terms (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too |
+| `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright Terms and Conditions.") and the agreement is kept |
+| `POST terms` | owner | `{agree: true}` agrees to the current Barnwright Terms and Conditions (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
 | `PUT price-list` | owner | `{settings, version}` → `{version, cfg, changes}`; 409 when someone saved first |
 | `GET price-list/history` | owner, manager | `{entries: [{version, savedAt, savedBy, changes}]}` |
@@ -303,8 +303,10 @@ keys. Turning help off stops it here at once, even if the control room
 can't be reached. Each turn on, turn off and check is written in a short log
 the owner sees under the switch.
 
-**Settings** (Netlify environment variables, from the control room when
-Alan makes the activation key): `CONTROL_ROOM_URL`,
+**Settings** (Netlify environment variables: the Control Room's **Make
+their Dealer Center** puts them on the business's site by itself, or, by
+hand, Alan pastes them all at once from **Copy settings for Netlify** with
+Netlify's **Import from a .env file**): `CONTROL_ROOM_URL`,
 `CONTROL_ROOM_CUSTOMER_ID`, `CONTROL_ROOM_ACTIVATION_KEY` (secret,
 Functions scope only), `CONTROL_ROOM_PUBLIC_KEY`, and optionally
 `CONTROL_ROOM_SITE_ID` (Netlify's own site ID otherwise). None set: not
@@ -489,10 +491,12 @@ needs both an email and a password. The build decides this (`__DEALER_DEMO__` in
 
 ## Setting up a new company
 
-Alan's whole procedure, from the day a company says yes to the day it goes
-live, with every button named, is
+Alan's whole procedure, from saying hello at their lot to their first quote,
+with every button named, is
 **`docs/legal/Barnwright-Adding-a-New-Customer.pdf`** (made by
-`tools/legal/make-legal-pdfs.py`). In short:
+`tools/legal/make-legal-pdfs.py`). The Control Room's **Practice adding a
+customer** runs it with nothing real: no texts, no emails, no payments. In
+short:
 
 Barnwright sells **one product**, the Barnwright 3D designer (the 3D designer
 and its Dealer Center), which works alongside whatever software the company
@@ -508,79 +512,104 @@ Barnwright sales messages, and **3D Setup** at
 **`3dsetup.barnwrightsoftware.com`**, where a new client's 3D designer is set
 up. Both are on the control room's Links page too.
 
-1. **Paperwork.** Alan fills in Sections B and C of the Sign-Up Form
-   (`docs/legal/Barnwright-Sign-Up-Form.pdf`, fillable, with Barnwright
-   Software, sales@barnwrightsoftware.com and the $250 monthly fee typed in:
-   lots, the lots after the first and their lot fees, which is nothing for
-   one lot) and sends it with the terms (`legal/barnwright-terms.pdf`)
-   and the Setup Questions (`docs/legal/Barnwright-Setup-Questions.pdf`); the
-   company fills in Section A, initials Section D and signs; Alan signs. The
-   company sends back its answers with its logo, price sheet and photos.
-2. **Control room.** **Add customer** with a dealership cap of 1 (the lot
-   the monthly fee includes), 0 for the build fee and 250 for the monthly
-   subscription. More than one lot: **Collect lot fee** for the lots after
-   the first; when Stripe confirms the payment the control room raises the
-   cap by itself. The monthly fee does not start yet.
-3. **Their site.** A new Netlify project from this repository (named for the
-   business) with the domain `<their name>.barnwrightsoftware.com`; its
-   Project ID and that address go on the customer in the control room; **Identity** on (registration open: anyone can make a login, but
-   only people the owner adds can see anything); **Create activation key** in
-   the control room; then the environment variables `OWNER_EMAIL` (the
-   owner's email from the form), `CONTROL_ROOM_URL`,
-   `CONTROL_ROOM_CUSTOMER_ID`, `CONTROL_ROOM_PUBLIC_KEY` and
-   `CONTROL_ROOM_ACTIVATION_KEY` (secret, Functions scope only), optionally
-   `RESEND_API_KEY` and `EMAIL_FROM`; deploy again.
-4. **The owner sets up.** They open `/dealer`, make a login with that email,
-   confirm it, and follow the setup steps: business details with "I agree to
-   the Barnwright terms", a starting price list, the first lot. Then their
-   prices, Settings, lots and team; Open to customers; the website code for
-   each lot; a test quote.
-5. **Go live.** **Start monthly subscription** in the control room, and the
-   go-live email with the date the monthly fee starts.
-6. **Adding a lot later.** **Collect lot fee** on the customer in the
-   control room ($250 for each new lot, one time) and email them the link.
-   When Stripe confirms the payment, the control room raises the
-   **Dealership cap** by that many lots by itself; the Dealer Center picks it
-   up at its next check-in (within six hours).
+**Before the first customer** (once): Alan gives his Control Room a Netlify
+key (a personal access token, saved as `NETLIFY_API_TOKEN` in the Control
+Room's own Netlify project), so it can make a business's site, and lets
+Stripe save cards.
+
+1. **The sign-up link.** At their lot, Alan adds them in the Control Room
+   (**New customer**: at least the owner's phone or email) and texts or
+   emails the owner a sign-up link (**Send sign-up link**). On their phone
+   the owner fills in or checks their details and their web address, reads
+   the short version of the terms (`docs/legal/terms.json`, the same words
+   as `legal/barnwright-terms.pdf`), ticks "I agree", types their name and
+   taps **Sign up and save my card**: Stripe saves their card. Nothing is
+   charged that day except the one-time fees for the lots after the first.
+   What they typed fills into the Control Room by itself, which shows
+   **Signed** and **Card saved**. There is no paper form.
+2. **The photos.** **Take photos** on the customer: each style they sell,
+   every page of their price list, and their doors, windows, options, color
+   cards and logo. A company Alan can't visit answers the Setup Questions
+   instead (below).
+3. **Their site: one button.** **Make their Dealer Center**, then **Make
+   it**: the Control Room makes a Netlify project from this repository named
+   for the business, gives it `<their name>.barnwrightsoftware.com`, turns
+   on **Identity** (registration open: anyone can make a login, but only
+   people the owner adds can see anything), puts the settings on it
+   (`OWNER_EMAIL`, the owner's email from the sign-up, and the
+   `CONTROL_ROOM_*` settings in "The business's Barnwright account") and
+   deploys it. If it says **One more step**, Alan turns on Identity from the
+   link it shows. Only when the Control Room has no Netlify key does it show
+   the steps by hand instead: a new Netlify project from this repository,
+   its name and domain, Identity on, one paste of the settings (**Copy
+   settings for Netlify**, then **Import from a .env file**) and a new
+   deploy. When the Dealer Center first checks in, the Control Room shows
+   **Connected**.
+4. **The owner's computer.** On the owner's computer they open `/dealer`,
+   make a login with the email from their sign-up, confirm it, and follow
+   the setup steps: business details with "I have read and agree to the
+   Barnwright Terms and Conditions", a starting price list, the first lot.
+   They put the Dealer Center on their computer and phone. Then their prices
+   from Alan's photos, Settings, their other lots and their team; Open to
+   customers; the website code for each lot; a test quote. Alan gives the
+   owner the one-page Welcome Sheet
+   (`docs/legal/Barnwright-Welcome-Sheet.pdf`).
+5. **Start.** **Start monthly fee**, then **Start and charge the card**: the
+   card saved at sign-up is charged that day (the start date in the terms)
+   and on the same day every month. With no card saved, **Start monthly
+   fee** gives a payment link to text or email instead.
+6. **Adding a lot later.** **Get extra lot payment link** on the customer
+   ($250 for each new lot, one time), texted or emailed to the owner. When
+   Stripe confirms the payment, the Control Room raises the number of lots
+   in their plan by itself; the Dealer Center picks it up at its next
+   check-in (within six hours), and the owner adds the lot under **Lots**.
 
 ### The Setup Questions
 
-`docs/legal/Barnwright-Setup-Questions.pdf` is what a new company answers so
-it can be set up: the business and its web address, the look, each lot, the
-team, the styles it sells (with its own names), sizes and prices, how it
-builds (each construction number with the standard beside it), doors,
-windows and options with prices and its own extras, colors, how prices show,
-rent to own, and what the quote form asks. Its lists come from
-`library/manufacturers/standard.json` and `library/construction.json` when the
-script runs, so they always match the designer. The `new-company` skill says
-which answer goes where.
+`docs/legal/Barnwright-Setup-Questions.pdf` is for a company Alan can't
+visit: what it answers, with photos of its buildings, price list and
+options, so it can be set up: the business and its web address, the look,
+each lot, the team, the styles it sells (with its own names), sizes and
+prices, how it builds (each construction number with the standard beside
+it), doors, windows and options with prices and its own extras, colors, how
+prices show, rent to own, and what the quote form asks. Its lists come from
+`library/manufacturers/standard.json` and `library/construction.json` when
+the script runs, so they always match the designer. The `new-company` skill
+says which answer goes where.
 
 ### The papers in the control room
 
-The control room's **Papers** page lists the papers (Sign-Up Form, terms,
-Setup Questions, Adding a New Customer, and the one-page Flyer and Price
-Sheet to hand to shed companies) so Alan can open or download
-them anywhere. It reads `docs/legal/papers.json` and each PDF from this
-repository's `main` branch on GitHub every time, so once a change to the papers
-is merged here, the control room has it: there is nothing to copy. The script
-writes `papers.json` too; a new paper added to its list shows up in the
-control room on its own.
+The Control Room's **Papers** page lists the papers (Adding a New Customer,
+the Welcome Sheet for the owner, the terms, the one-page Flyer and Price
+Sheet to hand to shed companies, and the Setup Questions) so Alan can open
+or download them anywhere. It reads `docs/legal/papers.json` and each PDF
+from this repository's `main` branch on GitHub every time, so once a change
+to the papers is merged here, the Control Room has it: there is nothing to
+copy. The script writes `papers.json` too (and checks it against the
+Control Room's rules for the list); a new paper added to its list shows up
+in the Control Room on its own. The sign-up page reads the terms the same
+way, from `docs/legal/terms.json`.
 
 ### The Barnwright terms
 
-A business Barnwright sells to agrees to the **Barnwright Software Terms and
+A business Barnwright sells to agrees to the **Barnwright Terms and
 Conditions** (`legal/barnwright-terms.pdf`, published on every business's
-site by `tools/build-site.mjs`) in two places: the paper Sign-Up Form, and
-the Dealer Center (`server/office/terms.js`). First setup can't make the
-business without the owner's "I agree"; an owner who set up before the box
-existed, or before the terms changed, sees "Please read the Barnwright
-Software Terms and Conditions (version 1.0), then tap I agree." at the top
-of every screen until they do. Each agreement is kept with its version, time
-and the owner's login, and Settings, Help from Barnwright, says who agreed
-and when. Alan's own business, the local copy and the demo are not asked.
-To change the terms: edit `tools/legal/make-legal-pdfs.py`, raise `VERSION`
-there and `TERMS.version` in `server/office/terms.js` together, run the
-script, and email every customer the new terms 30 days ahead.
+site by `tools/build-site.mjs`) in two places: on the sign-up page Alan
+texts the owner (it shows the short version and the full terms from
+`docs/legal/terms.json`; the owner ticks "I agree" and types their name),
+and in the Dealer Center (`server/office/terms.js`). First setup can't make
+the business without the owner ticking "I have read and agree to the
+Barnwright Terms and Conditions"; an owner who set up before the box
+existed, or before the terms changed, sees "Please read the Barnwright Terms
+and Conditions (version 2.0)." and the button "I have read and agree to the
+Barnwright Terms and Conditions" at the top of every screen until they tap
+it. Each agreement is kept with its version, time and the owner's login, and
+Settings, Help from Barnwright, says who agreed and when. Alan's own
+business, the local copy and the demo are not asked. To change the terms:
+edit `tools/legal/make-legal-pdfs.py`, raise `TERMS_VERSION` there and
+`TERMS.version` in `server/office/terms.js` together, run the script (it
+writes the PDF, `docs/legal/terms.json` and the papers list), and tell every
+customer about the new terms 30 days ahead (terms section 19).
 
 ## Files
 
@@ -598,9 +627,10 @@ script, and email every customer the new terms 30 days ahead.
 | `server/office/email.js` | the optional emails |
 | `server/office/netlify.js` | Netlify Blobs, Identity and environment |
 | `server/office/account.js` | the business's Barnwright account: when changes stop, open lots, help from Barnwright |
-| `server/office/terms.js` | the owner's agreement to the Barnwright terms |
-| `legal/barnwright-terms.pdf` | the Barnwright Software Terms and Conditions, published on every business's site |
-| `tools/legal/make-legal-pdfs.py` | makes the terms, the Sign-Up Form, the new customer steps and the Setup Questions (`docs/legal/`), and `docs/legal/papers.json`, the list the control room's Papers page reads |
+| `server/office/terms.js` | the owner's agreement to the Barnwright Terms and Conditions |
+| `legal/barnwright-terms.pdf` | the Barnwright Terms and Conditions, published on every business's site |
+| `docs/legal/terms.json` | the same terms as plain text, with their short version, for the Control Room's sign-up page |
+| `tools/legal/make-legal-pdfs.py` | makes the terms (the PDF and `docs/legal/terms.json`), Adding a New Customer, the Welcome Sheet, the Setup Questions, the Flyer and the Price Sheet (`docs/legal/`), and `docs/legal/papers.json`, the list the Control Room's Papers page reads |
 | `server/office/control-room.js`, `license-core.js` | the control room's own check-in code, copied to plain JavaScript |
 | `netlify/functions/tenant-diagnostics.mts` | Barnwright's support check |
 | `netlify/functions/barnwright-check-in.mts` | checks in with the control room every six hours |
@@ -766,9 +796,9 @@ Ask the owner to add this email."
 **First setup** (`#/setup`, the first owner, once; the menu is hidden
 until it's done) — three steps: your business (your name, business name,
 phone, email, and for a business Barnwright sells to "I have read and agree
-to the Barnwright Software Terms and Conditions (version 1.0) for my
-business", with a link to the PDF; Next says "Tick the box to agree to the
-Barnwright terms." until it is ticked), your starting price list (every standard building at example
+to the Barnwright Terms and Conditions", with a link to the PDF; Next says
+"Tick the box to agree to the Barnwright Terms and Conditions." until it is
+ticked), your starting price list (every standard building at example
 prices, or three buildings to start small — all example prices to change),
 your first lot (showing the link it will get). Then "Your Dealer Center is
 ready." with "Check your prices" and "Add your team". The designer links

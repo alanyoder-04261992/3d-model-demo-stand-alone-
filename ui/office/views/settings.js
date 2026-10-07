@@ -745,11 +745,11 @@ function helpCard() {
       log);
   };
   show(page.help);
-  /* who agreed to the Barnwright terms, and when */
+  /* who agreed to the Barnwright Terms and Conditions, and when */
   const t = page.ctx.app.me?.terms;
   const termsLine = t ? h("p", { class: "help-terms" }, icon("note"), h("span", {},
-    t.agreed ? `${t.agreed.by.name || t.agreed.by.email} agreed to the Barnwright terms (version ${t.agreed.version}) on ${when(t.agreed.agreedAt)}. `
-      : `Nobody has agreed to the Barnwright terms (version ${t.version}) yet. `,
+    t.agreed ? `${t.agreed.by.name || t.agreed.by.email} agreed to the ${t.title} (version ${t.agreed.version}) on ${when(t.agreed.agreedAt)}. `
+      : `Nobody has agreed to the ${t.title} (version ${t.version}) yet. `,
     h("a", { href: t.url, target: "_blank", rel: "noopener" }, "Read the terms"))) : null;
   return cardOf("user", "Help from Barnwright",
     "When something isn't working, let Barnwright check how your Dealer Center is running. They can't see your customers or prices, and they can't change anything. It turns itself off when the time is up.",

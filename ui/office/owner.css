@@ -788,9 +788,12 @@ body.setup-on .main { margin-left: 0; max-width: none; padding-bottom: 60px; }
   display: flex; align-items: flex-start; gap: 9px; font-size: 14.5px; border-radius: 8px; padding: 10px 12px;
 }
 .setup-note { background: var(--warn-bg); color: var(--warn); }
-/* "I agree to the Barnwright terms" (a business Barnwright sells to) */
+/* "I have read and agree to the Barnwright Terms and Conditions" (a business
+   Barnwright sells to): the box in first setup, and the banner's button,
+   whose words wrap on a phone instead of running off the screen */
 .setup-terms { margin-top: 16px; padding: 12px 14px; border: 1px solid var(--gold-line); background: var(--gold-soft); border-radius: var(--radius-small); font-size: 15px; line-height: 1.45; }
 .setup-terms a { font-weight: 600; }
+.banner.terms .btn { white-space: normal; text-align: left; line-height: 1.3; }
 .setup-link { background: var(--bg); color: var(--muted); }
 .setup-note .icon, .setup-link .icon { width: 17px; height: 17px; margin-top: 1px; flex: none; }
 .setup-link strong { color: var(--brand-header); overflow-wrap: anywhere; font-weight: 600; }

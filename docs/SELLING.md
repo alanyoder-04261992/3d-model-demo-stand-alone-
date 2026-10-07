@@ -22,13 +22,39 @@ Your own Sales Inbox, for Barnwright sales messages, is at
 inbox.barnwrightsoftware.com, and a new client's 3D designer is set up at
 3D Setup, 3dsetup.barnwrightsoftware.com.
 
-**Signing up a company that said yes**, step by step (the Sign-Up Form,
-terms and Setup Questions, the control room, their Dealer Center site, their
-owner's setup with "I agree to the Barnwright terms", go-live, adding a lot
-later): `docs/legal/Barnwright-Adding-a-New-Customer.pdf`. The papers
-themselves: `docs/legal/Barnwright-Sign-Up-Form.pdf`,
-`docs/legal/Barnwright-Setup-Questions.pdf` and `legal/barnwright-terms.pdf`
-([OFFICE.md, "Setting up a new company"](OFFICE.md)).
+**Signing up a company that said yes** takes about an hour at their lot,
+step by step in `docs/legal/Barnwright-Adding-a-New-Customer.pdf`
+([OFFICE.md, "Setting up a new company"](OFFICE.md#setting-up-a-new-company)).
+There is no paper form:
+
+1. **The sign-up link.** Alan adds them in his Control Room
+   (control.barnwrightsoftware.com) and texts the owner a sign-up link. On
+   their phone the owner checks their details and web address, reads the
+   short version of the terms, ticks "I agree", types their name and saves
+   a card with Stripe. Nothing is charged that day except the one-time fees
+   for any extra lots, and what they typed fills into the Control Room by
+   itself. The terms are `legal/barnwright-terms.pdf`; the sign-up page reads
+   them from `docs/legal/terms.json`.
+2. **The photos.** Alan photographs their buildings, their price list, and
+   their options and colors with the Control Room's Take photos. A company
+   he can't visit answers `docs/legal/Barnwright-Setup-Questions.pdf` and
+   sends the photos instead.
+3. **Their Dealer Center, one button.** Once Alan has given the Control
+   Room a Netlify key, Make their Dealer Center makes the Netlify site at
+   `<their name>.barnwrightsoftware.com`, turns on sign-in, connects it to
+   the Control Room and starts it. Without the key, the Control Room shows
+   the steps by hand: a Netlify project from this repository, Identity on,
+   and one paste of all its settings.
+4. **The owner's computer.** The owner makes their login at `/dealer`,
+   ticks "I have read and agree to the Barnwright Terms and Conditions" in
+   first setup and puts the Dealer Center on their computer and phone;
+   their prices go in from the photos, then their other lots and their
+   team. Alan gives them the one-page Welcome Sheet
+   (`docs/legal/Barnwright-Welcome-Sheet.pdf`).
+5. **Start.** When everything works, Alan starts the monthly fee with one
+   tap (Start and charge the card): the card saved at sign-up is charged
+   that day, the start date, and on the same day every month. An extra lot
+   later is a payment link from the Control Room.
 
 A business gets its own copy of the site with the **Dealer Center**
 ([how it works and how to set one up](OFFICE.md)). The owner sets the price
