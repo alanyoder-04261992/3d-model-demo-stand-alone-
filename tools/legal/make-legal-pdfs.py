@@ -505,6 +505,7 @@ PARTS = [
         ("Start the monthly fee", [
             "In your Control Room, on the customer, tap <b>Start monthly fee</b>. Check the amount and the card, then tap <b>Start and charge the card</b>. Their card is charged that day and on the same day every month after.",
             "No card saved? Then <b>Start monthly fee</b> gives you a payment link instead: <b>Text it</b> or <b>Email it</b>.",
+            "Card declined? Tap <b>Send card link</b> and text it: they save a different card on their page. Then tap <b>Start and charge the card</b> again.",
             "Add a reminder to call them in two weeks.",
         ]),
     ]),
