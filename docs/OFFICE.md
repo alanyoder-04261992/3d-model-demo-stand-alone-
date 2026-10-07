@@ -504,7 +504,7 @@ short:
 
 Barnwright sells **one product**, the Barnwright 3D designer (the 3D designer
 and its Dealer Center), which works alongside whatever software the company
-already uses. **No setup fee; $250 a month from go-live, with the first lot
+already uses. **No setup fee; $250 a month from the day it's ready, with the first lot
 included**; each lot after the first is **$250 one time** and adds nothing to
 the monthly fee. Every business lives at
 **`<their name>.barnwrightsoftware.com`** (once, before the first customer,

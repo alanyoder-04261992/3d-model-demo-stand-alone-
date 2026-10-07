@@ -61,7 +61,7 @@ TERMS_VERSION = "2.0"               # server/office/terms.js TERMS.version says 
 TERMS_DATE = "October 2026"
 VERSION = f"Version {TERMS_VERSION}, {TERMS_DATE}"   # at the top of every paper, and in papers.json
 DOMAIN = "barnwrightsoftware.com"   # every business's web address is <their name>.barnwrightsoftware.com
-MONTHLY_FEE = 250                   # a month from go-live, for any number of lots; it includes the first lot. No setup fee
+MONTHLY_FEE = 250                   # a month from the start date, for any number of lots; it includes the first lot. No setup fee
 LOT_FEE = 250                       # one time, for each lot after the first
 SALES = "sales@" + DOMAIN
 SUPPORT = "support@" + DOMAIN
@@ -220,7 +220,7 @@ def section_band(text):
 # TERMS_DATE are at the top of this file.
 
 TERMS_INTRO = [
-    "These are the rules for using the Barnwright 3D designer. \"We\" and \"us\" means Barnwright Software. \"You\" means the business that signs up.",
+    "These are the rules for using the Barnwright 3D designer. \"We\" and \"us\" mean Barnwright Software. \"You\" means the business that signs up.",
     "You agree to them by ticking \"I agree\" and typing your name on your sign-up page. That is your signature, the same as signing on paper.",
 ]
 
@@ -443,7 +443,9 @@ PARTS = [
             "Now <b>Make their Dealer Center</b> is one button. Without the key, your Control Room shows the steps to do by hand instead.",
         ]),
         ("Let Stripe save cards", [
-            "STRIPE_PERMISSIONS_PLACEHOLDER",
+            "In Stripe: <b>Developers</b>, <b>API keys</b>, then your Control Room's restricted key, and <b>Edit</b>.",
+            "Set <b>Subscriptions</b> to <b>Write</b>. Set <b>SetupIntents</b>, <b>PaymentIntents</b> and <b>PaymentMethods</b> to <b>Read</b>. Tap <b>Save</b>.",
+            "Now the owner's card is saved when they sign up, and <b>Start and charge the card</b> works. If a permission is missing, your Control Room says which one.",
         ]),
     ]),
     ("Part 1. At their lot", "About 30 minutes, on your phone.", [
@@ -488,12 +490,12 @@ PARTS = [
             "<b>Settings</b>: their logo, their colors and the line under the price.",
         ]),
         ("Their other lots and their team", [
-            "<b>Lots</b>, <b>Add lot</b>: one for each of their other lots. They can open as many as they have paid for.",
-            "<b>Team</b>, <b>Add person</b>: their managers and dealers. Each one gets a message saying how to make their login.",
+            "<b>Lots</b>, <b>Add a lot</b>: one for each of their other lots. They can open as many as they have paid for.",
+            "<b>Team</b>, <b>Add a person</b>: their managers and dealers. Each one gets a message saying how to make their login.",
         ]),
         ("Open it to customers", [
             "Open each lot's <b>3D designer link</b> and check the buildings and prices with the owner.",
-            "<b>Settings</b>, <b>3D designer</b>, <b>Open to customers</b>, <b>Save</b>.",
+            "<b>Settings</b>, <b>3D designer</b>, <b>Open to customers</b>, <b>Save settings</b>.",
             "<b>Lots</b>, each lot, <b>Put the designer on your website</b>, <b>Copy website code</b>: send it to whoever runs their website.",
             "Send a test quote from a lot's 3D designer link. It shows up in <b>Customers</b> as New.",
             "Give the owner the <b>Welcome Sheet</b> (on your Papers page). It has all of this for them.",
@@ -509,7 +511,7 @@ PARTS = [
     ("Later. When they open another lot", "", [
         ("Collect the lot fee", [
             "On the customer, tap <b>Get extra lot payment link</b>, choose how many new lots, then <b>Text it</b> or <b>Email it</b>.",
-            "When they have paid, their Dealer Center lets them add the lot within a few hours: <b>Lots</b>, <b>Add lot</b>.",
+            "When they have paid, their Dealer Center lets them add the lot within a few hours: <b>Lots</b>, <b>Add a lot</b>.",
         ]),
     ]),
 ]
@@ -917,7 +919,7 @@ def hero(head, words, FW):
 
 def price_strip(FW):
     """No setup fee, $250 a month with the first lot included, $250 one time a lot after that."""
-    cells = [("$0", "setup"), (f"${MONTHLY_FEE}", "a month, from go-live"), ("Included", "your first lot"), (f"${LOT_FEE}", "one time, each lot after the first")]
+    cells = [("$0", "setup"), (f"${MONTHLY_FEE}", "a month, from the day it's ready"), ("Included", "your first lot"), (f"${LOT_FEE}", "one time, each lot after the first")]
     w = FW / 4
     t = Table([[[Paragraph(a, price_big), Spacer(1, 2), Paragraph(b, price_cap)] for a, b in cells]], colWidths=[w] * 4, hAlign="LEFT")
     t.setStyle(TableStyle([("BACKGROUND", (0, 0), (-1, -1), GOLD_SOFT), ("LINEABOVE", (0, 0), (-1, 0), 2, GOLD),
@@ -973,7 +975,7 @@ def price_pdf(path):
     money = ParagraphStyle("money", parent=cell_b, alignment=2)
     rows = [
         ("Setup", "Your price list, styles, sizes, colors, logo, web address and website code, set up by us from photos of your buildings, price list and options.", "$0"),
-        ("Monthly fee", "Your 3D designer and Dealer Center for your first lot, on your own web address, with hosting, updates, fixes and help. Starts on your go-live date.", f"${MONTHLY_FEE} a month"),
+        ("Monthly fee", "Your 3D designer and Dealer Center for your first lot, on your own web address, with hosting, updates, fixes and help. Starts the day your 3D designer is ready.", f"${MONTHLY_FEE} a month"),
         ("Each extra lot", "Its own 3D designer link, its own customers and its own team. Paid once, before the lot opens.", f"${LOT_FEE} one time"),
     ]
     t = Table([[Paragraph(a, cell_b), Paragraph(b, cell), Paragraph(c, money)] for a, b, c in rows],
@@ -1022,10 +1024,10 @@ WELCOME = [
     ("Your Dealer Center", "Open <b>https://(your web address)/dealer</b> and sign in with your email and password. Your web address: ____________________." + DOMAIN),
     ("Keep it on your computer", "In Chrome or Edge, click <b>Install</b> at the right end of the address bar. On your phone: <b>Share</b>, <b>Add to Home Screen</b>."),
     ("Your prices", "<b>Price list</b>: your styles, sizes, doors, windows and options. Change a price and every lot has it at once."),
-    ("Your lots", "<b>Lots</b>, <b>Add lot</b>. Each lot has its own 3D designer link and its own customer list."),
-    ("Your team", "<b>Team</b>, <b>Add person</b>: your managers and dealers. Each one makes their own login with the email you add."),
+    ("Your lots", "<b>Lots</b>, <b>Add a lot</b>. Each lot has its own 3D designer link and its own customer list."),
+    ("Your team", "<b>Team</b>, <b>Add a person</b>: your managers and dealers. Each one makes their own login with the email you add."),
     ("Your website", "<b>Lots</b>, pick a lot, <b>Put the designer on your website</b>, <b>Copy website code</b>, and send it to whoever runs your website."),
-    ("New quotes", "Every quote a customer sends shows up in <b>Customers</b> as New, and you get an email."),
+    ("New quotes", "Every quote a customer sends shows up in <b>Customers</b> as New, on the lot it came from."),
     ("Your card", "Your monthly fee is charged to the card you saved when you signed up. To use a different card, ask Alan for a new card link."),
     ("Help", "Tap <b>Help</b> in your Dealer Center, or email <b>support@" + DOMAIN + "</b>."),
 ]
