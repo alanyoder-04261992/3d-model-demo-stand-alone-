@@ -6,7 +6,9 @@
    sample data in test/out/dealer-center-data, opens Chromium, and proves:
 
      1. signing in: the sign-in screen lists the sample team; picking the
-        owner opens Today;
+        owner opens Today; the page's app manifest (dealer.webmanifest)
+        loads with no errors under the Dealer Center's security policy,
+        Chromium can install it, and its icons and the iPhone's load;
      2. every screen opens for the owner, the manager and a dealer, on a
         desktop and on a phone, with no errors, no "didn't load", no stray
         "null" or "undefined" in the words, and no sideways scrolling on
@@ -121,6 +123,23 @@ try {
     await page.waitForSelector(".person-pick", { timeout: 20000 });
     const names = await page.$$eval(".person-pick strong", (els) => els.map((e) => e.textContent));
     ok("the sign-in screen lists the sample team (" + names.join(", ") + ")", names.includes("Chris Walker") && names.includes("Mike Harper"));
+    /* the Dealer Center as an app on a computer or phone (dealer.webmanifest:
+       Install in Chrome and Edge; the iPhone's Add to Home Screen icon),
+       loaded under the Dealer Center's own security policy */
+    const cdp = await page.context().newCDPSession(page);
+    const app = await cdp.send("Page.getAppManifest");
+    const manifest = JSON.parse(app.data || "{}");
+    const iconsLoad = await Promise.all((manifest.icons || []).map((i) => page.request.get(BASE + i.src)
+      .then((r) => r.status() === 200 && r.headers()["content-type"] === "image/png")));
+    const installErrors = (await cdp.send("Page.getInstallabilityErrors")).installabilityErrors;
+    ok(`its app manifest loads with no errors and Chromium can install it ("${manifest.name}", opening ${manifest.start_url}, ${iconsLoad.length} icons)`,
+      app.url === `${BASE}/dealer.webmanifest` && app.errors.length === 0 && manifest.name === "Dealer Center" && manifest.short_name === "Dealer Center"
+      && manifest.start_url === "/dealer" && manifest.scope === "/" && manifest.display === "standalone"
+      && manifest.background_color === "#16130E" && manifest.theme_color === "#16130E"
+      && ["192x192", "512x512"].every((s) => manifest.icons.some((i) => i.sizes === s)) && iconsLoad.every(Boolean) && installErrors.length === 0,
+      JSON.stringify({ url: app.url, errors: app.errors, installErrors, icons: manifest.icons }));
+    const appleIcon = await page.getAttribute('link[rel="apple-touch-icon"]', "href");
+    ok("... and the iPhone's home screen icon loads", !!appleIcon && (await page.request.get(BASE + appleIcon)).status() === 200, appleIcon);
     await page.screenshot({ path: `${OUT}/sign-in.png` });
     await page.click(".person-pick:has-text('Chris Walker')");
     await page.waitForSelector(".sidenav", { timeout: 20000 });

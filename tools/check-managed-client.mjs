@@ -29,9 +29,10 @@
    * the customer build ships the Barnwright terms (legal/barnwright-terms.pdf,
      which the owner's "I agree" links to), and
    * the customer build ships index.html, dealer.html, the Dealer Center's
-     one bundled script and its stylesheets (closed.css too), with the
-     Dealer Center's security policy in _headers, and nothing from server/,
-     tools/, docs, lessons, skills, or any source map. */
+     one bundled script and its stylesheets (closed.css too), its app
+     manifest (dealer.webmanifest) and every icon it and dealer.html name,
+     with the Dealer Center's security policy in _headers, and nothing from
+     server/, tools/, docs, lessons, skills, or any source map. */
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import { existsSync, readdirSync } from "node:fs";
@@ -397,6 +398,13 @@ try {
     for (const file of ["index.html", "embed.js", "dealer.html", "ui/app.js", "ui/views.js", "ui/managed-order.js", "ui/quote.js", "ui/share.js", "ui/office/main.js", ...officeCss, "_headers",
       "legal/barnwright-terms.pdf"]) assert.ok(files.includes(file), "Missing client file " + file);   /* the terms the owner's "I agree" links to (server/office/terms.js) */
     assert.deepEqual(files.filter(file => file.startsWith("legal/")), ["legal/barnwright-terms.pdf"], "legal/ ships the terms only, never Alan's other papers (docs/legal/)");
+    /* the Dealer Center as an app on a computer or phone: the manifest and every icon it and dealer.html name */
+    const manifest = JSON.parse(await readFile(resolve(out, "dealer.webmanifest"), "utf8"));
+    const dealerHtml = await readFile(resolve(out, "dealer.html"), "utf8");
+    assert.match(dealerHtml, /<link rel="manifest" href="\/dealer\.webmanifest">/, "dealer.html links its app manifest");
+    const icons = [...manifest.icons.map(icon => icon.src), ...[...dealerHtml.matchAll(/<link rel="apple-touch-icon" href="([^"]+)">/g)].map(m => m[1])];
+    assert.ok(manifest.icons.length >= 2 && icons.length > manifest.icons.length, "the manifest's icons and the iPhone's");
+    for (const src of icons) assert.ok(files.includes(src.slice(1)), "Missing client file " + src.slice(1));
     const forbidden = files.filter(file => /(^|\/)(\.agents|\.claude|\.office-local|docs|tools|test|server|netlify|node_modules|images)(\/|$)|(^|\/)learning-[^/]+|^ui\/(learn[^/]*|parts-gallery|part-details|setup)\.|(^|\/)portal\.|\.(md|tsx|ts|mts|toml|map)$/i.test(file));
     assert.deepEqual(forbidden, []);
     assert.deepEqual(files.filter(file => file.endsWith(".html")).sort(), ["404.html", "dealer.html", "index.html"]);

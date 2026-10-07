@@ -327,7 +327,7 @@ number), short help answers, and problem alerts. Barnwright drafts each
 reply with Claude, and Alan approves it in his Sales Inbox.
 
 * **The Help screen** (`#/help`): **Help** is in everyone's menu (under
-  **More** on a phone) and at the top of every screen. It has 14 short
+  **More** on a phone) and at the top of every screen. It has 15 short
   answers with a search box (`ui/office/help-answers.js`: every button an
   answer names is checked against the screens), **Ask Barnwright** (a box
   and **Send**, saying what goes with the question), and **Your questions**,
@@ -549,7 +549,10 @@ Stripe save cards.
    make a login with the email from their sign-up, confirm it, and follow
    the setup steps: business details with "I have read and agree to the
    Barnwright Terms and Conditions", a starting price list, the first lot.
-   They put the Dealer Center on their computer and phone. Then their prices
+   They put the Dealer Center on their computer and phone like an app
+   (`dealer.webmanifest`: Chrome and Edge show **Install** at the right end
+   of the address bar; on an iPhone, Share, Add to Home Screen; Help has
+   the steps). Then their prices
    from Alan's photos, Settings, their other lots and their team; Open to
    customers; the website code for each lot; a test quote. Alan gives the
    owner the one-page Welcome Sheet
@@ -637,6 +640,7 @@ customer about the new terms 30 days ahead (terms section 19).
 | `netlify/functions/office-api.mts` | serves `/api/office/*` and `/api/lots/*` |
 | `netlify/functions/lot-designer.mts` | serves `/d/:slug/` with that lot's allowed websites |
 | `dealer.html`, `ui/office/*` | the Dealer Center's screens (`ui/office/views/`), its frame and its look |
+| `dealer.webmanifest`, `ui/office/app-icons/` | the Dealer Center as an app on a computer or phone (Install in Chrome and Edge, Add to Home Screen on a phone): its name, start page and black and gold icons; every build ships them (`tools/build-site.mjs`) |
 | `ui/office/demo.js` | the "try it" demo: the server code running in the page on made-up data (`/dealer?demo`, learning preview and demo site only) |
 | `server/office/sample.js` | the sample business (Sample Storage Barns, 3 lots, 30 customers) for the local Dealer Center, the demo and the checks |
 | `server/office/identity.js` | asks Netlify Identity who is signed in; the autoconfirm guard |

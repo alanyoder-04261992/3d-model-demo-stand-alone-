@@ -15,7 +15,10 @@
        DEALER_DEMO=true) offer it: those builds ship the demo's own file and
        the "leave both boxes empty" sign-in, and the demo site has no lesson
        pages; a client build (npm run build:client) ships neither, even on
-       the learning site.
+       the learning site;
+     * every one of those builds ships the Dealer Center's app manifest
+       (dealer.webmanifest) and every icon it and dealer.html name, so
+       Install and Add to Home Screen work on every business's site.
 
    The browser side (the banner, signing in as anyone, 0 calls to a real
    server) is in tools/check-dealer-center.mjs. */
@@ -152,7 +155,13 @@ for (const b of BUILDS) {
     assert.ok(!main.includes("__DEALER_DEMO__"), "the build answered __DEALER_DEMO__");
     assert.ok(!/MemoryBlobs|website-requests\//.test(main), "the screens never carry the demo's copy of the server");
     assert.deepEqual(LESSONS.filter((path) => existsSync(resolve(out, path))), b.lessons ? LESSONS : [], "the lesson pages");
+    /* every build: the Dealer Center's app manifest and every icon it and dealer.html name */
+    const manifest = JSON.parse(readFileSync(resolve(out, "dealer.webmanifest"), "utf8"));
+    const html = readFileSync(resolve(out, "dealer.html"), "utf8");
+    const icons = [...manifest.icons.map((i) => i.src), ...[...html.matchAll(/<link rel="apple-touch-icon" href="([^"]+)">/g)].map((m) => m[1])];
+    assert.ok(html.includes('<link rel="manifest" href="/dealer.webmanifest">') && manifest.start_url === "/dealer" && icons.length >= 3, "the app manifest and its link");
+    assert.deepEqual(icons.filter((src) => !existsSync(resolve(out, src.slice(1)))), [], "the app icons");
   });
 }
 
-console.log(`PROVED (${passed} checks): the "try it" demo runs the real Dealer Center on the sample business with nothing sent anywhere, a saved price reaches all 3 lots, a dealer sees only their lot, a reload keeps the work and Start over clears it; only the learning preview and the demo site (no lesson pages there) offer it, and a client build leaves out both the demo file and the empty-boxes sign-in.`);
+console.log(`PROVED (${passed} checks): the "try it" demo runs the real Dealer Center on the sample business with nothing sent anywhere, a saved price reaches all 3 lots, a dealer sees only their lot, a reload keeps the work and Start over clears it; only the learning preview and the demo site (no lesson pages there) offer it, and a client build leaves out both the demo file and the empty-boxes sign-in; every build ships the Dealer Center's app manifest and icons.`);

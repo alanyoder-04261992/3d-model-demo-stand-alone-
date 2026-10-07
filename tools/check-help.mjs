@@ -39,7 +39,7 @@
     8. The browser's reporter: at most 3 a page, trimmed, no query strings,
        nothing typed, same site only, quiet when the address answers 404.
     9. Every page's security policy lets a page talk to its own site.
-   10. The short answers: 10 to 14, every button they name is on a screen,
+   10. The short answers: 10 to 15, every button they name is on a screen,
        every link opens a real screen, no slashes; the screen's words match
        the server's. */
 
@@ -547,8 +547,8 @@ ok(`every designer page in _headers (${csps.length})`, csps.length > 3 && csps.e
 
 /* ---- 10 --------------------------------------------------------------------------------- */
 section("10. The short answers");
-ok(`each Dealer Center shows 10 to 14 answers (connected ${answersFor(true).length}, not connected ${answersFor(false).length}), each with its own id`,
-  [answersFor(true), answersFor(false)].every((l) => l.length >= 10 && l.length <= 14) && new Set(ANSWERS.map((a) => a.id)).size === ANSWERS.length
+ok(`each Dealer Center shows 10 to 15 answers (connected ${answersFor(true).length}, not connected ${answersFor(false).length}), each with its own id`,
+  [answersFor(true), answersFor(false)].every((l) => l.length >= 10 && l.length <= 15) && new Set(ANSWERS.map((a) => a.id)).size === ANSWERS.length
   && ANSWERS.every((a) => a.when === undefined || a.when === "connected" || a.when === "not-connected"));
 {
   const ids = (connected) => answersFor(connected).map((a) => a.id);
@@ -557,6 +557,12 @@ ok(`each Dealer Center shows 10 to 14 answers (connected ${answersFor(true).leng
     && ids(false).includes("another-lot-own") && !ids(true).includes("another-lot-own"), JSON.stringify([ids(true), ids(false)]));
   const all = ANSWERS.map((a) => `${a.title} ${a.lines.join(" ")}`).join(" ");
   ok("no answer names a price (a business's lot fee is its own) or says \"below\" (on a computer the box is beside them)", !/\$\s?\d/.test(all) && !/\bbelow\b/i.test(all), (all.match(/.{30}(?:\$\s?\d|below).{20}/i) || [""])[0]);
+  const install = ANSWERS.find((a) => a.id === "install");
+  ok("every Dealer Center says how to put it on a computer or phone: Install in Chrome or Edge, a shortcut without it, Add to Home Screen on an iPhone (Alan, Oct 7 2026)",
+    !!install && !install.when && install.title === "Put the Dealer Center on your computer or phone"
+    && [/Chrome or Edge: click Install at the right end of the address bar/, /Bookmark the page/, /Cast, save and share, then Create shortcut/, /iPhone.*Share, then Add to Home Screen/]
+      .every((re) => re.test(install.lines.join(" "))) && findAnswers("install").some((a) => a.id === "install") && findAnswers("home screen", false).some((a) => a.id === "install"),
+    JSON.stringify(install));
 }
 /* every sentence on the Dealer Center's screens and the customer's designer:
    the text itself, or a template literal with real words in it, where each

@@ -228,7 +228,10 @@ site. One shed business runs everything from it:
   4. **The owner's computer.** The owner makes their login at their
      address with /dealer on the end, and ticks "I have read and agree to
      the Barnwright Terms and Conditions". Put the Dealer Center on their
-     computer and their phone, type their prices from your photos, add
+     computer and their phone like an app: on the computer, click
+     **Install** at the right end of the address bar in Chrome or Edge; on
+     an iPhone, **Share**, then **Add to Home Screen**. It gets its own
+     black and gold icon. Then type their prices from your photos, add
      their other lots and their team, and give them the one-page
      Welcome Sheet (`docs/legal/Barnwright-Welcome-Sheet.pdf`).
   5. **Start.** When everything works, tap **Start monthly fee**, then
@@ -308,8 +311,9 @@ what a connected company sees.
 
 ### Help inside the Dealer Center
 
-Every screen has a **Help** button (and Help is in the menu). It opens 14
-short answers to what people ask most, with a search box, and **Ask
+Every screen has a **Help** button (and Help is in the menu). It opens 15
+short answers to what people ask most (one of them: how to put the Dealer
+Center on a computer or phone), with a search box, and **Ask
 Barnwright**: a box and **Send**, with no phone number anywhere. The
 question lands in your Sales Inbox (inbox.barnwrightsoftware.com) with the
 page they were on and a few technical details, never their customers or

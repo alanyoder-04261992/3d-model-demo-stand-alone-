@@ -14,7 +14,8 @@
    Center connected to Barnwright's control room only (a plan, its notes at
    the top, Help from Barnwright), `when: "not-connected"` for one that
    isn't (Alan's own business, the demo); no `when` fits both. Each Dealer
-   Center shows at most 14. */
+   Center shows at most 15 (the 15th, Oct 7 2026: putting the Dealer Center
+   on a computer or phone). */
 
 export const SUPPORT_EMAIL = "support@barnwrightsoftware.com";
 
@@ -190,6 +191,18 @@ export const ANSWERS = Object.freeze([
     ],
     find: "login log in password reset forgot invite email access",
     link: ["#/team", "Open the team"],
+  },
+  {
+    /* the buttons named here are the browser's own, not the Dealer Center's, so none is in bold */
+    id: "install",
+    title: "Put the Dealer Center on your computer or phone",
+    lines: [
+      "On a computer, in Chrome or Edge: click Install at the right end of the address bar, then Install. The Dealer Center gets its own icon and opens in its own window.",
+      "No Install button? Bookmark the page, or in Chrome open the menu, then Cast, save and share, then Create shortcut.",
+      "On an iPhone: open your Dealer Center in Safari, tap Share, then Add to Home Screen.",
+      "On an Android phone: open it in Chrome, tap the menu, then Add to Home screen or Install app.",
+    ],
+    find: "app install icon desktop shortcut bookmark home screen iphone android chrome edge safari phone computer window",
   },
   {
     id: "look",
