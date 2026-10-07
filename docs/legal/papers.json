@@ -1,42 +1,33 @@
 {
-  "_about": "The papers the control room's Papers page shows. Made by tools/legal/make-legal-pdfs.py; the control room reads this file and each PDF from this repository's main branch.",
-  "version": "Version 1.2, October 2026",
+  "_about": "The papers the Control Room's Papers page shows. Made by tools/legal/make-legal-pdfs.py; the Control Room reads this file and each PDF from this repository's main branch.",
+  "version": "Version 2.0, October 2026",
   "papers": [
     {
-      "id": "sign-up-form",
-      "title": "Sign-Up Form",
+      "id": "adding-a-new-customer",
+      "title": "Adding a New Customer",
+      "for": "you",
+      "about": "Your steps, from saying hello at their lot to their first quote: the sign-up link, the photos, their Dealer Center, their computer, their other lots and the monthly fee.",
+      "path": "docs/legal/Barnwright-Adding-a-New-Customer.pdf",
+      "download": "Barnwright Adding a New Customer.pdf",
+      "pages": 3
+    },
+    {
+      "id": "welcome-sheet",
+      "title": "Welcome Sheet",
       "for": "customer",
-      "about": "Fill in sections B and C (lots and fees), then send it with the terms and the Setup Questions. They fill in section A, initial and sign; you sign for Barnwright.",
-      "path": "docs/legal/Barnwright-Sign-Up-Form.pdf",
-      "download": "Barnwright Sign-Up Form.pdf",
-      "pages": 2
+      "about": "Give it to the owner when you set up their computer: signing in, putting it on their computer and phone, prices, lots, team, their website and help.",
+      "path": "docs/legal/Barnwright-Welcome-Sheet.pdf",
+      "download": "Barnwright Welcome Sheet.pdf",
+      "pages": 1
     },
     {
       "id": "terms",
       "title": "Terms and Conditions",
       "for": "customer",
-      "about": "Send it with the Sign-Up Form. Their owner also ticks I agree to it in the Dealer Center's first setup.",
+      "about": "What every owner agrees to on their sign-up page. They also tick I agree in their Dealer Center the first time they sign in.",
       "path": "legal/barnwright-terms.pdf",
       "download": "Barnwright Terms and Conditions.pdf",
       "pages": 5
-    },
-    {
-      "id": "setup-questions",
-      "title": "Setup Questions",
-      "for": "customer",
-      "about": "Send it with the Sign-Up Form. They answer it and send it back with their logo, price sheet and photos, so you can set them up and build their buildings their way.",
-      "path": "docs/legal/Barnwright-Setup-Questions.pdf",
-      "download": "Barnwright Setup Questions.pdf",
-      "pages": 10
-    },
-    {
-      "id": "adding-a-new-customer",
-      "title": "Adding a New Customer",
-      "for": "you",
-      "about": "Your steps from the day they say yes to the day they go live, and adding a lot later.",
-      "path": "docs/legal/Barnwright-Adding-a-New-Customer.pdf",
-      "download": "Barnwright Adding a New Customer.pdf",
-      "pages": 4
     },
     {
       "id": "flyer",
@@ -55,6 +46,15 @@
       "path": "docs/legal/Barnwright-Price-Sheet.pdf",
       "download": "Barnwright Price Sheet.pdf",
       "pages": 1
+    },
+    {
+      "id": "setup-questions",
+      "title": "Setup Questions",
+      "for": "customer",
+      "about": "Only if you can't visit them: they answer it and send it back with photos of their buildings, price list and options.",
+      "path": "docs/legal/Barnwright-Setup-Questions.pdf",
+      "download": "Barnwright Setup Questions.pdf",
+      "pages": 10
     }
   ]
 }

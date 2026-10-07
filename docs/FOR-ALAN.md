@@ -208,14 +208,41 @@ site. One shed business runs everything from it:
   doubled up). Walk-ins and phone calls are added by hand. Each customer has
   a stage — New, Contacted, Quoted, Sold, Delivered or Lost — a follow-up
   date, notes of every call and text, their quotes, and their orders.
-* **Signing up a new company.** Your step-by-step guide from "yes" to live:
-  `docs/legal/Barnwright-Adding-a-New-Customer.pdf`. You send them the
-  Sign-Up Form, the terms and the questions they answer so you can set them
-  up and build their buildings their way:
-  `docs/legal/Barnwright-Setup-Questions.pdf`. Their owner ticks
-  "I agree to the Barnwright terms" in the Dealer Center's first setup, and
-  Settings shows who agreed and when. It's one product: no setup fee, $250
-  a month from go-live with the first lot included, each lot after the first
+* **Signing up a new company.** About an hour at their lot. Your step by
+  step guide is `docs/legal/Barnwright-Adding-a-New-Customer.pdf`. First
+  time? Tap **Practice adding a customer** in your Control Room: it works
+  the same, but nothing is real. There is no paper form any more:
+  1. **The sign-up link.** In your Control Room tap **New customer**, then
+     **Send sign-up link**, and text it to the owner. On their phone they
+     check their details, read the short version of the terms, tick
+     **I agree**, type their name and save their card. Nothing is charged
+     that day, except their extra lots if they have more than one. What
+     they typed fills into your Control Room by itself.
+  2. **The photos.** Tap **Take photos** and take pictures of their
+     buildings, their price list, and their options and colors.
+  3. **Their Dealer Center: one button.** Tap **Make their Dealer Center**,
+     then **Make it**. This works once you have given your Control Room a
+     Netlify key (the first step in the guide, done once). Without the key,
+     your Control Room shows the steps to do by hand in Netlify, with one
+     paste for all the settings.
+  4. **The owner's computer.** The owner makes their login at their
+     address with /dealer on the end, and ticks "I have read and agree to
+     the Barnwright Terms and Conditions". Put the Dealer Center on their
+     computer and their phone like an app: on the computer, click
+     **Install** at the right end of the address bar in Chrome or Edge; on
+     an iPhone, **Share**, then **Add to Home Screen**. It gets its own
+     black and gold icon. Then type their prices from your photos, add
+     their other lots and their team, and give them the one-page
+     Welcome Sheet (`docs/legal/Barnwright-Welcome-Sheet.pdf`).
+  5. **Start.** When everything works, tap **Start monthly fee**, then
+     **Start and charge the card**. Their card is charged that day and the
+     same day every month.
+
+  Settings in their Dealer Center shows who agreed to the terms and when.
+  A company you can't visit fills in the Setup Questions instead
+  (`docs/legal/Barnwright-Setup-Questions.pdf`) and sends you the photos.
+  It's one product: no setup fee, $250 a month from the day their 3D
+  designer is ready, with the first lot included, each lot after the first
   $250 one time, and every business gets its own
   `name.barnwrightsoftware.com` address. A one-page flyer and price sheet to
   hand to shed companies are with them. All the papers are also on the
@@ -252,13 +279,15 @@ guide](OFFICE.md).
 
 ### Connected to your control room
 
-When you sell the Dealer Center to a shed company, you make the company in
-your control room, take its payment there and make its activation key. The
-key and four other settings go into the company's Netlify settings (the
-list is in [the Dealer Center guide](OFFICE.md)). From then on:
+When you sell the Dealer Center to a shed company, you add the company in
+your Control Room, its owner signs up and saves a card there, and **Make
+their Dealer Center** puts its key and the other settings on the company's
+Netlify site by itself. (By hand, it is one paste; the list is in [the
+Dealer Center guide](OFFICE.md).) From then on:
 
 * **It checks in with your control room** every few hours and gets a pass
-  good for 7 days.
+  good for 7 days. It also tells your control room its own address, so the
+  first time it connects, its Dealer Center address fills in by itself.
 * **If they stop paying, or you switch them off,** changes stop the next time it
   checks in. They can still look at and download all their customers and
   orders, and remove a person from their team. Every screen tells them why.
@@ -283,8 +312,9 @@ what a connected company sees.
 
 ### Help inside the Dealer Center
 
-Every screen has a **Help** button (and Help is in the menu). It opens 14
-short answers to what people ask most, with a search box, and **Ask
+Every screen has a **Help** button (and Help is in the menu). It opens 15
+short answers to what people ask most (one of them: how to put the Dealer
+Center on a computer or phone), with a search box, and **Ask
 Barnwright**: a box and **Send**, with no phone number anywhere. The
 question lands in your Sales Inbox (inbox.barnwrightsoftware.com) with the
 page they were on and a few technical details, never their customers or
@@ -503,11 +533,14 @@ proved; the full list is in [the README](../README.md).
 
 ## Not finished yet
 
-* Each business's Dealer Center needs Netlify Identity turned on and the
-  owner's email set once (the steps are in [the Dealer Center guide](OFFICE.md)).
+* **Make their Dealer Center** in your Control Room needs your Netlify key
+  once (the first step in the Adding a New Customer guide). Until then, your
+  Control Room shows the steps by hand, and they are also in [the Dealer
+  Center guide](OFFICE.md).
   Emailing a lot when a quote arrives needs an email service key; without it
   everything else works the same. Taking payment from a business happens
-  in your control room; turning on live payments there is still to do.
+  in your Control Room, from the card the owner saves at sign-up; turning
+  on live payments there is still to do.
 * The control room's own screens and messages still say "HQ" (for example
   "enable support in HQ Setup"). For a Dealer Center company that switch is
   **Help from Barnwright** in their Settings.

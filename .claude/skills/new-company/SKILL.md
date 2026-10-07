@@ -7,30 +7,33 @@ description: Set up a new shed company (a new customer of the designer) from its
 
 A business that wants its own price list, lots, team and customer list gets
 its own copy of the site with the Dealer Center (`/dealer`). Follow "Setting up
-a new company" in `docs/OFFICE.md` (Alan's full steps, from the signed
-Sign-Up Form through the control room to go-live, are
-`docs/legal/Barnwright-Adding-a-New-Customer.pdf`): a new Netlify site,
-Identity on, the owner's email as `OWNER_EMAIL`, and the control room's
-`CONTROL_ROOM_*` settings for a business Barnwright sells to. The owner ticks
-"I agree" to the Barnwright terms in first setup, then sets everything up on screen:
-the price list (sizes, styles, prices, options, colors), the lots (each gets
+a new company" in `docs/OFFICE.md` (Alan's full steps, from the sign-up link
+he texts the owner to their first quote, are
+`docs/legal/Barnwright-Adding-a-New-Customer.pdf`): the owner signs up and
+saves a card on the Control Room's sign-up page (there is no paper form),
+Alan photographs their buildings, price list and options, and the Control
+Room's Make their Dealer Center makes the Netlify site (Identity on, the
+owner's email as `OWNER_EMAIL`, the `CONTROL_ROOM_*` settings); by hand
+that is one paste of the settings. The owner ticks "I have read and agree to
+the Barnwright Terms and Conditions" in first setup, then sets everything up
+on screen: the price list (sizes, styles, prices, options, colors), the lots (each gets
 `/d/<lot>/` and its own `data-lot` website code) and the team. No settings
 file is written by hand for these businesses; the price list is the same
 validated settings object a `companies/<id>/company.json` file holds. Dealers
 never change prices or options. Barnwright sells one product (the 3D designer
-with its Dealer Center). No setup fee; $250 a month from go-live, the same for
-any number of lots, with the first lot included (the control room customer has
-a dealership cap of 1, 0 for the build fee and 250 for the monthly
-subscription, started with Start monthly subscription at go-live). Each lot
-after the first is $250 one time, charged with the control room's Collect lot
-fee, at sign-up or later, which raises the dealership cap when Stripe confirms
-the payment. The site's
-address is `<their name>.barnwrightsoftware.com`. Alan's Sales Inbox is at
+with its Dealer Center). No setup fee; $250 a month from the start date (the day
+their 3D designer is ready), the same for any number of lots, with the first
+lot included: Alan starts it with Start monthly fee, then Start and charge the
+card, on the card saved at sign-up. Each lot after the first is $250 one time,
+paid at sign-up or later with the Control Room's extra lot payment link, which
+raises the number of lots in their plan when Stripe confirms the payment. The
+site's address is `<their name>.barnwrightsoftware.com`. Alan's Sales Inbox is at
 `inbox.barnwrightsoftware.com` (his private inbox for Barnwright sales
 messages), and a new client's 3D designer is set up at 3D Setup,
 `3dsetup.barnwrightsoftware.com`.
 
-**The company's answers.** A new company fills in
+**The company's answers.** Alan's photos (buildings, price list, options and
+colors) are the usual way in. A company he can't visit fills in
 `docs/legal/Barnwright-Setup-Questions.pdf` (made by
 `tools/legal/make-legal-pdfs.py`; its style, item, option, color and
 construction lists come from `library/`). Where each answer goes:

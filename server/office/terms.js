@@ -3,10 +3,12 @@
 
    The terms are a PDF on every business's own site (legal/, published by
    tools/build-site.mjs; made by tools/legal/make-legal-pdfs.py, which also
-   makes Alan's Sign-Up Form and setup steps). The owner ticks "I agree"
-   in first setup, before the business is made; an owner who set up before
-   the box existed, or before a newer version, is asked at the top of every
-   screen until they agree. Each agreement is kept: which version, when, and
+   writes docs/legal/terms.json for the sign-up page Alan texts to a new
+   owner). The owner agrees on that sign-up page, and again here: "I have
+   read and agree to the Barnwright Terms and Conditions" in first setup,
+   before the business is made; an owner who set up before the box existed,
+   or before a newer version, is asked at the top of every screen until they
+   agree. Each agreement is kept: which version, when, and
    who (their login email and name), in one record:
 
      barnwright-terms   { current: {version, agreedAt, by}, history: [...] }
@@ -20,13 +22,18 @@
 import { fail } from "./http.js";
 import { KEEP } from "./store.js";
 
-/* Change VERSION (and the PDF) when the terms change: every owner is asked again. */
+/* Change the version (with TERMS_VERSION in tools/legal/make-legal-pdfs.py,
+   and run it) when the terms change: every owner is asked again. */
 export const TERMS = Object.freeze({
-  version: "1.2",
+  version: "2.0",
   date: "October 2026",
   url: "/legal/barnwright-terms.pdf",
-  title: "Barnwright Software Terms and Conditions",
+  title: "Barnwright Terms and Conditions",
 });
+
+/* What an owner who hasn't ticked the box is told (first setup on the
+   screen says the same, with the title status() sends). */
+export const AGREE_FIRST = `Tick the box to agree to the ${TERMS.title}.`;
 
 const RECORD = "barnwright-terms";
 const HISTORY = 20;
@@ -64,7 +71,7 @@ export function createTerms({ store, account, now }) {
 
   /* first setup: when the owner is asked, they must have ticked the box */
   function mustHaveAgreed(data) {
-    if (asks() && data?.agreeTerms !== true) fail(422, "Tick the box to agree to the Barnwright terms.");
+    if (asks() && data?.agreeTerms !== true) fail(422, AGREE_FIRST);
   }
 
   return { asks, status, agree, mustHaveAgreed };

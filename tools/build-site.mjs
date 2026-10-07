@@ -2,7 +2,8 @@
    dist-client/). Only what is listed here ships: the 3D designer (index.html,
    embed.js and the browser files ui/app.js reaches), the Dealer Center
    (dealer.html, its screens bundled into one file, ui/office/main.js, and
-   its stylesheets, including ui/office/closed.css for a closed lot's link),
+   its stylesheets, including ui/office/closed.css for a closed lot's link,
+   and its app manifest, dealer.webmanifest, with the icons it names),
    the fonts, the builder's library, the example companies and legal/ (the
    Barnwright terms the Dealer Center's "I agree" box links to,
    server/office/terms.js). Never shipped:
@@ -66,6 +67,19 @@ function moduleGraph(path) {
   }
 }
 copy("index.html"); copy("embed.js"); copy("dealer.html");
+// The Dealer Center as an app on a computer or phone (Install in Chrome and
+// Edge, Add to Home Screen on a phone): its manifest and every icon the
+// manifest and dealer.html name, in every build.
+copy("dealer.webmanifest");
+const appIcons = [
+  ...JSON.parse(readFileSync(resolve(root, "dealer.webmanifest"), "utf8")).icons.map(i => i.src),
+  ...[...readFileSync(resolve(root, "dealer.html"), "utf8").matchAll(/<link rel="apple-touch-icon" href="([^"]+)">/g)].map(m => m[1]),
+];
+if (appIcons.length < 3) throw new Error("dealer.webmanifest and dealer.html name the Dealer Center's icons");
+for (const src of appIcons) {
+  if (!/^\/ui\/office\/app-icons\/[a-z0-9-]+\.png$/.test(src)) throw new Error(`Unexpected Dealer Center icon ${src}`);
+  copy(src.slice(1));
+}
 moduleGraph("ui/app.js");
 // app.js intentionally lazy-loads these by name after the first model render.
 for (const name of ["views", "blueprint", "quote", "share", "embed-mode"]) moduleGraph(`ui/${name}.js`);

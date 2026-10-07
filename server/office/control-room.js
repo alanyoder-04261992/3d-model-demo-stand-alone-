@@ -9,7 +9,11 @@
 
    What it does for a business's Dealer Center:
      refresh()        checks in (POST /api/license with the activation key)
-                      and keeps the signed seven-day lease in durable storage
+                      and keeps the signed seven-day lease in durable storage;
+                      added here: it also sends the site's main address
+                      (siteUrl), so the control room can fill in the
+                      business's Dealer Center address the first time it
+                      connects
      getAccess()      what the lease allows right now (and remembers the
                       latest time seen, so turning a clock back gains nothing)
      peekAccess()     the same answer without writing anything -- added here
@@ -63,9 +67,22 @@ export class LicenseAccessError extends Error {
   }
 }
 
+/* Added in the Dealer Center (not in the SDK): the site's main address as
+   the check-in sends it, or null. Only a plain https origin is sent:
+   "https://name.example" (a trailing slash is dropped), never plain http, a
+   path, a query, a fragment, a user, a password or a port, not even :443. */
+export function plainHttpsOrigin(value) {
+  if (typeof value !== "string" || !value || value.length > 300) return null;
+  let url;
+  try { url = new URL(value); } catch { return null; }
+  if (url.protocol !== "https:" || url.username || url.password || url.port || url.search || url.hash || url.pathname !== "/") return null;
+  return value === url.origin || value === url.origin + "/" ? url.origin : null;
+}
+
 export class TenantLicenseClient {
   /* options: { customerId, siteId, controlRoomUrl, activationKey, publicKeyPem, store,
-                fetch?, now?, timeoutMs?, allowLocalDevelopment? } */
+                fetch?, now?, timeoutMs?, allowLocalDevelopment?,
+                siteUrl? (added here: Netlify's URL, sent only when plainHttpsOrigin takes it) } */
   constructor(options) {
     const url = new URL(options.controlRoomUrl);
     if (url.username || url.password || url.search || url.hash || (url.pathname !== "/" && url.pathname !== "")) throw new Error("controlRoomUrl must be an origin");
@@ -74,6 +91,7 @@ export class TenantLicenseClient {
     if (!options.activationKey || !options.customerId || !options.siteId || !options.publicKeyPem) throw new Error("Missing server license configuration");
     this.options = options;
     this.origin = url.origin;
+    this.siteUrl = plainHttpsOrigin(options.siteUrl);
     this.request = options.fetch ?? fetch;
     this.lastObservedAt = 0;
     this.pendingRefresh = null;
@@ -135,7 +153,8 @@ export class TenantLicenseClient {
       const response = await this.request(`${this.origin}/api/license`, {
         method: "POST", redirect: "error", signal: AbortSignal.timeout(this.options.timeoutMs ?? 10_000),
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.options.activationKey}` },
-        body: JSON.stringify({ customerId: this.options.customerId, siteId: this.options.siteId, ...metadata }),
+        /* siteUrl last, so only the checked address is ever sent (undefined leaves it out) */
+        body: JSON.stringify({ customerId: this.options.customerId, siteId: this.options.siteId, ...metadata, siteUrl: this.siteUrl ?? undefined }),
       });
       if (!response.ok) throw new Error("License renewal unavailable");
       const incoming = parseEnvelope(await response.json());

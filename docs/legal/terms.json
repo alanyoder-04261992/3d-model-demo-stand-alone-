@@ -1,0 +1,507 @@
+{
+  "title": "Barnwright Terms and Conditions",
+  "version": "2.0",
+  "date": "October 2026",
+  "pdf": "legal/barnwright-terms.pdf",
+  "intro": [
+    "These are the rules for using the Barnwright 3D designer. \"We\" and \"us\" mean Barnwright Software. \"You\" means the business that signs up.",
+    "You agree to them by ticking \"I agree\" and typing your name on your sign-up page. That is your signature, the same as signing on paper."
+  ],
+  "summary": [
+    {
+      "title": "What you get",
+      "text": "Your 3D designer and your Dealer Center, on your own web address. We set it up for you (sections 1 and 2)."
+    },
+    {
+      "title": "What it costs",
+      "text": "No setup fee. You save a card when you sign up; nothing is charged that day except one-time fees for any extra lots. The monthly fee is charged to your card from the day your 3D designer is ready, and it includes your first lot (section 3)."
+    },
+    {
+      "title": "Stopping",
+      "text": "Month to month. Either of us can stop with 30 days' notice by email (section 4)."
+    },
+    {
+      "title": "Your prices",
+      "text": "You check your price list and you are responsible for your prices, your buildings and your rent-to-own contracts. The 3D pictures are not construction drawings (section 6)."
+    },
+    {
+      "title": "Texting customers",
+      "text": "You follow the texting and email laws, with your customers' permission (section 7)."
+    },
+    {
+      "title": "If a payment is missed",
+      "text": "Your account pauses until it is paid. You can still see and download everything (section 8)."
+    },
+    {
+      "title": "Your information",
+      "text": "It belongs to you. We never sell it (section 9)."
+    }
+  ],
+  "sections": [
+    {
+      "heading": "1. What you get",
+      "items": [
+        {
+          "n": "1.1",
+          "text": "The Barnwright 3D designer. It includes:",
+          "sub": false
+        },
+        {
+          "n": "(a)",
+          "text": "your 3D designer, where your customers pick a building, its size, colors, doors, windows and options, see the price, and send you a quote request;",
+          "sub": true
+        },
+        {
+          "n": "(b)",
+          "text": "your Dealer Center, where you keep your price list, your lots, your team, and your customers, quotes and orders; and",
+          "sub": true
+        },
+        {
+          "n": "(c)",
+          "text": "your own web address, hosting, updates and fixes, for as long as you use it.",
+          "sub": true
+        },
+        {
+          "n": "1.2",
+          "text": "It works alongside the software you already use, such as your website, your accounting and your rent-to-own company. It does not replace them.",
+          "sub": false
+        },
+        {
+          "n": "1.3",
+          "text": "We may add, change or improve features. We will tell you at least 30 days before we take away a main feature you use.",
+          "sub": false
+        },
+        {
+          "n": "1.4",
+          "text": "Your web address is under barnwrightsoftware.com, such as yourbusiness.barnwrightsoftware.com. We pick it with you. Barnwright owns barnwrightsoftware.com. You can use your address while you use the 3D designer, and you can also show your 3D designer on your own websites.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "2. Getting set up",
+      "items": [
+        {
+          "n": "2.1",
+          "text": "We set up your 3D designer for you at no charge: your buildings, sizes, prices, options, colors, logo, lots and web address.",
+          "sub": false
+        },
+        {
+          "n": "2.2",
+          "text": "To do that we need your price list, photos of your buildings, and your options and colors. Please get them to us correct and on time.",
+          "sub": false
+        },
+        {
+          "n": "2.3",
+          "text": "Before your customers can use it, we show you your buildings and prices. You check them and tell us they are right. You are responsible for the prices you approve.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "3. What it costs",
+      "items": [
+        {
+          "n": "3.1",
+          "text": "There is no setup fee.",
+          "sub": false
+        },
+        {
+          "n": "3.2",
+          "text": "$250 a month, or the amount on your sign-up page. It starts on your start date: the day we tell you, by email or text, that your 3D designer is ready to use. It includes your first lot, and it stays the same no matter how many lots you have.",
+          "sub": false
+        },
+        {
+          "n": "3.3",
+          "text": "Each lot after your first is $250 one time, or the amount on your sign-up page. You pay it before that lot opens. It is not refunded once the lot is open.",
+          "sub": false
+        },
+        {
+          "n": "3.4",
+          "text": "Your card. When you sign up, you save a card with our payment company, Stripe. Nothing is charged that day except the one-time fees for any extra lots. You allow us to charge that card for the monthly fee on your start date and on the same day each month after, and for any extra lots you ask for, until this agreement ends. You can change the card any time: ask us for the link. If we agree, you can pay by invoice instead.",
+          "sub": false
+        },
+        {
+          "n": "3.5",
+          "text": "If a payment doesn't go through, we try again and let you know. If it is still unpaid 15 days after we tell you, we may pause your account (section 8) until it is paid.",
+          "sub": false
+        },
+        {
+          "n": "3.6",
+          "text": "Prices don't include sales tax. You pay any tax that applies.",
+          "sub": false
+        },
+        {
+          "n": "3.7",
+          "text": "We may change our prices. We will tell you at least 30 days before. A change never charges you again for a lot you already paid for. If you don't agree, you can stop before the change starts.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "4. Starting and stopping",
+      "items": [
+        {
+          "n": "4.1",
+          "text": "This agreement starts when you sign up and continues month to month.",
+          "sub": false
+        },
+        {
+          "n": "4.2",
+          "text": "You or we can stop it at any time, for any reason, by telling the other 30 days ahead. An email is enough.",
+          "sub": false
+        },
+        {
+          "n": "4.3",
+          "text": "We can stop it sooner, or pause your account, if a payment is not made (3.5), if you seriously break these terms and don't fix it within 10 days after we tell you, or if the software is used against the law.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "5. Your login and your team",
+      "items": [
+        {
+          "n": "5.1",
+          "text": "Your owner is in charge of your account: who is on your team, which lots each person sees, and your settings. Your owner is responsible for the people they add.",
+          "sub": false
+        },
+        {
+          "n": "5.2",
+          "text": "Everyone uses their own login and keeps it private. Take people off your team when they leave.",
+          "sub": false
+        },
+        {
+          "n": "5.3",
+          "text": "Tell us right away if you think someone got into your account who shouldn't have.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "6. Your prices and your buildings",
+      "items": [
+        {
+          "n": "6.1",
+          "text": "You set your prices, options and the words your customers see. You are responsible for checking your price list and for every price and quote you give.",
+          "sub": false
+        },
+        {
+          "n": "6.2",
+          "text": "A price in the 3D designer is an estimate until you confirm the order with your customer. Say so in the line under the price.",
+          "sub": false
+        },
+        {
+          "n": "6.3",
+          "text": "The 3D pictures and floor plans help your customers choose. They are not construction drawings, engineered plans or permit papers. How your buildings are built and delivered is your responsibility, including building codes, permits, wind ratings and the delivery site.",
+          "sub": false
+        },
+        {
+          "n": "6.4",
+          "text": "Rent-to-own and other monthly payment figures are estimates from the numbers you give us. Barnwright is not a lender or a rent-to-own company. Your rent-to-own and financing contracts, and the laws about them, are your responsibility.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "7. Texting and emailing your customers",
+      "items": [
+        {
+          "n": "7.1",
+          "text": "Your 3D designer can ask your customers if you may text them, in words you choose. You must follow the laws about calling, texting and emailing customers: get their permission, keep a record of it, and stop when they ask, such as a reply of STOP. These laws include the Telephone Consumer Protection Act, the CAN-SPAM Act and the Florida Telephone Solicitation Act.",
+          "sub": false
+        },
+        {
+          "n": "7.2",
+          "text": "You are responsible for what you and your team send to customers, and for any texting or email service you connect.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "8. If your account is paused",
+      "items": [
+        {
+          "n": "8.1",
+          "text": "Your Dealer Center connects to Barnwright to confirm that your account is active and how many lots you have.",
+          "sub": false
+        },
+        {
+          "n": "8.2",
+          "text": "We pause your account if a payment is still unpaid 15 days after we tell you (3.5), if we stop under 4.3, or when this agreement ends. It also pauses by itself if your Dealer Center can't connect to Barnwright for 7 days in a row.",
+          "sub": false
+        },
+        {
+          "n": "8.3",
+          "text": "While it is paused, nothing new can be saved, quote requests can't be sent, and your 3D designer shows your phone number instead of the designer. You and your team can still look at and download everything.",
+          "sub": false
+        },
+        {
+          "n": "8.4",
+          "text": "When the reason is fixed, for example the payment goes through, we turn it back on. Nothing is deleted while it is paused.",
+          "sub": false
+        },
+        {
+          "n": "8.5",
+          "text": "Please don't try to get around the lot limit or the pause.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "9. Your information",
+      "items": [
+        {
+          "n": "9.1",
+          "text": "Your information belongs to you: your customers, quotes, orders, notes, prices, logo and settings.",
+          "sub": false
+        },
+        {
+          "n": "9.2",
+          "text": "We use it only to run, support, back up and improve your 3D designer, and when the law requires. We never sell it, and we never use your customers' details to market to them.",
+          "sub": false
+        },
+        {
+          "n": "9.3",
+          "text": "You can look at and download your information at any time, even while your account is paused.",
+          "sub": false
+        },
+        {
+          "n": "9.4",
+          "text": "You confirm that you have the right to give us the information you put in, including your customers' details.",
+          "sub": false
+        },
+        {
+          "n": "9.5",
+          "text": "When this agreement ends, we keep your information for 30 days so you can download it. After that we may delete it. Backup copies are deleted as the backups are replaced.",
+          "sub": false
+        },
+        {
+          "n": "9.6",
+          "text": "We keep your information safe with reasonable security. If someone gets into it without permission, we tell you right away and help you with what the law requires.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "10. Help from Barnwright",
+      "items": [
+        {
+          "n": "10.1",
+          "text": "We can't look inside your Dealer Center unless your owner turns on Help from Barnwright in Settings, for 1 to 24 hours. It turns off by itself, and your owner can turn it off sooner.",
+          "sub": false
+        },
+        {
+          "n": "10.2",
+          "text": "While it is on, we can run checks on how your Dealer Center is working. Every visit is written in a log your owner can see.",
+          "sub": false
+        },
+        {
+          "n": "10.3",
+          "text": "For help, tap Help in your Dealer Center or email support@barnwrightsoftware.com.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "11. Please don't",
+      "items": [
+        {
+          "n": "(a)",
+          "text": "copy, sell, rent or share the software;",
+          "sub": true
+        },
+        {
+          "n": "(b)",
+          "text": "try to take it apart or copy how it works;",
+          "sub": true
+        },
+        {
+          "n": "(c)",
+          "text": "put your 3D designer on websites you don't own or haven't told us about;",
+          "sub": true
+        },
+        {
+          "n": "(d)",
+          "text": "use it to send spam or to break any law;",
+          "sub": true
+        },
+        {
+          "n": "(e)",
+          "text": "put in anything that harms the software or other users; or",
+          "sub": true
+        },
+        {
+          "n": "(f)",
+          "text": "let anyone outside your team use your account.",
+          "sub": true
+        }
+      ]
+    },
+    {
+      "heading": "12. Who owns what",
+      "items": [
+        {
+          "n": "12.1",
+          "text": "Barnwright owns the software and everything we make for it: the 3D models, drawings, designs and code, and improvements to them, even ones that came from your ideas. You may use it for your business while this agreement is in place.",
+          "sub": false
+        },
+        {
+          "n": "12.2",
+          "text": "You keep owning your business name, your logo and your own content. You let us use them to run your 3D designer, for example to show your logo.",
+          "sub": false
+        },
+        {
+          "n": "12.3",
+          "text": "Your 3D designer shows a small \"3D designer by Barnwright\" line unless we agree otherwise.",
+          "sub": false
+        },
+        {
+          "n": "12.4",
+          "text": "We name your business as a Barnwright customer only if you say yes on your sign-up page.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "13. Other companies",
+      "items": [
+        {
+          "n": "",
+          "text": "The software runs on, and connects to, services from other companies, such as web hosting, email, payments, and any form or texting service you connect. Their own terms apply to those services. We are not responsible for their outages or changes, but we will work to keep your 3D designer running.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "14. Keeping it running",
+      "items": [
+        {
+          "n": "",
+          "text": "We work to keep it running day and night, but we can't promise it will never be down, slow or wrong. We may take it down briefly for updates, outside business hours when we can. We fix problems that are ours to fix as soon as we reasonably can.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "15. Keeping each other's business private",
+      "items": [
+        {
+          "n": "",
+          "text": "We each keep the other's private business information private: for you, your prices, customers and sales; for us, the software and our pricing. We each use it only for this agreement and share it only with people who need it and keep it private too. This doesn't cover information that is already public, or that the law requires us to share.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "16. Our promise",
+      "items": [
+        {
+          "n": "16.1",
+          "text": "We will provide the software with reasonable care and skill.",
+          "sub": false
+        },
+        {
+          "n": "16.2",
+          "text": "Other than that, the software is provided \"as is\". As far as the law allows, we make no other promises, including that it fits a particular purpose, that it will never stop or have errors, or that it will bring you a certain number of sales.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "17. Limits",
+      "items": [
+        {
+          "n": "17.1",
+          "text": "Neither of us is responsible to the other for lost profits, lost sales, lost information that could have been downloaded, or indirect damages, even if warned they could happen.",
+          "sub": false
+        },
+        {
+          "n": "17.2",
+          "text": "Our total responsibility for all claims is limited to what you paid us in the 12 months before the claim.",
+          "sub": false
+        },
+        {
+          "n": "17.3",
+          "text": "These limits don't apply to fraud, intentional wrongdoing, money you owe us, or section 18.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "18. Claims from other people",
+      "items": [
+        {
+          "n": "18.1",
+          "text": "You will defend us against, and pay for, claims by others that come from your prices, your buildings or their delivery, your contracts with your customers, rent-to-own or financing, your calls, texts or emails, or your breaking these terms or the law.",
+          "sub": false
+        },
+        {
+          "n": "18.2",
+          "text": "We will defend you against, and pay for, claims by others that the software, as we provide it, copies their work (copyright) or their invention (patent). If that happens, we may change the software, get the right for you to keep using it, or end this agreement and refund what you paid ahead for time not used.",
+          "sub": false
+        },
+        {
+          "n": "18.3",
+          "text": "The one asking to be covered must tell the other quickly and help with the defense.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "19. Changes to these terms",
+      "items": [
+        {
+          "n": "",
+          "text": "We may update these terms. We will tell you at least 30 days before a change takes effect, and put the new version and date at the top. If you don't agree, you can stop before the change starts. Using the software after that date means you accept the change.",
+          "sub": false
+        }
+      ]
+    },
+    {
+      "heading": "20. The fine print",
+      "items": [
+        {
+          "n": "20.1",
+          "text": "Florida law applies. Any lawsuit about this agreement will be in the state or federal courts for Charlotte County, Florida, and we both agree to those courts.",
+          "sub": false
+        },
+        {
+          "n": "20.2",
+          "text": "These terms and your sign-up page are our whole agreement about the software. They replace anything said or written before. If they say different things, your sign-up page wins.",
+          "sub": false
+        },
+        {
+          "n": "20.3",
+          "text": "We send notices by email, or by mail, to the address on your sign-up page. Please keep your details up to date.",
+          "sub": false
+        },
+        {
+          "n": "20.4",
+          "text": "You can't transfer this agreement to someone else without our written okay, which we won't unreasonably refuse if you sell your business. We can transfer it to a company that takes over our business.",
+          "sub": false
+        },
+        {
+          "n": "20.5",
+          "text": "Neither of us is responsible for delays caused by things we can't control, such as storms, power or internet outages, or outages at other companies.",
+          "sub": false
+        },
+        {
+          "n": "20.6",
+          "text": "If part of these terms can't be enforced, the rest still applies. Not enforcing a part is not giving it up.",
+          "sub": false
+        },
+        {
+          "n": "20.7",
+          "text": "Ticking \"I agree\" and typing your name on your sign-up page is your signature, the same as signing on paper.",
+          "sub": false
+        },
+        {
+          "n": "20.8",
+          "text": "Parts that should continue after this agreement ends keep applying, such as money owed, your information, who owns what, keeping things private, limits and claims.",
+          "sub": false
+        }
+      ]
+    }
+  ]
+}

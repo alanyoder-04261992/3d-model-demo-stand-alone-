@@ -15,7 +15,8 @@
    (tools/lib/fake-control-room.mjs) with a clock this check moves. Last,
    the help pass the Help screen asks for (helpPass): what is sent, and
    that only a well-formed answer is taken (what Help does with the pass
-   is tools/check-help.mjs). */
+   is tools/check-help.mjs); and the site's address each check-in sends
+   (siteUrl): only a plain https address, never anything else. */
 
 import { readFileSync } from "node:fs";
 import { resolve as resolvePath, dirname } from "node:path";
@@ -23,7 +24,7 @@ import { fileURLToPath } from "node:url";
 import { createOffice } from "../server/office/index.js";
 import { MemoryBlobs } from "../server/office/store.js";
 import { closedPage } from "../server/office/pages.js";
-import { TenantLicenseClient, createLeaseStore, verifyLease, misconfiguredLicense, LEASE_DURATION_MS } from "../server/office/control-room.js";
+import { TenantLicenseClient, createLeaseStore, verifyLease, misconfiguredLicense, plainHttpsOrigin, LEASE_DURATION_MS } from "../server/office/control-room.js";
 import { parseLease } from "../server/office/license-core.js";
 import { TERMS } from "../server/office/terms.js";
 import { resolve as resolveCatalogue } from "../model/company.js";
@@ -110,9 +111,20 @@ room.down = false;
 m = await me();
 ok("opening the Dealer Center checks in with the control room", room.calls.includes("/api/license") && m.account?.canWrite === true && m.account.reason === "active", JSON.stringify(m.account));
 ok("... and reports this copy and its open lots", room.business.appVersion === "dealer-center check" && room.business.dealerCount === 0);
-ok("the owner is asked to agree to the Barnwright terms, with a link to read them", m.terms?.version === TERMS.version && m.terms.url === "/legal/barnwright-terms.pdf" && m.terms.agreed === null, JSON.stringify(m.terms));
+ok("the owner is asked to agree to the Barnwright Terms and Conditions (version 2.0, October 2026), with a link to read them",
+  m.terms?.version === "2.0" && m.terms.version === TERMS.version && m.terms.title === "Barnwright Terms and Conditions" && m.terms.date === "October 2026"
+  && m.terms.url === "/legal/barnwright-terms.pdf" && m.terms.agreed === null, JSON.stringify(m.terms));
+{
+  /* the version asked for is the one on the papers: the PDF the link opens and the
+     sign-up page's terms (docs/legal/terms.json), both made by tools/legal/make-legal-pdfs.py */
+  const paper = J("docs/legal/terms.json");
+  const pdf = readFileSync(resolvePath(ROOT, "legal/barnwright-terms.pdf"), "latin1");
+  ok("... the same title, version and date as the sign-up page's terms and the PDF the link opens",
+    paper.title === TERMS.title && paper.version === TERMS.version && paper.date === TERMS.date && paper.pdf === TERMS.url.slice(1)
+    && pdf.includes(`/Title (${TERMS.title})`), JSON.stringify({ title: paper.title, version: paper.version, date: paper.date, pdf: paper.pdf }));
+}
 r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small" });
-ok("first setup without ticking \"I agree\" is refused in plain words, and no business is made", r.status === 422 && r.data.error === "Tick the box to agree to the Barnwright terms." && !(await office.parts.store.get("price-list")), JSON.stringify(r));
+ok("first setup without ticking \"I agree\" is refused in plain words, and no business is made", r.status === 422 && r.data.error === "Tick the box to agree to the Barnwright Terms and Conditions." && !(await office.parts.store.get("price-list")), JSON.stringify(r));
 r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small", agreeTerms: true });
 ok("first setup works", r.status === 201, JSON.stringify(r.data));
 m = await me();
@@ -125,7 +137,7 @@ ok(`the agreement is kept: version ${TERMS.version}, when, and who (the owner's 
   m = await me();
   ok("after the terms change, the owner is asked again", m.terms.agreed === null);
   r = await call("POST", "/api/office/terms", { agree: false });
-  ok("... not agreeing is refused in plain words", r.status === 422 && /Tick the box/.test(r.data.error));
+  ok("... not agreeing is refused in plain words", r.status === 422 && r.data.error === "Tick the box to agree to the Barnwright Terms and Conditions.", JSON.stringify(r));
   r = await call("POST", "/api/office/terms", { agree: true });
   const doc = await office.parts.store.get("barnwright-terms");
   ok("... \"I agree\" saves the new version and keeps the old one", r.status === 200 && r.data.terms.agreed?.version === TERMS.version && doc.history.length === 2 && doc.history[1].version === "0.9", JSON.stringify(doc));
@@ -180,7 +192,7 @@ r = await call("POST", "/api/office/team", { email: USERS.mike.email, name: "Mik
 ok("adding a person works", r.status === 201 || r.status === 200, JSON.stringify(r));
 await me("mike");
 r = await call("POST", "/api/office/terms", { agree: true }, { as: "mike" });
-ok("a dealer can't agree to the Barnwright terms for the business", r.status === 403, JSON.stringify(r));
+ok("a dealer can't agree to the Barnwright Terms and Conditions for the business", r.status === 403 && r.data.error === "Only the owner can agree to the Barnwright Terms and Conditions.", JSON.stringify(r));
 
 section("6. Switched off by Barnwright: read-only at the next check-in");
 room.business.status = "deactivated";
@@ -359,6 +371,49 @@ section("11. The help pass (the Help screen asks the control room for one)");
   ok("... and one that doesn't answer in time", await refused(slow.helpPass("thread")));
   clearTimeout(awake);
   ok("with some control room settings missing, there is no help pass", await refused(misconfiguredLicense().helpPass("question", "Hi")));
+}
+
+section("12. The check-in tells the control room this site's address (siteUrl, from Netlify's URL)");
+{
+  /* the control room fills in the business's Dealer Center address from it the first time the site connects */
+  const sent = [];
+  const spy = async (url, init = {}) => { sent.push({ path: new URL(url).pathname, body: JSON.parse(init.body || "{}") }); return room.fetch(url, init); };
+  const checkIn = async (options, metadata = { appVersion: "dealer-center check", dealerCount: 1 }) => {
+    const client = new TenantLicenseClient({
+      controlRoomUrl: room.origin, customerId: room.business.id, siteId: room.business.siteId,
+      activationKey: room.business.key, publicKeyPem: room.publicKeyPem,
+      store: createLeaseStore(room.business.id, room.business.siteId, new MemoryBlobs()), fetch: spy, now: () => clock.t, ...options,
+    });
+    const before = sent.length;
+    const { refreshed } = await client.refresh(metadata);
+    return { refreshed, body: sent.slice(before).find((c) => c.path === "/api/license")?.body };
+  };
+  room.down = false;
+  room.business.status = "active";
+  const ADDRESS = "https://cedar-ridge-sheds.barnwrightsoftware.com";
+  let c = await checkIn({ siteUrl: ADDRESS });
+  ok("a check-in sends the site's plain https address as siteUrl, with the business, the site and the details it always sent",
+    c.refreshed && JSON.stringify(c.body) === JSON.stringify({ customerId: room.business.id, siteId: room.business.siteId, appVersion: "dealer-center check", dealerCount: 1, siteUrl: ADDRESS }),
+    JSON.stringify(c));
+  c = await checkIn({ siteUrl: "https://cedar-ridge-sheds.netlify.app/" });
+  ok("... the address alone: a trailing slash is dropped", c.body?.siteUrl === "https://cedar-ridge-sheds.netlify.app", JSON.stringify(c.body));
+  const never = ["http://cedar-ridge-sheds.barnwrightsoftware.com", `${ADDRESS}/dealer`, `${ADDRESS}/dealer/`, "https://alan@cedar.example", "https://alan:secret@cedar.example",
+    "https://cedar.example:8443", "https://cedar.example:443", `${ADDRESS}?ref=1`, `${ADDRESS}?`, `${ADDRESS}#top`, "HTTPS://CEDAR.EXAMPLE", "cedar.example", "//cedar.example",
+    "ftp://cedar.example", "javascript:alert(1)", "https://", "", " ", `https://${"a".repeat(300)}.example`, 42, null, { href: ADDRESS }];
+  const sentAnyway = [];
+  for (const siteUrl of never) {
+    c = await checkIn({ siteUrl });
+    if (!c.refreshed || !c.body || "siteUrl" in c.body) sentAnyway.push(JSON.stringify(siteUrl).slice(0, 60));
+  }
+  ok(`... anything else is never sent, and the check-in still works: plain http, a path, a user or password, a port (even 443), a query, a fragment, capitals, no address at all (${never.length} tried)`,
+    sentAnyway.length === 0, sentAnyway.join(", "));
+  c = await checkIn({});
+  ok("... a site without the setting checks in as before, with no siteUrl", c.refreshed && !("siteUrl" in c.body) && c.body.customerId === room.business.id, JSON.stringify(c.body));
+  c = await checkIn({}, { appVersion: "dealer-center check", siteUrl: "http://somewhere.else" });
+  const c2 = await checkIn({ siteUrl: ADDRESS }, { appVersion: "dealer-center check", siteUrl: "https://somewhere.else" });
+  ok("... and the check-in's other details can never set siteUrl themselves", !("siteUrl" in c.body) && c2.body.siteUrl === ADDRESS, JSON.stringify([c.body, c2.body]));
+  ok("the address check on its own: only https://name.example (a trailing slash dropped)", plainHttpsOrigin(ADDRESS) === ADDRESS && plainHttpsOrigin(ADDRESS + "/") === ADDRESS
+    && [`${ADDRESS}/x`, "http://a.example", "https://a.example:443", "https://u@a.example"].every((v) => plainHttpsOrigin(v) === null));
 }
 
 console.log("");

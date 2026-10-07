@@ -196,18 +196,19 @@ function accountBanner() {
   return null;
 }
 
-/* The owner of a business Barnwright sells to agrees to the Barnwright terms:
-   asked here when they set up before the box existed, or the terms changed
-   (server/office/terms.js). Nobody else is asked. */
+/* The owner of a business Barnwright sells to agrees to the Barnwright Terms
+   and Conditions: asked here when they set up before the box existed, or the
+   terms changed (server/office/terms.js). The button says what they agree
+   to, the same words as first setup. Nobody else is asked. */
 function termsBanner() {
   const t = app.me?.terms;
   if (!t || t.agreed || !app.isOwner || !app.business) return null;
-  const btn = button("I agree", async () => {
+  const btn = button(`I have read and agree to the ${t.title}`, async () => {
     btn.disabled = true;
     try {
       await post("terms", { agree: true });
       await app.loadMe();
-      toast("Thanks. Your agreement to the Barnwright terms is saved.");
+      toast(`Thanks. Your agreement to the ${t.title} is saved.`);
       render();
     } catch (e) {
       btn.disabled = false;
@@ -216,7 +217,7 @@ function termsBanner() {
   }, { kind: "primary", small: true });
   return h("div", { class: "banner info terms" }, icon("note"),
     h("span", {}, "Please read the ", h("a", { href: t.url, target: "_blank", rel: "noopener" }, t.title),
-      ` (version ${t.version}), then tap I agree.`),
+      ` (version ${t.version}).`),
     btn);
 }
 
