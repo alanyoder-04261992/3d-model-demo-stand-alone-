@@ -533,9 +533,10 @@ proved; the full list is in [the README](../README.md).
 
 ## Not finished yet
 
-* Each business's Dealer Center is made by **Make their Dealer Center** in
-  your Control Room once you have given it a Netlify key; without the key,
-  the steps by hand are in [the Dealer Center guide](OFFICE.md).
+* **Make their Dealer Center** in your Control Room needs your Netlify key
+  once (the first step in the Adding a New Customer guide). Until then, your
+  Control Room shows the steps by hand, and they are also in [the Dealer
+  Center guide](OFFICE.md).
   Emailing a lot when a quote arrives needs an email service key; without it
   everything else works the same. Taking payment from a business happens
   in your Control Room, from the card the owner saves at sign-up; turning
