@@ -438,9 +438,9 @@ GUIDE_INTRO = [
 PARTS = [
     ("Before your first customer", "Once, about 10 minutes, on a computer.", [
         ("Give your Control Room a Netlify key", [
-            "In Netlify: your picture at the top right, <b>User settings</b>, <b>Applications</b>, <b>Personal access tokens</b>, <b>New access token</b>. Name it <b>Control Room</b>, choose <b>No expiration</b>, tap <b>Generate token</b> and copy it.",
+            "In Netlify: your picture at the top right, <b>User settings</b>, <b>Applications</b>, <b>Personal access tokens</b>, <b>New access token</b>. Name it <b>Control Room</b>, pick the longest <b>Expiration</b> it offers, tap <b>Generate token</b> and copy it.",
             "Open your Control Room's project in Netlify: <b>Project configuration</b>, <b>Environment variables</b>, <b>Add a variable</b>. Key: <b>NETLIFY_API_TOKEN</b>. Paste the token as the value, tick <b>Contains secret values</b>, and save. Then <b>Deploys</b>, <b>Trigger deploy</b>.",
-            "Now <b>Make their Dealer Center</b> is one button. Without the key, your Control Room shows the steps to do by hand instead.",
+            "Now <b>Make their Dealer Center</b> is one button. Without the key, your Control Room shows the steps to do by hand instead. When the key runs out, your Control Room tells you: make a new one the same way.",
         ]),
         ("Let Stripe save cards", [
             "In Stripe: <b>Developers</b>, <b>API keys</b>, then your Control Room's restricted key, and <b>Edit</b>.",
