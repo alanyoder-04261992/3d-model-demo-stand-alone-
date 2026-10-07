@@ -17,7 +17,8 @@
 
    A business that buys the Dealer Center from Barnwright is connected to
    Barnwright's control room (account.js says what that changes). The
-   control room shows these when Alan makes the business's activation key:
+   control room's Make their Dealer Center puts these on the site (by hand,
+   Alan pastes them all from its Copy settings for Netlify):
      CONTROL_ROOM_URL             https://barnwright-control-room.netlify.app
      CONTROL_ROOM_CUSTOMER_ID     the business in the control room
      CONTROL_ROOM_ACTIVATION_KEY  secret: Functions scope only, never in a
@@ -27,6 +28,9 @@
                                   (Netlify's own is used when left out)
    None of them set: not connected, nothing is limited (Alan's own site).
    Some but not all: nothing can be changed until they are all there.
+   Each check-in also sends the site's main address (Netlify's own URL
+   setting, a plain https address only), so the control room fills in the
+   business's Dealer Center address the first time it connects.
 
    The Help screen's questions go to Barnwright's Sales Inbox (help.js),
    only for a business connected to the control room:
@@ -74,6 +78,7 @@ function controlRoom(context) {
   try {
     return new TenantLicenseClient({
       controlRoomUrl: url, customerId, siteId, activationKey, publicKeyPem,
+      siteUrl: env("URL"),   /* the site's main address; sent only when it is a plain https address */
       store: createLeaseStore(customerId, siteId, getStore({ name: "barnwright-tenant-license-v1", consistency: "strong" })),
       timeoutMs: 6000,   /* opening the Dealer Center waits for a due check-in at most this long */
     });

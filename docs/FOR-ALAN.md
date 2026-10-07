@@ -286,7 +286,8 @@ Netlify site by itself. (By hand, it is one paste; the list is in [the
 Dealer Center guide](OFFICE.md).) From then on:
 
 * **It checks in with your control room** every few hours and gets a pass
-  good for 7 days.
+  good for 7 days. It also tells your control room its own address, so the
+  first time it connects, its Dealer Center address fills in by itself.
 * **If they stop paying, or you switch them off,** changes stop the next time it
   checks in. They can still look at and download all their customers and
   orders, and remove a person from their team. Every screen tells them why.

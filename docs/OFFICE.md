@@ -265,9 +265,13 @@ applies to them.
 **Checking in.** The Dealer Center checks in with the control room when
 someone opens it and its last check-in is more than six hours old, and
 every six hours on its own (`netlify/functions/barnwright-check-in.mts`).
-It reports how many lots are open and gets back a pass signed by the
+It reports how many lots are open and the site's main address
+(`siteUrl`: Netlify's own `URL` setting, sent only when it is a plain https
+address, with no path, user or port), and gets back a pass signed by the
 control room, good for exactly seven days: the account is on or off, and
-how many lots may be open. `server/office/control-room.js` is the control
+how many lots may be open. The control room fills in the business's Dealer
+Center address from `siteUrl` the first time the site connects.
+`server/office/control-room.js` is the control
 room's own check-in code (its `sdk/`, copied to plain JavaScript;
 `license-core.js` holds the rules) and `account.js` says what the pass
 means here.
@@ -544,7 +548,8 @@ Stripe save cards.
    its name and domain, Identity on, one paste of the settings (**Copy
    settings for Netlify**, then **Import from a .env file**) and a new
    deploy. When the Dealer Center first checks in, the Control Room shows
-   **Connected**.
+   **Connected** and fills in its address from the check-in ("Checking
+   in").
 4. **The owner's computer.** On the owner's computer they open `/dealer`,
    make a login with the email from their sign-up, confirm it, and follow
    the setup steps: business details with "I have read and agree to the
