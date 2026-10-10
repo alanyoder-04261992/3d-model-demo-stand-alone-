@@ -38,7 +38,7 @@ import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { MULBERRY32_SOURCE, textureSeed } from "../../engine/seeded.js";
-import { BARNWRIGHT_PUBLIC, BARNWRIGHT_SHA256, MKTEX_ENTRY_LINE } from "./barnwright-blocks.mjs";
+import { BARNWRIGHT_PUBLIC, BARNWRIGHT_SHA256, MKTEX_ENTRY_LINE, BARNWRIGHT_PAGE } from "./barnwright-blocks.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -129,7 +129,7 @@ function initScript() {
     var lines = String(stack).split("\\n");
     for (var i = 1; i < lines.length; i++) {
       var m = /at (?:(\\S+) \\()?(.*?):(\\d+):(\\d+)\\)?\\s*$/.exec(lines[i]);
-      if (m && /\\/3ddesign\\.html$/.test(m[2])) return { fn: m[1] || "", line: +m[3] };
+      if (m && /\\/3ddesign\\.html(\\?[^\\s]*)?$/.test(m[2])) return { fn: m[1] || "", line: +m[3] };
     }
     return null;
   }
@@ -188,7 +188,7 @@ export async function openPage(browser, server) {
     return route.continue();
   });
   await page.addInitScript({ content: initScript() });
-  await page.goto(origin + "/3ddesign.html", { waitUntil: "load" });
+  await page.goto(origin + "/" + BARNWRIGHT_PAGE, { waitUntil: "load" });   /* its warm light: what the answers were recorded in */
   await page.waitForFunction((n) =>
     window.__golden && window.__golden.tex.length === n &&
     typeof buildShed === "function" && typeof renderItem === "function" &&
@@ -344,7 +344,7 @@ export function inPageCapture(table) {
     const lines = String(stack).split("\n");
     for (let i = 1; i < lines.length; i++) {
       const m = /at (?:(\S+) \()?(.*?):(\d+):(\d+)\)?\s*$/.exec(lines[i]);
-      if (!m || !/\/3ddesign\.html$/.test(m[2])) continue;
+      if (!m || !/\/3ddesign\.html(\?\S*)?$/.test(m[2])) continue;   /* the page is opened with ?light=warm */
       const ln = +m[3];
       if (ln < table.buildShed.from || ln > table.buildShed.to) continue;
       for (const r of table.lineRanges) if (ln >= r.from && ln <= r.to) return r.part;

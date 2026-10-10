@@ -87,6 +87,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { BARNWRIGHT_PAGE } from "./lib/barnwright-blocks.mjs";
 import { loadCatalogue } from "./lib/load.mjs";
 import { paperText, footerText, titleText, porchRect, planFrame, wallChoices, floorChoices, hitAt } from "../ui/blueprint.js";
 import { defaults } from "../model/design.js";
@@ -975,7 +976,7 @@ try {
       if (/shedline-[a-z]+\.json|designs(-img)?\/|\.netlify\/functions/.test(u)) return route.abort();
       return route.continue();
     });
-    await bw.goto(origin + "/3ddesign.html", { waitUntil: "load" });
+    await bw.goto(origin + "/" + BARNWRIGHT_PAGE, { waitUntil: "load" });
     await bw.waitForFunction(() => typeof bpDraw === "function" && typeof setMode === "function" && window.state && state.items.length > 0, null, { timeout: 60000 });
     const CASES = [["UT", "10x16", "Utility Shed", "plain"], ["LB", "12x24", "Lofted Barn", "plain"], ["DK", "8x12", "Dog Kennel", "plain"], ["SC", "12x24", "Side Cabin", "porch"]];
     for (const [t, size, name, kind] of CASES) {

@@ -26,6 +26,7 @@ import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
+import { BARNWRIGHT_PAGE } from "./barnwright-blocks.mjs";
 
 const require = createRequire(import.meta.url);
 
@@ -105,7 +106,7 @@ export async function openBarnwright(opts = {}) {
     if (/shedline-[a-z]+\.json|designs(-img)?\/|\.netlify\/functions/.test(u)) return route.abort();
     return route.continue();
   });
-  await page.goto(origin + "/3ddesign.html", { waitUntil: "load" });
+  await page.goto(origin + "/" + BARNWRIGHT_PAGE, { waitUntil: "load" });   /* its warm light (barnwright-blocks.mjs) */
   await page.waitForFunction(() =>
     typeof includedItems === "function" && typeof clampPos === "function" &&
     typeof priceParts === "function" && typeof buildShed === "function" &&

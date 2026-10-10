@@ -20,7 +20,10 @@ Yoder Storage Barns site lights them (true colour), and nothing else moved.
 ## The rules that matter most
 
 1. **Never modify Barnwright** (`alanyoder-04261992/boisterous-lokum-a737e0`).
-   It is read only to record the golden fixtures.
+   It is read only to record the golden fixtures. The one change Alan asked
+   for there (Oct 10 2026, "yes change"): Barnwright's 3D designer wears the
+   Yoder site's look too; its warm light is kept at `3ddesign.html?light=warm`,
+   which is how every check here opens it (`BARNWRIGHT_PAGE`).
 2. **The finished building is Barnwright's shape for shape, lit the way the
    Yoder Storage Barns site lights it.** The golden test
    (`node tools/check-golden.mjs`) compares every triangle with Barnwright's

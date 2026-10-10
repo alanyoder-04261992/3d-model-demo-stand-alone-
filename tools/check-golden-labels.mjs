@@ -33,7 +33,7 @@ import { fileURLToPath } from "node:url";
 import { createHash } from "node:crypto";
 import { inPageRunSteps, loadPlaywright, CHROMIUM_ARGS, VIEWPORT, startServer } from "./lib/golden-page.mjs";
 import { loadCatalogue, buildCases, hashFloats } from "./lib/golden-cases.mjs";
-import { BARNWRIGHT_FILE, BARNWRIGHT_SHA256, PART_IDS, assertBarnwrightPinned } from "./lib/barnwright-blocks.mjs";
+import { BARNWRIGHT_FILE, BARNWRIGHT_SHA256, PART_IDS, assertBarnwrightPinned, BARNWRIGHT_PAGE } from "./lib/barnwright-blocks.mjs";
 import { MULBERRY32_SOURCE, textureSeed } from "../engine/seeded.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -43,9 +43,11 @@ const JOBS = 3;
 /* The one copy of Barnwright's file this check is true of: written against
    the copy of Sep 26 2026 (0bdcf663...), re-pinned Oct 6 2026 to Barnwright's
    current copy, whose lines 1-5792 are the same byte for byte (only its
-   saving code, after line 5792, changed), so every marked line below still
-   reads as it did. */
-export const PINNED_SHA256 = "85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36";
+   saving code, after line 5792, changed), and re-pinned Oct 10 2026 to the
+   copy with the Yoder site's look (lines 1-4089 the same but three one-line
+   switches; the new code after uploadBuffers), so every marked line below
+   still reads as it did. The page is opened with ?light=warm. */
+export const PINNED_SHA256 = "fd9c12b86a07c628252792c97e82d6d230e359679d6cd5c2ff81e5ff4bbd1bc7";
 
 /* Each item's part label, by its catalogue code -- this check's OWN copy,
    written from what each item is (a door with no glass, a steel door, a door
@@ -103,7 +105,7 @@ function initScript() {
   var nr=Math.random; Math.random=function(){ return G.rand? G.rand() : nr(); };
   var ce=Document.prototype.createElement;
   Document.prototype.createElement=function(tag){
-    if(typeof tag==="string"&&tag.toLowerCase()==="canvas"){ var s=String(new Error().stack); if(/at mkTex \\(.*3ddesign\\.html:1717:/.test(s)){ G.rand=mulberry32(SEEDS[G.i++]); } }
+    if(typeof tag==="string"&&tag.toLowerCase()==="canvas"){ var s=String(new Error().stack); if(/at mkTex \\(.*3ddesign\\.html(\\?[^:]*)?:1717:/.test(s)){ G.rand=mulberry32(SEEDS[G.i++]); } }
     return ce.apply(this,arguments); };
   var of=window.fetch; window.fetch=function(){ G.pendingFetch++; var d=function(){G.pendingFetch--;}; var p=of.apply(this,arguments); p.then(d,d); return p; };
   window.__G=G; })();`;
@@ -161,11 +163,11 @@ async function main() {
         const u = route.request().url();
         if (!u.startsWith(origin + "/")) return route.abort();
         if (/shedline-[a-z]+\.json|designs(-img)?\/|\.netlify\/functions/.test(u)) return route.abort();
-        if (/\/3ddesign\.html$/.test(u)) return route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: mod });
+        if (/\/3ddesign\.html(\?.*)?$/.test(u)) return route.fulfill({ status: 200, contentType: "text/html; charset=utf-8", body: mod });
         return route.continue();
       });
       await page.addInitScript({ content: initScript() });
-      await page.goto(origin + "/3ddesign.html", { waitUntil: "load" });
+      await page.goto(origin + "/" + BARNWRIGHT_PAGE, { waitUntil: "load" });
       await page.waitForFunction(() => typeof buildShed === "function" && window.state && state.items.length > 0 && ORDER.length > 0 && window.__G.i === 11, null, { timeout: 120000 });
       await page.waitForFunction(() => window.__G.pendingFetch === 0, null, { timeout: 60000 });
       await page.waitForTimeout(100);

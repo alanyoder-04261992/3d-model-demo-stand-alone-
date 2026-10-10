@@ -232,6 +232,32 @@ ok("...painted only with true colour, after all eleven (so the test randomness o
 const extLine = B.slice(B.indexOf("var extAniso=gl.getExtension("), B.indexOf("\n", B.indexOf("var extAniso=gl.getExtension(")));
 ok("the anisotropic-filtering line is Barnwright's", TX.includes("\n" + extLine + "\n"));
 
+/* ---------- 4b. Barnwright's own designer wears the same look ----------
+   Alan, Oct 10 2026 ("yes change"): Barnwright's designer draws with the Yoder
+   site's look too, and only ?light=warm (BARNWRIGHT_PAGE, how every check
+   opens it) gives its warm light -- FS, SCENES and texAO, the originals the
+   sections above compare with. */
+console.log("\nBarnwright's own designer wears the Yoder site's look (its warm light only at ?light=warm)");
+{
+  const blocks = await import(pathToFileURL(resolve(ROOT, "tools/lib/barnwright-blocks.mjs")).href);
+  const at = B.indexOf("function fsTrue(){ return "), look = B.indexOf("/* ---------- THE YODER SITE'S LOOK");
+  ok("Barnwright's designer carries THE YODER SITE'S LOOK, switched by its address", at >= 0 && look >= 0 && B.includes("function bwTrueColour(){") && /light=warm/.test(B));
+  ok("...and it is on unless the address says ?light=warm: its shader and its rooms both ask bwTrueColour()",
+    B.includes("var progMain=mkProg(VS,bwTrueColour()?fsTrue():FS)") && B.includes("function SC(){ var T9=bwTrueColour()?trueScenes():SCENES;"));
+  ok("every check opens Barnwright at ?light=warm (" + blocks.BARNWRIGHT_PAGE + ")", blocks.BARNWRIGHT_PAGE === "3ddesign.html?light=warm");
+  if (at >= 0 && look >= 0) {
+    const i = at + "function fsTrue(){ return ".length, j = B.indexOf('].join("\\n")', i);
+    const bFS = new Function("return " + B.slice(i, j + '].join("\\n")'.length))();
+    ok("its true-colour shader is the Yoder site's and this designer's FSTRUE, byte for byte", bFS === yoderFS && bFS === ours.FSTRUE, firstDiff(bFS, yoderFS));
+    const ts = B.slice(B.indexOf("function trueScenes(){"), B.indexOf("var U_ENVUP="));
+    const bTS = new Function("SCENES", ts + "; return trueScenes();")(bSCENES);
+    ok("its true-colour rooms are this designer's TRUE_SCENES, number for number (studio, yard, paper)", canon(bTS) === canon(sd.TRUE_SCENES), canon(bTS).slice(0, 300));
+    const ai = B.indexOf("var texAO=mkTex(", look), bAO = B.slice(ai, B.indexOf("},256);", ai) + "},256);".length);
+    ok("its contact shadow is the Yoder site's painter, the one engine/textures.js paints, character for character", bAO === yoderAO && bAO === oursYAO, firstDiff(bAO, yoderAO));
+    ok("...painted after its eleven textures, so its warm page's textures are untouched", look > B.indexOf("var texAOcorner=mkTex(") && B.slice(look).includes("if(bwTrueColour()){ try{ gl.deleteTexture(texAO); }catch(e){}"));
+  }
+}
+
 /* ---------- 5. compile in a real browser ---------- */
 console.log("\nCompiling in headless Chromium (software WebGL)");
 const require = createRequire(import.meta.url);
@@ -291,4 +317,5 @@ if (fail) { console.log("\nWhat failed:\n  " + failures.join("\n  ")); process.e
 console.log("Proved: the picture shader, the shadow shaders and all eleven texture painters are Barnwright's own code,");
 console.log("the only additions are the building-step table and the test seeding line, the true-colour look (the");
 console.log("standard one) is the Yoder site's shader with exactly its six colour lines changed and the Yoder site's own");
-console.log("contact shadow, and everything compiles in a real browser.");
+console.log("contact shadow, Barnwright's own designer now wears that same look (its warm light only at ?light=warm),");
+console.log("and everything compiles in a real browser.");

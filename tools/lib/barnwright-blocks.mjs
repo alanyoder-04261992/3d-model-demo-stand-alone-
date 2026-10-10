@@ -38,8 +38,22 @@ export const BARNWRIGHT_FILE = BARNWRIGHT_PUBLIC + "/3ddesign.html";
    1-5792 are byte for byte the same in both copies, so buildShed (3854-4078),
    mkTex (1717), the ANCHORS and every line number below still read true.
    Recording again on the new copy changed nothing but the recorded SHA-256.
+   Re-pinned Oct 10 2026 to Barnwright's copy with the Yoder site's look
+   (Barnwright commit 035896b, Alan: "yes change"): Barnwright's designer now
+   draws in true colour unless its address says ?light=warm. Lines 1-4089
+   change in three one-line places only (the stage backdrop, SC() and
+   progMain); the new code sits after uploadBuffers, so buildShed, mkTex, the
+   ANCHORS and every line number below still read true. Every check opens
+   Barnwright with BARNWRIGHT_PAGE (below), where FS, SCENES and texAO are
+   the warm originals, untouched -- so the recorded answers are unchanged.
    test/golden/barnwright-catalogue.json carries the same. */
-export const BARNWRIGHT_SHA256 = "85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36";
+export const BARNWRIGHT_SHA256 = "fd9c12b86a07c628252792c97e82d6d230e359679d6cd5c2ff81e5ff4bbd1bc7";
+
+/* The address every check opens Barnwright's designer at: its warm late-
+   afternoon light, which the golden answers were recorded in. Without
+   ?light=warm Barnwright now draws the Yoder site's look (true colour), the
+   same as this designer's standard look. */
+export const BARNWRIGHT_PAGE = "3ddesign.html?light=warm";
 
 /* Every part id a Barnwright triangle can belong to (the finished-building
    parts of the PIPELINE; the framing parts are new and Barnwright draws none). */

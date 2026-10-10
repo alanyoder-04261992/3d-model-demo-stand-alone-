@@ -68,6 +68,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { BARNWRIGHT_PAGE } from "./lib/barnwright-blocks.mjs";
 import { loadCatalogue, readJSON } from "./lib/load.mjs";
 import * as S from "../ui/state.js";
 import { esc, safeUrl } from "../ui/esc.js";
@@ -894,7 +895,7 @@ try {
     for (const [w, h] of [[1440, 900], [390, 844]]) {
       const cb = await newContext(browser, { viewport: { width: w, height: h } });
       const pb = await cb.newPage();
-      await pb.goto("http://127.0.0.1:" + BW_PORT + "/3ddesign.html", { waitUntil: "load" });
+      await pb.goto("http://127.0.0.1:" + BW_PORT + "/" + BARNWRIGHT_PAGE, { waitUntil: "load" });
       await pb.waitForFunction(() => document.getElementById("plateprice") && /\$/.test(document.getElementById("plateprice").textContent), null, { timeout: 60000 });
       await sameFont(pb);
       const bw = await grab(pb);

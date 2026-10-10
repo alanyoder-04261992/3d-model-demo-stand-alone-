@@ -171,7 +171,11 @@ finished designer retains the golden geometry.
     see-through outline are the same both ways (`tools/check-look.mjs`).
     Barnwright's warm light stays for the Barnwright company the golden and
     look checks draw, so they still prove every triangle and every pixel is
-    Barnwright's. A business set up on the Dealer Center before this keeps the
+    Barnwright's. Since Oct 10 2026 Barnwright's own designer wears the same
+    look (Alan: "yes change"), so the two agree; the checks open Barnwright
+    at `3ddesign.html?light=warm`, where its warm light is untouched, and
+    `tools/check-shaders.mjs` proves Barnwright's true-colour shader, rooms
+    and contact shadow are the Yoder site's. A business set up on the Dealer Center before this keeps the
     light it was saved with.
 
     **Not taken from the Yoder site**, because Barnwright fixed them after it
