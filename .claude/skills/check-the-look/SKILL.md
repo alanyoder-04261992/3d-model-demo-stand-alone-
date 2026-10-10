@@ -131,8 +131,11 @@ doors).
 
 The fixtures are **Barnwright's answers**. `node tools/capture-golden.mjs`
 records them again from Barnwright's page (read only, at
-`/home/user/boisterous-lokum-a737e0/public/3ddesign.html`, about five
-minutes); `--check` records into a temporary folder and proves the result is
+`/home/user/boisterous-lokum-a737e0/public/3ddesign.html`, opened at
+`?light=warm` -- `BARNWRIGHT_PAGE` in `tools/lib/barnwright-blocks.mjs`,
+which every check that opens Barnwright uses; since Oct 10 2026 Barnwright's
+page without it draws the Yoder site's look, as this designer does -- about
+five minutes); `--check` records into a temporary folder and proves the result is
 byte for byte what is in `test/golden/`; `--only=ut-10x20,lb-8x12` does just
 those cases. It refuses to run when Barnwright's file is not the pinned copy
 (its SHA-256 in `tools/lib/barnwright-blocks.mjs`).

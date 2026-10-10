@@ -93,6 +93,12 @@ board and roof is the same shape it was, and the prices, options and colour
 lists are untouched. A business already set up on the Dealer Center keeps the
 light it was saved with until its settings are changed.
 
+The same light is now everywhere your 3D designer is: this designer
+(demo.barnwrightsoftware.com and 3dsetup.barnwrightsoftware.com), your
+website, the Barnwright website's tour, and, since October 10, the 3D
+designer inside the Barnwright apps (the Dealer Hub, Small Shop and
+Headquarters open it).
+
 Barnwright's warm light is kept for one job: the golden check still draws
 Barnwright's 148 buildings in it, to prove every triangle and every pixel is
 still Barnwright's. A company that wants the warm light can have it; it is one

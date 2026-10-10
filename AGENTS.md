@@ -1,7 +1,8 @@
 # The standalone 3D shed designer
 
 Read [CLAUDE.md](CLAUDE.md) for the repository's architecture and part rules.
-This project is separate from Barnwright; never modify the Barnwright repository.
+This project is separate from Barnwright; never modify the Barnwright repository
+(the one exception Alan made, Oct 10 2026, is described in CLAUDE.md rule 1).
 
 For customer setup, terminology, or a new buyer's design, use
 [shed-customer-setup](.agents/skills/shed-customer-setup/SKILL.md).

@@ -328,7 +328,9 @@ Chromium's software graphics, each on its own port.
 
 ## The rules that matter most
 
-1. **Never change Barnwright.** Its files are only ever read, by the golden
+1. **Never change Barnwright** (one exception, Oct 10 2026: its 3D designer
+   wears the Yoder site's look; the checks open it at `?light=warm`, its
+   untouched warm light). Its files are only ever read, by the golden
    capture and the live comparisons.
 2. **The finished building is Barnwright's shape for shape, lit the way the
    Yoder site lights it.** A red `check-golden.mjs` is a look change: fix the

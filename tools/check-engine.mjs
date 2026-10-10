@@ -32,6 +32,7 @@ import { readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
+import { BARNWRIGHT_PAGE } from "./lib/barnwright-blocks.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BARN_DIR = "/home/user/boisterous-lokum-a737e0/public";
@@ -262,7 +263,7 @@ try {
   const page = await ctx.newPage();
   const pageErrors = [];
   page.on("pageerror", (e) => pageErrors.push(String(e)));
-  await page.goto("http://127.0.0.1:" + P_BARN + "/3ddesign.html", { waitUntil: "load" });
+  await page.goto("http://127.0.0.1:" + P_BARN + "/" + BARNWRIGHT_PAGE, { waitUntil: "load" });
   await page.waitForFunction(() => typeof MAT === "function" && typeof buildShed === "function" && window.__bwTex && window.__bwTex.length === 11, null, { timeout: 30000 });
 
   const report = await page.evaluate(async ({ BASE, SAMPLE_SRC }) => {

@@ -2,7 +2,7 @@
  "about": "The buildings recorded from Barnwright's 3D designer by tools/capture-golden.mjs. See test/golden/README.md.",
  "barnwright": {
   "file": "boisterous-lokum-a737e0/public/3ddesign.html",
-  "sha256": "85c4b022d2f75db2145f4ff5cf1ea43c1b52074f8972b96180d64840eb4c5d36"
+  "sha256": "fd9c12b86a07c628252792c97e82d6d230e359679d6cd5c2ff81e5ff4bbd1bc7"
  },
  "viewport": {"width":1440,"height":900,"deviceScaleFactor":1},
  "canvas": {"clientWidth":742,"clientHeight":803},

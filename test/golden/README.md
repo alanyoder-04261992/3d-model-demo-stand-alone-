@@ -3,7 +3,9 @@
 Alan's first ask for this designer was "make it look like Barnwright's". These
 files are how that is proved. They are **Barnwright's exact answers**, recorded
 from its real 3D designer (`boisterous-lokum-a737e0/public/3ddesign.html`,
-read only, never changed), for 148 buildings. Our engine is then asked to draw
+read only, opened at `3ddesign.html?light=warm` -- its warm late-afternoon
+light; since Oct 10 2026 the page without it draws the Yoder site's look),
+for 148 buildings. Our engine is then asked to draw
 the same buildings, and `tools/check-golden.mjs` demands the same triangles,
 and `tools/check-look.mjs` the same pictures.
 
