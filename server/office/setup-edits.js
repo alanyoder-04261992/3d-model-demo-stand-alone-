@@ -21,12 +21,14 @@
 
    The logo, how the 3D designer looks, where quotes go, which websites may
    show it, opening it to customers and how the buildings are built (other
-   than one gable roof's pitch) are never edits.
+   than one gable roof's pitch, a style's own number in How it's built) are
+   never edits.
 
    Pure: no store, no clock. Node-safe and browser-safe. */
 
 import { lockedItems, newStyleKey, placeStyle, groupsOf, sortSizes, paletteNames, nameKey } from "../../ui/office/views/price-list/model.js";
-import { LOCK_WORDS, GABLE_STYLES, pitchRuleOk } from "./setup-lock.js";
+import { LOCK_WORDS, GABLE_STYLES } from "./setup-lock.js";
+import { liftRawRules, setBuilt, parse as parseBuilt } from "../../model/build-settings.js";
 import { styleName, itemName, optionName } from "./setup-view.js";
 
 export const MAX_EDITS = 300;
@@ -291,8 +293,13 @@ const HANDLERS = {
     }
   },
 
-  /* F13: one library gable style's pitch, by a construction rule */
-  set_roof_pitch(s, e, { M, standardRise }) {
+  /* F13: one library gable style's roof pitch, as that style's own number
+     in How it's built (offer.<code>.built.roofPitch, written with
+     model/build-settings.js setBuilt). It reaches every style of their own
+     built like it that has no pitch of its own. "standard" takes the
+     style's own number out, so the standard building's pitch (the shop
+     standard, or the library's) is used again. */
+  set_roof_pitch(s, e, { M }) {
     const v = e.style;
     if (typeof v !== "string" || !CODE.test(v)) no(`there is no building style ${shown(v)}.`);
     if (!has(M.styles, v)) {
@@ -311,32 +318,22 @@ const HANDLERS = {
       const m = typeof e.pitch === "string" ? /^(\d{1,2})\/12$/.exec(e.pitch.trim()) : null;
       if (!m || Number(m[1]) < 3 || Number(m[1]) > 12) no("Pick a pitch from 3/12 to 12/12, in whole twelfths, or standard.");
       twelfths = Number(m[1]);
+      /* inside How it's built's own limits for this roof (a metal roof is never flatter than 4/12) */
+      const r = parseBuilt("roofPitch", twelfths, { kind: "gable", metal: !!lib.metal, name: lib.name });
+      if (r.problem) no(r.problem);
     }
-    if (typeof standardRise !== "number") no("The roof pitch can't be changed on this Dealer Center.");
-    const rise = s.construction?.roof?.shapes?.gable?.rise;
-    if (!pitchRuleOk(rise, standardRise)) no("Their gable roofs were set up another way, so the pitch can't be changed here.");
-    const rules = Array.isArray(rise) ? rise.slice(0, -1) : [];
-    const at = rules.findIndex((r) => r.when.styles[0] === v);
-    if (twelfths === null) { if (at >= 0) rules.splice(at, 1); }
-    else {
-      const rule = { when: { styles: [v] }, value: { w: twelfths / 24 } };
-      if (at >= 0) rules[at] = rule; else rules.push(rule);
+    if (!isObj(s.offer?.[v])) no(`They don't sell the ${styleName(s, v, M)}. Sell it first (sell_style), then set its roof pitch.`);
+    /* a price list from before How it's built: the roof pitch rule list
+       this edit used to write moves into How it's built first (the same
+       move every save makes); any other gable rise stays theirs */
+    const lifted = liftRawRules(s, M).settings;
+    if (isObj(lifted.construction?.roof?.shapes?.gable) && "rise" in lifted.construction.roof.shapes.gable) {
+      no("Their gable roofs were set up another way, so the pitch can't be changed here.");
     }
-    if (rules.length) {
-      if (!isObj(s.construction)) s.construction = {};
-      const C = s.construction;
-      C.roof = isObj(C.roof) ? C.roof : {};
-      C.roof.shapes = isObj(C.roof.shapes) ? C.roof.shapes : {};
-      C.roof.shapes.gable = isObj(C.roof.shapes.gable) ? C.roof.shapes.gable : {};
-      C.roof.shapes.gable.rise = [...rules, { value: { w: standardRise } }];
-    } else if (isObj(s.construction?.roof?.shapes?.gable)) {
-      /* the last rule went: the rise goes too, and any part left empty */
-      const C = s.construction;
-      delete C.roof.shapes.gable.rise;
-      if (!Object.keys(C.roof.shapes.gable).length) delete C.roof.shapes.gable;
-      if (!Object.keys(C.roof.shapes).length) delete C.roof.shapes;
-      if (!Object.keys(C.roof).length) delete C.roof;
-    }
+    const r = setBuilt(lifted, { style: v, knob: "roofPitch", value: twelfths });
+    if (r.problems.length) no(r.problems.map((p) => p.words).join(" "));
+    for (const k of Object.keys(s)) delete s[k];
+    Object.assign(s, r.settings);
   },
 
   set_item(s, e, { M }) {
@@ -563,14 +560,13 @@ const HANDLERS = {
 /* -> {settings, problems, newCodes}. settings is null when there are
    problems ("Edit 3: ..."): nothing is half done. options:
      manufacturer  the builder's library
-     mode          "prelive" or "switch" (access() says which)
-     standardRise  the library's own gable rise (library/construction.json) */
-export function applyEdits(settings, edits, { manufacturer: M, mode = "prelive", standardRise = null } = {}) {
+     mode          "prelive" or "switch" (access() says which) */
+export function applyEdits(settings, edits, { manufacturer: M, mode = "prelive" } = {}) {
   if (!Array.isArray(edits) || edits.length < 1 || edits.length > MAX_EDITS) return { settings: null, problems: [TOO_MANY_EDITS], newCodes: {} };
   let s = structuredClone(settings);
   const problems = [];
   const newCodes = {};
-  const ctx = { M, mode, standardRise, original: settings, newCodes };
+  const ctx = { M, mode, original: settings, newCodes };
   edits.forEach((e, i) => {
     try {
       if (!isObj(e) || typeof e.do !== "string") no("every edit needs do: the name of the edit.");

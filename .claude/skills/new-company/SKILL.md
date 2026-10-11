@@ -58,8 +58,10 @@ settings, and the Claude connector will do the same through the Control
 Room once it is there. It works only after their owner agrees to the
 Barnwright terms 2.2, and their owner can stop it on the Barnwright card in
 Settings. It can't open the 3D designer, change where quotes go or which
-websites may show it, or change how the buildings are built (except a gable
-roof's pitch). Lots (3), team (4) and how they build (6) stay as above: the
+websites may show it, or change how the buildings are built (except a
+building style's own numbers in How it's built, like a gable roof's pitch;
+the numbers for the whole business stay the owner's). Lots (3), team (4)
+and how they build (6) stay as above: the
 owner adds lots and the team, and construction is changed here with the
 `change-construction` skill. Before opening, go through each lot's preview
 with the owner (**Look at the preview**); then the owner opens it in

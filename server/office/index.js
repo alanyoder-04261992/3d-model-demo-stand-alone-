@@ -85,7 +85,7 @@ export function createOffice(deps) {
   setup = createSetupAccess({
     store, license: deps.license || null, priceList, account, lots, website, now, log,
     appVersion: deps.appVersion || "dealer-center", manufacturer: deps.manufacturer || {},
-    standardRise: deps.library?.roof?.shapes?.gable?.rise?.w ?? null,
+    library: deps.library || null,
     terms: shipped,
   });
   const signIn = deps.signIn || "netlify";

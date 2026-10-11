@@ -931,7 +931,7 @@ gets "Barnwright looked at your price list." at most once every 30 minutes.
 | part | view |
 |---|---|
 | `summary` | `business` (below), `styles` sold `[{code, name, sizes, from}]`, `counts` `{styles, sizes, items, options, extras}`, `colors` (how many of each), `show`, `rentToOwn` (true or false), `open` |
-| `buildings` | `groups [{name, styles: [codes]}]`; `styles [{code, name, builtLike, roof, pitch, sizes: {"10x16": 5540}}]` in group order; `opensOn {style, size}`. `pitch` is `"standard"` or `"N/12"` for a gable roof that can change (see `set_roof_pitch`), else null |
+| `buildings` | `groups [{name, styles: [codes]}]`; `styles [{code, name, builtLike, roof, pitch, sizes: {"10x16": 5540}}]` in group order; `opensOn {style, size}`. `pitch` is `"N/12"` for a gable roof that can change (see `set_roof_pitch`) when the business set its pitch in How it's built (on that style, on the style it is built like, or for the whole business), `"standard"` when it didn't, else null |
 | `doors_windows` | `items [{code, name, price}]`, the ones they sell |
 | `options` | `dormers`, `ramps`, `elec`, `misc`, `rates` as `[{key, name, price}]` (`rates` add `per`: "sq ft of floor", "wall" or "roof"); `extras [{key, name, charged, price}]` |
 | `colors` | `paint`, `trim`, `metal` as `[{name, hex, own}]` in order; `opensOn {body, trim, roof}` |
@@ -1208,21 +1208,36 @@ to 12) or `"standard"`.
     the library style it is built like.";
   * any other pitch: "Pick a pitch from 3/12 to 12/12, in whole twelfths,
     or standard.";
-  * a business whose gable roofs were set up by hand some other way (a rise
-    that isn't this rule list): "Their gable roofs were set up another way,
-    so the pitch can't be changed here."
-* It writes one construction rule, `construction.roof.shapes.gable.rise`,
-  as a rule list: one `{when: {styles: [code]}, value: {w: N / 24}}` for
-  each style changed (in the order first changed), then the library's own
-  rise last (`{value: {w: 0.27}}` today). `"standard"` takes that style's
-  rule out; with none left, the key goes too.
-* A rule for a library style also applies to every style of their own
-  built like it, so the change words say so: "Utility Shed and every
-  building built like it: roof pitch 6.5/12 (standard) → 5/12". The
-  standard gable roof rises 0.27 of the building's width, about 6.5/12.
-  These are the price list's own change words (`describeChanges`), so
-  History says the same.
-* Every other construction change stays locked.
+  * a style they don't sell: "They don't sell the Garden Utility. Sell it
+    first (sell_style), then set its roof pitch.";
+  * a pitch How it's built doesn't allow on that roof (a metal roof is never
+    flatter than 4/12), in How it's built's own words: "Roof pitch 3/12 is
+    flatter than 4/12, the flattest the 3D designer can frame a metal
+    roof.";
+  * a business whose gable roofs were set up by hand some other way (a
+    construction setting on the gable rise): "Their gable roofs were set up
+    another way, so the pitch can't be changed here."
+* It writes that style's own roof pitch in How it's built,
+  `offer.<code>.built.roofPitch` (a number per 12: `6` is 6/12), with
+  `model/build-settings.js` `setBuilt`, as the owner's own "How it's built"
+  box does. `"standard"` takes the style's own number out, so the standard
+  building's pitch is used again: the shop standard where there is one
+  (the Utility Shed's 5/12), or the library's.
+* The pitch also reaches every style of their own built like it that has
+  no pitch of its own. Nothing is written in the construction settings.
+* A price list from before How it's built may hold the rule list this edit
+  used to write (`construction.roof.shapes.gable.rise`: one `{when:
+  {styles: [code]}, value: {w: N / 24}}` for each style, then the library's
+  own rise last). It is moved into How it's built first (`liftRawRules`,
+  the same move every save makes), so each style keeps the pitch it had.
+* The change words are the owner's own History words for How it's built,
+  with the standard said as its number: "Utility Shed roof pitch: 5/12 →
+  6/12", and back again "Utility Shed roof pitch: 6/12 → 5/12".
+* The save is checked like the owner's own: How it's built's limits, then
+  every size of that style (the every-size check, `server/office/
+  built-check.js`); a problem the new pitch causes refuses the save in
+  words.
+* Every other change to how the buildings are built stays locked.
 
 **Examples.** `edits.samples` in the fixtures has every edit with the
 change words it must give, the settings it must leave, and the refusals.
@@ -1282,8 +1297,10 @@ Barnwright save can never be anything an owner's save couldn't be.
 | `offer`, `categories`, `items`, `options`, `palettes`, `defaults`, `pricing`, `notes` | yes | yes |
 | `leads.fields`, `leads.askPlan`, `leads.smsConsent` | yes | yes |
 | `look`, `features`, `renames` | no edit reaches them | yes |
-| `construction` | only the roof pitch rule | only the roof pitch rule (no screen edits the rest) |
-| an extra's construction effect (`options.extras[].construction`) | never: no new one, no change, no removing an extra that has one | never, the same |
+| a building style's own How it's built numbers (`offer.<code>.built`) | yes, only through `set_roof_pitch` (its roof pitch), before live and while the switch is on | yes, every number its screen has |
+| How it's built for the whole business (`built`) | never | never |
+| `construction` | never | never (no screen edits it) |
+| an extra that changes how the building is built: its construction effect (`options.extras[].construction`), its own How it's built numbers (`options.extras[].built`) and, for such an extra, the buildings it is offered on (`styles`) | never: no new one, no change, no removing an extra that has one | never, the same |
 | `status`, `id`, `manufacturer`, `license`, `embed`, `brand.credit`, every other `leads` key (`mode`, `url`, `email`, `images`) | never | never |
 | `cfg` | worked out by the server | worked out by the server |
 
@@ -1298,8 +1315,9 @@ Each refusal is one plain sentence:
 | `embed` | Only the owner can change which websites may show the 3D designer. |
 | where quotes go (`leads` other than the three above) | Only the owner can change where quotes go. |
 | `brand.credit` | The 3D designer credit line can't be changed by Barnwright. |
-| `construction` | How the buildings are built can't be changed here, except a gable roof's pitch. |
-| an extra's construction effect | The extra "<name>" changes how the building is built, so only the owner can add it, remove it or change what it builds. |
+| `construction` | How the buildings are built can't be changed here, except a building style's own numbers in How it's built. |
+| `built` (for the whole business) | Only the owner can change How it's built for the whole business. A building style's own numbers can be changed here. |
+| an extra that changes how the building is built | The extra "<name>" changes how the building is built, so only the owner can add it, remove it or change what it builds. |
 | a logo that is a web address | The logo must be a picture uploaded in Settings, Logo, not a web address. |
 | a logo over 150 KB | The logo is too big. Use a picture of 150 KB or less. |
 | contact details while the switch is on (door) | While their 3D designer is open, the business phone, email and website can be changed only by the owner, or by Alan by hand in Open their price list. |
@@ -1308,14 +1326,25 @@ A web address would load the logo from someone else's server on every
 customer's 3D designer, so the logo must be a picture.
 
 **Building shape.** The only change to how a building is built that
-Barnwright can make is a gable roof's pitch (`set_roof_pitch`). An option
-or an extra can carry a construction effect too (`model/company.js`
-`optionEffects`): the builder's library's options carry theirs in the
-library, which no setting changes, so selling or not selling one is fine;
-an extra of the business's own carries its effect in the price list
-(`options.extras[].construction`). The lock compares every extra that has
-one, by its key: each must still be there with exactly the same effect, and
-no other extra may have one. Keys are read as text, the way the 3D
+Barnwright can make is a building style's own numbers in How it's built
+(`offer.<code>.built`): at the door its roof pitch (`set_roof_pitch`),
+in the visit any number that style's "How it's built" boxes have. They are
+checked exactly as the owner's are, after the lock: How it's built's own
+limits and words (`model/build-settings.js`), then every size of each
+style whose numbers changed (the every-size check); what they cause
+refuses the save. How it's built for the whole business and the
+construction settings stay the owner's. Both sides are read the way a save
+stores them: a price list from before How it's built, holding
+`set_roof_pitch`'s old rule list, reads as each style's own pitch, and
+"7/12" and 7 are one number. An option or an extra can change how the
+building is built too: the builder's library's options carry their effect
+in the library, which no setting changes, so selling or not selling one is
+fine; an extra of the business's own carries a construction effect
+(`options.extras[].construction`, `model/company.js` `optionEffects`), its
+own How it's built numbers (`options.extras[].built`), or both, on the
+buildings its `styles` names. The lock compares every extra that has one,
+by its key: each must still be there with exactly the same effect, numbers
+and buildings, and no other extra may have one. Keys are read as text, the way the 3D
 designer reads them, so a key with an effect is never used by two extras
 (5 and "5" are one key); and an extra's key must be text in every save
 (`validate()`, the owner's words "One of your extras could not be saved.
@@ -1325,9 +1354,11 @@ change, or a new extra's own name.
 
 Undo and put back carry the current values of every "never" part forward
 (`carryLocked`), so going back can't open the 3D designer, change where
-quotes go or which websites may show it. An undo or put back that would
-add, change or remove an extra's construction effect is refused by the lock
-like any other change.
+quotes go or which websites may show it; the construction settings and How
+it's built for the whole business stay as they are now too, while each
+building style's own numbers (its roof pitch) go back with the rest. An
+undo or put back that would add, change or remove an extra that changes
+how the building is built is refused by the lock like any other change.
 
 ### The visit: Alan in their Dealer Center
 

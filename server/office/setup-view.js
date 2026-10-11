@@ -18,6 +18,7 @@
    Pure: no store, no clock. Node-safe and browser-safe. */
 
 import { GABLE_STYLES } from "./setup-lock.js";
+import { apply as builtOf, liftRawRules, format as formatBuilt } from "../../model/build-settings.js";
 
 export const PARTS = Object.freeze(["summary", "buildings", "doors_windows", "options", "colors", "prices_and_quotes", "library"]);
 const OPTION_GROUPS = ["dormers", "ramps", "elec", "misc", "rates"];
@@ -47,14 +48,23 @@ export function optionName(s, g, k, M) {
 
 const logoOf = (logo) => ({ present: !!logo, kb: logo ? Math.ceil(String(logo).length / 1024) : 0 });
 
-/* "standard", "5/12" (a gable roof whose pitch Barnwright may change), or
-   null (every other roof, and the Dormer Shed, whose dormer sets it). */
-export function pitchOf(s, code, M) {
-  if (M.styles?.[code]?.roof !== "gable" || M.styles?.[code]?.dormer) return null;
-  const rise = s.construction?.roof?.shapes?.gable?.rise;
-  if (!Array.isArray(rise)) return "standard";
-  const rule = rise.find((r) => r?.when?.styles?.length === 1 && r.when.styles[0] === code);
-  return rule && typeof rule.value?.w === "number" ? `${Math.round(rule.value.w * 24)}/12` : "standard";
+/* The roof pitch of each offered style with a gable roof Barnwright may
+   change: "5/12" when the business set one in How it's built (on the style,
+   on the style it is built like, or for the whole business; an older price
+   list's roof pitch rule list counts as the style's own), else "standard"
+   (the standard building's own). null for every other roof, and the
+   Dormer Shed, whose dormer sets it. -> {code: words} */
+export function pitchesOf(s, M) {
+  const eff = builtOf(liftRawRules(s, M).settings, M).styles || {};
+  const out = {};
+  for (const k of keysOf(s.offer)) {
+    const base = baseOf(s, k), t = M.styles?.[base];
+    if (t?.roof !== "gable" || t?.dormer) { out[k] = null; continue; }
+    const e = eff[k]?.built?.roofPitch;
+    const theirs = e && e.value !== undefined && (e.from === "this style" || e.from === "business-wide" || /^built like /.test(e.from));
+    out[k] = theirs ? formatBuilt("roofPitch", e.value) : "standard";
+  }
+  return out;
 }
 
 /* The groups as customers see them: the business's own, or the builder's. */
@@ -118,14 +128,17 @@ export function readView(settings, part, M) {
       rentToOwn: !!s.pricing?.rto,
       open: s.status !== "suspended",
     };
-    case "buildings": return {
-      groups: groupsOf(s, M),
-      styles: soldInOrder(s, M).map((k) => ({
-        code: k, name: styleName(s, k, M), builtLike: s.offer[k]?.base || null, roof: M.styles?.[baseOf(s, k)]?.roof || null,
-        pitch: pitchOf(s, baseOf(s, k), M), sizes: sizesOf(s, k),
-      })),
-      opensOn: { style: s.defaults?.style || null, size: s.defaults?.size || null },
-    };
+    case "buildings": {
+      const pitches = pitchesOf(s, M);
+      return {
+        groups: groupsOf(s, M),
+        styles: soldInOrder(s, M).map((k) => ({
+          code: k, name: styleName(s, k, M), builtLike: s.offer[k]?.base || null, roof: M.styles?.[baseOf(s, k)]?.roof || null,
+          pitch: pitches[k] ?? null, sizes: sizesOf(s, k),
+        })),
+        opensOn: { style: s.defaults?.style || null, size: s.defaults?.size || null },
+      };
+    }
     case "doors_windows": return {
       items: keysOf(s.items).map((k) => ({ code: k, name: itemName(s, k, M), price: priceOf(s.items[k]) })),
     };

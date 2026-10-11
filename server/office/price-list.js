@@ -498,7 +498,15 @@ export function describeChanges(before, after, manufacturer, { contact = "full",
   /* How it's built: "Lofted Barn wall height: 6 ft 8 in → 7 ft" */
   out.push(...builtChanges(before, after, M, library));
 
-  if (!out.length && !same(before, after)) out.push("Changed other settings");
+  /* an older roof pitch rule list moved into How it's built (liftRawRules)
+     is the same building: the save says so in its own line */
+  const asBuilt = (s) => {
+    const l = liftRawRules(s, M).settings;
+    if (!l?.construction || typeof l.construction !== "object" || Object.keys(l.construction).length) return l;
+    const { construction, ...rest } = l;
+    return rest;
+  };
+  if (!out.length && !same(asBuilt(before), asBuilt(after))) out.push("Changed other settings");
   return [...new Set(out)];
 }
 

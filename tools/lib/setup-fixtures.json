@@ -4426,52 +4426,30 @@
         }
       },
       {
-        "name": "set_roof_pitch: one gable style, every building built like it too",
+        "name": "set_roof_pitch: one gable style's own roof pitch in How it's built (every building built like it too)",
         "mode": "prelive",
         "edits": [
           {
             "do": "set_roof_pitch",
             "style": "UT",
-            "pitch": "5/12"
+            "pitch": "6/12"
           }
         ],
         "expect": {
           "ok": true,
           "changes": [
-            "Utility Shed and every building built like it: roof pitch 6.5/12 (standard) → 5/12"
+            "Utility Shed roof pitch: 5/12 → 6/12"
           ],
           "warnings": [],
           "contactDetailsChange": false,
           "newCodes": {},
-          "newWords": true,
           "paths": {
-            "construction": {
-              "roof": {
-                "shapes": {
-                  "gable": {
-                    "rise": [
-                      {
-                        "when": {
-                          "styles": [
-                            "UT"
-                          ]
-                        },
-                        "value": {
-                          "w": 0.20833333333333334
-                        }
-                      },
-                      {
-                        "value": {
-                          "w": 0.27
-                        }
-                      }
-                    ]
-                  }
-                }
-              }
-            }
+            "offer.UT.built": {
+              "roofPitch": 6
+            },
+            "construction": {}
           },
-          "settingsSha256": "1c3f2b035d36d2b73aeb1291ca3682d8c5f714c7c16ce55c196dc7158eef884d"
+          "settingsSha256": "ad6f304e759cecf5fab8f2ebc988abe19f8b20672f52ccc24c9d59e3ccd4138f"
         }
       },
       {
@@ -5812,6 +5790,42 @@
         }
       },
       {
+        "name": "set_roof_pitch: a style they don't sell",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_roof_pitch",
+            "style": "GU",
+            "pitch": "6/12"
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Edit 1: They don't sell the Garden Utility. Sell it first (sell_style), then set its roof pitch."
+          ]
+        }
+      },
+      {
+        "name": "set_roof_pitch: flatter than How it's built allows on a metal roof",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_roof_pitch",
+            "style": "MU",
+            "pitch": "3/12"
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Edit 1: Roof pitch 3/12 is flatter than 4/12, the flattest the 3D designer can frame a metal roof."
+          ]
+        }
+      },
+      {
         "name": "set_business: contact details while the owner's switch is on",
         "mode": "switch",
         "edits": [
@@ -5873,7 +5887,7 @@
       }
     ],
     "effects": {
-      "about": "An extra of the business's own can carry a construction effect (options.extras[].construction; model/company.js optionEffects). Barnwright never adds one, changes one or removes an extra that has one; the only building-shape change it can make is set_roof_pitch. Door samples are checked like edits.samples, on effectBase; visit samples are the visit's PUT price-list with effectBase whose options.extras is replaced by `extras` (and a put back that would do the same is refused alike).",
+      "about": "An extra of the business's own can change how the building is built: a construction effect (options.extras[].construction; model/company.js optionEffects) or How it's built numbers of its own (options.extras[].built, on the buildings its styles list names). Barnwright never adds one, changes one (its effect, its numbers or the buildings it is offered on) or removes an extra that has one; the only building-shape change it can make is a building style's own numbers in How it's built (set_roof_pitch at the door). Door samples are checked like edits.samples, on effectBase; visit samples are the visit's PUT price-list with effectBase whose options.extras is replaced by `extras` (and a put back that would do the same is refused alike).",
       "extra": {
         "key": "heavy-floor",
         "name": "Heavy-duty floor",
@@ -5881,6 +5895,18 @@
         "price": 350,
         "construction": {
           "floor.spacingIn": 12
+        }
+      },
+      "builtExtra": {
+        "key": "steeper-roof",
+        "name": "Steeper roof",
+        "input": "check",
+        "price": 450,
+        "styles": [
+          "UT"
+        ],
+        "built": {
+          "roofPitch": 7
         }
       },
       "effectBase": {
@@ -6011,6 +6037,18 @@
               "price": 350,
               "construction": {
                 "floor.spacingIn": 12
+              }
+            },
+            {
+              "key": "steeper-roof",
+              "name": "Steeper roof",
+              "input": "check",
+              "price": 450,
+              "styles": [
+                "UT"
+              ],
+              "built": {
+                "roofPitch": 7
               }
             }
           ]
@@ -6167,10 +6205,22 @@
                   "construction": {
                     "floor.spacingIn": 12
                   }
+                },
+                {
+                  "key": "steeper-roof",
+                  "name": "Steeper roof",
+                  "input": "check",
+                  "price": 450,
+                  "styles": [
+                    "UT"
+                  ],
+                  "built": {
+                    "roofPitch": 7
+                  }
                 }
               ]
             },
-            "settingsSha256": "917ef5ea9a219c3862029c54409a991a3f29f098123c1e36ee77d122e6f6411e"
+            "settingsSha256": "9ef37c2ac3972ee26ee6ebb7a8f0d1e47dac4ee11ffbc0efb9d9398aa0685fee"
           }
         },
         {
@@ -6187,6 +6237,84 @@
             "code": "problems",
             "problems": [
               "The extra \"Heavy-duty floor\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
+            ]
+          }
+        },
+        {
+          "name": "set_extra on an extra with How it's built numbers of its own: name and price change, its numbers and buildings stay exactly",
+          "mode": "prelive",
+          "edits": [
+            {
+              "do": "set_extra",
+              "key": "steeper-roof",
+              "name": "Steeper roof (7/12)",
+              "charged": "check",
+              "price": 475
+            }
+          ],
+          "expect": {
+            "ok": true,
+            "changes": [
+              "The extra \"Steeper roof\" is now called \"Steeper roof (7/12)\"",
+              "Steeper roof (7/12): $450 → $475"
+            ],
+            "warnings": [],
+            "contactDetailsChange": false,
+            "newCodes": {},
+            "paths": {
+              "options.extras": [
+                {
+                  "key": "ridge-vent",
+                  "name": "Ridge vent",
+                  "input": "check",
+                  "price": 120
+                },
+                {
+                  "key": "anchors",
+                  "name": "Extra ground anchors",
+                  "input": "qty",
+                  "price": 45
+                },
+                {
+                  "key": "heavy-floor",
+                  "name": "Heavy-duty floor",
+                  "input": "check",
+                  "price": 350,
+                  "construction": {
+                    "floor.spacingIn": 12
+                  }
+                },
+                {
+                  "key": "steeper-roof",
+                  "name": "Steeper roof (7/12)",
+                  "input": "check",
+                  "price": 475,
+                  "styles": [
+                    "UT"
+                  ],
+                  "built": {
+                    "roofPitch": 7
+                  }
+                }
+              ]
+            },
+            "settingsSha256": "f8f5070daef428711b1fafb1fddcef271a58ae9941c4ca50b1b9cf1ec6531c05"
+          }
+        },
+        {
+          "name": "remove_extra: an extra with How it's built numbers of its own (the lock)",
+          "mode": "prelive",
+          "edits": [
+            {
+              "do": "remove_extra",
+              "key": "steeper-roof"
+            }
+          ],
+          "expect": {
+            "ok": false,
+            "code": "problems",
+            "problems": [
+              "The extra \"Steeper roof\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
             ]
           }
         },
@@ -6239,6 +6367,18 @@
               }
             },
             {
+              "key": "steeper-roof",
+              "name": "Steeper roof",
+              "input": "check",
+              "price": 450,
+              "styles": [
+                "UT"
+              ],
+              "built": {
+                "roofPitch": 7
+              }
+            },
+            {
               "key": "taller-walls",
               "name": "Taller walls",
               "input": "check",
@@ -6278,6 +6418,18 @@
               "construction": {
                 "floor.spacingIn": 16
               }
+            },
+            {
+              "key": "steeper-roof",
+              "name": "Steeper roof",
+              "input": "check",
+              "price": 450,
+              "styles": [
+                "UT"
+              ],
+              "built": {
+                "roofPitch": 7
+              }
             }
           ],
           "expect": {
@@ -6307,6 +6459,18 @@
               "name": "Heavy-duty floor",
               "input": "check",
               "price": 350
+            },
+            {
+              "key": "steeper-roof",
+              "name": "Steeper roof",
+              "input": "check",
+              "price": 450,
+              "styles": [
+                "UT"
+              ],
+              "built": {
+                "roofPitch": 7
+              }
             }
           ],
           "expect": {
@@ -6330,6 +6494,18 @@
               "name": "Extra ground anchors",
               "input": "qty",
               "price": 45
+            },
+            {
+              "key": "steeper-roof",
+              "name": "Steeper roof",
+              "input": "check",
+              "price": 450,
+              "styles": [
+                "UT"
+              ],
+              "built": {
+                "roofPitch": 7
+              }
             }
           ],
           "expect": {
@@ -6362,10 +6538,205 @@
               "construction": {
                 "floor.spacingIn": 12
               }
+            },
+            {
+              "key": "steeper-roof",
+              "name": "Steeper roof",
+              "input": "check",
+              "price": 450,
+              "styles": [
+                "UT"
+              ],
+              "built": {
+                "roofPitch": 7
+              }
             }
           ],
           "expect": {
             "status": 200
+          }
+        },
+        {
+          "name": "a new extra with How it's built numbers of its own",
+          "extras": [
+            {
+              "key": "ridge-vent",
+              "name": "Ridge vent",
+              "input": "check",
+              "price": 120
+            },
+            {
+              "key": "anchors",
+              "name": "Extra ground anchors",
+              "input": "qty",
+              "price": 45
+            },
+            {
+              "key": "heavy-floor",
+              "name": "Heavy-duty floor",
+              "input": "check",
+              "price": 350,
+              "construction": {
+                "floor.spacingIn": 12
+              }
+            },
+            {
+              "key": "steeper-roof",
+              "name": "Steeper roof",
+              "input": "check",
+              "price": 450,
+              "styles": [
+                "UT"
+              ],
+              "built": {
+                "roofPitch": 7
+              }
+            },
+            {
+              "key": "taller-door",
+              "name": "Taller door",
+              "input": "check",
+              "price": 200,
+              "built": {
+                "doorHeight": 80
+              }
+            }
+          ],
+          "expect": {
+            "status": 422,
+            "problems": [
+              "The extra \"Taller door\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
+            ]
+          }
+        },
+        {
+          "name": "an extra's How it's built numbers changed",
+          "extras": [
+            {
+              "key": "ridge-vent",
+              "name": "Ridge vent",
+              "input": "check",
+              "price": 120
+            },
+            {
+              "key": "anchors",
+              "name": "Extra ground anchors",
+              "input": "qty",
+              "price": 45
+            },
+            {
+              "key": "heavy-floor",
+              "name": "Heavy-duty floor",
+              "input": "check",
+              "price": 350,
+              "construction": {
+                "floor.spacingIn": 12
+              }
+            },
+            {
+              "key": "steeper-roof",
+              "name": "Steeper roof",
+              "input": "check",
+              "price": 450,
+              "styles": [
+                "UT"
+              ],
+              "built": {
+                "roofPitch": 8
+              }
+            }
+          ],
+          "expect": {
+            "status": 422,
+            "problems": [
+              "The extra \"Steeper roof\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
+            ]
+          }
+        },
+        {
+          "name": "the buildings an extra with How it's built numbers is offered on changed",
+          "extras": [
+            {
+              "key": "ridge-vent",
+              "name": "Ridge vent",
+              "input": "check",
+              "price": 120
+            },
+            {
+              "key": "anchors",
+              "name": "Extra ground anchors",
+              "input": "qty",
+              "price": 45
+            },
+            {
+              "key": "heavy-floor",
+              "name": "Heavy-duty floor",
+              "input": "check",
+              "price": 350,
+              "construction": {
+                "floor.spacingIn": 12
+              }
+            },
+            {
+              "key": "steeper-roof",
+              "name": "Steeper roof",
+              "input": "check",
+              "price": 450,
+              "styles": [
+                "UT",
+                "G"
+              ],
+              "built": {
+                "roofPitch": 7
+              }
+            }
+          ],
+          "expect": {
+            "status": 422,
+            "problems": [
+              "The extra \"Steeper roof\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
+            ]
+          }
+        },
+        {
+          "name": "an extra's How it's built numbers taken off (the extra stays)",
+          "extras": [
+            {
+              "key": "ridge-vent",
+              "name": "Ridge vent",
+              "input": "check",
+              "price": 120
+            },
+            {
+              "key": "anchors",
+              "name": "Extra ground anchors",
+              "input": "qty",
+              "price": 45
+            },
+            {
+              "key": "heavy-floor",
+              "name": "Heavy-duty floor",
+              "input": "check",
+              "price": 350,
+              "construction": {
+                "floor.spacingIn": 12
+              }
+            },
+            {
+              "key": "steeper-roof",
+              "name": "Steeper roof",
+              "input": "check",
+              "price": 450,
+              "styles": [
+                "UT"
+              ]
+            }
+          ],
+          "expect": {
+            "status": 422,
+            "problems": [
+              "The extra \"Steeper roof\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
+            ]
           }
         }
       ]
@@ -8451,7 +8822,8 @@
       "embed": "Only the owner can change which websites may show the 3D designer.",
       "leads": "Only the owner can change where quotes go.",
       "credit": "The 3D designer credit line can't be changed by Barnwright.",
-      "construction": "How the buildings are built can't be changed here, except a gable roof's pitch.",
+      "construction": "How the buildings are built can't be changed here, except a building style's own numbers in How it's built.",
+      "built": "Only the owner can change How it's built for the whole business. A building style's own numbers can be changed here.",
       "extraConstruction": "The extra \"<name>\" changes how the building is built, so only the owner can add it, remove it or change what it builds.",
       "logoAddress": "The logo must be a picture uploaded in Settings, Logo, not a web address.",
       "logoBig": "The logo is too big. Use a picture of 150 KB or less.",
@@ -8470,8 +8842,8 @@
       "stopped": "This stops selling <n> building styles: <names>."
     },
     "undoLine": "Put back the price list from before Barnwright's last change",
-    "roofPitchLine": "<Style> and every building built like it: roof pitch <old pitch> → <new pitch>",
-    "standardPitch": "6.5/12 (standard)",
+    "roofPitchLine": "<Style> roof pitch: <old pitch> → <new pitch>",
+    "standardPitch": "5/12",
     "nothingToUndo": "Barnwright hasn't changed this price list, so there is nothing to undo.",
     "nothingBeforeStart": "This is the starting price list Barnwright set up, so there is nothing before it to put back.",
     "tooManySaves": "Barnwright has saved 60 changes here today. Try again tomorrow.",

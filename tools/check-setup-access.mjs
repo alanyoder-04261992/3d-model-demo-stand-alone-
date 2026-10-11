@@ -44,8 +44,17 @@
      F15  item 3: a refused change is said in the owner's log in the
           owner's own words, never the door's words for Alan; item 4: the
           lock refuses adding, changing or taking away an extra's
-          construction effect (door, visit, undo and put back), so
-          set_roof_pitch stays the only building-shape change
+          construction effect or its own How it's built numbers (door,
+          visit, undo and put back), so a building style's own numbers in
+          How it's built (set_roof_pitch at the door) stay the only
+          building-shape change
+     HB   How it's built (model/build-settings.js): set_roof_pitch writes the
+          style's own roof pitch there; the lock lets a building style's own
+          numbers change (door in both modes, and the visit), checked like
+          the owner's own and by the every-size check; never the
+          construction settings or the numbers for the whole business; an
+          older price list's roof pitch rule list reads as the pitch it
+          draws
    (A13, nothing but netlify.js imports control-room.js, is in
    tools/check-imports.mjs; A14, the screens, in tools/check-setup-screens.mjs.) */
 
@@ -415,12 +424,40 @@ section("A4. The lock: what Barnwright may never change");
   ok("contact details: the door may not change them while the switch is on; before live, or by hand, it may",
     JSON.stringify(lockProblems(s, t, { door: true, mode: "switch" })) === JSON.stringify([LOCK_WORDS.contact])
     && lockProblems(s, t, { door: true, mode: "prelive" }).length === 0 && lockProblems(s, t, { door: false, mode: "switch" }).length === 0);
+  /* HB: How it's built (old code: a raw roof pitch rule could change; the
+     numbers for the whole business and an extra's own numbers were not
+     looked at) */
   const rise = library.roof.shapes.gable.rise.w;
-  const pitch = structuredClone(s);
-  pitch.construction = { roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 5 / 24 } }, { value: { w: rise } }] } } } };
-  ok("a gable roof's pitch rule may change; any other rise may not", lockProblems(s, pitch, { standardRise: rise }).length === 0
-    && lockProblems(s, { ...pitch, construction: { roof: { shapes: { gable: { rise: [{ when: { styles: ["LB"] }, value: { w: 5 / 24 } }, { value: { w: rise } }] } } } } }, { standardRise: rise })[0] === LOCK_WORDS.construction
-    && lockProblems(s, { ...pitch, construction: { roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 20 / 24 } }, { value: { w: rise } }] } } } } }, { standardRise: rise })[0] === LOCK_WORDS.construction);
+  const rule = (code, twelfths) => ({ roof: { shapes: { gable: { rise: [{ when: { styles: [code] }, value: { w: twelfths / 24 } }, { value: { w: rise } }] } } } });
+  const own = structuredClone(s);
+  own.offer.UT.built = { roofPitch: 6 };
+  own.offer.LB.built = { wallHeight: 84 };
+  const allModes = [[true, "prelive"], [true, "switch"], [false, "prelive"], [false, "switch"]];
+  ok("HB: a building style's own How it's built numbers may change: at the door before live and while the switch is on, and in the visit",
+    allModes.every(([door, mode]) => lockProblems(s, own, { door, mode, manufacturer }).length === 0 && lockProblems(own, s, { door, mode, manufacturer }).length === 0));
+  const biz = structuredClone(s);
+  biz.built = { roofPitch: { gable: 6 } };
+  ok("HB: How it's built for the whole business may not, at the door or in the visit",
+    allModes.every(([door, mode]) => JSON.stringify(lockProblems(s, biz, { door, mode, manufacturer })) === JSON.stringify([LOCK_WORDS.built])), JSON.stringify(lockProblems(s, biz, { manufacturer })));
+  const raw = structuredClone(s);
+  raw.construction = rule("UT", 7);
+  const rawLB = structuredClone(s);
+  rawLB.construction = rule("LB", 7);
+  const rawWall = structuredClone(s);
+  rawWall.construction = { walls: { heightIn: 96 } };
+  ok("HB: the construction settings may not change, a roof pitch rule list included (except as the same pitch, below)",
+    [rawLB, rawWall].every((n) => JSON.stringify(lockProblems(s, n, { door: true, manufacturer })) === JSON.stringify([LOCK_WORDS.construction]))
+    && JSON.stringify(lockProblems(s, raw, { door: true })) === JSON.stringify([LOCK_WORDS.construction]), JSON.stringify(lockProblems(s, rawLB, { door: true, manufacturer })));
+  const lifted = structuredClone(s);
+  lifted.offer.UT.built = { roofPitch: 7 };
+  const steeper = structuredClone(s);
+  steeper.offer.UT.built = { roofPitch: 8 };
+  ok("HB: a price list from before, holding set_roof_pitch's old rule list, reads as the Utility Shed's own pitch: moved into How it's built, or changed there, it passes",
+    lockProblems(raw, lifted, { door: true, manufacturer }).length === 0 && lockProblems(raw, steeper, { door: true, mode: "switch", manufacturer }).length === 0
+    && lockProblems(raw, raw, { door: true, manufacturer }).length === 0, JSON.stringify(lockProblems(raw, lifted, { door: true, manufacturer })));
+  ok("HB: History never says a roof pitch changed when an older rule list only moves into How it's built (the rule list's own words are gone)",
+    JSON.stringify(describeChanges(raw, lifted, manufacturer, { library })) === "[]" && JSON.stringify(describeChanges(raw, steeper, manufacturer, { library })) === JSON.stringify(["Utility Shed roof pitch: 7/12 → 8/12"]),
+    JSON.stringify([describeChanges(raw, lifted, manufacturer, { library }), describeChanges(raw, steeper, manufacturer, { library })]));
   const shuffled = structuredClone(s);
   shuffled.embed = Object.fromEntries(Object.entries(s.embed || { origins: [] }).reverse());
   shuffled.brand = Object.fromEntries(Object.entries(s.brand).reverse());
@@ -428,14 +465,17 @@ section("A4. The lock: what Barnwright may never change");
   const now = structuredClone(s);
   now.status = "active"; now.embed = { origins: ["https://mine.example"] }; now.leads = { ...now.leads, mode: "form", url: "https://mine.example/q" };
   now.brand.credit = { text: "x", url: "", show: false };
+  now.built = { eaveOverhang: { gable: 6 } };
+  now.construction = { walls: { heightIn: 96 } };
   const old = structuredClone(s);
   old.offer.UT.sizes["10x16"] = 1234;
-  old.construction = { roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 5 / 24 } }, { value: { w: rise } }] } } } };
-  const back = carryLocked(now, old);
-  ok("carryLocked: going back keeps status, embed, where quotes go and the credit as they are now, and the prices and pitch as they were",
+  old.construction = rule("UT", 5);
+  const back = carryLocked(now, old, { manufacturer });
+  ok("carryLocked: going back keeps status, embed, where quotes go, the credit, the construction settings and How it's built for the whole business as they are now, and the prices and each style's own pitch as they were (an old rule list as the pitch it drew)",
     back.status === "active" && JSON.stringify(back.embed) === JSON.stringify(now.embed) && back.leads.mode === "form" && back.leads.url === "https://mine.example/q"
     && JSON.stringify(back.brand.credit) === JSON.stringify(now.brand.credit) && back.offer.UT.sizes["10x16"] === 1234
-    && JSON.stringify(back.construction) === JSON.stringify(old.construction) && lockProblems(now, back, { standardRise: rise }).length === 0, JSON.stringify(back).slice(0, 400));
+    && back.offer.UT.built?.roofPitch === 5 && JSON.stringify(back.construction) === JSON.stringify(now.construction) && JSON.stringify(back.built) === JSON.stringify(now.built)
+    && lockProblems(now, back, { manufacturer }).length === 0, JSON.stringify(back).slice(0, 400));
 }
 {
   /* put back during a visit carries the locked parts forward */
@@ -813,7 +853,6 @@ const fxExample = (name) => FX.door.examples.find((e) => e.name === name);
 /* ======================================================================================== */
 /* THE EDITS, THE WARNINGS AND THE READ PARTS on their own (setup-edits.js, setup-view.js)  */
 
-const STD_RISE = library.roof.shapes.gable.rise.w;
 
 section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own");
 {
@@ -823,16 +862,16 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
   const wrong = [];
   for (const sm of FX.edits.samples) {
     const edits = sm.name === "too many edits" ? Array.from({ length: 301 }, () => sm.edits[0]) : sm.edits;
-    const res = applyEdits(base, edits, { manufacturer, mode: sm.mode, standardRise: STD_RISE });
+    const res = applyEdits(base, edits, { manufacturer, mode: sm.mode });
     let got;
     if (res.problems.length) got = { ok: false, problems: res.problems };
     else {
       const next = structuredClone(res.settings);
       next.cfg = priceFingerprint(next) === priceFingerprint(base) ? base.cfg : (base.cfg || 1) + 1;
-      const locked = lockProblems(base, next, { door: true, mode: sm.mode, standardRise: STD_RISE });
+      const locked = lockProblems(base, next, { door: true, mode: sm.mode, manufacturer });
       if (locked.length) got = { ok: false, problems: locked };
       else {
-        try { pl.check(next); got = { ok: true, changes: describeChanges(base, next, manufacturer, { contact: "new" }), warnings: warnings(base, next, manufacturer), sha: sha256(JSON.stringify(next)), newCodes: res.newCodes }; }
+        try { pl.check(next); got = { ok: true, changes: describeChanges(base, next, manufacturer, { contact: "new", library }), warnings: warnings(base, next, manufacturer), sha: sha256(JSON.stringify(next)), newCodes: res.newCodes }; }
         catch (e) { got = { ok: false, problems: e.problems || [e.message] }; }
       }
     }
@@ -846,7 +885,7 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
   ok(`A6: all ${FX.edits.samples.length} sample edits give the fixtures' change words, warnings, problems and the exact settings (SHA-256)`, wrong.length === 0, wrong.join("\n       "));
   const pathsWrong = [];
   for (const sm of FX.edits.samples.filter((x) => x.expect.ok)) {
-    const res = applyEdits(FX.edits.baseSettings, sm.edits, { manufacturer, mode: sm.mode, standardRise: STD_RISE });
+    const res = applyEdits(FX.edits.baseSettings, sm.edits, { manufacturer, mode: sm.mode });
     for (const [p, v] of Object.entries(sm.expect.paths)) {
       const got = p.split(".").reduce((o, k) => (o == null ? undefined : o[k]), res.settings);
       if (JSON.stringify(got) !== JSON.stringify(v)) pathsWrong.push(`${sm.name}: ${p}`);
@@ -878,41 +917,64 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
   ok("... and an email isn't also a web address", JSON.stringify(contactKinds("office@testingsheds.com")) === JSON.stringify(["an email address"]));
 }
 {
-  /* F13: the roof pitch, drawn the way dealersetup/library/pitch-override.mjs checks it */
-  const opts = { manufacturer, standardRise: STD_RISE };
-  const own = applyEdits(FX.edits.baseSettings, [{ do: "add_own_style", built_like: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }, { do: "set_roof_pitch", style: "UT", pitch: "5/12" }], opts);
+  /* F13 / HB: the roof pitch, a style's own number in How it's built, drawn
+     the way dealersetup/library/pitch-override.mjs checks it */
+  const opts = { manufacturer };
+  const base = FX.edits.baseSettings;
+  const own = applyEdits(base, [{ do: "add_own_style", built_like: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }, { do: "set_roof_pitch", style: "UT", pitch: "6/12" }], opts);
   const pitched = (settings, st) => {
     const cat = resolveCatalogue(settings, manufacturer, library);
-    const s = designDefaults(cat); setType(s, st, cat); s.size = "10x16";
+    const s = designDefaults(cat); setType(s, st, cat); s.size = st === "G" ? "12x20" : "10x16";
     const f = frameOf(s, cat);
     return (Math.max(...f.prof.map((p) => p[1])) - f.topY) / (f.W / 2) * 12;
   };
-  ok("F13: set_roof_pitch UT 5/12 draws the Utility Shed at 5/12, and the style of their own built like it too; the Garage stays standard",
-    own.problems.length === 0 && validate(own.settings, manufacturer).length === 0 && Math.abs(pitched(own.settings, "UT") - 5) < 0.01
-    && Math.abs(pitched(own.settings, "UT1") - 5) < 0.01 && Math.abs(pitched(own.settings, "G") - STD_RISE * 24) < 0.01 && Math.abs(pitched(FX.edits.baseSettings, "UT") - STD_RISE * 24) < 0.01,
-    `${pitched(own.settings, "UT").toFixed(2)} ${pitched(own.settings, "UT1").toFixed(2)} ${pitched(own.settings, "G").toFixed(2)}`);
-  const two = applyEdits(FX.edits.baseSettings, [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }, { do: "set_roof_pitch", style: "G", pitch: "8/12" }, { do: "set_roof_pitch", style: "UT", pitch: "7/12" }], opts);
-  ok("F13: one rule per style, in the order first changed, then the library's own rise last",
-    JSON.stringify(two.settings.construction) === JSON.stringify({ roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 7 / 24 } }, { when: { styles: ["G"] }, value: { w: 8 / 24 } }, { value: { w: STD_RISE } }] } } } })
-    && lockProblems(FX.edits.baseSettings, two.settings, { door: true, standardRise: STD_RISE }).length === 0, JSON.stringify(two.settings.construction));
+  const shopUT = manufacturer.styles.UT.built.roofPitch, shopG = manufacturer.styles.G.built.roofPitch;
+  ok("F13: set_roof_pitch UT 6/12 writes the Utility Shed's own roof pitch in How it's built (old code: a construction rule), and nothing in the construction settings",
+    own.problems.length === 0 && own.settings.offer.UT.built?.roofPitch === 6 && JSON.stringify(own.settings.construction) === JSON.stringify(base.construction) && !("built" in own.settings.offer.UT1),
+    JSON.stringify([own.problems, own.settings?.offer?.UT, own.settings?.construction]));
+  ok("F13: it draws the Utility Shed at 6/12, and the style of their own built like it too; the Garage keeps its standard (the shop's 5/12)",
+    validate(own.settings, manufacturer).length === 0 && Math.abs(pitched(own.settings, "UT") - 6) < 0.01
+    && Math.abs(pitched(own.settings, "UT1") - 6) < 0.01 && Math.abs(pitched(own.settings, "G") - shopG) < 0.01 && Math.abs(pitched(base, "UT") - shopUT) < 0.01,
+    `${pitched(own.settings, "UT").toFixed(2)} ${pitched(own.settings, "UT1").toFixed(2)} ${pitched(own.settings, "G").toFixed(2)} ${pitched(base, "UT").toFixed(2)}`);
+  const two = applyEdits(base, [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }, { do: "set_roof_pitch", style: "G", pitch: "8/12" }, { do: "set_roof_pitch", style: "UT", pitch: "7/12" }], opts);
+  ok("F13: each style keeps its own number; the last one set wins",
+    two.settings.offer.UT.built?.roofPitch === 7 && two.settings.offer.G.built?.roofPitch === 8 && JSON.stringify(two.settings.construction) === JSON.stringify(base.construction)
+    && lockProblems(base, two.settings, { door: true, manufacturer }).length === 0 && lockProblems(base, two.settings, { door: true, mode: "switch", manufacturer }).length === 0, JSON.stringify(two.settings?.offer));
   const back = applyEdits(two.settings, [{ do: "set_roof_pitch", style: "G", pitch: "standard" }, { do: "set_roof_pitch", style: "UT", pitch: "standard" }], opts);
-  ok("F13: standard takes the style's rule out; with none left the rise goes, and construction is as it was",
-    JSON.stringify(back.settings.construction) === JSON.stringify(FX.edits.baseSettings.construction), JSON.stringify(back.settings.construction));
-  ok("F13: the change words say every building built like it",
-    JSON.stringify(describeChanges(FX.edits.baseSettings, two.settings, manufacturer)) === JSON.stringify(["Utility Shed and every building built like it: roof pitch 6.5/12 (standard) → 7/12", "Garage and every building built like it: roof pitch 6.5/12 (standard) → 8/12"])
-    && JSON.stringify(describeChanges(two.settings, back.settings, manufacturer)) === JSON.stringify(["Utility Shed and every building built like it: roof pitch 7/12 → 6.5/12 (standard)", "Garage and every building built like it: roof pitch 8/12 → 6.5/12 (standard)"]),
-    JSON.stringify(describeChanges(two.settings, back.settings, manufacturer)));
-  const pitches = ["3/12", "12/12"].map((p) => applyEdits(FX.edits.baseSettings, [{ do: "set_roof_pitch", style: "MU", pitch: p }], opts).problems.length);
-  const refusedPitch = ["2/12", "13/12", "5.5/12", "steep", 5].map((p) => applyEdits(FX.edits.baseSettings, [{ do: "set_roof_pitch", style: "UT", pitch: p }], opts).problems[0]);
+  ok("F13: standard takes the style's own number out, and the price list is as it was",
+    JSON.stringify(back.settings) === JSON.stringify(base), JSON.stringify([back.settings.offer.UT, back.settings.offer.G]));
+  const std = (n) => manufacturer.styles.UT.built ? `${n}/12` : "";
+  ok("F13: the change words are the owner's own History words for How it's built, the standard said as its number (the shop's 5/12)",
+    JSON.stringify(describeChanges(base, two.settings, manufacturer, { library })) === JSON.stringify([`Utility Shed roof pitch: ${std(shopUT)} → 7/12`, `Garage roof pitch: ${std(shopG)} → 8/12`])
+    && JSON.stringify(describeChanges(two.settings, back.settings, manufacturer, { library })) === JSON.stringify([`Utility Shed roof pitch: 7/12 → ${std(shopUT)}`, `Garage roof pitch: 8/12 → ${std(shopG)}`]),
+    JSON.stringify([describeChanges(base, two.settings, manufacturer, { library }), describeChanges(two.settings, back.settings, manufacturer, { library })]));
+  const views = (st) => JSON.stringify(readView(st, "buildings", manufacturer).styles.map((x) => [x.code, x.pitch]));
+  ok("F13: read says each style's own pitch (old code: standard), its own style built like it the same, and standard again after",
+    views(two.settings) === JSON.stringify([["UT", "7/12"], ["LB", null], ["G", "8/12"]]) && views(back.settings) === JSON.stringify([["UT", "standard"], ["LB", null], ["G", "standard"]])
+    && JSON.stringify(readView(own.settings, "buildings", manufacturer).styles.find((x) => x.code === "UT1")?.pitch) === JSON.stringify("6/12"), views(two.settings));
+  const pitches = ["3/12", "12/12"].map((p) => applyEdits(base, [{ do: "set_roof_pitch", style: "UT", pitch: p }], opts).problems.length);
+  const refusedPitch = ["2/12", "13/12", "5.5/12", "steep", 5].map((p) => applyEdits(base, [{ do: "set_roof_pitch", style: "UT", pitch: p }], opts).problems[0]);
   ok("F13: 3/12 to 12/12 in whole twelfths, or standard; anything else in plain words",
     pitches.every((n) => n === 0) && refusedPitch.every((w) => w === "Edit 1: Pick a pitch from 3/12 to 12/12, in whole twelfths, or standard."), JSON.stringify(refusedPitch));
-  const roofs = ["CS", "SS", "BU", "SB"].map((st) => applyEdits(FX.edits.baseSettings, [{ do: "set_roof_pitch", style: st, pitch: "6/12" }], opts).problems[0]);
+  const metal = applyEdits(base, [{ do: "sell_style", style: "MU", sizes: { "10x12": 4990 } }, { do: "set_roof_pitch", style: "MU", pitch: "3/12" }], opts);
+  const unsold = applyEdits(base, [{ do: "set_roof_pitch", style: "GU", pitch: "6/12" }], opts);
+  ok("F13: How it's built's own limits hold (a metal roof never flatter than 4/12), and a style they don't sell is said in words",
+    JSON.stringify(metal.problems) === JSON.stringify(["Edit 2: Roof pitch 3/12 is flatter than 4/12, the flattest the 3D designer can frame a metal roof."])
+    && JSON.stringify(unsold.problems) === JSON.stringify(["Edit 1: They don't sell the Garden Utility. Sell it first (sell_style), then set its roof pitch."]), JSON.stringify([metal.problems, unsold.problems]));
+  const roofs = ["CS", "SS", "BU", "SB"].map((st) => applyEdits(base, [{ do: "set_roof_pitch", style: st, pitch: "6/12" }], opts).problems[0]);
   ok("F13: saltbox, single slope, lean-to and gambrel roofs are refused, each in words",
     JSON.stringify(roofs) === JSON.stringify(["saltbox", "single slope", "lean-to", "gambrel"].map((w, i) => `Edit 1: Only a gable roof's pitch can be changed here. The ${manufacturer.styles[["CS", "SS", "BU", "SB"][i]].name} has a ${w} roof, so a different pitch needs a new library style.`)), JSON.stringify(roofs));
-  const hand = structuredClone(FX.edits.baseSettings);
+  const hand = structuredClone(base);
   hand.construction = { roof: { shapes: { gable: { rise: { w: 0.3 } } } } };
   ok("F13: gable roofs set up some other way (by hand in the repository) are left alone, in words",
     applyEdits(hand, [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }], opts).problems[0] === "Edit 1: Their gable roofs were set up another way, so the pitch can't be changed here.");
+  const older = structuredClone(base);
+  older.construction = { roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 7 / 24 } }, { value: { w: library.roof.shapes.gable.rise.w } }] } } } };
+  const moved = applyEdits(older, [{ do: "set_roof_pitch", style: "G", pitch: "8/12" }], opts);
+  ok("HB: on a price list from before, holding set_roof_pitch's old rule list, the next pitch moves that rule into How it's built first: the Utility Shed keeps 7/12 and draws it",
+    moved.problems.length === 0 && moved.settings.offer.UT.built?.roofPitch === 7 && moved.settings.offer.G.built?.roofPitch === 8 && JSON.stringify(moved.settings.construction ?? {}) === "{}"
+    && Math.abs(pitched(moved.settings, "UT") - 7) < 0.01 && Math.abs(pitched(older, "UT") - 7) < 0.01 && lockProblems(older, moved.settings, { door: true, manufacturer }).length === 0,
+    JSON.stringify([moved.problems, moved.settings?.offer?.UT, moved.settings?.construction]));
 }
 
 /* ======================================================================================== */
@@ -1129,15 +1191,20 @@ const S = withDoor(await fixtureBusiness());
 {
   /* F13 through the door */
   await D.fresh();
-  const chk = await D.door({ action: "check", version: 1, edits: [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }] });
-  const sv = await D.door({ action: "save", version: 1, edits: [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }], settingsSha256: chk.data.settingsSha256 });
+  const chk = await D.door({ action: "check", version: 1, edits: [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }] });
+  const sv = await D.door({ action: "save", version: 1, edits: [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }], settingsSha256: chk.data.settingsSha256 });
   const bld = await D.door({ action: "read", part: "buildings" });
-  ok("F13: through the door it passes the lock and saves, and read says UT 5/12, the Garage standard, the Loft Barn none",
-    sv.status === 200 && sv.data.version === 2 && sv.data.changes[0] === "Utility Shed and every building built like it: roof pitch 6.5/12 (standard) → 5/12"
-    && JSON.stringify(bld.data.view.styles.map((x) => [x.code, x.pitch])) === JSON.stringify([["UT", "5/12"], ["LB", null], ["G", "standard"]]), JSON.stringify([sv.data, bld.data.view?.styles?.map((x) => x.pitch)]));
+  const saved = (await D.store.get("price-list")).settings;
+  ok("F13: through the door it passes the lock and saves the Utility Shed's own roof pitch in How it's built, and read says UT 6/12, the Garage standard, the Loft Barn none",
+    sv.status === 200 && sv.data.version === 2 && sv.data.changes[0] === `Utility Shed roof pitch: ${manufacturer.styles.UT.built.roofPitch}/12 → 6/12`
+    && saved.offer.UT.built?.roofPitch === 6 && JSON.stringify(saved.construction) === "{}"
+    && JSON.stringify(bld.data.view.styles.map((x) => [x.code, x.pitch])) === JSON.stringify([["UT", "6/12"], ["LB", null], ["G", "standard"]]), JSON.stringify([sv.data, bld.data.view?.styles?.map((x) => x.pitch)]));
+  const hist = await D.store.get("price-list-history/000002");
+  ok("... and the owner's History says the same words", JSON.stringify(hist?.changes) === JSON.stringify(sv.data.changes), JSON.stringify(hist?.changes));
   const und = await D.door({ action: "check", version: 2, undo: true });
   r = await D.door({ action: "undo", version: 2, settingsSha256: und.data.settingsSha256 });
-  ok("(and undone again)", r.status === 200 && r.data.version === 3 && JSON.stringify((await D.store.get("price-list")).settings.construction) === "{}", JSON.stringify(r.data));
+  const undone = (await D.store.get("price-list")).settings;
+  ok("(and undone again)", r.status === 200 && r.data.version === 3 && JSON.stringify(undone.construction) === "{}" && !("built" in undone.offer.UT), JSON.stringify(r.data));
 }
 
 section("A5. Parity: the door's check refuses exactly what the owner's own save refuses");
@@ -1152,7 +1219,7 @@ section("A5. Parity: the door's check refuses exactly what the owner's own save 
   for (const [name, edits] of cases) {
     const v = (await D.store.get("price-list")).version;
     const door = await D.door({ action: "check", version: v, edits });
-    const res = applyEdits((await D.store.get("price-list")).settings, edits, { manufacturer, standardRise: STD_RISE });
+    const res = applyEdits((await D.store.get("price-list")).settings, edits, { manufacturer });
     const owner = res.settings ? await D.call("PUT", "/api/office/price-list", { settings: res.settings, version: v }, { as: "pat" }) : { status: 0, data: { problems: res.problems } };
     if (!(door.status === 422 && owner.status === 422 && door.data.problems.length && JSON.stringify(door.data.problems) === JSON.stringify(owner.data.problems))) {
       wrong.push(`${name}: door ${door.status} ${JSON.stringify(door.data.problems)} owner ${owner.status} ${JSON.stringify(owner.data.problems)}`);
@@ -1233,6 +1300,15 @@ const F = await fixtureBusiness();
     && (await F.door({ action: "status" })).status === 200 && (await F.door({ action: "read", part: "options" })).status === 200, JSON.stringify(r.data));
   F.room.business.status = "active";
   await F.office.checkIn({ force: true });
+}
+{
+  /* HB: while the owner's switch is on, the door may set a style's own roof pitch too */
+  const v = (await S.store.get("price-list")).version;
+  const ep = [{ do: "set_roof_pitch", style: "G", pitch: "7/12" }];
+  const cp = await S.door({ action: "check", version: v, edits: ep });
+  const sp = await S.door({ action: "save", version: v, edits: ep, settingsSha256: cp.data.settingsSha256 });
+  ok("HB: switch on: set_roof_pitch passes the lock and saves the Garage's own roof pitch (Alan's tap in the Control Room)",
+    cp.status === 200 && cp.data.access === "switch" && sp.status === 200 && (await S.store.get("price-list")).settings.offer.G.built?.roofPitch === 7, JSON.stringify([cp.data, sp.data]).slice(0, 400));
 }
 {
   /* F3: while the owner's switch is on, only Alan's own tap in the Control Room saves */
@@ -1406,8 +1482,8 @@ section("A6 / DCSEC-1. The change words say what is written, so Alan reads the n
 {
   const base = FX.edits.baseSettings;
   const linesFor = (edits) => {
-    const res = applyEdits(base, edits, { manufacturer, standardRise: STD_RISE });
-    return res.problems.length ? res.problems : describeChanges(base, res.settings, manufacturer, { contact: "new" });
+    const res = applyEdits(base, edits, { manufacturer });
+    return res.problems.length ? res.problems : describeChanges(base, res.settings, manufacturer, { contact: "new", library });
   };
   const long = ("Prices plus tax. " + "Delivery and setup included within our area, on level ground with room for the truck. ".repeat(3) + "Deposits are paid only by gift card at the lot.").slice(0, 300).trim();
   const cases = [
@@ -1808,7 +1884,7 @@ section("F15 item 4. The lock: an extra that changes how the building is built")
   }
   ok(`the door: each of the ${FXE.door.length} examples (a name and price change keeps the effect; remove_extra and a construction part are refused)`, wrong.length === 0, wrong.join("\n       "));
   const pathsWrong = FXE.door.filter((sm) => sm.expect.ok).filter((sm) => {
-    const res = applyEdits(FXE.effectBase, sm.edits, { manufacturer, standardRise: STD_RISE });
+    const res = applyEdits(FXE.effectBase, sm.edits, { manufacturer });
     return JSON.stringify(res.settings?.options?.extras) !== JSON.stringify(sm.expect.paths["options.extras"]);
   });
   ok("set_extra on its own keeps the extra's construction effect exactly", pathsWrong.length === 0, pathsWrong.map((x) => x.name).join(", "));
@@ -1845,19 +1921,26 @@ section("F15 item 4. The lock: an extra that changes how the building is built")
     ["an effect added to an extra that had none", (s) => { s.options.extras.find((x) => x.key === "ridge-vent").construction = { "roof.ventIn": 4 }; }, ["Ridge vent"]],
     ["the extra with the effect renamed and its effect removed", (s) => { const x = s.options.extras.find((y) => y.key === "heavy-floor"); x.name = "Floor"; delete x.construction; }, ["Heavy-duty floor"]],
     ["the effect moved to another key", (s) => { const x = s.options.extras.find((y) => y.key === "heavy-floor"); x.key = "floor-2"; }, ["Heavy-duty floor"]],
+    /* HB: an extra's own How it's built numbers (old code: not looked at) */
+    ["How it's built numbers added to an extra that had none", (s) => { s.options.extras.find((x) => x.key === "ridge-vent").built = { roofPitch: 8 }; }, ["Ridge vent"]],
+    ["an extra's How it's built numbers changed", (s) => { s.options.extras.find((x) => x.key === FXE.builtExtra.key).built.roofPitch = 9; }, [FXE.builtExtra.name]],
+    ["the buildings an extra with How it's built numbers is offered on", (s) => { delete s.options.extras.find((x) => x.key === FXE.builtExtra.key).styles; }, [FXE.builtExtra.name]],
+    ["an extra with How it's built numbers removed", (s) => { s.options.extras = s.options.extras.filter((x) => x.key !== FXE.builtExtra.key); }, [FXE.builtExtra.name]],
   ];
   const lwrong = [];
   for (const [what, change, names] of variants) {
     const n = structuredClone(s0);
     change(n);
-    const got = lockProblems(s0, n, { standardRise: STD_RISE });
+    const got = lockProblems(s0, n, { manufacturer });
     if (JSON.stringify(got) !== JSON.stringify(names.map(words))) lwrong.push(`${what}: ${JSON.stringify(got)}`);
   }
   const reordered = structuredClone(s0);
   reordered.options.extras.reverse();
+  /* the same numbers written as text ("7/12" for 7) are the same numbers */
+  reordered.options.extras.find((x) => x.key === FXE.builtExtra.key).built.roofPitch = "7/12";
   reordered.options.extras.find((x) => x.key === "heavy-floor").construction = { ...s0.options.extras.find((x) => x.key === "heavy-floor").construction };
-  if (lockProblems(s0, reordered, { standardRise: STD_RISE }).length) lwrong.push("the same extras in another order are refused");
-  ok("lockProblems: every way of adding, changing or taking away an extra's effect is refused with its name; the same extras in another order are not", lwrong.length === 0, lwrong.join("; "));
+  if (lockProblems(s0, reordered, { manufacturer }).length) lwrong.push("the same extras in another order are refused");
+  ok("lockProblems: every way of adding, changing or taking away an extra's effect or its own How it's built numbers is refused with its name; the same extras in another order (a number written as text) are not", lwrong.length === 0, lwrong.join("; "));
   /* SEC-F15-2: the 3D designer reads an extra's key as text (optionEffects[x.key]),
      so the number 5 and the text "5" are one choice there */
   const owner5 = structuredClone(s0);
@@ -1866,7 +1949,7 @@ section("F15 item 4. The lock: an extra that changes how the building is built")
   twin.options.extras.push({ key: 5, name: "Cheap shelf", input: "check", price: 10 });
   const kwrong = [];
   for (const door of [true, false]) {
-    const got = lockProblems(owner5, twin, { door, standardRise: STD_RISE });
+    const got = lockProblems(owner5, twin, { door, manufacturer });
     if (asJson(got) !== asJson([words("Heavy floor")])) kwrong.push(`a second extra keyed 5 beside "5" (${door ? "door" : "visit"}): ${asJson(got)}`);
   }
   const both = structuredClone(s0);
@@ -1876,15 +1959,46 @@ section("F15 item 4. The lock: an extra that changes how the building is built")
   ];
   const swapped = structuredClone(both);
   swapped.options.extras.reverse();
-  if (!lockProblems(both, swapped, { standardRise: STD_RISE }).length) kwrong.push("5 and \"5\" swapped (which one builds changes): not refused");
+  if (!lockProblems(both, swapped, { manufacturer }).length) kwrong.push("5 and \"5\" swapped (which one builds changes): not refused");
   ok("the lock reads extras' keys as the 3D designer does, as text: an extra keyed 5 beside the owner's \"5\" that has an effect is refused with its name, and so is swapping 5 and \"5\"",
     kwrong.length === 0, kwrong.join("; "));
   const vk = validate(twin, manufacturer);
   ok("... and model/company.js validate() takes only text keys for extras (the number 5 is refused; \"5\" is fine)",
     vk.includes("options.extras[1].key must be 1 to 40 letters, digits, dashes or underscores.") && validate(owner5, manufacturer).length === 0, asJson(vk));
-  const pitch = applyEdits(s0, [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }], { manufacturer, standardRise: STD_RISE });
-  ok("... while a gable roof's pitch (set_roof_pitch) still passes the lock with the effect extra there", pitch.problems.length === 0 && lockProblems(s0, pitch.settings, { door: true, standardRise: STD_RISE }).length === 0);
+  const pitch = applyEdits(s0, [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }], { manufacturer });
+  ok("... while a gable roof's pitch (set_roof_pitch) still passes the lock with the effect extras there", pitch.problems.length === 0 && lockProblems(s0, pitch.settings, { door: true, manufacturer }).length === 0);
 }
+section("HB. How it's built through Barnwright's setup access: a building style's own numbers, checked like the owner's");
+{
+  const H = await fixtureBusiness();
+  const hc = cookieFrom(await H.start());
+  const put = async (fn) => {
+    const pl = (await H.visit("GET", "price-list", undefined, hc)).data;
+    const settings = structuredClone(pl.settings);
+    fn(settings);
+    const x = await H.visit("PUT", "price-list", { settings, version: pl.version }, hc);
+    return { x, before: pl.version, after: (await H.store.get("price-list")).version };
+  };
+  let t = await put((s) => { s.offer.LB.built = { wallHeight: "7 ft" }; });
+  const savedLB = await H.store.get("price-list");
+  const histLB = await H.store.get(`price-list-history/${String(savedLB.version).padStart(6, "0")}`);
+  ok("HB: the visit may set a building style's own number in How it's built: stored as a number, said in History like the owner's own",
+    t.x.status === 200 && savedLB.settings.offer.LB.built?.wallHeight === 84 && (histLB?.changes || []).includes("Loft Barn wall height: 6 ft 7 1/2 in → 7 ft"), JSON.stringify([t.x.data, histLB?.changes]).slice(0, 400));
+  t = await put((s) => { s.offer.UT.built = { wallHeight: 60 }; });
+  ok("HB: ... and the every-size check judges it as it does the owner's: a 5 ft Utility Shed wall that no door fits is refused in words, nothing saved",
+    t.x.status === 422 && /Utility Shed 12x20: the 72″ Wooden Double Doors on the front should be 76 1\/2 in tall, but the wall leaves room for/.test((t.x.data.problems || [])[0] || "") && t.after === t.before, JSON.stringify(t.x.data).slice(0, 400));
+  t = await put((s) => { s.offer.UT.built = { roofPitch: "5\\12" }; });
+  ok("HB: ... and How it's built's own words refuse a number it can't read", t.x.status === 422 && JSON.stringify(t.x.data.problems) === JSON.stringify(["Roof pitch: write it like 5/12."]) && t.after === t.before, JSON.stringify(t.x.data));
+  t = await put((s) => { s.built = { roofPitch: { gable: 6 } }; });
+  ok("HB: How it's built for the whole business is the owner's alone: refused in the lock's words", t.x.status === 422 && JSON.stringify(t.x.data.problems) === JSON.stringify([LOCK_WORDS.built]) && t.after === t.before, JSON.stringify(t.x.data));
+  t = await put((s) => { s.construction = { walls: { heightIn: 96 } }; });
+  ok("HB: so are the construction settings", t.x.status === 422 && JSON.stringify(t.x.data.problems) === JSON.stringify([LOCK_WORDS.construction]) && t.after === t.before, JSON.stringify(t.x.data));
+  const own = await H.ownerSave((s) => { s.built = { roofPitch: { gable: 6 } }; });
+  ok("(the owner may set How it's built for the whole business)", own.status === 200, JSON.stringify(own.data).slice(0, 300));
+  const bld = await (withDoor(H)).door({ action: "read", part: "buildings" });
+  ok("HB: read says a gable roof's pitch the owner set for the whole business, not standard", JSON.stringify(bld.data.view?.styles?.map((x) => [x.code, x.pitch])) === JSON.stringify([["UT", "6/12"], ["LB", null], ["G", "6/12"]]), JSON.stringify(bld.data.view?.styles?.map((x) => [x.code, x.pitch])));
+}
+
 {
   /* putting back can't take an effect away either: the owner added the extra after the version Barnwright puts back */
   const G = withDoor(business());

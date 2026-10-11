@@ -27,9 +27,9 @@
        check-in right after a deploy (deploy-succeeded).
 
    The change words come from the Dealer Center's own describeChanges, so
-   they are exactly what it writes today. Two kinds of words are new and
-   written here by hand: the roof pitch line and the undo line (marked
-   "newWords"), and every warning.
+   they are exactly what it writes today (the roof pitch line too: a style's
+   own roof pitch is a How it's built number, said like the owner's own).
+   Written here by hand: the undo line and every warning.
 
    Signatures: ECDSA signatures differ every time they are made, so a
    signature already in the file is kept when it still checks out. Running
@@ -40,7 +40,8 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { readJSON, ROOT } from "./load.mjs";
-import { createPriceList, describeChanges, priceFingerprint } from "../../server/office/price-list.js";
+import { createPriceList, describeChanges as describeAll, priceFingerprint } from "../../server/office/price-list.js";
+import { format as formatBuilt } from "../../model/build-settings.js";
 import { MemoryBlobs, wrapStore } from "../../server/office/store.js";
 import { canonicalLease, LEASE_DURATION_MS } from "../../server/office/license-core.js";
 
@@ -140,7 +141,8 @@ export const LOCK = {
   embed: "Only the owner can change which websites may show the 3D designer.",
   leads: "Only the owner can change where quotes go.",
   credit: "The 3D designer credit line can't be changed by Barnwright.",
-  construction: "How the buildings are built can't be changed here, except a gable roof's pitch.",
+  construction: "How the buildings are built can't be changed here, except a building style's own numbers in How it's built.",
+  built: "Only the owner can change How it's built for the whole business. A building style's own numbers can be changed here.",
   extraConstruction: "The extra \"<name>\" changes how the building is built, so only the owner can add it, remove it or change what it builds.",
   logoAddress: "The logo must be a picture uploaded in Settings, Logo, not a web address.",
   logoBig: "The logo is too big. Use a picture of 150 KB or less.",
@@ -220,8 +222,11 @@ export const REFUSED_LOG = {
 };
 const logStarted = `${BARNWRIGHT} started your price list from Every standard building, using the terms you agreed to when you signed up.`;
 const UNDO_LINE = "Put back the price list from before Barnwright's last change";
-const pitchLine = (style, from, to) => `${style} and every building built like it: roof pitch ${from} → ${to}`;
-const STANDARD_PITCH = "6.5/12 (standard)";
+/* set_roof_pitch's change line: the owner's own History words for a style's
+   own roof pitch (model/build-settings.js describeChanges). The pitch
+   reaches every style of their own built like it that has no pitch of its
+   own. */
+const pitchLine = (style, from, to) => `${style} roof pitch: ${from} → ${to}`;
 
 /* ---- keys and signing ------------------------------------------------------------------ */
 
@@ -349,6 +354,11 @@ export function signupCounts(signup, { ships, ownCopies = {}, ownerSignedIn = fa
 
 const M = readJSON("library/manufacturers/standard.json");
 const LIB = readJSON("library/construction.json");
+/* the change words, with the builder's construction library How it's built reads */
+const describeChanges = (before, after, manufacturer, options = {}) => describeAll(before, after, manufacturer, { library: LIB, ...options });
+/* the Utility Shed's standard roof pitch as History says it: the shop
+   standard's own number (styles.UT.built.roofPitch), never written in by hand */
+const STANDARD_PITCH = formatBuilt("roofPitch", M.styles.UT.built?.roofPitch ?? LIB.roof.shapes.gable.rise.w * 24);
 
 async function basePriceList() {
   const store = wrapStore(new MemoryBlobs());
@@ -376,12 +386,13 @@ function optionName(s, g, k) {
   return def?.name || k;
 }
 const logoOf = (logo) => ({ present: !!logo, kb: logo ? Math.ceil(logo.length / 1024) : 0 });
-function pitchOf(s, code) {
-  if (M.styles?.[code]?.roof !== "gable" || M.styles?.[code]?.dormer) return null;
-  const rise = s.construction?.roof?.shapes?.gable?.rise;
-  if (!Array.isArray(rise)) return "standard";
-  const rule = rise.find((r) => r.when?.styles?.length === 1 && r.when.styles[0] === code);
-  return rule ? `${Math.round(rule.value.w * 24)}/12` : "standard";
+/* the roof pitch the business set in How it's built: on the style, on the
+   style it is built like, or for the whole business; else "standard" */
+function pitchOf(s, k) {
+  const base = baseOf(s, k);
+  if (M.styles?.[base]?.roof !== "gable" || M.styles?.[base]?.dormer) return null;
+  const own = s.offer?.[k]?.built?.roofPitch ?? (base !== k ? s.offer?.[base]?.built?.roofPitch : undefined) ?? s.built?.roofPitch?.gable;
+  return own === undefined ? "standard" : formatBuilt("roofPitch", own);
 }
 function groupsOf(s) {
   if (Array.isArray(s.categories)) return s.categories.map(([name, ks]) => ({ name, styles: ks.filter((k) => k in (s.offer || {})) }));
@@ -432,7 +443,7 @@ export function view(s, part) {
       groups: groupsOf(s),
       styles: soldInOrder(s).map((k) => ({
         code: k, name: styleName(s, k), builtLike: s.offer[k].base || null, roof: M.styles?.[baseOf(s, k)]?.roof || null,
-        pitch: pitchOf(s, baseOf(s, k)), sizes: s.offer[k].sizes,
+        pitch: pitchOf(s, k), sizes: s.offer[k].sizes,
       })),
       opensOn: { style: s.defaults?.style || null, size: s.defaults?.size || null },
     };
@@ -484,6 +495,7 @@ function sampleSet(base, pl) {
     settle(base, after);
     pl.check(after);                                  /* throws when the sample would not save */
     const changes = more.changes || describeChanges(base, after, M, { contact: "new" });
+    if (more.wantChanges && JSON.stringify(changes) !== JSON.stringify(more.wantChanges)) throw new Error(`${name}: the change words are ${JSON.stringify(changes)}`);
     const paths = {};
     for (const p of more.paths || []) paths[p] = p.split(".").reduce((v, k) => (v == null ? undefined : v[k]), after);
     const contact = ["phone", "email", "website"].some((k) => (base.brand[k] || "") !== (after.brand[k] || ""));
@@ -524,9 +536,9 @@ function sampleSet(base, pl) {
     (s) => { s.offer.UT.name = "Classic Utility Shed"; }, { paths: ["offer.UT.name"] });
   ok("change_prices: the owner's Change prices rule (nearest $5)", [{ do: "change_prices", scope: { style: "G" }, by_percent: 3, round_to: 5 }],
     (s) => { for (const z of keysOf(sizes(s, "G"))) sizes(s, "G")[z] = Math.round((sizes(s, "G")[z] * 1.03) / 5) * 5; }, { paths: ["offer.G.sizes"] });
-  ok("set_roof_pitch: one gable style, every building built like it too", [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }],
-    (s) => { s.construction = { roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 5 / 24 } }, { value: { w: LIB.roof.shapes.gable.rise.w } }] } } } }; },
-    { paths: ["construction"], changes: [pitchLine("Utility Shed", STANDARD_PITCH, "5/12")], newWords: true });
+  ok("set_roof_pitch: one gable style's own roof pitch in How it's built (every building built like it too)", [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }],
+    (s) => { s.offer.UT.built = { roofPitch: 6 }; },
+    { paths: ["offer.UT.built", "construction"], wantChanges: [pitchLine("Utility Shed", STANDARD_PITCH, "6/12")] });
 
   /* doors and windows, options, colors */
   ok("set_item: a new price", [{ do: "set_item", item: "w48", price: 175 }], (s) => { s.items.w48 = 175; }, { paths: ["items.w48"] });
@@ -629,6 +641,10 @@ function sampleSet(base, pl) {
   refused("set_roof_pitch: a style of their own", [{ do: "set_roof_pitch", style: "UT1", pitch: "6/12" }],
     ["Edit 1: UT1 is a style of their own. Change the pitch of the library style it is built like."]);
   refused("set_roof_pitch: out of range", [{ do: "set_roof_pitch", style: "UT", pitch: "14/12" }], ["Edit 1: Pick a pitch from 3/12 to 12/12, in whole twelfths, or standard."]);
+  refused("set_roof_pitch: a style they don't sell", [{ do: "set_roof_pitch", style: "GU", pitch: "6/12" }],
+    ["Edit 1: They don't sell the Garden Utility. Sell it first (sell_style), then set its roof pitch."]);
+  refused("set_roof_pitch: flatter than How it's built allows on a metal roof", [{ do: "set_roof_pitch", style: "MU", pitch: "3/12" }],
+    ["Edit 1: Roof pitch 3/12 is flatter than 4/12, the flattest the 3D designer can frame a metal roof."]);
   refused("set_business: contact details while the owner's switch is on", [{ do: "set_business", phone: "941-555-0199" }], ["Edit 1: " + LOCK.contact], { mode: "switch" });
   refused("too many edits", Array.from({ length: 301 }, () => ({ do: "set_price", style: "UT", size: "10x16", price: 5190 })).slice(0, 2), ["Send 1 to 300 edits at a time."]);
   out[out.length - 1].note = "the real request has 301 edits; two are shown here";
@@ -645,13 +661,16 @@ function sampleSet(base, pl) {
 /* ---- the lock: an extra that changes how the building is built ------------------------------- */
 
 const EFFECT_EXTRA = { key: "heavy-floor", name: "Heavy-duty floor", input: "check", price: 350, construction: { "floor.spacingIn": 12 } };
+/* an extra with How it's built numbers of its own (options.extras[].built), offered on one style:
+   it changes how that building is built just as a construction effect does */
+const BUILT_EXTRA = { key: "steeper-roof", name: "Steeper roof", input: "check", price: 450, styles: ["UT"], built: { roofPitch: 7 } };
 const extraWords = (name) => LOCK.extraConstruction.replace("<name>", name);
 
 /* The fixtures' base with one extra of the business's own that carries a construction effect
    (model/company.js optionEffects), and what Barnwright may and may not do with it. */
 function effectSet(base, pl) {
   const effectBase = structuredClone(base);
-  effectBase.options.extras.push(structuredClone(EFFECT_EXTRA));
+  effectBase.options.extras.push(structuredClone(EFFECT_EXTRA), structuredClone(BUILT_EXTRA));
   pl.check(effectBase);
   const door = [];
   {
@@ -671,6 +690,22 @@ function effectSet(base, pl) {
   }
   door.push({ name: "remove_extra: an extra that changes how the building is built (the lock)", mode: "prelive",
     edits: [{ do: "remove_extra", key: EFFECT_EXTRA.key }], expect: { ok: false, code: "problems", problems: [extraWords(EFFECT_EXTRA.name)] } });
+  {
+    const after = structuredClone(effectBase);
+    Object.assign(after.options.extras.find((e) => e.key === BUILT_EXTRA.key), { name: "Steeper roof (7/12)", price: 475 });
+    settle(effectBase, after);
+    pl.check(after);
+    door.push({
+      name: "set_extra on an extra with How it's built numbers of its own: name and price change, its numbers and buildings stay exactly",
+      mode: "prelive", edits: [{ do: "set_extra", key: BUILT_EXTRA.key, name: "Steeper roof (7/12)", charged: "check", price: 475 }],
+      expect: {
+        ok: true, changes: describeChanges(effectBase, after, M, { contact: "new" }), warnings: [], contactDetailsChange: false, newCodes: {},
+        paths: { "options.extras": after.options.extras }, settingsSha256: sha256(JSON.stringify(after)),
+      },
+    });
+  }
+  door.push({ name: "remove_extra: an extra with How it's built numbers of its own (the lock)", mode: "prelive",
+    edits: [{ do: "remove_extra", key: BUILT_EXTRA.key }], expect: { ok: false, code: "problems", problems: [extraWords(BUILT_EXTRA.name)] } });
   door.push({ name: "set_extra can't carry a construction effect (not part of the edit)", mode: "prelive",
     edits: [{ do: "set_extra", name: "Taller walls", charged: "check", price: 600, construction: { "walls.heightIn": 96 } }],
     expect: { ok: false, code: "problems", problems: ["Edit 1: construction isn't part of set_extra."] } });
@@ -688,10 +723,18 @@ function effectSet(base, pl) {
       expect: { status: 422, problems: [extraWords(EFFECT_EXTRA.name)] } },
     { name: "its name, how it is charged and its price changed, the effect the same", extras: extrasOf((l) => Object.assign(l.find((e) => e.key === EFFECT_EXTRA.key), { name: "Strong floor", input: "sqftF", price: 2 })),
       expect: { status: 200 } },
+    { name: "a new extra with How it's built numbers of its own", extras: extrasOf((l) => l.push({ key: "taller-door", name: "Taller door", input: "check", price: 200, built: { doorHeight: 80 } })),
+      expect: { status: 422, problems: [extraWords("Taller door")] } },
+    { name: "an extra's How it's built numbers changed", extras: extrasOf((l) => { l.find((e) => e.key === BUILT_EXTRA.key).built = { roofPitch: 8 }; }),
+      expect: { status: 422, problems: [extraWords(BUILT_EXTRA.name)] } },
+    { name: "the buildings an extra with How it's built numbers is offered on changed", extras: extrasOf((l) => { l.find((e) => e.key === BUILT_EXTRA.key).styles = ["UT", "G"]; }),
+      expect: { status: 422, problems: [extraWords(BUILT_EXTRA.name)] } },
+    { name: "an extra's How it's built numbers taken off (the extra stays)", extras: extrasOf((l) => { delete l.find((e) => e.key === BUILT_EXTRA.key).built; }),
+      expect: { status: 422, problems: [extraWords(BUILT_EXTRA.name)] } },
   ];
   return {
-    about: "An extra of the business's own can carry a construction effect (options.extras[].construction; model/company.js optionEffects). Barnwright never adds one, changes one or removes an extra that has one; the only building-shape change it can make is set_roof_pitch. Door samples are checked like edits.samples, on effectBase; visit samples are the visit's PUT price-list with effectBase whose options.extras is replaced by `extras` (and a put back that would do the same is refused alike).",
-    extra: EFFECT_EXTRA, effectBase, door, visit,
+    about: "An extra of the business's own can change how the building is built: a construction effect (options.extras[].construction; model/company.js optionEffects) or How it's built numbers of its own (options.extras[].built, on the buildings its styles list names). Barnwright never adds one, changes one (its effect, its numbers or the buildings it is offered on) or removes an extra that has one; the only building-shape change it can make is a building style's own numbers in How it's built (set_roof_pitch at the door). Door samples are checked like edits.samples, on effectBase; visit samples are the visit's PUT price-list with effectBase whose options.extras is replaced by `extras` (and a put back that would do the same is refused alike).",
+    extra: EFFECT_EXTRA, builtExtra: BUILT_EXTRA, effectBase, door, visit,
   };
 }
 

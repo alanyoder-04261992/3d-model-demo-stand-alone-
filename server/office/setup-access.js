@@ -183,13 +183,14 @@ function b64url(bytes) {
 
 /* deps: store, license (null when not connected), priceList, account,
    lots, website, now, log, appVersion, manufacturer (the builder's
-   library, for the door's edits and reads), standardRise (the library's
-   own gable rise, for the lock and the roof pitch), terms (the terms this
+   library, for the door's edits, reads and the lock), library (the
+   builder's construction library, library/construction.json, which the
+   How it's built change words read), terms (the terms this
    copy ships: TERMS; the checks and the local copy may pretend to ship
    newer ones) and copies (this copy's own copies of the terms by version,
    docs/legal/terms-sha256.json), for the owner's sign-up agreement. */
 export function createSetupAccess({
-  store, license, priceList, account, lots, website, now, log = console.error, appVersion = "dealer-center", manufacturer = {}, standardRise = null,
+  store, license, priceList, account, lots, website, now, log = console.error, appVersion = "dealer-center", manufacturer = {}, library = null,
   terms = TERMS, copies = termsCopies(),
 }) {
   const connected = !!license && !license.misconfigured;
@@ -682,11 +683,11 @@ export function createSetupAccess({
     await account.mustWrite();
     await count({ save: true });
     const savedBy = { id: "barnwright", name: `Barnwright (${s.actor})`, passId: s.passId };
-    const lock = (old, next) => lockProblems(old, next, { standardRise });
+    const lock = (old, next) => lockProblems(old, next, { manufacturer });
     let saved;
     try {
       saved = restore
-        ? await priceList.restore(null, { version: data.version, current: data.current }, { lock, savedBy, ensureHistory: true, carry: carryLocked })
+        ? await priceList.restore(null, { version: data.version, current: data.current }, { lock, savedBy, ensureHistory: true, carry: (from, into) => carryLocked(from, into, { manufacturer }) })
         : await priceList.save(null, { settings: data.settings, version: data.version }, { lock, savedBy, ensureHistory: true });
     } catch (e) {
       if (e?.locked) await refusedNote("locked");
@@ -814,13 +815,13 @@ export function createSetupAccess({
       if (current.version === 1) throw doorNo(409, "cant-undo", DOOR_WORDS.nothingBeforeStart);
       const before = await store.get(historyKey(current.version - 1));
       if (!before?.settings) throw doorNo(409, "cant-undo", DOOR_WORDS.copyGone);
-      settings = carryLocked(current.settings, before.settings);
+      settings = carryLocked(current.settings, before.settings, { manufacturer });
       lead = UNDO_LINE;
     } else if (!v.record && (data.edits === undefined || (Array.isArray(data.edits) && data.edits.length === 0))) {
       /* version 0 with no edits: the starting price list alone */
       settings = structuredClone(start);
     } else {
-      const r = applyEdits(current.settings, data.edits, { manufacturer, mode: v.mode, standardRise });
+      const r = applyEdits(current.settings, data.edits, { manufacturer, mode: v.mode });
       if (r.problems.length) throw doorNo(422, "problems", r.problems.join(" "), { problems: r.problems });
       settings = r.settings;
       newCodes = r.newCodes;
@@ -829,7 +830,7 @@ export function createSetupAccess({
     let prepared;
     try {
       prepared = await priceList.preview(settings, version, {
-        lock: (o, n) => lockProblems(o, n, { door: true, mode: v.mode, standardRise }), lead,
+        lock: (o, n) => lockProblems(o, n, { door: true, mode: v.mode, manufacturer }), lead,
         ...(v.record ? {} : { previous: { data: current } }),
       });
     } catch (e) {
@@ -843,7 +844,7 @@ export function createSetupAccess({
     /* The door's change words: the owner's own History words, except that
        the business phone, email and website the owner typed are never said
        (only a new one an edit writes; for an undo, neither). */
-    const changes = describeChanges(current.settings, prepared.next, manufacturer, { contact: undo ? "hidden" : "new" });
+    const changes = describeChanges(current.settings, prepared.next, manufacturer, { contact: undo ? "hidden" : "new", library });
     if (lead && changes.length) changes.unshift(lead);
     return {
       next: prepared.next, changes, warnings: warnings(current.settings, prepared.next, manufacturer),
@@ -913,7 +914,7 @@ export function createSetupAccess({
     let saved;
     try {
       saved = await priceList.save(null, { settings: p.next, version: from }, {
-        lock: (o, n) => lockProblems(o, n, { door: true, mode: v.mode, standardRise }), lead: p.lead, savedBy, ensureHistory: true,
+        lock: (o, n) => lockProblems(o, n, { door: true, mode: v.mode, manufacturer }), lead: p.lead, savedBy, ensureHistory: true,
       });
     } catch (e) {
       if (e instanceof OfficeError && e.status === 409) throw doorNo(409, "version", DOOR_WORDS.version);

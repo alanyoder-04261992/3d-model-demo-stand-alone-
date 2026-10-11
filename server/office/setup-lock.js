@@ -10,11 +10,16 @@
      * change which websites may show it (embed), the license settings,
        the credit line, or where quotes go (every `leads` key except the
        quote form's boxes, its plan question and its texting words);
-     * change how the buildings are built, except one gable roof's pitch:
-       not even through an extra of the business's own that carries a
-       construction effect (options.extras[].construction, model/company.js
-       optionEffects): no new one, no change to one, no removing an extra
-       that has one;
+     * change how the buildings are built, except a building style's own
+       numbers in How it's built (offer.<code>.built, which the door's
+       set_roof_pitch writes; checked by model/build-settings.js and the
+       every-size check like the owner's own): not the construction
+       settings, not the numbers for the whole business (the top-level
+       built), and not through an extra of the business's own that changes
+       how the building is built (its construction or its own How it's
+       built numbers, options.extras[].construction and .built, and where
+       such an extra is offered): no new one, no change to one, no removing
+       an extra that has one;
      * put a web address in as the logo: a logo is a picture of 150 KB or
        less, so no customer's 3D designer ever loads it from somewhere else.
 
@@ -27,7 +32,15 @@
    where quotes go or which websites may show it. Going back to a price
    list whose extras build differently is refused by the lock itself.
 
+   A price list from before How it's built may hold the roof pitch rule
+   list Barnwright's set_roof_pitch used to write (construction.roof.
+   shapes.gable.rise). Both sides are read with it moved into How it's
+   built first (liftRawRules, the same move every save makes), so such a
+   list compares as the style's own roof pitch it draws.
+
    Pure: no store, no clock. Node-safe and browser-safe. */
+
+import { liftRawRules, tidyBuilt } from "../../model/build-settings.js";
 
 export const LOCK_WORDS = Object.freeze({
   status: "Only the owner can open or close the 3D designer to customers.",
@@ -37,7 +50,9 @@ export const LOCK_WORDS = Object.freeze({
   embed: "Only the owner can change which websites may show the 3D designer.",
   leads: "Only the owner can change where quotes go.",
   credit: "The 3D designer credit line can't be changed by Barnwright.",
-  construction: "How the buildings are built can't be changed here, except a gable roof's pitch.",
+  construction: "How the buildings are built can't be changed here, except a building style's own numbers in How it's built.",
+  /* the top-level built: How it's built for the whole business */
+  built: "Only the owner can change How it's built for the whole business. A building style's own numbers can be changed here.",
   /* an extra of the business's own that changes how the building is built */
   extraConstruction: (name) => `The extra "${name}" changes how the building is built, so only the owner can add it, remove it or change what it builds.`,
   logoAddress: "The logo must be a picture uploaded in Settings, Logo, not a web address.",
@@ -66,27 +81,29 @@ function canon(v) {
 const same = (a, b) => canon(a) === canon(b);
 const openOf = (s) => (s?.status === "suspended" ? "suspended" : "active");
 
-/* construction without the one rule Barnwright may change (the gable
-   roof's rise), with the containers it leaves empty taken away */
-function pitchless(construction) {
-  if (!isObj(construction)) return construction ?? null;
-  const c = structuredClone(construction);
-  const gable = c.roof?.shapes?.gable;
-  if (isObj(gable) && "rise" in gable) {
-    delete gable.rise;
-    if (!Object.keys(gable).length) delete c.roof.shapes.gable;
-    if (!Object.keys(c.roof.shapes).length) delete c.roof.shapes;
-    if (!Object.keys(c.roof).length) delete c.roof;
-  }
-  return Object.keys(c).length ? c : null;
+/* A price list as the lock reads it: a roof pitch rule list of the shape
+   set_roof_pitch used to write moved into How it's built (the stored
+   settings may be from before), and How it's built numbers as numbers
+   ("5/12" as 5), the way every save stores them. Without the builder's
+   library nothing moves. */
+function asSaved(s, manufacturer) {
+  if (!isObj(s)) return {};
+  if (!isObj(manufacturer)) return s;
+  return tidyBuilt(liftRawRules(s, manufacturer).settings, manufacturer);
 }
+const emptyAsNull = (v) => (v === undefined || (isObj(v) && !Object.keys(v).length) ? null : v);
+
 /* The extras that change how the building is built, by key: an extra's
    construction effect counts when it is there at all (model/company.js
-   reads it with `if (x.construction)`). Keys are compared as the 3D
-   designer reads them, as text (optionEffects[x.key], the design's
-   choices), so 5 and "5" are one key. -> {first: key -> the first extra
-   with it, all: key -> every extra with it}. */
-const hasEffect = (x) => isObj(x) && !!x.construction;
+   reads it with `if (x.construction)`), and so do its own How it's built
+   numbers (options.extras[].built, read when it holds any). Keys are
+   compared as the 3D designer reads them, as text (optionEffects[x.key],
+   the design's choices), so 5 and "5" are one key. -> {first: key -> the
+   first extra with it, all: key -> every extra with it}. */
+const hasEffect = (x) => isObj(x) && (!!x.construction || (isObj(x.built) && Object.keys(x.built).length > 0));
+/* what such an extra builds, and on which buildings it is offered (its
+   numbers reach only those) */
+const effectOf = (x) => (hasEffect(x) ? { construction: x.construction ?? null, built: emptyAsNull(x.built), styles: x.styles ?? null } : null);
 function extrasByKey(s) {
   const first = new Map(), all = new Map();
   for (const x of Array.isArray(s?.options?.extras) ? s.options.extras : []) {
@@ -112,7 +129,7 @@ export function extraEffectChanges(old, next) {
   for (const [key, x] of before) {
     if (!hasEffect(x)) continue;
     const now = after.get(key);
-    if (!now || !same(x.construction, now.construction)) names.push(extraName(x));
+    if (!now || !same(effectOf(x), effectOf(now))) names.push(extraName(x));
   }
   for (const [key, x] of after) {
     if (!hasEffect(x) || hasEffect(before.get(key))) continue;
@@ -127,38 +144,20 @@ export function extraEffectChanges(old, next) {
   return [...new Set(names)];
 }
 
-const riseOf = (construction) => (isObj(construction?.roof?.shapes?.gable) ? construction.roof.shapes.gable.rise : undefined);
-
-/* A rise Barnwright may write: one rule per library gable style, N/12 for N
-   from 3 to 12, then the library's own rise last. */
-export function pitchRuleOk(rise, standardRise) {
-  if (rise === undefined) return true;
-  if (!Array.isArray(rise) || rise.length < 2) return false;
-  const last = rise[rise.length - 1];
-  if (!isObj(last) || Object.keys(last).length !== 1 || !isObj(last.value) || Object.keys(last.value).length !== 1) return false;
-  if (standardRise != null && last.value.w !== standardRise) return false;
-  const seen = new Set();
-  for (const rule of rise.slice(0, -1)) {
-    if (!isObj(rule) || !same(Object.keys(rule).sort(), ["value", "when"])) return false;
-    const styles = rule.when?.styles;
-    if (!isObj(rule.when) || Object.keys(rule.when).length !== 1 || !Array.isArray(styles) || styles.length !== 1) return false;
-    if (!GABLE_STYLES.includes(styles[0]) || seen.has(styles[0])) return false;
-    seen.add(styles[0]);
-    if (!isObj(rule.value) || Object.keys(rule.value).length !== 1 || typeof rule.value.w !== "number") return false;
-    const twelfths = rule.value.w * 24;
-    if (Math.abs(twelfths - Math.round(twelfths)) > 1e-9 || Math.round(twelfths) < 3 || Math.round(twelfths) > 12) return false;
-  }
-  return true;
-}
-
 /* -> the plain sentences for everything in `next` that Barnwright may not
    change from `old` (none: an empty list). options:
      door          true for the door (Claude through the Control Room)
      mode          "prelive" or "switch" (access() says which)
-     standardRise  the library's own gable rise (library/construction.json) */
-export function lockProblems(old, next, { door = false, mode = "prelive", standardRise = null } = {}) {
+     manufacturer  the builder's library (library/manufacturers), so a
+                   price list holding the old roof pitch rule list is read
+                   as the pitch it draws (asSaved)
+   A building style's own How it's built numbers (offer.<code>.built) may
+   change, in either mode, at the door and in the visit: the owner's own
+   check() (model/build-settings.js) and the every-size check judge them
+   after the lock, as they do the owner's. */
+export function lockProblems(old, next, { door = false, mode = "prelive", manufacturer = null } = {}) {
   const out = [];
-  const o = isObj(old) ? old : {}, n = isObj(next) ? next : {};
+  const o = asSaved(old, manufacturer), n = asSaved(next, manufacturer);
   if (openOf(o) !== openOf(n)) out.push(LOCK_WORDS.status);
   if (o.id !== n.id) out.push(LOCK_WORDS.id);
   if (o.manufacturer !== n.manufacturer) out.push(LOCK_WORDS.manufacturer);
@@ -169,10 +168,8 @@ export function lockProblems(old, next, { door = false, mode = "prelive", standa
   if (routing.some((k) => !same(ol[k], nl[k]))) out.push(LOCK_WORDS.leads);
   const ob = isObj(o.brand) ? o.brand : {}, nb = isObj(n.brand) ? n.brand : {};
   if (!same(ob.credit, nb.credit)) out.push(LOCK_WORDS.credit);
-  if (!same(pitchless(o.construction), pitchless(n.construction))
-    || (!same(riseOf(o.construction), riseOf(n.construction)) && !pitchRuleOk(riseOf(n.construction), standardRise))) {
-    out.push(LOCK_WORDS.construction);
-  }
+  if (!same(emptyAsNull(o.construction), emptyAsNull(n.construction))) out.push(LOCK_WORDS.construction);
+  if (!same(emptyAsNull(o.built), emptyAsNull(n.built))) out.push(LOCK_WORDS.built);
   for (const name of extraEffectChanges(o, n)) out.push(LOCK_WORDS.extraConstruction(name));
   const logo = nb.logo ?? "";
   if (logo !== (ob.logo ?? "") && logo !== "") {
@@ -186,11 +183,13 @@ export function lockProblems(old, next, { door = false, mode = "prelive", standa
 /* -> a copy of `into` (an earlier price list being put back) with the
    parts Barnwright may never change taken from `from` (the one in use now):
    status, id, manufacturer, license, embed, the credit line, where quotes
-   go, and how the buildings are built (the gable pitch rule stays as `into`
-   had it). */
-export function carryLocked(from, into) {
-  const f = isObj(from) ? from : {};
-  const out = structuredClone(isObj(into) ? into : {});
+   go, the construction settings and How it's built for the whole business.
+   Each building style's own How it's built numbers (its roof pitch) stay
+   as `into` had them. Both are read as saved (asSaved), so an earlier
+   price list's roof pitch rule list comes back as the pitch it drew. */
+export function carryLocked(from, into, { manufacturer = null } = {}) {
+  const f = asSaved(from, manufacturer);
+  const out = structuredClone(asSaved(into, manufacturer));
   for (const k of NEVER) {
     if (k in f) out[k] = structuredClone(f[k]);
     else delete out[k];
@@ -206,17 +205,10 @@ export function carryLocked(from, into) {
     else delete leads[k];
   }
   if (isObj(out.leads) || Object.keys(leads).length) out.leads = leads;
-  const rise = riseOf(out.construction);
-  const built = pitchless(f.construction);
-  const construction = built ? structuredClone(built) : {};
-  if (rise !== undefined) {
-    construction.roof = isObj(construction.roof) ? construction.roof : {};
-    construction.roof.shapes = isObj(construction.roof.shapes) ? construction.roof.shapes : {};
-    construction.roof.shapes.gable = isObj(construction.roof.shapes.gable) ? construction.roof.shapes.gable : {};
-    construction.roof.shapes.gable.rise = structuredClone(rise);
+  /* written the way they are now ({} or left out) */
+  for (const k of ["construction", "built"]) {
+    if (k in f) out[k] = structuredClone(f[k]);
+    else delete out[k];
   }
-  /* an empty construction stays written the way it is now ({} or left out) */
-  if (Object.keys(construction).length || isObj(f.construction)) out.construction = construction;
-  else delete out.construction;
   return out;
 }
