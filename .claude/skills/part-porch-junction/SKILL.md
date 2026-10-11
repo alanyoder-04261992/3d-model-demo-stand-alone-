@@ -39,6 +39,9 @@ and the trim material's triangles must come out in Barnwright's order.
 
 None. The boards follow the porch walls (`plan.span`, the style's wall
 height).
+* How it's built (Oct 2026): the trim boards follow the porch depth
+  (`plan.t.porchDepthFt`, 4 ft standard): `W/2-d`, `L/2-d`, `L/2-(d+4)`.
+  The wrap porch's 4 ft stub and 12 ft run are fixed.
 
 ## Where it came from in Barnwright
 

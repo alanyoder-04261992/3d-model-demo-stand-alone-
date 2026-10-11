@@ -33,7 +33,11 @@
      46 in door although a 10x16 comes with 70 in doubles, and a 6x8 Backyard
      Utility made 6x12 never got its two windows. Once the customer has moved,
      added, removed, swapped or dressed up anything, their items are kept and
-     only moved onto the new walls, exactly as Barnwright does.
+     only moved onto the new walls, exactly as Barnwright does -- except
+     the shop standard's own door at some sizes (DIFFERENCES #27): an
+     included door of that pair the customer never swapped becomes the door
+     the new size comes with (the 72 in double doors and the 48 in door of
+     the 8x12 and 10x12 Side Utility), so the price stays the building's.
    * #8 the electrical package's fixtures are laid AFTER the standard doors
      and windows whenever those are laid out again (style change, the size
      re-lay above, and the side-cabin porch moved to the middle), so the
@@ -47,8 +51,8 @@
      whether or not the screen was drawn. */
 
 import { frameOf } from "../model/frame.js";
-import { resetItems, clampPos, pkFixtures, freeSpot, itemById } from "../model/layout.js";
-import { setType as modelSetType, setSize as modelSetSize, flipPorch as modelFlipPorch } from "../model/design.js";
+import { resetItems, clampPos, pkFixtures, freeSpot, itemById, fitsOnWall } from "../model/layout.js";
+import { setType as modelSetType, setSize as modelSetSize, flipPorch as modelFlipPorch, followStandardDoor } from "../model/design.js";
 import { pPrice } from "../model/pricing.js";
 import { wallPt } from "../engine/wall.js";
 
@@ -162,7 +166,14 @@ export function chooseDormer(state, id) { state.dormer = String(id); return stat
 export function chooseSize(state, sz, cat) {
   if (!pPrice(state.type, sz, cat)) throw new Error(`"${sz}" is not a size of the ${cat.TYPES[state.type].name} this company sells.`);
   const untouched = isStandardLayout(state, cat);
-  if (!untouched) { modelSetSize(state, sz, cat); return { relaid: false }; }
+  if (!untouched) {
+    modelSetSize(state, sz, cat);
+    /* the shop standard's own door at some sizes (the 8x12 and 10x12 Side
+       Utility's 48 in Wooden Door): a door of the pair the customer never
+       swapped becomes the one the new size comes with, in its place */
+    followStandardDoor(state, cat);
+    return { relaid: false };
+  }
   state.size = sz;
   const fr = frame(state, cat);
   resetItems(state, fr, cat);
@@ -214,6 +225,7 @@ export function setColour(state, key, hex) {
 export function addItem(state, catId, cat, yaw) {
   const fr = frame(state, cat), c = cat.CAT[catId], t = fr.t;
   if (!c) throw new Error(`"${catId}" is not an item this company sells.`);
+  if (c.gable && !fitsOnWall(c, "F", fr)) return null;          /* too tall for this gable */
   let wall = c.gable ? "F" : facingWall(yaw || 0);
   if (c.k === "post") wall = (t.porch === "C") ? ((facingWall(yaw || 0) === "F") ? "F" : "R") : ((t.porch === "R" || t.porch === "S") ? "R" : "F");
   if (t.kennel && wall === "F") wall = "B";                  /* the kennel's front is its open run */
@@ -292,6 +304,9 @@ export function setItemType(state, id, v, cat) {
   }
   if (!CAT[v]) throw new Error(`"${v}" is not an item this company sells.`);
   const fr = frame(state, cat);
+  /* a gable window too tall for this gable is not offered there (the sheet
+     greys it: "too tall for this gable") */
+  if (v !== it.cat && CAT[v].gable && !fitsOnWall(CAT[v], "FBRL".indexOf(it.wall) < 0 ? "F" : it.wall, fr)) return {};
   const was = it.cat; it.cat = v;
   const wasC = CAT[was], nowC = CAT[it.cat];
   if (nowC.free && !wasC.free) {                                /* outlet -> overhead light: lift it off the wall */
@@ -315,6 +330,7 @@ export function setItemType(state, id, v, cat) {
 export function setItemWall(state, id, wall, cat) {
   const it = itemById(state, id);
   if (!it || it.wall === wall) return null;
+  if (!fitsOnWall(cat.CAT[it.cat], wall, frame(state, cat))) return null;     /* too tall for this gable */
   it.wall = wall; it.pos = 0; it.vy = 0;
   clampPos(it, state, frame(state, cat));
   return it;

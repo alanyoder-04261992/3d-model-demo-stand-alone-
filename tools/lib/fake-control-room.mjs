@@ -11,23 +11,27 @@
                                 and remembers the reported lot count
      POST /api/support-consent  the owner's "help from Barnwright" switch
      POST /api/support-verify   checks a support pass it issued
+     POST /api/setup-service    a Barnwright change saved by hand in a
+                                visit, one service line for each version
      POST /api/help-pass        a help pass good for 10 minutes for the
                                 Sales Inbox ("question", "thread" or
                                 "problem"), for every business whose key
                                 matches, switched off or not; a question is
                                 written in the business's audit list
    plus what Alan does in the real control room: switch a business on or
-   off, change its lot limit, and start a support check (issueSupport).
+   off, change its lot limit, start a support check (issueSupport), and
+   get a Barnwright setup pass (setupPass: docs/OFFICE.md, "The pass").
 
    Signing uses a throwaway P-256 key made at start. That the real control
    room's signatures read the same way is proved separately, with leases it
    signed itself (test/control-room/leases.json). */
 
-import { generateKeyPairSync, sign, verify, createPublicKey, randomBytes } from "node:crypto";
+import { generateKeyPairSync, sign, verify, createPublicKey, randomBytes, createHash } from "node:crypto";
 import { canonicalLease, LEASE_DURATION_MS } from "../../server/office/license-core.js";
 
-export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "site-yoder-1", activationKey = "bwk_" + "x".repeat(40), dealerLimit = 2 } = {}) {
-  const { privateKey, publicKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "site-yoder-1", activationKey = "bwk_" + "x".repeat(40), dealerLimit = 2, keyPair = null } = {}) {
+  /* keyPair: {privateKey, publicKey} KeyObjects to sign with (the fixtures' TEST ONLY pair, so their passes work here); a new pair when left out */
+  const { privateKey, publicKey } = keyPair || generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   const publicKeyPem = publicKey.export({ type: "spki", format: "pem" });
   const business = {
     id: customerId, siteId, key: activationKey, status: "active", dealerLimit, addons: [],
@@ -35,7 +39,8 @@ export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "si
     name: "Sample Storage Barns", contact: "Chris Walker", email: "chris@samplebarns.example", siteUrl: "https://samplebarns.barnwrightsoftware.com", audit: [],
   };
   /* helpPasses: every help pass asked for ({kind, subject}), for the checks */
-  const room = { down: false, calls: [], helpPasses: [], business, publicKeyPem, origin: "https://control-room.test" };
+  /* setupService: the visit saves told to the service record (POST /api/setup-service) */
+  const room = { down: false, calls: [], helpPasses: [], setupService: [], business, publicKeyPem, origin: "https://control-room.test" };
   const now = () => clock.t;
 
   const answer = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -66,6 +71,24 @@ export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "si
     if (!supportAllowed(c, t) || claims.customerId !== c.id || claims.siteId !== c.siteId || claims.grantAt !== c.support.grantedAt || claims.expiresAt <= t) throw new Error("not allowed");
     return claims;
   }
+
+  /* A Barnwright setup pass for one request, as the Control Room makes it:
+     the claims in the contract's order, signed over
+     "barnwright-setup-pass/v1." + base64url(claims). body: the exact bytes
+     the request will carry ("{\"action\":\"session\"}" for a visit's
+     start). over: claims to change (a pass that must be refused);
+     prefix / key: sign it some other way (also to be refused). */
+  /* signup: the owner's sign-up agreement and details, as the Control Room puts them on every setup pass for a customer who signed up (always last) */
+  room.setupPass = ({ action = "session", body = JSON.stringify({ action }), actor = "alan@barnwright.test", via = "control-room", over = {}, prefix = "barnwright-setup-pass/v1.", key = privateKey, signup } = {}) => {
+    const t = now();
+    const claims = {
+      v: 1, purpose: "setup-pass", id: randomBytes(16).toString("base64url"), customerId: business.id, siteId: business.siteId,
+      actor, via, action, bodySha256: createHash("sha256").update(body).digest("hex"), issuedAt: t, expiresAt: t + 120_000, ...over,
+      ...(signup !== undefined ? { signup } : {}),
+    };
+    const head = Buffer.from(JSON.stringify(claims)).toString("base64url");
+    return `${head}.${sign("sha256", Buffer.from(prefix + head), { key, dsaEncoding: "ieee-p1363" }).toString("base64url")}`;
+  };
 
   /* A help pass: base64url(claims) + "." + the signature over
      "barnwright-help-pass/v1." + that, so it never reads as a lease or a
@@ -111,6 +134,16 @@ export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "si
     if (path === "/api/support-verify") {
       try { return answer({ ok: true, claims: verifySupport(body.token, c, t) }); }
       catch { return answer({ error: "Support access is not valid." }, 403); }
+    }
+    /* a Barnwright change saved by hand in a visit (control-room.ts
+       recordSetupService): one service line for each version */
+    if (path === "/api/setup-service") {
+      if (body.action !== "setup-saved" || !Number.isSafeInteger(body.version) || body.version < 1) return answer({ error: "Choose a supported service action." }, 400);
+      if (body.changes !== undefined && (!Array.isArray(body.changes) || body.changes.length > 500)) return answer({ error: "Send at most 500 change lines." }, 400);
+      const eventId = `setup:${c.id}:${body.version}`;
+      const duplicate = room.setupService.some((x) => x.eventId === eventId);
+      if (!duplicate) room.setupService.push({ eventId, ...body });
+      return answer({ ok: true, eventId, duplicate });
     }
     if (path === "/api/help-pass") {
       const kinds = ["question", "thread", "problem"];

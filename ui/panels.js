@@ -35,6 +35,13 @@ import { esc } from "./esc.js";
 import * as S from "./state.js";
 import { money, pPrice, pSizes, minPrice, priceParts, itemCharge, rateCharges, optxList, optxQty, optxOn, optxCharge, optxChargeIfOn, rtoTerms, rtoMonthly, RTO_NOTE } from "../model/pricing.js";
 import { colorName, sidingPalette } from "../model/company.js";
+import { porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, SIDE_WALL_MIN_FT } from "../model/frame.js";
+
+/* feet on a chip: "4", "4' 6\"" -- the chips have always said "4 × 8" */
+function feetWords(ft) {
+  const i = Math.round(ft * 12), f = Math.floor(i / 12), r = i - f * 12;
+  return r ? `${f}′ ${r}″` : `${f}`;
+}
 
 /* where an item is, in words (Barnwright refreshLists 5084-5086; S3, the
    far wall of a middle porch, was missing and printed "undefined") */
@@ -61,7 +68,15 @@ function optxLabel(x) {
   if (x.input === "sqftR") return "by the square foot of roof";
   if (x.input === "pct") return (+x.price || 0) + "% of the building";
   if (x.input === "lf") return "by the foot";
+  /* the roof it gives, from its own number, never from its name (review W2) */
+  const p = typeof x.roofPitch === "number" ? x.roofPitch : null;
+  if (p != null) return pitchWords(p) + " roof";
   return "";
+}
+/* 7 -> "7/12", 7.5 -> "7 1/2/12" */
+function pitchWords(p) {
+  const q = Math.round(p * 4), whole = Math.floor(q / 4), part = ["", "1/4", "1/2", "3/4"][q % 4];
+  return (whole ? whole + (part ? " " + part : "") : part || "0") + "/12";
 }
 
 export function createPanels(ctx) {
@@ -164,7 +179,7 @@ export function createPanels(ctx) {
   function updateXopts() {
     const box = el("xoptrows"); box.innerHTML = "";
     const state = ctx.state, fr = ctx.frame();
-    optxList(cat).forEach((x) => {
+    optxList(cat, state).forEach((x) => {
       const row = document.createElement("div"); row.className = "optrow";
       const nm = document.createElement("span");
       nm.innerHTML = esc(x.name) + (optxLabel(x) ? (" <small>(" + esc(optxLabel(x)) + ")</small>") : "");
@@ -195,6 +210,11 @@ export function createPanels(ctx) {
       }
       box.appendChild(row);
     });
+    /* what turning an extra on or off changed besides itself (a gable
+       window too tall for the gable without the Steep roof comes off) */
+    const said = ctx.said && ctx.said.reason === "extra" ? ctx.said.lines : [];
+    const note = el("xoptnote");
+    if (note) note.textContent = said.join(" ");
   }
 
   /* ---------- the whole side panel (Barnwright refreshUI 5114-5198) ---------- */
@@ -233,9 +253,14 @@ export function createPanels(ctx) {
       pr.style.display = "block";
       const Lnow = +String(state.size).split("x")[1];
       const pc = el("porchchips"); pc.innerHTML = "";
-      [["8", "4 × 8 porch"], ["12", "4 × 12 porch"]].forEach((pp2) => {
-        const dis = (pp2[0] === "12" && Lnow < 20);
-        pc.appendChild(chip(("" + state.pLen) === pp2[0], pp2[1] + small(dis ? "20 ft &amp; up" : "included"), () => ctx.act("porch", (s) => S.choosePorchLength(s, pp2[0], cat)), dis));
+      /* one chip per side porch length the style sells (8 and 12 standard);
+         under 20 ft long only the shortest, and never one that leaves less
+         than 4 ft of side wall (model/frame.js sidePorchLengthsFor) */
+      const plens = sidePorchLengthsOf(T), pdep = porchDepthOf(T), ok = sidePorchLengthsFor(T, Lnow);
+      plens.map((n) => ["" + n, `${feetWords(pdep)} × ${feetWords(n)} porch`]).forEach((pp2) => {
+        const n = +pp2[0], dis = ok.indexOf(n) < 0;
+        const from = n === plens[0] ? n + SIDE_WALL_MIN_FT : Math.max(20, n + SIDE_WALL_MIN_FT);
+        pc.appendChild(chip(("" + state.pLen) === pp2[0], pp2[1] + small(dis ? `${from} ft &amp; up` : "included"), () => ctx.act("porch", (s) => S.choosePorchLength(s, pp2[0], cat)), dis));
       });
       [["end", "Corner porch"], ["mid", "Middle porch"]].forEach((pm) => {
         const on = (pm[0] === "mid") === (!!state.pMid);
@@ -268,7 +293,7 @@ export function createPanels(ctx) {
     el("insidehint").style.display = (CAT.bench || CAT.shelf) ? "" : "none";
     updateOpts();
     el("insidecard").style.display = (CAT.bench || CAT.shelf || (cat.ELECPK || []).length > 1 || (cat.RAMPS || []).length > 1 ||
-      Object.keys(cat.RATES || {}).length || optxList(cat).length) ? "" : "none";
+      Object.keys(cat.RATES || {}).length || optxList(cat, ctx.state).length) ? "" : "none";
     refreshLists();
   }
 

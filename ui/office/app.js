@@ -31,8 +31,13 @@ export const app = {
   /* the business's Barnwright account (null when not connected to Barnwright's control room) */
   get account() { return this.me?.account || null; },
   get changesStopped() { return !!this.me?.account && !this.me.account.canWrite; },
+  /* a Barnwright visit (docs/OFFICE.md "The visit"): {actor, mode, until,
+     visitEndsAt}, or null. Barnwright is never a person on the team: it
+     may change the price list and some settings, and see the history. */
+  get barnwright() { return this.me?.barnwright || null; },
 
   can(what) {
+    if (this.barnwright) return ["changePrices", "changeSettings", "seeHistory"].includes(what);
     const r = this.role;
     switch (what) {
       case "changePrices": case "changeLots": case "changeTeam": case "changeSettings": return r === "owner";
@@ -43,6 +48,9 @@ export const app = {
 
   async loadMe() {
     this.me = await get("me");
+    /* when this device's sign-in ends, in this browser's own time */
+    const s = this.me?.session;
+    if (s && Number.isFinite(s.left)) s.endsLocal = new Date(Date.now() + s.left).toISOString();
     this.lots = this.me.lots || [];
     let saved = "all";
     try { saved = localStorage.getItem(`${LOT_KEY}:${this.me?.user?.id}`) || "all"; } catch { /* private mode */ }
@@ -60,6 +68,11 @@ export const app = {
      the example designer (its business shares that designer's id). */
   designerUrl(slug) {
     return this.demo ? "/c/demo/" : `/d/${slug}/`;
+  },
+  /* A lot's 3D designer while it is closed, as a preview (the team, or a
+     Barnwright visit): it never takes a quote. */
+  previewUrl(slug) {
+    return this.demo ? "/c/demo/" : `/d/${slug}/?preview=${this.barnwright ? "barnwright" : "1"}`;
   },
 
   openLots() { return this.lots.filter((l) => l.active !== false); },

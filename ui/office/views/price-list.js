@@ -10,11 +10,17 @@
    saving, in plain words.
 
    Tabs: Buildings, Doors & windows, Options, Colors, History (owner and
-   manager). Each tab is a module in views/price-list/; they share state.js. */
+   manager). Each tab is a module in views/price-list/; they share state.js.
+
+   A Barnwright visit uses this same screen (its saves go to the visit's
+   own routes). When the visit ends while there are changes, they stay on
+   screen and are kept in this tab (visit-draft.js), and they come back
+   when the price list opens again in this tab. */
 
 import { h, clear, button, icon, pageHead, tabs, toast, confirmBox, dialog } from "../dom.js";
 import { put } from "../api.js";
-import { plural, dayWords } from "../words.js";
+import { plural, dayWords, when } from "../words.js";
+import { keepDraft, takeDraft, dropDraft } from "../visit-draft.js";
 import { S, TABS, freshParked } from "./price-list/state.js";
 import { prepare, describe, problemsOf, lockedItems, tidyCategories, tidyDefaults, groupsOf, keysOf } from "./price-list/model.js";
 import { buildingsTab } from "./price-list/buildings.js";
@@ -22,6 +28,7 @@ import { doorsTab } from "./price-list/doors.js";
 import { optionsTab } from "./price-list/options.js";
 import { colorsTab } from "./price-list/colors.js";
 import { historyTab } from "./price-list/history.js";
+import { builtSaved } from "./price-list/built.js";
 
 const TAB_VIEWS = { buildings: buildingsTab, doors: doorsTab, options: optionsTab, colors: colorsTab, history: historyTab };
 const IS_PRICE_LIST = /^#\/price-list(?:[/?]|$)/;
@@ -32,15 +39,20 @@ let page = null;
 
 async function loadLibrary(settings) {
   const id = /^[a-z0-9-]{2,40}$/.test(settings?.manufacturer || "") ? settings.manufacturer : "standard";
-  if (S.M && S.M.id === id) return;
-  let r;
+  if (S.M && S.M.id === id && S.L) return;
+  /* the builder's styles, and the construction numbers How it's built
+     starts from (views/price-list/built.js) */
+  let r, l;
   try {
-    r = await fetch(`/library/manufacturers/${id}.json`, { credentials: "same-origin" });
+    [r, l] = await Promise.all([
+      fetch(`/library/manufacturers/${id}.json`, { credentials: "same-origin" }),
+      fetch("/library/construction.json", { credentials: "same-origin" }),
+    ]);
   } catch {
     throw new Error("The list of buildings didn't load. Check your internet connection, then reload the page.");
   }
-  if (!r.ok) throw new Error("The list of buildings didn't load. Reload the page to try again.");
-  S.M = await r.json();
+  if (!r.ok || !l.ok) throw new Error("The list of buildings didn't load. Reload the page to try again.");
+  [S.M, S.L] = await Promise.all([r.json(), l.json()]);
 }
 
 /* Start (again) from a price list as the server has it. */
@@ -48,6 +60,11 @@ function startFrom(record) {
   S.saved = record;
   S.latest = record;
   S.draft = S.owner ? structuredClone(record.settings) : null;
+  if (S.draft && S.ctx?.app.barnwright) {
+    const kept = takeDraft("price-list", record.version);
+    if (kept?.draft) { S.draft = kept.draft; S.restored = "Your changes from before are back. Tap the gold Save button to keep them."; }
+    else if (kept?.older) S.restored = "The price list was saved by someone else since your last changes, so they weren't brought back.";
+  }
   if (S.draft && !S.draft.items) S.draft.items = {};
   S.parked = freshParked();
   S.problems = [];
@@ -70,9 +87,9 @@ function recompute() {
   tidyCategories(S.draft, S.saved.settings, S.M);
   const notes = tidyDefaults(S.draft, S.M, groupsOf(S.draft, S.M).flatMap((g) => g[1]));
   const ready = prepare(S.draft);
-  S.problems = problemsOf(ready, S.M);
+  S.problems = problemsOf(ready, S.M, S.saved.settings);
   S.locks = lockedItems(ready, S.M);
-  S.changes = describe(S.saved.settings, ready, S.M);
+  S.changes = describe(S.saved.settings, ready, S.M, S.L);
   return notes;
 }
 
@@ -116,6 +133,7 @@ export async function render(ctx) {
   updateBar();
   app.leaveGuard = leaveGuard;
   if (S.focus) S.hooks.focus();
+  if (S.restored) { toast(S.restored, { ms: 7000 }); S.restored = null; }
   /* on a phone the tabs scroll sideways: bring the one showing into view */
   setTimeout(() => {
     const on = page?.tabs?.querySelector("[aria-selected=true]");
@@ -148,12 +166,13 @@ function staleBanner() {
 
 function savedBanner() {
   if (!S.justSaved) return null;
-  const { changes, lotCount } = S.justSaved;
+  const { changes, lotCount, sizeCheck } = S.justSaved;
   const close = h("button", { type: "button", class: "pl-banner-x", "aria-label": "Close" }, icon("x"));
   const el = h("section", { class: "pl-saved", role: "status" },
     h("div", { class: "pl-saved-head" }, h("span", { class: "pl-saved-mark" }, icon("check")),
       h("div", {}, h("h2", {}, savedWords(lotCount)), changes.length ? h("p", {}, `What changed (${changes.length}):`) : null), close),
-    changes.length ? changeList(changes, 8) : null);
+    changes.length ? changeList(changes, 8) : null,
+    builtSaved(sizeCheck));
   close.addEventListener("click", () => { S.justSaved = null; el.remove(); });
   page.saved = el;
   return el;
@@ -326,6 +345,7 @@ async function undoAll() {
     `The price list goes back to how it was saved ${dayWords(S.saved.savedAt)}. Your lots keep showing those prices.`,
     { yes: "Undo changes", danger: true });
   if (!ok) return;
+  dropDraft("price-list");
   startFrom(S.latest);
   S.justSaved = null;
   toast("Changes undone. Nothing was saved.");
@@ -335,6 +355,7 @@ async function undoAll() {
 async function reloadFresh() {
   try {
     const record = await S.ctx.app.loadPriceList(true);
+    dropDraft("price-list");
     startFrom(record);
     S.justSaved = null;
     toast("Reloaded. This is the newest price list.");
@@ -365,14 +386,15 @@ async function saveAll() {
   label.textContent = "Saving…";
   try {
     const answer = await put("price-list", { settings: prepare(S.draft), version: S.saved.version });
+    dropDraft("price-list");
     const lotCount = Number.isInteger(answer.lotCount) ? answer.lotCount : S.ctx.app.openLots().length;
     const record = await S.ctx.app.loadPriceList(true);
     startFrom(record);
-    S.justSaved = { changes: answer.changes || [], lotCount };
+    S.justSaved = { changes: answer.changes || [], lotCount, sizeCheck: answer.sizeCheck || null };
     toast(savedWords(lotCount));
     S.ctx.refresh();
   } catch (e) {
-    if (e.status === 409) savedFirst();
+    if (e.status === 409) savedFirst(e);
     else if (e.status === 422) notSaved(e.problems?.length ? e.problems : [e.message]);
     else toast(e.message, { error: true, ms: 6000 });
   } finally {
@@ -382,9 +404,14 @@ async function saveAll() {
   }
 }
 
-function savedFirst() {
-  const box = dialog("Someone else saved first", [
-    h("p", {}, "Someone else saved the price list while you were working."),
+/* e.data.savedAt: when the save that got in first happened (the server
+   never writes a time into its words; it shows here in this browser's own
+   time). Barnwright's save says so. */
+function savedFirst(e) {
+  const by = /^Barnwright /.test(e?.message || "") ? "Barnwright" : "Someone else";
+  const at = e?.data?.savedAt ? ` (${when(e.data.savedAt)})` : "";
+  const box = dialog(`${by} saved first`, [
+    h("p", {}, `${by} saved the price list while you were working${at}.`),
     h("p", {}, "Reload to see the price list as it is now, then make your changes again. Reloading drops these changes of yours:"),
     changeList(S.changes, 8),
     h("div", { class: "actions end" },
@@ -413,11 +440,21 @@ function leaveGuard() {
   return `Leave the price list without saving? Your ${plural(S.changes.length, "change")} will be lost.`;
 }
 
+/* A Barnwright visit ended, or the page is going away: keep the changes in this tab. */
+function keepForVisit() {
+  if (S.ctx?.app.barnwright && dirty()) keepDraft("price-list", S.saved.version, S.draft);
+}
+window.addEventListener("dealer:visit-ended", keepForVisit);
+window.addEventListener("pagehide", keepForVisit);
+
 /* After the address has changed (and main.js has put it back if the owner
    chose to stay): left the price list, so let the draft go. */
 window.addEventListener("hashchange", () => {
   if (IS_PRICE_LIST.test(location.hash)) return;
   document.body.classList.remove("pl-bar-on");
+  /* main.js asked first: leaving lets the changes go, kept or not (a new
+     visit's link opened in this tab keeps them: main.js reloads with them) */
+  if (!location.hash.startsWith("#barnwright=")) dropDraft("price-list");
   if (S.saved) {
     S.draft = null;
     S.parked = freshParked();

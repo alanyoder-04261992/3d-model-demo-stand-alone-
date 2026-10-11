@@ -7,7 +7,7 @@
 import { h, icon } from "../../dom.js";
 import { money } from "../../words.js";
 import { S, edited, repaint } from "./state.js";
-import { keysOf, priceOf, ownName, styleName } from "./model.js";
+import { keysOf, priceOf, ownName, lockStyleNames } from "./model.js";
 import { priceInput, sellBox, renameable, msgs } from "./bits.js";
 
 export const ITEM_GROUPS = [
@@ -41,7 +41,7 @@ function listWords(names, max = 2) {
 }
 
 export function lockWords(lock) {
-  const names = (lock.styles || []).map((k) => styleName(S.M, k, S.draft?.offer[k] || S.saved.settings.offer?.[k]));
+  const names = lockStyleNames(lock, S.M, { ...(S.saved?.settings?.offer || {}), ...(S.draft?.offer || {}) });
   const why = [];
   if (names.length) why.push(`Comes with the ${listWords(names)}.`);
   if (lock.elec) why.push("Your electrical packages put it in.");
@@ -81,7 +81,10 @@ function itemRow(id) {
       },
     });
     let control;
-    if (lock && isSold) {
+    if (lock) {
+      /* why it must be sold, also while it is not sold yet (a door the shop
+         standard swaps in that the price list does not sell: Save is
+         refused until it is) */
       const { words, all } = lockWords(lock);
       name.append(h("p", { class: "pl-lock-words", title: all ? `Comes with: ${all}` : null }, words));
     }

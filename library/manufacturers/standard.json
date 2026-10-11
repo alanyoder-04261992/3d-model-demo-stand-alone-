@@ -6,6 +6,8 @@
     "items: every door, window and fixture: name, kind (door ru win light bench shelf out ilt post), draw (which drawing module draws it), w and h in feet (door widths are the shop's rough openings), leaves, and flags. 'sill' is recorded only because Barnwright's table has it; nothing reads it (a window's height comes from the window-top rule).",
     "palettes: colours as [name, hex]. 'metal' is both the roof colours for every building and the siding colours for metal styles, exactly as in Barnwright.",
     "options: which dormers, ramps, electrical packages, odds and ends and per-square-foot upgrades exist, what they are called, and what they change in the construction. No prices.",
+    "built: the shop standard's How it's built numbers (model/build-settings.js): Alan's own shop numbers where he confirmed them (Oct 2026, \"yes match\": the Utility Shed, Side Utility, Lofted Barn and Side Lofted Barn; Oct 11 2026, yes to the proposal pictures: the Garage, Dog Kennel, Garden Utility, Dormer Shed, Metal Lofted Barn and Lofted Barn Garage), each with its _source. Every Dealer Center business gets them unless it sets its own. Barnwright's own numbers stay in the raw traits and library/construction.json; Barnwright's company is this file without the built blocks (tools/lib/barnwright-company.mjs), so the golden test still compares with Barnwright's drawing.",
+    "built.standardSwaps (the shop standard only, never a How it's built box): at the sizes listed (width x length), every standard 'from' door or window the loadout puts in becomes 'to', in the same place (model/loadouts.js standardItems). Alan, Oct 11 2026: the 8x12 and 10x12 Side Utility come with the 48 in Wooden Door, not the 72 in double doors. A price list that does not sell 'to' keeps 'from' and the owner is told (model/company.js resolve).",
     "Numbers and names here were read live from Barnwright's page (test/golden/barnwright-catalogue.json)."
   ],
   "id": "standard",
@@ -16,7 +18,13 @@
       "category": "Utility & Storage",
       "roof": "gable",
       "wallH": 7.75,
-      "loadout": "barnwright:UT"
+      "loadout": "barnwright:UT",
+      "built": {
+        "roofPitch": 5,
+        "eaveOverhang": 4,
+        "wallHeight": 93.5,
+        "_source": "Alan's shop numbers (Oct 2026, \"yes match\"): roof pitch 5/12 at every width and a 4 in eave measured level from the wall (confirmed, .agents/skills/utility-framing/SKILL.md, A-frame roof); wall 93 1/2 in = 89 in studs (confirmed) + three 1 1/2 in plates (DERIVED, .agents/skills/shed-measurements/SKILL.md). Barnwright's own numbers stay in the raw traits and library/construction.json."
+      }
     },
     "SU": {
       "name": "Side Utility",
@@ -24,7 +32,19 @@
       "roof": "gable",
       "wallH": 7.75,
       "side": true,
-      "loadout": "barnwright:SU"
+      "loadout": "barnwright:SU",
+      "built": {
+        "roofPitch": 5,
+        "eaveOverhang": 4,
+        "wallHeight": 93.5,
+        "_source": "Alan's shop numbers (Oct 2026, \"yes match\"): roof pitch 5/12 at every width and a 4 in eave measured level from the wall (confirmed, .agents/skills/utility-framing/SKILL.md, A-frame roof); wall 93 1/2 in = 89 in studs (confirmed) + three 1 1/2 in plates (DERIVED, .agents/skills/shed-measurements/SKILL.md). Barnwright's own numbers stay in the raw traits and library/construction.json.",
+        "standardSwaps": [
+          {
+            "sizes": ["8x12", "10x12"], "from": "w72", "to": "w48",
+            "_source": "Alan, Oct 11 2026, asked how his shop builds the 8x12 and 10x12 Side Utility (Barnwright's layout pushes a 2x3 window 2 3/8 in into the 72 in double doors there): \"replace 6 foot to 4 foot\". The 48 in Wooden Door goes where the double doors were, in the middle of the door side, between the same two windows. Barnwright's own Side Utility keeps the double doors (barnwright:SU)."
+          }
+        ]
+      }
     },
     "DS": {
       "name": "Dormer Shed",
@@ -33,7 +53,11 @@
       "wallH": 7.75,
       "dormer": true,
       "side": true,
-      "loadout": "barnwright:DS"
+      "loadout": "barnwright:DS",
+      "built": {
+        "roofPitch": 7,
+        "_source": "Alan's shop numbers (Oct 11 2026, yes to the proposal pictures): the main roof at 7/12, his steep A-frame pitch (.agents/skills/utility-framing/SKILL.md), so the dormer keeps its room (at 5/12 it would have none). The eave, walls and dormer stay as they were. Barnwright's own numbers stay in the raw traits and library/construction.json."
+      }
     },
     "BU": {
       "name": "Backyard Utility",
@@ -50,7 +74,12 @@
       "wallH": 6.9,
       "gableBand": false,
       "rakeOverhang": 0.03,
-      "loadout": "barnwright:GU"
+      "loadout": "barnwright:GU",
+      "built": {
+        "roofPitch": 5,
+        "eaveOverhang": 4,
+        "_source": "Alan's shop numbers (Oct 11 2026, yes to the proposal pictures): roof pitch 5/12 at every width and a 4 in eave measured level from the wall, as on the Utility Shed (confirmed, .agents/skills/utility-framing/SKILL.md, A-frame roof). Its walls and its flush gable ends stay as they were (Alan: walls as they are). Barnwright's own numbers stay in the raw traits and library/construction.json."
+      }
     },
     "SB": {
       "name": "Standard Barn",
@@ -68,7 +97,12 @@
       "roof": "gambrel",
       "wallH": 6.67,
       "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
-      "loadout": "barnwright:LB"
+      "loadout": "barnwright:LB",
+      "built": {
+        "wallHeight": 79.5,
+        "barnPeak": { "8": 43.75, "10": 48, "12": 51 },
+        "_source": "Alan's shop numbers (Oct 2026, \"yes match\"): barn roof peak above the top of the upper plate 43 3/4 in (8 ft wide), 48 in (10 ft), 51 in (12 ft) (confirmed, .agents/skills/shed-measurements/SKILL.md, loft truss size rules); wall 79 1/2 in = 75 in studs (confirmed) + three 1 1/2 in plates (DERIVED). Other widths keep the library shape, held between these (model/roof-shapes.js). Barnwright's own numbers stay in the raw traits and library/construction.json."
+      }
     },
     "SLB": {
       "name": "Side Lofted Barn",
@@ -77,7 +111,12 @@
       "wallH": 6.67,
       "side": true,
       "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
-      "loadout": "barnwright:SLB"
+      "loadout": "barnwright:SLB",
+      "built": {
+        "wallHeight": 79.5,
+        "barnPeak": { "8": 43.75, "10": 48, "12": 51 },
+        "_source": "Alan's shop numbers (Oct 2026, \"yes match\"): barn roof peak above the top of the upper plate 43 3/4 in (8 ft wide), 48 in (10 ft), 51 in (12 ft) (confirmed, .agents/skills/shed-measurements/SKILL.md, loft truss size rules); wall 79 1/2 in = 75 in studs (confirmed) + three 1 1/2 in plates (DERIVED). Other widths keep the library shape, held between these (model/roof-shapes.js). Barnwright's own numbers stay in the raw traits and library/construction.json."
+      }
     },
     "CS": {
       "name": "Cottage Shed",
@@ -143,14 +182,30 @@
       "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
       "loadout": "barnwright:SLC"
     },
-    "G": {"name": "Garage", "category": "Garages", "roof": "gable", "wallH": 7.75, "loadout": "barnwright:G"},
+    "G": {
+      "name": "Garage",
+      "category": "Garages",
+      "roof": "gable",
+      "wallH": 7.75,
+      "loadout": "barnwright:G",
+      "built": {
+        "roofPitch": 5,
+        "eaveOverhang": 4,
+        "wallHeight": 93.5,
+        "_source": "Alan's shop numbers (Oct 11 2026, yes to the proposal pictures): roof pitch 5/12 at every width and a 4 in eave measured level from the wall, as on the Utility Shed (confirmed, .agents/skills/utility-framing/SKILL.md, A-frame roof); wall 93 1/2 in = 89 in studs (confirmed) + three 1 1/2 in plates (DERIVED, .agents/skills/shed-measurements/SKILL.md), as on the Utility Shed. Barnwright's own numbers stay in the raw traits and library/construction.json."
+      }
+    },
     "LBG": {
       "name": "Lofted Barn Garage",
       "category": "Garages",
       "roof": "gambrel",
       "wallH": 6.9,
       "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
-      "loadout": "barnwright:LBG"
+      "loadout": "barnwright:LBG",
+      "built": {
+        "barnPeak": { "8": 43.75, "10": 48, "12": 51 },
+        "_source": "Alan's shop numbers (Oct 11 2026, yes to the proposal pictures): barn roof peak above the top of the upper plate 43 3/4 in (8 ft wide), 48 in (10 ft), 51 in (12 ft), as on the Lofted Barn (confirmed, .agents/skills/shed-measurements/SKILL.md, loft truss size rules). Its walls stay as they were (Alan: walls as they are). Other widths, 14 ft among them, keep the library shape, held between these (model/roof-shapes.js). Barnwright's own numbers stay in the raw traits and library/construction.json."
+      }
     },
     "MU": {
       "name": "Metal Utility",
@@ -167,7 +222,12 @@
       "wallH": 6.67,
       "metal": true,
       "loft": {"ends": ["F", "B"], "depthFt": 4, "assumed": true},
-      "loadout": "barnwright:MLB"
+      "loadout": "barnwright:MLB",
+      "built": {
+        "wallHeight": 79.5,
+        "barnPeak": { "8": 43.75, "10": 48, "12": 51 },
+        "_source": "Alan's shop numbers (Oct 11 2026, yes to the proposal pictures): barn roof peak above the top of the upper plate 43 3/4 in (8 ft wide), 48 in (10 ft), 51 in (12 ft), as on the Lofted Barn (confirmed, .agents/skills/shed-measurements/SKILL.md, loft truss size rules); wall 79 1/2 in = 75 in studs (confirmed) + three 1 1/2 in plates (DERIVED), as on the Lofted Barn. Other widths, 14 ft among them, keep the library shape, held between these (model/roof-shapes.js). Barnwright's own numbers stay in the raw traits and library/construction.json."
+      }
     },
     "MG": {
       "name": "Metal Garage",
@@ -195,7 +255,12 @@
       "wallH": 7.4,
       "side": true,
       "kennel": true,
-      "loadout": "barnwright:DK"
+      "loadout": "barnwright:DK",
+      "built": {
+        "roofPitch": 5,
+        "eaveOverhang": 4,
+        "_source": "Alan's shop numbers (Oct 11 2026, yes to the proposal pictures): roof pitch 5/12 at every width and a 4 in eave measured level from the wall, as on the Utility Shed (confirmed, .agents/skills/utility-framing/SKILL.md, A-frame roof). Its walls stay as they were (Alan: walls as they are). Barnwright's own numbers stay in the raw traits and library/construction.json."
+      }
     }
   },
   "items": {

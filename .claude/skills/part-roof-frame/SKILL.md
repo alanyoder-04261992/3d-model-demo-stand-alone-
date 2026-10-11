@@ -81,7 +81,9 @@ All sloping lengths use longest points. Read the measurement skill's
 using the sales width in `state.size`. Missing actual width, peak height
 or projection blocks a full fit rather than borrowing the 10-wide inputs.
 Confirmed peak heights from the **top of the upper plate to the peak** are
-43.75 in for 8-wide, 48 in for 10-wide and 51 in for 12-wide. The 8/12-wide
+43.75 in for 8-wide, 48 in for 10-wide and 51 in for 12-wide (the standard
+buildings' `peakIn`; the roof framing's highest piece lands on it exactly,
+and the roof line over the deck stands about 1/2 in higher, Oct 2026). The 8/12-wide
 tip projections and actual 8-wide width remain unspecified. The following
 fit and 48-inch rise describe the existing **10-wide** lesson.
 
@@ -269,6 +271,15 @@ used.
 * `loft.*` -- through `loftZones`: a truss crossing a loft keeps its webs and
   plates out of the loft floor's thickness.
 * A size is written like `2x4`, `2x6`, `"2x8 doubled"` (`lumberFt`).
+* How it's built (Oct 2026): `roofSection` takes the gable-end overhang
+  from `gableEndOverhangOf(plan)` (a gambrel's `endOverhang`, 0.10
+  standard) and the eaves from `eaveOverhangs` (which knows `{flatIn}`), so
+  the framing follows the roofing. THE DORMER SIDE: `dormerGeom` stays in the
+  dormer's own x (toward its front) and says `side` (+1 door side, -1 back,
+  the style's `dormerSide` trait); `dormerHoles` returns world boxes; a
+  truss a back-side dormer cuts or trims (not an end truss) is worked out
+  on +x and mirrored (`mirrorMembers`), which is exact because a dormer
+  style's truss is symmetric.
 
 ## Where it came from in Barnwright
 

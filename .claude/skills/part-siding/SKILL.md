@@ -48,6 +48,10 @@ the lean-to and single-slope rise from `roof.shapes.lean.rise` /
 `roof.shapes.slope.rise` for the wall tops), the porch notch from
 `plan.span`, and the skirt from `SKIRT` in `engine/constants.js`. The drawing
 itself reads no `plan.construction` value.
+* How it's built (Oct 2026): the porch cut-outs follow the porch depth
+  (`plan.t.porchDepthFt`, 4 ft standard): a side porch trims the depth off
+  the end wall the notch reaches, and a wrap porch's L wall stops the depth
+  short of the end. The wrap porch's 4 ft F stub and 12 ft R run are fixed.
 
 ## Where it came from in Barnwright
 

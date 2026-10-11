@@ -72,7 +72,8 @@ import { BARNWRIGHT_PAGE } from "./lib/barnwright-blocks.mjs";
 import { loadCatalogue, readJSON } from "./lib/load.mjs";
 import * as S from "../ui/state.js";
 import { esc, safeUrl } from "../ui/esc.js";
-import { defaults, setSize as modelSetSize, normalize } from "../model/design.js";
+import { defaults, setSize as modelSetSize, normalize, followStandardDoor } from "../model/design.js";
+import { barnwrightCatalogue } from "./lib/barnwright-company.mjs";
 import { frameOf } from "../model/frame.js";
 import { clampPos, resetItems } from "../model/layout.js";
 import { priceParts, money, pSizes } from "../model/pricing.js";
@@ -115,7 +116,22 @@ ok("safeUrl() keeps https, http, mailto, relative paths and data:image", safeUrl
 function itemsSig(items) { return items.map((it) => [it.cat, it.wall, +(it.pos || 0).toFixed(6), +(it.vy || 0).toFixed(6), !!it.dbl, !!it.inc, it.origCat || null, !!it.pk]); }
 
 {
-  let allStd = true, relayOk = 0, relayBad = [], keptOk = 0, keptBad = [], priceBad = [], pairs = 0, keptTried = 0;
+  let allStd = true, relayOk = 0, relayBad = [], keptOk = 0, keptBad = [], priceBad = [], pairs = 0, keptTried = 0, doorFollowed = 0, bwKept = 0, bwBad = [];
+  /* Barnwright's own buildings: a touched size change is Barnwright's setSize, item for item */
+  const BWC = barnwrightCatalogue();
+  for (const t of Object.keys(BWC.TYPES)) {
+    const s = defaults(BWC); S.chooseType(s, t, BWC); normalize(s, null, BWC);
+    for (const sz of pSizes(t, BWC)) {
+      if (sz === s.size) continue;
+      const b = copy(s), w = b.items.find((it) => typeof it.pos === "number" && !BWC.CAT[it.cat].gable);
+      if (!w) continue;
+      w.shut = !w.shut;
+      const bw = copy(b);
+      S.chooseSize(b, sz, BWC); modelSetSize(bw, sz, BWC);
+      if (J(b.items) === J(bw.items)) bwKept++; else bwBad.push(`${t} ${s.size}->${sz}`);
+    }
+  }
+  ok(`Barnwright's own buildings: a touched size change is Barnwright's setSize, item for item (${bwKept} changes)`, bwBad.length === 0 && bwKept > 100, bwBad.slice(0, 12).join(", "));
   for (const t of Object.keys(DEMO.TYPES)) {
     const s = defaults(DEMO); S.chooseType(s, t, DEMO); normalize(s, null, DEMO);
     if (!S.isStandardLayout(s, DEMO)) { allStd = false; relayBad.push(t + " starts non-standard"); }
@@ -140,13 +156,16 @@ function itemsSig(items) { return items.map((it) => [it.cat, it.wall, +(it.pos |
       keptTried++;
       const bw = copy(b);
       const r2 = S.chooseSize(b, sz, DEMO);
+      /* ... and the shop standard's own door at some sizes follows the new
+         size's (the 8x12 and 10x12 Side Utility, DIFFERENCES #27) */
       modelSetSize(bw, sz, DEMO);
+      if (followStandardDoor(bw, DEMO).length) doorFollowed++;
       if (!r2.relaid && J(b.items) === J(bw.items)) keptOk++; else keptBad.push(`${t} ${start}->${sz}`);
     }
   }
   ok("every demo style starts on its standard doors and windows", allStd, relayBad.join(", "));
   ok(`untouched: a size change lays the NEW size's standard doors and windows (all ${relayOk} style/size changes from each style's first size)`, relayBad.length === 0 && relayOk === pairs && pairs > 100, relayBad.slice(0, 12).join(", "));
-  ok(`touched: a size change keeps the customer's items, moved as Barnwright's setSize moves them (${keptOk} changes)`, keptBad.length === 0 && keptOk === keptTried && keptOk > 100, keptBad.slice(0, 12).join(", "));
+  ok(`touched: a size change keeps the customer's items, moved as Barnwright's setSize moves them, the Side Utility's door following the size's (${keptOk} changes, ${doorFollowed} of them the door)`, keptBad.length === 0 && keptOk === keptTried && keptOk > 100 && doorFollowed > 0, keptBad.slice(0, 12).join(", "));
   ok("every re-laid building still prices", priceBad.length === 0, priceBad.join(", "));
 }
 {
@@ -586,6 +605,12 @@ try {
   if (want(7)) section("7. The Inside button, the mode, the events, a shared link, read-only");
   if (want(7)) {
     const ctx = await newContext(browser);
+    /* no sample price list has a Steep roof (Alan, Oct 11 2026); the demo
+       here carries an owner's own, "Roof pitch at least 7/12" on the
+       Utility Shed and Side Utility, for the Steep roof checks below */
+    const ownSteep = readJSON("companies/demo/company.json");
+    ownSteep.options.extras = [...(ownSteep.options.extras || []), { key: "steep-roof", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 7 }, styles: ["UT", "SU"] }];
+    await ctx.route(/\/companies\/demo\/company\.json/, (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ownSteep) }));
     const { page, noise } = await openPage(ctx, "?company=demo");
     const r = await page.evaluate(async () => {
       const api = window.shedUI, calls = [], ev = { change: 0, select: 0, rebuild: 0, mode: 0 };
@@ -616,6 +641,23 @@ try {
     ok("'change', 'select', 'rebuild' and 'mode' events fire", r.ev.change > 0 && r.ev.select >= 2 && r.ev.rebuild > 0 && r.ev.mode === 2, J(r.ev));
     ok("applyDesign opens a saved design (the standard doors when it has none, the package it had) with no warnings", r.after.type === "UT" && r.after.size === "10x12" && r.after.n === 1 && r.after.pk > 0 && r.warnings.length === 0 && /10 × 12/.test(r.after.plate), J(r));
     ok("a read-only page selects nothing and hides the cards", r.ro.sel === null && r.ro.cls, J(r.ro));
+    /* the owner's Steep roof lets an 18x24 sit on a 12 ft Utility Shed's
+       gable; turned off again, the window is too tall for the 5/12 gable:
+       it comes off and the extras card says so (review GL-2, F2) */
+    const st = await page.evaluate(() => {
+      const api = window.shedUI;
+      const d = api.getDesign(); d.type = "UT"; d.size = "12x16"; delete d.items; d.xopt = { "steep-roof": 1 };
+      api.applyDesign(d);
+      api.setState((s) => { s.items.push({ id: "gx", cat: "g1824", wall: "F", pos: 0, vy: 0, inc: false, shut: false }); });
+      const on = api.getState().items.some((i) => i.cat === "g1824");
+      const tg = Array.from(document.querySelectorAll("#xoptrows .tgl")).find((b) => /Steep roof/.test(b.getAttribute("aria-label") || ""));
+      if (tg) tg.click();
+      const row = tg ? tg.closest(".optrow") : null;
+      return { steep: !!tg, on, off: api.getState().items.some((i) => i.cat === "g1824"), xopt: api.getState().xopt, note: document.getElementById("xoptnote").textContent, label: row ? row.firstChild.textContent : "" };
+    });
+    /* the roof it gives is said from its own number, not its name (review W2) */
+    ok(`the option says the roof it gives: "${st.label}"`, st.label === "Steep roof (7/12 roof)", J(st.label));
+    ok("turning the Steep roof off takes the 18x24 off the gable it no longer fits, and the extras card says so", st.steep && st.on && !st.off && /18×24 Gable Window is too tall for this gable, so it was taken off\./.test(st.note), J(st));
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
     await ctx.close();
     /* a #d= link is applied before the first picture */

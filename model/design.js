@@ -33,21 +33,42 @@
                              depends on whether the screen was drawn: a side
                              porch is 4x8 under 20 ft, and anything the company
                              does not offer (a package, ramp, upgrade, extra,
-                             dormer size, shutters, door window) is switched off.
+                             dormer size, shutters, door window) is switched off;
+                             a door of the shop standard's own pair (the
+                             8x12 and 10x12 Side Utility's 48 in Wooden Door)
+                             that is not the one the building comes with
+                             follows it (followStandardDoor).
    encode(design) / decode(text)   the share link: short keys, defaults left
                              out, items as tuples, UTF-8, optional deflate-raw
                              (a "z" in front), base64url. encodeSync / decodeSync
                              do the same without compression. */
 
-import { frameOf } from "./frame.js";
-import { resetItems, clampPos, keepOnWall, pkFixtures } from "./layout.js";
+import { frameOf, porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, porchLengthFor } from "./frame.js";
+import { resetItems, clampPos, keepOnWall, pkFixtures, fitsOnWall } from "./layout.js";
+import { standardItems } from "./loadouts.js";
 import { pPrice, pSizes, priceParts } from "./pricing.js";
-import { colorName, hexOfName, pickByName, sidingPalette } from "./company.js";
+import { colorName, hexOfName, pickByName, sidingPalette, extraOfferedOn } from "./company.js";
 
 /* own keys only: a link naming "constructor" or "__proto__" is not a style,
    an item, a wall or a size */
 function has(o, k) { return o != null && typeof o === "object" && Object.prototype.hasOwnProperty.call(o, k); }
 function isNum(v) { return typeof v === "number" && isFinite(v); }
+
+/* A side porch length as a design keeps it: whole feet from 4 to 20 (the
+   style's own lengths are 8 and 12 standard); anything else reads as 12, as
+   a link with no porch in it always has. */
+export function porchLen(v) {
+  const n = +v;
+  return Number.isInteger(n) && n >= 4 && n <= 20 ? n : 12;
+}
+/* "4 ft x 8 ft" */
+/* a size the way a person reads it: "10x16" -> "10×16", "4 ft × 8 ft" */
+function times(z) { return String(z).replace("x", "×"); }
+function porchWords(t, len) { return `${fmtFt(porchDepthOf(t))} × ${fmtFt(len)}`; }
+function fmtFt(ft) {
+  const i = Math.round(ft * 12), f = Math.floor(i / 12), r = i - f * 12;
+  return r ? (f ? `${f} ft ${r} in` : `${r} in`) : `${f} ft`;
+}
 
 function round(v, places) {
   if (typeof v !== "number" || !isFinite(v)) return v;
@@ -76,6 +97,9 @@ export function setType(state, t, cat) {
   state.type = t;
   if (!pPrice(t, state.size, cat)) { const zz = pSizes(t, cat); state.size = zz[Math.min(4, zz.length - 1)]; }
   const T = cat.TYPES[t];
+  /* a side porch length this style does not sell becomes its longest (with
+     the standard 8 and 12 this never happens) */
+  if (T.porch === "S") { const ls = sidePorchLengthsOf(T); if (ls.indexOf(+state.pLen) < 0) state.pLen = ls[ls.length - 1]; }
   if (T.metal && cat.COLORS.metal.map((c) => c[1]).indexOf(state.body) < 0) state.body = pickByName(cat.COLORS.metal, ["white"]);
   if (!T.metal && cat.COLORS.paint.map((c) => c[1]).indexOf(state.body) < 0) state.body = pickByName(cat.COLORS.paint, ["white"]);
   const fr = frameOf(state, cat);
@@ -118,8 +142,16 @@ export function normalize(state, frame, cat) {
   const t = fr.t;
   const changed = [];
   if (t.porch === "S") {
-    const Lnow = +String(state.size).split("x")[1];
-    if (Lnow < 20 && state.pLen !== 8) { state.pLen = 8; changed.push("The side porch is 4 x 8 on a building under 20 ft long."); }
+    /* the porch is one of the lengths the style sells; a building under 20 ft
+       long carries the shortest ("short buildings carry the 4x8 porch") */
+    const Lnow = fr.L, all = sidePorchLengthsOf(t), ok = sidePorchLengthsFor(t, Lnow);
+    if (ok.indexOf(+state.pLen) < 0) {
+      const to = porchLengthFor(t, Lnow, state.pLen);
+      state.pLen = to;
+      changed.push(Lnow < 20 && to === all[0]
+        ? `The side porch is ${porchWords(t, to)} on a building under 20 ft long.`
+        : `The side porch is now ${porchWords(t, to)}.`);
+    }
   }
   if (state.elec && state.elec.pkg > 0 && !(cat.ELECPK || []).some((e) => +e[0] === +state.elec.pkg)) {
     changed.push(`Electric package ${state.elec.pkg} is not offered, so it was switched off.`);
@@ -137,14 +169,108 @@ export function normalize(state, frame, cat) {
   const X = state.xopt || {};
   const keys = new Set(((cat.OPTX && cat.OPTX.extras) || []).map((x) => x.key));
   for (const k of Object.keys(X)) if (!keys.has(k)) { delete X[k]; changed.push(`The extra "${k}" is not offered, so it was taken off.`); }
+  /* an extra offered only on some buildings (a Steep roof on the Utility
+     Shed) comes off when the building is one it is not offered on */
+  for (const x of ((cat.OPTX && cat.OPTX.extras) || [])) {
+    if (X[x.key] != null && !extraOfferedOn(x, t, state.type)) { delete X[x.key]; changed.push(`${x.name} is not offered on the ${t.name}, so it was taken off.`); }
+  }
   if (t.dormer && state.dormer !== "none" && !(cat.DORMERS || []).some((d) => d[0] === state.dormer)) {
     const fallback = (cat.DORMERS || []).some((d) => d[0] === cat.defaults.dormer) ? cat.defaults.dormer : "none";
     changed.push(`The ${state.dormer} ft dormer is not offered; it is now ${fallback === "none" ? "no dormer" : fallback + " ft"}.`);
     state.dormer = fallback;
   }
+  /* A GABLE WINDOW TOO TALL FOR THIS GABLE (model/layout.js gableItemFits):
+     a design saved before the roof got flatter (the shop's 5/12, an owner's
+     own pitch), or one whose Steep roof was taken off. The designer would
+     not offer it and the server refuses it, so it comes off here, with
+     words, and what is drawn, saved and priced agree. */
+  const tooTall = [];
+  const frNow = state.items.some((it) => cat.CAT[it.cat] && cat.CAT[it.cat].gable) ? frameOf(state, cat) : fr;   /* after any extra above came off */
+  state.items = state.items.filter((it) => {
+    const c = cat.CAT[it.cat];
+    if (!c || !c.gable || fitsOnWall(c, it.wall, frNow)) return true;
+    tooTall.push(`The ${c.n} is too tall for this gable, so it was taken off.`);
+    return false;
+  });
+  changed.push(...new Set(tooTall));
   if ((cat.MISC || {}).shutter == null) state.items.forEach((it) => { if (it.shut) { it.shut = false; changed.push("Shutters are not offered, so they were taken off."); } });
   if ((cat.MISC || {}).lite == null) state.items.forEach((it) => { if (it.lite) { it.lite = false; changed.push("A window in a wooden door is not offered, so it was taken off."); } });
+  changed.push(...doorWords(state, cat));
   return changed;
+}
+
+/* THE SHOP STANDARD'S OWN DOOR AT SOME SIZES (the style's standardSwaps:
+   the 8x12 and 10x12 Side Utility come with the 48 in Wooden Door, its
+   other sizes with the 72 in Wooden Double Doors; Alan, Oct 11 2026,
+   "replace 6 foot to 4 foot"). A design can hold the other door of the
+   pair as the one it came with: a design saved before the change, or one
+   whose size changed after the customer touched the doors and windows (the
+   size chip keeps them, DIFFERENCES #12). The server prices only what the
+   building comes with (server/office/pricing.js), so:
+   - a door of the pair the customer never swapped (it is still the door it
+     came as) becomes the door this size comes with, with the same id, wall
+     and place, then kept inside the wall: the building's own door, at no
+     charge, so the price does not go up;
+   - a door the customer swapped it for is kept, now in the place of the
+     door this size comes with, priced as that swap (the difference, never
+     a credit).
+   Matched the server's way: every included item that is one the building
+   comes with keeps it, in order; only one left over whose door is one of
+   the pair is changed. Nothing else is touched, so a style with no swaps
+   (every Barnwright building, the Cottage too) keeps its items exactly as
+   Barnwright does. ui/state.js chooseSize runs this without words;
+   normalize says each change in one line (DIFFERENCES #27).
+   -> [{it, was, to, swapped}] */
+export function followStandardDoor(state, cat) {
+  const out = [];
+  const t = cat.TYPES[state.type];
+  const pairs = [];
+  for (const e of (t && Array.isArray(t.standardSwaps) ? t.standardSwaps : [])) {
+    if (e && cat.CAT[e.from] && cat.CAT[e.to]) pairs.push([e.from, e.to]);
+  }
+  if (!pairs.length) return out;
+  const inc = (state.items || []).filter((it) => it.inc && !it.pk && cat.CAT[it.cat]);
+  if (!inc.length) return out;
+  const fr = frameOf(state, cat);
+  let std;
+  try { std = standardItems(fr.t, fr.d.W, fr.d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws }, state.type); } catch (e) { return out; }
+  const left = new Map();
+  for (const s of std) left.set(s.cat, (left.get(s.cat) || 0) + 1);
+  const over = [];
+  for (const it of inc) {
+    const o = it.origCat || it.cat;
+    if (left.get(o) > 0) left.set(o, left.get(o) - 1); else over.push(it);
+  }
+  const L = cat.LISTS || {};
+  const swapsFor = (id) => { const k = cat.CAT[id] && cat.CAT[id].k; return k === "win" ? (L.sheetWindow || []) : (k === "door" || k === "ru") ? (L.sheetDoor || []) : []; };
+  for (const it of over) {
+    const was = it.origCat || it.cat;
+    const pair = pairs.find((p) => (p[0] === was || p[1] === was) && left.get(p[0] === was ? p[1] : p[0]) > 0);
+    if (!pair) continue;
+    const to = pair[0] === was ? pair[1] : pair[0];
+    if (it.cat === was) {
+      it.cat = to; it.origCat = to;
+      clampPos(it, state, fr);
+    } else {
+      if (it.cat !== to && swapsFor(to).indexOf(it.cat) < 0) continue;
+      it.origCat = to;
+    }
+    left.set(to, left.get(to) - 1);
+    out.push({ it, was, to, swapped: it.cat !== to });
+  }
+  return out;
+}
+
+/* followStandardDoor in words, one line for each change. */
+function doorWords(state, cat) {
+  const t = cat.TYPES[state.type], C = cat.CAT;
+  const plural = (name) => /s$/.test(name);
+  return [...new Set(followStandardDoor(state, cat).map((x) => {
+    const theirs = C[x.to], mine = C[x.it.cat];
+    if (!x.swapped) return `The ${times(state.size)} ${t.name} comes with the ${theirs.n}, so ${plural(theirs.n) ? "they take" : "it takes"} the place of the ${C[x.was].n}.`;
+    const up = (mine.p || 0) - (theirs.p || 0) > 0;
+    return `The ${times(state.size)} ${t.name} comes with the ${theirs.n}, so the ${mine.n} ${plural(mine.n) ? "are" : "is"} kept in ${plural(theirs.n) ? "their" : "its"} place${up ? " as an upgrade" : ""}.`;
+  }))];
 }
 
 /* ------------------------------------------------------------------------ */
@@ -185,7 +311,7 @@ export function fromState(state, cat, opts) {
     },
     items: state.items.map(itemOut),
     dormer: state.dormer,
-    porch: { pLen: +state.pLen === 8 ? 8 : 12, pFlip: !!state.pFlip, pMid: !!state.pMid },
+    porch: { pLen: porchLen(state.pLen), pFlip: !!state.pFlip, pMid: !!state.pMid },
     opts: Object.keys(state.opts || {}).filter((k) => state.opts[k]),
     elec: { pkg: +((state.elec && state.elec.pkg) || 0), ext: !!(state.elec && state.elec.ext) },
     ramp: state.ramp || "none",
@@ -230,7 +356,7 @@ export function toState(design, cat) {
   if (size) s.size = size;
   setType(s, type, cat);
   let asSaved = type === d.type && size === d.size && d.company === cat.id && d.cfg === cat.cfg;
-  if (size && s.size !== size) { warnings.push(`The ${size} size of the ${cat.TYPES[type].name} is no longer sold; showing the ${s.size} instead.`); asSaved = false; }
+  if (size && s.size !== size) { warnings.push(`The ${times(size)} size of the ${cat.TYPES[type].name} is no longer sold; showing the ${times(s.size)} instead.`); asSaved = false; }
   else if (size) setSize(s, size, cat);
 
   const C = d.colors || {};
@@ -242,7 +368,7 @@ export function toState(design, cat) {
   s.shutC = colourBack(C.shutters, cat.COLORS.paint, cat, "shutter", warnings, "");
   if (d.dormer != null) s.dormer = String(d.dormer);
   if (d.porch) {
-    if (d.porch.pLen != null) s.pLen = +d.porch.pLen === 8 ? 8 : 12;
+    if (d.porch.pLen != null) s.pLen = porchLen(d.porch.pLen);
     s.pFlip = !!d.porch.pFlip; s.pMid = !!d.porch.pMid;
   }
   for (const k of Object.keys(s.opts)) s.opts[k] = false;
@@ -302,6 +428,25 @@ export function toState(design, cat) {
     resetItems(s, fr, cat);
     if (s.elec.pkg > 0) pkFixtures(s, fr, cat);
   }
+  /* THE SIDE PORCH IT WAS SAVED WITH IS NO LONGER SOLD (the owner changed the
+     style's porch lengths): it snaps to the nearest length sold -- the
+     shortest under 20 ft long -- and the porch walls' standard doors and
+     windows are laid out again for it, keeping the customer's own items, so
+     the design and its price agree with the building drawn. (A 12 on a
+     building under 20 ft, where 12 is sold, is the old "4x8 under 20 ft"
+     rule: normalize says it, nothing is laid again.) */
+  if (t.porch === "S" && d.porch && d.porch.pLen != null && sidePorchLengthsOf(t).indexOf(s.pLen) < 0) {
+    const to = porchLengthFor(t, fr.L, s.pLen);
+    s.pLen = to;
+    const fr2 = frameOf(s, cat);
+    const porchWalls = ["S1", "S2", "S3"];
+    const fresh = standardItems(fr2.t, fr2.d.W, fr2.d.L, { CAT: fr2.CAT, span: fr2.span, ws: fr2.ws }, s.type).filter((it) => porchWalls.indexOf(it.wall) >= 0);
+    s.items = s.items.filter((it) => !(it.inc && porchWalls.indexOf(it.wall) >= 0)).concat(fresh);
+    s.items.forEach((it, i) => { it.id = "e" + i; });
+    s.seq = s.items.length + 1;
+    s.items.forEach((it) => clampPos(it, s, fr2));
+    warnings.push(`The side porch is now ${porchWords(t, to)}; its windows were set back to the standard ones.`);
+  }
   warnings.push(...normalize(s, frameOf(s, cat), cat));
   return { state: s, warnings };
 }
@@ -330,7 +475,7 @@ function compact(design) {
   });
   if (d.dormer != null && d.dormer !== "none") o.d = d.dormer;
   const P = d.porch || {};
-  if ((P.pLen != null && +P.pLen !== 12) || P.pFlip || P.pMid) o.p = [+P.pLen === 8 ? 8 : 12, P.pFlip ? 1 : 0, P.pMid ? 1 : 0];
+  if ((P.pLen != null && porchLen(P.pLen) !== 12) || P.pFlip || P.pMid) o.p = [porchLen(P.pLen), P.pFlip ? 1 : 0, P.pMid ? 1 : 0];
   if (d.opts && d.opts.length) o.o = d.opts.slice();
   if (d.elec && (d.elec.pkg || d.elec.ext)) o.e = [+d.elec.pkg || 0, d.elec.ext ? 1 : 0];
   if (d.ramp && d.ramp !== "none") o.r = d.ramp;

@@ -37,6 +37,10 @@ decking. PIPELINE: among the framing entries, only with `frames: true`.
   thick so they finish at y0 like the room's decking.
 The boards' width and gap (5 1/2 in, 1/4 in: `DECK_BOARD`) are drawn sizes;
 the settings have no porch deck board yet.
+* How it's built (Oct 2026): the porch decks are the porch depth deep
+  (`plan.t.porchDepthFt`, 4 ft standard); this part reads them from
+  `parts/floor-frame.js porchOutlines` and `floorPlanOf().porchRect`, which
+  follow the depth.
 
 ## Where it came from in Barnwright
 

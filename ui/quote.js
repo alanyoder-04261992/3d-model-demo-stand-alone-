@@ -100,7 +100,7 @@ import { submitManagedOrder, reloadWithDesign, WORDS as MANAGED_WORDS } from "./
 import { money, priceParts, rtoMonthly } from "../model/pricing.js";
 import { QUOTE_PLANS, planWords, asksPlan } from "../model/quote-plan.js";
 import { colorName, sidingPalette } from "../model/company.js";
-import { frameOf } from "../model/frame.js";
+import { frameOf, porchDepthOf } from "../model/frame.js";
 import { makePlan } from "../model/plan.js";
 import { assemble } from "../engine/assemble.js";
 import { snapshotCanvas } from "../engine/snapshot.js";
@@ -147,6 +147,12 @@ function rtoWords(total, cat, months) {
    line, the total -- then the customer's details and the link.
    opts.short: 1 leaves out the option lines (the link has them), 2 also the
    colours and porch, 3 also the address and note. */
+/* feet as a shed builder says them: "4 ft", "4 ft 6 in" */
+function ftWords(ft) {
+  const i = Math.round(ft * 12), f = Math.floor(i / 12), r = i - f * 12;
+  return r ? (f ? `${f} ft ${r} in` : `${r} in`) : `${f} ft`;
+}
+
 export function summaryText(state, cat, contact, link, opts) {
   const short = (opts && opts.short) || 0;
   const t = cat.TYPES[state.type] || {};
@@ -159,7 +165,7 @@ export function summaryText(state, cat, contact, link, opts) {
   if (short < 2) {
     L.push((t.metal ? "Metal " : "Siding ") + colorName(sidingPalette(t, cat.COLORS), state.body) +
       " / Trim " + colorName(cat.COLORS.trim, state.trim) + " / Roof " + colorName(cat.COLORS.metal, state.roof));
-    if (t.porch === "S" && fr.span) L.push("Porch 4x" + fr.span.P + " — " + (state.pMid ? "middle" : (state.pFlip ? "right" : "left")) + " end");
+    if (t.porch === "S" && fr.span) L.push("Porch " + ftWords(porchDepthOf(t)) + " x " + ftWords(fr.span.P) + " — " + (state.pMid ? "middle" : (state.pFlip ? "right" : "left")) + " end");
   }
   if (short < 1) pp.lines.forEach((l) => L.push(l[0] + (show ? " " + money(l[1]) : "")));
   else if (pp.lines.length) L.push("+ " + pp.lines.length + " option" + (pp.lines.length > 1 ? "s" : "") + " (all in the link below)");

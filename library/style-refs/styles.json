@@ -1,0 +1,3267 @@
+{
+ "format": 1,
+ "about": "Pictures and shape facts for every style in the 3D designer's library, for matching a dealer's photos to a style. Made by node tools/make-style-refs.mjs and checked by node tools/check-style-refs.mjs in the 3D designer repository.",
+ "pitch_note": "Every pitch, height and size here is the standard building line as the 3D designer draws it. The Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility use Alan's 5/12, the Dormer Shed's main roof his 7/12, and the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage his barn roof heights (3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide); the other styles use Barnwright's drawing. A barn roof's height is to the peak of its trusses, the way a builder measures it; every other roof's is to the top of the roof. The words say every length and pitch the way How it's built does (5/12, about 6 1/2/12, 7 ft 4 13/16 in); a barn roof is said by its height, not by the pitch of its steep part. Each slope's pitch is also given as an exact number for measuring a photo. A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.",
+ "library_version": "ba1405fe62629015",
+ "library_files": {
+  "library/manufacturers/standard.json": "98fec193b32759aba6dda483464cbb16f1cb0a1b45676fb68d7732a260a33e80",
+  "library/construction.json": "bc45a625290a988f7ee7b274352eb7f4f6a6ce7aa5b971f568837dc0fc5a1297"
+ },
+ "drawn_with": {
+  "price_list": "companies/demo",
+  "look": "the Yoder Storage Barns site's light (true colour)",
+  "backdrop": "#E9E9E5",
+  "long_side_px": 1024,
+  "jpeg_quality": 0.8,
+  "views": {
+   "three_quarter": {
+    "words": "From the front corner: the front end on the left, the right long side on the right. The same view the 3D designer opens on.",
+    "camera": {
+     "yaw": 0.62,
+     "pitch": 0.215
+    },
+    "file": "<code>.jpg"
+   },
+   "end": {
+    "words": "Straight at the front end, from a little above the floor. The roof's shape and pitch can be measured on it: the right long side is on the right.",
+    "camera": {
+     "yaw": 0,
+     "pitch": 0.03
+    },
+    "file": "<code>-end.jpg"
+   }
+  }
+ },
+ "floor_above_ground": {
+  "ft": 0.92,
+  "in": 11.0625,
+  "words": "11 1/16 in"
+ },
+ "walls_legend": {
+  "F": "The front end: the short end on the left in the corner picture, and the end the end picture looks at.",
+  "B": "The back end: the other short end, not seen in either picture.",
+  "R": "The right long side: the long side on the right in the corner picture. Side-door styles have their doors here.",
+  "L": "The left long side: the other long side, not seen in either picture.",
+  "porch": "A porch's own walls are named as the porch's back, end, side or angled wall."
+ },
+ "sheet": {
+  "file": "sheet.jpg",
+  "sha256": "fae1e5e735756b20567996ae40fb4766171c177808eb764307584779c7abd062",
+  "bytes": 96145,
+  "width": 1024,
+  "height": 1194,
+  "columns": 4,
+  "order": [
+   "UT",
+   "SU",
+   "DS",
+   "BU",
+   "GU",
+   "SB",
+   "LB",
+   "SLB",
+   "CS",
+   "SS",
+   "C",
+   "LBC",
+   "SC",
+   "LSC",
+   "DSC",
+   "SLC",
+   "G",
+   "LBG",
+   "MU",
+   "MLB",
+   "MG",
+   "MCS",
+   "DK"
+  ],
+  "words": "Every style's corner picture, 4 across in the order of \"order\", each labelled with its code."
+ },
+ "styles": [
+  {
+   "code": "UT",
+   "name": "Utility Shed",
+   "group": "Utility & Storage",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at 5/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "5/12",
+      "degrees": 22.6
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 2.08,
+     "in": 25,
+     "words": "2 ft 1 in"
+    },
+    "peak_per_width": 0.208,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.79,
+     "in": 93.5,
+     "words": "7 ft 9 1/2 in"
+    }
+   },
+   "main_door": {
+    "name": "72″ Wooden Double Doors",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 6.38,
+     "in": 76.5,
+     "words": "6 ft 4 1/2 in"
+    },
+    "wall_over_it_in": 17,
+    "words": "1 ft 5 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w72",
+     "name": "72″ Wooden Double Doors",
+     "wall": "F",
+     "words": "72″ Wooden Double Doors, centred on the front end"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "at the top of the walls",
+    "back": "at the top of the walls"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Plain A roof, both sides the same.",
+    "Double doors in the middle of the front end.",
+    "Painted siding, with a trim band across the gable at the top of the walls."
+   ],
+   "look_alikes": [
+    {
+     "code": "MU",
+     "name": "Metal Utility",
+     "how": "Metal siding, no trim band, and a steeper roof."
+    },
+    {
+     "code": "G",
+     "name": "Garage",
+     "how": "A roll-up door on the front end."
+    },
+    {
+     "code": "GU",
+     "name": "Garden Utility",
+     "how": "Smaller: 6 ft wide, short walls and one door."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "8x16",
+    "10x12",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x32",
+    "14x20",
+    "14x24",
+    "14x28",
+    "14x32",
+    "14x40"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "UT.jpg",
+     "sha256": "801f7dfd8a1a1a2d6268b48eb10ad51f7bf1cb87a71972f2279463394967bc92",
+     "bytes": 42925,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "UT-end.jpg",
+     "sha256": "7991ca11adbee96c5a98025b52b02809c85507624606f0ad2491492e56952cd1",
+     "bytes": 24951,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "SU",
+   "name": "Side Utility",
+   "group": "Utility & Storage",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at 5/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "5/12",
+      "degrees": 22.6
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 2.08,
+     "in": 25,
+     "words": "2 ft 1 in"
+    },
+    "peak_per_width": 0.208,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.79,
+     "in": 93.5,
+     "words": "7 ft 9 1/2 in"
+    }
+   },
+   "main_door": {
+    "name": "72″ Wooden Double Doors",
+    "wall": "R",
+    "top_from_floor": {
+     "ft": 6.38,
+     "in": 76.5,
+     "words": "6 ft 4 1/2 in"
+    },
+    "wall_over_it_in": 17,
+    "words": "1 ft 5 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w72",
+     "name": "72″ Wooden Double Doors",
+     "wall": "R",
+     "words": "72″ Wooden Double Doors, centred on the right long side"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in right of its middle"
+    }
+   ],
+   "changes_with_size": [
+    {
+     "sizes": [
+      "8x12",
+      "10x12"
+     ],
+     "doors_windows": [
+      "48″ Wooden Door on the right long side",
+      "two 2×3 Windows on the right long side"
+     ]
+    },
+    {
+     "sizes": [
+      "8x16",
+      "10x14",
+      "10x16",
+      "10x20",
+      "12x16",
+      "12x20",
+      "12x24",
+      "12x30",
+      "12x32"
+     ],
+     "doors_windows": [
+      "72″ Wooden Double Doors on the right long side",
+      "two 2×3 Windows on the right long side"
+     ]
+    }
+   ],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "at the top of the walls",
+    "back": "at the top of the walls"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Plain A roof.",
+    "Double doors in the middle of a long side, with a window each side (the 8×12 and 10×12 have one 48 in door there instead)."
+   ],
+   "look_alikes": [
+    {
+     "code": "DS",
+     "name": "Dormer Shed",
+     "how": "A dormer on the roof, and a steeper roof."
+    },
+    {
+     "code": "SLB",
+     "name": "Side Lofted Barn",
+     "how": "A barn roof."
+    },
+    {
+     "code": "CS",
+     "name": "Cottage Shed",
+     "how": "The roof's peak is off-centre."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "8x16",
+    "10x12",
+    "10x14",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x30",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "SU.jpg",
+     "sha256": "39ceaf4f1703d9fd4b4285876d70146e8a5d23b0f996aa897f053719407d3c6d",
+     "bytes": 43630,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "SU-end.jpg",
+     "sha256": "95d9256a9bb7756f911831521621daccc933ab7694defdc20cfd5478ba79c78c",
+     "bytes": 19916,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "DS",
+   "name": "Dormer Shed",
+   "group": "Utility & Storage",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at 7/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "7/12",
+      "degrees": 30.3
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 2.92,
+     "in": 35,
+     "words": "2 ft 11 in"
+    },
+    "peak_per_width": 0.292,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.75,
+     "in": 93,
+     "words": "7 ft 9 in"
+    }
+   },
+   "main_door": {
+    "name": "72″ Wooden Double Doors",
+    "wall": "R",
+    "top_from_floor": {
+     "ft": 6.38,
+     "in": 76.5,
+     "words": "6 ft 4 1/2 in"
+    },
+    "wall_over_it_in": 16.5,
+    "words": "1 ft 4 1/2 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w72",
+     "name": "72″ Wooden Double Doors",
+     "wall": "R",
+     "words": "72″ Wooden Double Doors, centred on the right long side"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in right of its middle"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": {
+    "width_ft": 9,
+    "choices_ft": [
+     6,
+     9,
+     12
+    ],
+    "words": "A 9 ft dormer with windows on the roof over the right long side."
+   },
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "at the top of the walls",
+    "back": "at the top of the walls"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "A dormer with windows on the roof, over the doors.",
+    "A steeper A roof than the Side Utility.",
+    "Doors and windows on a long side."
+   ],
+   "look_alikes": [
+    {
+     "code": "SU",
+     "name": "Side Utility",
+     "how": "No dormer, and a flatter roof."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "8x16",
+    "10x12",
+    "10x14",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x30",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "DS.jpg",
+     "sha256": "bf5d135541b9242fabdeefff77bfa895dc1a8b57865df985db93e707ed6af805",
+     "bytes": 45507,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "DS-end.jpg",
+     "sha256": "a9a695913b22216b1294ae6551d927d060cadbba61357c3021bf7e81c4c4bb6f",
+     "bytes": 20659,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "BU",
+   "name": "Backyard Utility",
+   "group": "Utility & Storage",
+   "drawn_at": "6x12",
+   "roof": {
+    "type": "lean",
+    "words": "lean-to: one slope at about 2/12",
+    "slopes": [
+     {
+      "where": "one slope, high over the left long side and low over the right long side",
+      "pitch": "2.04/12",
+      "degrees": 9.6
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 1.02,
+     "in": 12.25,
+     "words": "1 ft 0 1/4 in"
+    },
+    "peak_per_width": 0.17,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 6.9,
+     "in": 82.8125,
+     "words": "6 ft 10 13/16 in"
+    },
+    "high_side": {
+     "wall": "L",
+     "words": "7 ft 11 1/16 in",
+     "ft": 7.92,
+     "in": 95.0625
+    }
+   },
+   "main_door": {
+    "name": "48″ Wooden Door",
+    "wall": "R",
+    "top_from_floor": {
+     "ft": 6.38,
+     "in": 76.5,
+     "words": "6 ft 4 1/2 in"
+    },
+    "wall_over_it_in": 6.3125,
+    "words": "6 5/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w48",
+     "name": "48″ Wooden Door",
+     "wall": "R",
+     "words": "48″ Wooden Door, centred on the right long side"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 3 ft 8 3/8 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 3 ft 8 3/8 in right of its middle"
+    }
+   ],
+   "changes_with_size": [
+    {
+     "sizes": [
+      "6x8"
+     ],
+     "doors_windows": [
+      "48″ Wooden Door on the right long side"
+     ]
+    },
+    {
+     "sizes": [
+      "6x10",
+      "6x12"
+     ],
+     "doors_windows": [
+      "48″ Wooden Door on the right long side",
+      "two 2×3 Windows on the right long side"
+     ]
+    }
+   ],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "none"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "One-slope roof, low over the door side and high at the back.",
+    "Small: 6 ft wide.",
+    "One door in the middle of a long side."
+   ],
+   "look_alikes": [
+    {
+     "code": "SS",
+     "name": "Single Slope",
+     "how": "The high side is over the door, with a row of small windows up high."
+    }
+   ],
+   "standard_sizes": [
+    "6x8",
+    "6x10",
+    "6x12"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "BU.jpg",
+     "sha256": "f00406845ca644d1fe4c69897c89c0159b8dfaa2f6219dbcd4e84456258520fb",
+     "bytes": 38076,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "BU-end.jpg",
+     "sha256": "1d650248570d5e39b2639448afac913071398b8e07c2ad1fe59f6cb5adf167af",
+     "bytes": 17361,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "GU",
+   "name": "Garden Utility",
+   "group": "Utility & Storage",
+   "drawn_at": "6x12",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at 5/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "5/12",
+      "degrees": 22.6
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 1.25,
+     "in": 15,
+     "words": "1 ft 3 in"
+    },
+    "peak_per_width": 0.208,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 6.9,
+     "in": 82.8125,
+     "words": "6 ft 10 13/16 in"
+    }
+   },
+   "main_door": {
+    "name": "48″ Wooden Door",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 6.38,
+     "in": 76.5,
+     "words": "6 ft 4 1/2 in"
+    },
+    "wall_over_it_in": 6.3125,
+    "words": "6 5/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w48",
+     "name": "48″ Wooden Door",
+     "wall": "F",
+     "words": "48″ Wooden Door, centred on the front end"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "none"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "A small A-roof building, 6 ft wide, with short walls.",
+    "One door on the front end.",
+    "The roof hardly sticks out past the ends.",
+    "No trim band across the gable."
+   ],
+   "look_alikes": [
+    {
+     "code": "UT",
+     "name": "Utility Shed",
+     "how": "Taller walls, double doors, a trim band, and the roof sticks out past the ends."
+    }
+   ],
+   "standard_sizes": [
+    "6x8",
+    "6x10",
+    "6x12"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "GU.jpg",
+     "sha256": "0577a9a7b5acae25f7eb6a128ac7146ee2fa03b228516f0aa59aee6f5e671b56",
+     "bytes": 37470,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "GU-end.jpg",
+     "sha256": "5a42364e5334b61a3f7c1d6ed46c7aaa95e467b166621ba0d3f975c81e23c336",
+     "bytes": 21976,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "SB",
+   "name": "Standard Barn",
+   "group": "Barns",
+   "drawn_at": "10x12",
+   "roof": {
+    "type": "gambrel",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 4 11/16 in at 8 and 10 ft wide from the top of the wall to the peak of its trusses",
+    "slopes": [
+     {
+      "where": "lower part, each side",
+      "pitch": "14.58/12",
+      "degrees": 50.5
+     },
+     {
+      "where": "upper part, each side",
+      "pitch": "4/12",
+      "degrees": 18.4
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 3.39,
+     "in": 40.6875,
+     "words": "3 ft 4 11/16 in"
+    },
+    "peak_per_width": 0.339,
+    "same_at_every_width": false,
+    "by_width": [
+     {
+      "width_ft": 8,
+      "pitches": [
+       "18.23/12",
+       "5/12"
+      ],
+      "peak_over_wall_in": 40.6875
+     },
+     {
+      "width_ft": 10,
+      "pitches": [
+       "14.58/12",
+       "4/12"
+      ],
+      "peak_over_wall_in": 40.6875
+     }
+    ]
+   },
+   "walls": {
+    "height": {
+     "ft": 4.2,
+     "in": 50.375,
+     "words": "4 ft 2 3/8 in"
+    }
+   },
+   "main_door": {
+    "name": "48″ Wooden Door",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 5.96,
+     "in": 71.5,
+     "words": "5 ft 11 1/2 in"
+    },
+    "wall_over_it_in": -21.125,
+    "words": "it rises 1 ft 9 1/8 in into the gable"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w48",
+     "name": "48″ Wooden Door",
+     "wall": "F",
+     "words": "48″ Wooden Door, centred on the front end"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": false,
+   "trim_band": {
+    "front": "none",
+    "back": "none"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "A small barn roof on very short walls.",
+    "The door rises up into the gable.",
+    "No gable vent and no trim band."
+   ],
+   "look_alikes": [
+    {
+     "code": "LB",
+     "name": "Lofted Barn",
+     "how": "Taller walls, a gable vent, a trim band and a loft window."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "10x12"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "SB.jpg",
+     "sha256": "a804c34ecc9c381c668890defa80283abd021587cdfa5dac2cd97a212ba6138d",
+     "bytes": 41029,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "SB-end.jpg",
+     "sha256": "fe0512240ac4954ad7c547d5bd326efb3dab13d9db791436e4b64692cdc7f8ca",
+     "bytes": 24950,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "LB",
+   "name": "Lofted Barn",
+   "group": "Barns",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gambrel",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 7 3/4 in at 8 ft wide, 4 ft at 10 ft wide, 4 ft 3 in at 12 ft wide and 6 ft 3 1/8 in at 14 ft wide from the top of the wall to the peak of its trusses",
+    "slopes": [
+     {
+      "where": "lower part, each side",
+      "pitch": "28.72/12",
+      "degrees": 67.3
+     },
+     {
+      "where": "upper part, each side",
+      "pitch": "3.68/12",
+      "degrees": 17.1
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 4,
+     "in": 48,
+     "words": "4 ft"
+    },
+    "peak_per_width": 0.4,
+    "same_at_every_width": false,
+    "by_width": [
+     {
+      "width_ft": 8,
+      "pitches": [
+       "32.75/12",
+       "4.2/12"
+      ],
+      "peak_over_wall_in": 43.75
+     },
+     {
+      "width_ft": 10,
+      "pitches": [
+       "28.72/12",
+       "3.68/12"
+      ],
+      "peak_over_wall_in": 48
+     },
+     {
+      "width_ft": 12,
+      "pitches": [
+       "25.41/12",
+       "3.26/12"
+      ],
+      "peak_over_wall_in": 51
+     },
+     {
+      "width_ft": 14,
+      "pitches": [
+       "32/12",
+       "4.11/12"
+      ],
+      "peak_over_wall_in": 75.125
+     }
+    ]
+   },
+   "walls": {
+    "height": {
+     "ft": 6.63,
+     "in": 79.5,
+     "words": "6 ft 7 1/2 in"
+    }
+   },
+   "main_door": {
+    "name": "72″ Wooden Double Doors",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 5.96,
+     "in": 71.5,
+     "words": "5 ft 11 1/2 in"
+    },
+    "wall_over_it_in": 8,
+    "words": "8 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w72",
+     "name": "72″ Wooden Double Doors",
+     "wall": "F",
+     "words": "72″ Wooden Double Doors, centred on the front end"
+    },
+    {
+     "item": "fake",
+     "name": "Faux Loft Window",
+     "wall": "F",
+     "words": "Faux Loft Window, in the front gable"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": "A 4 ft loft inside at each end. It can't be seen from outside.",
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "at the top of the walls",
+    "back": "at the loft line, 40% of the way up the gable"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Barn roof: a steep lower part and a flatter top.",
+    "Double doors in the middle of the front end.",
+    "A small loft window above the doors."
+   ],
+   "look_alikes": [
+    {
+     "code": "MLB",
+     "name": "Metal Lofted Barn",
+     "how": "Metal siding and no loft window."
+    },
+    {
+     "code": "SLB",
+     "name": "Side Lofted Barn",
+     "how": "The doors are on a long side."
+    },
+    {
+     "code": "SB",
+     "name": "Standard Barn",
+     "how": "Very short walls and no loft window."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "8x16",
+    "10x12",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x32",
+    "14x20",
+    "14x24",
+    "14x28",
+    "14x32",
+    "14x40"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "LB.jpg",
+     "sha256": "bc3453d945c9f9fb9aee6e02b9a6d31a4399caa537d3134f04cf386f338b917c",
+     "bytes": 41483,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "LB-end.jpg",
+     "sha256": "f2d65e6df0755eb0a47442d43a69948444e5cff37e6a58bdc667622af953f374",
+     "bytes": 26214,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "SLB",
+   "name": "Side Lofted Barn",
+   "group": "Barns",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gambrel",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 7 3/4 in at 8 ft wide, 4 ft at 10 ft wide and 4 ft 3 in at 12 ft wide from the top of the wall to the peak of its trusses",
+    "slopes": [
+     {
+      "where": "lower part, each side",
+      "pitch": "28.72/12",
+      "degrees": 67.3
+     },
+     {
+      "where": "upper part, each side",
+      "pitch": "3.68/12",
+      "degrees": 17.1
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 4,
+     "in": 48,
+     "words": "4 ft"
+    },
+    "peak_per_width": 0.4,
+    "same_at_every_width": false,
+    "by_width": [
+     {
+      "width_ft": 8,
+      "pitches": [
+       "32.75/12",
+       "4.2/12"
+      ],
+      "peak_over_wall_in": 43.75
+     },
+     {
+      "width_ft": 10,
+      "pitches": [
+       "28.72/12",
+       "3.68/12"
+      ],
+      "peak_over_wall_in": 48
+     },
+     {
+      "width_ft": 12,
+      "pitches": [
+       "25.41/12",
+       "3.26/12"
+      ],
+      "peak_over_wall_in": 51
+     }
+    ]
+   },
+   "walls": {
+    "height": {
+     "ft": 6.63,
+     "in": 79.5,
+     "words": "6 ft 7 1/2 in"
+    }
+   },
+   "main_door": {
+    "name": "72″ Wooden Double Doors",
+    "wall": "R",
+    "top_from_floor": {
+     "ft": 5.96,
+     "in": 71.5,
+     "words": "5 ft 11 1/2 in"
+    },
+    "wall_over_it_in": 8,
+    "words": "8 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w72",
+     "name": "72″ Wooden Double Doors",
+     "wall": "R",
+     "words": "72″ Wooden Double Doors, centred on the right long side"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in right of its middle"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": "A 4 ft loft inside at each end. It can't be seen from outside.",
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "at the loft line, 40% of the way up the gable",
+    "back": "at the loft line, 40% of the way up the gable"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Barn roof.",
+    "Double doors in the middle of a long side, with a window each side."
+   ],
+   "look_alikes": [
+    {
+     "code": "LB",
+     "name": "Lofted Barn",
+     "how": "The doors are on the front end."
+    },
+    {
+     "code": "SU",
+     "name": "Side Utility",
+     "how": "A plain A roof."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "8x16",
+    "10x12",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "SLB.jpg",
+     "sha256": "0d331d76b3301d87d43950262ca84abb1c8d1f655e776327ce49cd894f9a20a4",
+     "bytes": 39740,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "SLB-end.jpg",
+     "sha256": "4a3ec3f7b9d5cbd60df75b68eae0952e239d6490b678eba686ebba6206f435c1",
+     "bytes": 20645,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "CS",
+   "name": "Cottage Shed",
+   "group": "Barns",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "salt",
+    "words": "saltbox: an A roof with its peak off-centre, about 4 1/2/12 over the left long side and 9 3/4/12 over the right long side",
+    "slopes": [
+     {
+      "where": "over the left long side",
+      "pitch": "4.59/12",
+      "degrees": 20.9
+     },
+     {
+      "where": "over the right long side",
+      "pitch": "9.75/12",
+      "degrees": 39.1
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 2.6,
+     "in": 31.1875,
+     "words": "2 ft 7 3/16 in"
+    },
+    "peak_per_width": 0.26,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.75,
+     "in": 93,
+     "words": "7 ft 9 in"
+    }
+   },
+   "main_door": {
+    "name": "72″ Wooden Double Doors",
+    "wall": "R",
+    "top_from_floor": {
+     "ft": 6.38,
+     "in": 76.5,
+     "words": "6 ft 4 1/2 in"
+    },
+    "wall_over_it_in": 16.5,
+    "words": "1 ft 4 1/2 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w72",
+     "name": "72″ Wooden Double Doors",
+     "wall": "R",
+     "words": "72″ Wooden Double Doors, on the right long side, 5 ft 11 3/16 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window (a double: two sashes side by side)",
+     "wall": "R",
+     "words": "2×3 Window (a double: two sashes side by side), on the right long side, 3 ft 7 3/8 in right of its middle"
+    }
+   ],
+   "changes_with_size": [
+    {
+     "sizes": [
+      "8x12",
+      "10x12"
+     ],
+     "doors_windows": [
+      "48″ Wooden Door on the right long side",
+      "2×3 Window (double) on the right long side"
+     ]
+    },
+    {
+     "sizes": [
+      "10x16",
+      "10x20",
+      "12x16",
+      "12x20",
+      "12x24",
+      "12x32"
+     ],
+     "doors_windows": [
+      "72″ Wooden Double Doors on the right long side",
+      "2×3 Window (double) on the right long side"
+     ]
+    }
+   ],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "at the top of the walls",
+    "back": "at the top of the walls"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "The roof's peak is off-centre: a short steep slope over the door side, a long flatter slope behind.",
+    "The door is near one end of the long side, with a double window beside it.",
+    "Boxed eaves, and the roof hardly sticks out past the ends."
+   ],
+   "look_alikes": [
+    {
+     "code": "SU",
+     "name": "Side Utility",
+     "how": "Both roof slopes the same."
+    },
+    {
+     "code": "MCS",
+     "name": "Metal Cottage",
+     "how": "Metal siding and no trim band."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "10x12",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "CS.jpg",
+     "sha256": "ff003de75987aaaa017d46caf11edeaf9223025a4e2683f6628cf274b2002189",
+     "bytes": 41729,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "CS-end.jpg",
+     "sha256": "9cd5b15a60ebd424e83f7f5f8276fe20a49c1b7edad359ae824edfba3eea033d",
+     "bytes": 20323,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "SS",
+   "name": "Single Slope",
+   "group": "Barns",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "slope",
+    "words": "single slope: one slope at about 3 1/4/12",
+    "slopes": [
+     {
+      "where": "one slope, high over the right long side and low over the left long side",
+      "pitch": "3.36/12",
+      "degrees": 15.6
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 2.8,
+     "in": 33.625,
+     "words": "2 ft 9 5/8 in"
+    },
+    "peak_per_width": 0.28,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7,
+     "in": 84,
+     "words": "7 ft"
+    },
+    "high_side": {
+     "wall": "R",
+     "words": "9 ft 9 5/8 in",
+     "ft": 9.8,
+     "in": 117.625
+    }
+   },
+   "main_door": {
+    "name": "36″ 11-Lite Door",
+    "wall": "R",
+    "top_from_floor": {
+     "ft": 6.3,
+     "in": 75.625,
+     "words": "6 ft 3 5/8 in"
+    },
+    "wall_over_it_in": 42,
+    "words": "3 ft 6 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "d36lite",
+     "name": "36″ 11-Lite Door",
+     "wall": "R",
+     "words": "36″ 11-Lite Door, centred on the right long side"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft 7 3/16 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft 7 3/16 in right of its middle"
+    },
+    {
+     "item": "tr",
+     "name": "36×12 Transom Window",
+     "wall": "R",
+     "words": "36×12 Transom Window, on the right long side, 7 ft 4 13/16 in left of its middle"
+    },
+    {
+     "item": "tr",
+     "name": "36×12 Transom Window",
+     "wall": "R",
+     "words": "36×12 Transom Window, on the right long side, 3 ft 8 3/8 in left of its middle"
+    },
+    {
+     "item": "tr",
+     "name": "36×12 Transom Window",
+     "wall": "R",
+     "words": "36×12 Transom Window, centred on the right long side"
+    },
+    {
+     "item": "tr",
+     "name": "36×12 Transom Window",
+     "wall": "R",
+     "words": "36×12 Transom Window, on the right long side, 3 ft 8 3/8 in right of its middle"
+    },
+    {
+     "item": "tr",
+     "name": "36×12 Transom Window",
+     "wall": "R",
+     "words": "36×12 Transom Window, on the right long side, 7 ft 4 13/16 in right of its middle"
+    }
+   ],
+   "changes_with_size": [
+    {
+     "sizes": [
+      "8x12",
+      "10x12"
+     ],
+     "doors_windows": [
+      "36″ 11-Lite Door on the right long side",
+      "two 2×3 Windows on the right long side",
+      "three 36×12 Transom Windows on the right long side"
+     ]
+    },
+    {
+     "sizes": [
+      "8x16",
+      "10x16",
+      "12x16"
+     ],
+     "doors_windows": [
+      "36″ 11-Lite Door on the right long side",
+      "two 2×3 Windows on the right long side",
+      "four 36×12 Transom Windows on the right long side"
+     ]
+    },
+    {
+     "sizes": [
+      "10x20",
+      "12x20"
+     ],
+     "doors_windows": [
+      "36″ 11-Lite Door on the right long side",
+      "two 2×3 Windows on the right long side",
+      "five 36×12 Transom Windows on the right long side"
+     ]
+    },
+    {
+     "sizes": [
+      "12x24"
+     ],
+     "doors_windows": [
+      "36″ 11-Lite Door on the right long side",
+      "two 2×3 Windows on the right long side",
+      "six 36×12 Transom Windows on the right long side"
+     ]
+    },
+    {
+     "sizes": [
+      "12x32"
+     ],
+     "doors_windows": [
+      "36″ 11-Lite Door on the right long side",
+      "two 2×3 Windows on the right long side",
+      "eight 36×12 Transom Windows on the right long side"
+     ]
+    }
+   ],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "none"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "One-slope roof, high over the door side.",
+    "A row of small windows high up on the door side.",
+    "A glass door in the middle of the long side."
+   ],
+   "look_alikes": [
+    {
+     "code": "BU",
+     "name": "Backyard Utility",
+     "how": "The low side is over the door, and no row of high windows."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "8x16",
+    "10x12",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "SS.jpg",
+     "sha256": "28dce130ad8e4f7978f8bd084d0d5fb582eb224d7c9faf11b2058935daa7040e",
+     "bytes": 38537,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "SS-end.jpg",
+     "sha256": "fd8b120c8947fa438cf00888958421f29b1dbce7202b37c21331c9f8f59148e8",
+     "bytes": 18850,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "C",
+   "name": "Cabin",
+   "group": "Cabins",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at about 6 1/2/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "6.48/12",
+      "degrees": 28.4
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 2.7,
+     "in": 32.375,
+     "words": "2 ft 8 3/8 in"
+    },
+    "peak_per_width": 0.27,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.4,
+     "in": 88.8125,
+     "words": "7 ft 4 13/16 in"
+    }
+   },
+   "main_door": {
+    "name": "36″ 11-Lite Door",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 6.3,
+     "in": 75.625,
+     "words": "6 ft 3 5/8 in"
+    },
+    "wall_over_it_in": 13.1875,
+    "words": "1 ft 1 3/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "d36lite",
+     "name": "36″ 11-Lite Door",
+     "wall": "F",
+     "words": "36″ 11-Lite Door, centred on the front end"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, centred on the right long side"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "F",
+     "words": "2×3 Window, on the front end, 3 ft 5 1/8 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "F",
+     "words": "2×3 Window, on the front end, 3 ft 5 1/8 in right of its middle"
+    }
+   ],
+   "changes_with_size": [
+    {
+     "sizes": [
+      "8x12",
+      "8x16"
+     ],
+     "doors_windows": [
+      "36″ 11-Lite Door on the front end",
+      "2×3 Window on the right long side"
+     ]
+    },
+    {
+     "sizes": [
+      "10x16",
+      "10x20",
+      "12x16",
+      "12x20",
+      "12x24",
+      "12x32"
+     ],
+     "doors_windows": [
+      "36″ 11-Lite Door on the front end",
+      "2×3 Window on the right long side",
+      "two 2×3 Windows on the front end"
+     ]
+    }
+   ],
+   "porch": "A 4 ft deep porch across the front end, under the main roof, with posts and rails.",
+   "porch_posts": 2,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "at the top of the walls"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "A porch across the front end, under the main roof, with posts and rails.",
+    "Plain A roof.",
+    "A glass door behind the porch, with a window each side."
+   ],
+   "look_alikes": [
+    {
+     "code": "SC",
+     "name": "Side Cabin",
+     "how": "The porch is cut into a long side."
+    },
+    {
+     "code": "DSC",
+     "name": "Deluxe Side Cabin",
+     "how": "The porch wraps round a corner."
+    },
+    {
+     "code": "LBC",
+     "name": "Lofted Barn Cabin",
+     "how": "A barn roof."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "8x16",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "C.jpg",
+     "sha256": "e29b26ecdce920f968469436fcd34a54f88520b125d1363abc5eaae25294d72a",
+     "bytes": 52532,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "C-end.jpg",
+     "sha256": "bb02364b415709c269b5c10180472d412c8131820a39b6be4902abace2e51dbe",
+     "bytes": 30436,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "LBC",
+   "name": "Lofted Barn Cabin",
+   "group": "Cabins",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gambrel",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 6 3/4 in at 8 ft wide, 4 ft 5 9/16 in at 10 ft wide and 5 ft 4 5/16 in at 12 ft wide from the top of the wall to the peak of its trusses",
+    "slopes": [
+     {
+      "where": "lower part, each side",
+      "pitch": "32/12",
+      "degrees": 69.4
+     },
+     {
+      "where": "upper part, each side",
+      "pitch": "4.11/12",
+      "degrees": 18.9
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 4.46,
+     "in": 53.5625,
+     "words": "4 ft 5 9/16 in"
+    },
+    "peak_per_width": 0.446,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 6.9,
+     "in": 82.8125,
+     "words": "6 ft 10 13/16 in"
+    }
+   },
+   "main_door": {
+    "name": "36″ 11-Lite Door",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 6.3,
+     "in": 75.625,
+     "words": "6 ft 3 5/8 in"
+    },
+    "wall_over_it_in": 7.1875,
+    "words": "7 3/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "d36lite",
+     "name": "36″ 11-Lite Door",
+     "wall": "F",
+     "words": "36″ 11-Lite Door, centred on the front end"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, centred on the right long side"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "F",
+     "words": "2×3 Window, on the front end, 3 ft 5 1/8 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "F",
+     "words": "2×3 Window, on the front end, 3 ft 5 1/8 in right of its middle"
+    },
+    {
+     "item": "oct",
+     "name": "Octagon Gable Window",
+     "wall": "F",
+     "words": "Octagon Gable Window, in the front gable"
+    }
+   ],
+   "changes_with_size": [
+    {
+     "sizes": [
+      "8x16"
+     ],
+     "doors_windows": [
+      "36″ 11-Lite Door on the front end",
+      "2×3 Window on the right long side",
+      "Octagon Gable Window in the front gable"
+     ]
+    },
+    {
+     "sizes": [
+      "10x16",
+      "10x20",
+      "12x18",
+      "12x20",
+      "12x24",
+      "12x30",
+      "12x32"
+     ],
+     "doors_windows": [
+      "36″ 11-Lite Door on the front end",
+      "2×3 Window on the right long side",
+      "two 2×3 Windows on the front end",
+      "Octagon Gable Window in the front gable"
+     ]
+    }
+   ],
+   "porch": "A 4 ft deep porch across the front end, under the main roof, with posts and rails.",
+   "porch_posts": 2,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": "A 4 ft loft inside at each end. It can't be seen from outside.",
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "at the loft line, 40% of the way up the gable"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Barn roof with a porch across the front end.",
+    "An octagon window in the front gable."
+   ],
+   "look_alikes": [
+    {
+     "code": "C",
+     "name": "Cabin",
+     "how": "A plain A roof."
+    },
+    {
+     "code": "LSC",
+     "name": "Loft Side Cabin",
+     "how": "The porch is cut into a long side."
+    }
+   ],
+   "standard_sizes": [
+    "8x16",
+    "10x16",
+    "10x20",
+    "12x18",
+    "12x20",
+    "12x24",
+    "12x30",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "LBC.jpg",
+     "sha256": "7eb126f753e7dabc1c39442880431b399676b5d383bc15567ca3cd6139b01798",
+     "bytes": 49459,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "LBC-end.jpg",
+     "sha256": "fc9e481bec7fe4e463e640a58b28a1010ee62fc8d3d1686531023c056651f943",
+     "bytes": 32826,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "SC",
+   "name": "Side Cabin",
+   "group": "Cabins",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at about 6 1/2/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "6.48/12",
+      "degrees": 28.4
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 2.7,
+     "in": 32.375,
+     "words": "2 ft 8 3/8 in"
+    },
+    "peak_per_width": 0.27,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.4,
+     "in": 88.8125,
+     "words": "7 ft 4 13/16 in"
+    }
+   },
+   "main_door": {
+    "name": "36″ 11-Lite Door",
+    "wall": "S1",
+    "top_from_floor": {
+     "ft": 6.3,
+     "in": 75.625,
+     "words": "6 ft 3 5/8 in"
+    },
+    "wall_over_it_in": 13.1875,
+    "words": "1 ft 1 3/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "d36lite",
+     "name": "36″ 11-Lite Door",
+     "wall": "S1",
+     "words": "36″ 11-Lite Door, centred on the porch's back wall"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "S1",
+     "words": "2×3 Window, on the porch's back wall, 4 ft 1 3/16 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "S1",
+     "words": "2×3 Window, on the porch's back wall, 4 ft 1 3/16 in right of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft right of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "F",
+     "words": "2×3 Window, on the front end, 2 ft left of its middle"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": "A 4 ft deep porch cut into the right long side at the front end, 12 ft long, with posts and rails.",
+   "porch_posts": 2,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "at the top of the walls",
+    "back": "at the top of the walls"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "A porch cut into one end of a long side, with posts.",
+    "Plain A roof.",
+    "A glass door inside the porch."
+   ],
+   "look_alikes": [
+    {
+     "code": "C",
+     "name": "Cabin",
+     "how": "The porch is across the front end."
+    },
+    {
+     "code": "DSC",
+     "name": "Deluxe Side Cabin",
+     "how": "The porch wraps round the corner, with an angled wall."
+    }
+   ],
+   "standard_sizes": [
+    "10x20",
+    "12x20",
+    "12x24",
+    "12x30",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "SC.jpg",
+     "sha256": "f93317f9091be1fc41926713e722173b94d90a644bccc27e5021e5d7251ca79e",
+     "bytes": 53902,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "SC-end.jpg",
+     "sha256": "c401381725b8a78d2cfb9d1b24844529ddd867db33a42baa3485498f971649d5",
+     "bytes": 26239,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "LSC",
+   "name": "Loft Side Cabin",
+   "group": "Cabins",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gambrel",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 4 ft 5 9/16 in at 10 ft wide and 5 ft 4 5/16 in at 12 ft wide from the top of the wall to the peak of its trusses",
+    "slopes": [
+     {
+      "where": "lower part, each side",
+      "pitch": "32/12",
+      "degrees": 69.4
+     },
+     {
+      "where": "upper part, each side",
+      "pitch": "4.11/12",
+      "degrees": 18.9
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 4.46,
+     "in": 53.5625,
+     "words": "4 ft 5 9/16 in"
+    },
+    "peak_per_width": 0.446,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 6.9,
+     "in": 82.8125,
+     "words": "6 ft 10 13/16 in"
+    }
+   },
+   "main_door": {
+    "name": "36″ 11-Lite Door",
+    "wall": "S1",
+    "top_from_floor": {
+     "ft": 6.3,
+     "in": 75.625,
+     "words": "6 ft 3 5/8 in"
+    },
+    "wall_over_it_in": 7.1875,
+    "words": "7 3/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "d36lite",
+     "name": "36″ 11-Lite Door",
+     "wall": "S1",
+     "words": "36″ 11-Lite Door, centred on the porch's back wall"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "S1",
+     "words": "2×3 Window, on the porch's back wall, 4 ft 1 3/16 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "S1",
+     "words": "2×3 Window, on the porch's back wall, 4 ft 1 3/16 in right of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft right of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "F",
+     "words": "2×3 Window, on the front end, 2 ft left of its middle"
+    },
+    {
+     "item": "fake",
+     "name": "Faux Loft Window",
+     "wall": "F",
+     "words": "Faux Loft Window, in the front gable"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": "A 4 ft deep porch cut into the right long side at the front end, 12 ft long, with posts and rails.",
+   "porch_posts": 2,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": "A 4 ft loft inside at each end. It can't be seen from outside.",
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "at the top of the walls",
+    "back": "at the loft line, 40% of the way up the gable"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Barn roof with a porch cut into one end of a long side.",
+    "A loft window in the gable next to the porch."
+   ],
+   "look_alikes": [
+    {
+     "code": "SC",
+     "name": "Side Cabin",
+     "how": "A plain A roof."
+    },
+    {
+     "code": "LBC",
+     "name": "Lofted Barn Cabin",
+     "how": "The porch is across the front end."
+    }
+   ],
+   "standard_sizes": [
+    "10x20",
+    "12x20",
+    "12x24",
+    "12x30",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "LSC.jpg",
+     "sha256": "c9829811a50ed90d04b6704529482aa70eca1a138741dad9808eb9283770579d",
+     "bytes": 49948,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "LSC-end.jpg",
+     "sha256": "1a424836ae3888880eb805676b4253a7f0a2222c699bcc24b6374b6980df2e0d",
+     "bytes": 27891,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "DSC",
+   "name": "Deluxe Side Cabin",
+   "group": "Cabins",
+   "drawn_at": "12x32",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at about 6 1/2/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "6.48/12",
+      "degrees": 28.4
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 3.24,
+     "in": 38.875,
+     "words": "3 ft 2 7/8 in"
+    },
+    "peak_per_width": 0.27,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.4,
+     "in": 88.8125,
+     "words": "7 ft 4 13/16 in"
+    }
+   },
+   "main_door": {
+    "name": "36″ 11-Lite Door",
+    "wall": "P3",
+    "top_from_floor": {
+     "ft": 6.3,
+     "in": 75.625,
+     "words": "6 ft 3 5/8 in"
+    },
+    "wall_over_it_in": 13.1875,
+    "words": "1 ft 1 3/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "d36lite",
+     "name": "36″ 11-Lite Door",
+     "wall": "P3",
+     "words": "36″ 11-Lite Door, centred on the porch's back wall"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "P1",
+     "words": "2×3 Window, centred on the porch's angled wall"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "P2",
+     "words": "2×3 Window, centred on the porch's side wall"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "F",
+     "words": "2×3 Window, on the front end, 4 ft left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft right of its middle"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": "A porch that wraps round the front corner: 4 ft deep across the front end and 12 ft down the right long side, with an angled wall behind it.",
+   "porch_posts": 4,
+   "drawn_length_ft": 36,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "at the top of the walls"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "A porch that wraps round a front corner, with an angled wall behind it.",
+    "Plain A roof.",
+    "A glass door inside the porch."
+   ],
+   "look_alikes": [
+    {
+     "code": "SC",
+     "name": "Side Cabin",
+     "how": "No angled wall, and no porch across the front."
+    },
+    {
+     "code": "C",
+     "name": "Cabin",
+     "how": "The porch is across the front end only."
+    }
+   ],
+   "standard_sizes": [
+    "12x20",
+    "12x24",
+    "12x30",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "DSC.jpg",
+     "sha256": "edbc160f2cba4827f89993e2b54b897ae1db7d300d23350d9ccf71d48e70846e",
+     "bytes": 46544,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "DSC-end.jpg",
+     "sha256": "411e843456856de819566f6ea0dc10025cdaddcc6f5763a076a3024f6a0c8888",
+     "bytes": 23441,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "SLC",
+   "name": "Deluxe Loft Side Cabin",
+   "group": "Cabins",
+   "drawn_at": "12x32",
+   "roof": {
+    "type": "gambrel",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 5 ft 4 5/16 in at 12 ft wide from the top of the wall to the peak of its trusses",
+    "slopes": [
+     {
+      "where": "lower part, each side",
+      "pitch": "32/12",
+      "degrees": 69.4
+     },
+     {
+      "where": "upper part, each side",
+      "pitch": "4.11/12",
+      "degrees": 18.9
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 5.36,
+     "in": 64.3125,
+     "words": "5 ft 4 5/16 in"
+    },
+    "peak_per_width": 0.447,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 6.9,
+     "in": 82.8125,
+     "words": "6 ft 10 13/16 in"
+    }
+   },
+   "main_door": {
+    "name": "36″ 11-Lite Door",
+    "wall": "P3",
+    "top_from_floor": {
+     "ft": 6.3,
+     "in": 75.625,
+     "words": "6 ft 3 5/8 in"
+    },
+    "wall_over_it_in": 7.1875,
+    "words": "7 3/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "d36lite",
+     "name": "36″ 11-Lite Door",
+     "wall": "P3",
+     "words": "36″ 11-Lite Door, centred on the porch's back wall"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "P1",
+     "words": "2×3 Window, centred on the porch's angled wall"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "P2",
+     "words": "2×3 Window, centred on the porch's side wall"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "F",
+     "words": "2×3 Window, on the front end, 4 ft left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft right of its middle"
+    },
+    {
+     "item": "fake",
+     "name": "Faux Loft Window",
+     "wall": "F",
+     "words": "Faux Loft Window, in the front gable"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": "A porch that wraps round the front corner: 4 ft deep across the front end and 12 ft down the right long side, with an angled wall behind it.",
+   "porch_posts": 4,
+   "drawn_length_ft": 36,
+   "dormer": null,
+   "loft": "A 4 ft loft inside at each end. It can't be seen from outside.",
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "at the loft line, 40% of the way up the gable"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Barn roof with a porch that wraps round a front corner.",
+    "A loft window in the front gable."
+   ],
+   "look_alikes": [
+    {
+     "code": "DSC",
+     "name": "Deluxe Side Cabin",
+     "how": "A plain A roof."
+    },
+    {
+     "code": "LSC",
+     "name": "Loft Side Cabin",
+     "how": "The porch is cut into a long side."
+    }
+   ],
+   "standard_sizes": [
+    "12x20",
+    "12x24",
+    "12x30",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "SLC.jpg",
+     "sha256": "4ac9283d5a67844ef6974c5d37c79d31d453b8419958170b3395e483536eede3",
+     "bytes": 41810,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "SLC-end.jpg",
+     "sha256": "d6189a6e787747859dad3e74ea1dc571cd2bd69455cc1b29e59e9983d507463a",
+     "bytes": 24475,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "G",
+   "name": "Garage",
+   "group": "Garages",
+   "drawn_at": "14x20",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at 5/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "5/12",
+      "degrees": 22.6
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 2.92,
+     "in": 35,
+     "words": "2 ft 11 in"
+    },
+    "peak_per_width": 0.208,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.79,
+     "in": 93.5,
+     "words": "7 ft 9 1/2 in"
+    }
+   },
+   "main_door": {
+    "name": "8′ Roll-up Door",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 6.4,
+     "in": 76.8125,
+     "words": "6 ft 4 13/16 in"
+    },
+    "wall_over_it_in": 16.6875,
+    "words": "1 ft 4 11/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "ru8",
+     "name": "8′ Roll-up Door",
+     "wall": "F",
+     "words": "8′ Roll-up Door, centred on the front end"
+    },
+    {
+     "item": "d36in",
+     "name": "36″ In-Swing Door",
+     "wall": "R",
+     "words": "36″ In-Swing Door, on the right long side, 6 ft 7 3/16 in right of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 6 ft 7 3/16 in left of its middle"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "at the top of the walls",
+    "back": "at the top of the walls"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Plain A roof.",
+    "A big roll-up door on the front end.",
+    "A steel walk-in door and a window on a long side."
+   ],
+   "look_alikes": [
+    {
+     "code": "MG",
+     "name": "Metal Garage",
+     "how": "Metal siding, no trim band, and a steeper roof."
+    },
+    {
+     "code": "LBG",
+     "name": "Lofted Barn Garage",
+     "how": "A barn roof."
+    },
+    {
+     "code": "UT",
+     "name": "Utility Shed",
+     "how": "Wooden double doors instead of a roll-up door."
+    }
+   ],
+   "standard_sizes": [
+    "12x20",
+    "12x24",
+    "12x30",
+    "12x32",
+    "14x20",
+    "14x24",
+    "14x28",
+    "14x32",
+    "14x40"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "G.jpg",
+     "sha256": "32e9f3c262e4b929aac10c4931dc79f37e8053be31b74690a61903989ed23151",
+     "bytes": 57388,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "G-end.jpg",
+     "sha256": "e250eb0e715614cb895b3aa1922d60b9a0b034b84bdcac6715d3762e13006180",
+     "bytes": 32137,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "LBG",
+   "name": "Lofted Barn Garage",
+   "group": "Garages",
+   "drawn_at": "12x32",
+   "roof": {
+    "type": "gambrel",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 4 ft 3 in at 12 ft wide from the top of the wall to the peak of its trusses",
+    "slopes": [
+     {
+      "where": "lower part, each side",
+      "pitch": "25.41/12",
+      "degrees": 64.7
+     },
+     {
+      "where": "upper part, each side",
+      "pitch": "3.26/12",
+      "degrees": 15.2
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 4.25,
+     "in": 51,
+     "words": "4 ft 3 in"
+    },
+    "peak_per_width": 0.354,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 6.9,
+     "in": 82.8125,
+     "words": "6 ft 10 13/16 in"
+    }
+   },
+   "main_door": {
+    "name": "8′ Roll-up Door",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 6.4,
+     "in": 76.8125,
+     "words": "6 ft 4 13/16 in"
+    },
+    "wall_over_it_in": 6,
+    "words": "6 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "ru8",
+     "name": "8′ Roll-up Door",
+     "wall": "F",
+     "words": "8′ Roll-up Door, centred on the front end"
+    },
+    {
+     "item": "d36in",
+     "name": "36″ In-Swing Door",
+     "wall": "R",
+     "words": "36″ In-Swing Door, on the right long side, 9 ft 7 3/16 in right of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 9 ft 7 3/16 in left of its middle"
+    },
+    {
+     "item": "fake",
+     "name": "Faux Loft Window",
+     "wall": "F",
+     "words": "Faux Loft Window, in the front gable"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": "A 4 ft loft inside at each end. It can't be seen from outside.",
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "at the top of the walls",
+    "back": "at the loft line, 40% of the way up the gable"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Barn roof with a roll-up door on the front end.",
+    "A loft window above the roll-up door."
+   ],
+   "look_alikes": [
+    {
+     "code": "G",
+     "name": "Garage",
+     "how": "A plain A roof."
+    }
+   ],
+   "standard_sizes": [
+    "12x20",
+    "12x24",
+    "12x30",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "LBG.jpg",
+     "sha256": "3de5c24e5b8949222bd68d0e99b90a22ccc49c2a63130a411d37c8bd6e97fce3",
+     "bytes": 40946,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "LBG-end.jpg",
+     "sha256": "ac829769ff50b050fee37c4a6cefac4db40097cb46b641a85c1e1921b6d41da7",
+     "bytes": 23194,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "MU",
+   "name": "Metal Utility",
+   "group": "Metal Buildings",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at about 6 1/2/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "6.48/12",
+      "degrees": 28.4
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 2.7,
+     "in": 32.375,
+     "words": "2 ft 8 3/8 in"
+    },
+    "peak_per_width": 0.27,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.75,
+     "in": 93,
+     "words": "7 ft 9 in"
+    }
+   },
+   "main_door": {
+    "name": "72″ Wooden Double Doors",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 6.38,
+     "in": 76.5,
+     "words": "6 ft 4 1/2 in"
+    },
+    "wall_over_it_in": 16.5,
+    "words": "1 ft 4 1/2 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w72",
+     "name": "72″ Wooden Double Doors",
+     "wall": "F",
+     "words": "72″ Wooden Double Doors, centred on the front end"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "ribbed metal",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "none"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Ribbed metal siding and no trim band.",
+    "Plain A roof.",
+    "Double doors in the middle of the front end."
+   ],
+   "look_alikes": [
+    {
+     "code": "UT",
+     "name": "Utility Shed",
+     "how": "Painted siding with a trim band, and a flatter roof."
+    },
+    {
+     "code": "MG",
+     "name": "Metal Garage",
+     "how": "A roll-up door."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "10x12",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "MU.jpg",
+     "sha256": "e338f8546231bb704de2858f6358a40262e601581cbeeee7335e5f9cfadb1728",
+     "bytes": 46182,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "MU-end.jpg",
+     "sha256": "4e808b50dccfd0bdf734e60436f6ca9afe3ac0e7254c96573fd09dab305c8e79",
+     "bytes": 27049,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "MLB",
+   "name": "Metal Lofted Barn",
+   "group": "Metal Buildings",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "gambrel",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 7 3/4 in at 8 ft wide, 4 ft at 10 ft wide and 4 ft 3 in at 12 ft wide from the top of the wall to the peak of its trusses",
+    "slopes": [
+     {
+      "where": "lower part, each side",
+      "pitch": "29.38/12",
+      "degrees": 67.8
+     },
+     {
+      "where": "upper part, each side",
+      "pitch": "3.77/12",
+      "degrees": 17.4
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 4,
+     "in": 48,
+     "words": "4 ft"
+    },
+    "peak_per_width": 0.4,
+    "same_at_every_width": false,
+    "by_width": [
+     {
+      "width_ft": 8,
+      "pitches": [
+       "33.59/12",
+       "4.31/12"
+      ],
+      "peak_over_wall_in": 43.75
+     },
+     {
+      "width_ft": 10,
+      "pitches": [
+       "29.38/12",
+       "3.77/12"
+      ],
+      "peak_over_wall_in": 48
+     },
+     {
+      "width_ft": 12,
+      "pitches": [
+       "25.95/12",
+       "3.33/12"
+      ],
+      "peak_over_wall_in": 51
+     }
+    ]
+   },
+   "walls": {
+    "height": {
+     "ft": 6.63,
+     "in": 79.5,
+     "words": "6 ft 7 1/2 in"
+    }
+   },
+   "main_door": {
+    "name": "72″ Wooden Double Doors",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 5.96,
+     "in": 71.5,
+     "words": "5 ft 11 1/2 in"
+    },
+    "wall_over_it_in": 8,
+    "words": "8 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w72",
+     "name": "72″ Wooden Double Doors",
+     "wall": "F",
+     "words": "72″ Wooden Double Doors, centred on the front end"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": "A 4 ft loft inside at each end. It can't be seen from outside.",
+   "siding": "ribbed metal",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "none"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Ribbed metal siding with a barn roof.",
+    "Double doors on the front end, and no loft window."
+   ],
+   "look_alikes": [
+    {
+     "code": "LB",
+     "name": "Lofted Barn",
+     "how": "Painted siding and a loft window."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "10x12",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "MLB.jpg",
+     "sha256": "184cc70e60e2a2f2015f5a808c3ffe1f461e84609ed8e73de07ca88b94d99bfb",
+     "bytes": 41973,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "MLB-end.jpg",
+     "sha256": "18458f16445f19a7a520f668f38030340580ad602b0869c9b412431cf11f98ca",
+     "bytes": 27680,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "MG",
+   "name": "Metal Garage",
+   "group": "Metal Buildings",
+   "drawn_at": "12x32",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at about 6 1/2/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "6.48/12",
+      "degrees": 28.4
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 3.24,
+     "in": 38.875,
+     "words": "3 ft 2 7/8 in"
+    },
+    "peak_per_width": 0.27,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.75,
+     "in": 93,
+     "words": "7 ft 9 in"
+    }
+   },
+   "main_door": {
+    "name": "8′ Roll-up Door",
+    "wall": "F",
+    "top_from_floor": {
+     "ft": 6.4,
+     "in": 76.8125,
+     "words": "6 ft 4 13/16 in"
+    },
+    "wall_over_it_in": 16.1875,
+    "words": "1 ft 4 3/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "ru8",
+     "name": "8′ Roll-up Door",
+     "wall": "F",
+     "words": "8′ Roll-up Door, centred on the front end"
+    },
+    {
+     "item": "d36in",
+     "name": "36″ In-Swing Door",
+     "wall": "R",
+     "words": "36″ In-Swing Door, on the right long side, 9 ft 7 3/16 in right of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 9 ft 7 3/16 in left of its middle"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "ribbed metal",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "none"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Ribbed metal siding.",
+    "A roll-up door on the front end."
+   ],
+   "look_alikes": [
+    {
+     "code": "G",
+     "name": "Garage",
+     "how": "Painted siding with a trim band, and a flatter roof."
+    },
+    {
+     "code": "MU",
+     "name": "Metal Utility",
+     "how": "Double doors instead of a roll-up door."
+    }
+   ],
+   "standard_sizes": [
+    "12x20",
+    "12x24",
+    "12x30",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "MG.jpg",
+     "sha256": "e7485b023ec63a0406dcf993d2a2615b22db88fe9bfebdaf02ed62b688003eb1",
+     "bytes": 46057,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "MG-end.jpg",
+     "sha256": "5204b073fdb5b341e0da4b1b93b1f0415130604f9dec21350d9cdbe38f21c693",
+     "bytes": 21958,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "MCS",
+   "name": "Metal Cottage",
+   "group": "Metal Buildings",
+   "drawn_at": "10x20",
+   "roof": {
+    "type": "salt",
+    "words": "saltbox: an A roof with its peak off-centre, about 4 1/2/12 over the left long side and 9 3/4/12 over the right long side",
+    "slopes": [
+     {
+      "where": "over the left long side",
+      "pitch": "4.59/12",
+      "degrees": 20.9
+     },
+     {
+      "where": "over the right long side",
+      "pitch": "9.75/12",
+      "degrees": 39.1
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 2.6,
+     "in": 31.1875,
+     "words": "2 ft 7 3/16 in"
+    },
+    "peak_per_width": 0.26,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.75,
+     "in": 93,
+     "words": "7 ft 9 in"
+    }
+   },
+   "main_door": {
+    "name": "72″ Wooden Double Doors",
+    "wall": "R",
+    "top_from_floor": {
+     "ft": 6.38,
+     "in": 76.5,
+     "words": "6 ft 4 1/2 in"
+    },
+    "wall_over_it_in": 16.5,
+    "words": "1 ft 4 1/2 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w72",
+     "name": "72″ Wooden Double Doors",
+     "wall": "R",
+     "words": "72″ Wooden Double Doors, on the right long side, 5 ft 11 3/16 in left of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window (a double: two sashes side by side)",
+     "wall": "R",
+     "words": "2×3 Window (a double: two sashes side by side), on the right long side, 3 ft 7 3/8 in right of its middle"
+    }
+   ],
+   "changes_with_size": [
+    {
+     "sizes": [
+      "8x12",
+      "10x12"
+     ],
+     "doors_windows": [
+      "48″ Wooden Door on the right long side",
+      "2×3 Window (double) on the right long side"
+     ]
+    },
+    {
+     "sizes": [
+      "10x16",
+      "10x20",
+      "12x16",
+      "12x20",
+      "12x24",
+      "12x32"
+     ],
+     "doors_windows": [
+      "72″ Wooden Double Doors on the right long side",
+      "2×3 Window (double) on the right long side"
+     ]
+    }
+   ],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "ribbed metal",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "none"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "Ribbed metal siding.",
+    "The roof's peak is off-centre, toward the door side."
+   ],
+   "look_alikes": [
+    {
+     "code": "CS",
+     "name": "Cottage Shed",
+     "how": "Painted siding with a trim band."
+    }
+   ],
+   "standard_sizes": [
+    "8x12",
+    "10x12",
+    "10x16",
+    "10x20",
+    "12x16",
+    "12x20",
+    "12x24",
+    "12x32"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "MCS.jpg",
+     "sha256": "a36ba7a80233310b28b67c7f19f6c5c51b2b0c145aac886690ab7faeff70796d",
+     "bytes": 42704,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "MCS-end.jpg",
+     "sha256": "67869cdff62cd1e0ae40a68ae890bc91d19a3647cb0b2d0239e6a271e0934f60",
+     "bytes": 20027,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  },
+  {
+   "code": "DK",
+   "name": "Dog Kennel",
+   "group": "Dog Kennels",
+   "drawn_at": "8x16",
+   "roof": {
+    "type": "gable",
+    "words": "gable: an A roof at 5/12, both sides the same",
+    "slopes": [
+     {
+      "where": "each side",
+      "pitch": "5/12",
+      "degrees": 22.6
+     }
+    ],
+    "peak_over_wall": {
+     "ft": 1.67,
+     "in": 20,
+     "words": "1 ft 8 in"
+    },
+    "peak_per_width": 0.208,
+    "same_at_every_width": true,
+    "by_width": []
+   },
+   "walls": {
+    "height": {
+     "ft": 7.4,
+     "in": 88.8125,
+     "words": "7 ft 4 13/16 in"
+    }
+   },
+   "main_door": {
+    "name": "48″ Wooden Door",
+    "wall": "B",
+    "top_from_floor": {
+     "ft": 6.38,
+     "in": 76.5,
+     "words": "6 ft 4 1/2 in"
+    },
+    "wall_over_it_in": 12.3125,
+    "words": "1 ft 0 5/16 in of wall above it"
+   },
+   "standard_doors_windows": [
+    {
+     "item": "w48",
+     "name": "48″ Wooden Door",
+     "wall": "B",
+     "words": "48″ Wooden Door, centred on the back end"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "R",
+     "words": "2×3 Window, on the right long side, 4 ft right of its middle"
+    },
+    {
+     "item": "w23",
+     "name": "2×3 Window",
+     "wall": "L",
+     "words": "2×3 Window, on the left long side, 4 ft left of its middle"
+    }
+   ],
+   "changes_with_size": [],
+   "porch": null,
+   "porch_posts": 0,
+   "drawn_length_ft": null,
+   "dormer": null,
+   "loft": null,
+   "siding": "painted grooved panel",
+   "gable_vent": true,
+   "trim_band": {
+    "front": "none",
+    "back": "at the top of the walls"
+   },
+   "colors": {
+    "siding": "White",
+    "trim": "Black",
+    "roof": "Black"
+   },
+   "tells": [
+    "The front half is an open dog run with chain-link sides and gates.",
+    "One door on the back end.",
+    "Plain A roof."
+   ],
+   "look_alikes": [],
+   "standard_sizes": [
+    "8x12",
+    "8x16"
+   ],
+   "pictures": {
+    "three_quarter": {
+     "file": "DK.jpg",
+     "sha256": "f368df41091c8465e949266bbe48aebab4a724b094657edc5fe4277aacc41be3",
+     "bytes": 63540,
+     "width": 1024,
+     "height": 796
+    },
+    "end": {
+     "file": "DK-end.jpg",
+     "sha256": "02affcff3a5febb2dd5b6042ffa6faca7ab601530fb9ac792d5807cbc4cbdf04",
+     "bytes": 31877,
+     "width": 1024,
+     "height": 761
+    }
+   }
+  }
+ ]
+}

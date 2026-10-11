@@ -220,6 +220,8 @@ with `frames: true`.
   `wallH`).
 * `porch.post` -- the kennel run's posts.
 * `openings.doorHeightIn`, `openings.windowTop` -- through `openingRect`.
+* How it's built (Oct 2026): the framed wall runs follow the porch depth
+  (`plan.t.porchDepthFt`, 4 ft standard) exactly as the siding's cut-outs do.
 
 ## Where it came from in Barnwright
 
@@ -232,6 +234,14 @@ docs/ARCHITECTURE.md "Framing datums" 2: bottom plate on y0, top of the upper
 top plate at the wall top, studs inside the siding plane from o = -0.02 to
 -0.02 - the stud depth. The high side wall of a lean-to or single slope stops
 its plates under the roof line at its inside face.
+
+Two walls that meet end to end in one line (a side porch as long as the
+building puts its end wall in the back wall) meet at no corner, and a run
+whose frame would reach more than 2 ft past its own wall throws "the ... wall
+frame runs past its wall, so it cannot be built": the every-size check says
+it in words. Before Oct 2026 that case divided by zero and filled the
+computer's memory with studs. The price list never offers such a porch
+(`model/frame.js SIDE_WALL_MIN_FT`).
 
 Helpers other parts use: `wallRuns` (every framed run with its corner ends),
 `frameRun`, `wallFrame(plan)` (members, runs, and each opening's framing),

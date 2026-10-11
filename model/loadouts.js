@@ -33,12 +33,15 @@
       They are read by a small parser in this file: nothing is ever handed to
       eval or Function.
 
-   standardItems(t, W, L, ctx)  the items for style t at W x L.
+   standardItems(t, W, L, ctx)  the items for style t at W x L, with the shop
+                                standard's own swaps at some sizes
+                                (t.standardSwaps, see swapped() below).
                                 ctx = {CAT, span, ws}: the catalogue, the side
                                 porch span, and the walls (data recipes only).
    includedItems(key, W, L, ctx)  the named Barnwright recipe for style key. */
 
 import { CASING } from "../engine/constants.js";
+import { porchDepthOf } from "./frame.js";
 
 function toItems(s) {
   /* A fourth entry, when a building comes with a DOUBLE of something - two
@@ -124,6 +127,9 @@ export function includedItems(t, W, L, ctx) {
       if (t === "SLC") s.push(["fake", "F", 0]);
       break;
     case "SC": case "LSC": {
+      /* the end-wall window sits in the middle of the closed part of the end
+         wall: half the porch depth (4 ft standard) off the centre */
+      var hd = (ctx.porchDepth != null ? ctx.porchDepth : 4) / 2;
       var sp = ctx.span, zc = (sp.z0 + sp.z1) / 2, eW = sp.mid ? "F" : (sp.f ? "B" : "F");
       s = [["d36lite", "S1", sp.P >= 12 ? 0.0 : 1.4],
            ["w23", "S1", sp.P >= 12 ? -(sp.P / 2 - 1.9) : -1.7]];
@@ -131,11 +137,11 @@ export function includedItems(t, W, L, ctx) {
       if (sp.mid) {
         s.push(["w23", "R", (sp.P / 2 + 2.7)]);
         s.push(["w23", "R", -(sp.P / 2 + 2.7)]);
-        s.push(["w23", "F", -2]);
-        s.push(["w23", "B", 2]);
+        s.push(["w23", "F", -hd]);
+        s.push(["w23", "B", hd]);
       } else {
         s.push(["w23", "R", sp.f ? -sp.P / 2 : sp.P / 2]);
-        s.push(["w23", eW, eW === "F" ? -2 : 2]);
+        s.push(["w23", eW, eW === "F" ? -hd : hd]);
       }
       var dz = zc - (sp.P >= 12 ? 0.0 : 1.4);   /* door position */
       s.push(["ppost", "R", -(dz - 2.2)]);
@@ -342,9 +348,35 @@ export function standardItems(t, W, L, ctx, key) {
     if (lo.indexOf("barnwright:") !== 0 || NAMED_RECIPES.indexOf(lo) < 0) {
       throw new Error(`Style ${key || t.name}: its loadout "${lo}" is not a known recipe (use one of ${NAMED_RECIPES.join(", ")} or a data list).`);
     }
-    return includedItems(lo.slice("barnwright:".length), W, L, ctx);
+    return swapped(includedItems(lo.slice("barnwright:".length), W, L, Object.assign({}, ctx, { porchDepth: porchDepthOf(t) })), t, W, L, ctx);
   }
-  if (Array.isArray(lo)) return evalDataRecipe(lo, W, L, ctx);
+  if (Array.isArray(lo)) return swapped(evalDataRecipe(lo, W, L, ctx), t, W, L, ctx);
   if (lo == null) return [];
   throw new Error(`Style ${key || t.name}: its loadout must be a recipe name like "barnwright:UT" or a list of entries.`);
+}
+
+/* THE SHOP STANDARD'S OWN DOOR AT SOME SIZES (t.standardSwaps, from the
+   library style's built.standardSwaps; model/company.js resolve puts it on
+   the style only when the price list sells the "to" item). At exactly
+   those sizes, each standard "from" item becomes "to": the same wall,
+   place, id and order, and it comes with the building (origCat). Alan,
+   Oct 11 2026, on the 8x12 and 10x12 Side Utility: "replace 6 foot to 4
+   foot" -- the 48 in Wooden Door where Barnwright's recipe puts the 72 in
+   double doors. Barnwright's own company has no built blocks, so its
+   recipe is untouched (the golden test). */
+function sizeIs(z, t, W, L) {
+  const m = /^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/.exec(String(z));
+  if (!m) return false;
+  const len = t && t.porch === "C" ? L - porchDepthOf(t) : L;      /* a corner porch's deck is not in the size */
+  return Math.abs(+m[1] - W) < 1e-9 && Math.abs(+m[2] - len) < 1e-9;
+}
+function swapped(items, t, W, L, ctx) {
+  const list = t && t.standardSwaps;
+  if (!Array.isArray(list) || !list.length) return items;
+  for (const s of list) {
+    if (!s || !Array.isArray(s.sizes) || !s.sizes.some((z) => sizeIs(z, t, W, L))) continue;
+    if (!ctx || !ctx.CAT || !ctx.CAT[s.to]) continue;
+    for (const it of items) if (it.cat === s.from) { it.cat = s.to; it.origCat = s.to; }
+  }
+  return items;
 }

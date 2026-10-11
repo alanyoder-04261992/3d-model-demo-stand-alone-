@@ -15,7 +15,10 @@
    -- "6", "9" or "12" on the standard line, the id IS the width in feet along
    the building), clamped to the building's length less 2 ft. It is drawn only
    on a style with the "dormer" trait, and only when the design has one
-   (plan.state.dormer is not "none"). It always sits on the +x (door) side.
+   (plan.state.dormer is not "none"). It sits on the door side (+x, where the
+   Dormer Shed's doors are) unless the style's dormerSide trait is "back"
+   ("How it's built"): then every piece is drawn mirrored to -x. The roof of
+   a dormer style is symmetric, so the mirrored dormer is the same dormer.
    The main roof of a dormer style is a little steeper (construction
    roof.dormerRise, Barnwright's W*0.30 -- model/roof-shapes.js), which is
    what gives the dormer room to stand.
@@ -53,6 +56,7 @@
 import { y0, RIB } from "../engine/constants.js";
 import { texSiding, texTrim, texRoofMetal, texGlass, texFlat } from "../engine/tex-names.js";
 import { profileYat } from "../model/roof-shapes.js";
+import { dormerSideOf } from "../model/frame.js";
 
 export default {
   id: "dormer",
@@ -63,6 +67,13 @@ export default {
   build(plan, kit) {
     var state=plan.state, STEP=kit.STEP;
     var mat=kit.mat, pushQuad=kit.pushQuad;
+    /* on the back side (-x): each quad mirrored (x negated) with its corners
+       in the other order round (a d c b, the same a-c diagonal), so its faces
+       still face out and it splits into the same two triangles */
+    if(dormerSideOf(plan.t)<0){
+      var neg=function(p){ return [-p[0],p[1],p[2]]; };
+      pushQuad=function(m,a,b,c,d,ua,ub,uc,ud){ return kit.pushQuad(m,neg(a),neg(d),neg(c),neg(b),ua,ud,uc,ub); };
+    }
     kit.setStage("dormer");
 
     /* ---------- dormer (Dormer Shed) ---------- */

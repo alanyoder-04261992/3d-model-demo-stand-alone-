@@ -13,11 +13,21 @@
    saves the same way the price list does: the whole record with the
    version it started from (someone else saved first -> 409, reload). The
    page works on a draft; a bar at the bottom counts the changes and saves
-   them all at once. Managers and dealers get a short note instead. */
+   them all at once. Managers and dealers get a short note instead.
+
+   Barnwright (only with a Barnwright account): the owner's one card. Run
+   checks, or run checks and change my price list and settings, for 1 to 24
+   hours; before the business is open to customers, Barnwright sets it up
+   and the owner can stop that. Opening to customers asks first, because it
+   ends that setup access.
+
+   A Barnwright visit sees this screen too, without the card, without Open
+   or Closed, and its draft is kept in this tab if the visit ends. */
 
 import { h, clear, icon, button, field, checkbox, form, toast, pageHead, emptyState, linkButton, confirmBox, nextId } from "../dom.js";
 import { get, put, post } from "../api.js";
-import { money, size as sizeWords, plural, initials, when } from "../words.js";
+import { money, size as sizeWords, plural, initials, when, untilWords } from "../words.js";
+import { keepDraft, takeDraft, dropDraft } from "../visit-draft.js";
 import { tidyDefaults, sortSizes, styleName, keysOf, groupsOf } from "./price-list/model.js";
 import { RTO_NOTE } from "../../../model/pricing.js";
 import { QUOTE_PLANS } from "../../../model/quote-plan.js";
@@ -34,9 +44,38 @@ const ASK = [["required", "Must give"], ["optional", "Can give"], ["off", "Don't
 
 let page = null;   /* this screen's state while it is showing */
 
+/* The owner's Barnwright card (docs/OFFICE.md, "The owner's card"). */
+const CARD = {
+  about: "Let Barnwright run checks on your Dealer Center, or change your price list and settings, for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team.",
+  /* terms 2.2 aren't out yet: Barnwright can only run checks */
+  aboutChecks: "Let Barnwright run checks on your Dealer Center for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team, and can't change anything.",
+  beforeLive: "Barnwright is setting up your 3D designer. Until you open it to customers, they can change your price list and settings for you. Every change is listed here and in Price list, History.",
+  stopped: "Stopped. Barnwright can't change your price list or settings.",
+  off: "Off. Barnwright can't run checks or change your price list or settings.",
+  termsFirst: "Agree to the new terms at the top of the page first.",
+  /* terms 2.2 aren't out yet (this Dealer Center's own terms are older): nothing to agree to */
+  termsNotOut: "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
+  /* Turn off, before live: checks stop, setup access goes on */
+  checksOff: "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access.",
+  allOff: "Barnwright can't run checks or change anything now.",
+  opening: "Opening ends Barnwright's setup access. After this, Barnwright needs your switch to change your prices.",
+};
+const LEVELS = [["checks", "Run checks"], ["change", "Run checks and change my price list and settings"]];
+
+/* A Barnwright visit ended, or the page is going away: keep the changes in this tab. */
+function keepForVisit() {
+  if (page?.ctx.app.barnwright && changes().length) keepDraft("settings", page.saved.version, page.draft);
+}
+window.addEventListener("dealer:visit-ended", keepForVisit);
+window.addEventListener("pagehide", keepForVisit);
+
 /* the save bar lifts the toasts; put them back when leaving the screen */
 window.addEventListener("hashchange", () => {
-  if (!/^#\/settings(?:[/?]|$)/.test(location.hash)) document.body.classList.remove("set-bar-on");
+  if (/^#\/settings(?:[/?]|$)/.test(location.hash)) return;
+  document.body.classList.remove("set-bar-on");
+  /* main.js asked first: leaving lets the changes go, kept or not (a new
+     visit's link opened in this tab keeps them: main.js reloads with them) */
+  if (!location.hash.startsWith("#barnwright=")) dropDraft("settings");
 });
 
 export async function render(ctx) {
@@ -49,9 +88,14 @@ export async function render(ctx) {
         `The business details and the 3D designer's look are set by ${owners.length ? owners.join(" or ") : "the owner"}. Ask them when something needs to change.`,
         linkButton("Go to Today", "#/", { kind: "primary" }))));
   }
-  const [record, M, help] = await Promise.all([app.loadPriceList(true), loadLibrary(app),
-    app.account ? get("barnwright-help").then((r) => r.help).catch(() => null) : null]);
-  page = { ctx, M, saved: record, draft: normalized(record.settings), sections: {}, bar: null, problems: {}, help };
+  const [record, M, card] = await Promise.all([app.loadPriceList(true), loadLibrary(app),
+    app.account && !app.barnwright ? get("barnwright-help").then((r) => (r.help ? { help: r.help, setup: r.setup || null } : null)).catch(() => null) : null]);
+  page = { ctx, M, saved: record, draft: normalized(record.settings), sections: {}, bar: null, problems: {}, card };
+  if (app.barnwright) {
+    const kept = takeDraft("settings", record.version);
+    if (kept?.draft) { page.draft = normalized(kept.draft); toast("Your changes from before are back. Tap Save settings to keep them.", { ms: 7000 }); }
+    else if (kept?.older) toast("The settings were saved by someone else since your last changes, so they weren't brought back.", { ms: 7000 });
+  }
   app.leaveGuard = () => (page && changes().length ? "You have settings you haven't saved. Leave without saving them?" : null);
   return draw();
 }
@@ -124,7 +168,7 @@ function draw() {
     ["colors", "Colors", colorsCard()],
     ["designer", "3D designer", designerCard()],
     ["form", "Quote form", quoteFormCard()],
-    ...(page.help ? [["help", "Help from Barnwright", helpCard()]] : []),
+    ...(page.card ? [["help", "Barnwright", barnwrightCard()]] : []),
   ];
   const jump = h("nav", { class: "set-jump", "aria-label": "Settings sections" },
     cards.map(([key, words, el]) => h("button", { type: "button", class: "chip", onclick: () => el.scrollIntoView({ behavior: "smooth", block: "start" }) }, words)));
@@ -390,8 +434,8 @@ function designerCard() {
   const app = page.ctx.app;
   const lots = app.lots.filter((l) => l.active !== false).length;
 
-  /* open or closed */
-  const openPart = h("div", { class: "set-block" },
+  /* open or closed (only the owner: a Barnwright visit never sees it) */
+  const openPart = app.barnwright ? null : h("div", { class: "set-block" },
     h("h3", { class: "set-sub" }, "Can customers use it?"),
     radioCards("status", [
       ["active", "Open to customers", `Every lot's 3D designer link works and takes quotes${lots ? ` (${plural(lots, "lot")} open now)` : ""}.`],
@@ -453,7 +497,7 @@ function designerCard() {
   fine.input.addEventListener("input", () => { fine.input.value = fine.input.value.replace(/[\r\n]+/g, " "); s.notes.finePrint = fine.input.value; edited(); });
 
   return cardOf("cube", "3D designer", "How every lot's 3D designer works for customers.",
-    s.status === "suspended" ? h("p", { class: "set-callout" }, icon("alert"),
+    s.status === "suspended" && !app.barnwright ? h("p", { class: "set-callout" }, icon("alert"),
       h("span", {}, "Your 3D designer is closed to customers. When your prices are right, pick “Open to customers” and save.")) : null,
     openPart, showPart, rtoPart,
     h("div", { class: "set-block" }, fine.wrap),
@@ -644,6 +688,7 @@ function drawBar() {
 /* someone else saved first: start again from what they saved */
 async function reload() {
   const record = await page.ctx.app.loadPriceList(true);
+  dropDraft("settings");
   page.saved = record;
   page.draft = normalized(record.settings);
   page.stale = false;
@@ -655,6 +700,7 @@ async function reload() {
 async function undo() {
   const yes = await confirmBox("Undo your changes?", "Your settings go back to how they were last saved.", { yes: "Undo changes" });
   if (!yes) return;
+  dropDraft("settings");
   page.draft = normalized(page.saved.settings);
   page.error = null;
   rerender();
@@ -677,15 +723,22 @@ async function save(e) {
     page.error = null;
     return;
   }
-  if (btn) btn.disabled = true;
   const { app } = page.ctx;
+  /* opening to customers ends Barnwright's setup access: say so first */
+  const opening = page.saved.settings.status === "suspended" && page.draft.status !== "suspended";
+  if (opening && app.me?.setup?.mode === "prelive") {
+    const yes = await confirmBox("Open your 3D designer to customers?", CARD.opening, { yes: "Open to customers" });
+    if (!yes) return;
+  }
+  if (btn) btn.disabled = true;
   const brandBefore = JSON.stringify([page.saved.settings.brand, page.saved.settings.status]);
   let out;
   try {
     out = await put("price-list", { settings: prepared(), version: page.saved.version });
+    dropDraft("settings");
   } catch (err) {
     if (btn) btn.disabled = false;
-    page.error = err.problems?.length ? err.problems.join(" ") : err.message;
+    page.error = err.problems?.length ? err.problems.join(" ") : err.message + (err.status === 409 && err.data?.savedAt ? ` (Saved ${when(err.data.savedAt)}.)` : "");
     page.stale = err.status === 409;
     drawBar();
     page.error = page.stale ? page.error : null;
@@ -701,57 +754,108 @@ async function save(e) {
   rerender();
 }
 
-/* ---- Help from Barnwright (only with a Barnwright account) ------------------------------
-   The owner lets Barnwright run checks for 1 to 24 hours. Not part of the
-   settings saved with the bar at the bottom: it turns on and off at once. */
+/* ---- Barnwright (only with a Barnwright account) ---------------------------------------
+   The owner's one card. Not part of the settings saved with the bar at the
+   bottom: it turns on and off at once (POST barnwright-help). Run checks is
+   Help from Barnwright as it was (the control room confirms every check);
+   changing the price list and settings is the switch kept here. Times come
+   from the server as fields and show in this browser's own time. */
 
-function helpCard() {
+/* A log line with its end, in this browser's own time: "... for 4 hours:
+   New prices (until 4:26 PM)", the period kept last when the words end
+   with one. */
+function logWords(e) {
+  if (!e.until) return e.words;
+  const until = `until ${untilWords(e.until)}`;
+  return /\.$/.test(e.words) ? `${e.words.slice(0, -1)} (${until}).` : `${e.words} (${until})`;
+}
+
+function barnwrightCard() {
   const box = h("div", { class: "stack" });
-  const show = (help) => {
-    page.help = help;
+  const act = (body, done) => async (ev) => {
+    const btn = ev?.currentTarget;
+    if (btn) btn.disabled = true;
+    try {
+      const out = await post("barnwright-help", body);
+      show({ help: out.help, setup: out.setup || null });
+      await page.ctx.app.loadMe().catch(() => null);
+      window.dispatchEvent(new Event("dealer:brand"));
+      const words = out.notice || (typeof done === "function" ? done(out) : done);
+      toast(words, { ms: out.notice || words.length > 60 ? 8000 : 4000 });
+    } catch (e) {
+      if (btn) btn.disabled = false;
+      toast(e.message, { error: true });
+    }
+  };
+  const show = (state) => {
+    page.card = state;
+    const { help, setup } = state;
     const log = help.log?.length
       ? h("div", { class: "stack" }, h("h3", { class: "set-sub" }, "What happened"),
-        h("ul", { class: "help-log" }, help.log.map((e) => h("li", {}, h("time", { dateTime: e.at }, when(e.at)), e.words))))
+        h("ul", { class: "help-log" }, help.log.map((e) => h("li", {}, h("time", { dateTime: e.at }, when(e.at)), logWords(e)))))
       : null;
-    if (help.on) {
-      clear(box,
-        h("div", { class: "help-state on" }, icon("check"), h("span", {},
-          h("strong", {}, `Barnwright can run checks until ${when(help.until)}.`), " ", help.reason ? `You asked them to look at: ${help.reason}` : "")),
-        h("div", { class: "actions" }, button("Turn off now", async (ev) => {
-          ev.currentTarget.disabled = true;
-          try {
-            show((await post("barnwright-help", { on: false })).help);
-            toast("Help from Barnwright is off.");
-          } catch (e) {
-            ev.currentTarget.disabled = false;
-            toast(e.message, { error: true });
-          }
-        })),
-        log);
-      return;
+    const parts = [];
+    /* terms 2.2 aren't out yet (so no owner has agreed to them): no setup
+       access words, no change choice */
+    const notOut = termsNotOut(setup);
+    if (notOut) parts.push(h("div", { class: "help-state bw-terms-not-out" }, icon("note"), h("span", {}, CARD.termsNotOut)));
+    /* before the business is live: Barnwright is setting it up */
+    if (setup && !setup.live && !notOut) {
+      const on = setup.prelive !== "stopped";
+      parts.push(h("div", { class: ["help-state", on && setup.termsOk && "on"] }, icon(on ? "check" : "alert"), h("span", {}, on ? CARD.beforeLive : CARD.stopped)));
+      if (on && !setup.termsOk) parts.push(h("p", { class: "set-problem bw-terms" }, CARD.termsFirst));
+      parts.push(h("div", { class: "actions" }, on
+        ? button("Stop Barnwright's setup access", act({ prelive: "stopped" }, "Barnwright can't change your price list or settings now."), { kind: "ghost" })
+        : button("Let Barnwright set it up again", act({ prelive: "on" }, "Barnwright can set up your price list again."), { kind: "primary" })));
     }
-    const reason = field("What should Barnwright look at?", { required: true, maxLength: 300, wide: true, placeholder: "Quotes from the Riverside lot aren't showing up" });
-    const hours = field("For how long", { type: "select", value: "4", options: [["1", "1 hour"], ["4", "4 hours"], ["8", "8 hours"], ["24", "24 hours"]] });
-    clear(box,
-      h("div", { class: "help-state" }, icon("alert"), h("span", {}, "Off. Barnwright can't run any checks on your Dealer Center.")),
-      form([
+    const switchOn = setup?.mode === "switch";
+    if (switchOn || help.on) {
+      parts.push(h("div", { class: "help-state on" }, icon("check"), h("span", {},
+        h("strong", {}, switchOn ? `Barnwright can change your price list and settings until ${untilWords(setup.until)}.` : `Barnwright can run checks until ${untilWords(help.until)}.`),
+        " ", help.on && help.reason ? `You asked for: ${help.reason}` : "")),
+      h("div", { class: "actions" }, button("Turn off now", act({ on: false }, (out) => (out.setup?.mode === "prelive" ? CARD.checksOff : CARD.allOff)))));
+    } else {
+      const afterLive = !!setup?.live;
+      const choices = afterLive && !notOut ? LEVELS : LEVELS.slice(0, 1);
+      let level = "checks";
+      const group = nextId("level");
+      const levelPart = choices.length > 1 ? h("div", { class: "set-block" },
+        h("div", { class: "set-choices two", role: "radiogroup", "aria-label": "What Barnwright can do" }, choices.map(([value, words]) => {
+          const blocked = value === "change" && !setup.termsOk;
+          const input = h("input", { type: "radio", name: group, value, checked: value === "checks", disabled: blocked, onchange: () => { level = value; } });
+          return h("label", { class: ["set-choice", `is-${value}`, blocked && "is-off"] }, input,
+            h("span", { class: "set-choice-words" }, h("strong", {}, words), blocked ? h("small", {}, CARD.termsFirst) : null));
+        }))) : null;
+      const reason = field("What should Barnwright do?", { required: true, maxLength: 300, wide: true, placeholder: afterLive ? "New 2027 prices" : "Quotes from the Riverside lot aren't showing up" });
+      const hours = field("For how long", { type: "select", value: "4", options: [["1", "1 hour"], ["4", "4 hours"], ["8", "8 hours"], ["24", "24 hours"]] });
+      if ((afterLive || !setup) && !notOut) parts.push(h("div", { class: "help-state" }, icon("alert"), h("span", {}, CARD.off)));
+      else parts.push(h("h3", { class: "set-sub" }, "Run checks"));
+      parts.push(form([
+        levelPart,
         h("div", { class: "form-grid" }, reason.wrap, hours.wrap),
-        h("div", { class: "actions" }, h("button", { type: "submit", class: "btn btn-primary" }, h("span", {}, "Let Barnwright help"))),
+        h("div", { class: "actions" }, h("button", { type: "submit", class: "btn btn-primary" }, h("span", {}, "Turn on"))),
       ], async () => {
-        const out = await post("barnwright-help", { on: true, reason: reason.input.value, hours: Number(hours.input.value) });
-        show(out.help);
-        toast("Barnwright can help now.");
-      }),
-      log);
+        const out = await post("barnwright-help", { on: true, level, reason: reason.input.value, hours: Number(hours.input.value) });
+        show({ help: out.help, setup: out.setup || null });
+        await page.ctx.app.loadMe().catch(() => null);
+        window.dispatchEvent(new Event("dealer:brand"));
+        toast(out.notice || (level === "change" ? "Barnwright can change your price list and settings now." : "Barnwright can run checks now."), { ms: out.notice ? 8000 : 4000 });
+      }));
+    }
+    clear(box, parts, log);
   };
-  show(page.help);
+  show(page.card);
   /* who agreed to the Barnwright Terms and Conditions, and when */
   const t = page.ctx.app.me?.terms;
   const termsLine = t ? h("p", { class: "help-terms" }, icon("note"), h("span", {},
     t.agreed ? `${t.agreed.by.name || t.agreed.by.email} agreed to the ${t.title} (version ${t.agreed.version}) on ${when(t.agreed.agreedAt)}. `
       : `Nobody has agreed to the ${t.title} (version ${t.version}) yet. `,
     h("a", { href: t.url, target: "_blank", rel: "noopener" }, "Read the terms"))) : null;
-  return cardOf("user", "Help from Barnwright",
-    "When something isn't working, let Barnwright check how your Dealer Center is running. They can't see your customers or prices, and they can't change anything. It turns itself off when the time is up.",
+  /* the card's own line says only what the terms let Barnwright do */
+  return cardOf("user", "Barnwright",
+    page.card?.setup && !termsNotOut(page.card.setup) ? CARD.about : CARD.aboutChecks,
     box, termsLine);
 }
+/* the terms don't let Barnwright change anything yet: this copy's terms
+   are older than 2.2 and the owner hasn't agreed to 2.2 */
+const termsNotOut = (setup) => !!setup && setup.termsOut === false && !setup.termsOk;

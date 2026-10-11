@@ -33,6 +33,12 @@ ticks "I agree" and types their name.
                                              with the first lot, $250 each lot after
   docs/legal/papers.json                     the list the Control Room's Papers
                                              page reads (from main on GitHub)
+  docs/legal/terms-sha256.json               the SHA-256 of every terms.json
+                                             written for terms 2.2 or later, by
+                                             version (added, never removed): the
+                                             sign-up agreements a Dealer Center
+                                             can take before the owner first
+                                             signs in (terms_sha256.py)
 
 Run:  python3 tools/legal/make-legal-pdfs.py            (into the repository)
       python3 tools/legal/make-legal-pdfs.py <folder>   (all of them there, to look at)
@@ -465,7 +471,7 @@ PARTS = [
             "Your Control Room fills in everything they typed and shows <b>Signed</b> and <b>Card saved</b>, with their name and the time.",
         ]),
         ("Take the photos", [
-            "On the customer, tap <b>Take photos</b> and pick what you are shooting: <b>Buildings</b>, <b>Price list</b>, <b>Options and colors</b> or <b>Other</b>. Your camera opens. Take as many as you like.",
+            "On the customer, tap <b>Add photos or files</b> and pick what you are adding: <b>Buildings</b>, <b>Price list</b>, <b>Options and colors</b> or <b>Other</b>. Then <b>Take Photo</b> and take as many as you like, or <b>Choose File</b> for a PDF price list.",
             "<b>Buildings</b>: each style they sell, the front and the side, and the inside if they show it.",
             "<b>Price list</b>: every page, flat, in good light, close enough that every number is easy to read.",
             "<b>Options and colors</b>: their doors, windows and options with prices, their color cards (siding, trim, roof), and their logo or sign.",
@@ -500,8 +506,8 @@ PARTS = [
             "<b>Team</b>, <b>Add a person</b>: their managers and dealers. Each one gets a message saying how to make their login.",
         ]),
         ("Open it to customers", [
-            "Open each lot's <b>3D designer link</b> and check the buildings and prices with the owner.",
-            "<b>Settings</b>, <b>3D designer</b>, <b>Open to customers</b>, <b>Save settings</b>.",
+            "<b>Lots</b>, each lot, <b>Look at the preview</b>: check the buildings and prices with the owner.",
+            "Then <b>Settings</b>, <b>3D designer</b>, <b>Open to customers</b>, <b>Save settings</b>.",
             "<b>Lots</b>, each lot, <b>Put the designer on your website</b>, <b>Copy website code</b>: send it to whoever runs their website.",
             "Send a test quote from a lot's 3D designer link. It shows up in <b>Customers</b> as New.",
             "Give the owner the <b>Welcome Sheet</b> (on your Papers page). It has all of this for them.",
@@ -1083,6 +1089,12 @@ else:
     price_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Price-Sheet.pdf")
 terms_pdf(terms_out)
 write_json(terms_json_out, terms_json())
+if len(sys.argv) == 1:
+    # the copies of the terms this Dealer Center has (docs/legal/terms-sha256.json)
+    sys.path.insert(0, HERE)
+    import terms_sha256
+    with open(terms_json_out, "rb") as f:
+        terms_sha256.add(os.path.join(ROOT, "docs", "legal", "terms-sha256.json"), TERMS_VERSION, f.read())
 steps_pdf(steps_out)
 welcome_pdf(welcome_out)
 questions_pdf(questions_out)

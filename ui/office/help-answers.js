@@ -12,12 +12,36 @@
    search box, link: [address, words], when}. A link shows only to the
    people who can open that screen. `when: "connected"` is for a Dealer
    Center connected to Barnwright's control room only (a plan, its notes at
-   the top, Help from Barnwright), `when: "not-connected"` for one that
-   isn't (Alan's own business, the demo); no `when` fits both. Each Dealer
-   Center shows at most 15 (the 15th, Oct 7 2026: putting the Dealer Center
-   on a computer or phone). */
+   the top, the Barnwright card), `when: "not-connected"` for one that
+   isn't (Alan's own business, the demo); no `when` fits both. `terms:
+   "change"` is for a Dealer Center whose Barnwright terms let Barnwright
+   change the price list (2.2 or later, see barnwrightCanChange), `terms:
+   "checks"` for one where Barnwright can only run checks; no `terms` fits
+   both. Each Dealer Center shows at most 15 (the 15th, Oct 7 2026: putting
+   the Dealer Center on a computer or phone). */
 
 export const SUPPORT_EMAIL = "support@barnwrightsoftware.com";
+
+/* Barnwright changes a price list only under the Barnwright Terms and
+   Conditions 2.2 or later (server/office/setup-access.js TERMS_NEEDED):
+   when this Dealer Center ships them, or when the owner has agreed to them.
+   That is the Barnwright card's own rule (setup.termsOut or setup.termsOk),
+   so the answer and the card never disagree. terms: GET me's terms
+   ({version, agreed}), null when the Dealer Center isn't connected. */
+export const CHANGE_TERMS = "2.2";
+export function barnwrightCanChange(terms) {
+  return !!terms && (versionAtLeast(terms.version, CHANGE_TERMS) || versionAtLeast(terms.agreed?.version, CHANGE_TERMS));
+}
+/* "2.2" or later, compared as numbers: server/office/terms.js
+   versionAtLeast, which this screen can't load (check-help keeps them the same) */
+export function versionAtLeast(version, need) {
+  if (typeof version !== "string" || !/^\d{1,4}(\.\d{1,4}){0,3}$/.test(version)) return false;
+  const a = version.split(".").map(Number), b = String(need).split(".").map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+  }
+  return true;
+}
 
 /* The Help screen's own words (server/office/help.js says the "not
    connected" one too, when someone asks anyway; check-help keeps them equal). */
@@ -159,15 +183,34 @@ export const ANSWERS = Object.freeze([
     link: ["#/orders", "Open the orders"],
   },
   {
-    id: "barnwright-look",
+    /* the owner's one Barnwright card (server/office/setup-access.js),
+       once the terms let Barnwright change things */
+    id: "barnwright",
     when: "connected",
-    title: "Let Barnwright look at your Dealer Center",
+    terms: "change",
+    title: "Let Barnwright change your prices",
     lines: [
-      "Only the owner can turn this on. Tap **Settings**, then **Help from Barnwright** at the bottom.",
-      "Type what Barnwright should look at, pick how long (1 to 24 hours) and tap **Let Barnwright help**.",
-      "Barnwright sees how your Dealer Center runs, never your customers or prices, and can't change anything. **Turn off now** stops it at once, and it turns itself off when the time is up.",
+      "Only the owner can. Tap **Settings**, then the **Barnwright** card at the bottom.",
+      "Until your 3D designer is open to customers, Barnwright can set up your price list and settings for you. **Stop Barnwright's setup access** stops that.",
+      "After it's open, pick **Run checks** or **Run checks and change my price list and settings**, type what Barnwright should do, pick how long (1 to 24 hours) and tap **Turn on**.",
+      "Every change is listed on the card and in **Price list**, **History**, where **Put this back** undoes it. **Turn off now** stops it at once, and it turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team.",
     ],
-    find: "support check diagnostics look problem broken",
+    find: "barnwright change prices setup access switch support check diagnostics look problem broken help",
+    link: ["#/settings", "Open Settings"],
+  },
+  {
+    /* the same card before the terms let Barnwright change anything: the
+       card offers Run checks only (its "aren't out yet" line) */
+    id: "barnwright-checks",
+    when: "connected",
+    terms: "checks",
+    title: "Let Barnwright run checks on your Dealer Center",
+    lines: [
+      "Only the owner can. Tap **Settings**, then the **Barnwright** card at the bottom.",
+      "Type what Barnwright should check, pick how long (1 to 24 hours) and tap **Turn on**.",
+      "Barnwright sees how your Dealer Center runs, never your customers, quotes, orders or team, and can't change anything. **Turn off now** stops it at once, and it turns itself off when the time is up.",
+    ],
+    find: "barnwright support check checks diagnostics look problem broken help",
     link: ["#/settings", "Open Settings"],
   },
   {
@@ -187,19 +230,23 @@ export const ANSWERS = Object.freeze([
       "They need to be on your team first: the owner adds their email on **Team**.",
       "New people tap **Make your login** on the sign-in screen, use the email the owner added, then open the link we email them to confirm it.",
       "Forgot the password? Tap **Forgot your password?** on the sign-in screen for a link to choose a new one.",
-      "Signed in and told they're not on the team yet? The owner added another email. Check it on **Team**.",
+      "Told they're not on the team yet? The owner added another email. Check it on **Team**.",
+      "To stay signed in, tick **Keep me signed in on this device for 30 days** when you sign in. Then closing the browser doesn't sign you out. Leave it off on a computer other people use: then it signs out when the browser closes, or after 12 hours with nobody using it.",
+      "**Sign out** signs out only the computer or phone you're on. To sign out everywhere (a lost phone, or a shared computer), tap your name, then **Sign out on every device**.",
     ],
-    find: "login log in password reset forgot invite email access",
+    find: "login log in password reset forgot invite email access stay signed in keep remember 30 days 12 hours sign out every device lost",
     link: ["#/team", "Open the team"],
   },
   {
-    /* the buttons named here are the browser's own, not the Dealer Center's, so none is in bold */
+    /* the buttons named here are the browser's own, not the Dealer Center's, so they are not in
+       bold; only the Dealer Center's own tick on its sign-in card is */
     id: "install",
     title: "Put the Dealer Center on your computer or phone",
     lines: [
       "On a computer, in Chrome or Edge: click Install at the right end of the address bar, then Install. The Dealer Center gets its own icon and opens in its own window.",
       "No Install button? Bookmark the page, or in Chrome open the menu, then Cast, save and share, then Create shortcut.",
       "On an iPhone: open your Dealer Center in Safari, tap Share, then Add to Home Screen.",
+      "The Dealer Center on a Home Screen keeps its own sign-in, apart from Safari: sign in there once, and tick **Keep me signed in on this device for 30 days** there too.",
       "On an Android phone: open it in Chrome, tap the menu, then Add to Home screen or Install app.",
     ],
     find: "app install icon desktop shortcut bookmark home screen iphone android chrome edge safari phone computer window",
@@ -217,15 +264,17 @@ export const ANSWERS = Object.freeze([
 ]);
 
 /* The answers for this Dealer Center: connected to Barnwright's control
-   room or not (see `when` above). */
-export function answersFor(connected) {
-  return ANSWERS.filter((a) => !a.when || a.when === (connected ? "connected" : "not-connected"));
+   room or not, and whether its terms let Barnwright change things (see
+   `when` and `terms` above; terms: GET me's terms). */
+export function answersFor(connected, terms = null) {
+  const change = barnwrightCanChange(terms) ? "change" : "checks";
+  return ANSWERS.filter((a) => (!a.when || a.when === (connected ? "connected" : "not-connected")) && (!a.terms || a.terms === change));
 }
 
 /* The answers that match what someone typed (every word, anywhere in an
    answer), in the order above. */
-export function findAnswers(typed, connected = true) {
-  const mine = answersFor(connected);
+export function findAnswers(typed, connected = true, terms = null) {
+  const mine = answersFor(connected, terms);
   const words = String(typed || "").toLowerCase().replace(/[^a-z0-9$ ]+/g, " ").split(/\s+/).filter(Boolean);
   if (!words.length) return mine;
   return mine.filter((a) => {

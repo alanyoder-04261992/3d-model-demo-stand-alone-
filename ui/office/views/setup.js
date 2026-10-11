@@ -12,6 +12,12 @@
                                to customers)
      3  Your first lot      name, address, phone, email -> POST lots
 
+   When Barnwright already set up the price list before the owner's first
+   sign-in (docs/OFFICE.md, "Before the owner first signs in"), there are
+   two steps: "Barnwright set up your price list. You can change anything."
+   above them, Your business (filled in from the price list, with the
+   terms box; POST setup without a starting price list) and Your first lot.
+
    Then: "Your Dealer Center is ready", with the way to the price list and
    the team. The page reloads on the way out so the menu and the business
    name appear. While setting up, the menu is hidden: nothing else works
@@ -21,6 +27,13 @@ import { h, clear, icon, button, field, form, linkButton, emptyState, pageHead }
 import { post } from "../api.js";
 
 const STEPS = ["Your business", "Your price list", "Your first lot"];
+/* Barnwright set up the price list before the owner's first sign-in */
+const STEPS_STARTED = ["Your business", "Your first lot"];
+export const SETUP_WORDS = Object.freeze({
+  hello: "Three short steps. You can change all of it later.",
+  helloStarted: "Two short steps. You can change all of it later.",
+  started: "Barnwright set up your price list. You can change anything.",
+});
 
 let wiz = null;
 
@@ -45,9 +58,13 @@ export async function render(ctx) {
         "Everything is ready. Today shows what to do first.", linkButton("Go to Today", "#/", { kind: "primary" }))));
   }
   document.body.classList.add("setup-on");
+  /* a business already here while First setup is still needed: Barnwright set up its price list */
+  const b = app.business;
   wiz = {
-    ctx, step: 1, start: "full", lot: null,
-    data: { yourName: app.person?.name || app.me?.user?.name || "", businessName: "", phone: "", email: app.person?.email || "" },
+    ctx, step: 1, start: "full", lot: null, started: !!b,
+    data: b
+      ? { yourName: app.person?.name || app.me?.user?.name || "", businessName: b.name || "", phone: b.phone || "", email: b.email || "" }
+      : { yourName: app.person?.name || app.me?.user?.name || "", businessName: "", phone: "", email: app.person?.email || "" },
   };
   return frame();
 }
@@ -59,16 +76,21 @@ function frame() {
     h("header", { class: "setup-hello" },
       h("span", { class: "setup-mark", "aria-hidden": "true" }, icon("shed")),
       h("div", {}, h("h1", {}, "Set up your Dealer Center"),
-        h("p", {}, "Three short steps. You can change all of it later."))),
+        h("p", {}, wiz.started ? SETUP_WORDS.helloStarted : SETUP_WORDS.hello))),
+    wiz.started ? h("p", { class: "setup-note setup-started" }, icon("check"), h("span", {}, SETUP_WORDS.started)) : null,
     body);
   draw();
   return el;
 }
 
+/* the step the screen shows: with the price list already set up, Your first lot is step 2 */
+const shownStep = (step) => (wiz.started && step === 3 ? 2 : step);
+
 function steps() {
-  return h("ol", { class: "setup-steps" }, STEPS.map((words, i) => {
+  const now = shownStep(wiz.step);
+  return h("ol", { class: "setup-steps" }, (wiz.started ? STEPS_STARTED : STEPS).map((words, i) => {
     const n = i + 1;
-    const state = wiz.step > n ? "done" : wiz.step === n ? "now" : "later";
+    const state = now > n ? "done" : now === n ? "now" : "later";
     return h("li", { class: ["setup-step", state], "aria-current": state === "now" ? "step" : null },
       h("span", { class: "setup-num" }, state === "done" ? icon("check") : String(n)), h("span", {}, words));
   }));
@@ -108,7 +130,7 @@ function business() {
       h("div", { class: "form-grid" }, yourName.wrap, businessName.wrap, phone.wrap, email.wrap),
       termsBox,
       h("div", { class: "actions end" },
-        h("button", { type: "submit", class: "btn btn-primary" }, h("span", {}, "Next: your price list"), icon("arrowRight"))),
+        h("button", { type: "submit", class: "btn btn-primary" }, h("span", {}, wiz.started ? "Next: your first lot" : "Next: your price list"), icon("arrowRight"))),
     ], async () => {
       Object.assign(d, {
         yourName: yourName.input.value.trim(), businessName: businessName.input.value.trim(),
@@ -120,7 +142,14 @@ function business() {
         d.agreeTerms = agree.checked;
         if (!d.agreeTerms) throw new Error(`Tick the box to agree to the ${terms.title}.`);
       }
-      wiz.step = 2;
+      if (wiz.started) {
+        /* the price list is there already: save the details (and the agreement), then the first lot */
+        await post("setup", { ...d });
+        await wiz.ctx.app.loadMe();
+        wiz.step = 3;
+      } else {
+        wiz.step = 2;
+      }
       draw();
     }));
 }
@@ -180,7 +209,7 @@ function firstLot() {
   };
   name.input.addEventListener("input", showLink);
   showLink();
-  return stepCard(3, "Your first lot", "The place you sell from. It gets its own 3D designer link for your website. Add more lots later.",
+  return stepCard(shownStep(3), "Your first lot", "The place you sell from. It gets its own 3D designer link for your website. Add more lots later.",
     form([
       h("div", { class: "form-grid" }, name.wrap),
       h("p", { class: "setup-link" }, icon("link"), link),

@@ -55,6 +55,9 @@ entries (only with `frames: true`). Materials `osb` (texFlat `#b8915a`) and
 * The sheet size (4 x 8 ft) and the 1/8 in gap are the standard sheet, in the
   code (`SHEET_UP`, `SHEET_ALONG`, `SHEET_GAP`).
 * `walls.stud` -- how deep a tall wall's framing is (no deck over it).
+* How it's built (Oct 2026): the holes under a back-side dormer
+  (`dormerSide: "back"`) come mirrored from `dormerHoles`, so the deck is
+  open on -x there.
 
 ## Where it came from in Barnwright
 

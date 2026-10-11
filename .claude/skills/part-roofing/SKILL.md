@@ -107,7 +107,8 @@ the roof paint the dormer then shares).
 
 All from `plan.construction.roof` through `roofShape(t, construction)`
 (`model/roof-shapes.js`); every default is Barnwright's number, so nothing
-moves unless a company changes one:
+moves unless the shop standard or a company changes one (the shop standard's
+numbers are listed at the end of this section):
 
 * **`roof.shapes.<roof>.rakeOverhang`** -- the gable-end overhang in feet
   (`rakeOverhangOf(plan)`). Defaults: gable 0.45, salt 0.45, slope 0.45,
@@ -133,6 +134,41 @@ Not settings (kept in the code, they are the roofing PRODUCT, not the shop):
 rib spacing 9 in (`RIB`, shared with metal siding), rib height 0.07 and
 half-widths 0.058/0.02, screw size 0.038 and row pitch 1.95, ridge cap half
 width 0.52, lap 0.34 x 0.024.
+* **How it's built (Oct 2026).** A gambrel's gable-end overhang is
+  `roof.shapes.gambrel.endOverhang` (0.10 ft, Barnwright's), read by
+  `gableEndOverhangOf(plan)` -- it used to be a fixed 0.10 inside
+  `profileRoof`. The upper panels still stand `RAKE_STEP` further out. An
+  eave overhang may be `{"flatIn": n}`: n inches measured level out from the
+  wall, turned into the length along that eave's end slope by
+  `eaveOverhangs` (`flat / cos(slope)`); a plain number is feet along the
+  slope as before. A gambrel may carry `roof.shapes.gambrel.peakIn` (the
+  barn roof's height by width from the top of the wall to the top of the
+  trusses, model/roof-shapes.js `barnPeakFt`; `roofProfile` raises the
+  roof line by the deck's thickness so the framing's highest piece lands
+  on it exactly, `barnTrussPeakFt` reads it back, and `roofRise` takes the
+  taller of 0.45 W and that line so the camera never cuts the top off). `tools/check-build-settings.mjs` proves each.
+* **The shop standard (Oct 2026, Alan: "yes match").** The standard
+  manufacturer's How it's built blocks (`styles.<KEY>.built` in
+  `library/manufacturers/standard.json`) give the Utility Shed, Side
+  Utility, Garage, Dog Kennel and Garden Utility a 5/12 roof at every width
+  (Barnwright: about 6 1/2/12) and an eave 4 in out from the wall measured
+  level (`{"flatIn": 4}`; Barnwright: 0.42 ft along the slope), the Dormer
+  Shed's main roof 7/12 (`roof.dormerRise`; Barnwright about 7 1/4/12; its
+  eave stays 0.42 ft along the slope), and the Lofted Barn, Side Lofted
+  Barn, Metal Lofted Barn and Lofted Barn Garage a barn roof 43 3/4, 48 and
+  51 in above the wall at 8, 10 and 12 ft wide (`peakIn`; Barnwright: 0.45
+  of the width; 14 ft unchanged). Not the Metal Garage or Metal Utility
+  (Alan: "not metal garage"). The knee
+  stays where Barnwright put it, so the slopes are not Alan's truss pieces
+  yet. A barn's eave stays 0.42 ft along its lower slope, and that slope
+  changes with the height, so measured level the eave reaches 1 11/16 to
+  2 1/8 in out depending on the width (1 3/4 in on Barnwright's); the
+  Dealer Center's How it's built box says it width by width
+  (`model/build-settings.js plainValue`). Barnwright's own company leaves these blocks out, so
+  `check-golden.mjs --part roofing` still compares Barnwright's numbers;
+  `node tools/check-shop-numbers.mjs` holds the shop numbers (every roof
+  height, pitch and eave of every style and size, and every triangle of the
+  ten styles that changed).
 
 ## Where it came from in Barnwright
 

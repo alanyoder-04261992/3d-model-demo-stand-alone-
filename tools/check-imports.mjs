@@ -20,7 +20,12 @@
         parts/ ui/ may import a .json file (import attributes break older
         Safari and Firefox);
    and, for the whole of engine/ model/ parts/ ui/:
-     3. nothing calls Math.random except engine/textures.js (the painters).
+     3. nothing calls Math.random except engine/textures.js (the painters);
+   and, for the Dealer Center's server (server/office/):
+     4. nothing but netlify.js imports control-room.js (it needs Node; the
+        "try it" demo runs the rest of server/office/ inside the browser),
+        and no file there but control-room.js and netlify.js imports a
+        node: module or a package.
    Files that do not exist yet are skipped and listed as such. */
 
 import { spawnSync } from "node:child_process";
@@ -131,14 +136,33 @@ for (const f of allCode) {
   ok(rel + " never calls Math.random", !/Math\s*\.\s*random/.test(code));
 }
 
+/* 4. the Dealer Center's server: only netlify.js reaches the Node-only parts */
+const OFFICE = join(ROOT, "server", "office");
+const officeFiles = walk(OFFICE);
+const NODE_ONLY = ["control-room.js", "netlify.js"];
+for (const f of officeFiles) {
+  const rel = relative(ROOT, f);
+  const name = relative(OFFICE, f);
+  const { specs } = importsOf(f);
+  const cr = specs.filter((sp) => sp.startsWith(".") && resolve(dirname(f), sp) === join(OFFICE, "control-room.js"));
+  if (name !== "netlify.js") ok(rel + " does not import control-room.js (only netlify.js may)", cr.length === 0, cr.join(", "));
+  if (!NODE_ONLY.includes(name)) {
+    const outside = specs.filter((sp) => !sp.startsWith("."));
+    ok(rel + " imports no node: module or package (the demo runs it in a browser)", outside.length === 0, outside.join(", "));
+  }
+}
+ok("server/office/setup-access.js and setup-lock.js exist and are checked", ["setup-access.js", "setup-lock.js"].every((n) => officeFiles.includes(join(OFFICE, n))));
+
 console.log("\nImported alone in Node: " + nodeSafe.length + " file(s): " + nodeSafe.map((f) => relative(ROOT, f)).join(", "));
 if (expectedMissing.length) console.log("Not written yet (skipped): engine/" + expectedMissing.join(", engine/"));
 if (!existsSync(join(ROOT, "model")) || walk(join(ROOT, "model")).length === 0) console.log("Not written yet (skipped): anything under model/");
 console.log("Checked " + allCode.length + " file(s) under engine/ model/ parts/ ui/ for JSON imports and Math.random.");
+console.log("Checked " + officeFiles.length + " file(s) under server/office/: only netlify.js imports control-room.js, and only those two use Node.");
 console.log("\n" + (fail ? "FAILED" : "PASSED") + ": " + pass + " passed, " + fail + " failed.");
 if (fail) {
   console.log("\nWhat failed:\n  " + failures.join("\n  "));
   process.exit(1);
 }
 console.log("Proved: every Node-safe file above loads on its own in Node without looking at a browser, none of them");
-console.log("pulls in a browser file, no code imports a JSON file, and only the texture painters use randomness.");
+console.log("pulls in a browser file, no code imports a JSON file, and only the texture painters use randomness;");
+console.log("in the Dealer Center's server only netlify.js reaches control-room.js, so the in-browser demo still runs.");

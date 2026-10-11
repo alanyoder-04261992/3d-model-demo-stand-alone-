@@ -1,21 +1,45 @@
 /* THE DEALER CENTER: start-up, the frame around every screen, and the
    address (#/customers/abc) that says which screen is showing.
 
-   Start-up: handle a link from a Netlify email -> ask the server who this
-   is -> sign-in screen, "not on the team yet", first setup, or the Dealer
-   Center itself.
+   Start-up: handle a link from a Netlify email -> finish a Sign out the
+   server never confirmed -> ask the server who this is -> sign-in screen
+   (saying why the last sign-in ended), "not on the team yet", first setup,
+   or the Dealer Center itself. A sign-in from before the Dealer Center had
+   its own cookie moves onto the cookie (until the browser closes); one
+   left in a browser that was closed is cleared, never used.
+
+   Sign out (and Sign out on every device) asks a screen with unsaved
+   changes first, and lands on a clean sign-in card at /dealer (Sign out on
+   every device only once the server said every device is out; otherwise
+   it says so and stays). Signing in or out in one tab redraws this
+   browser's other Dealer Center tabs -- unless the same person is still
+   signed in here (the "try it" demo signing out, or another tab signing
+   in again). A sign-in that ends while a screen has unsaved changes never
+   reloads: a lasting note says to sign in in a new tab and tap Save again,
+   and the changes stay. The person menu says until when this device is
+   signed in, and the last 24 hours a note on top says so too.
 
    Screens live in ui/office/views/<name>.js. Each exports
    render(ctx) -> an element (or a promise of one). ctx carries the shared
    app (who, lots, customers), the parts of the address, go(path) and
    setTitle(words). A screen with unsaved changes sets app.leaveGuard to a
-   function that returns a question ("Leave without saving?") or null. */
+   function that returns a question ("Leave without saving?") or null.
 
-import { h, clear, icon, button, toast, loading, emptyState } from "./dom.js";
+   A BARNWRIGHT VISIT (docs/OFFICE.md "The visit"): Alan's Control Room
+   opens /dealer#barnwright=<pass>. The page reads the pass, clears the
+   address at once, and starts the visit (the server sets its own cookie).
+   Then a smaller frame: only Price list and Settings, and a bar on top,
+   "Working on <business> as Barnwright until 3:15 PM. [Done]". A visit
+   that ends never shows a sign-in screen and never reloads: the work on
+   screen stays (and is kept in this tab, visit-draft.js). */
+
+import { h, clear, icon, button, linkButton, toast, loading, emptyState } from "./dom.js";
 import { app } from "./app.js";
-import { configureApi, signOut, post } from "./api.js";
-import { signInScreen, notOnTeam, handleEmailLink } from "./auth.js";
-import { ROLE_WORDS, initials, dayWords, todayKey } from "./words.js";
+import { configureApi, signOut, finishSignOut, startSession, onOtherTabs, post, get, startVisit, endVisit, VISIT_ENDED, takeSignInNote } from "./api.js";
+import { signInScreen, notOnTeam, handleEmailLink, endedWords } from "./auth.js";
+import { oldSignIn, forgetOldSignIn } from "./identity.js";
+import { ROLE_WORDS, initials, dayWords, todayKey, untilWords, when } from "./words.js";
+import { visitMark, visitMarked } from "./visit-draft.js";
 import { watchProblems, reportProblem, screenOf } from "../problems.js";
 
 const root = document.getElementById("dealer-center");
@@ -38,12 +62,14 @@ const NAV = [
   { path: "/", label: "Today", icon: "today", roles: ["owner", "manager", "dealer"] },
   { path: "/customers", label: "Customers", icon: "customers", roles: ["owner", "manager", "dealer"] },
   { path: "/orders", label: "Orders", icon: "orders", roles: ["owner", "manager", "dealer"] },
-  { path: "/price-list", label: "Price list", icon: "prices", roles: ["owner", "manager", "dealer"] },
+  { path: "/price-list", label: "Price list", icon: "prices", roles: ["owner", "manager", "dealer"], visit: true },
   { path: "/lots", label: "Lots", icon: "lots", roles: ["owner", "manager", "dealer"] },
   { path: "/team", label: "Team", icon: "team", roles: ["owner", "manager"] },
-  { path: "/settings", label: "Settings", icon: "settings", roles: ["owner"] },
+  { path: "/settings", label: "Settings", icon: "settings", roles: ["owner"], visit: true },
   { path: "/help", label: "Help", icon: "help", roles: ["owner", "manager", "dealer"] },
 ];
+/* the only screens a Barnwright visit has */
+const VISIT_VIEWS = ["price-list", "settings"];
 
 const ROUTES = [
   [/^\/$/, "today"],
@@ -113,12 +139,42 @@ function badge(business) {
   return h("span", { class: "brand-initials", "aria-hidden": "true" }, business?.initials || initials(business?.name || "DC"));
 }
 
+/* Sign out: a screen with unsaved changes asks first (Stay keeps
+   everything as it was). */
+async function signOutHere({ everywhere = false } = {}) {
+  const guard = app.leaveGuard;
+  if (guard) {
+    const question = guard();
+    if (question && !confirm(question)) return;
+  }
+  app.leaveGuard = null;
+  try {
+    await signOut({ everywhere });
+  } catch (e) {
+    /* Sign out on every device didn't finish: still signed in here, nothing lost */
+    app.leaveGuard = guard;
+    toast(e.message, { error: true, ms: 12000 });
+  }
+}
+
+/* When this device's sign-in ends, in this browser's own time (the server
+   says how long is left, so a computer clock that is off doesn't matter). */
+function signInEnds() {
+  const s = app.me?.session;
+  const at = s?.endsLocal || s?.endsAt;
+  const d = at ? new Date(at) : null;
+  return d && !Number.isNaN(d.valueOf()) ? d : null;
+}
+
 function personMenu() {
   const p = app.person;
+  const ends = app.me?.session?.keep ? signInEnds() : null;
   const menu = h("div", { class: "person-menu", hidden: true },
     h("div", { class: "person-menu-who" }, h("strong", {}, p.name || p.email), h("span", {}, p.email),
-      h("span", { class: "role-tag" }, ROLE_WORDS[p.role] + (p.role === "dealer" ? ` · ${p.lots.map((s) => app.lotName(s)).join(", ")}` : ""))),
-    button("Sign out", signOut, { kind: "quiet", icon: "signOut" }));
+      h("span", { class: "role-tag" }, ROLE_WORDS[p.role] + (p.role === "dealer" ? ` · ${p.lots.map((s) => app.lotName(s)).join(", ")}` : "")),
+      ends ? h("span", { class: "kept" }, `Signed in on this device until ${when(ends.toISOString())}.`) : null),
+    button("Sign out", () => signOutHere(), { kind: "quiet", icon: "signOut" }),
+    app.me?.signIn === "netlify" ? button("Sign out on every device", () => signOutHere({ everywhere: true }), { kind: "quiet" }) : null);
   const toggle = h("button", { type: "button", class: "person-button", "aria-haspopup": "true", "aria-expanded": "false",
     onclick: () => { menu.hidden = !menu.hidden; toggle.setAttribute("aria-expanded", String(!menu.hidden)); } },
   h("span", { class: "avatar" }, initials(p.name || p.email)), h("span", { class: "person-name" }, (p.name || p.email).split(" ")[0]));
@@ -139,24 +195,25 @@ function buildLotPicker() {
 
 function frameUp() {
   const business = app.business;
+  const visit = !!app.barnwright;
   applyBrand(business);
-  const items = NAV.filter((n) => n.roles.includes(app.role));
+  const items = NAV.filter((n) => (visit ? n.visit : n.roles.includes(app.role)));
   navEls = items.map((n) => h("a", { href: "#" + n.path, class: "nav-item", dataset: { path: n.path } }, icon(n.icon), h("span", {}, n.label)));
   /* phones: the first four, then "More" with the rest */
   const phoneMain = items.slice(0, 4).map((n) => h("a", { href: "#" + n.path, class: "tab-item", dataset: { path: n.path } }, icon(n.icon), h("span", {}, n.label)));
   const more = items.slice(4);
   const moreSheet = h("div", { class: "more-sheet", hidden: true },
     more.map((n) => h("a", { href: "#" + n.path, class: "more-item", dataset: { path: n.path }, onclick: () => { moreSheet.hidden = true; } }, icon(n.icon), h("span", {}, n.label))),
-    h("button", { type: "button", class: "more-item", onclick: signOut }, icon("signOut"), h("span", {}, "Sign out")));
+    visit ? null : h("button", { type: "button", class: "more-item", onclick: () => signOutHere() }, icon("signOut"), h("span", {}, "Sign out")));
   const moreBtn = h("button", { type: "button", class: "tab-item", onclick: () => { moreSheet.hidden = !moreSheet.hidden; } }, icon("menu"), h("span", {}, "More"));
-  lotPicker = buildLotPicker();
+  lotPicker = visit ? null : buildLotPicker();
   main = h("main", { id: "main", class: "main", tabindex: "-1" });
   clear(root,
     h("a", { href: "#main", class: "skip" }, "Skip to the page"),
     h("header", { class: "topbar" },
-      h("a", { href: "#/", class: "brand" }, badge(business),
+      h("a", { href: visit ? "#/price-list" : "#/", class: "brand" }, badge(business),
         brandWords(business)),
-      h("div", { class: "topbar-tools" },
+      visit ? h("div", { class: "topbar-tools" }) : h("div", { class: "topbar-tools" },
         lotPicker,
         h("a", { href: "#/customers?new=1", class: "btn btn-accent btn-small new-customer" }, icon("plus"), h("span", {}, "Customer")),
         h("a", { href: "#/help", class: "topbar-help", title: "Help", "aria-label": "Help", dataset: { path: "/help" } }, icon("help"), h("span", {}, "Help")),
@@ -221,16 +278,180 @@ function termsBanner() {
     btn);
 }
 
+/* Barnwright setup access, for the owner (server/office/setup-access.js;
+   me.setup is {mode, until, live}): while their switch is on, a line that
+   says until when, with Turn off. */
+const PRELIVE_WORDS = "Barnwright is setting up your prices. Look at the preview, check it with Alan, then open it to customers in Settings.";
+function switchBanner() {
+  const s = app.me?.setup;
+  if (!app.isOwner || s?.mode !== "switch") return null;
+  const btn = button("Turn off", async () => {
+    btn.disabled = true;
+    try {
+      await post("barnwright-help", { on: false });
+      await app.loadMe();
+      /* before live, setup access goes on: say only what stopped */
+      toast(app.me?.setup?.mode === "prelive"
+        ? "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access."
+        : "Barnwright can't change anything now.", { ms: 8000 });
+      render();
+    } catch (e) {
+      btn.disabled = false;
+      toast(e.message, { error: true });
+    }
+  }, { kind: "primary", small: true });
+  return h("div", { class: "banner info setup-switch" }, icon("user"),
+    h("span", {}, `Barnwright can change your price list and settings until ${untilWords(s.until)}.`), btn);
+}
+
+/* The bar on top of every screen during a Barnwright visit. Once it ended,
+   the server's own words: why, when access closed (the owner stopped it,
+   the switch went off, the designer opened), or what to tap. */
+function visitBar() {
+  if (app.visitEnded) return h("div", { class: "banner warn bw-bar", role: "alert" }, icon("alert"), h("span", {}, app.visitEndedWords || VISIT_ENDED));
+  const b = app.barnwright;
+  const lot = app.lots[0];
+  return h("div", { class: "banner info bw-bar", role: "status" }, icon("user"),
+    h("span", {}, `Working on ${app.business?.name || "this business"} as Barnwright until ${untilWords(b.visitEndsAt)}.`),
+    lot ? linkButton("Look at the preview", app.previewUrl(lot.slug), { small: true, newTab: true, icon: "cube" }) : null,
+    button("Done", doneVisit, { kind: "primary", small: true }));
+}
+
+/* The last 24 hours of this device's sign-in: say when it ends, so it
+   never ends in the middle of something without warning. */
+function signInEndsBanner() {
+  if (app.demo || app.barnwright) return null;
+  const ends = signInEnds();
+  if (!ends) return null;
+  const left = ends.getTime() - Date.now();
+  if (left <= 0 || left > 86400000) return null;
+  const day = todayKey(ends) === todayKey() ? "today" : "tomorrow";
+  const time = ends.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return h("div", { class: "banner info sign-in-ends", role: "status" }, icon("clock"),
+    h("span", {}, `Your sign-in on this device ends ${day} at ${time}. Sign out and sign in again before then to keep going.`));
+}
+
+/* The server said the sign-in ended (a 401 on a tap). Nothing unsaved:
+   start again on the Sign in card. Unsaved changes: never reload -- a note
+   that stays says what to do, and the changes stay on the screen; Save
+   works again once this browser is signed in (in another tab). -> the
+   words the tap shows, or null. */
+const SIGNED_OUT_KEEP = {
+  time: "Your 30 days on this device are up. Your changes are still here: open the Dealer Center in a new tab, sign in, then come back and tap Save.",
+  other: "You were signed out. Your changes are still here: open the Dealer Center in a new tab, sign in, then come back and tap Save.",
+  tap: "You were signed out. Sign in in a new tab, then tap Save again.",
+};
+function signedOutHere(data) {
+  const question = main && app.leaveGuard ? app.leaveGuard() : null;
+  if (!question) {
+    location.reload();
+    return null;
+  }
+  main.querySelector(".banner.signed-out")?.remove();
+  main.prepend(h("div", { class: "banner warn signed-out", role: "alert" }, icon("alert"),
+    h("span", {}, data?.ended === "time" && data?.kept ? SIGNED_OUT_KEEP.time : SIGNED_OUT_KEEP.other)));
+  return SIGNED_OUT_KEEP.tap;
+}
+
 function closedBanner() {
   if (app.demo) return demoBanner();
+  if (app.barnwright) return visitBar();
   const account = accountBanner();
   if (account) return account;
+  /* First setup asks for the tick itself, and says the rest */
+  if (app.me?.setupNeeded) return null;
   const terms = termsBanner();
   if (terms) return terms;
+  const setup = switchBanner();
+  if (setup) return setup;
   if (!app.business || app.business.open || !app.isOwner) return null;
+  const lot = app.openLots()[0] || app.lots[0];
   return h("div", { class: "banner warn" }, icon("alert"),
-    h("span", {}, "Your 3D designer links are closed to customers. Check your prices, then open them in Settings."),
+    h("span", {}, app.me?.setup?.mode === "prelive" ? PRELIVE_WORDS : "Your 3D designer links are closed to customers. Check your prices, then open them in Settings."),
+    lot ? linkButton("Look at the preview", app.previewUrl(lot.slug), { small: true, newTab: true, icon: "cube" }) : null,
     h("a", { href: "#/settings", class: "btn btn-small btn-primary" }, "Open for customers"));
+}
+
+/* ---- a Barnwright visit --------------------------------------------------------------- */
+
+/* A screen with words and nothing to sign in to (and, when given, one button). */
+function visitScreen(title, words, action = null) {
+  clear(root, h("main", { class: "auth" }, h("div", { class: "auth-card bw-card" }, h("h1", {}, title), h("p", {}, words), action)));
+}
+
+/* A tab that once held a Barnwright visit goes back to it on every
+   reload. Once that visit has ended, the person in front of it can leave
+   it for the Dealer Center's own sign-in (the visit's unsaved work stays
+   kept in this tab for a new visit). */
+function leaveVisitButton() {
+  return h("div", { class: "actions center" }, button("Sign in to this Dealer Center", () => {
+    visitMark(false, { keepDrafts: true });
+    location.replace(location.pathname);
+  }, { kind: "ghost" }));
+}
+
+/* The visit ended while Alan was working: say so on top, keep everything on screen. */
+function visitEnded(data) {
+  const words = data?.code === "visit-ended" && typeof data.error === "string" ? data.error : null;
+  const first = !app.visitEnded;
+  if (!first && words === app.visitEndedWords) return;
+  app.visitEnded = true;
+  app.visitEndedWords = words;
+  if (first) window.dispatchEvent(new Event("dealer:visit-ended"));
+  drawVisitBar();
+}
+function drawVisitBar() {
+  const old = main && [...main.children].find((el) => el.matches(".bw-bar"));
+  if (old) old.replaceWith(visitBar());
+  else if (main) main.prepend(visitBar());
+}
+
+/* A request worked again after the visit ended: Alan opened a new visit
+   from his Control Room (its cookie is this whole browser's) and came back
+   to this tab. The bar says who and until when again, with Done. */
+let visitComingBack = false;
+async function visitBack() {
+  if (!app.visitEnded || visitComingBack) return;
+  visitComingBack = true;
+  app.visitEnded = false;
+  app.visitEndedWords = null;
+  try { await app.loadMe(); } catch { /* a 401 says so again */ }
+  visitComingBack = false;
+  if (!app.visitEnded) drawVisitBar();
+}
+
+async function doneVisit() {
+  if (app.leaveGuard) {
+    const question = app.leaveGuard();
+    if (question && !confirm(question)) return;
+  }
+  app.leaveGuard = null;
+  await endVisit();
+  visitMark(false);
+  const name = app.business?.name || "this business";
+  visitScreen("Done", `Your Barnwright visit to ${name} has ended. You can close this tab.`);
+}
+
+async function startBarnwright(pass) {
+  configureApi({ barnwright: true, visitEnded, visitBack });
+  if (pass) {
+    const out = await startVisit(pass);
+    if (out.status !== 200) {
+      return visitScreen(out.status === 401 || out.status === 410 ? "This link ran out" : "Barnwright can't open this price list",
+        out.error || "This link ran out. Tap Open their price list again.");
+    }
+    visitMark(true);
+  }
+  try {
+    await app.loadMe();
+  } catch (e) {
+    return visitScreen("Your Barnwright visit ended", e.message || VISIT_ENDED, pass ? null : leaveVisitButton());
+  }
+  try { app.lots = (await get("lots")).lots || []; } catch { app.lots = []; }
+  frameUp();
+  const { path } = currentPath();
+  if (!/^\/(price-list|settings)(\/|$)/.test(path)) { history.replaceState(null, "", "#/price-list"); lastHash = "#/price-list"; }
+  render();
 }
 
 /* ---- showing a screen ----------------------------------------------------------- */
@@ -255,8 +476,16 @@ async function render() {
   const seq = ++renderSeq;
   app.leaveGuard = null;
   clear(main, closedBanner(), loading());
+  if (app.barnwright && !VISIT_VIEWS.includes(viewName)) {
+    if (path === "/") { go("/price-list"); return; }
+    viewName = null;
+  }
   if (!viewName) {
-    clear(main, emptyState("Nothing here", "That page doesn't exist.", h("a", { href: "#/", class: "btn btn-primary" }, "Go to Today")));
+    clear(main, closedBanner(), app.barnwright
+      /* the page is there for the team; a visit just doesn't include it */
+      ? emptyState("Only the price list and settings", "A Barnwright visit has only the price list and settings.",
+        h("a", { href: "#/price-list", class: "btn btn-primary" }, "Go to the price list"))
+      : emptyState("Nothing here", "That page doesn't exist.", h("a", { href: "#/", class: "btn btn-primary" }, "Go to Today")));
     return;
   }
   try {
@@ -268,7 +497,7 @@ async function render() {
     };
     const el = await mod.render(ctx);
     if (seq !== renderSeq) return;
-    clear(main, closedBanner(), el);
+    clear(main, closedBanner(), signInEndsBanner(), el);
     main.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   } catch (e) {
@@ -281,6 +510,14 @@ async function render() {
 
 const HELP = /^#\/help(?:[?]|$)/;
 window.addEventListener("hashchange", () => {
+  /* a Barnwright visit's link opened in this tab: start the page again with it
+     (a draft on screen is kept in this tab first, visit-draft.js) */
+  if (location.hash.startsWith("#barnwright=")) {
+    window.dispatchEvent(new Event("pagehide"));
+    app.leaveGuard = null;   /* kept: no need to ask before leaving */
+    location.reload();
+    return;
+  }
   if (app.leaveGuard) {
     const question = app.leaveGuard();
     if (question && !confirm(question)) {
@@ -310,7 +547,7 @@ window.addEventListener("dealer:brand", () => {
       brandWords(business));
   }
   if (!main) return;
-  const old = [...main.children].find((el) => el.matches(".banner.warn, .banner.demo"));
+  const old = [...main.children].find((el) => el.matches(".banner.warn, .banner.demo, .banner.setup-switch, .bw-bar"));
   const fresh = closedBanner();
   if (old && fresh) old.replaceWith(fresh);
   else if (old) old.remove();
@@ -335,14 +572,72 @@ window.addEventListener("dealer:lots", () => {
    not fold it into this file. */
 const DEMO_MODULE = __DEALER_DEMO__ ? "/ui/office/demo.js" : "";
 
+/* What a sign-in from before the Dealer Center's own cookie left in this
+   browser (Identity's tokens in localStorage and two cookies a page can
+   read). While this browser is still open on it -- the server took its
+   token, or its cookies are still here (they go when the browser closes) --
+   it moves onto the cookie, until the browser closes, as it would have
+   lasted. Left from a browser that was closed since, it is cleared and
+   never used: the next person at a lot computer is not signed in as
+   somebody else. -> me, asked again when it moved. */
+async function oldSignInHere(me) {
+  const open = /(?:^|;\s*)nf_(jwt|refresh)=/.test(document.cookie);
+  if (me.session || (me.status === 401 && !open)) {
+    forgetOldSignIn();
+    return me;
+  }
+  try {
+    await startSession(oldSignIn(), { keep: false });
+    return me.status === 401 ? await app.loadMe() : me;
+  } catch (e) {
+    if (e.status !== 0 && e.status !== 503) forgetOldSignIn();
+    return me;
+  }
+}
+
+/* Another tab of this browser signed in or out: show this one as it is
+   now (a screen with unsaved changes says so instead of losing them). */
+async function otherTab(what) {
+  if (main && app.me?.user) {
+    /* still the same person signed in here (another tab signed in again,
+       or the "try it" demo signed out of nothing real): nothing to redraw;
+       a note that this tab was signed out goes, and Save works again */
+    try {
+      const now = await get("me");
+      if (now.user?.id === app.me.user.id) {
+        if (Number.isFinite(now.session?.left)) app.me.session = { ...now.session, endsLocal: new Date(Date.now() + now.session.left).toISOString() };
+        const gone = main.querySelector(".banner.signed-out");
+        if (gone) { gone.remove(); toast("You're signed in again. Tap Save to keep your changes.", { ms: 8000 }); }
+        return;
+      }
+    } catch { /* redraw */ }
+  }
+  const question = main && app.leaveGuard ? app.leaveGuard() : null;
+  if (question) {
+    toast(what === "out" ? "You signed out in another window. Copy what you typed, then sign in again." : "Somebody else signed in in another window. Copy what you typed, then reload this page.", { ms: 12000 });
+    return;
+  }
+  location.reload();
+}
+
 /* __DEALER_DEMO__ (true or false) is written in by whatever bundles this
    file: tools/build-site.mjs says true only for Alan's learning preview and
    his demo site (tools/site-profiles.mjs), so a client build leaves every bit
    of the demo out; the local Dealer Center (tools/office-local.mjs) says true. */
 
 async function start() {
+  /* a Barnwright visit: the pass leaves the address at once */
+  const visitPass = /^#barnwright=([A-Za-z0-9_.-]{1,8000})$/.exec(location.hash)?.[1] || null;
+  if (location.hash.startsWith("#barnwright=")) {
+    history.replaceState(null, "", location.pathname + location.search);
+    lastHash = "";
+  }
+  if (visitPass || visitMarked()) {
+    clear(root, h("div", { class: "boot" }, loading("Opening their price list…")));
+    return startBarnwright(visitPass);
+  }
   clear(root, h("div", { class: "boot" }, loading("Opening the Dealer Center…")));
-  let note = null;
+  let note = null, warning = null;
   if (__DEALER_DEMO__ && new URLSearchParams(location.search).has("demo")) {
     try {
       await (await import(DEMO_MODULE)).startDemo();
@@ -356,27 +651,39 @@ async function start() {
   } else {
     try {
       const linked = await handleEmailLink(root);
-      note = linked?.message || null;
+      if (linked?.warn) warning = linked.message;
+      else note = linked?.message || null;
     } catch { /* carry on to sign in */ }
   }
+  const notAnswering = (title, words) => clear(root, h("main", { class: "auth" }, h("div", { class: "auth-card" },
+    h("h1", {}, title), h("p", {}, words), button("Try again", () => location.reload(), { kind: "primary" }))));
+  /* a Sign out the server never confirmed: never show the Dealer Center before it is */
+  if (!app.demo && !(await finishSignOut())) return notAnswering("The Dealer Center isn't answering", "Can't reach the Dealer Center to finish signing you out. Check your internet connection and try again.");
   let me;
   try {
     me = await app.loadMe();
   } catch (e) {
-    clear(root, h("main", { class: "auth" }, h("div", { class: "auth-card" },
-      h("h1", {}, "The Dealer Center isn't answering"), h("p", {}, e.message), button("Try again", () => location.reload(), { kind: "primary" }))));
-    return;
+    return notAnswering(e.data?.code === "sign-in-down" ? "Can't check your sign-in" : "The Dealer Center isn't answering", e.message);
   }
-  configureApi({ mode: me.signIn, signedOut: () => location.reload() });
-  if (me.status === 401) return signInScreen(root, { mode: me.signIn || "netlify", business: null, note });
-  if (!me.person) return notOnTeam(root, { email: me.user.email, signOut });
+  configureApi({ mode: me.signIn, demo: !!app.demo, signedOut: signedOutHere });
+  if (!app.demo) onOtherTabs(otherTab);
+  if (me.signIn === "netlify" && oldSignIn()) me = await oldSignInHere(me);
+  if (me.status === 401) {
+    return signInScreen(root, {
+      mode: me.signIn || "netlify", business: null, note,
+      ended: warning || takeSignInNote() || endedWords(me.ended, me.kept),
+      /* this device's kept 30 days ran out: the same device, kept again unless untouched */
+      keepTicked: me.ended === "time" && me.kept === true,
+    });
+  }
+  if (!me.person) return notOnTeam(root, { email: me.user.email, signOut: () => signOutHere() });
   if (me.setupNeeded) {
     frameUp();
     if (currentPath().path !== "/setup") { history.replaceState(null, "", "#/setup"); lastHash = "#/setup"; }
     return render();
   }
   frameUp();
-  if (note) toast(note);
+  if (note || warning) toast(note || warning, { error: !!warning });
   render();
 }
 

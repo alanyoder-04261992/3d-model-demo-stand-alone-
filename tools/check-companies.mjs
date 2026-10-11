@@ -128,10 +128,23 @@ check("the demo company", DEMO.look.trueColour === true && DEMO.leads.mode === "
   check("the demo company", BW.look.trueColour === false, "the Barnwright company the golden checks draw must keep Barnwright's warm light");
 }
 check("the demo company", J(DEMO.COLORS) === J(G.COLORS), "the demo's colours are not Barnwright's (the golden test draws with them)");
+/* the demo's standard doors and windows are Barnwright's, but for the shop
+   standard's own: the 8x12 and 10x12 Side Utility come with the 48 in
+   Wooden Door where Barnwright has the 72 in double doors (Alan, Oct 11
+   2026: "replace 6 foot to 4 foot") */
 for (const k of Object.keys(G.P)) for (const z of Object.keys(G.P[k])) {
   const a = { type: k, size: z, pLen: 12, pFlip: false, pMid: false, items: [], opts: {}, elec: { pkg: 0 } };
   const b = copy(a);
   resetItems(a, frameOf(a, DEMO), DEMO); resetItems(b, frameOf(b, BW), BW);
+  if (k === "SU" && (z === "8x12" || z === "10x12")) {
+    const want = copy(b.items); want[0].cat = want[0].origCat = "w48";
+    /* Barnwright's double doors and window lap, and the clamp moved them; the 48 in door sits where the recipe puts them */
+    const at = (s) => s.items.map((i) => Math.round(i.pos * 1000) / 1000);
+    check("the demo company", J(a.items.map((i) => [i.cat, i.wall, i.origCat])) === J(want.map((i) => [i.cat, i.wall, i.origCat])) && J(at(a)) === J([0, -4.4, 4.4]),
+      `${k} ${z}: the demo's should come with the 48″ Wooden Door in the middle of the door side, the two windows 4.4 ft either side: ${J(a.items)}`);
+    check("the demo company", b.items[0].cat === "w72", `${k} ${z}: Barnwright's should keep the 72″ Wooden Double Doors`);
+    continue;
+  }
   check("the demo company", J(a.items) === J(b.items), `${k} ${z}: the demo's standard doors and windows differ from Barnwright's`);
 }
 

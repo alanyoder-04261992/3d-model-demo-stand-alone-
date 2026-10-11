@@ -19,6 +19,11 @@ there -- every company that sells the style prices it in its own file. Read
 * **Same building sold twice, under two names and two prices** (a "Premium
   Lofted Barn" next to the Lofted Barn) -- no new style either: see "A style
   built like another one" below.
+* **Same building, built a little differently by one business** (a 6/12
+  roof, 7 ft walls, a 6 ft porch, 10 and 14 ft side porches, the dormer on
+  the back, a 6 in gable-end overhang, a taller barn roof, a taller shop
+  door) -- no new style: that is **How it's built** (`offer.<KEY>.built`),
+  the `how-its-built` skill.
 * **A building the traits below can describe** (a roof shape that exists, a
   wall height, a porch, a loft, a dormer, metal or painted, its own doors and
   windows) -- a new style entry, no code. This skill.
@@ -54,8 +59,9 @@ new code and a `base`:
 It is drawn, framed, fitted and priced exactly like its base:
 `model/company.js` copies the base's traits into it with `"base": "LB"`, and
 a construction rule that tests `"styles": ["LB"]` covers both (a rule naming
-`LBX1` is refused). `node tools/check-style-variants.mjs` proves it for every
-style at every size.
+`LBX1` is refused). It is built like its base in How it's built too: it
+follows `offer.LB.built` unless it has its own `built`. `node
+tools/check-style-variants.mjs` proves it for every style at every size.
 
 **When the shape is different** -- another wall height, roof, porch, loft or
 standard door and window layout -- it is a new library style: carry on below.
@@ -72,7 +78,9 @@ standard door and window layout -- it is a new library style: carry on below.
 
 **Never change an existing Barnwright style's entry** (its `roof`, `wallH`,
 traits or `loadout`): the 148 golden buildings and `check-model-live.mjs`
-hold those to Barnwright's own numbers. A new style has a new key.
+hold those to Barnwright's own numbers. A new style has a new key. A shop
+number Alan confirms for an existing style goes in its `built` block, never
+in these traits.
 
 ## 2. The style entry
 
@@ -110,6 +118,34 @@ hold those to Barnwright's own numbers. A new style has a new key.
   "depthFt": 4}` -- a loft depth nobody has confirmed carries
   `"assumed": true`, and `docs/FOR-ALAN.md` must list it (check-docs holds
   that).
+* porch and dormer traits (each defaults to today's number, so leave them
+  out unless the style differs): `porchDepthFt` (a front, side or wrap
+  porch's depth in feet, 4), `sidePorch: {"lengthsFt": [8, 12]}` (the side
+  porch lengths it sells, whole feet; the shortest is used under 20 ft
+  long, and a length is offered only where it leaves 4 ft of side wall),
+  `dormerSide` (`"door"` or `"back"`).
+* `built` -- the shop standard's How it's built numbers for this style
+  (`{"roofPitch": 5, "wallHeight": 93.5}`), only where Alan confirmed them;
+  every business gets them unless it sets its own (the `how-its-built`
+  skill). `validateManufacturer` checks them like a business's. Today ten
+  styles carry Alan's shop numbers (Oct 2026, "yes match": the Utility Shed,
+  Side Utility, Lofted Barn and Side Lofted Barn; Oct 11 2026: the Garage,
+  Dog Kennel, Garden Utility, Dormer Shed, Metal Lofted Barn and Lofted
+  Barn Garage), each with a `_source` note saying where the number came
+  from; the Metal Garage and Metal Utility do not. Barnwright's own numbers stay in the raw
+  traits, and the golden test draws those (it leaves every `built` block
+  out: `tools/lib/barnwright-company.mjs`). A new style built like one of
+  them gets no `built` by itself: copy the block only if Alan says the new
+  style is built the same way; then add it and its numbers to
+  `SHOP_NUMBERS` in `tools/check-shop-numbers.mjs` (and to its gable window
+  list `NOT_OFFERED` if a gable window no longer fits) and run that with
+  `--record`, saying why in the commit. The block may also hold
+  `standardSwaps` (section 3), the shop's own door at some sizes; it is not
+  a How it's built box.
+* A key the style entry does not know (`"wallHeight"` instead of `wallH`,
+  `"porchDepth"`) is named with a did-you-mean by `validateManufacturer`, and
+  a business's `offer` entry likewise ("Side Utility: "sizez" is not part of
+  a building style. Did you mean sizes?").
 
 ## 3. The standard doors and windows (the loadout)
 
@@ -133,6 +169,33 @@ recipes in `tools/check-companies.mjs` (section 8) are the best examples: they
 reproduce thirteen of the named Barnwright recipes exactly, at every size (the
 utility, side-door, garden, barn, single-slope, garage and kennel ones -- the
 cottage, backyard utility, dormer shed and the cabins have no data twin yet).
+
+**The shop's own door at some sizes** (`built.standardSwaps`, the shop
+standard only): when Alan's shop builds a size with another door than the
+recipe gives, and the recipe is Barnwright's (so it may not change), list
+the swap in the style's `built` block, with a `_source`:
+
+```json
+"standardSwaps": [{ "sizes": ["8x12", "10x12"], "from": "w72", "to": "w48", "_source": "Alan, Oct 11 2026: ..." }]
+```
+
+At exactly those sizes every standard `from` becomes `to`, in the same
+place, with the same id (`model/loadouts.js standardItems`); Barnwright's
+company has no built blocks, so the golden test still draws the recipe. A
+price list that does not sell `to` keeps `from` and the owner is told
+(`swapWarnings`, under its own heading on the Buildings tab); a new save
+must sell it (`strictProblems`; the Dealer Center shows the problem before
+Save, keeps it sold and names the sizes: "Comes with the 8×12 and 10×12
+Side Utility"). Where `to` is sold, `from` is needed only by the sizes that
+still come with it (`validate`). A design holding the other door of the
+pair -- saved before the swap, or a touched design whose size changed --
+gets the door its size comes with when the customer never swapped it
+(`model/design.js followStandardDoor`, `ui/state.js chooseSize`;
+DIFFERENCES #27). `validateManufacturer` refuses a size or item that is
+not one, and a `from` the style does not come with at that size. The Side
+Utility's 8x12 and 10x12 have the 48 in Wooden Door this way. Prove it in
+`tools/check-shop-numbers.mjs` (part 4e) and `tools/check-design.mjs`
+(part 11), and re-record the changed sizes.
 
 Every item a style comes with must be priced by every company that sells the
 style (0 is fine): included items are charged as the difference when swapped.
@@ -179,3 +242,12 @@ Say plainly in your report which of these you looked at.
 * `node tools/check-construction.mjs`, `node tools/check-parts.mjs` (every
   caption fills in), `node tools/check-imports.mjs`, then
   `node tools/check-all.mjs --fast`.
+* A style in `standard.json` also needs its reference pictures and facts
+  for Barnwright's Control Room: write what tells it apart in a photo in
+  `TELLS` (`tools/lib/style-facts.mjs`), make sure the sample price list
+  (`companies/demo`) sells it, then run `node tools/make-style-refs.mjs`
+  (a browser, under a minute) and `node tools/check-style-refs.mjs`. Commit
+  the new pictures in `library/style-refs/` with the style. A style given
+  shop numbers (`styles.<KEY>.built`) draws differently too: make the
+  pictures again, name the style in `PITCH_NOTE` (the check says when one
+  is missing) and read its `TELLS` lines against the new pictures.

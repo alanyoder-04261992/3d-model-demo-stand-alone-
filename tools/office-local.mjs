@@ -11,6 +11,21 @@
                                         pretend Sales Inbox for the Help
                                         screen; add --control-room-off to
                                         start with the account switched off
+         npm run office -- --terms-version 2.2 as if this copy shipped those
+                                        Barnwright terms (to try terms that
+                                        aren't out yet, such as setting up
+                                        before the owner first signs in)
+         npm run office -- --identity   the live site's sign-in instead of
+                                        "pick who you are": an email and a
+                                        password against a pretend Netlify
+                                        Identity (tools/lib/fake-identity.mjs),
+                                        with the Dealer Center's own sign-in
+                                        cookie and "Keep me signed in on this
+                                        device for 30 days" (every sample
+                                        person's password: sample-password);
+                                        add --demo to offer the "try it" demo
+                                        on that card too, as Alan's learning
+                                        preview and demo site do
 
    Then open http://127.0.0.1:8383/dealer
 
@@ -39,8 +54,11 @@ import { inlineScriptHashes } from "./build-headers.mjs";
 import { FileBlobs } from "./lib/file-blobs.mjs";
 import { seedSample, SAMPLE_PEOPLE } from "../server/office/sample.js";
 import { TenantLicenseClient, createLeaseStore } from "../server/office/control-room.js";
+import { TERMS } from "../server/office/terms.js";
 import { fakeControlRoom } from "./lib/fake-control-room.mjs";
 import { fakeHelpInbox } from "./lib/fake-help-inbox.mjs";
+import { fakeIdentity } from "./lib/fake-identity.mjs";
+import { netlifyIdentity, identityClient } from "../server/office/identity.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -51,6 +69,14 @@ const DATA = resolve(ROOT, value("--data", ".office-local"));
 const EMPTY = flag("--empty");
 const OWNER_EMAIL = value("--owner", EMPTY ? "owner@example.com" : SAMPLE_PEOPLE[0].email);
 const CONTROL_ROOM = flag("--control-room") || flag("--control-room-off");
+const TERMS_VERSION = value("--terms-version", "");
+const IDENTITY = flag("--identity");
+const WITH_DEMO = flag("--demo");
+const SAMPLE_PASSWORD = "sample-password";
+if (TERMS_VERSION && !/^\d{1,4}(\.\d{1,4}){0,3}$/.test(TERMS_VERSION)) {
+  console.log("FAIL: --terms-version takes a version like 2.2.");
+  process.exit(1);
+}
 
 if (process.env.NETLIFY || process.env.NETLIFY_BLOBS_CONTEXT) {
   console.log("FAIL: the local Dealer Center is for your own computer, not for Netlify.");
@@ -85,17 +111,38 @@ function cookieEmail(request) {
 }
 
 let seeding = null;          /* during seeding, the person the sample script acts as */
-const clock = { at: null };
+/* at: a fixed time while the sample is made; shift: ms the clock runs
+   ahead (POST /__local/clock, --identity only), for "30 days later" */
+const clock = { at: null, shift: 0 };
 const blobs = new FileBlobs(DATA);
+/* --identity: a pretend Netlify Identity at /.netlify/identity, with every
+   sample person (and the owner's email) as a confirmed login. POST
+   /__local/identity changes it: {ttl: seconds}, {server: "down" | "slow" |
+   429 | 503 | null} (the Dealer Center server's own calls), {serverUser: 503
+   | null} (only the server's "whose sign-in is this"), {browser: 429 |
+   503 | "slow" | null}, {logout: "hang" | null}, {link: {type: "invite" |
+   "recovery" | "signup", email}} -> {token} (what an email link would
+   carry), {addUser: {email, password, name}} (a login saved exactly as
+   typed, capitals and all); the answer also lists the calls it had and
+   how many reset links went out (recoveries). */
+const idp = IDENTITY ? fakeIdentity({ clock: () => Date.now() + clock.shift }) : null;
+if (idp) {
+  for (const p of SAMPLE_PEOPLE) idp.addUser({ id: p.id, email: p.email, password: SAMPLE_PASSWORD, name: p.name });
+  if (!SAMPLE_PEOPLE.some((p) => p.email === OWNER_EMAIL)) idp.addUser({ email: OWNER_EMAIL, password: SAMPLE_PASSWORD });
+}
+const idClient = idp ? identityClient({ fetchImpl: idp.fetch, now: () => Date.now() + clock.shift }) : null;
+const idUser = idClient ? netlifyIdentity({ client: idClient }) : null;
 const deps = {
   blobs,
-  identityUser: async (request) => (seeding ? seeding.user : localUserFrom(cookieEmail(request || requestStore.getStore()))),
+  identityUser: async (request) => (seeding ? seeding.user : idUser ? idUser(request || requestStore.getStore()) : localUserFrom(cookieEmail(request || requestStore.getStore()))),
+  ...(idClient ? { identity: idClient } : {}),
   ownerEmail: OWNER_EMAIL,
   manufacturer, library, templates,
-  now: () => clock.at || new Date(),
+  now: () => clock.at || new Date(Date.now() + clock.shift),
   siteUrl: `http://127.0.0.1:${PORT}`,
-  signIn: "local",
+  signIn: IDENTITY ? "netlify" : "local",
   log: (...a) => console.error(...a),
+  ...(TERMS_VERSION ? { termsVersion: TERMS_VERSION } : {}),
 };
 /* --control-room: a pretend Barnwright control room in this process
    (tools/lib/fake-control-room.mjs). POST /__local/control-room with
@@ -107,7 +154,21 @@ const deps = {
    with {id}), {down: true | false} makes it unreachable or not; the answer
    lists the questions and problem reports it holds.
    Without --control-room the Dealer Center is not connected: Help shows
-   its answers and the email to write to. */
+   its answers and the email to write to.
+   Barnwright setup access, on this computer only: POST /__local/barnwright
+   with {terms: "2.2"} records the owner's agreement to a terms version
+   (terms 2.2 aren't out yet, and nothing works before them), and with
+   {visit: true} answers {url}: the link Alan's Control Room would open,
+   /dealer#barnwright=<a one-use pass from the pretend control room>; with
+   {door: {action: "status"}} (any door request) answers {door: {pass,
+   body}}, a pass for exactly that body, to send to the door,
+   POST /.netlify/functions/barnwright-setup (add {via: "claude"} for a
+   pass as Claude's). Add {signup: true} for a pass that carries the
+   pretend owner's sign-up agreement to the terms this copy ships (with the
+   business name, phone and email they gave), as the Control Room sends for
+   a customer who signed up on its sign-up page: with no owner signed in
+   yet, that is how to try "Before the owner first signs in" here (with
+   --terms-version 2.2 while terms 2.2 aren't out). */
 const roomClock = { get t() { return (clock.at || new Date()).getTime(); } };
 const room = CONTROL_ROOM ? fakeControlRoom({ clock: roomClock, dealerLimit: 3 }) : null;
 const helpInbox = room ? fakeHelpInbox({ clock: roomClock, publicKeyPem: room.publicKeyPem }) : null;
@@ -146,7 +207,8 @@ const demoBundler = await esbuildContext({
 const bundler = await esbuildContext({
   entryPoints: [resolve(ROOT, "ui/office/main.js")], bundle: true, format: "esm", platform: "browser",
   target: "es2022", write: false, outfile: "main.js", logLevel: "silent", sourcemap: "inline",
-  define: { __DEALER_DEMO__: "true" },   /* the local copy always offers the "try it" demo */
+  /* the local copy offers the "try it" demo; with --identity it is the live site's sign-in card */
+  define: { __DEALER_DEMO__: IDENTITY && !WITH_DEMO ? "false" : "true" },
 });
 async function officeBundle() {
   const r = await bundler.rebuild();
@@ -192,6 +254,32 @@ async function route(request) {
     try { token = room.issueSupport("alan@barnwright.example"); } catch { return Response.json({ error: "Help from Barnwright is off." }, { status: 403 }); }
     return office.diagnostics(new Request(`http://127.0.0.1:${PORT}/.netlify/functions/tenant-diagnostics`, { method: "POST", headers: { authorization: `Bearer ${token}` } }));
   }
+  if (room && path === "/__local/barnwright" && request.method === "POST") {
+    if (request.headers.get("origin") !== url.origin) return new Response("no", { status: 403 });
+    const body = await request.json().catch(() => ({}));
+    if (typeof body.terms === "string" && /^\d+(\.\d+)*$/.test(body.terms)) {
+      const owner = (await office.parts.store.all("people/")).find((p) => p.role === "owner") || { userId: "local", email: OWNER_EMAIL, name: "" };
+      const entry = { version: body.terms, agreedAt: new Date().toISOString(), by: { userId: owner.userId, email: owner.email, name: owner.name || "" } };
+      const doc = await office.parts.store.get("barnwright-terms");
+      await office.parts.store.put("barnwright-terms", { current: entry, history: [entry, ...(doc?.history || [])].slice(0, 20) });
+    }
+    /* the pretend owner's sign-up agreement: the terms this copy ships, as the sign-up page showed them */
+    const signup = body.signup === true ? {
+      termsVersion: TERMS_VERSION || TERMS.version,
+      termsSha256: createHash("sha256").update(readFileSync(resolve(ROOT, "docs/legal/terms.json"))).digest("hex"),
+      signature: "Pat Owner", signedAt: new Date(Date.now() - 86400_000).toISOString(),
+      business: "Testing Sheds", phone: "941-555-0100", email: OWNER_EMAIL,
+    } : undefined;
+    const pass = body.visit === true ? room.setupPass({ actor: "alan@barnwright.example", signup }) : null;
+    /* {door: {action, ...}}: a pass for that exact door request, to send to
+       POST /.netlify/functions/barnwright-setup (with curl, say) */
+    let door = null;
+    if (body.door && typeof body.door === "object" && !Array.isArray(body.door) && typeof body.door.action === "string") {
+      const doorBody = JSON.stringify(body.door);
+      door = { pass: room.setupPass({ action: body.door.action, body: doorBody, actor: "alan@barnwright.example", via: body.via === "claude" ? "claude" : "control-room", signup }), body: doorBody };
+    }
+    return Response.json({ ok: true, ...(pass ? { url: `/dealer#barnwright=${pass}` } : {}), ...(door ? { door } : {}) });
+  }
   if (helpInbox && path === "/__local/help-inbox" && request.method === "POST") {
     const body = await request.json().catch(() => ({}));
     if (typeof body.down === "boolean") helpInbox.down = body.down;
@@ -203,6 +291,21 @@ async function route(request) {
     });
   }
   if (path === "/.netlify/functions/tenant-diagnostics") return office.diagnostics(request);
+  if (path === "/.netlify/functions/barnwright-setup") return office.setupDoor(request);
+  if (idp && path.startsWith("/.netlify/identity/")) return idp.handle(request);
+  if (idp && path === "/__local/identity" && request.method === "POST") {
+    const body = await request.json().catch(() => ({}));
+    if (Number.isFinite(body.ttl) && body.ttl > 0) idp.ttl = body.ttl;
+    for (const k of ["server", "serverUser", "browser", "logout"]) if (k in body) idp.trouble[k] = body[k] ?? null;
+    const token = body.link && typeof body.link.email === "string" ? idp.linkToken(body.link.type, body.link.email) : undefined;
+    if (body.addUser && typeof body.addUser.email === "string") idp.addUser({ email: body.addUser.email, password: String(body.addUser.password || SAMPLE_PASSWORD), name: String(body.addUser.name || "") });
+    return Response.json({ ttl: idp.ttl, trouble: idp.trouble, ...(token ? { token } : {}), lastSignup: idp.lastSignup || null, lastRecovery: idp.lastRecovery || null, recoveries: idp.recoveries || 0, calls: idp.calls.slice(-200), live: idp.liveRefresh().length });
+  }
+  if (idp && path === "/__local/clock" && request.method === "POST") {
+    const body = await request.json().catch(() => ({}));
+    if (Number.isFinite(body.shift)) clock.shift = body.shift;
+    return Response.json({ shift: clock.shift, now: new Date(Date.now() + clock.shift).toISOString() });
+  }
   if (path === "/__local/people" && request.method === "GET") {
     const people = (await office.parts.store.all("people/")).filter((p) => p.active !== false)
       .map((p) => ({ email: p.email, name: p.name, role: p.role, lots: p.lots }));
@@ -237,6 +340,11 @@ async function route(request) {
   let m = /^\/d\/([a-z0-9-]{2,40})$/.exec(path);
   if (m) return new Response(null, { status: 301, headers: { Location: `/d/${m[1]}/${url.search}` } });
   m = /^\/d\/([a-z0-9-]{2,40})\/$/.exec(path);
+  if (m && ["1", "barnwright"].includes(url.searchParams.get("preview"))) {
+    /* a preview of a closed lot (as netlify/functions/lot-designer.mts): the page holds no prices */
+    const html = designerHtml();
+    return lotDesignerPage({ html, hashes: inlineScriptHashes(html), origins: [], head: request.method === "HEAD" });
+  }
   if (m) {
     try {
       const data = await office.publicLot(m[1]);
@@ -266,6 +374,9 @@ const server = http.createServer(async (req, res) => {
     const answer = await requestStore.run(request, () => route(request));
     const headers = {};
     answer.headers.forEach((v, k) => { headers[k] = v; });
+    /* every Set-Cookie line, not only the last */
+    const setCookies = answer.headers.getSetCookie?.() || [];
+    if (setCookies.length) headers["set-cookie"] = setCookies;
     res.writeHead(answer.status, headers);
     res.end(req.method === "HEAD" ? undefined : Buffer.from(await answer.arrayBuffer()));
   } catch (e) {
@@ -278,7 +389,8 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`The Dealer Center is running: http://127.0.0.1:${PORT}/dealer`);
   console.log(`A lot's 3D designer:          http://127.0.0.1:${PORT}/d/riverside/`);
-  console.log(EMPTY ? `No sample data. Sign in as ${OWNER_EMAIL} to set up the business.` : "Sign in as anyone on the sample team. Press Ctrl+C to stop.");
+  console.log(IDENTITY ? `Sign in with an email of the sample team (${SAMPLE_PEOPLE[0].email} is the owner${EMPTY ? `; ${OWNER_EMAIL} sets up the business` : ""}) and the password ${SAMPLE_PASSWORD}. Press Ctrl+C to stop.`
+    : EMPTY ? `No sample data. Sign in as ${OWNER_EMAIL} to set up the business.` : "Sign in as anyone on the sample team. Press Ctrl+C to stop.");
 });
 
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { bundler.dispose(); demoBundler.dispose(); server.close(); process.exit(0); });

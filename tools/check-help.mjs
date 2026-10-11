@@ -55,7 +55,10 @@ import { OFFICE_POLICY, lotDesignerPolicy } from "../server/office/pages.js";
 import { parseHeaders, designerCsp } from "./build-headers.mjs";
 import { fakeControlRoom } from "./lib/fake-control-room.mjs";
 import { fakeHelpInbox } from "./lib/fake-help-inbox.mjs";
+import * as HELP_ANSWERS from "../ui/office/help-answers.js";
 import { ANSWERS, HELP_SCREEN, SUPPORT_EMAIL as SCREEN_EMAIL, answersFor, findAnswers } from "../ui/office/help-answers.js";
+import { versionAtLeast, TERMS } from "../server/office/terms.js";
+import { TERMS_NEEDED } from "../server/office/setup-access.js";
 
 const ROOT = resolvePath(dirname(fileURLToPath(import.meta.url)), "..");
 const J = (p) => JSON.parse(readFileSync(resolvePath(ROOT, p), "utf8"));
@@ -551,10 +554,34 @@ ok(`each Dealer Center shows 10 to 15 answers (connected ${answersFor(true).leng
   [answersFor(true), answersFor(false)].every((l) => l.length >= 10 && l.length <= 15) && new Set(ANSWERS.map((a) => a.id)).size === ANSWERS.length
   && ANSWERS.every((a) => a.when === undefined || a.when === "connected" || a.when === "not-connected"));
 {
-  const ids = (connected) => answersFor(connected).map((a) => a.id);
-  ok("what exists only when connected (a plan, its notes at the top, Help from Barnwright) shows only there; the demo and Alan's own business get their own way to open a lot",
-    ["another-lot", "stopped", "barnwright-look"].every((id) => ids(true).includes(id) && !ids(false).includes(id))
+  const T22 = { version: "2.2", agreed: null };
+  const ids = (connected, terms = T22) => answersFor(connected, terms).map((a) => a.id);
+  ok("what exists only when connected (a plan, its notes at the top, the Barnwright card) shows only there; the demo and Alan's own business get their own way to open a lot",
+    ["another-lot", "stopped", "barnwright"].every((id) => ids(true).includes(id) && !ids(false).includes(id))
+    && !ids(false, null).includes("barnwright-checks") && ids(true, null).includes("barnwright-checks")
     && ids(false).includes("another-lot-own") && !ids(true).includes("another-lot-own"), JSON.stringify([ids(true), ids(false)]));
+  /* ORD-2: while this copy ships terms older than 2.2 (and the owner hasn't
+     agreed to 2.2), the Barnwright card offers Run checks only and says
+     Barnwright can only run checks; the answer says the same to the owner,
+     the managers and the dealers. From 2.2 (or the owner's agreement to it,
+     the card's own rule) the answer about changing prices shows. */
+  const meOf = async (email) => (await call("GET", "/api/office/me", undefined, { as: email })).data;
+  const [ownerMe, dealerMe] = [await meOf(EMAIL.owner), await meOf(EMAIL.mike)];
+  const shown = (terms) => answersFor(true, terms).map((a) => `${a.title} ${a.lines.join(" ")}`).join(" ");
+  const promises = (text) => /set up your price list|Run checks and change|change your price list|change your prices/i.test(text);
+  const before = [null, { version: "2.1", agreed: null }, { version: "2.1", agreed: { version: "2.1" } }, ownerMe.terms, dealerMe.terms];
+  ok(`connected on terms ${TERMS.version} (what this copy ships): the owner's and a dealer's Help promise nothing the card can't do, no "set up your price list" and no "Run checks and change", and say Barnwright can only run checks`,
+    !versionAtLeast(TERMS.version, "2.2") ? ownerMe.terms?.version === TERMS.version && dealerMe.terms?.version === TERMS.version
+      && before.every((t) => !promises(shown(t)) && answersFor(true, t).some((a) => a.id === "barnwright-checks" && /can't change anything/.test(a.lines.join(" ")) && a.lines.join(" ").includes("**Turn on**")))
+      && before.every((t) => !findAnswers("barnwright", true, t).some((a) => promises(`${a.title} ${a.lines.join(" ")}`)))
+      : promises(shown(ownerMe.terms)),
+    JSON.stringify({ owner: ownerMe.terms, dealer: dealerMe.terms, shown: answersFor(true, ownerMe.terms).filter((a) => /barnwright/.test(a.id)).map((a) => a.title) }));
+  const after = [T22, { version: "2.10", agreed: null }, { version: "2.1", agreed: { version: "2.2" } }];
+  ok("with terms 2.2 (or the owner's agreement to 2.2, as on the card) the full answer shows: Let Barnwright change your prices, with setup access and Run checks and change my price list and settings",
+    after.every((t) => { const a = answersFor(true, t).find((x) => x.id === "barnwright"); return !!a && a.title === "Let Barnwright change your prices" && /set up your price list/.test(a.lines.join(" ")) && /Run checks and change my price list and settings/.test(a.lines.join(" ")) && !ids(true, t).includes("barnwright-checks"); }),
+    JSON.stringify(after.map((t) => ids(true, t))));
+  ok("the screen's version rule is the server's (server/office/terms.js versionAtLeast) and its 2.2 is setup-access.js's TERMS_NEEDED",
+    HELP_ANSWERS.CHANGE_TERMS === TERMS_NEEDED && ["2.1", "2.2", "2.10", "2.2.1", "3", "10.0", "2", "", "2.x", "1.9.9", undefined, null, 2.2].every((v) => ["2.2", "2.10", "3"].every((need) => HELP_ANSWERS.versionAtLeast(v, need) === versionAtLeast(v, need))));
   const all = ANSWERS.map((a) => `${a.title} ${a.lines.join(" ")}`).join(" ");
   ok("no answer names a price (a business's lot fee is its own) or says \"below\" (on a computer the box is beside them)", !/\$\s?\d/.test(all) && !/\bbelow\b/i.test(all), (all.match(/.{30}(?:\$\s?\d|below).{20}/i) || [""])[0]);
   const install = ANSWERS.find((a) => a.id === "install");
