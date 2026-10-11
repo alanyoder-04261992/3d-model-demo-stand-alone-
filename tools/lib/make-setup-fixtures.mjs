@@ -42,6 +42,7 @@ import { pathToFileURL } from "node:url";
 import { readJSON, ROOT } from "./load.mjs";
 import { createPriceList, describeChanges as describeAll, priceFingerprint } from "../../server/office/price-list.js";
 import { format as formatBuilt } from "../../model/build-settings.js";
+import { checkChangedStyles } from "../../server/office/built-check.js";
 import { MemoryBlobs, wrapStore } from "../../server/office/store.js";
 import { canonicalLease, LEASE_DURATION_MS } from "../../server/office/license-core.js";
 
@@ -222,6 +223,8 @@ export const REFUSED_LOG = {
 };
 const logStarted = `${BARNWRIGHT} started your price list from Every standard building, using the terms you agreed to when you signed up.`;
 const UNDO_LINE = "Put back the price list from before Barnwright's last change";
+/* The every-size check's "Not checked yet" line at the door (setup-access.js CHECK_THE_REST) */
+export const CHECK_THE_REST = "To check the rest, tap Open their price list and press Check every size in that building's How it's built.";
 /* set_roof_pitch's change line: the owner's own History words for a style's
    own roof pitch (model/build-settings.js describeChanges). The pitch
    reaches every style of their own built like it that has no pitch of its
@@ -489,11 +492,19 @@ const sizeWords = (z) => z.replace("x", "×");
 function sampleSet(base, pl) {
   const out = [];
   /* ok: {name, edits, mode?, apply(s), warnings?, paths?, newCodes?, newWords?(before, after)} */
+  /* the every-size check of How it's built (server/office/built-check.js),
+     as the door runs it after the owner's own check: what it finds that
+     doesn't stop the change comes back as warnings, after the others */
+  const sizeCheck = (after) => checkChangedStyles(base, after, M, LIB, { budgetMs: Infinity });
   function ok(name, edits, apply, more = {}) {
     const after = structuredClone(base);
     apply(after);
     settle(base, after);
-    pl.check(after);                                  /* throws when the sample would not save */
+    pl.check(after, base);                            /* throws when the sample would not save (the stricter rules too, as the door) */
+    const sc = sizeCheck(after);
+    if (sc.problems.length) throw new Error(`${name}: the every-size check refuses it: ${sc.problems.join(" ")}`);
+    const sizeWarnings = [...sc.warnings, ...sc.unchecked.map((l) => l.replace(/ Press Check every size\.$/, ` ${CHECK_THE_REST}`))];
+    if (more.wantSizeWarnings !== undefined && more.wantSizeWarnings !== sizeWarnings.length) throw new Error(`${name}: the every-size check warns ${JSON.stringify(sizeWarnings)}`);
     const changes = more.changes || describeChanges(base, after, M, { contact: "new" });
     if (more.wantChanges && JSON.stringify(changes) !== JSON.stringify(more.wantChanges)) throw new Error(`${name}: the change words are ${JSON.stringify(changes)}`);
     const paths = {};
@@ -502,7 +513,7 @@ function sampleSet(base, pl) {
     out.push({
       name, mode: more.mode || "prelive", edits,
       expect: {
-        ok: true, changes, warnings: more.warnings || [], contactDetailsChange: contact, newCodes: more.newCodes || {},
+        ok: true, changes, warnings: [...(more.warnings || []), ...sizeWarnings], contactDetailsChange: contact, newCodes: more.newCodes || {},
         ...(more.newWords ? { newWords: true } : {}), paths, settingsSha256: sha256(JSON.stringify(after)),
       },
     });
@@ -538,7 +549,23 @@ function sampleSet(base, pl) {
     (s) => { for (const z of keysOf(sizes(s, "G"))) sizes(s, "G")[z] = Math.round((sizes(s, "G")[z] * 1.03) / 5) * 5; }, { paths: ["offer.G.sizes"] });
   ok("set_roof_pitch: one gable style's own roof pitch in How it's built (every building built like it too)", [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }],
     (s) => { s.offer.UT.built = { roofPitch: 6 }; },
-    { paths: ["offer.UT.built", "construction"], wantChanges: [pitchLine("Utility Shed", STANDARD_PITCH, "6/12")] });
+    { paths: ["offer.UT.built", "construction"], wantChanges: [pitchLine("Utility Shed", STANDARD_PITCH, "6/12")], wantSizeWarnings: 1 });
+  ok("set_built: a style's own roof pitch, eave, gable-end overhang, wall height and door height, in a builder's words", [{ do: "set_built", style: "UT", roofPitch: "6/12", eaveOverhang: "6 in", gableOverhang: "3 in", wallHeight: "8 ft", doorHeight: "80 in" }],
+    (s) => { s.offer.UT.built = { roofPitch: 6, eaveOverhang: 6, gableEndOverhang: 3, wallHeight: 96, doorHeight: 80 }; },
+    { paths: ["offer.UT.built", "construction"] });
+  ok("set_built: barn roof heights by width; a width left out keeps the standard", [{ do: "set_built", style: "LB", barnHeights: { 10: "4 ft 2 in" } }],
+    (s) => { s.offer.LB.built = { barnPeak: { 10: 50 } }; }, { paths: ["offer.LB.built"] });
+  ok("set_built: standard takes the style's own number out again (here in the same list)", [{ do: "set_built", style: "G", wallHeight: "8 ft", doorHeight: "80 in" }, { do: "set_built", style: "G", doorHeight: "standard" }],
+    (s) => { s.offer.G.built = { wallHeight: 96 }; }, { paths: ["offer.G.built"] });
+  ok("set_built: a style of their own gets numbers of its own (said as its own)", [{ do: "add_own_style", built_like: "LB", name: "Tall Loft Barn", sizes: { "10x16": 6490, "12x24": 10790 } }, { do: "set_built", style: "LB1", wallHeight: "7 ft" }],
+    (s) => { s.offer.LB1 = { base: "LB", name: "Tall Loft Barn", sizes: { "10x16": 6490, "12x24": 10790 }, built: { wallHeight: 84 } }; s.categories[0][1].push("LB1"); },
+    { paths: ["offer.LB1", "categories"], newCodes: { "Tall Loft Barn": "LB1" } });
+  ok("set_built: porch depth and side porch lengths on a side porch style", [{ do: "sell_style", style: "SC", group: "Cabins", sizes: { "10x20": 9890, "12x24": 12490 } }, { do: "set_built", style: "SC", porchDepth: "5 ft", sidePorchLength: ["8 ft", "10 ft"] }],
+    (s) => { s.offer.SC = { sizes: { "10x20": 9890, "12x24": 12490 }, built: { porchDepth: 5, sidePorchLengths: [8, 10] } }; s.categories.push(["Cabins", ["SC"]]); },
+    { paths: ["offer.SC", "categories"] });
+  ok("set_built: the dormer on the back side", [{ do: "sell_style", style: "DS", group: "Sheds", sizes: { "10x16": 6190 } }, { do: "set_option", group: "dormers", key: 6, price: 650 }, { do: "set_built", style: "DS", dormerSide: "back side" }],
+    (s) => { s.offer.DS = { sizes: { "10x16": 6190 }, built: { dormerSide: "back" } }; s.categories[0][1].push("DS"); s.options.dormers = { 6: 650 }; },
+    { paths: ["offer.DS", "categories", "options.dormers"] });
 
   /* doors and windows, options, colors */
   ok("set_item: a new price", [{ do: "set_item", item: "w48", price: 175 }], (s) => { s.items.w48 = 175; }, { paths: ["items.w48"] });
@@ -645,6 +672,32 @@ function sampleSet(base, pl) {
     ["Edit 1: They don't sell the Garden Utility. Sell it first (sell_style), then set its roof pitch."]);
   refused("set_roof_pitch: flatter than How it's built allows on a metal roof", [{ do: "set_roof_pitch", style: "MU", pitch: "3/12" }],
     ["Edit 1: Roof pitch 3/12 is flatter than 4/12, the flattest the 3D designer can frame a metal roof."]);
+  refused("set_built: a part that doesn't apply to that style", [{ do: "set_built", style: "UT", porchDepth: "6 ft" }], ["Edit 1: The Utility Shed has no porch."]);
+  refused("set_built: a bare number is never guessed (inches or feet?)", [{ do: "set_built", style: "UT", wallHeight: 93.5 }],
+    ["Edit 1: Wall height: write it the way a builder says it, like 7 ft 9 1/2 in, or standard."]);
+  refused("set_built: How it's built's own limits for that style, in its own words", [{ do: "set_built", style: "UT", wallHeight: "8" }, { do: "set_built", style: "LB", eaveOverhang: "6 in" }],
+    ["Edit 1: Wall height 8 in is lower than 4 ft. Did you mean 8 ft?", "Edit 2: Eave overhang 6 in is more than a barn roof can take: 3 in at most."]);
+  refused("set_built: a style they don't sell", [{ do: "set_built", style: "GU", wallHeight: "8 ft" }],
+    ["Edit 1: They don't sell the Garden Utility. Sell it first (sell_style), then set how it's built."]);
+  refused("set_built: nothing to set", [{ do: "set_built", style: "UT" }],
+    ["Edit 1: set_built needs one or more of roofPitch, barnHeights, eaveOverhang, gableOverhang, wallHeight, doorHeight, porchDepth, sidePorchLength, dormerSide."]);
+  {
+    /* the owner's own check: barn heights joined width by width with the standard */
+    const tall = structuredClone(base);
+    tall.offer.LB.built = { barnPeak: { 10: 60 } };
+    let words = [];
+    try { pl.check(tall, base); } catch (e) { words = e.problems || [e.message]; }
+    if (!words.length) throw new Error("The barn heights sample needs the owner's own check to refuse it.");
+    refused("set_built: barn heights that drop as the barn gets wider (the owner's own check)", [{ do: "set_built", style: "LB", barnHeights: "10 ft wide: 5 ft" }], words);
+    /* the every-size check: a wall too low for the doors */
+    const low = structuredClone(base);
+    low.offer.UT.built = { wallHeight: 60 };
+    settle(base, low);
+    pl.check(low, base);
+    const sc = sizeCheck(low);
+    if (!sc.problems.length) throw new Error("The every-size sample needs the every-size check to refuse it.");
+    refused("set_built: what the every-size check finds refuses it, in words", [{ do: "set_built", style: "UT", wallHeight: "5 ft" }], sc.problems);
+  }
   refused("set_business: contact details while the owner's switch is on", [{ do: "set_business", phone: "941-555-0199" }], ["Edit 1: " + LOCK.contact], { mode: "switch" });
   refused("too many edits", Array.from({ length: 301 }, () => ({ do: "set_price", style: "UT", size: "10x16", price: 5190 })).slice(0, 2), ["Send 1 to 300 edits at a time."]);
   out[out.length - 1].note = "the real request has 301 edits; two are shown here";
@@ -733,7 +786,7 @@ function effectSet(base, pl) {
       expect: { status: 422, problems: [extraWords(BUILT_EXTRA.name)] } },
   ];
   return {
-    about: "An extra of the business's own can change how the building is built: a construction effect (options.extras[].construction; model/company.js optionEffects) or How it's built numbers of its own (options.extras[].built, on the buildings its styles list names). Barnwright never adds one, changes one (its effect, its numbers or the buildings it is offered on) or removes an extra that has one; the only building-shape change it can make is a building style's own numbers in How it's built (set_roof_pitch at the door). Door samples are checked like edits.samples, on effectBase; visit samples are the visit's PUT price-list with effectBase whose options.extras is replaced by `extras` (and a put back that would do the same is refused alike).",
+    about: "An extra of the business's own can change how the building is built: a construction effect (options.extras[].construction; model/company.js optionEffects) or How it's built numbers of its own (options.extras[].built, on the buildings its styles list names). Barnwright never adds one, changes one (its effect, its numbers or the buildings it is offered on) or removes an extra that has one; the only building-shape change it can make is a building style's own numbers in How it's built (set_built at the door, and its short form set_roof_pitch). Door samples are checked like edits.samples, on effectBase; visit samples are the visit's PUT price-list with effectBase whose options.extras is replaced by `extras` (and a put back that would do the same is refused alike).",
     extra: EFFECT_EXTRA, builtExtra: BUILT_EXTRA, effectBase, door, visit,
   };
 }

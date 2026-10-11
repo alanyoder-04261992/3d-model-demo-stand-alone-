@@ -4440,7 +4440,9 @@
           "changes": [
             "Utility Shed roof pitch: 5/12 → 6/12"
           ],
-          "warnings": [],
+          "warnings": [
+            "Utility Shed 12x20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 12x24 and 12x16."
+          ],
           "contactDetailsChange": false,
           "newCodes": {},
           "paths": {
@@ -4450,6 +4452,310 @@
             "construction": {}
           },
           "settingsSha256": "ad6f304e759cecf5fab8f2ebc988abe19f8b20672f52ccc24c9d59e3ccd4138f"
+        }
+      },
+      {
+        "name": "set_built: a style's own roof pitch, eave, gable-end overhang, wall height and door height, in a builder's words",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_built",
+            "style": "UT",
+            "roofPitch": "6/12",
+            "eaveOverhang": "6 in",
+            "gableOverhang": "3 in",
+            "wallHeight": "8 ft",
+            "doorHeight": "80 in"
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Utility Shed roof pitch: 5/12 → 6/12",
+            "Utility Shed eave overhang: 4 in → 6 in",
+            "Utility Shed gable-end overhang: 5 3/8 in → 3 in",
+            "Utility Shed wall height: 7 ft 9 1/2 in → 8 ft",
+            "Utility Shed wooden shop door height: 76 1/2 in → 80 in"
+          ],
+          "warnings": [
+            "Utility Shed 12x20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 12x24 and 12x16."
+          ],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {
+            "offer.UT.built": {
+              "roofPitch": 6,
+              "eaveOverhang": 6,
+              "gableEndOverhang": 3,
+              "wallHeight": 96,
+              "doorHeight": 80
+            },
+            "construction": {}
+          },
+          "settingsSha256": "91127203e53c350f07875368dd2070de66f4323396eebe729954b09407d8ea99"
+        }
+      },
+      {
+        "name": "set_built: barn roof heights by width; a width left out keeps the standard",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_built",
+            "style": "LB",
+            "barnHeights": {
+              "10": "4 ft 2 in"
+            }
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Loft Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in"
+          ],
+          "warnings": [],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {
+            "offer.LB.built": {
+              "barnPeak": {
+                "10": 50
+              }
+            }
+          },
+          "settingsSha256": "27f4d85674be6ca4c5016228b7acceaa678d566bc96ddf1a8d3d38dfa69e3551"
+        }
+      },
+      {
+        "name": "set_built: standard takes the style's own number out again (here in the same list)",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_built",
+            "style": "G",
+            "wallHeight": "8 ft",
+            "doorHeight": "80 in"
+          },
+          {
+            "do": "set_built",
+            "style": "G",
+            "doorHeight": "standard"
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Garage wall height: 7 ft 9 1/2 in → 8 ft"
+          ],
+          "warnings": [],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {
+            "offer.G.built": {
+              "wallHeight": 96
+            }
+          },
+          "settingsSha256": "57c3c4efd1b26b3396901b2476b3a90314880f4363875b46012003aaed0fdf87"
+        }
+      },
+      {
+        "name": "set_built: a style of their own gets numbers of its own (said as its own)",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "add_own_style",
+            "built_like": "LB",
+            "name": "Tall Loft Barn",
+            "sizes": {
+              "10x16": 6490,
+              "12x24": 10790
+            }
+          },
+          {
+            "do": "set_built",
+            "style": "LB1",
+            "wallHeight": "7 ft"
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Started selling the Tall Loft Barn (built like the Lofted Barn) in 2 sizes",
+            "Tall Loft Barn wall height: 7 ft of its own"
+          ],
+          "warnings": [],
+          "contactDetailsChange": false,
+          "newCodes": {
+            "Tall Loft Barn": "LB1"
+          },
+          "paths": {
+            "offer.LB1": {
+              "base": "LB",
+              "name": "Tall Loft Barn",
+              "sizes": {
+                "10x16": 6490,
+                "12x24": 10790
+              },
+              "built": {
+                "wallHeight": 84
+              }
+            },
+            "categories": [
+              [
+                "Sheds",
+                [
+                  "UT",
+                  "LB",
+                  "LB1"
+                ]
+              ],
+              [
+                "Garages",
+                [
+                  "G"
+                ]
+              ]
+            ]
+          },
+          "settingsSha256": "2481f5a5fc4dd58bbda407aa275eb53c242800e691d107642ea2ee987de13e7b"
+        }
+      },
+      {
+        "name": "set_built: porch depth and side porch lengths on a side porch style",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "sell_style",
+            "style": "SC",
+            "group": "Cabins",
+            "sizes": {
+              "10x20": 9890,
+              "12x24": 12490
+            }
+          },
+          {
+            "do": "set_built",
+            "style": "SC",
+            "porchDepth": "5 ft",
+            "sidePorchLength": [
+              "8 ft",
+              "10 ft"
+            ]
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Started selling the Side Cabin in 2 sizes",
+            "New building group \"Cabins\"",
+            "Side Cabin porch depth: 5 ft of its own",
+            "Side Cabin side porch lengths: 8 ft and 10 ft of its own"
+          ],
+          "warnings": [],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {
+            "offer.SC": {
+              "sizes": {
+                "10x20": 9890,
+                "12x24": 12490
+              },
+              "built": {
+                "porchDepth": 5,
+                "sidePorchLengths": [
+                  8,
+                  10
+                ]
+              }
+            },
+            "categories": [
+              [
+                "Sheds",
+                [
+                  "UT",
+                  "LB"
+                ]
+              ],
+              [
+                "Garages",
+                [
+                  "G"
+                ]
+              ],
+              [
+                "Cabins",
+                [
+                  "SC"
+                ]
+              ]
+            ]
+          },
+          "settingsSha256": "8a10da603ade9cae365d83dbd0e9438ea76868b095b3ee1d59448326195ffd3c"
+        }
+      },
+      {
+        "name": "set_built: the dormer on the back side",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "sell_style",
+            "style": "DS",
+            "group": "Sheds",
+            "sizes": {
+              "10x16": 6190
+            }
+          },
+          {
+            "do": "set_option",
+            "group": "dormers",
+            "key": 6,
+            "price": 650
+          },
+          {
+            "do": "set_built",
+            "style": "DS",
+            "dormerSide": "back side"
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Started selling the Dormer Shed in 1 size",
+            "Started offering 6 ft dormer at $650",
+            "Dormer Shed dormer side: back side of its own"
+          ],
+          "warnings": [],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {
+            "offer.DS": {
+              "sizes": {
+                "10x16": 6190
+              },
+              "built": {
+                "dormerSide": "back"
+              }
+            },
+            "categories": [
+              [
+                "Sheds",
+                [
+                  "UT",
+                  "LB",
+                  "DS"
+                ]
+              ],
+              [
+                "Garages",
+                [
+                  "G"
+                ]
+              ]
+            ],
+            "options.dormers": {
+              "6": 650
+            }
+          },
+          "settingsSha256": "ebe69027a2a2073f1743b9286b0434b9b14bb7247e65c5d053bacbf953dca50a"
         }
       },
       {
@@ -5826,6 +6132,139 @@
         }
       },
       {
+        "name": "set_built: a part that doesn't apply to that style",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_built",
+            "style": "UT",
+            "porchDepth": "6 ft"
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Edit 1: The Utility Shed has no porch."
+          ]
+        }
+      },
+      {
+        "name": "set_built: a bare number is never guessed (inches or feet?)",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_built",
+            "style": "UT",
+            "wallHeight": 93.5
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Edit 1: Wall height: write it the way a builder says it, like 7 ft 9 1/2 in, or standard."
+          ]
+        }
+      },
+      {
+        "name": "set_built: How it's built's own limits for that style, in its own words",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_built",
+            "style": "UT",
+            "wallHeight": "8"
+          },
+          {
+            "do": "set_built",
+            "style": "LB",
+            "eaveOverhang": "6 in"
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Edit 1: Wall height 8 in is lower than 4 ft. Did you mean 8 ft?",
+            "Edit 2: Eave overhang 6 in is more than a barn roof can take: 3 in at most."
+          ]
+        }
+      },
+      {
+        "name": "set_built: a style they don't sell",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_built",
+            "style": "GU",
+            "wallHeight": "8 ft"
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Edit 1: They don't sell the Garden Utility. Sell it first (sell_style), then set how it's built."
+          ]
+        }
+      },
+      {
+        "name": "set_built: nothing to set",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_built",
+            "style": "UT"
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Edit 1: set_built needs one or more of roofPitch, barnHeights, eaveOverhang, gableOverhang, wallHeight, doorHeight, porchDepth, sidePorchLength, dormerSide."
+          ]
+        }
+      },
+      {
+        "name": "set_built: barn heights that drop as the barn gets wider (the owner's own check)",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_built",
+            "style": "LB",
+            "barnHeights": "10 ft wide: 5 ft"
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Barn roof height: the 12 ft wide barn (4 ft 3 in, the standard) would be lower than the 10 ft wide barn (5 ft). Type a height for the 12 ft wide barn too."
+          ]
+        }
+      },
+      {
+        "name": "set_built: what the every-size check finds refuses it, in words",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_built",
+            "style": "UT",
+            "wallHeight": "5 ft"
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Utility Shed 12x20: the 72″ Wooden Double Doors on the front should be 76 1/2 in tall, but the wall leaves room for 55 5/8 in. The same at 8x12, 12x24 and 3 more.",
+            "Utility Shed 12x20: the roof edge over the left side is only 4 ft 10 3/8 in above the floor (6 ft at least). The same at 8x12, 12x24 and 3 more.",
+            "Utility Shed 12x20: the roof edge over the right side is only 4 ft 10 3/8 in above the floor (6 ft at least). The same at 8x12, 12x24 and 3 more."
+          ]
+        }
+      },
+      {
         "name": "set_business: contact details while the owner's switch is on",
         "mode": "switch",
         "edits": [
@@ -5887,7 +6326,7 @@
       }
     ],
     "effects": {
-      "about": "An extra of the business's own can change how the building is built: a construction effect (options.extras[].construction; model/company.js optionEffects) or How it's built numbers of its own (options.extras[].built, on the buildings its styles list names). Barnwright never adds one, changes one (its effect, its numbers or the buildings it is offered on) or removes an extra that has one; the only building-shape change it can make is a building style's own numbers in How it's built (set_roof_pitch at the door). Door samples are checked like edits.samples, on effectBase; visit samples are the visit's PUT price-list with effectBase whose options.extras is replaced by `extras` (and a put back that would do the same is refused alike).",
+      "about": "An extra of the business's own can change how the building is built: a construction effect (options.extras[].construction; model/company.js optionEffects) or How it's built numbers of its own (options.extras[].built, on the buildings its styles list names). Barnwright never adds one, changes one (its effect, its numbers or the buildings it is offered on) or removes an extra that has one; the only building-shape change it can make is a building style's own numbers in How it's built (set_built at the door, and its short form set_roof_pitch). Door samples are checked like edits.samples, on effectBase; visit samples are the visit's PUT price-list with effectBase whose options.extras is replaced by `extras` (and a put back that would do the same is refused alike).",
       "extra": {
         "key": "heavy-floor",
         "name": "Heavy-duty floor",

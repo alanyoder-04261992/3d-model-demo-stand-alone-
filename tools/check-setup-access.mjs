@@ -46,8 +46,8 @@
           lock refuses adding, changing or taking away an extra's
           construction effect or its own How it's built numbers (door,
           visit, undo and put back), so a building style's own numbers in
-          How it's built (set_roof_pitch at the door) stay the only
-          building-shape change
+          How it's built (set_built at the door, and its short form
+          set_roof_pitch) stay the only building-shape change
      HB   How it's built (model/build-settings.js): set_roof_pitch writes the
           style's own roof pitch there; the lock lets a building style's own
           numbers change (door in both modes, and the visit), checked like
@@ -55,6 +55,13 @@
           construction settings or the numbers for the whole business; an
           older price list's roof pitch rule list reads as the pitch it
           draws
+     SB   set_built: a building style's own numbers in How it's built, in a
+          builder's words ("8 ft", "6/12"), only the ones that apply, with
+          How it's built's own limits and words; stored as numbers, drawn as
+          set, said in History (a new style's own number too); the every-
+          size check's warnings and the sizes it had no time for in the
+          check answer, what it finds that doesn't build refused in words;
+          set_roof_pitch is its short form
    (A13, nothing but netlify.js imports control-room.js, is in
    tools/check-imports.mjs; A14, the screens, in tools/check-setup-screens.mjs.) */
 
@@ -73,6 +80,7 @@ import * as termsModule from "../server/office/terms.js";
 import { BARNWRIGHT_SAVED_FIRST, NO_COPY, describeChanges, createPriceList, priceFingerprint } from "../server/office/price-list.js";
 import { applyEdits, warnings, contactKinds, UNDO_LINE } from "../server/office/setup-edits.js";
 import { readView } from "../server/office/setup-view.js";
+import { checkChangedStyles } from "../server/office/built-check.js";
 import { canonicalLease } from "../server/office/license-core.js";
 import { validate, resolve as resolveCatalogue } from "../model/company.js";
 import { defaults as designDefaults, setType } from "../model/design.js";
@@ -120,7 +128,7 @@ const USERS = {
    termsVersion: the terms this copy pretends to ship; siteUrl: what each
    check-in reports. */
 function business({ connected = true, start = Date.UTC(2026, 9, 11, 15, 0, 0), blobs = new MemoryBlobs(), keyPair = null, ownerEmail = USERS.pat.email,
-  termsVersion = undefined, appVersion = "dealer-center check", siteUrl = undefined } = {}) {
+  termsVersion = undefined, appVersion = "dealer-center check", siteUrl = undefined, sizeCheckMs = undefined } = {}) {
   const clock = { t: start };
   const room = fakeControlRoom({ clock, customerId: "cust_testing", siteId: "site-testing-1", keyPair });
   const b = { clock, room, blobs, who: "pat", emails: [], sentLicense: [] };
@@ -138,6 +146,7 @@ function business({ connected = true, start = Date.UTC(2026, 9, 11, 15, 0, 0), b
     manufacturer, library, templates, now: () => new Date(clock.t), log: () => {},
     license: b.license, appVersion, sendEmail: async (m) => { b.emails.push(m); return true; },
     ...(termsVersion ? { termsVersion } : {}),
+    ...(sizeCheckMs !== undefined ? { sizeCheckMs } : {}),
   });
   b.office = b.make();
   b.store = b.office.parts.store;
@@ -871,8 +880,13 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
       const locked = lockProblems(base, next, { door: true, mode: sm.mode, manufacturer });
       if (locked.length) got = { ok: false, problems: locked };
       else {
-        try { pl.check(next); got = { ok: true, changes: describeChanges(base, next, manufacturer, { contact: "new", library }), warnings: warnings(base, next, manufacturer), sha: sha256(JSON.stringify(next)), newCodes: res.newCodes }; }
-        catch (e) { got = { ok: false, problems: e.problems || [e.message] }; }
+        try {
+          /* the owner's own check (its stricter rules against the price list before), then the every-size check, as the door runs them */
+          pl.check(next, base);
+          const sc = checkChangedStyles(base, next, manufacturer, library, { budgetMs: Infinity });
+          if (sc.problems.length) got = { ok: false, problems: sc.problems };
+          else got = { ok: true, changes: describeChanges(base, next, manufacturer, { contact: "new", library }), warnings: [...warnings(base, next, manufacturer), ...sc.warnings], sha: sha256(JSON.stringify(next)), newCodes: res.newCodes };
+        } catch (e) { got = { ok: false, problems: e.problems || [e.message] }; }
       }
     }
     const want = sm.expect;
@@ -1003,8 +1017,8 @@ function withDoor(b) {
 /* A business being set up whose price list is the fixtures' base (First
    setup with the small starting price list), owner agreed to terms 2.2.
    base: another price list to start from (edits.effects.effectBase). */
-async function fixtureBusiness(base = FX.edits.baseSettings) {
-  const F = withDoor(business());
+async function fixtureBusiness(base = FX.edits.baseSettings, opts = {}) {
+  const F = withDoor(business(opts));
   await F.setUp(); await F.agree("2.2");
   const pl = await F.store.get("price-list");
   const settings = structuredClone(base);
@@ -1921,7 +1935,7 @@ section("F15 item 4. The lock: an extra that changes how the building is built")
   }
   const log = await E.log();
   ok("... and a refusal says so in the owner's log, in the owner's own words", log.some((e) => e.words === REFUSED_LOG.locked), JSON.stringify(log.map((e) => e.words)));
-  /* the lock on its own: set_roof_pitch stays the only building-shape change */
+  /* the lock on its own: a building style's own numbers (set_built, set_roof_pitch) stay the only building-shape change */
   const s0 = FXE.effectBase;
   const variants = [
     ["the effect's value changed", (s) => { s.options.extras.find((x) => x.key === "heavy-floor").construction["floor.spacingIn"] = 24; }, ["Heavy-duty floor"]],
@@ -2025,9 +2039,83 @@ section("HB. How it's built through Barnwright's setup access: a building style'
   ok("the door's undo to a copy without the effect extra is refused by the lock too", owner2.status === 200 && u.status === 422 && JSON.stringify(u.data.problems) === JSON.stringify([extraWords("Heavy-duty floor")]), JSON.stringify(u.data).slice(0, 400));
 }
 
+section("SB. set_built: a building style's own numbers in How it's built, in a builder's words, through the door");
+{
+  const opts = { manufacturer };
+  const base = FX.edits.baseSettings;
+  const D2 = await fixtureBusiness();
+  /* check, then save, then read back: stored as numbers, drawn as set, History in the owner's own words */
+  const edits = [{ do: "set_built", style: "UT", wallHeight: "8 ft", doorHeight: "80 in" }, { do: "add_own_style", built_like: "LB", name: "Tall Loft Barn", sizes: { "10x16": 6490 } }, { do: "set_built", style: "LB1", wallHeight: "7 ft" }];
+  const c = await D2.door({ action: "check", version: 1, edits });
+  const sv = await D2.door({ action: "save", version: 1, edits, settingsSha256: c.data.settingsSha256 });
+  const saved = (await D2.store.get("price-list")).settings;
+  const hist = await D2.store.get("price-list-history/000002");
+  const cat = resolveCatalogue(saved, manufacturer, library);
+  ok("SB: set_built through the door: the Utility Shed's own wall and door height and a style of their own's wall, stored as numbers (old code: no such edit)",
+    c.status === 200 && sv.status === 200 && sv.data.version === 2 && JSON.stringify(saved.offer.UT.built) === JSON.stringify({ wallHeight: 96, doorHeight: 80 })
+    && JSON.stringify(saved.offer.LB1?.built) === JSON.stringify({ wallHeight: 84 }) && JSON.stringify(saved.construction) === "{}" && !("built" in saved), JSON.stringify([c.data, sv.data]).slice(0, 500));
+  ok("SB: ... drawn as set: 8 ft walls on the Utility Shed, 7 ft on the Tall Loft Barn, the Loft Barn keeps the standard",
+    Math.abs(cat.TYPES.UT.wallH * 12 - 96) < 1e-9 && Math.abs(cat.TYPES.LB1?.wallH * 12 - 84) < 1e-9 && Math.abs(cat.TYPES.LB.wallH * 12 - manufacturer.styles.LB.built.wallHeight) < 1e-9,
+    JSON.stringify([cat.TYPES.UT.wallH, cat.TYPES.LB1?.wallH, cat.TYPES.LB.wallH]));
+  ok("SB: ... the change words and History say what moved, a new style's own number too",
+    JSON.stringify(sv.data.changes) === JSON.stringify(["Started selling the Tall Loft Barn (built like the Lofted Barn) in 1 size", "Utility Shed wall height: 7 ft 9 1/2 in → 8 ft", "Utility Shed wooden shop door height: 76 1/2 in → 80 in", "Tall Loft Barn wall height: 7 ft of its own"])
+    && JSON.stringify(hist?.changes) === JSON.stringify(sv.data.changes), JSON.stringify([sv.data.changes, hist?.changes]));
+  const back = await D2.door({ action: "check", version: 2, edits: [{ do: "set_built", style: "UT", wallHeight: "standard", doorHeight: "standard" }] });
+  ok("SB: standard takes them out again, said with the standard's own numbers",
+    back.status === 200 && JSON.stringify(back.data.changes) === JSON.stringify(["Utility Shed wall height: 8 ft → 7 ft 9 1/2 in", "Utility Shed wooden shop door height: 80 in → 76 1/2 in"]), JSON.stringify(back.data));
+
+  /* the every-size result in the check answer: what it warns, and what it had no time for */
+  /* (set_roof_pitch, set_built's short form, so the old code can be asked too) */
+  const w = await D2.door({ action: "check", version: 2, edits: [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }] });
+  const gw = (w.data.warnings || []).filter((x) => /^Utility Shed 12x20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof\./.test(x));
+  ok("SB: the door's check answer carries the every-size check's warnings in plain words, counted (old code: warnings [])",
+    w.status === 200 && gw.length === 1 && w.data.counts?.warnings === w.data.warnings?.length, JSON.stringify(w.data.warnings));
+  const H2 = await fixtureBusiness(FX.edits.baseSettings, { sizeCheckMs: 0 });
+  const hurried = await H2.door({ action: "check", version: 1, edits: [{ do: "set_built", style: "UT", wallHeight: "8 ft" }] });
+  const later = (hurried.data.warnings || []).filter((x) => /^Not checked yet: \d+ sizes? of the Utility Shed\. To check the rest, tap Open their price list and press Check every size in that building's How it's built\.$/.test(x));
+  const hs = await H2.door({ action: "save", version: 1, edits: [{ do: "set_built", style: "UT", wallHeight: "8 ft" }], settingsSha256: hurried.data.settingsSha256 });
+  ok("SB: sizes the check had no time for are a warning that says where Alan checks the rest, and never stop the save",
+    hurried.status === 200 && later.length === 1 && hs.status === 200 && hs.data.version === 2, JSON.stringify([hurried.data.warnings, hs.data]).slice(0, 500));
+  const low = await D2.door({ action: "check", version: 2, edits: [{ do: "set_built", style: "UT", wallHeight: "5 ft" }] });
+  ok("SB: what the every-size check finds refuses the change, in its own words (422 problems), nothing saved",
+    low.status === 422 && low.data.code === "problems" && /^Utility Shed 12x20: the 72″ Wooden Double Doors on the front should be 80 in tall, but the wall leaves room for/.test(low.data.problems?.[0] || "")
+    && (await D2.store.get("price-list")).version === 2, JSON.stringify(low.data).slice(0, 400));
+
+  /* while the owner's switch is on, the same (the lock lets a style's own numbers change in both modes) */
+  const S2 = await fixtureBusiness();
+  await S2.ownerSave((x) => { x.status = "active"; });
+  await S2.call("POST", "/api/office/barnwright-help", { on: true, level: "change", reason: "New barn heights", hours: 4 }, { as: "pat" });
+  const sw = await S2.door({ action: "check", version: (await S2.store.get("price-list")).version, edits: [{ do: "set_built", style: "LB", barnHeights: { 10: "4 ft 2 in" } }] });
+  ok("SB: while the owner's switch is on, set_built still checks (a style's own numbers pass the lock in both modes)",
+    (await S2.access()).mode === "switch" && sw.status === 200 && JSON.stringify(sw.data.changes) === JSON.stringify(["Loft Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in"]), JSON.stringify(sw.data).slice(0, 300));
+
+  /* set_roof_pitch is set_built's short form: the same settings */
+  const a = applyEdits(base, [{ do: "set_roof_pitch", style: "UT", pitch: "7/12" }], opts), b = applyEdits(base, [{ do: "set_built", style: "UT", roofPitch: "7/12" }], opts);
+  ok("SB: set_roof_pitch {UT, 7/12} and set_built {UT, roofPitch 7/12} leave the very same price list", a.problems.length === 0 && JSON.stringify(a.settings) === JSON.stringify(b.settings), JSON.stringify([a, b]).slice(0, 300));
+  const quarter = applyEdits(base, [{ do: "set_built", style: "UT", roofPitch: "6 1/4/12" }], opts), dormer = applyEdits(base, [{ do: "sell_style", style: "DS", sizes: { "10x16": 6190 } }, { do: "set_built", style: "DS", roofPitch: "6/12" }], opts);
+  ok("SB: set_built has How it's built's own limits, wider than set_roof_pitch's: quarter steps, and the Dormer Shed's own main roof",
+    quarter.problems.length === 0 && quarter.settings?.offer.UT.built?.roofPitch === 6.25 && dormer.problems.length === 0 && dormer.settings?.offer.DS?.built?.roofPitch === 6, JSON.stringify([quarter.problems, dormer.problems]));
+  const many = applyEdits(base, [{ do: "set_built", style: "LB", roofPitch: "6/12", porchDepth: "5 ft", wallHeight: "80 ft" }], opts);
+  ok("SB: every part's problem in one edit is said at once", JSON.stringify(many.problems) === JSON.stringify(["Edit 1: The Loft Barn has a barn roof, so it has no roof pitch. Set its barn roof height instead. Wall height 80 ft is taller than 10 ft. The Loft Barn has no porch."]), JSON.stringify(many.problems));
+  const odd = applyEdits(base, [{ do: "set_built", style: "UT", wallHeight: "8 ft\n" }, { do: "set_built", style: "UT", wall: "8 ft" }, { do: "set_built", style: "UT", wallHeight: ["8 ft"] }, { do: "set_built", style: "SC", porchDepth: "5 ft" }], opts);
+  ok("SB: odd values are words, never a crash: a control character, an unknown part, a list for a single number, a style they don't sell",
+    JSON.stringify(odd.problems) === JSON.stringify(["Edit 1: Wall height: write it the way a builder says it, like 7 ft 9 1/2 in, or standard.", "Edit 2: wall isn't part of set_built.", "Edit 3: Wall height: write it the way a builder says it, like 7 ft 9 1/2 in, or standard.", "Edit 4: They don't sell the Side Cabin. Sell it first (sell_style), then set how it's built."]), JSON.stringify(odd.problems));
+  const hand = structuredClone(base);
+  hand.construction = { openings: { doorHeightIn: 78 } };
+  ok("SB: a number set up by hand some other way (a construction setting on its path) stays theirs, in words",
+    JSON.stringify(applyEdits(hand, [{ do: "set_built", style: "UT", doorHeight: "80 in" }], opts).problems) === JSON.stringify(["Edit 1: Their wooden shop door height was set up another way, so it can't be changed here."])
+    && applyEdits(hand, [{ do: "set_built", style: "UT", wallHeight: "8 ft" }], opts).problems.length === 0);
+  const older = structuredClone(base);
+  older.construction = { roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 7 / 24 } }, { value: { w: library.roof.shapes.gable.rise.w } }] } } } };
+  const lifted = applyEdits(older, [{ do: "set_built", style: "G", wallHeight: "8 ft" }], opts);
+  ok("SB: on a price list from before, set_built moves the old roof pitch rule list into How it's built first (the Utility Shed keeps 7/12)",
+    lifted.problems.length === 0 && lifted.settings?.offer.UT.built?.roofPitch === 7 && lifted.settings?.offer.G.built?.wallHeight === 96 && JSON.stringify(lifted.settings?.construction ?? {}) === "{}"
+    && !!lifted.settings && lockProblems(older, lifted.settings, { door: true, manufacturer }).length === 0, JSON.stringify([lifted.problems, lifted.settings?.offer?.UT]));
+}
+
 console.log("");
 if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} setup access checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, the construction settings, How it's built for the whole business, an extra that changes how a building is built and a web address logo, and putting back carries them forward, while a building style's own How it's built numbers pass to the owner's own checks and the every-size check (set_roof_pitch writes the style's roof pitch there, and an older rule list reads as the pitch it draws); a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set; the door takes only a one-use pass made for its exact body from the Control Room's server, reads in parts with no contact details, refuses what the owner's own save refuses, saves exactly what was checked with a copy kept first, saves for Claude only before live, and undoes only Barnwright's last change.`);
+console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, the construction settings, How it's built for the whole business, an extra that changes how a building is built and a web address logo, and putting back carries them forward, while a building style's own How it's built numbers pass to the owner's own checks and the every-size check (set_roof_pitch writes the style's roof pitch there, and an older rule list reads as the pitch it draws); a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set; set_built writes a building style's own How it's built numbers from a builder's words, only those that apply, checked with How it's built's limits and the every-size check, whose warnings and unchecked sizes come back with the check; the door takes only a one-use pass made for its exact body from the Control Room's server, reads in parts with no contact details, refuses what the owner's own save refuses, saves exactly what was checked with a copy kept first, saves for Claude only before live, and undoes only Barnwright's last change.`);

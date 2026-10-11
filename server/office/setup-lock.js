@@ -12,7 +12,8 @@
        quote form's boxes, its plan question and its texting words);
      * change how the buildings are built, except a building style's own
        numbers in How it's built (offer.<code>.built, which the door's
-       set_roof_pitch writes; checked by model/build-settings.js and the
+       set_built writes, and set_roof_pitch, its short form; checked by
+       model/build-settings.js and the
        every-size check like the owner's own): not the construction
        settings, not the numbers for the whole business (the top-level
        built), and not through an extra of the business's own that changes

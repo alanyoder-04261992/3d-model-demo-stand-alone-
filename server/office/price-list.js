@@ -356,9 +356,9 @@ function quoteFormChanges(before, after) {
    "new" (Barnwright's door: only the new one, never the one the owner
    typed) or "hidden" (Barnwright's undo: neither). options.library: the
    builder's library (library/construction.json), which How it's built
-   reads a style's numbers against. A roof pitch Barnwright sets
-   (set_roof_pitch) is a How it's built number now, so it is said with the
-   rest of How it's built ("Utility Shed roof pitch: 5/12 → 7/12"). */
+   reads a style's numbers against. A style's own numbers Barnwright sets
+   (set_built, set_roof_pitch) are How it's built numbers, so they are said
+   with the rest of How it's built ("Utility Shed roof pitch: 5/12 → 7/12"). */
 export function describeChanges(before, after, manufacturer, { contact = "full", library = null } = {}) {
   const out = [];
   const M = manufacturer;

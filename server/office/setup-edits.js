@@ -21,14 +21,14 @@
 
    The logo, how the 3D designer looks, where quotes go, which websites may
    show it, opening it to customers and how the buildings are built (other
-   than one gable roof's pitch, a style's own number in How it's built) are
-   never edits.
+   than a building style's own numbers in How it's built: set_built, and
+   its short form set_roof_pitch) are never edits.
 
    Pure: no store, no clock. Node-safe and browser-safe. */
 
 import { lockedItems, newStyleKey, placeStyle, groupsOf, sortSizes, paletteNames, nameKey } from "../../ui/office/views/price-list/model.js";
 import { LOCK_WORDS, GABLE_STYLES } from "./setup-lock.js";
-import { liftRawRules, setBuilt, parse as parseBuilt } from "../../model/build-settings.js";
+import { liftRawRules, setBuilt, parse as parseBuilt, checkStyleNumber, KNOBS, KNOB_PATHS } from "../../model/build-settings.js";
 import { styleName, itemName, optionName } from "./setup-view.js";
 
 export const MAX_EDITS = 300;
@@ -50,6 +50,23 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 const CODE = /^[A-Za-z0-9]{1,8}$/;
 const EMAIL_RE = /^[^\s@<>()",;]+@[^\s@<>()",;]+\.[^\s@<>()",;]+$/;
 
+/* set_built's parts: How it's built's knobs (model/build-settings.js KNOBS),
+   by the names the door uses, each with an example in a builder's words for
+   the refusals. In KNOBS order, the order they are written in. */
+const BUILT_PARTS = Object.freeze({
+  roofPitch: { knob: "roofPitch", like: "5/12" },
+  barnHeights: { knob: "barnPeak", like: "10 ft wide: 4 ft" },
+  eaveOverhang: { knob: "eaveOverhang", like: "4 in" },
+  gableOverhang: { knob: "gableEndOverhang", like: "4 in" },
+  wallHeight: { knob: "wallHeight", like: "7 ft 9 1/2 in" },
+  doorHeight: { knob: "doorHeight", like: "76 1/2 in" },
+  porchDepth: { knob: "porchDepth", like: "6 ft" },
+  sidePorchLength: { knob: "sidePorchLengths", like: "8 ft, 12 ft" },
+  dormerSide: { knob: "dormerSide", like: "door side" },
+});
+export const BUILT_PART_NAMES = Object.freeze(Object.keys(BUILT_PARTS));
+const BUILT_WORDS_MAX = 120;
+
 /* Every edit and the parts it takes (besides `do`). */
 const EDITS = Object.freeze({
   set_price: ["style", "size", "price"],
@@ -59,6 +76,7 @@ const EDITS = Object.freeze({
   stop_selling_style: ["style"],
   rename_style: ["style", "name"],
   change_prices: ["scope", "by_percent", "by_dollars", "round_to"],
+  set_built: ["style", ...Object.keys(BUILT_PARTS)],
   set_roof_pitch: ["style", "pitch"],
   set_item: ["item", "price", "name"],
   stop_selling_item: ["item"],
@@ -193,6 +211,42 @@ function keepColors(s, M) {
     if (D.colors[f] == null || !names.length || names.includes(D.colors[f])) continue;
     D.colors[f] = wanted.map((w) => names.find((n) => n.toLowerCase().includes(w))).find(Boolean) || names[0];
   }
+}
+
+/* What set_built was sent for one part, as text How it's built reads
+   (model/build-settings.js parse): words, or for the barn heights
+   {"10": "4 ft"} with words, or for the side porch lengths a list of words.
+   undefined when it isn't words at all (a bare number could be inches or
+   feet, so it is never guessed). */
+function builderWords(v, knob) {
+  const text = (x) => typeof x === "string" && x.trim() && x.length <= BUILT_WORDS_MAX && !CONTROL.test(x);
+  if (text(v)) return v.trim();
+  if (knob === "barnPeak" && isObj(v) && Object.keys(v).length && Object.keys(v).length <= 8 && Object.values(v).every(text)) {
+    return Object.fromEntries(Object.entries(v).map(([w, x]) => [w, x.trim()]));
+  }
+  if (knob === "sidePorchLengths" && Array.isArray(v) && v.length && v.length <= 4 && v.every(text)) return v.map((x) => x.trim()).join(", ");
+  return undefined;
+}
+
+/* Does the business's own construction settings hold one of the paths
+   this How it's built number owns (set up by hand)? */
+function rawHolds(raw, knob) {
+  return (KNOB_PATHS[knob] || []).some((p) => p.split(".").reduce((o, b) => (isObj(o) ? o[b] : undefined), raw) !== undefined);
+}
+
+/* Write a style's own How it's built numbers ([{knob, value}], value null
+   for standard) with model/build-settings.js setBuilt, after moving an old
+   roof pitch rule list into How it's built, into s itself. */
+function writeBuilt(s, style, writes, M) {
+  let next = liftRawRules(s, M).settings;
+  for (const w of writes) {
+    const r = setBuilt(next, { style, knob: w.knob, value: w.value });
+    if (r.problems.length) no(r.problems.map((p) => p.words).join(" "));
+    next = r.settings;
+  }
+  if (next === s) return;
+  for (const key of Object.keys(s)) delete s[key];
+  Object.assign(s, structuredClone(next));
 }
 
 /* ---- the edits ------------------------------------------------------------------------- */
@@ -330,10 +384,48 @@ const HANDLERS = {
     if (isObj(lifted.construction?.roof?.shapes?.gable) && "rise" in lifted.construction.roof.shapes.gable) {
       no("Their gable roofs were set up another way, so the pitch can't be changed here.");
     }
-    const r = setBuilt(lifted, { style: v, knob: "roofPitch", value: twelfths });
-    if (r.problems.length) no(r.problems.map((p) => p.words).join(" "));
-    for (const k of Object.keys(s)) delete s[k];
-    Object.assign(s, r.settings);
+    /* the short form of set_built {style, roofPitch}, with its stricter
+       limits above */
+    writeBuilt(s, v, [{ knob: "roofPitch", value: twelfths }], M);
+  },
+
+  /* A building style's own numbers in How it's built
+     (offer.<code>.built, model/build-settings.js), the way the owner's own
+     How it's built boxes write them: each part in a builder's words
+     ("5/12", "7 ft 9 1/2 in", "4 in"), or "standard" to take the style's
+     own number out. Only the parts that apply to that style; each is
+     checked with How it's built's own limits for that style (its roof, its
+     sizes, its porch). A style of their own may have numbers of its own;
+     numbers on a library style also reach every style of theirs built
+     like it that has none of its own. The every-size check judges the
+     result after the lock, like the owner's save. */
+  set_built(s, e, { M }) {
+    const v = e.style;
+    if (typeof v === "string" && CODE.test(v) && has(M.styles, v) && !isObj(s.offer?.[v])) {
+      no(`They don't sell the ${styleName(s, v, M)}. Sell it first (sell_style), then set how it's built.`);
+    }
+    const k = soldStyle(s, v);
+    const parts = BUILT_PART_NAMES.filter((p) => p in e);
+    if (!parts.length) no(`set_built needs one or more of ${BUILT_PART_NAMES.join(", ")}.`);
+    /* a price list from before How it's built: an old roof pitch rule
+       list moves into How it's built first (the same move every save makes) */
+    const lifted = liftRawRules(s, M).settings;
+    const problems = [], writes = [];
+    for (const p of parts) {
+      const { knob, like } = BUILT_PARTS[p];
+      const K = KNOBS.find((x) => x.id === knob);
+      const standard = typeof e[p] === "string" && e[p].trim().toLowerCase() === "standard";
+      const typed = standard ? null : builderWords(e[p], knob);
+      if (typed === undefined) { problems.push(`${K.Words}: write it the way a builder says it, like ${like}, or standard.`); continue; }
+      const r = checkStyleNumber(lifted, M, k, knob, typed);
+      if (r.problem) { problems.push(r.problem); continue; }
+      /* set up by hand some other way (a construction setting on a path
+         this number owns): that stays theirs */
+      if (typed !== null && rawHolds(lifted.construction, knob)) { problems.push(`Their ${K.words} was set up another way, so it can't be changed here.`); continue; }
+      writes.push({ knob, value: r.value });
+    }
+    if (problems.length) no(problems.join(" "));
+    writeBuilt(s, k, writes, M);
   },
 
   set_item(s, e, { M }) {

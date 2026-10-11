@@ -1141,7 +1141,11 @@ Sizes are `"WxL"` in whole feet, width 4 to 16, length 4 to 60.
   every size price in it moves by the percent or dollars (negative lowers),
   rounds to the nearest `round_to` (1, 5, 10 or 25), and never drops below
   `round_to`. Lowering by 100% or more is refused.
-* `set_roof_pitch {style, pitch}`, see Roof pitch.
+* `set_built {style, roofPitch?, barnHeights?, eaveOverhang?, gableOverhang?,
+  wallHeight?, doorHeight?, porchDepth?, sidePorchLength?, dormerSide?}`:
+  a building style's own numbers in How it's built, see How it's built.
+* `set_roof_pitch {style, pitch}`: the short form of `set_built {style,
+  roofPitch}`, with its own stricter limits, see Roof pitch.
 
 **Doors, windows and options**
 
@@ -1198,9 +1202,77 @@ Sizes are `"WxL"` in whole feet, width 4 to 16, length 4 to 60.
 
 The logo is never an edit: Alan uploads it by hand in the visit.
 
+**How it's built** (`set_built`). A building style's own numbers in How
+it's built (`offer.<code>.built`, `model/build-settings.js`), written the way
+the owner's own How it's built boxes write them, so Claude can make a
+dealer's building match the photos: its roof, its walls, its doors.
+
+```
+{"do": "set_built", "style": "UT", "roofPitch": "6/12", "wallHeight": "8 ft", "doorHeight": "80 in"}
+```
+
+| Part | How it's built | Written like | Applies to |
+|---|---|---|---|
+| `roofPitch` | Roof pitch | `"5/12"`, `"5 1/4/12"` (quarter steps) | gable, lean-to and single slope roofs (a metal gable roof 4/12 to 12/12, any other gable 3/12 to 12/12; lean-to 1 1/4/12 to 6/12; single slope 2/12 to 8/12); the Dormer Shed's own main roof |
+| `barnHeights` | Barn roof height, from the top of the wall to the top of the trusses, by width | `{"10": "4 ft 2 in"}` or `"8 ft wide: 3 ft 9 in, 10 ft wide: 4 ft 2 in"` | barn roofs; a width left out keeps the standard's height |
+| `eaveOverhang` | Eave overhang, measured level out from the long walls | `"4 in"` | gable roofs (0 to 12 in) and barn roofs (0 to 3 in), not the cottages |
+| `gableOverhang` | Gable-end overhang | `"4 in"` | every roof (0 to 12 in) |
+| `wallHeight` | Wall height, floor to the top of the wall plate | `"7 ft 9 1/2 in"` | every style (4 ft to 10 ft) |
+| `doorHeight` | Wooden shop door height (the opening) | `"76 1/2 in"` | every style (60 to 96 in) |
+| `porchDepth` | Porch depth | `"6 ft"` | porch styles (3 to 8 ft, at least 4 ft of room left inside) |
+| `sidePorchLength` | Side porch lengths the customer can pick | `"8 ft, 12 ft"` or `["8 ft", "12 ft"]` | side porch styles (1 to 4 lengths, 4 to 20 ft, each leaving 4 ft of side wall) |
+| `dormerSide` | Dormer side | `"door side"` or `"back side"` | dormer styles |
+
+* `style` is a style they sell: a library style, or a style of their own
+  (it may have numbers of its own). Numbers on a library style also reach
+  every style of theirs built like it that has none of its own. A library
+  style they don't sell: "Edit 1: They don't sell the Garden Utility. Sell
+  it first (sell_style), then set how it's built."
+* One or more parts, each a builder's words (text, at most 120 letters), or
+  `"standard"`: that takes the style's own number out, so the standard
+  building's number is used again (the shop standard, or the library's).
+  A bare number is never guessed (inches or feet?): "Edit 1: Wall height:
+  write it the way a builder says it, like 7 ft 9 1/2 in, or standard."
+  Text with no unit is the unit the owner's box shows (inches; feet for a
+  porch), as there: "Edit 1: Wall height 8 in is lower than 4 ft. Did you
+  mean 8 ft?"
+* Only the parts that apply to that style: "Edit 1: The Utility Shed has no
+  porch.", "Edit 1: The Loft Barn has a barn roof, so it has no roof pitch.
+  Set its barn roof height instead." Every part's problem in one edit is
+  said at once.
+* Each is checked with How it's built's own limits and words for that
+  style (its roof, its sizes, its porch): "Edit 2: Eave overhang 6 in is
+  more than a barn roof can take: 3 in at most." Then, after the lock, the
+  owner's own `check()` (barn heights joined width by width with the
+  standard's: "Barn roof height: the 12 ft wide barn (4 ft 3 in, the
+  standard) would be lower than the 10 ft wide barn (5 ft). Type a height
+  for the 12 ft wide barn too.") and the every-size check
+  (`server/office/built-check.js`): what the new numbers cause at some
+  size refuses the change in its words ("Utility Shed 12x20: the 72″
+  Wooden Double Doors on the front should be 76 1/2 in tall, but the wall
+  leaves room for 55 5/8 in. ..."); what it finds that still builds, and
+  the sizes it had no time for, come back as warnings (see Warnings).
+* A number the business set up by hand another way (a construction
+  setting on the same path) stays theirs: "Edit 1: Their wooden shop door
+  height was set up another way, so it can't be changed here."
+* A price list from before How it's built holding the old roof pitch rule
+  list moves it into How it's built first, as every save does.
+* It is written with `model/build-settings.js` `setBuilt`, stored as numbers
+  (`"8 ft"` is `96`, `"6/12"` is `6`). The change words are the owner's own
+  History words for How it's built: "Utility Shed wall height: 7 ft 9 1/2 in
+  → 8 ft", "Loft Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in", and
+  back with `"standard"` "Utility Shed wall height: 8 ft → 7 ft 9 1/2 in". A
+  style started in the same change says its own numbers after "Started
+  selling ...": "Tall Loft Barn wall height: 7 ft of its own".
+* Before live, and while the owner's switch is on (a save then needs Alan's
+  tap in the Control Room, as every save does).
+* How it's built for the whole business (`built`), the construction
+  settings and an extra's numbers stay the owner's.
+
 **Roof pitch** (Alan: "make sure roof pitch is the same").
 `set_roof_pitch {style, pitch}`, with `pitch` `"N/12"` (N a whole number, 3
-to 12) or `"standard"`.
+to 12) or `"standard"`: the short form of `set_built {style, roofPitch}`,
+with stricter limits and its own words, kept as they were.
 
 * Only these library styles, all gable roofs: UT, SU, GU, C, SC, DSC, G, MU,
   MG, DK (`gableStyles` in `read` part `library`). Others are refused:
@@ -1242,8 +1314,9 @@ to 12) or `"standard"`.
 * The save is checked like the owner's own: How it's built's limits, then
   every size of that style (the every-size check, `server/office/
   built-check.js`); a problem the new pitch causes refuses the save in
-  words.
-* Every other change to how the buildings are built stays locked.
+  words, and what it finds that still builds is a warning.
+* Every other number of a style's own is `set_built`'s; every other change
+  to how the buildings are built stays locked.
 
 **Examples.** `edits.samples` in the fixtures has every edit with the
 change words it must give, the settings it must leave, and the refusals.
@@ -1281,6 +1354,16 @@ are for Alan to read before he says yes. In this order:
    building prices."
 8. Three or more styles stop selling: "This stops selling 3 building
    styles: Utility Shed, Loft Barn, Garage."
+9. What the every-size check of How it's built finds that still builds,
+   when a building style's own numbers change (`set_built`,
+   `set_roof_pitch`): "Utility Shed 12x20: even set as low as it goes, right
+   under the peak, the 18×24 Gable Window's trim runs into the roof. The
+   same at 12x24 and 12x16." (What it finds that doesn't build refuses the
+   change instead, 422 `problems`.)
+10. The sizes the every-size check had no time for (about 3 seconds):
+   "Not checked yet: 14 sizes of the Lofted Barn. To check the rest, tap
+   Open their price list and press Check every size in that building's How
+   it's built."
 
 Warnings 3 to 6 look only at styles and prices this change touches.
 Money and sizes are written as everywhere else ($5,540, 10×16). What counts
@@ -1303,7 +1386,7 @@ Barnwright save can never be anything an owner's save couldn't be.
 | `offer`, `categories`, `items`, `options`, `palettes`, `defaults`, `pricing`, `notes` | yes | yes |
 | `leads.fields`, `leads.askPlan`, `leads.smsConsent` | yes | yes |
 | `look`, `features`, `renames` | no edit reaches them | yes |
-| a building style's own How it's built numbers (`offer.<code>.built`) | yes, only through `set_roof_pitch` (its roof pitch), before live and while the switch is on | yes, every number its screen has |
+| a building style's own How it's built numbers (`offer.<code>.built`) | yes, through `set_built` (and its short form `set_roof_pitch`), before live and while the switch is on | yes, every number its screen has |
 | How it's built for the whole business (`built`) | never | never |
 | `construction` | never | never (no screen edits it) |
 | an extra that changes how the building is built: its construction effect (`options.extras[].construction`), its own How it's built numbers (`options.extras[].built`) and, for such an extra, the buildings it is offered on (`styles`) | never: no new one, no change, no removing an extra that has one | never, the same |
@@ -1333,8 +1416,9 @@ customer's 3D designer, so the logo must be a picture.
 
 **Building shape.** The only change to how a building is built that
 Barnwright can make is a building style's own numbers in How it's built
-(`offer.<code>.built`): at the door its roof pitch (`set_roof_pitch`),
-in the visit any number that style's "How it's built" boxes have. They are
+(`offer.<code>.built`): at the door through `set_built` (and its short
+form `set_roof_pitch`), in the visit any number that style's "How it's
+built" boxes have. They are
 checked exactly as the owner's are, after the lock: How it's built's own
 limits and words (`model/build-settings.js`), then every size of each
 style whose numbers changed (the every-size check); what they cause

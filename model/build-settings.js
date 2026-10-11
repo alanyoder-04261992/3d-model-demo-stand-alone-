@@ -49,6 +49,7 @@
      businessReach(settings, manufacturer, id, kind), roofKindOf(t),
      describeExtraBuilt(name, before, after),
      describeChanges(before, after, manufacturer, library), setBuilt(settings, edit),
+     checkStyleNumber(settings, manufacturer, key, id, input),
      liftRawRules(settings, manufacturer)
 
    A value is stored as a NUMBER in its knob's unit; screens and the connector
@@ -1102,7 +1103,22 @@ export function describeChanges(before, after, manufacturer, library) {
     } else if (!same(bb[id], ab[id]) && shownBiz(id, bb[id]) !== shownBiz(id, ab[id])) out.push(`Business-wide ${K.words}: ${shownBiz(id, bb[id])} → ${shownBiz(id, ab[id])}${moved(id, null)}`);
   }
   for (const k of keysOf(a.offer)) {
-    if (!isObj(b.offer) || !own(b.offer, k)) continue;           /* a new style says "Started selling" */
+    if (!isObj(b.offer) || !own(b.offer, k)) {
+      /* a new style says "Started selling"; a number of its own on it is
+         said too ("Tall Barn wall height: 7 ft 6 in of its own") */
+      const oa = isObj(a.offer[k]) && isObj(a.offer[k].built) ? a.offer[k].built : {};
+      const name = styleName(a, M, k);
+      for (const id of KNOB_IDS) {
+        if (oa[id] === undefined) continue;
+        const r = parse(id, oa[id], {});
+        if (id === "barnPeak" && isObj(r.value)) {
+          for (const w of Object.keys(r.value).map(Number).sort((x, y) => x - y)) out.push(`${name} ${KNOB[id].words} at ${w} ft wide: ${fmtIn(r.value[w])} of its own`);
+          continue;
+        }
+        out.push(`${name} ${KNOB[id].words}: ${r.value !== undefined ? format(id, r.value) : `"${String(oa[id]).slice(0, 40)}"`} of its own`);
+      }
+      continue;
+    }
     const ob = (isObj(b.offer[k]) && b.offer[k].built) || {}, oa = (isObj(a.offer[k]) && a.offer[k].built) || {};
     if (same(ob, oa)) continue;
     const name = styleName(a, M, k), base = a.offer[k].base != null ? a.offer[k].base : k, s = (M.styles || {})[base];
@@ -1225,6 +1241,26 @@ export function setBuilt(settings, { style, knob, value, roof } = {}) {
   if (r.problem) return { settings: S, problems: [{ path: at, words: r.problem }] };
   container[knob] = r.value;
   return { settings: S, problems: [] };
+}
+
+/* One number typed for one offered style, checked the way that style's own
+   How it's built box checks it (its roof, its sizes, its porch): -> {value}
+   or {problem} in words. A knob that doesn't apply to the style is a
+   problem ("The Utility Shed has no porch."). input null is "standard"
+   (take the style's own number out): only whether the knob applies is
+   checked, -> {value: null}. For the Barnwright door's set_built
+   (server/office/setup-edits.js), which then writes it with setBuilt. */
+export function checkStyleNumber(settings, manufacturer, key, id, input) {
+  const S = settings || {}, M = manufacturer || {};
+  const o = isObj(S.offer) ? S.offer[key] : null;
+  const s = isObj(o) ? (M.styles || {})[o.base != null ? o.base : key] : null;
+  if (!s) return { problem: "That building style is not sold." };
+  const K = KNOB[id];
+  if (!K) return { problem: `${JSON.stringify(String(id))} is not a building setting${dym(id)}` };
+  const name = styleName(S, M, key);
+  if (knobsFor(s).indexOf(id) < 0) return { problem: notApplying(id, name, s) };
+  if (input === null) return { value: null };
+  return checkFor(id, input, s, name, keysOf(o.sizes));
 }
 
 /* ------------------------------------------------------------------------ */

@@ -154,6 +154,10 @@ export const DOOR_WORDS = Object.freeze({
   accountOff: "Their Dealer Center can't save changes right now: its Barnwright account is off or hasn't checked in for 7 days. Reading still works.",
   error: "Something went wrong on their Dealer Center. Try again in a minute.",
 });
+/* The every-size check's "Not checked yet" line, at the door: Alan checks
+   the rest in their price list (the visit), on that building's own How it's
+   built. */
+export const CHECK_THE_REST = "To check the rest, tap Open their price list and press Check every size in that building's How it's built.";
 const DOOR_ACTIONS = ["status", "read", "check", "save", "undo"];
 const DOOR_MAX_BYTES = 64 * 1024;
 const CHANGE_LINES = 500;
@@ -851,10 +855,20 @@ export function createSetupAccess({
     const changes = describeChanges(current.settings, prepared.next, manufacturer, { contact: undo ? "hidden" : "new", library });
     if (lead && changes.length) changes.unshift(lead);
     return {
-      next: prepared.next, changes, warnings: warnings(current.settings, prepared.next, manufacturer),
+      next: prepared.next, changes, warnings: [...warnings(current.settings, prepared.next, manufacturer), ...sizeCheckWarnings(prepared.sizeCheck)],
       newCodes, edits, lead, sha: sha256Hex(JSON.stringify(prepared.next)),
       contact: ["phone", "email", "website"].some((k) => (current.settings.brand?.[k] || "") !== (prepared.next.brand?.[k] || "")),
     };
+  }
+
+  /* What the every-size check of How it's built (server/office/built-check.js)
+     found that doesn't stop the change, for Alan to read before he says yes:
+     what a building style's own numbers make worse that still builds, and
+     the sizes it had no time for (he checks those in their price list).
+     What would stop it has already refused it, in words (422 problems). */
+  function sizeCheckWarnings(sc) {
+    if (!sc) return [];
+    return [...(sc.warnings || []), ...(sc.unchecked || []).map((line) => line.replace(/ Press Check every size\.$/, ` ${CHECK_THE_REST}`))];
   }
 
   /* The edits a check or save carries: 1 to 300, or (version 0, before a

@@ -199,7 +199,16 @@ is one number, measured level, at every width.
   eave) must draw: 0 to 8 ft above the wall at 6 and 16 ft wide, knee and
   ridge inside the walls, an eave 0 to 2 ft out
   (`model/construction.js roofValueProblems`).
-* History: `describeChanges()` (per style and business-wide),
+* Barnwright's door (the Control Room, and Claude through it) writes a
+  building style's own numbers with the edit `set_built` (and its short
+  form `set_roof_pitch`; `server/office/setup-edits.js`, contract
+  `docs/OFFICE.md` "How it's built"): each part in a builder's words, only
+  the knobs that apply, checked with `checkStyleNumber()` (the style's own
+  box limits), written with `setBuilt()`, then the owner's own check and
+  the every-size check, whose warnings come back in the door's answer.
+* History: `describeChanges()` (per style and business-wide; a style
+  started in the same save says its own numbers, "Tall Loft Barn wall
+  height: 7 ft of its own"),
   `describeExtraBuilt()` ("Steep roof: roof pitch at least 7/12"), and
   "Wall upgrades priced by the square foot follow the new wall height: ..."
   when a wall height moves a per-square-foot wall price.
