@@ -284,7 +284,9 @@ export function builtSection(key, entry) {
       parts.push(porchLengthsField({ value: own.sidePorchLengths, fallback: Array.isArray(e?.value) ? e.value : null, caption: sourceWords(e), field: field(id), where: field(id), onSet: set(id) }));
     } else {
       const hint = id === "gableEndOverhang" && kind === "barn" ? `${HINTS[id]} ${BARN_END}` : HINTS[id];
-      parts.push(textBox({ id, kind, label: K.Words, value: own[id], placeholder: e?.words, caption: sourceWords(e), hint, field: field(id), where: field(id), onSet: set(id) }));
+      /* a barn's eave differs by width: the box says "1 3/4 to 2 1/8 in",
+         the line under it each width */
+      parts.push(textBox({ id, kind, label: K.Words, value: own[id], placeholder: e ? BUILT.shortWords(id, e.value) : "", caption: sourceWords(e), hint, field: field(id), where: field(id), onSet: set(id) }));
     }
   }
   const base = isObj(entry) && entry.base ? styleName(S.M, entry.base, S.draft.offer[entry.base]) : null;
@@ -411,7 +413,7 @@ function nowWords(id, keys, offer) {
   const list = [];
   for (const k of keys) {
     const e = BUILT.effective(cat, k).find((x) => x.id === id);
-    if (e && e.words) list.push({ name: styleName(S.M, k, offer[k]), words: e.words });
+    if (e && e.words) list.push({ name: styleName(S.M, k, offer[k]), words: BUILT.shortWords(id, e.value) || e.words });
   }
   const groups = BUILT.groupByWords(list);
   return groups.length ? `Built now: ${groups.map((g) => `${g.words} on the ${BUILT.namesWords(g.names)}`).join("; ")}.` : "";
@@ -565,9 +567,9 @@ export function builtLines(key) {
   const rows = [];
   for (const e of BUILT.effective(cat, key)) {
     if (!e.words) continue;
-    /* the barn roof height, one line for each width */
-    if (e.id === "barnPeak" && isObj(e.value)) {
-      for (const w of Object.keys(e.value).map(Number).sort((a, b) => a - b)) rows.push([`Barn roof height, ${w} ft wide`, inWords(e.value[w])]);
+    /* the barn roof height, and a barn's eave, one line for each width */
+    if (isObj(e.value) && (e.id === "barnPeak" || e.id === "eaveOverhang")) {
+      for (const w of Object.keys(e.value).map(Number).sort((a, b) => a - b)) rows.push([`${KNOB[e.id].Words}, ${w} ft wide`, BUILT.format(e.id === "barnPeak" ? "wallHeight" : e.id, e.value[w])]);
     } else rows.push([KNOB[e.id].Words, e.words]);
   }
   if (!rows.length) return null;

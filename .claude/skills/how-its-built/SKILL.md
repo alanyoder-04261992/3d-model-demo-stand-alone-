@@ -102,11 +102,21 @@ construction layer `t.construction` (plain values: `roof.shapes.gable.rise =
 each number came from; `effective(cat, key)` gives the screens every knob's
 number, its words and its source. A number no setting holds is read off the
 drawing's own numbers (`plainValue`): an eave given along the slope is said
-measured level on the roof it hangs from -- on the Dormer Shed its own main
-roof (`roof.dormerRise`), so it says 4 3/8 in on the 7/12 roof, not the plain
-gable's 4 7/16 in. A barn eave is still said from the library's lower slope
-(1 3/4 in), while the drawn one moves a little with the barn roof height
-(1 11/16 to 2 1/8 in with the shop's heights): not fixed yet.
+measured level on the slope that is drawn, at every width sold -- on the
+Dormer Shed its own main roof (`roof.dormerRise`), so it says 4 3/8 in on the
+7/12 roof, not the plain gable's 4 7/16 in; on a barn the lower slope
+changes with the barn roof height (and the Standard Barn's own shoulders),
+so the eave differs by width and is kept width by width
+(`{"8": 1.6957, "10": 1.9059, "12": 2.1151}` on the Metal Lofted Barn, whose
+roofing lies on purlins). `format()` says it "1 11/16 in at 8 ft wide,
+1 7/8 in at 10 ft wide and 2 1/8 in at 12 ft wide"; `shortWords()` says it
+"1 11/16 to 2 1/8 in" for the empty box and the business-wide card; a
+manager's read-only list has one line per width. History and the "cannot be
+read" warnings say the same: `apply(settings, manufacturer, library)` and
+`describeChanges(before, after, manufacturer, library)` read a style's
+numbers with its other How it's built numbers and the builder's library in
+(the library says a metal building's roofing lies on purlins). A typed eave
+is one number, measured level, at every width.
 
 ## Reading never fails; saving refuses only new problems
 
@@ -195,7 +205,9 @@ gable's 4 7/16 in. A barn eave is still said from the library's lower slope
   when a wall height moves a per-square-foot wall price.
 * Words: a pitch between quarters is said "about 6 1/2/12"; a door opening
   in inches ("76 1/2 in"); walls, barn heights and overhangs in feet and
-  inches ("7 ft 9 1/2 in", "4 ft 3 in", "4 in").
+  inches ("7 ft 9 1/2 in", "4 ft 3 in", "4 in"); an eave that differs by
+  width at each width ("1 3/4 in at 8 ft wide, 1 15/16 in at 10 ft wide
+  ...") or short ("1 3/4 to 2 1/8 in").
 
 ## Adding a knob
 
@@ -225,3 +237,6 @@ gable's 4 7/16 in. A barn eave is still said from the library's lower slope
   1280 and 390 wide.
 * `node tools/check-golden.mjs` -- with no settings, every building is
   Barnwright's triangle for triangle.
+* `node tools/check-shop-numbers.mjs` -- the shop numbers, and (part 5) that
+  the box, History and the warnings say the eave each style is drawn with,
+  width by width on a barn.

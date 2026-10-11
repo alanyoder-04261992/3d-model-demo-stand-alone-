@@ -311,7 +311,7 @@ export function prepare(draft) {
 
 /* ---- what changed, in words ---------------------------------------------------- */
 
-export function describe(before, after, M) {
+export function describe(before, after, M, L) {
   const out = [];
   const sName = (s, k) => styleName(M, k, s.offer?.[k]);
   const iName = (s, k) => ownName(s.items?.[k]) || M.items?.[k]?.name || "Door or window";
@@ -395,7 +395,7 @@ export function describe(before, after, M) {
   if (!same(od.colors, nd.colors)) out.push("Change the colors the 3D designer opens on");
 
   /* How it's built: "Lofted Barn wall height: 6 ft 8 in → 7 ft" */
-  out.push(...builtChanges(before, after, M));
+  out.push(...builtChanges(before, after, M, L));
 
   if (!out.length && canon(stripCats(before)) !== canon(stripCats(after))) out.push("Tidy the price list");
   return [...new Set(out)];

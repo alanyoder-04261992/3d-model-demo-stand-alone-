@@ -153,7 +153,9 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   height, wooden shop door height, and where the style has them, porch
   depth, side porch lengths (chips) and dormer side (chips). Each empty box
   shows the number the style is built with and where it comes from
-  ("Standard: 7 ft 9 1/2 in", "Built like the Utility Shed: 6/12"). A style of
+  ("Standard: 7 ft 9 1/2 in", "Built like the Utility Shed: 6/12"); a barn's
+  eave, which differs by width, is said short in the box ("1 3/4 to
+  2 1/8 in") and at each width under it. A style of
   the business's own follows the style it is built like, unless it has a
   number of its own.
 * **For the whole business** ("How your buildings are built", at the end

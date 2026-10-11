@@ -214,7 +214,7 @@ finished designer retains the golden geometry.
     | Dog Kennel, Garden Utility | eave | about 4 7/16 in | 4 in, measured level | the same utility eave |
     | Dormer Shed | main roof | about 7 1/4/12 (7.2/12) | 7/12 (eave, walls and dormer as they were) | utility-framing skill: Alan's steep pitch |
     | Lofted Barn, Side Lofted Barn, Metal Lofted Barn | wall | 6 ft 8 1/16 in (80.04 in) | 6 ft 7 1/2 in | 75 in studs + three 1 1/2 in plates (derived) |
-    | Lofted Barn, Side Lofted Barn, Metal Lofted Barn, Lofted Barn Garage | barn roof height at 8, 10, 12 ft wide, to the top of the trusses | 3 ft 6 3/4 in, 4 ft 5 1/2 in, 5 ft 4 5/16 in (the Metal Lofted Barn 3 ft 5 5/8 in, 4 ft 4 7/16 in, 5 ft 3 3/16 in; the Lofted Barn Garage is sold 12 ft wide only) | 3 ft 7 3/4 in, 4 ft, 4 ft 3 in (the Lofted Barn Garage on its own 6 ft 10 13/16 in walls) | shed-measurements skill: loft truss peaks |
+    | Lofted Barn, Side Lofted Barn, Metal Lofted Barn, Lofted Barn Garage | barn roof height at 8, 10, 12 ft wide, to the top of the trusses | 3 ft 6 3/4 in, 4 ft 5 9/16 in, 5 ft 4 5/16 in (the Metal Lofted Barn 3 ft 5 5/8 in, 4 ft 4 7/16 in, 5 ft 3 3/16 in; the Lofted Barn Garage is sold 12 ft wide only) | 3 ft 7 3/4 in, 4 ft, 4 ft 3 in (the Lofted Barn Garage on its own 6 ft 10 13/16 in walls) | shed-measurements skill: loft truss peaks |
 
     What "match" means and does not: the peak heights and wall heights match
     his shop. A barn roof's height is measured where he measured it, from
@@ -226,7 +226,8 @@ finished designer retains the golden geometry.
     about 38 5/8 in long against his 34 in piece), and the barn eave moves a
     little with the lower slope (1 3/4 in out before; now 1 11/16 to
     1 3/4 in at 8 ft wide, 1 7/8 to 1 15/16 in at 10 ft and 2 1/8 in at
-    12 ft). The utility eave is 4 in
+    12 ft, measured level; the Dealer Center's How it's built box says it
+    width by width). The utility eave is 4 in
     out but drawn sloping, not his level 2 in end. The Dormer Shed keeps its
     eave board, which on the 7/12 roof reaches 4 3/8 in out, measured level
     (4 5/16 in before); its dormer front stays 1 ft 11 3/8 in at 10 and
@@ -235,7 +236,9 @@ finished designer retains the golden geometry.
     (the every-size check shows it as a warning, never a fault). A 14 ft
     wide lofted barn, and every other width he did not give, keeps the
     library shape, held so a wider barn is never lower (Alan: the 14 ft
-    barns keep today's height). The Metal Garage ("not metal garage"), the
+    barns keep today's height). Its walls are the shop's 6 ft 7 1/2 in like
+    the other widths, so a 14 ft Lofted Barn stands 9/16 in lower overall
+    than Barnwright's. The Metal Garage ("not metal garage"), the
     Metal Utility (not picked) and the other 11 styles (the cabins, Standard
     Barn, cottages, Backyard Utility and Single Slope) keep Barnwright's
     numbers until Alan says yes; a yes is one built block, no code. A

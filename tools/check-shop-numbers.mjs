@@ -58,9 +58,21 @@
          one of their own with "Roof pitch at least";
       d. a business-wide roof pitch still leaves the Dormer Shed's main roof
          alone: it stays at the shop's 7/12.
+   5. What the screens and Alan's papers say is what is drawn:
+      a. the Dealer Center's How it's built box says the eave each style is
+         drawn with, measured level: a barn's eave width by width, since
+         its lower slope changes with the barn roof height (the Metal Lofted
+         Barn 1 11/16 in at 8 ft wide, 1 7/8 in at 10 ft and 2 1/8 in at
+         12 ft); History and the warnings say the same;
+      b. docs/DIFFERENCES.md #26 gives the barn heights and walls the
+         drawing has (Barnwright's 10 ft Lofted Barn is 4 ft 5 9/16 in);
+      c. docs/FOR-ALAN.md says how much lower overall a 14 ft lofted barn
+         stands (its roof keeps today's height, its walls are the shop's),
+         and asks no question Alan answered on Oct 11 2026 (the 14 ft Garage
+         at 5/12 was in the proposal he said yes to).
    Prints PROVED with the counts, or FAIL with what moved. */
 
-import { writeFileSync, mkdirSync } from "node:fs";
+import { writeFileSync, mkdirSync, readFileSync } from "node:fs";
 import { resolve as resolvePath, dirname } from "node:path";
 import { createHash } from "node:crypto";
 import { ROOT, readJSON } from "./lib/load.mjs";
@@ -351,6 +363,97 @@ console.log(`4b. A gable window too tall for the gable is not offered there: ${g
   ok("a business-wide 6/12 for gable roofs: the Utility Shed and Garage 6/12, the Dormer Shed still 7/12", near(pitchOf("UT", "10x16"), 6) && near(pitchOf("G", "12x24"), 6) && near(pitchOf("DS", "10x16"), 7), JSON.stringify([pitchOf("UT", "10x16"), pitchOf("G", "12x24"), pitchOf("DS", "10x16")]));
 }
 console.log("4. The 14 ft lofted barns keep today's height; no sample price list has the Steep roof and an owner can still make one; a business-wide pitch leaves the Dormer Shed at 7/12.");
+
+/* 5. What the screens and Alan's papers say is what is drawn (round 2
+      review, Oct 11 2026) */
+const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
+const ftIn = (inches) => BUILT.format("wallHeight", Math.round(inches * 16) / 16);
+const and = (list) => (list.length < 2 ? list.join("") : list.slice(0, -1).join(", ") + " and " + list[list.length - 1]);
+/* the eave a style is drawn with at each width it is sold in, measured
+   level, in a builder's words: { 8: "1 11/16 in", ... } */
+function drawnEaves(key, measuredAt) {
+  const out = {};
+  for (const z of Object.keys(now.styles[key].sizes)) {
+    const m = measuredAt(key, z);
+    out[width(z)] = BUILT.format("eaveOverhang", Math.round(m.eaveRightIn * 16) / 16);
+  }
+  return out;
+}
+/* "1 3/4 in at 8 ft wide, 1 15/16 in at 10 ft wide and 2 1/8 in at 12 ft
+   wide", or the one number when every width has it */
+function eaveWords(byW) {
+  const ws = Object.keys(byW).map(Number).sort((a, b) => a - b);
+  return new Set(ws.map((w) => byW[w])).size === 1 ? byW[ws[0]] : and(ws.map((w) => `${byW[w]} at ${w} ft wide`));
+}
+let eaveStyles = 0;
+/* a. the How it's built box says the eave each style is drawn with */
+{
+  for (const [label, CAT, at] of [["shop standard", SHOP, (k, z) => now.styles[k].sizes[z]], ["Barnwright", BW, (k, z) => bwOf[k + " " + z]]]) {
+    for (const key of Object.keys(CAT.TYPES)) {
+      const eff = BUILT.effective(CAT, key).find((e) => e.id === "eaveOverhang");
+      if (!eff) continue;
+      const byW = drawnEaves(key, at), words = eaveWords(byW), ws = Object.keys(byW);
+      const byWidth = new Set(Object.values(byW)).size > 1;
+      eaveStyles++;
+      ok(`${label} ${now.styles[key].name}: How it's built says the eave it is drawn with (${words})`,
+        eff.words === words && (byWidth ? isObj(eff.value) && ws.every((w) => BUILT.format("eaveOverhang", eff.value[w]) === byW[w]) : typeof eff.value === "number"),
+        `says ${JSON.stringify(eff.words)} (${JSON.stringify(eff.value)})`);
+    }
+  }
+  /* the business-wide card and the empty box say it short: from the
+     narrowest reach to the widest */
+  const lb = BUILT.effective(SHOP, "LB").find((e) => e.id === "eaveOverhang");
+  ok(`Lofted Barn: the empty eave box says "1 3/4 to 2 1/8 in" (${BUILT.shortWords ? BUILT.shortWords("eaveOverhang", lb.value) : "no shortWords"})`, !!BUILT.shortWords && BUILT.shortWords("eaveOverhang", lb.value) === "1 3/4 to 2 1/8 in");
+  /* History and the warnings say the eave it was built with too */
+  const SM2 = standardManufacturer();
+  const before = demoCompany(), after = demoCompany();
+  for (const k of ["LB", "MLB"]) after.offer[k].built = Object.assign({}, after.offer[k].built, { eaveOverhang: 2 });
+  const lines = BUILT.describeChanges(before, after, SM2, LIB);
+  for (const [k, name] of [["LB", "Lofted Barn"], ["MLB", "Metal Lofted Barn"]]) {
+    const was = eaveWords(drawnEaves(k, (key, z) => now.styles[key].sizes[z]));
+    ok(`History: "${name} eave overhang: ${was} → 2 in"`, lines.includes(`${name} eave overhang: ${was} → 2 in`), JSON.stringify(lines));
+  }
+  const typo = demoCompany(); typo.offer.MLB.built = Object.assign({}, typo.offer.MLB.built, { eaveOverhang: "two" });
+  const mlbWas = eaveWords(drawnEaves("MLB", (k, z) => now.styles[k].sizes[z]));
+  const warn = resolveCompany(typo, SM2, LIB).settingsWarnings || [];
+  ok(`a typo in the Metal Lofted Barn's eave box says it is built at ${mlbWas} until it is fixed`, warn.some((w) => w.startsWith("Metal Lofted Barn: ") && w.endsWith(`it is built at ${mlbWas} (the standard).`)), JSON.stringify(warn));
+}
+/* b. DIFFERENCES #26 gives the barn heights and walls that are drawn */
+{
+  const diff = readFileSync(resolvePath(ROOT, "docs/DIFFERENCES.md"), "utf8");
+  const row = diff.split("\n").find((l) => /^\s*\| Lofted Barn, Side Lofted Barn, Metal Lofted Barn, Lofted Barn Garage \| barn roof height at 8, 10, 12 ft wide/.test(l));
+  const cells = row ? row.split("|").map((c) => c.trim()) : [];
+  const peaks = (rows, k) => [8, 10, 12].map((w) => { const z = Object.keys(now.styles[k].sizes).find((x) => width(x) === w); return ftIn(rows(k, z).trussPeakIn); }).join(", ");
+  const bwLB = peaks((k, z) => bwOf[k + " " + z], "LB"), bwMLB = peaks((k, z) => bwOf[k + " " + z], "MLB"), shopLB = peaks((k, z) => now.styles[k].sizes[z], "LB");
+  ok(`DIFFERENCES #26: Barnwright's Lofted Barn and Side Lofted Barn are ${bwLB} tall at 8, 10 and 12 ft wide`, !!row && cells[3].startsWith(bwLB + " ") && peaks((k, z) => bwOf[k + " " + z], "SLB") === bwLB, cells[3]);
+  ok(`DIFFERENCES #26: Barnwright's Metal Lofted Barn is ${bwMLB}`, !!row && cells[3].includes(`the Metal Lofted Barn ${bwMLB};`), cells[3]);
+  ok(`DIFFERENCES #26: now ${shopLB}, the Lofted Barn Garage on its own ${ftIn(now.styles.LBG.sizes["12x24"].wallIn)} walls`, !!row && cells[4].startsWith(shopLB + " ") && cells[4].includes(`on its own ${ftIn(now.styles.LBG.sizes["12x24"].wallIn)} walls`), cells[4]);
+  const wallRow = diff.split("\n").find((l) => /^\s*\| Lofted Barn, Side Lofted Barn, Metal Lofted Barn \| wall \|/.test(l));
+  ok(`DIFFERENCES #26: their walls ${ftIn(bwOf["LB 10x16"].wallIn)} before, ${ftIn(now.styles.LB.sizes["10x16"].wallIn)} now`, !!wallRow && wallRow.includes(`| ${ftIn(bwOf["LB 10x16"].wallIn)} (`) && wallRow.includes(`| ${ftIn(now.styles.LB.sizes["10x16"].wallIn)} |`), wallRow);
+}
+/* c. FOR-ALAN: the 14 ft lofted barns, and no question asked twice */
+{
+  const forAlan = readFileSync(resolvePath(ROOT, "docs/FOR-ALAN.md"), "utf8");
+  const BARNS = ["LB", "SLB", "MLB", "LBG"];
+  const add14 = (c) => { for (const k of BARNS) if (c.offer[k] && !Object.keys(c.offer[k].sizes).some((z) => width(z) === 14)) c.offer[k].sizes["14x24"] = 9999; };
+  const s14 = shopStandardCatalogue(add14), b14 = barnwrightCatalogue(add14);
+  const lower = {};
+  for (const k of BARNS) {
+    const z = Object.keys(s14.P[k]).find((x) => width(x) === 14);
+    const a = measures(s14, k, z).out, b = measures(b14, k, z).out;
+    lower[k] = (b.wallIn + b.trussPeakIn) - (a.wallIn + a.trussPeakIn);
+    const wantLower = SHOP_NUMBERS[k].wall != null ? b.wallIn - SHOP_NUMBERS[k].wall : 0;
+    ok(`${s14.TYPES[k].name} ${z}: overall ${lower[k] ? ftIn(lower[k]) + " lower than today (its walls are the shop's, its roof today's)" : "as tall as today"}`, Math.abs(lower[k] - wantLower) < 1e-9, `${lower[k]} against ${wantLower}`);
+  }
+  const para = (forAlan.split(/\n(?=\* )/).find((p) => p.startsWith("* **14 ft wide lofted barns keep today's")) || "").replace(/\s+/g, " ");
+  ok(`FOR-ALAN: the 14 ft lofted barns keep today's roof height, and with ${ftIn(SHOP_NUMBERS.LB.wall)} walls stand ${ftIn(lower.LB)} lower overall`, para.includes(`${ftIn(SHOP_NUMBERS.LB.wall)}`) && para.includes(`${ftIn(lower.LB)} lower overall`), para);
+  /* the questions still open: none about a style Alan answered on Oct 11 */
+  const open = forAlan.split("### Your shop numbers: what we still need from you")[1] || "";
+  const items = (open.split(/\n### /)[0].match(/\n\d+\. \*\*[^*]+\*\*/g) || []).map((x) => x.trim());
+  const ANSWERED = [["Garage", /(?<!Metal |Barn )\bGarages?\b/], ["Dog Kennel", /\bDog Kennels?\b/], ["Garden Utility", /\bGarden Utilit/], ["Dormer Shed", /\bDormer Sheds?\b/], ["Metal Lofted Barn", /\bMetal Lofted Barns?\b/], ["Lofted Barn Garage", /\bLofted Barn Garages?\b/], ["Metal Garage", /\bMetal Garages?\b/]];
+  ok(`FOR-ALAN: ${items.length} open questions, none about a style Alan answered on Oct 11 (the Garage he said yes to at 14 ft wide too)`, items.length > 0 && items.every((q) => ANSWERED.every(([, re]) => !re.test(q))), items.filter((q) => ANSWERED.some(([, re]) => re.test(q))).join(" / "));
+}
+console.log(`5. What the screens and papers say is what is drawn: the eave on ${eaveStyles} styles (a barn's width by width), DIFFERENCES #26's barn heights, FOR-ALAN's 14 ft barns and its open questions.`);
 
 const secs = ((performance.now() - T0) / 1000).toFixed(1);
 if (failures.length) {

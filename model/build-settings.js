@@ -42,12 +42,13 @@
 
    Exports:
      KNOBS, KNOB_PATHS, knobsFor(t), parse(id, input, ctx), format(id, value),
+     shortWords(id, value),
      problems(settings, manufacturer), libraryProblems(manufacturer),
-     apply(settings, manufacturer), optionEffectFor(built, t),
+     apply(settings, manufacturer, library), optionEffectFor(built, t),
      extraProblems(built, at), effective(cat, key),
      businessReach(settings, manufacturer, id, kind), roofKindOf(t),
      describeExtraBuilt(name, before, after),
-     describeChanges(before, after, manufacturer), setBuilt(settings, edit),
+     describeChanges(before, after, manufacturer, library), setBuilt(settings, edit),
      liftRawRules(settings, manufacturer)
 
    A value is stored as a NUMBER in its knob's unit; screens and the connector
@@ -57,7 +58,7 @@
    roof, ...". */
 
 import { closest, resolveConstruction, buildingFacts } from "./construction.js";
-import { DEFAULT_ROOF, lengthOf, barnTrussPeakFt } from "./roof-shapes.js";
+import { DEFAULT_ROOF, lengthOf, barnTrussPeakFt, roofProfile, roofShape } from "./roof-shapes.js";
 import { SIDE_WALL_MIN_FT, SIDE_PORCH_LENGTHS } from "./frame.js";
 
 const lengthOfFt = (v, W) => lengthOf(v, W);
@@ -350,13 +351,33 @@ export function format(id, value) {
   if (!K || value == null) return "";
   switch (K.unit) {
     case "pitch": return fmtPitch(+value);
-    case "in": return id === "doorHeight" ? fmtInOnly(+value) : fmtIn(+value);
+    /* an eave that differs by width (a barn's): "1 3/4 in at 8 ft wide,
+       1 15/16 in at 10 ft wide and 2 1/8 in at 12 ft wide" */
+    case "in": return isObj(value) ? byWidthIn(value) : id === "doorHeight" ? fmtInOnly(+value) : fmtIn(+value);
     case "ft": return fmtFt(+value);
     case "byWidth": return Object.keys(value).map(Number).sort((a, b) => a - b).map((w) => `${w} ft wide: ${fmtIn(value[w])}`).join(", ");
     case "ftList": return joinWords(value.map((n) => `${n} ft`));
     case "side": return value === "back" ? "back side" : "door side";
   }
   return String(value);
+}
+
+function widthKeys(value) { return keysOf(value).map(Number).filter((w) => w > 0).sort((a, b) => a - b); }
+function byWidthIn(value) {
+  const ws = widthKeys(value), words = ws.map((w) => fmtIn(value[w]));
+  return new Set(words).size === 1 ? words[0] : joinWords(ws.map((w, i) => `${words[i]} at ${w} ft wide`));
+}
+/* A number said short, for an empty box and the business-wide card: one
+   that differs by width from the least to the most ("1 3/4 to 2 1/8 in"),
+   anything else as format() says it. */
+export function shortWords(id, value) {
+  const K = KNOB[id];
+  if (!K || K.unit !== "in" || !isObj(value)) return format(id, value);
+  const vs = widthKeys(value).map((w) => +value[w]);
+  if (!vs.length) return "";
+  const lo = fmtIn(Math.min(...vs)), hi = fmtIn(Math.max(...vs));
+  if (lo === hi) return lo;
+  return / in$/.test(lo) && !/ ft/.test(lo) ? `${lo.slice(0, -3)} to ${hi}` : `${lo} to ${hi}`;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -684,7 +705,7 @@ function mapKnob(id, v, t, res) {
    number came from. A bad value is skipped -- the next layer is used -- and
    said in warnings (the owner sees them; the designer and quotes never fail
    on them). -> { styles: {KEY: {traits, drop, construction, built}}, warnings } */
-export function apply(settings, manufacturer) {
+export function apply(settings, manufacturer, library) {
   const S = settings || {}, M = manufacturer || {}, styles = M.styles || {};
   const out = { styles: {}, warnings: [] };
   const offer = isObj(S.offer) ? S.offer : {};
@@ -719,7 +740,9 @@ export function apply(settings, manufacturer) {
         const b = res.built[id];
         let used = b && b.value !== undefined ? format(id, b.value) : "";
         if (!used && !(b && b.feature)) {
-          const v = plainValue(id, s, mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {}), keysOf(o.sizes));
+          /* with this style's other numbers (its barn roof heights move
+             the slope its eave is measured on) */
+          const v = plainValue(id, s, mergeTwo(mergeTwo(mergeTwo(baseOf(library), M.construction || {}), S.construction || {}), res.construction), keysOf(o.sizes));
           used = v !== undefined ? format(id, v) : "";
         }
         const from = !b || b.from === "standard" || b.from === "library" ? "the standard"
@@ -812,12 +835,24 @@ function plainValue(id, t, merged, sizes) {
         const sh = Object.assign({}, roofOf(t.roof), t.roof === "gambrel" ? t.gambrel || {} : {});
         const eo = settle(sh.eaveOverhang) || {}, e = settle(eo.right);
         if (e && typeof e === "object" && e.flatIn != null) return e.flatIn;
-        /* a dormer style's main roof has its own rise (roof.dormerRise):
-           its eave is measured on that slope, as it is drawn */
-        const gableRise = t.dormer ? (merged.roof && merged.roof.dormerRise) || DEFAULT_ROOF.dormerRise : sh.rise;
-        const rL = t.roof === "gambrel" ? lengthOfFt(settle(sh.lowerRise), W0) : lengthOfFt(settle(gableRise), W0);
-        const run = t.roof === "gambrel" ? W0 / 2 - lengthOfFt(settle(sh.knee), W0) : W0 / 2;
-        return r4(lengthOfFt(e, W0) * 12 * run / Math.hypot(run, rL));
+        /* an eave given along the slope, measured level on the slope that is
+           drawn at each width sold (round 2 review): a barn's lower slope
+           changes with its height (the shop's barn roof heights, the
+           Standard Barn's own shoulders), and a dormer style's main roof has
+           its own rise (roof.dormerRise). One number when every width has
+           the same to the 1/16 in; else the reach width by width
+           ({"8": 1.6957, "10": 1.9059, "12": 2.1151}, the Metal Lofted
+           Barn). */
+        const value = {};
+        for (const W of widthsOf(sizes)) {
+          const c = settledAt(merged, W, t);
+          const P = roofProfile(W, 0, t, c), a = P[P.length - 2], b = P[P.length - 1];
+          const run = b[0] - a[0], rise = a[1] - b[1];
+          const ev = settle((roofShape(t, c).eaveOverhang || {}).right);
+          value[W] = r4(isObj(ev) && ev.flatIn != null ? ev.flatIn : lengthOfFt(ev, W) * 12 * run / Math.hypot(run, rise));
+        }
+        const ws = Object.keys(value);
+        return new Set(ws.map((w) => Math.round(value[w] * 16))).size === 1 ? value[ws[0]] : value;
       }
       case "gableEndOverhang": {
         const sh = roofOf(t.roof);
@@ -834,6 +869,20 @@ function plainValue(id, t, merged, sizes) {
     }
   } catch (e) { return undefined; }
   return undefined;
+}
+/* What a style's numbers are read against: the builder's library
+   (library/construction.json) when it is given -- it says a metal building's
+   roofing lies on purlins, which sets how high a barn roof's line stands
+   over its trusses and so the slope its eave is measured on -- else
+   Barnwright's roof numbers alone. */
+function baseOf(library) {
+  return isObj(library) ? mergeTwo({ roof: DEFAULT_ROOF }, library) : { roof: DEFAULT_ROOF };
+}
+/* The widths a list of sizes is sold in ("10x16" -> 10), or 10 ft wide
+   when there are none. */
+function widthsOf(sizes) {
+  const ws = [...new Set(sizes.map((z) => +String(z).split("x")[0]).filter((w) => w > 0))];
+  return ws.length ? ws : [10];
 }
 /* The construction settled for a building this wide (rule lists picked). */
 function settledAt(merged, W, t) {
@@ -988,7 +1037,7 @@ export function roofKindOf(t) { return kindOf(t); }
 /* -> ["Lofted Barn wall height: 6 ft 8 in → 7 ft", "Business-wide roof pitch
    for gable roofs: standard → 6/12"]. Raw rule lists moved by liftRawRules
    are compared after the move, so they say nothing. */
-export function describeChanges(before, after, manufacturer) {
+export function describeChanges(before, after, manufacturer, library) {
   const out = [];
   const M = manufacturer || {};
   const b = liftRawRules(before || {}, M).settings, a = liftRawRules(after || {}, M).settings;
@@ -998,14 +1047,17 @@ export function describeChanges(before, after, manufacturer) {
     const r = parse(id, v, {});
     return r.value !== undefined ? format(id, r.value) : String(v);
   };
-  const ea = apply(b, M).styles, eb = apply(a, M).styles;
+  const ea = apply(b, M, library).styles, eb = apply(a, M, library).styles;
+  /* a style's construction with its How it's built numbers in: an eave is
+     measured on the slope its barn roof height gives it */
+  const styleConstruction = (S, E, k) => mergeTwo(mergeTwo(mergeTwo(baseOf(library), M.construction || {}), S.construction || {}), (E[k] && E[k].construction) || {});
   /* what a style is built with, in words: its number, or the library's */
   const builtWords = (S, E, k, id) => {
     const e = E[k] && E[k].built[id];
     if (e && e.value !== undefined) return format(id, e.value);
     const o = isObj(S.offer) ? S.offer[k] : null, t = o && (M.styles || {})[o.base != null ? o.base : k];
     if (!t) return "";
-    const v = plainValue(id, t, mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {}), keysOf(o.sizes));
+    const v = plainValue(id, t, styleConstruction(S, E, k), keysOf(o.sizes));
     return v !== undefined ? format(id, v) : "";
   };
   const soldWidths = (S1, S2, k) => {
@@ -1014,7 +1066,7 @@ export function describeChanges(before, after, manufacturer) {
   };
   /* a barn's height at width W as drawn: the trusses' peak */
   const drawnBarnWords = (S, E, k, t, W) => {
-    const merged = mergeTwo(mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {}), (E[k] && E[k].construction) || {});
+    const merged = styleConstruction(S, E, k);
     try { return fmtIn(barnTrussPeakFt(W, t, settledAt(merged, W, t)) * 12); } catch (e) { return null; }
   };
   /* the styles a business-wide number moved, before → after (review W4):
@@ -1060,7 +1112,7 @@ export function describeChanges(before, after, manufacturer) {
       const typed = isObj(S.offer[k]) && isObj(S.offer[k].built) ? S.offer[k].built[id] : undefined;
       if (typed !== undefined && !(e && e.from === "this style")) return typeof typed === "string" ? `"${typed}"` : shownRaw(id, typed);
       if (e && e.value !== undefined) return format(id, e.value);
-      const v = s ? plainValue(id, s, mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {}), keysOf(S.offer[k] && S.offer[k].sizes)) : undefined;
+      const v = s ? plainValue(id, s, styleConstruction(S, E, k), keysOf(S.offer[k] && S.offer[k].sizes)) : undefined;
       return v !== undefined ? format(id, v) : "standard";
     };
     for (const id of KNOB_IDS) {

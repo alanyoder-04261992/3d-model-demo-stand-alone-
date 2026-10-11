@@ -506,7 +506,7 @@ the details):
 |---|---|---|
 | `roofPitch` (gable, lean-to, single slope) | rise per 12 (5 = 5/12) | `roof.shapes.<shape>.rise = {"w": p/24}`; the Dormer Shed's `roof.dormerRise` |
 | `barnPeak` (barn roofs) | inches above the wall top, by width `{"10": 48}` | `roof.shapes.gambrel.peakIn`; an unlisted width is held between its neighbours |
-| `eaveOverhang` | inches, measured level from the wall | `roof.shapes.<shape>.eaveOverhang = {"flatIn": n}` |
+| `eaveOverhang` | inches, measured level from the wall | `roof.shapes.<shape>.eaveOverhang = {"flatIn": n}`; with none set, the screens say the eave measured level on the slope drawn at each width (a barn's differs by width) |
 | `gableEndOverhang` | inches | `rakeOverhang` (feet) on gable roofs, `roof.shapes.gambrel.endOverhang` on barns |
 | `wallHeight` | inches | the style's `wallH` trait (never business-wide) |
 | `doorHeight` | inches | `openings.doorHeightIn` |

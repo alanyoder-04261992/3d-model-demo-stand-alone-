@@ -29,8 +29,9 @@
      5. when the price list opens, a style whose own numbers no longer fit
         (the standard changed under them) shows a yellow note with the words;
      6. a manager sees the numbers read only, never a box, with the barn
-        height at every width sold; typing one barn width keeps the other
-        widths' numbers (the empty boxes say them, and they are drawn);
+        height and the eave at every width sold; typing one barn width
+        keeps the other widths' numbers (the empty boxes say them, and they
+        are drawn); the empty eave box says "1 3/4 to 2 1/8 in";
      7. the "try it" demo (/dealer?demo) shows the same screens and saves a
         wall height with its in-page copy of the server.
    Pictures: test/out/how-its-built/. --keep leaves the server running. */
@@ -283,6 +284,9 @@ try {
     ok(`${width} wide: the Lofted Barn's numbers show, with its own 7 ft wall`, /Wall height\s*7 ft/.test(lines) && /Barn roof height, 10 ft wide\s*4 ft(?!\s*\d)/.test(lines), lines.slice(0, 200));
     /* every width sold, the 14 ft one too (review W6) */
     ok(`${width} wide: ... and the barn height at 14 ft wide, which it is sold in (6 ft 3 1/8 in)`, /Barn roof height, 14 ft wide\s*6 ft 3 1\/8 in/.test(lines), lines.slice(0, 400));
+    /* the eave as drawn at each width: the lower slope changes with the
+       barn roof height (round 2 review) */
+    ok(`${width} wide: ... and the eave at each width (1 3/4 in at 8 ft wide, 1 15/16 in at 10 ft, 2 1/8 in at 12 ft)`, /Eave overhang, 8 ft wide\s*1 3\/4 in/.test(lines) && /Eave overhang, 10 ft wide\s*1 15\/16 in/.test(lines) && /Eave overhang, 12 ft wide\s*2 1\/8 in/.test(lines), lines.slice(0, 600));
     ok(`${width} wide: no sideways scrolling`, (await sideways(p)) <= 0);
     const small = await smallTaps(p, ".pl-built-ro");
     ok(`${width} wide: the "How it's built" line is at least 44 px tall`, small.length === 0, small.join("; "));
@@ -302,6 +306,10 @@ try {
     const ph = async (w) => p.getAttribute(`[data-field="built:LB:barnPeak${w === 8 ? "" : ":" + w}"]`, "placeholder");
     ok(`the empty barn boxes say what each width is built at (${[await ph(8), await ph(10), await ph(12), await ph(14)].join(", ")})`,
       (await ph(8)) === "3 ft 7 3/4 in" && (await ph(10)) === "4 ft" && (await ph(12)) === "4 ft 3 in" && (await ph(14)) === "6 ft 3 1/8 in");
+    /* the empty eave box says it short, the line under it width by width */
+    const eavePh = await p.getAttribute('[data-field="built:LB:eaveOverhang"]', "placeholder");
+    const eaveFrom = await p.locator('[data-field="built:LB:eaveOverhang"]').locator("xpath=..").locator(".pl-built-from").textContent();
+    ok(`the empty eave box says "1 3/4 to 2 1/8 in" and under it each width ("${eaveFrom}")`, eavePh === "1 3/4 to 2 1/8 in" && eaveFrom === "Standard: 1 3/4 in at 8 ft wide, 1 15/16 in at 10 ft wide, 2 1/8 in at 12 ft wide and 1 3/4 in at 14 ft wide", `${eavePh} | ${eaveFrom}`);
     await typeIn(p, "built:LB:barnPeak:10", "4 ft 2 in");
     ok("typing 4 ft 2 in for 10 ft wide leaves the 8 and 12 ft boxes saying the standard's", (await ph(8)) === "3 ft 7 3/4 in" && (await ph(12)) === "4 ft 3 in" && (await msgText(p, "built:LB:barnPeak")) === "");
     await p.click(".pl-bar .btn-accent");

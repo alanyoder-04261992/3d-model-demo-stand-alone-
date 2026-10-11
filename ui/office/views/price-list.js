@@ -78,7 +78,7 @@ function recompute() {
   const ready = prepare(S.draft);
   S.problems = problemsOf(ready, S.M, S.saved.settings);
   S.locks = lockedItems(ready, S.M);
-  S.changes = describe(S.saved.settings, ready, S.M);
+  S.changes = describe(S.saved.settings, ready, S.M, S.L);
   return notes;
 }
 

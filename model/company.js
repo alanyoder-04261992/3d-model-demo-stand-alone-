@@ -803,7 +803,7 @@ export function resolve(company, manufacturer, library) {
      How it's built (the drawn roof is the same either way) */
   const c = BUILT.liftRawRules(company, manufacturer).settings, m = manufacturer, mO = m.options || {}, O = c.options || {};
   /* How it's built: each offered style's own numbers (model/build-settings.js) */
-  const built = BUILT.apply(c, m);
+  const built = BUILT.apply(c, m, library);
   const COLORS = {
     paint: resolvePalette(c.palettes && c.palettes.paint, m, "paint"),
     trim: resolvePalette(c.palettes && c.palettes.trim, m, "trim"),

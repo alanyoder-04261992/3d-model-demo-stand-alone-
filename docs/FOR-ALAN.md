@@ -143,7 +143,9 @@ On October 11, after the pictures, you said yes to six more styles.
 * **Lofted Barn Garage:** the same barn roof heights (4 ft 3 in on the
   12 ft wide ones it is sold in), on its own walls as they were.
 * **14 ft wide lofted barns keep today's height**, about 6 ft 3 in to the
-  top of the trusses, as you said.
+  top of the trusses, as you said. Their walls are 6 ft 7 1/2 in like the
+  other widths, so a 14 ft Lofted Barn stands 9/16 in lower overall than
+  before.
 * **Everything else is as it was:** the Metal Garage (you said "not metal
   garage"), the Metal Utility, the cabins, the Standard Barn, the cottages,
   the Backyard Utility and the Single Slope.
@@ -550,11 +552,11 @@ loft). Any company can build differently in its own settings.
 ### Your shop numbers: what we still need from you
 
 Each one has an answer we used until you say otherwise. Answered on
-October 11: the Garage, Dog Kennel, Garden Utility, Dormer Shed, Metal
-Lofted Barn and Lofted Barn Garage (yes, as in the pictures), the Metal
-Garage (no), the 14 ft lofted barns (keep today's height), the gable window
-(not offered where it does not fit) and the Steep roof (out of the sample
-price list).
+October 11: the Garage (12 and 14 ft wide), Dog Kennel, Garden Utility,
+Dormer Shed, Metal Lofted Barn and Lofted Barn Garage (yes, as in the
+pictures), the Metal Garage (no), the 14 ft lofted barns (keep today's
+height), the gable window (not offered where it does not fit) and the Steep
+roof (out of the sample price list).
 
 1. **The cabins and the Metal Utility** at 5/12 with a 4 in roof edge, like
    your utility roof? *For now: unchanged.*
@@ -580,8 +582,8 @@ price list).
 9. **A smaller gable window?** Where the 18x24 or the octagon no longer fits
    (listed above), does your shop put a smaller window in those gables?
    *For now: not offered there.*
-10. **The 14 ft Utility Shed, Side Utility and Garage at 5/12** too? *For
-    now: yes, 5/12 is your standard pitch at every width.*
+10. **The 14 ft Utility Shed and Side Utility at 5/12** too? *For now:
+    yes, 5/12 is your standard pitch at every width.*
 11. **Who can change How it's built.** *For now: the owner only, like
     prices; managers and dealers see the numbers.*
 

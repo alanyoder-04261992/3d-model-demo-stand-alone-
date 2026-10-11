@@ -160,7 +160,11 @@ width 0.52, lap 0.34 x 0.024.
   of the width; 14 ft unchanged). Not the Metal Garage or Metal Utility
   (Alan: "not metal garage"). The knee
   stays where Barnwright put it, so the slopes are not Alan's truss pieces
-  yet. Barnwright's own company leaves these blocks out, so
+  yet. A barn's eave stays 0.42 ft along its lower slope, and that slope
+  changes with the height, so measured level the eave reaches 1 11/16 to
+  2 1/8 in out depending on the width (1 3/4 in on Barnwright's); the
+  Dealer Center's How it's built box says it width by width
+  (`model/build-settings.js plainValue`). Barnwright's own company leaves these blocks out, so
   `check-golden.mjs --part roofing` still compares Barnwright's numbers;
   `node tools/check-shop-numbers.mjs` holds the shop numbers (every roof
   height, pitch and eave of every style and size, and every triangle of the

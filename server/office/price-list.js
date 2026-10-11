@@ -269,7 +269,7 @@ const priceOf = (v) => (v && typeof v === "object" ? v.price : v);
 const keys = (o) => Object.keys(o || {}).filter((k) => !k.startsWith("_"));
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
-export function describeChanges(before, after, manufacturer) {
+export function describeChanges(before, after, manufacturer, library) {
   const out = [];
   const M = manufacturer;
   const styleName = (s, key) => s.offer?.[key]?.name || M.styles?.[key]?.name || s.offer?.[key]?.base && M.styles?.[s.offer[key].base]?.name || key;
@@ -391,7 +391,7 @@ export function describeChanges(before, after, manufacturer) {
   if (!same(before.features, after.features) || !same(before.look, after.look)) out.push("Changed how the designer looks");
 
   /* How it's built: "Lofted Barn wall height: 6 ft 8 in → 7 ft" */
-  out.push(...builtChanges(before, after, M));
+  out.push(...builtChanges(before, after, M, library));
 
   if (!out.length && !same(before, after)) out.push("Changed other settings");
   return [...new Set(out)];
@@ -559,7 +559,7 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
        those numbers cause refuses the save; putting back an old copy is
        never refused (what it finds is said instead). */
     const sizeCheck = sizeCheckOf(old, next, cat, { refuse: !restoring });
-    const changes = describeChanges(old, next, manufacturer);
+    const changes = describeChanges(old, next, manufacturer, library);
     if (lifted.moved.length) changes.push(...lifted.moved);
     if (restoring) changes.unshift(`Put back the price list saved ${restoring}`);
     if (!changes.length) return { ...previous.data, cfg: old.cfg, changes: [], sizeCheck };
