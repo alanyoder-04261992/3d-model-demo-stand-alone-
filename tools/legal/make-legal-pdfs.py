@@ -500,8 +500,8 @@ PARTS = [
             "<b>Team</b>, <b>Add a person</b>: their managers and dealers. Each one gets a message saying how to make their login.",
         ]),
         ("Open it to customers", [
-            "Open each lot's <b>3D designer link</b> and check the buildings and prices with the owner.",
-            "<b>Settings</b>, <b>3D designer</b>, <b>Open to customers</b>, <b>Save settings</b>.",
+            "<b>Lots</b>, each lot, <b>Look at the preview</b>: check the buildings and prices with the owner.",
+            "Then <b>Settings</b>, <b>3D designer</b>, <b>Open to customers</b>, <b>Save settings</b>.",
             "<b>Lots</b>, each lot, <b>Put the designer on your website</b>, <b>Copy website code</b>: send it to whoever runs their website.",
             "Send a test quote from a lot's 3D designer link. It shows up in <b>Customers</b> as New.",
             "Give the owner the <b>Welcome Sheet</b> (on your Papers page). It has all of this for them.",
