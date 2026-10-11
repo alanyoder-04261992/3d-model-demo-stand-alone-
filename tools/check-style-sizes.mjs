@@ -153,6 +153,14 @@ const FIXTURES = [
     words: /^Deluxe Side Cabin 7x20: the angled porch wall would run backwards\.$/,
     style: () => checkStyle(testCatalogue({ offer: { DSC: ["7x20"] } }), "DSC", { framing: false }),
     control: () => checkStyle(testCatalogue({ offer: { DSC: ["12x20"] } }), "DSC", { framing: false }) },
+  /* (the size check never offers a length that leaves under 4 ft of side
+     wall, model/frame.js; a size too short for even the shortest keeps it,
+     and this must be words, never a check that runs until it is out of
+     memory: the porch end wall then stands in the back wall) */
+  { name: "a side porch as long as the building (a 10x8 Side Cabin with its 8 ft porch), framing and all", code: "porch",
+    words: /^Side Cabin 10x8 with the 8 ft side porch at the corner: the 8 ft side porch is as long as the building, so there is no side wall beside it \(4 ft at least\)\.$/,
+    style: () => checkStyle(testCatalogue({ offer: { SC: ["10x8"] } }), "SC"),
+    control: () => checkStyle(testCatalogue({ offer: { SC: ["10x12"] } }), "SC") },
   { name: "a window on the open side porch, where there is no wall", code: "porch",
     words: /^Side Cabin 12x24 with the 12 ft side porch at the corner: the 2×3 Window on the right side is where there is no wall \(the open porch\)\.$/,
     building: () => checkBuilding(planWith(LIBRARY, "SC", "12x24", [{ id: "x1", cat: "w23", wall: "R", pos: -8 }], { pLen: 12, pFlip: false, pMid: false }), { label: "Side Cabin 12x24 with the 12 ft side porch at the corner", gableItems: false }),

@@ -316,7 +316,9 @@ function checkRow(key) {
       const BC = await checker();
       const cat = catOf(S.draft), std = stdOf(S.draft, BC);
       if (!cat || !std || !cat.TYPES[key]) throw new Error("not ready");
-      const r = BC.checkAgainstStandard(cat, std, key, {});
+      /* a size at a time, giving the page back between sizes: a style with
+         many sizes never freezes the page */
+      const r = await BC.checkInSteps(cat, std, key, { pause: frame });
       clear(out, resultOf(BC.summarize([r]), r));
     } catch {
       clear(out, resultBox("bad", "The check could not run. Reload the page and try again.", []));

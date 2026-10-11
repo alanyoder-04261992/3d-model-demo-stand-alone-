@@ -80,7 +80,11 @@ the trim material's triangles must come out in that order.
   wall stands back, how deep a side porch's notch is, and how deep a wrap
   porch's deck and side run are; `plan.t.sidePorch.lengthsFt` (8 and 12
   standard, `sidePorchLengthsOf`) are the side porch lengths a customer can
-  pick (`plan.span.P`; only the shortest under 20 ft long). Every expression
+  pick (`plan.span.P`; only the shortest under 20 ft long, and never one
+  that leaves less than 4 ft of side wall beside the porch,
+  `SIDE_WALL_MIN_FT` in `sidePorchLengthsFor`: a porch as long as the
+  building puts its end wall in the back wall and cannot be framed; the
+  price list refuses such a length or size in words). Every expression
   is written so it is EXACTLY Barnwright's number at 4 ft (`L/2-(d-0.25)`,
   not `L/2-d+0.25`: the two differ in the last bit). Fixed whatever the
   depth: the wrap porch's 4 ft stub of front wall on -x and its 12 ft run

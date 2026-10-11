@@ -173,6 +173,24 @@ group("2. side porch lengths");
   ok("... and a building under 20 ft long gets the shortest, 10 ft", frShort.span.P === 10, J(frShort.span));
   const fr0 = frameOf(stateOf(BASE, "SC", "12x24", { pLen: 12 }), BASE), fr8 = frameOf(stateOf(BASE, "SC", "12x24", { pLen: 8 }), BASE);
   ok("with no setting the porch is 8 or 12 ft, as today", fr0.span.P === 12 && fr8.span.P === 8 && frameOf(stateOf(BASE, "SC", "12x16", { pLen: 12 }), BASE).span.P === 8);
+  /* a porch as long as the building (review GL-1, F1): never offered, and
+     a length that would be is a problem in words, never a save that runs
+     until the computer is out of memory */
+  const long = catalogue({ traits: { SC: { sidePorch: { lengthsFt: [12, 20] } } } });
+  ok("a 20 ft porch is never offered on a 20 ft long building (4 ft of side wall at least): it gets the 12", frameOf(stateOf(long, "SC", "12x20", { pLen: 20 }), long).span.P === 12
+    && frameOf(stateOf(long, "SC", "12x24", { pLen: 20 }), long).span.P === 20);
+  const c20 = barnwrightCompany(); c20.offer.SC.built = { sidePorchLengths: [12, 20] };
+  ok("... and the price list says why: \"Side porch lengths: 20 ft is as long as the 10x20 Side Cabin.\"", BUILT.problems(c20, M).some((x) => x.path === "offer.SC.built.sidePorchLengths" && /^Side porch lengths: 20 ft is as long as the 10x20 Side Cabin\. Leave at least 4 ft of side wall beside the porch\.$/.test(x.words)), J(BUILT.problems(c20, M)));
+  const c18 = barnwrightCompany(); c18.built = { sidePorchLengths: [8, 18] };
+  ok("... 18 ft business-wide leaves the 10x20 only 2 ft of side wall", BUILT.problems(c18, M).some((x) => x.path === "built.sidePorchLengths" && x.words === "Side porch lengths: 18 ft leaves the 10x20 Side Cabin only 2 ft of side wall beside the porch (4 ft at least)."), J(BUILT.problems(c18, M)));
+  const c8 = barnwrightCompany(); c8.offer.SC.sizes["10x8"] = 4000;
+  ok("... and a size too short for the standard 8 ft porch is said at the porch lengths", BUILT.problems(c8, M).some((x) => x.path === "offer.SC.built.sidePorchLengths" && x.words === "The 10x8 Side Cabin is too short for its 8 ft side porch: sell it 12 ft long and up, or set a shorter side porch length."), J(BUILT.problems(c8, M)));
+  ok("... the standard sizes have no such problem", !BUILT.problems(barnwrightCompany(), M).some((x) => /side porch/i.test(x.words)));
+  /* the wall framing never runs away: a porch as long as the building is a
+     plain problem of the every-size check */
+  let framed = null;
+  try { framed = checkStyle(resolve((() => { const x = barnwrightCompany(); x.offer.SC.sizes = { "10x8": 4000 }; return x; })(), M, LIB), "SC"); } catch (e) { framed = e; }
+  ok("... and a 10x8 Side Cabin is checked to the end in words (\"no side wall beside it\")", framed && framed.problems && framed.problems.some((f) => /the 8 ft side porch is as long as the building, so there is no side wall beside it/.test(f.words)), framed && framed.stack);
 }
 
 /* ------------------------------------------------------------------ 3 */

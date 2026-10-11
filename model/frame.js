@@ -46,11 +46,21 @@ export function sidePorchLengthsOf(t) {
   var l = t && t.sidePorch && Array.isArray(t.sidePorch.lengthsFt) ? t.sidePorch.lengthsFt.filter(function (n) { return typeof n === "number" && n > 0; }) : [];
   return (l.length ? l : SIDE_PORCH_LENGTHS).slice().sort(function (a, b) { return a - b; });
 }
-/* The lengths allowed on a building this long: only the shortest under
-   20 ft ("short buildings carry the 4x8 porch"). */
+/* THE SIDE WALL LEFT BESIDE A SIDE PORCH: a porch is never offered so long
+   that less than this much of the long wall is left beside it (4 ft). A
+   porch as long as the building leaves no wall at all: its end wall would
+   stand in the back wall and the building could not be framed. */
+export var SIDE_WALL_MIN_FT = 4;
+/* The lengths allowed on a building this long: those that leave at least
+   SIDE_WALL_MIN_FT of side wall, and only the shortest under 20 ft ("short
+   buildings carry the 4x8 porch"). A building too short for every length
+   keeps the shortest (the price list refuses such a size:
+   model/build-settings.js). */
 export function sidePorchLengthsFor(t, L) {
   var all = sidePorchLengthsOf(t);
-  return L < 20 ? [all[0]] : all;
+  var fit = all.filter(function (n) { return L - n >= SIDE_WALL_MIN_FT - 1e-9; });
+  if (!fit.length) fit = [all[0]];
+  return L < 20 ? [fit[0]] : fit;
 }
 /* The length a porch of pLen becomes: pLen when it is allowed, else the
    nearest allowed one (the longer on a tie; a missing pLen is the longest --

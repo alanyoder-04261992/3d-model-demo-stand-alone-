@@ -35,7 +35,7 @@ import { esc } from "./esc.js";
 import * as S from "./state.js";
 import { money, pPrice, pSizes, minPrice, priceParts, itemCharge, rateCharges, optxList, optxQty, optxOn, optxCharge, optxChargeIfOn, rtoTerms, rtoMonthly, RTO_NOTE } from "../model/pricing.js";
 import { colorName, sidingPalette } from "../model/company.js";
-import { porchDepthOf, sidePorchLengthsOf } from "../model/frame.js";
+import { porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, SIDE_WALL_MIN_FT } from "../model/frame.js";
 
 /* feet on a chip: "4", "4' 6\"" -- the chips have always said "4 × 8" */
 function feetWords(ft) {
@@ -241,11 +241,13 @@ export function createPanels(ctx) {
       const Lnow = +String(state.size).split("x")[1];
       const pc = el("porchchips"); pc.innerHTML = "";
       /* one chip per side porch length the style sells (8 and 12 standard);
-         under 20 ft long only the shortest */
-      const plens = sidePorchLengthsOf(T), pdep = porchDepthOf(T);
+         under 20 ft long only the shortest, and never one that leaves less
+         than 4 ft of side wall (model/frame.js sidePorchLengthsFor) */
+      const plens = sidePorchLengthsOf(T), pdep = porchDepthOf(T), ok = sidePorchLengthsFor(T, Lnow);
       plens.map((n) => ["" + n, `${feetWords(pdep)} × ${feetWords(n)} porch`]).forEach((pp2) => {
-        const dis = (+pp2[0] !== plens[0] && Lnow < 20);
-        pc.appendChild(chip(("" + state.pLen) === pp2[0], pp2[1] + small(dis ? "20 ft &amp; up" : "included"), () => ctx.act("porch", (s) => S.choosePorchLength(s, pp2[0], cat)), dis));
+        const n = +pp2[0], dis = ok.indexOf(n) < 0;
+        const from = n === plens[0] ? n + SIDE_WALL_MIN_FT : Math.max(20, n + SIDE_WALL_MIN_FT);
+        pc.appendChild(chip(("" + state.pLen) === pp2[0], pp2[1] + small(dis ? `${from} ft &amp; up` : "included"), () => ctx.act("porch", (s) => S.choosePorchLength(s, pp2[0], cat)), dis));
       });
       [["end", "Corner porch"], ["mid", "Middle porch"]].forEach((pm) => {
         const on = (pm[0] === "mid") === (!!state.pMid);

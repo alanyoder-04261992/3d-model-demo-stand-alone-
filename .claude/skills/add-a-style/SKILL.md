@@ -122,7 +122,8 @@ in these traits.
   out unless the style differs): `porchDepthFt` (a front, side or wrap
   porch's depth in feet, 4), `sidePorch: {"lengthsFt": [8, 12]}` (the side
   porch lengths it sells, whole feet; the shortest is used under 20 ft
-  long), `dormerSide` (`"door"` or `"back"`).
+  long, and a length is offered only where it leaves 4 ft of side wall),
+  `dormerSide` (`"door"` or `"back"`).
 * `built` -- the shop standard's How it's built numbers for this style
   (`{"roofPitch": 5, "wallHeight": 93.5}`), only where Alan confirmed them;
   every business gets them unless it sets its own (the `how-its-built`

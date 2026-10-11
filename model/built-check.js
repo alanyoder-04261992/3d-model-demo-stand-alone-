@@ -38,7 +38,7 @@
    building has too is counted, never shown as the owner's. */
 
 import * as BUILT from "./build-settings.js";
-import { checkStyle, checkBuilding, variantsOf } from "./style-check.js";
+import { checkStyle, checkBuilding, variantsOf, orderSizes } from "./style-check.js";
 import { defaults, setType } from "./design.js";
 import { frameOf } from "./frame.js";
 import { makePlan } from "./plan.js";
@@ -174,7 +174,7 @@ export function checkAgainstStandard(cat, std, key, opts) {
   if (!t || !std.TYPES[key]) return out;
   const variants = variantsFor(cat, key, opts.extra);
   const byId = new Map(variants.map((v) => [v.id, v]));
-  const r = checkStyle(cat, key, { sizes: opts.sizes || undefined, variants, budgetMs: opts.budgetMs });
+  const r = checkStyle(cat, key, { sizes: opts.sizes || undefined, variants, budgetMs: opts.budgetMs, widths: opts.widths });
   out.buildings = r.buildings;
   out.unchecked = r.unchecked.map((u) => ({ size: u.size, variant: u.variant, words: u.words }));
   /* findings about the style as a whole (a wider building lower than a
@@ -200,6 +200,26 @@ export function checkAgainstStandard(cat, std, key, opts) {
   }
   out.ms = now() - t0;
   return out;
+}
+
+/* The same as checkAgainstStandard for every size, one size at a time,
+   waiting on `pause()` (a promise: the next frame, a timeout) between sizes,
+   so a page stays usable while a style with many sizes is drawn (the
+   Dealer Center's Check every size). The roof-widths test runs once. */
+export async function checkInSteps(cat, std, key, { extra = null, pause = null } = {}) {
+  const t0 = now();
+  const sizes = orderSizes(Object.keys((cat.P && cat.P[key]) || {}));
+  let all = null;
+  for (let i = 0; i < sizes.length; i++) {
+    if (pause) await pause();
+    const r = checkAgainstStandard(cat, std, key, { sizes: [sizes[i]], extra, widths: i === 0 });
+    if (!all) { all = r; continue; }
+    for (const f of ["problems", "warnings", "already", "unchecked"]) all[f].push(...r[f]);
+    all.buildings += r.buildings;
+  }
+  if (!all) all = checkAgainstStandard(cat, std, key, { sizes: [], extra });
+  all.ms = now() - t0;
+  return all;
 }
 
 /* "8x12" sizes in a sentence: "8x12, 10x12 and 3 more" */

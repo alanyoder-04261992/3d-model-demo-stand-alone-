@@ -60,7 +60,8 @@
                  drawn shorter than its size (warning)
      porch       every opening on a wall of the closed-in room (not out on
                  the open porch or the kennel run); porch posts on the
-                 porch deck; at least 4 ft of room left inside; the corner
+                 porch deck; at least 4 ft of room left inside and 4 ft of
+                 side wall beside a side porch; the corner
                  porch's angled wall at least 2 ft sideways, its front wall
                  at least 1 ft
      framing     every framing part's members(plan) works out; no piece
@@ -80,7 +81,7 @@
 
 import { y0, OCT_WIN } from "../engine/constants.js";
 import { wallPt } from "../engine/wall.js";
-import { frameOf } from "./frame.js";
+import { frameOf, SIDE_WALL_MIN_FT } from "./frame.js";
 import { makePlan } from "./plan.js";
 import { defaults, setType } from "./design.js";
 import * as LAYOUT from "./layout.js";
@@ -108,6 +109,7 @@ export const LIMITS = Object.freeze({
   dormerFaceFt: 1.2,           /* parts/dormer.js: if(faceH<1.2)faceH=1.2 */
   dormerWindowFt: 7 / 12,
   roomFt: 4,                   /* room left inside a porch */
+  sideWallFt: SIDE_WALL_MIN_FT, /* side wall left beside a side porch */
   wrapSidewaysFt: 2, wrapFrontFt: 1,
   loftMinFt: 2, loftWarnFt: 3,
 });
@@ -380,6 +382,12 @@ function checkPorch(plan, ops, add) {
   if (t.porch === "S" && ws.S1) {
     const room = W / 2 + ws.S1.at;
     if (room < LIMITS.roomFt - EPS) add("problem", "porch", "room", `the side porch leaves only ${lengthWords(room)} of room inside (4 ft at least).`);
+    /* the long wall left beside the porch (model/frame.js SIDE_WALL_MIN_FT):
+       a porch as long as the building puts its end wall in the back wall */
+    const wall = L - plan.span.P;
+    if (wall < LIMITS.sideWallFt - EPS) add("problem", "porch", "side-wall", wall <= EPS
+      ? `the ${lengthWords(plan.span.P)} side porch is as long as the building, so there is no side wall beside it (4 ft at least).`
+      : `the ${lengthWords(plan.span.P)} side porch leaves only ${lengthWords(wall)} of side wall beside it (4 ft at least).`);
   }
   if ((t.porch === "F" || t.porch === "C") && ws.F) {
     const room = L / 2 + ws.F.at;
@@ -532,7 +540,7 @@ export function variantsOf(t, cat) {
 /* Typical size first (the one the designer opens on), then the smallest and
    the largest, then the rest in the price list's order -- so a check that
    runs out of time has looked at the ones that matter most. */
-function orderSizes(sizes) {
+export function orderSizes(sizes) {
   if (sizes.length < 3) return sizes.slice();
   const area = (z) => { const a = String(z).split("x"); return (+a[0]) * (+a[1]); };
   const typical = sizes[Math.min(4, sizes.length - 1)];
@@ -593,6 +601,8 @@ function checkWidths(cat, key, base, sizes, add) {
                 finding it covers becomes a warning with its reason
      budgetMs   stop starting new buildings after this long; what is left
                 is listed in `unchecked` (the roof-widths test always runs)
+     widths     false: skip the roof-widths test (a check done a size at a
+                time runs it once)
      framing, allGableItems   passed to checkBuilding */
 export function checkStyle(cat, key, opts) {
   opts = opts || {};
@@ -613,7 +623,7 @@ export function checkStyle(cat, key, opts) {
   }
   const base = defaults(cat);
   setType(base, key, cat);
-  checkWidths(cat, key, base, all, function (level, code, id, detail) {
+  if (opts.widths !== false) checkWidths(cat, key, base, all, function (level, code, id, detail) {
     const f = { code, id: code + ":" + id, words: t.name + ": " + detail, detail, where: {} };
     if (level === "problem") file(f, "", ""); else res.warnings.push(f);
   });

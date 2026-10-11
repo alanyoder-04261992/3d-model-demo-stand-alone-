@@ -138,6 +138,14 @@ export function wallRuns(plan) {
   var sp2 = wallSpec(plan);
   runs.forEach(function (r, i) { r.index = i; r.D = sp2.D; });
   runs.forEach(function (r) { r.ends = [endOf(r, 0, runs), endOf(r, 1, runs)]; r.fu0 = r.a + r.ends[0].s; r.fu1 = r.b - r.ends[1].s; });
+  /* A frame that runs far past its own wall cannot be built (it would fill
+     the computer's memory with studs): say so, the way any part that cannot
+     be worked out does, never draw it */
+  runs.forEach(function (r) {
+    if (!isFinite(r.fu0) || !isFinite(r.fu1) || r.fu0 < r.a - 2 || r.fu1 > r.b + 2) {
+      throw new Error("the " + r.key + " wall frame runs past its wall, so it cannot be built");
+    }
+  });
   return runs;
 }
 
@@ -161,6 +169,9 @@ function endOf(r, e, runs) {
       var convex = ((dr[0] + dq[0]) * -nr[0] + (dr[1] + dq[1]) * -nr[1]) > 0;
       var target = convex ? (through ? q.inset : q.inset + q.D) : (through ? q.inset + q.D : q.inset);
       var den = -(dr[0] * nq[0] + dr[1] * nq[1]), nn = nr[0] * nq[0] + nr[1] * nq[1];
+      /* two walls in one line (a side porch as long as the building puts its
+         end wall in the plane of the back wall) meet at no corner */
+      if (Math.abs(den) < 1e-9) continue;
       var s = -1e9;
       [r.inset, r.inset + r.D].forEach(function (qq) { s = Math.max(s, (target - qq * nn) / den); });
       return { s: s, corner: true, through: through, convex: convex, other: q.key, otherIndex: q.index };

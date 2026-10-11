@@ -703,6 +703,10 @@ const BROKEN = [
   ["a roof pitch past the limit", (s) => { s.offer.UT.built = { roofPitch: 15 }; }, /Roof pitch 15\/12 is steeper than 12\/12/],
   ["an extra that changes the wall height", (s) => { s.options.extras = [{ key: "tall", name: "Tall walls", input: "check", price: 1, built: { wallHeight: 96 } }]; }, /An extra cannot change the wall height\. Set it on the style in How it's built\./],
   ["an extra that raises the roof through construction", (s) => { s.options.extras = [{ key: "steep", name: "Steep roof", input: "check", price: 1, construction: { "roof.shapes.gable.rise": { w: 0.35 } } }]; }, /Steep roof: set this extra's roof pitch in How it's built\./],
+  /* a porch as long as the building (review GL-1, F1): words, never a save
+     that runs until it is out of memory */
+  ["a side porch as long as the building", (s) => { s.offer.SC.built = { sidePorchLengths: [12, 20] }; }, /Side porch lengths: 20 ft is as long as the 10x20 .+\. Leave at least 4 ft of side wall beside the porch\./],
+  ["a size too short for the side porch", (s) => { s.offer.SC.sizes["10x8"] = 4000; }, /The 10x8 .+ is too short for its 8 ft side porch: sell it 12 ft long and up, or set a shorter side porch length\./],
   ["an extra with a construction setting misspelled", (s) => { s.options.extras = [{ key: "joists", name: "Close joists", input: "check", price: 1, construction: { "floor.spacingInn": 12 } }]; }, /Close joists: "spacingInn" is not a construction setting\. Did you mean spacingIn\?/],
 ];
 for (const [label, change, words] of BROKEN) {

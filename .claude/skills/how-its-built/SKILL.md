@@ -22,7 +22,7 @@ use it). Read it with `docs/ARCHITECTURE.md` "How it's built".
 | `wallHeight` | Wall height | inches, floor to the top of the wall plate | 48-120 | every style; never business-wide |
 | `doorHeight` | Wooden shop door height | inches | 60-96 | every style |
 | `porchDepth` | Porch depth | feet | 3-8, 4 ft of room left inside; a wrap porch at most 7 ft and W - 6 | porch styles |
-| `sidePorchLengths` | Side porch lengths | whole feet, a list | 1-4 lengths, 4-20 ft, none twice | side porch styles |
+| `sidePorchLengths` | Side porch lengths | whole feet, a list | 1-4 lengths, 4-20 ft, none twice; each leaves at least 4 ft of side wall on every size it is offered on (the shortest on every size, the others from 20 ft long) | side porch styles |
 | `dormerSide` | Dormer side | "door" or "back" | -- | dormer styles |
 
 `parse(id, text, {kind})` reads what a person types ("5/12", "5 1/2/12",

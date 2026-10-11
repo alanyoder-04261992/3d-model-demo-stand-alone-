@@ -180,8 +180,10 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   sold in with the numbers on the screen, saved or not, in the browser
   (`model/built-check.js`, `model/style-check.js`), and says in words what
   does not fit: a door taller than the wall leaves room for, a roof edge in
-  front of a door, framing that does not build. What the same building has
-  with the standard numbers is never the owner's to fix.
+  front of a door, framing that does not build. It draws one size at a
+  time and gives the page back in between, so a style with many sizes never
+  freezes the page. What the same building has with the standard numbers is
+  never the owner's to fix.
 * **On save** the server does the same for every style whose numbers
   changed, and for every style a changed option reaches
   (`server/office/built-check.js`): what the new numbers cause refuses the

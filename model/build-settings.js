@@ -58,6 +58,7 @@
 
 import { closest } from "./construction.js";
 import { DEFAULT_ROOF, lengthOf } from "./roof-shapes.js";
+import { SIDE_WALL_MIN_FT, SIDE_PORCH_LENGTHS } from "./frame.js";
 
 const lengthOfFt = (v, W) => lengthOf(v, W);
 
@@ -404,7 +405,26 @@ function checkFor(id, value, s, name, sizes) {
       if (d > most) return { problem: `Porch depth ${fmtFt(d)} leaves the ${W} ft wide ${name} no angled wall: ${fmtFt(Math.max(most, 0))} at most.` };
     }
   }
+  if (id === "sidePorchLengths") {
+    const bad = porchMisfit(r.value, sizes);
+    if (bad) return { problem: bad.left <= 0
+      ? `Side porch lengths: ${bad.n} ft is ${bad.left < 0 ? "longer than" : "as long as"} the ${bad.z} ${name}. Leave at least ${fmtFt(SIDE_WALL_MIN_FT)} of side wall beside the porch.`
+      : `Side porch lengths: ${bad.n} ft leaves the ${bad.z} ${name} only ${fmtFt(bad.left)} of side wall beside the porch (${fmtFt(SIDE_WALL_MIN_FT)} at least).` };
+  }
   return r;
+}
+
+/* The first side porch length that leaves less than 4 ft of side wall on a
+   size it is offered on -- the shortest on every size, the others from 20 ft
+   long (model/frame.js sidePorchLengthsFor) -- or null. A porch as long as
+   the building cannot be framed. -> {n, z, left} */
+function porchMisfit(list, sizes) {
+  const sold = sizes.map((z) => ({ z: String(z), L: +String(z).split("x")[1] })).filter((x) => x.L > 0).sort((a, b) => a.L - b.L);
+  for (const n of list) {
+    const bad = sold.find((x) => (n === list[0] || x.L >= 20) && x.L - n < SIDE_WALL_MIN_FT - 1e-9);
+    if (bad) return { n, z: bad.z, left: bad.L - n };
+  }
+  return null;
 }
 
 /* ------------------------------------------------------------------------ */
@@ -465,7 +485,16 @@ export function problems(settings, manufacturer) {
     const o = offer[k], base = o.base != null ? o.base : k, s = styles[base], name = styleName(S, M, k);
     for (const id of knobsFor(s)) {
       const win = layersOf(S, M, k, id).find((l) => !l.feature && !parse(id, l.value, { kind: kindOf(s) }).problem);
-      if (!win || win.from === "standard" || win.path === `offer.${k}.built.${id}`) continue;
+      if (win && win.path === `offer.${k}.built.${id}`) continue;
+      /* the standard side porch lengths still have to fit the sizes sold (a
+         10x8 Side Cabin is too short for its 8 ft porch) */
+      if ((!win || win.from === "standard") && id === "sidePorchLengths") {
+        const r = parse(id, win ? win.value : (s.sidePorch && Array.isArray(s.sidePorch.lengthsFt) ? s.sidePorch.lengthsFt : SIDE_PORCH_LENGTHS.slice()), {});
+        const bad = r.value ? porchMisfit(r.value, keysOf(o.sizes)) : null;
+        if (bad) say(`offer.${k}.built.${id}`, id, k, `The ${bad.z} ${name} is too short for its ${bad.n} ft side porch: sell it ${bad.n + SIDE_WALL_MIN_FT} ft long and up, or set a shorter side porch length.`);
+        continue;
+      }
+      if (!win || win.from === "standard") continue;
       const r = checkFor(id, win.value, s, name, keysOf(o.sizes));
       if (r.problem) say(win.path, id, k, r.problem);
     }

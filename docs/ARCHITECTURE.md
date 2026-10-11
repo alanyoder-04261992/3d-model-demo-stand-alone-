@@ -582,7 +582,7 @@ makes, shared by every dealer of that builder, **no prices**:
 | `rakeOverhang` | `"GU" "CS" "MCS"` in the `profileRoof` call | gable-end overhang |
 | `loft: {ends, depthFt}` | (new) | lofted styles, for the loft part |
 | `porchDepthFt` | the 4 ft porch fixed in `frame.js` and the parts | a porch's depth in feet (4) |
-| `sidePorch: {lengthsFt}` | the 8 or 12 ft side porch | the side porch lengths sold, whole feet (`[8, 12]`; the shortest under 20 ft long) |
+| `sidePorch: {lengthsFt}` | the 8 or 12 ft side porch | the side porch lengths sold, whole feet (`[8, 12]`; the shortest under 20 ft long; never one that leaves under 4 ft of side wall) |
 | `dormerSide` | the dormer always on the door side | `"door"` (default) or `"back"` (every triangle mirrored) |
 | `built` | (new) | the shop standard's How it's built numbers for this style |
 
