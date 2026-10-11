@@ -882,6 +882,7 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "an extra Steep roof at 12/12" });
   const gableNames = Object.keys(cur.settings.offer).filter((k) => manufacturer.styles[cur.settings.offer[k].base || k]?.roof === "gable").map((k) => cur.settings.offer[k].name || manufacturer.styles[cur.settings.offer[k].base || k].name);
   ok(`... is checked on the gable styles (${gableNames.length}) and on no barn`, gableNames.every((n) => out.sizeCheck.checked.includes(n)) && !out.sizeCheck.checked.includes(cur.settings.offer.LB.name || manufacturer.styles.LB.name), JSON.stringify(out.sizeCheck.checked));
+  ok("... and History says what it does (\"Steep roof: roof pitch at least 12/12\")", out.changes.includes("Steep roof: roof pitch at least 12/12"), JSON.stringify(out.changes));
   cur = await want(200, "GET", "/api/office/price-list");
   s = clone(cur.settings); s.options.extras = s.options.extras.filter((x) => x.key !== "steep-roof");
   await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "taking the Steep roof extra off" });

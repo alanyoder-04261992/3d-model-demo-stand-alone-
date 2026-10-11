@@ -25,7 +25,7 @@
 
    checkChangedStyles(before, after, manufacturer, library, {cat, budgetMs})
      -> {problems: [words], warnings: [words], unchecked: [words],
-         checked: [style names], already, buildings, ms} */
+         checked: [style names], styles: [{key, name}], already, buildings, ms} */
 
 import { resolve } from "../../model/company.js";
 import { changedStyles, checkAgainstStandard, summarize, withoutOwnNumbers } from "../../model/built-check.js";
@@ -36,7 +36,7 @@ function now() { return (typeof performance !== "undefined" && performance.now) 
 
 export function checkChangedStyles(before, after, manufacturer, library, { cat = null, budgetMs = SAVE_BUDGET_MS } = {}) {
   const t0 = now();
-  const empty = { problems: [], warnings: [], unchecked: [], checked: [], already: 0, buildings: 0, ms: 0 };
+  const empty = { problems: [], warnings: [], unchecked: [], checked: [], styles: [], already: 0, buildings: 0, ms: 0 };
   const catNext = cat || resolve(after, manufacturer, library);
   const todo = changedStyles(before, after, manufacturer, catNext);
   if (!todo.length) return empty;
@@ -47,5 +47,7 @@ export function checkChangedStyles(before, after, manufacturer, library, { cat =
     results.push(checkAgainstStandard(catNext, std, job.key, { sizes: job.sizes, extra: job.extra, budgetMs: left }));
   }
   const words = summarize(results);
-  return { ...words, checked: [...new Set(results.map((r) => r.name))], ms: now() - t0 };
+  const styles = [];
+  for (const r of results) if (!styles.some((x) => x.key === r.key)) styles.push({ key: r.key, name: r.name });
+  return { ...words, checked: styles.map((x) => x.name), styles, ms: now() - t0 };
 }

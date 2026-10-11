@@ -56,8 +56,9 @@ async function putBack(entry, app, ctx) {
     (unsaved ? ` Your ${plural(unsaved, "change")} not saved yet will be dropped.` : ""),
     { yes: "Put this back" });
   if (!ok) return;
+  let answer;
   try {
-    await post("price-list/restore", { version: entry.version, current: S.latest.version });
+    answer = await post("price-list/restore", { version: entry.version, current: S.latest.version });
   } catch (e) {
     toast(e.message, { error: true, ms: 7000 });
     if (e.status === 409) {
@@ -67,7 +68,10 @@ async function putBack(entry, app, ctx) {
     return;
   }
   S.hooks.reset?.(await app.loadPriceList(true));
-  S.justSaved = null;
+  /* the numbers put back are drawn at every size; what no longer fits is
+     said in the "Saved" box (a copy is always put back) */
+  const sc = answer?.sizeCheck;
+  S.justSaved = sc && (sc.problems?.length || sc.warnings?.length || sc.unchecked?.length) ? { changes: answer.changes || [], lotCount: lots, sizeCheck: sc } : null;
   toast(lots === 1 ? `Put back. Your lot shows the price list from ${dayWords(entry.savedAt)} again.` : `Put back. All ${lots} lots show the price list from ${dayWords(entry.savedAt)} again.`, { ms: 6000 });
   ctx.refresh();
 }

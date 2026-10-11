@@ -45,6 +45,8 @@
      problems(settings, manufacturer), libraryProblems(manufacturer),
      apply(settings, manufacturer), optionEffectFor(built, t),
      extraProblems(built, at), effective(cat, key),
+     businessReach(settings, manufacturer, id, kind), roofKindOf(t),
+     describeExtraBuilt(name, before, after),
      describeChanges(before, after, manufacturer), setBuilt(settings, edit),
      liftRawRules(settings, manufacturer)
 
@@ -200,7 +202,7 @@ export function parse(id, input, ctx = {}) {
       if (!Number.isFinite(v) || v < 0) return { problem: `${K.Words}: write it like ${K.unit === "ft" ? "4 ft" : "7 ft 9 1/2 in"}.` };
       const lim = id === "eaveOverhang" ? (EAVE[ctx.kind] || EAVE.gable) : LIMITS[id];
       const [lo, hi] = lim;
-      const shown = (x) => (K.unit === "ft" ? fmtFt(x) : fmtIn(x));
+      const shown = (x) => (K.unit === "ft" ? fmtFt(x) : id === "doorHeight" ? fmtInOnly(x) : fmtIn(x));
       /* a bare number is in the box's unit; when it only makes sense in the
          other unit, say so */
       const typed = bare ? `${fmtNum(v)} ${K.unit}` : shown(v);
@@ -288,14 +290,21 @@ function fmtIn(inches) {
   return (neg ? "-" : "") + out;
 }
 function fmtFt(feet) { return fmtIn(feet * 12); }
+/* inches only, the way door openings are said: "76 1/2 in" */
+function fmtInOnly(inches) {
+  const s16 = Math.round(Math.abs(inches) * 16);
+  const whole = Math.floor(s16 / 16); let frac = s16 - whole * 16, den = 16;
+  while (frac && frac % 2 === 0) { frac /= 2; den /= 2; }
+  return (inches < 0 ? "-" : "") + (whole && frac ? `${whole} ${frac}/${den}` : frac ? `${frac}/${den}` : `${whole}`) + " in";
+}
+/* 5 -> "5/12", 5.25 -> "5 1/4/12"; a pitch between quarters (the library's
+   6.48) is said the way a builder would: "about 6 1/2/12" */
 function fmtPitch(p) {
-  const q = p * 4;
-  if (Math.abs(q - Math.round(q)) < 1e-6) {
-    const whole = Math.floor(Math.round(q) / 4), quarters = Math.round(q) - whole * 4;
-    const f = quarters === 2 ? "1/2" : quarters ? `${quarters}/4` : "";
-    return `${whole && f ? whole + " " + f : f || whole}/12`;
-  }
-  return `${(Math.round(p * 100) / 100)}/12`;
+  const q = Math.round(p * 4);
+  const whole = Math.floor(q / 4), quarters = q - whole * 4;
+  const f = quarters === 2 ? "1/2" : quarters ? `${quarters}/4` : "";
+  const words = `${whole && f ? whole + " " + f : f || whole}/12`;
+  return Math.abs(p * 4 - q) < 1e-6 ? words : `about ${words}`;
 }
 function joinWords(list) { return list.length < 2 ? list.join("") : list.slice(0, -1).join(", ") + " and " + list[list.length - 1]; }
 
@@ -304,7 +313,7 @@ export function format(id, value) {
   if (!K || value == null) return "";
   switch (K.unit) {
     case "pitch": return fmtPitch(+value);
-    case "in": return fmtIn(+value);
+    case "in": return id === "doorHeight" ? fmtInOnly(+value) : fmtIn(+value);
     case "ft": return fmtFt(+value);
     case "byWidth": return Object.keys(value).map(Number).sort((a, b) => a - b).map((w) => `${w} ft wide: ${fmtIn(value[w])}`).join(", ");
     case "ftList": return joinWords(value.map((n) => `${n} ft`));
@@ -683,6 +692,40 @@ function mergeTwo(a, b) {
   return out;
 }
 
+/* Which offered styles a business-wide number reaches, for the Dealer
+   Center's "How your buildings are built" card: id is the knob, kind the
+   roof kind it is kept by ("gable", "lean", "slope", "barn"; door height
+   "barn" or "other"; omitted for a knob kept once for the whole business).
+   -> {reaches: [KEY], own: [KEY] (a number of their own wins), kept:
+   [{key, feature}] (a style feature keeps it off)} */
+export function businessReach(settings, manufacturer, id, kind) {
+  const out = { reaches: [], own: [], kept: [] };
+  const K = KNOB[id];
+  if (!K || !K.business) return out;
+  const S = settings || {}, styles = (manufacturer && manufacturer.styles) || {};
+  const offer = isObj(S.offer) ? S.offer : {};
+  for (const k of keysOf(offer)) {
+    const o = offer[k];
+    if (!isObj(o)) continue;
+    const base = o.base != null ? o.base : k, s = styles[base];
+    if (!s || knobsFor(s).indexOf(id) < 0) continue;
+    if (Array.isArray(K.business)) {
+      const sk = kindOf(s);
+      if ((id === "doorHeight" ? (sk === "barn" ? "barn" : "other") : sk) !== kind) continue;
+    }
+    const f = feature(id, s);
+    if (f) { out.kept.push({ key: k, feature: f }); continue; }
+    const mine = isObj(o.built) && own(o.built, id);
+    const like = base !== k && isObj(offer[base]) && isObj(offer[base].built) && own(offer[base].built, id);
+    (mine || like ? out.own : out.reaches).push(k);
+  }
+  return out;
+}
+
+/* The roof kind of a style, in the words the knobs use: "gable", "lean",
+   "slope", "barn" or "salt". */
+export function roofKindOf(t) { return kindOf(t); }
+
 /* ------------------------------------------------------------------------ */
 /* History words                                                             */
 
@@ -694,7 +737,11 @@ export function describeChanges(before, after, manufacturer) {
   const M = manufacturer || {};
   const b = liftRawRules(before || {}, M).settings, a = liftRawRules(after || {}, M).settings;
   const bb = isObj(b.built) ? b.built : {}, ab = isObj(a.built) ? a.built : {};
-  const shownBiz = (id, v) => (v === undefined ? "standard" : format(id, parse(id, v, {}).value ?? v));
+  const shownBiz = (id, v) => {
+    if (v === undefined) return "standard";
+    const r = parse(id, v, {});
+    return r.value !== undefined ? format(id, r.value) : String(v);
+  };
   for (const id of KNOB_IDS) {
     const K = KNOB[id];
     if (Array.isArray(K.business)) {
@@ -735,6 +782,21 @@ export function describeChanges(before, after, manufacturer) {
     for (const x of extras) if (isObj(x) && x.input === "sqftW" && typeof x.name === "string" && x.name.trim()) byWall.push(x.name.trim());
     const names = [...new Set(byWall.filter(Boolean))];
     if (names.length) out.push(`Wall upgrades priced by the square foot follow the new wall height: ${joinWords(names)}`);
+  }
+  return out;
+}
+
+/* What changed in an extra's own numbers, in History words: "Steep roof:
+   roof pitch at least 7/12", "Steep roof no longer changes the roof pitch". */
+export function describeExtraBuilt(name, before, after) {
+  const out = [];
+  const b = isObj(before) ? before : {}, a = isObj(after) ? after : {};
+  for (const id of KNOB_IDS) {
+    if (same(b[id], a[id])) continue;
+    const K = KNOB[id];
+    if (a[id] === undefined) { out.push(`${name} no longer changes the ${K.words}`); continue; }
+    const r = parse(id, a[id], {});
+    out.push(`${name}: ${K.words}${id === "roofPitch" ? " at least" : ""} ${r.value !== undefined ? format(id, r.value) : String(a[id])}`);
   }
   return out;
 }

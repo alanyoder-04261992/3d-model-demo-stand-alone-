@@ -9,6 +9,7 @@
    runs before it saves, so a draft with no problems here saves. */
 
 import { validate } from "../../../../model/company.js";
+import { problems as builtProblems, extraProblems, describeChanges as builtChanges, describeExtraBuilt } from "../../../../model/build-settings.js";
 import { money, size as sizeWords } from "../../words.js";
 
 export const keysOf = (o) => (o && typeof o === "object" && !Array.isArray(o) ? Object.keys(o).filter((k) => !k.startsWith("_")) : []);
@@ -363,8 +364,9 @@ export function describe(before, after, M) {
   const label = (x) => (x?.name || "").trim() || "a new option";
   for (const x of xa) {
     const old = x.key ? xb.find((o) => o.key === x.key) : null;
-    if (!old) out.push(`Add your option "${label(x)}"${x.price != null ? ` at ${x.input === "pct" ? `${x.price}%` : money(x.price)}` : ""}`);
+    if (!old) out.push(`Add your option "${label(x)}"${x.price != null ? ` at ${x.input === "pct" ? `${x.price}%` : money(x.price)}` : ""}`, ...describeExtraBuilt(label(x), undefined, x.built));
     else if (!same(old, x)) {
+      out.push(...describeExtraBuilt(label(x), old.built, x.built));
       if (old.price !== x.price) out.push(`${label(x)}: ${x.input === "pct" ? `${old.price}%` : money(old.price)} → ${x.price == null ? "no price yet" : x.input === "pct" ? `${x.price}%` : money(x.price)}`);
       if (old.name !== x.name) out.push(`Your option "${old.name}" is now called "${label(x)}"`);
       if (old.input !== x.input) out.push(`${label(x)} is priced ${EXTRA_KINDS.find((e) => e[0] === x.input)?.[1].toLowerCase() || "another way"} now`);
@@ -385,6 +387,9 @@ export function describe(before, after, M) {
     if (st) out.push(`The 3D designer opens on the ${nd.size ? sizeWords(nd.size) + " " : ""}${styleName(M, st, after.offer[st])}`);
   }
   if (!same(od.colors, nd.colors)) out.push("Change the colors the 3D designer opens on");
+
+  /* How it's built: "Lofted Barn wall height: 6 ft 8 in → 7 ft" */
+  out.push(...builtChanges(before, after, M));
 
   if (!out.length && canon(stripCats(before)) !== canon(stripCats(after))) out.push("Tidy the price list");
   return [...new Set(out)];
@@ -483,9 +488,43 @@ function officeChecks(draft, M) {
   return out;
 }
 
+/* How it's built problems (model/build-settings.js, already in the owner's
+   words), each next to its box (views/price-list/built.js): a style's own
+   number under its field, a business-wide one on the "How your buildings
+   are built" card. Like the server, a problem the saved price list already
+   had does not stop a save (it shows as a note instead). */
+export function builtProblemsOf(prepared, M, saved) {
+  const had = new Set(saved ? builtProblems(saved, M).map((p) => `${p.path}|${p.words}`) : []);
+  const out = [];
+  for (const p of builtProblems(prepared, M)) {
+    if (had.has(`${p.path}|${p.words}`)) continue;
+    let m = /^offer\.([^.]+)\.built\.([A-Za-z]+)/.exec(p.path);
+    if (m) { out.push({ words: p.words, tab: "buildings", where: `built:${m[1]}:${m[2]}`, field: `built:${m[1]}:${m[2]}`, style: m[1] }); continue; }
+    m = /^offer\.([^.]+)\.built$/.exec(p.path);
+    if (m) { out.push({ words: p.words, tab: "buildings", where: `built:${m[1]}`, style: m[1] }); continue; }
+    m = /^built\.([A-Za-z]+)(?:\.([A-Za-z]+))?/.exec(p.path);
+    if (m) { out.push({ words: p.words, tab: "buildings", where: `built:biz:${m[1]}${m[2] ? ":" + m[2] : ""}`, field: `built:biz:${m[1]}${m[2] ? ":" + m[2] : ""}` }); continue; }
+    out.push({ words: p.words, tab: "buildings", where: "built:biz" });
+  }
+  /* an option's own numbers (Options tab: "Roof pitch at least") */
+  const extras = Array.isArray(prepared?.options?.extras) ? prepared.options.extras : [];
+  const savedX = Array.isArray(saved?.options?.extras) ? saved.options.extras : [];
+  extras.forEach((x, i) => {
+    if (!isObj(x) || x.built === undefined) return;
+    const was = savedX.find((y) => isObj(y) && y.key && y.key === x.key);
+    const old = new Set(was ? extraProblems(was.built, "built", was.name).map((p) => `${p.path}|${p.words}`) : []);
+    for (const p of extraProblems(x.built, "built", x.name)) {
+      if (old.has(`${p.path}|${p.words}`)) continue;
+      const knob = p.path.split(".")[1];
+      out.push({ words: p.words, tab: "options", where: `extra:${i}`, field: knob ? `extra:${i}:${knob}` : undefined });
+    }
+  });
+  return out;
+}
+
 /* Every problem with the draft, in words, each with its place. */
-export function problemsOf(prepared, M) {
-  const list = validate(prepared, M).map((p) => explain(p, prepared, M)).concat(officeChecks(prepared, M));
+export function problemsOf(prepared, M, saved) {
+  const list = validate(prepared, M).map((p) => explain(p, prepared, M)).concat(officeChecks(prepared, M), builtProblemsOf(prepared, M, saved));
   const seen = new Set();
   return list.filter((p) => { const k = `${p.where}|${p.field || ""}|${p.words}`; if (seen.has(k)) return false; seen.add(k); return true; });
 }

@@ -15,7 +15,7 @@
 
 import { validate, validateManufacturer, resolve, strictProblems, SIZE_RE, ID_RE } from "../../model/company.js";
 import { fail, OfficeError } from "./http.js";
-import { describeChanges as builtChanges, liftRawRules } from "../../model/build-settings.js";
+import { describeChanges as builtChanges, describeExtraBuilt, liftRawRules } from "../../model/build-settings.js";
 import { checkChangedStyles, SAVE_BUDGET_MS } from "./built-check.js";
 
 /* The parts of the settings that change what a customer can pick or pay. */
@@ -321,8 +321,13 @@ export function describeChanges(before, after, manufacturer) {
   const nx = new Map((after.options?.extras || []).map((x) => [x.key, x]));
   for (const [k, x] of nx) {
     const old = ox.get(k);
-    if (!old) out.push(`Added the extra "${x.name}" at ${fmtMoney(x.price)}`);
-    else if (!same(old, x)) out.push(old.price !== x.price ? `${x.name}: ${fmtMoney(old.price)} → ${fmtMoney(x.price)}` : `Changed the extra "${x.name}"`);
+    const built = describeExtraBuilt(x.name, old?.built, x.built);
+    if (!old) out.push(`Added the extra "${x.name}" at ${fmtMoney(x.price)}`, ...built);
+    else if (!same(old, x)) {
+      if (old.price !== x.price) out.push(`${x.name}: ${fmtMoney(old.price)} → ${fmtMoney(x.price)}`);
+      out.push(...built);
+      if (old.price === x.price && !built.length) out.push(`Changed the extra "${x.name}"`);
+    }
   }
   for (const [k, x] of ox) if (!nx.has(k)) out.push(`Removed the extra "${x.name}"`);
 
@@ -517,7 +522,7 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
       err.problems = words;
       throw err;
     }
-    return { checked: r.checked, buildings: r.buildings, problems: refuse ? [] : r.problems, warnings: r.warnings, unchecked: r.unchecked };
+    return { checked: r.checked, styles: r.styles, buildings: r.buildings, problems: refuse ? [] : r.problems, warnings: r.warnings, unchecked: r.unchecked };
   }
 
   async function history() {

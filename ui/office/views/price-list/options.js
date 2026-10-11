@@ -10,7 +10,8 @@
 import { h, icon, button, linkButton } from "../../dom.js";
 import { money } from "../../words.js";
 import { S, edited, repaint, focusLater } from "./state.js";
-import { keysOf, priceOf, ownName, styleName, baseOf, optionName, EXTRA_KINDS, NAME_MAX } from "./model.js";
+import { keysOf, isObj, priceOf, ownName, styleName, baseOf, optionName, EXTRA_KINDS, NAME_MAX } from "./model.js";
+import * as BUILT from "../../../../model/build-settings.js";
 import { priceInput, sellBox, renameable, msgs } from "./bits.js";
 
 const BASIS = { floor: "floor", wall: "walls", roof: "roof" };
@@ -161,7 +162,38 @@ function extraRow(x, i) {
       h("div", { class: "field" }, h("label", { htmlFor: ids.kind }, "How it's priced"), kind),
       priceSlot,
       h("div", { class: "pl-extra-rm" }, rm)),
+    extraPitch(x, i),
     msgs(`extra:${i}`));
+}
+
+/* How it's built for an option like a steep roof: the roof is at least this
+   steep when a customer picks it (model/build-settings.js: an extra's roof
+   pitch only ever makes a roof steeper). Empty: it does not change the
+   building. */
+function extraPitch(x, i) {
+  const id = `pl-x-${i}-pitch`;
+  const box = h("input", { id, type: "text", autocomplete: "off", spellcheck: false, placeholder: "Not changed", class: "pl-built-input",
+    dataset: { field: `extra:${i}:roofPitch` } });
+  const v = isObj(x.built) ? x.built.roofPitch : undefined;
+  box.value = v === undefined ? "" : typeof v === "number" ? BUILT.format("roofPitch", v) : String(v);
+  const set = (value) => {
+    if (value === undefined) { if (isObj(x.built)) { delete x.built.roofPitch; if (!Object.keys(x.built).length) delete x.built; } }
+    else { if (!isObj(x.built)) x.built = {}; x.built.roofPitch = value; }
+    edited();
+  };
+  box.addEventListener("input", () => {
+    const t = box.value.trim();
+    if (!t) return set(undefined);
+    const r = BUILT.parse("roofPitch", t, { kind: "gable" });
+    set(r.problem ? t : r.value);
+  });
+  box.addEventListener("change", () => {
+    const r = box.value.trim() ? BUILT.parse("roofPitch", box.value.trim(), { kind: "gable" }) : null;
+    if (r && !r.problem) box.value = BUILT.format("roofPitch", r.value);
+  });
+  return h("div", { class: "field pl-extra-built" },
+    h("label", { htmlFor: id }, "Roof pitch at least"), box,
+    h("p", { class: "hint" }, "For an option like a steep roof, like 7/12: when a customer picks it, the roof is at least this steep. Leave it empty when the option does not change the building."));
 }
 
 /* ---- read only ---------------------------------------------------------------- */

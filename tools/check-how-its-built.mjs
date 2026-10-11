@@ -1,0 +1,297 @@
+/* CHECK: "HOW IT'S BUILT" IN THE DEALER CENTER, IN A REAL BROWSER.
+   Run: node tools/check-how-its-built.mjs [--keep]
+   check-all: browser
+   Port: 8392 (HOW_ITS_BUILT_PORT=<port> to use another).
+
+   WHY. Alan (Oct 2026, "lets all 5"): each business types how its own
+   buildings are built -- a roof pitch like 5/12, a wall height like 7 ft
+   9 1/2 in -- gets a plain error next to the box on a typo, sees every
+   change in History, and an automatic every-size check replaces checking
+   by eye. This drives the screens the owner uses for it
+   (ui/office/views/price-list/built.js) on the local Dealer Center
+   (tools/office-local.mjs, sample data in test/out/how-its-built-data).
+
+   It proves:
+     1. the owner sees "How it's built" in a style's editor and the
+        business-wide card, at 1280 and 390 wide, with no sideways scrolling
+        and every box, chip and button at least 44 px tall;
+     2. typing "5\12" as the Utility Shed's roof pitch says "Roof pitch:
+        write it like 5/12." under the box and puts a red count on the
+        Buildings tab; a porch depth of "72" asks "Did you mean 72 in
+        (6 ft)?"; clearing the box takes the problem away;
+     3. "Check every size" with a 5 ft Utility Shed wall shows the door that
+        does not fit, in words; saving it is refused by the server with the
+        same words;
+     4. a 7 ft Lofted Barn wall saves, the "Saved" box says what changed
+        ("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft"), that every size
+        was drawn and fits, and links to a lot's 3D designer; History says
+        it too;
+     5. when the price list opens, a style whose own numbers no longer fit
+        (the standard changed under them) shows a yellow note with the words;
+     6. a manager sees the numbers read only, never a box;
+     7. the "try it" demo (/dealer?demo) shows the same screens and saves a
+        wall height with its in-page copy of the server.
+   Pictures: test/out/how-its-built/. --keep leaves the server running. */
+
+import { spawn } from "node:child_process";
+import { mkdirSync, rmSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+
+const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
+const KEEP = process.argv.includes("--keep");
+const PORT = Number(process.env.HOW_ITS_BUILT_PORT || 8392);
+const BASE = `http://127.0.0.1:${PORT}`;
+const DATA = "test/out/how-its-built-data";
+const OUT = resolve(ROOT, "test/out/how-its-built");
+const require = createRequire(import.meta.url);
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "/opt/node22/lib/node_modules/playwright/index.js");
+
+const OWNER = "chris@samplebarns.example", MANAGER = "sarah@samplebarns.example";
+
+let pass = 0, fail = 0;
+const failures = [];
+function ok(name, cond, extra) {
+  if (cond) { pass++; console.log("    ok   " + name); }
+  else { fail++; failures.push(name + (extra ? " -- " + extra : "")); console.log("    FAIL " + name + (extra ? " -- " + extra : "")); }
+}
+const section = (t) => console.log("\n  " + t);
+
+rmSync(resolve(ROOT, DATA), { recursive: true, force: true });
+mkdirSync(OUT, { recursive: true });
+const server = spawn(process.execPath, ["tools/office-local.mjs", "--reset", "--port", String(PORT), "--data", DATA], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+let serverLog = "";
+server.stdout.on("data", (d) => { serverLog += d; });
+server.stderr.on("data", (d) => { serverLog += d; });
+for (let i = 0; i < 120 && !/is running/.test(serverLog); i++) await new Promise((r) => setTimeout(r, 250));
+if (!/is running/.test(serverLog)) {
+  console.log("FAIL the local Dealer Center did not start:\n" + serverLog);
+  server.kill();
+  process.exit(1);
+}
+
+const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
+
+async function pageFor(email, { width = 1280, height = 900 } = {}) {
+  const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: "reduce" });
+  await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, (r) => r.abort());
+  if (email) await context.addCookies([{ name: "dealer_local_user", value: encodeURIComponent(email), url: BASE }]);
+  const page = await context.newPage();
+  page.errors = [];
+  page.on("console", (m) => { if (m.type() === "error" && !/status of 4\d\d/.test(m.text())) page.errors.push(m.text()); });
+  page.on("pageerror", (e) => page.errors.push("page error: " + e.message));
+  return page;
+}
+async function openPriceList(page, base = `${BASE}/dealer`) {
+  await page.goto(`${base}#/price-list`, { waitUntil: "load" });
+  await page.waitForSelector(".pl-body .pl-tab", { timeout: 30000 });
+  await page.waitForTimeout(300);
+}
+async function openStyle(page, key) {
+  const sel = `.pl-style[data-style="${key}"]`;
+  if (!(await page.$(`${sel}.open`))) await page.click(`${sel} .pl-style-open`);
+  await page.waitForSelector(`[data-built="${key}"]`, { timeout: 10000 });
+}
+async function typeIn(page, field, text) {
+  const box = page.locator(`[data-field="${field}"]`);
+  await box.fill(text);
+  await box.dispatchEvent("change");
+  await page.waitForTimeout(150);
+}
+const msgText = (page, where) => page.$eval(`[data-msgs="${where}"]`, (el) => el.textContent).catch(() => "");
+async function sideways(page) {
+  return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+}
+/* every box, chip and button the screens add, at least 44 px tall */
+async function smallTaps(page, scope) {
+  return page.$$eval(`${scope} input, ${scope} button, ${scope} summary`, (els) => els.filter((e) => {
+    const r = e.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && r.height < 43.5;
+  }).map((e) => `${e.tagName.toLowerCase()} "${(e.textContent || e.getAttribute("data-field") || "").trim().slice(0, 30)}" ${Math.round(e.getBoundingClientRect().height)} px`));
+}
+function storedPriceList() {
+  const file = resolve(ROOT, DATA, encodeURIComponent("price-list") + ".json");
+  return { file, raw: JSON.parse(readFileSync(file, "utf8")) };
+}
+
+try {
+  /* ---- 1 ----------------------------------------------------------------- */
+  section("1. The owner's screens, on a computer and a phone");
+  for (const [width, height] of [[1280, 900], [390, 844]]) {
+    const page = await pageFor(OWNER, { width, height });
+    await openPriceList(page);
+    await openStyle(page, "LB");
+    const fields = await page.$$eval('[data-built="LB"] .pl-built-field', (els) => els.map((e) => e.querySelector("label, .pl-label")?.textContent));
+    ok(`${width} wide: the Lofted Barn has How it's built with its numbers (${fields.join(", ")})`,
+      ["Barn roof height", "Eave overhang", "Gable-end overhang", "Wall height", "Wooden shop door height"].every((f) => fields.includes(f)) && !fields.includes("Roof pitch"));
+    const wall = await page.getAttribute('[data-field="built:LB:wallHeight"]', "placeholder");
+    const from = await page.$eval('[data-built="LB"] [data-field="built:LB:wallHeight"] ~ .hint .pl-built-from', (el) => el.textContent).catch(() => "");
+    ok(`${width} wide: an empty box shows the number it builds with ("${wall}") and where it comes from ("${from}")`, wall === "6 ft 8 1/16 in" && from === "Standard: 6 ft 8 1/16 in", `${wall} | ${from}`);
+    ok(`${width} wide: the business-wide card "How your buildings are built" is there`, !!(await page.$(".pl-built-card")) && /Reaches the/.test(await page.textContent(".pl-built-card")));
+    ok(`${width} wide: no sideways scrolling`, (await sideways(page)) <= 0, String(await sideways(page)));
+    const small = [...await smallTaps(page, '[data-built="LB"]'), ...await smallTaps(page, ".pl-built-card")];
+    ok(`${width} wide: every box, chip and button is at least 44 px tall`, small.length === 0, small.slice(0, 5).join("; "));
+    await page.locator('[data-built="LB"]').screenshot({ path: `${OUT}/style-${width}.png` });
+    await page.locator(".pl-built-card").screenshot({ path: `${OUT}/business-${width}.png` });
+    ok(`${width} wide: no errors`, page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
+    await page.context().close();
+  }
+
+  /* ---- 2 ----------------------------------------------------------------- */
+  section("2. A typo is said next to the box, as it is typed");
+  const page = await pageFor(OWNER);
+  await openPriceList(page);
+  await openStyle(page, "UT");
+  await typeIn(page, "built:UT:roofPitch", "5\\12");
+  let said = await msgText(page, "built:UT:roofPitch");
+  ok(`"5\\12" says "${said}" under the box`, said === "Roof pitch: write it like 5/12.", said);
+  const flag = await page.$eval('.tab[data-key="buildings"] .pl-tab-flag', (el) => el.textContent).catch(() => "");
+  ok(`... and the Buildings tab has a red count (${flag})`, flag === "1", flag);
+  ok("... and the bar at the bottom says there is 1 thing to fix", /1 thing to fix/.test(await page.textContent(".pl-bar")));
+  await page.screenshot({ path: `${OUT}/typo-1280.png` });
+  await typeIn(page, "built:UT:roofPitch", "5/12");
+  said = await msgText(page, "built:UT:roofPitch");
+  ok("typing 5/12 takes the problem away", said === "" && !(await page.$('.tab[data-key="buildings"] .pl-tab-flag')), said);
+  await typeIn(page, "built:UT:roofPitch", "");
+  await openStyle(page, "C");
+  await typeIn(page, "built:C:porchDepth", "72");
+  said = await msgText(page, "built:C:porchDepth");
+  ok(`a porch depth of "72" asks about inches ("${said}")`, /Porch depth 72 ft is deeper than 8 ft\. Did you mean 72 in \(6 ft\)\?/.test(said), said);
+  await typeIn(page, "built:C:porchDepth", "");
+  ok("... and an empty box is the standard again", (await msgText(page, "built:C:porchDepth")) === "" && !(await page.isVisible(".pl-bar")), await page.textContent(".pl-bar"));
+
+  /* ---- 3 ----------------------------------------------------------------- */
+  section("3. Check every size, and the server's check on save");
+  await typeIn(page, "built:UT:wallHeight", "60");
+  ok("a bare 60 in the wall height box reads as inches: 5 ft", (await page.inputValue('[data-field="built:UT:wallHeight"]')) === "5 ft");
+  await page.click('[data-built="UT"] .pl-built-check button');
+  await page.waitForSelector('[data-built="UT"] .pl-built-box', { timeout: 30000 });
+  const checked = await page.textContent('[data-built="UT"] .pl-built-result');
+  ok("Check every size says the door does not fit, in words", /Change these numbers before you save/.test(checked) && /72″ Wooden Double Doors on the front should be 76 1\/2 in tall, but the wall leaves room for 55 5\/8 in/.test(checked), checked.slice(0, 300));
+  ok("... and not the gable window the standard Utility Shed has the same trouble with", !/Gable Window/.test(checked));
+  await page.locator('[data-built="UT"]').screenshot({ path: `${OUT}/check-every-size-1280.png` });
+  await page.click(".pl-bar .btn-accent");
+  await page.waitForSelector("dialog.dialog", { timeout: 30000 });
+  const refused = await page.textContent("dialog.dialog");
+  ok("Save is refused by the server with the same words", /The price list wasn't saved/.test(refused) && /should be 76 1\/2 in tall, but the wall leaves room for 55 5\/8 in/.test(refused), refused.slice(0, 300));
+  await page.screenshot({ path: `${OUT}/save-refused-1280.png` });
+  await page.click("dialog.dialog .btn-primary");
+  await typeIn(page, "built:UT:wallHeight", "");
+
+  /* ---- 4 ----------------------------------------------------------------- */
+  section("4. A 7 ft Lofted Barn wall saves, says so, and shows in History");
+  await openStyle(page, "LB");
+  await typeIn(page, "built:LB:wallHeight", "7 ft");
+  await page.click(".pl-bar .btn-accent");
+  await page.waitForSelector(".pl-saved", { timeout: 30000 });
+  const saved = await page.textContent(".pl-saved");
+  ok("the Saved box says \"Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft\"", saved.includes("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft"), saved.slice(0, 300));
+  ok("... that every size was drawn and fits", /Every size of the Lofted Barn was drawn with your numbers and fits\./.test(saved), saved.slice(0, 300));
+  const link = await page.getAttribute(".pl-saved a.btn", "href").catch(() => null);
+  ok(`... with a link to see it in a lot's 3D designer (${link ? link.slice(0, 40) + "…" : "none"})`, !!link && /^\/d\/[a-z0-9-]+\/#d=/.test(link) && /See the Lofted Barn in the 3D designer/.test(saved), link);
+  await page.screenshot({ path: `${OUT}/saved-1280.png` });
+  const history = await page.evaluate(async () => (await (await fetch("/api/office/price-list/history", { credentials: "same-origin" })).json()).entries[0].changes);
+  ok("History has the line", history.includes("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft"), JSON.stringify(history));
+
+  /* an option like a steep roof: "Roof pitch at least" on the Options tab */
+  await page.click('.tab[data-key="options"]');
+  await page.waitForSelector(".pl-extras", { timeout: 10000 });
+  await page.click('.pl-extras .pl-card-head button');
+  const n = (await page.$$(".pl-extras .pl-extra")).length - 1;
+  await typeIn(page, `extra:${n}:name`, "Steep roof");
+  await page.fill(`[data-field="extra:${n}:price"]`, "350");
+  await typeIn(page, `extra:${n}:roofPitch`, "15/12");
+  said = await msgText(page, `extra:${n}`);
+  ok(`an option's roof pitch past the limit says so ("${said}")`, /Roof pitch 15\/12 is steeper than 12\/12/.test(said)
+    && (await page.$eval('.tab[data-key="options"] .pl-tab-flag', (el) => el.textContent).catch(() => "")) === "1", said);
+  await typeIn(page, `extra:${n}:roofPitch`, "7/12");
+  await page.click(".pl-bar .btn-accent");
+  await page.waitForSelector(".pl-saved", { timeout: 30000 });
+  const xsaved = await page.textContent(".pl-saved");
+  ok("an option \"Steep roof\" at 7/12 saves, says \"Steep roof: roof pitch at least 7/12\" and was drawn on the styles it reaches",
+    xsaved.includes("Steep roof: roof pitch at least 7/12") && /Every size of the Utility Shed, .*was drawn with your numbers and fits\./.test(xsaved), xsaved.slice(0, 400));
+  await page.locator(".pl-extras .pl-extra").last().screenshot({ path: `${OUT}/option-roof-pitch-1280.png` });
+  ok("no errors on the owner's screens", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
+  await page.context().close();
+
+  /* ---- 5 ----------------------------------------------------------------- */
+  section("5. When the price list opens: a quiet check of the styles with numbers of their own");
+  {
+    /* the standard changed under a saved number: put a 5 ft Utility Shed
+       wall straight into the stored price list, as if it had been saved
+       before the change */
+    const { file, raw } = storedPriceList();
+    raw.data.settings.offer.UT.built = { wallHeight: 60 };
+    raw.data.version += 1;
+    writeFileSync(file, JSON.stringify(raw));
+    const p = await pageFor(OWNER, { width: 390, height: 844 });
+    await openPriceList(p);
+    await p.waitForSelector("[data-built-notes] .pl-built-box", { timeout: 30000 });
+    const note = await p.textContent("[data-built-notes]");
+    ok("a yellow note says the Utility Shed's own wall no longer fits, in words", /Since the last update, your own building numbers do not fit everywhere/.test(note) && /should be 76 1\/2 in tall/.test(note), note.slice(0, 300));
+    ok("... with no sideways scrolling on a phone", (await sideways(p)) <= 0);
+    await p.locator("[data-built-notes]").screenshot({ path: `${OUT}/since-last-update-390.png` });
+    ok("no errors", p.errors.length === 0, p.errors.slice(0, 3).join(" | "));
+    await p.context().close();
+    delete raw.data.settings.offer.UT.built;
+    raw.data.version += 1;
+    writeFileSync(file, JSON.stringify(raw));
+  }
+
+  /* ---- 6 ----------------------------------------------------------------- */
+  section("6. A manager sees the numbers, read only");
+  for (const [width, height] of [[1280, 900], [390, 844]]) {
+    const p = await pageFor(MANAGER, { width, height });
+    await openPriceList(p);
+    ok(`${width} wide: no How it's built boxes for a manager`, (await p.$$(".pl-built-input, .pl-built-card")).length === 0);
+    const lb = p.locator(".pl-sheet-card", { hasText: "Lofted Barn" }).first();
+    await lb.locator(".pl-built-ro summary").click();
+    const lines = await lb.locator(".pl-built-ro").textContent();
+    ok(`${width} wide: the Lofted Barn's numbers show, with its own 7 ft wall`, /Wall height\s*7 ft/.test(lines) && /Barn roof height, 10 ft wide\s*4 ft 6 in/.test(lines), lines.slice(0, 200));
+    ok(`${width} wide: no sideways scrolling`, (await sideways(p)) <= 0);
+    const small = await smallTaps(p, ".pl-built-ro");
+    ok(`${width} wide: the "How it's built" line is at least 44 px tall`, small.length === 0, small.join("; "));
+    await lb.screenshot({ path: `${OUT}/manager-${width}.png` });
+    ok(`${width} wide: no errors`, p.errors.length === 0, p.errors.slice(0, 3).join(" | "));
+    await p.context().close();
+  }
+
+  /* ---- 7 ----------------------------------------------------------------- */
+  section("7. The \"try it\" demo");
+  {
+    const p = await pageFor(null);
+    const calls = [];
+    p.on("request", (r) => { if (/\/api\//.test(r.url())) calls.push(r.url()); });
+    await p.goto(`${BASE}/dealer?demo`, { waitUntil: "load" });
+    await p.waitForSelector(".person-pick", { timeout: 30000 });
+    await p.click(".person-pick:has-text('Chris Walker')");
+    await p.waitForSelector(".banner.demo", { timeout: 30000 });
+    await openPriceList(p, `${BASE}/dealer?demo`);
+    await openStyle(p, "LB");
+    await typeIn(p, "built:LB:wallHeight", "84");
+    await p.click(".pl-bar .btn-accent");
+    await p.waitForSelector(".pl-saved", { timeout: 60000 });
+    const saved = await p.textContent(".pl-saved");
+    ok("the demo saves a 7 ft Lofted Barn wall, checked at every size, in the page", saved.includes("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft") && /Every size of the Lofted Barn was drawn/.test(saved), saved.slice(0, 300));
+    ok("... and never calls the real server", calls.length === 0, calls.slice(0, 3).join(" "));
+    ok("no errors in the demo", p.errors.length === 0, p.errors.slice(0, 3).join(" | "));
+    await p.context().close();
+  }
+} catch (e) {
+  fail++;
+  failures.push("the check stopped: " + (e && e.stack || e));
+  console.log("    FAIL the check stopped: " + (e && e.message || e));
+} finally {
+  await browser.close();
+  if (!KEEP) server.kill();
+  else console.log(`\nThe local Dealer Center is still running: ${BASE}/dealer`);
+}
+
+if (fail) {
+  console.log(`\nFAIL: ${fail} of ${pass + fail} checks failed:`);
+  for (const f of failures) console.log("  - " + f);
+  process.exit(1);
+}
+console.log(`\nPROVED: all ${pass} checks passed -- the owner types how a style or the whole business is built and sees a plain problem under the box as it types ("Roof pitch: write it like 5/12.", "Did you mean 72 in (6 ft)?") with a red count on the tab; Check every size and the server's save both say what does not fit in words; a good change saves with its History line and a link to the 3D designer; a quiet check on open finds numbers the standard no longer fits; a manager sees the numbers read only; the "try it" demo does the same in the page; 1280 and 390 wide with no sideways scrolling and 44 px taps. Pictures: test/out/how-its-built/.`);
+if (!KEEP) process.exit(0);
