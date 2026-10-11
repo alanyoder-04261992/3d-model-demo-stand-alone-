@@ -817,6 +817,31 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   ok(`... History says "${lbName} wall height: 6 ft 7 1/2 in → 7 ft"`, out.changes.includes(`${lbName} wall height: 6 ft 7 1/2 in → 7 ft`), JSON.stringify(out.changes));
   ok("... and cfg goes up, so open designers redraw", out.cfg === cur.cfg + 1);
   ok("... the lot's designer draws the 7 ft walls", (await liveCat()).TYPES.LB.wallH === 7);
+  /* a number is stored as its number, the same number in other words is no
+     change, and the standard's own number typed on a style changes nothing
+     a customer sees, so open designs stay current (review F9, W12) */
+  {
+    const utName = cur.settings.offer.UT.name || manufacturer.styles.UT.name;
+    cur = await want(200, "GET", "/api/office/price-list");
+    s = clone(cur.settings); s.offer.UT.built = { roofPitch: 5 };
+    out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "typing the standard's 5/12 on the Utility Shed" });
+    ok(`typing the standard's 5/12 on the ${utName}: History says "${utName} roof pitch: standard (5/12) → 5/12 of its own"`, out.changes.includes(`${utName} roof pitch: standard (5/12) → 5/12 of its own`), JSON.stringify(out.changes));
+    ok("... and cfg stays (nothing is drawn differently)", out.cfg === cur.cfg && out.version === cur.version + 1, JSON.stringify([cur.cfg, out.cfg]));
+    cur = await want(200, "GET", "/api/office/price-list");
+    s = clone(cur.settings); s.offer.UT.built = { roofPitch: "5/12" };
+    out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "sending the same pitch as \"5/12\"" });
+    const kept = await want(200, "GET", "/api/office/price-list");
+    ok("sending the same pitch as \"5/12\" is no change: nothing in History, no new version", out.changes.length === 0 && kept.version === cur.version && kept.settings.offer.UT.built.roofPitch === 5, JSON.stringify([out.changes, kept.settings.offer.UT.built]));
+    s = clone(kept.settings); s.offer.UT.built = { roofPitch: "6/12" };
+    out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: kept.version }, { label: "a pitch sent as \"6/12\"" });
+    ok("a pitch sent as \"6/12\" is stored as the number 6", out.settings.offer.UT.built.roofPitch === 6 && out.cfg === kept.cfg + 1, JSON.stringify(out.settings.offer.UT.built));
+    cur = await want(200, "GET", "/api/office/price-list");
+    s = clone(cur.settings); s.offer.LB.built = { ...s.offer.LB.built, barnPeak: { "08": 40, "8": 50 } };
+    const twice = await want(422, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the 8 ft wide barn given twice, as \"08\" and \"8\"" });
+    ok("the 8 ft wide barn given twice (\"08\" and \"8\") is refused, never one height dropped", /Barn roof height: the 8 ft wide barn is listed twice\./.test(twice.error || ""), twice.error);
+    s = clone(cur.settings); delete s.offer.UT.built;
+    await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Utility Shed back to the standard" });
+  }
   cur = await want(200, "GET", "/api/office/price-list");
   s = clone(cur.settings); s.built = { roofPitch: { gable: 6 } };
   out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "saving a business-wide roof pitch" });

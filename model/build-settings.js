@@ -253,6 +253,8 @@ export function parse(id, input, ctx = {}) {
         if (!r || !Number.isFinite(r.value)) return { problem: `${K.Words} for the ${w} ft wide barn: write it like 4 ft 3 in.` };
         const [lo, hi] = LIMITS.barnPeak;
         if (r.value < lo || r.value > hi) return { problem: `${K.Words} for the ${w} ft wide barn: ${fmtIn(r.value)} is not between ${fmtIn(lo)} and ${fmtIn(hi)}.` };
+        /* "08" and "8" are one width: never keep one and drop the other */
+        if (own(out, String(+w))) return { problem: `${K.Words}: the ${+w} ft wide barn is listed twice.` };
         out[String(+w)] = r4(r.value);
       }
       const sorted = Object.keys(out).map(Number).sort((a, b) => a - b);
@@ -776,6 +778,58 @@ export function businessReach(settings, manufacturer, id, kind) {
   return out;
 }
 
+/* Each How it's built number stored as the number it reads as: a pitch
+   sent as "5/12" is kept as 5, a barn width "08" as "8" (review F9), so the
+   same number never reads as a change and the stored price list holds
+   numbers, as the contract says. A value that cannot be read is left as
+   sent, for problems() to refuse in words. -> a new copy, or the same
+   object when every value already is its number. */
+export function tidyBuilt(settings, manufacturer) {
+  const S = settings || {}, styles = (manufacturer && manufacturer.styles) || {};
+  let out = null;
+  const edit = () => (out = out || copy(S));
+  const tidy = (v, id, ctx) => {
+    const r = parse(id, v, ctx);
+    return r.problem || r.value === undefined || same(r.value, v) ? undefined : r.value;
+  };
+  if (isObj(S.built)) for (const id of keysOf(S.built)) {
+    const K = KNOB[id];
+    if (!K || !K.business) continue;
+    if (Array.isArray(K.business)) {
+      if (!isObj(S.built[id])) continue;
+      for (const kind of keysOf(S.built[id])) {
+        if (K.business.indexOf(kind) < 0) continue;
+        const v = tidy(S.built[id][kind], id, { kind: id === "doorHeight" ? null : kind });
+        if (v !== undefined) edit().built[id][kind] = v;
+      }
+    } else {
+      const v = tidy(S.built[id], id, {});
+      if (v !== undefined) edit().built[id] = v;
+    }
+  }
+  for (const k of keysOf(S.offer)) {
+    const o = S.offer[k];
+    if (!isObj(o) || !isObj(o.built)) continue;
+    const s = styles[o.base != null ? o.base : k];
+    if (!s) continue;
+    for (const id of keysOf(o.built)) {
+      if (!KNOB[id]) continue;
+      const v = tidy(o.built[id], id, { kind: kindOf(s), metal: !!s.metal, name: s.name });
+      if (v !== undefined) edit().offer[k].built[id] = v;
+    }
+  }
+  const xs = isObj(S.options) && Array.isArray(S.options.extras) ? S.options.extras : [];
+  xs.forEach((x, i) => {
+    if (!isObj(x) || !isObj(x.built)) return;
+    for (const id of keysOf(x.built)) {
+      if (!KNOB[id]) continue;
+      const v = tidy(x.built[id], id, {});
+      if (v !== undefined) edit().options.extras[i].built[id] = v;
+    }
+  });
+  return out || S;
+}
+
 /* The roof kind of a style, in the words the knobs use: "gable", "lean",
    "slope", "barn" or "salt". */
 export function roofKindOf(t) { return kindOf(t); }
@@ -801,9 +855,9 @@ export function describeChanges(before, after, manufacturer) {
     if (Array.isArray(K.business)) {
       for (const kind of K.business) {
         const x = isObj(bb[id]) ? bb[id][kind] : undefined, y = isObj(ab[id]) ? ab[id][kind] : undefined;
-        if (!same(x, y)) out.push(`Business-wide ${K.words} for ${KIND_WORDS[kind]}: ${shownBiz(id, x)} → ${shownBiz(id, y)}`);
+        if (!same(x, y) && shownBiz(id, x) !== shownBiz(id, y)) out.push(`Business-wide ${K.words} for ${KIND_WORDS[kind]}: ${shownBiz(id, x)} → ${shownBiz(id, y)}`);
       }
-    } else if (!same(bb[id], ab[id])) out.push(`Business-wide ${K.words}: ${shownBiz(id, bb[id])} → ${shownBiz(id, ab[id])}`);
+    } else if (!same(bb[id], ab[id]) && shownBiz(id, bb[id]) !== shownBiz(id, ab[id])) out.push(`Business-wide ${K.words}: ${shownBiz(id, bb[id])} → ${shownBiz(id, ab[id])}`);
   }
   const ea = apply(b, M).styles, eb = apply(a, M).styles;
   for (const k of keysOf(a.offer)) {
@@ -822,7 +876,16 @@ export function describeChanges(before, after, manufacturer) {
     };
     for (const id of KNOB_IDS) {
       if (same(ob[id], oa[id])) continue;
-      out.push(`${name} ${KNOB[id].words}: ${words(b, ea, id)} → ${words(a, eb, id)}`);
+      const was = words(b, ea, id), now = words(a, eb, id);
+      /* the same number in other words ("5/12" for 5) is no change; the
+         standard's number typed as the style's own is: the style now keeps
+         it when the standard moves (review W12) */
+      if (was === now) {
+        if (ob[id] === undefined) out.push(`${name} ${KNOB[id].words}: standard (${was}) → ${now} of its own`);
+        else if (oa[id] === undefined) out.push(`${name} ${KNOB[id].words}: ${was} of its own → standard (${now})`);
+        continue;
+      }
+      out.push(`${name} ${KNOB[id].words}: ${was} → ${now}`);
     }
   }
   /* a new wall height changes what a wall upgrade priced by the square foot

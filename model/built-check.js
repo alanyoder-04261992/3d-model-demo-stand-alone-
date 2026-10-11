@@ -77,7 +77,7 @@ export function ownNumbersOf(settings, M) {
 /* What reaches the drawing for each offered style: the traits it sets, the
    traits it drops and its own construction layer. Two price lists that give
    a style the same of these draw it the same. */
-function drawnOf(settings, M) {
+export function drawnOf(settings, M) {
   const out = {};
   const applied = BUILT.apply(BUILT.liftRawRules(settings, M).settings, M).styles;
   for (const k of Object.keys(applied)) {

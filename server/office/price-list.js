@@ -15,7 +15,8 @@
 
 import { validate, validateManufacturer, resolve, strictProblems, SIZE_RE, ID_RE } from "../../model/company.js";
 import { fail, OfficeError } from "./http.js";
-import { describeChanges as builtChanges, describeExtraBuilt, liftRawRules } from "../../model/build-settings.js";
+import { describeChanges as builtChanges, describeExtraBuilt, liftRawRules, tidyBuilt } from "../../model/build-settings.js";
+import { drawnOf } from "../../model/built-check.js";
 import { checkChangedStyles, SAVE_BUDGET_MS } from "./built-check.js";
 
 /* The parts of the settings that change what a customer can pick or pay. */
@@ -25,6 +26,23 @@ const POLICY_PARTS = ["roundTo", "minCharge", "roofAreaFactor"];
 export function priceFingerprint(settings) {
   const pricing = settings.pricing || {};
   return JSON.stringify([PRICE_PARTS.map((k) => settings[k] ?? null), POLICY_PARTS.map((k) => pricing[k] ?? null)]);
+}
+
+/* Does a customer's open design need to be told "prices or items have
+   changed"? A How it's built number counts only when it changes what is
+   drawn (model/built-check.js drawnOf): typing the standard's own 5/12 on
+   the Utility Shed changes nothing a customer sees (review F9). */
+function customerSeesChange(before, after, manufacturer) {
+  const noBuilt = (s) => {
+    const c = { ...s, built: undefined };
+    if (s.offer && typeof s.offer === "object") {
+      c.offer = {};
+      for (const k of Object.keys(s.offer)) c.offer[k] = s.offer[k] && typeof s.offer[k] === "object" && !Array.isArray(s.offer[k]) ? { ...s.offer[k], built: undefined } : s.offer[k];
+    }
+    return c;
+  };
+  if (priceFingerprint(noBuilt(before)) !== priceFingerprint(noBuilt(after))) return true;
+  try { return JSON.stringify(drawnOf(before, manufacturer)) !== JSON.stringify(drawnOf(after, manufacturer)); } catch (e) { return true; }
 }
 
 /* Limits on top of model/company.js: whole feet, sensible sizes and
@@ -529,7 +547,10 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
        How it's built (model/build-settings.js liftRawRules): the same roof */
     const lifted = liftRawRules(next, manufacturer);
     next = lifted.settings === next ? next : clean(lifted.settings);
-    next.cfg = priceFingerprint(next) === priceFingerprint(liftRawRules(old, manufacturer).settings) ? old.cfg : (old.cfg || 1) + 1;
+    /* How it's built numbers are stored as numbers ("5/12" as 5) */
+    const tidied = tidyBuilt(next, manufacturer);
+    next = tidied === next ? next : clean(tidied);
+    next.cfg = customerSeesChange(liftRawRules(old, manufacturer).settings, next, manufacturer) ? (old.cfg || 1) + 1 : old.cfg;
     /* a stricter rule refuses only what is new: compared with the stored
        price list, or, when putting an old copy back, with that copy */
     const cat = check(next, restoredFrom !== undefined ? restoredFrom : old);

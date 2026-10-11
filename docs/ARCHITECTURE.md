@@ -535,9 +535,13 @@ settings hold the roof pitch. Set it in How it's built instead."), except
 the Barnwright setup connector's roof pitch rule list, which
 `liftRawRules()` moves into `offer.<KEY>.built.roofPitch` (in memory on
 read, for real on save: "Roof pitch rules moved into How it's built (no
-building changes)"). Top-level `built` is a price part, so a change raises
-`cfg`, open designers redraw and History says it ("Lofted Barn wall height:
-6 ft 7 1/2 in → 7 ft").
+building changes)"). `save()` stores each number as its number
+(`tidyBuilt`: "5/12" as 5, a barn width "08" as "8"). A change that moves
+what is drawn (`model/built-check.js drawnOf`) raises `cfg`, open designers
+redraw and History says it ("Lofted Barn wall height: 6 ft 7 1/2 in →
+7 ft"); the same number in other words is no change, and the standard's
+number typed on a style is History only ("standard (5/12) → 5/12 of its
+own").
 
 **Checked at every size, on save and on the screen.** `model/built-check.js`
 says which styles a change reaches (`changedStyles`: numbers changed, sizes

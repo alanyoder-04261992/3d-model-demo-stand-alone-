@@ -106,8 +106,11 @@ number, its words and its source.
   built (no building changes)"); the drawn roof is identical.
 * History: `describeChanges()` -- "Lofted Barn wall height: 6 ft 7 1/2 in
   → 7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12".
-  Top-level `built` is a price part, so a change raises `cfg` and open
-  designers redraw.
+  A change that moves what is drawn (`drawnOf`) raises `cfg` and open
+  designers redraw; the standard's number typed on a style says "standard
+  (5/12) → 5/12 of its own" and keeps `cfg`; the same number in other words
+  says nothing. `tidyBuilt()` stores each value as its number on save, and
+  a barn width given twice ("08" and "8") is refused.
 
 ## In the Dealer Center (the screens and the save)
 

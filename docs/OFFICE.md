@@ -200,8 +200,12 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12",
   "Steep roof: roof pitch at least 7/12", and "Wall upgrades priced by the
   square foot follow the new wall height: ..." when a wall height moves
-  what a per-square-foot wall upgrade costs. A change raises `cfg`, so open
-  designers redraw.
+  what a per-square-foot wall upgrade costs. A change that moves what is
+  drawn raises `cfg`, so open designers redraw; the standard's own number
+  typed on a style is said ("Utility Shed roof pitch: standard (5/12) →
+  5/12 of its own") but draws nothing new, so `cfg` stays. Every number is
+  stored as its number ("5/12" as 5), so sending it again is no change, and
+  a barn width given twice ("08" and "8") is refused.
 * **When the price list opens**, the owner's screen quietly checks the
   styles with numbers of the business's own for about 1 1/2 seconds and
   shows a yellow note if a change to the standard means they no longer

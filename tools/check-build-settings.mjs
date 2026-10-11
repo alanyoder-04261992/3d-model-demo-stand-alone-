@@ -439,6 +439,31 @@ group("11. problems, screens and History words");
   const typo = copy(before); typo.offer.LB.built = { wallHeight: "5\\12" };
   const typoLines = BUILT.describeChanges(before, typo, M);
   ok("changes: a wall height typed wrong says what was typed (\"... → \"5\\12\"\")", typoLines.includes('Lofted Barn wall height: 6 ft 8 1/16 in → "5\\12"'), J(typoLines));
+  /* the standard's own number typed on a style (review W12), the same
+     number in other words (F9) */
+  {
+    const SMx = standardManufacturer();
+    const mine = copy(before); mine.offer.UT.built = { roofPitch: 5 };
+    const asText = copy(before); asText.offer.UT.built = { roofPitch: "5/12" };
+    ok("History: the standard's 5/12 typed on the Utility Shed is \"standard (5/12) → 5/12 of its own\"", J(BUILT.describeChanges(before, mine, SMx)) === J(["Utility Shed roof pitch: standard (5/12) → 5/12 of its own"]), J(BUILT.describeChanges(before, mine, SMx)));
+    ok("... and taken out again \"5/12 of its own → standard (5/12)\"", J(BUILT.describeChanges(mine, before, SMx)) === J(["Utility Shed roof pitch: 5/12 of its own → standard (5/12)"]), J(BUILT.describeChanges(mine, before, SMx)));
+    ok("History: 5 and \"5/12\" are the same number, no line", J(BUILT.describeChanges(mine, asText, SMx)) === "[]", J(BUILT.describeChanges(mine, asText, SMx)));
+    const bizA = copy(before); bizA.built = { roofPitch: { gable: 6 } };
+    const bizB = copy(before); bizB.built = { roofPitch: { gable: "6/12" } };
+    ok("History: a business-wide 6 and \"6/12\" are the same number, no line", J(BUILT.describeChanges(bizA, bizB, SMx)) === "[]", J(BUILT.describeChanges(bizA, bizB, SMx)));
+    /* stored as numbers */
+    const sent = copy(before);
+    sent.built = { roofPitch: { gable: "6/12" }, eaveOverhang: { gable: "5 in" } };
+    sent.offer.UT.built = { roofPitch: "5 1/2/12", wallHeight: "7 ft 9 1/2 in" };
+    sent.offer.LB.built = { barnPeak: { "08": "3 ft 7 3/4 in", 10: 48 }, wallHeight: "5\\12" };
+    sent.options.extras = [{ key: "steep", name: "Steep roof", input: "check", price: 1, built: { roofPitch: "7/12" } }];
+    const tidy = BUILT.tidyBuilt(sent, SMx);
+    ok("tidyBuilt: every number stored as its number (\"6/12\" → 6, \"7 ft 9 1/2 in\" → 93.5, \"08\" → 8)", J(tidy.built) === J({ roofPitch: { gable: 6 }, eaveOverhang: { gable: 5 } }) && J(tidy.offer.UT.built) === J({ roofPitch: 5.5, wallHeight: 93.5 })
+      && J(tidy.offer.LB.built.barnPeak) === J({ 8: 43.75, 10: 48 }) && tidy.options.extras[0].built.roofPitch === 7, J([tidy.built, tidy.offer.UT.built, tidy.offer.LB.built, tidy.options.extras[0].built]));
+    ok("... a value that cannot be read is left as sent (the save refuses it in words), and the one sent is not changed", tidy.offer.LB.built.wallHeight === "5\\12" && sent.offer.UT.built.roofPitch === "5 1/2/12");
+    ok("... a price list already in numbers comes back as itself", BUILT.tidyBuilt(tidy, SMx) === tidy);
+    ok("a barn width given twice (\"08\" and \"8\") is refused: \"Barn roof height: the 8 ft wide barn is listed twice.\"", BUILT.parse("barnPeak", { "08": 40, 8: 50 }).problem === "Barn roof height: the 8 ft wide barn is listed twice.", J(BUILT.parse("barnPeak", { "08": 40, 8: 50 })));
+  }
   ok("words: a pitch between quarters is \"about 6 1/2/12\"; a door opening in inches", BUILT.format("roofPitch", 6.48) === "about 6 1/2/12" && BUILT.format("roofPitch", 5.25) === "5 1/4/12" && BUILT.format("doorHeight", 76.5) === "76 1/2 in");
   ok("History: an extra's roof pitch (\"Steep roof: roof pitch at least 7/12\")", J(BUILT.describeExtraBuilt("Steep roof", undefined, { roofPitch: 7 })) === J(["Steep roof: roof pitch at least 7/12"])
     && J(BUILT.describeExtraBuilt("Steep roof", { roofPitch: 7 }, undefined)) === J(["Steep roof no longer changes the roof pitch"]));
