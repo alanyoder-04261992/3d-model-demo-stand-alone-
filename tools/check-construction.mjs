@@ -17,14 +17,24 @@
    5. The door-height and window-top shop rules give Barnwright's exact numbers
       (71 1/2 in draws as 5.9583 ft), and follow a company's own numbers.
    6. Every building of every demo style settles without a leftover rule, and a
-      company's roof numbers really move the roof line. */
+      company's roof numbers really move the roof line.
+   7. A typo is named, never ignored: every path in the library and every
+      block the code reads is in the schema (model/construction.js
+      CONSTRUCTION_SCHEMA); "roof.shapes.gable.rize" says "Did you mean
+      rise?"; interior.benchHeightIn and ramp.lengthFt are real settings; a
+      company's typo is a strict problem that never stops its price list
+      opening; the manufacturer file's typos are errors. */
 
 import { readJSON, readManufacturer, loadCatalogue } from "./lib/load.mjs";
-import { barnwrightCompany } from "./lib/barnwright-company.mjs";
-import { resolve } from "../model/company.js";
+import { barnwrightCompany, barnwrightManufacturer, barnwrightCatalogue, standardManufacturer } from "./lib/barnwright-company.mjs";
+import { readdirSync, readFileSync } from "node:fs";
+import { resolve as resolvePath } from "node:path";
+import { ROOT } from "./lib/load.mjs";
+import { resolve, validate, validateManufacturer, strictProblems } from "../model/company.js";
 import {
   resolveConstruction, mergeConstruction, pickRule, isRuleList, constructionProblems, effectsToTree,
   doorHeightFt, windowTopFt, constructionFor, buildingFacts,
+  CONSTRUCTION_SCHEMA, constructionPathProblems, strictConstructionProblems,
 } from "../model/construction.js";
 import { DEFAULT_ROOF } from "../model/roof-shapes.js";
 import { frameOf } from "../model/frame.js";
@@ -40,7 +50,11 @@ function check(group, ok, msg) {
 const J = (v) => JSON.stringify(v);
 const copy = (v) => JSON.parse(JSON.stringify(v));
 const LIB = readJSON("library/construction.json");
-const M = readManufacturer("standard");
+/* Barnwright's company is resolved with Barnwright's numbers (the standard
+   file without its How it's built blocks); the repo's own companies and the
+   manufacturer file itself are checked as they are (the shop standard). */
+const M = barnwrightManufacturer();
+const STANDARD = standardManufacturer();
 const DEMO = loadCatalogue("demo");
 
 /* ---------------------------------------------------------------- 1 */
@@ -163,9 +177,11 @@ for (const t of Object.keys(DEMO.P)) for (const z of Object.keys(DEMO.P[t])) {
   settled++;
 }
 {
+  /* a company's own roof rise, against Barnwright's own Utility Shed (the
+     demo's is the shop standard's 5/12 since "yes match") */
   const bc = barnwrightCompany(); bc.construction = { roof: { shapes: { gable: { rise: { w: 0.35 } } } } };
-  const steep = resolve(bc, M, LIB);
-  const a = frameOf(stateFor(DEMO, "UT", "10x16"), DEMO).prof, b = frameOf(stateFor(steep, "UT", "10x16"), steep).prof;
+  const steep = resolve(bc, M, LIB), bw = barnwrightCatalogue();
+  const a = frameOf(stateFor(bw, "UT", "10x16"), bw).prof, b = frameOf(stateFor(steep, "UT", "10x16"), steep).prof;
   check("every demo building settles", Math.abs((b[1][1] - a[1][1]) - 10 * (0.35 - 0.27)) < 1e-12, "a company's roof rise did not move the roof line");
 }
 
@@ -192,6 +208,90 @@ for (const t of Object.keys(DEMO.P)) for (const z of Object.keys(DEMO.P[t])) {
   const good = barnwrightCompany(); good.construction = { walls: { stud: "2x6", spacingIn: 24, header: [{ value: "2x8 tripled" }] }, roof: { framing: "Rafter", chord: "2x6" }, floor: { deck: { layers: 2 } } };
   let okGood = true; try { resolve(good, M, LIB); } catch (e) { okGood = false; }
   check("bad construction values are refused in plain words", okGood, "a sensible company construction block (2x6 studs at 24 in, tripled 2x8 headers, rafters) was refused");
+}
+
+/* ------------------------------------------------ typos are named, never ignored */
+{
+  const G = "a typo in a setting is named";
+  /* every path in the library file is a setting the schema knows */
+  const libProblems = constructionPathProblems(LIB, "library");
+  check(G, libProblems.length === 0, `library/construction.json has paths the schema does not know: ${libProblems.slice(0, 4).join(" | ")}`);
+  /* every construction block the code reads has its block in the schema */
+  const read = new Set();
+  const walkDir = (dir) => {
+    for (const f of readdirSync(resolvePath(ROOT, dir), { withFileTypes: true })) {
+      const rel = `${dir}/${f.name}`;
+      if (f.isDirectory()) walkDir(rel);
+      else if (/\.(m?js)$/.test(f.name)) {
+        /* the code only: comments may name an example path */
+        const src = readFileSync(resolvePath(ROOT, rel), "utf8").replace(/\/\*[\s\S]*?\*\//g, "").replace(/(^|[^:])\/\/[^\n]*/g, "$1");
+        for (const m of src.matchAll(/construction\??\.([A-Za-z_]\w*)/g)) if (!["js", "json", "mjs"].includes(m[1])) read.add(`${m[1]} (${rel})`);
+      }
+    }
+  };
+  for (const dir of ["parts", "model", "engine"]) walkDir(dir);
+  const blocks = [...read].map((x) => x.split(" ")[0]);
+  const missing = [...read].filter((x) => !Object.prototype.hasOwnProperty.call(CONSTRUCTION_SCHEMA, x.split(" ")[0]));
+  check(G, blocks.length >= 15 && missing.length === 0, `blocks the code reads but the schema does not know: ${missing.join(", ")} (found ${blocks.length})`);
+  for (const b of ["interior", "ramp", "floorStudy", "wallStudy", "trussStudy"]) check(G, blocks.includes(b), `the scan should find the code reading construction.${b}`);
+  /* the words, with the closest real setting */
+  const said = (tree) => constructionPathProblems(tree, "construction");
+  check(G, J(said({ roof: { shapes: { gable: { rize: { w: 0.3 } } } } })) === J(["construction.roof.shapes.gable.rize is not a construction setting. Did you mean rise?"]), J(said({ roof: { shapes: { gable: { rize: { w: 0.3 } } } } })));
+  check(G, said({ floor: { spacingInn: 12 } }).some((p) => /floor\.spacingInn is not a construction setting\. Did you mean spacingIn\?/.test(p)), J(said({ floor: { spacingInn: 12 } })));
+  check(G, said({ openings: { doorHeightIn: { gambrl: 70 } } }).some((p) => /gambrl is not a roof shape\. Did you mean gambrel\?/.test(p)), J(said({ openings: { doorHeightIn: { gambrl: 70 } } })));
+  check(G, said({ roof: { shapes: { gable: { rise: [{ when: { maxW: 8 }, value: { w: 0.3 } }, { value: { w: 0.27 } }], rakeOverhang: 0.2 } } } }).length === 0, "a rule list on a real setting was named as a typo");
+  check(G, said({ interior: { benchHeightIn: 30, shelfHeightIn: 54 }, ramp: { lengthFt: 5 }, openings: { doorHeightIn: 80 } }).length === 0,
+    `the settings parts/interior.js and parts/ramp.js read were named as typos: ${J(said({ interior: { benchHeightIn: 30 }, ramp: { lengthFt: 5 } }))}`);
+  check(G, said({ wallStudy: { anything: { goes: [1, 2] } }, claddingStudy: { notes: "free" } }).length === 0, "a lesson block's notes were named as typos");
+  check(G, strictConstructionProblems({ roof: { shapes: { gable: { rise: { wee: 0.3 } } } } }).some((p) => /rise: \{"wee":0\.3\} is not a length/.test(p)), "a roof length that cannot be drawn was not named");
+  /* a company's typo is a strict problem: named, but it never stops the price list opening */
+  const bc = barnwrightCompany();
+  bc.construction = { roof: { shapes: { gable: { rize: { w: 0.31 } } } } };
+  bc.offer.UT.wallH = 8.5; bc.offer.SU.sizez = {};
+  const strict = strictProblems(bc, M);
+  check(G, strict.includes("construction.roof.shapes.gable.rize is not a construction setting. Did you mean rise?") &&
+    strict.includes("offer.SU.sizez is not part of a building style. Did you mean sizes?") && strict.some((p) => /^offer\.UT\.wallH is not part of a building style/.test(p)), J(strict));
+  let opened = true; try { resolve(bc, M, LIB); } catch (e) { opened = false; }
+  check(G, opened && validate(bc, M).length === 0, "a price list holding an old typo no longer opens (validate must keep its old rules)");
+  /* the repo's own files have none */
+  for (const id of ["demo", "starter", "learning-side-loft", "_template"]) {
+    const p = strictProblems(readJSON(`companies/${id}/company.json`), STANDARD);
+    check(G, p.length === 0, `companies/${id} has strict problems: ${p.slice(0, 3).join(" | ")}`);
+  }
+  /* the manufacturer file is in the repo: its typos are errors */
+  const m2 = copy(STANDARD); m2.styles.UT.wallh = 8; m2.options.rates.jo12.construction = { "floor.spacingInn": 12 }; m2.construction = { roof: { chrod: "2x4" } };
+  const mp = validateManufacturer(m2);
+  check(G, mp.some((p) => /^styles\.UT\.wallh is not part of a style\. Did you mean wallH\?/.test(p)), J(mp));
+  check(G, mp.some((p) => /options\.rates\.jo12\.construction\.floor\.spacingInn is not a construction setting\. Did you mean spacingIn\?/.test(p)), J(mp));
+  check(G, mp.some((p) => /construction\.roof\.chrod is not a construction setting\. Did you mean chord\?/.test(p)), J(mp));
+  check(G, validateManufacturer(STANDARD).length === 0, J(validateManufacturer(STANDARD)));
+}
+
+/* ------------------------------------------------ Barnwright from one place */
+{
+  /* Barnwright's numbers are the standard manufacturer WITHOUT its How it's
+     built blocks (BUILDFAST-SPEC E.5), and every check that compares with
+     Barnwright gets them from tools/lib/barnwright-company.mjs. */
+  const G = "Barnwright's numbers come from one place";
+  const strip = (m) => { const x = copy(m); for (const k of Object.keys(x.styles)) delete x.styles[k].built; return x; };
+  check(G, J(M) === J(strip(STANDARD)), "barnwrightManufacturer() differs from library/manufacturers/standard.json by more than its styles' built blocks");
+  const shop = Object.keys(STANDARD.styles).filter((k) => STANDARD.styles[k].built !== undefined);
+  check(G, Object.keys(M.styles).every((k) => M.styles[k].built === undefined), "barnwrightManufacturer() still holds a built block");
+  check(G, validateManufacturer(M).length === 0, J(validateManufacturer(M)));
+  /* no tools file pairs Barnwright's company with the standard manufacturer
+     by itself: it says which numbers it means (barnwrightManufacturer() or
+     standardManufacturer(), or barnwrightCatalogue()) */
+  const files = [];
+  for (const dir of ["tools", "tools/lib"]) {
+    for (const f of readdirSync(resolvePath(ROOT, dir))) if (/\.m?js$/.test(f)) files.push(dir + "/" + f);
+  }
+  const both = files.filter((f) => f !== "tools/lib/barnwright-company.mjs").filter((f) => {
+    const text = readFileSync(resolvePath(ROOT, f), "utf8");
+    return /barnwrightCompany\(/.test(text) && /readManufacturer\(\s*["']standard["']/.test(text);
+  });
+  check(G, both.length === 0, `these files resolve Barnwright's company with the standard manufacturer themselves (use barnwrightCatalogue() or barnwrightManufacturer()): ${both.join(", ")}`);
+  check(G, files.length > 50, `only ${files.length} tools files were read`);
+  console.log(`Barnwright's numbers: the standard manufacturer without the built blocks of ${shop.length ? shop.join(", ") : "no style yet"}; ${files.length} tools files read, none pairs the two by itself.`);
 }
 
 /* ---------------------------------------------------------------- report */

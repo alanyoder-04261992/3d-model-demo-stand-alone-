@@ -4,7 +4,8 @@
 
    In real life a cabin's porch floor is at the same height as the room's
    floor and sits on the same skids:
-   * a FRONT porch (porch "F", and the 4 ft end deck of the corner porch "C")
+   * a FRONT porch (porch "F", and the end deck of the corner porch "C", the
+     porch depth deep -- 4 ft standard)
      is framed on from the room's floor frame, whose front end joist sits
      under the front wall: joists across the width at the floor's spacing
      (floor.spacingIn) measured from that end joist, a rim down each side

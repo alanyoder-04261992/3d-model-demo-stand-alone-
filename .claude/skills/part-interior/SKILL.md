@@ -61,7 +61,10 @@ Watch-it-build. A piece glows with its item when that item is selected
 * `interior.benchHeightIn` (36), `interior.shelfHeightIn` (60),
   `interior.topIn` (0.75), `interior.legMaxSpacingFt` (4) -- read with Alan's
   answers as the defaults. `library/construction.json` has no `interior`
-  block yet; a company adds one to change them.
+  block yet; a company adds one to change them. They are known settings
+  (`CONSTRUCTION_SCHEMA` in `model/construction.js`), so a typo like
+  `benchHeigthIn` is named on save with a did-you-mean; a new interior
+  setting must be added there too.
 * The catalogue: `dep` (bench 2, shelf 1), `sill` (outlet height 1.2 ft),
   `switch` (the two-gang box).
 * `walls.stud` -- the framing depth, for the room inside the studs.

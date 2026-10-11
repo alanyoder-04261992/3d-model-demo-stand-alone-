@@ -7,9 +7,28 @@
    its page) and the standard manufacturer file. Barnwright's real prices are
    never written into companies/: they live only in test/golden.
 
-   barnwrightCompany()     -> the company object (not written to disk)
-   barnwrightCatalogue()   -> it resolved (model/company.js resolve)
-   golden()                -> the recorded Barnwright tables */
+   BARNWRIGHT'S NUMBERS. Since Oct 2026 ("yes match") the standard
+   manufacturer file carries Alan's shop numbers as "How it's built" blocks
+   (library/manufacturers/standard.json styles.<KEY>.built: the Utility Shed's
+   5/12 roof, the Lofted Barn's walls and barn roof heights ...). Barnwright's
+   own numbers are still the raw traits and library/construction.json, so
+   Barnwright's company is the standard manufacturer WITHOUT those blocks.
+   Every check that compares with Barnwright resolves through this file, and
+   tools/check-construction.mjs proves no other tools file pairs
+   barnwrightCompany() with the standard manufacturer by itself.
+
+   barnwrightCompany()          -> the company object (not written to disk)
+   barnwrightManufacturer()     -> standard.json without its built blocks
+   barnwrightCatalogue(change)  -> the company resolved with Barnwright's
+                                   numbers; change(company), when given, edits
+                                   a fresh copy first (extras, construction)
+   standardManufacturer()       -> standard.json as every other company
+                                   gets it (the shop standard), for a check
+                                   that pairs it with this company on purpose
+   shopStandardCatalogue(change) -> the same company (every style at every
+                                   size Barnwright sells) with the shop
+                                   standard numbers, for the every-size check
+   golden()                     -> the recorded Barnwright tables */
 
 import { readJSON, readManufacturer } from "./load.mjs";
 import { resolve, colorName } from "../../model/company.js";
@@ -66,6 +85,26 @@ export function barnwrightCompany() {
   };
 }
 
-export function barnwrightCatalogue() {
-  return resolve(barnwrightCompany(), readManufacturer("standard"), readJSON("library/construction.json"));
+/* The standard manufacturer with every style's "How it's built" block taken
+   out: Barnwright's own numbers. Nothing else differs (check-construction). */
+export function barnwrightManufacturer() {
+  const m = JSON.parse(JSON.stringify(readManufacturer("standard")));
+  for (const k of Object.keys(m.styles || {})) if (m.styles[k] && typeof m.styles[k] === "object") delete m.styles[k].built;
+  return m;
+}
+
+export function standardManufacturer() {
+  return readManufacturer("standard");
+}
+
+function resolved(manufacturer, change) {
+  const c = barnwrightCompany();
+  if (typeof change === "function") change(c);
+  return resolve(c, manufacturer, readJSON("library/construction.json"));
+}
+export function barnwrightCatalogue(change) {
+  return resolved(barnwrightManufacturer(), change);
+}
+export function shopStandardCatalogue(change) {
+  return resolved(readManufacturer("standard"), change);
 }

@@ -67,9 +67,17 @@ come from `loftZones` in `parts/roof-frame.js`, shared with the trusses.
 
 ## The owner's facts
 
-* Loft (short-wall) studs are 75 in, giving about a 6.63 ft wall; the lofted
-  styles' walls are 6.67 ft (6.9 on the loft cabins and garage) -- the loft
-  floor sits on those walls' top plates.
+* Loft (short-wall) studs are 75 in, giving a 79 1/2 in (6 ft 7 1/2 in) wall
+  with three 1 1/2 in plates. Since Oct 2026 ("yes match") the standard
+  Lofted Barn, Side Lofted Barn and (Oct 11 2026) Metal Lofted Barn are
+  drawn with that wall (`styles.LB.built.wallHeight: 79.5` in
+  `library/manufacturers/standard.json`) and a barn roof 43 3/4, 48 and
+  51 in above it at 8, 10 and 12 ft wide; the Lofted Barn Garage has that
+  barn roof on its own 6.9 ft walls. So the loft has less headroom at 10
+  and 12 ft wide than under Barnwright's taller roof (at 8 ft wide a little
+  more). Barnwright's own lofted styles stay 6.67 ft (6.9 on the loft
+  cabins and garage) and so do the loft cabins until Alan says yes -- the
+  loft floor sits on those walls' top plates.
 * On loft builds a window top sits 5 in under the wall top and never higher,
   and the shop door opening is 71 1/2 in (Barnwright's shop rules) -- the
   loft joists at the wall top clear both.

@@ -30,9 +30,10 @@
      porch and the right wall of a porch "R" (no style uses "R"; Barnwright's
      branch is kept), which stand on a deck, and on every porch wall (S*, P*);
    * the PORCH CUT-OUTS: a side porch cuts the R wall round the notch (both
-     sides of it when it is in the middle) and trims 4 ft off whichever end
-     wall the notch reaches; a corner porch draws only a 4 ft stub of F, the R
-     wall from 12 ft back and the L wall to 4 ft short of the front;
+     sides of it when it is in the middle) and trims the porch depth (4 ft
+     standard, plan.t.porchDepthFt) off whichever end wall the notch reaches;
+     a corner porch draws only a 4 ft stub of F, the R wall from 12 ft back
+     and the L wall to the porch depth short of the front;
    * the DOG KENNEL: at F the kennel's open front (kennel.front), at R and L
      the kennel's side walls (kennel.side) -- drawn from inside this loop, at
      Barnwright's position, and attributed to the kennel (kit.part); at B the
@@ -51,6 +52,7 @@ import { y0, SKIRT } from "../engine/constants.js";
 import { texSiding } from "../engine/tex-names.js";
 import { tintShade } from "../engine/math.js";
 import * as kennel from "./kennel.js";
+import { porchDepthOf } from "../model/frame.js";
 
 /* The walls that carry siding, in Barnwright's order (the order is the draw
    order within the siding material, so it is part of the look). */
@@ -85,12 +87,15 @@ export default {
         if(k==="R"){
           if(spw.mid){ wq(mB,w,-half,yb0,-spw.z1,w.top,0,"sid"); wq(mB,w,-spw.z0,yb0,half,w.top,0,"sid"); return; }
           if(spw.f) wq(mB,w,-half,yb0,half-spw.P,w.top,0,"sid"); else wq(mB,w,-half+spw.P,yb0,half,w.top,0,"sid"); return; }
-        if(k==="F"&&!spw.f&&!spw.mid){ wq(mB,w,-half,yb0,half-4,w.top,0,"sid"); return; }
-        if(k==="B"&&spw.f){ wq(mB,w,-half+4,yb0,half,w.top,0,"sid"); return; }
+        /* the porch notch is the porch depth deep (4 ft standard) */
+        if(k==="F"&&!spw.f&&!spw.mid){ wq(mB,w,-half,yb0,half-porchDepthOf(t),w.top,0,"sid"); return; }
+        if(k==="B"&&spw.f){ wq(mB,w,-half+porchDepthOf(t),yb0,half,w.top,0,"sid"); return; }
       }
+      /* the corner porch: the F stub (4 ft) and the 12 ft run are fixed; the
+         L wall stops at the deck, the porch depth from the end */
       if(t.porch==="C" && k==="F"){ wq(mB,w,-half,y0,-half+4,w.top,0,"sid"); return; }
       if(t.porch==="C" && k==="R"){ wq(mB,w,-half+12,yb0,half,w.top,0,"sid"); return; }
-      if(t.porch==="C" && k==="L"){ wq(mB,w,-half,yb0,half-4,w.top,0,"sid"); return; }
+      if(t.porch==="C" && k==="L"){ wq(mB,w,-half,yb0,half-porchDepthOf(t),w.top,0,"sid"); return; }
       wq(mB,w,-half,yb0,half,w.top,0,"sid");
       if(t.kennel){
         var mIn=mat("bodyIn",texSiding,tintShade(state.body,0.72),0.04,10);

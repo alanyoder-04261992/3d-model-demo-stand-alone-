@@ -1,11 +1,13 @@
 # Where this designer deliberately behaves differently from Barnwright's
 
-The finished building is drawn exactly like Barnwright's (the golden test proves
-it triangle for triangle). This list is everything ELSE that behaves
-differently on purpose, with the reason. Each change is either a real bug in
-Barnwright's designer that this product should not inherit, or something a
-standalone product needs. None of them changes the shape of a finished
-building; one (#25) changes its light, because Alan chose the Yoder site's.
+The drawing engine draws a building exactly like Barnwright's (the golden test
+proves it triangle for triangle, on Barnwright's own company with Barnwright's
+numbers). This list is everything ELSE that behaves differently on purpose,
+with the reason. Each change is either a real bug in Barnwright's designer
+that this product should not inherit, or something a standalone product
+needs, or Alan's own choice. Only #26 changes the shape of a finished
+building (Alan's shop numbers on ten standard styles); one (#25) changes its
+light, because Alan chose the Yoder site's.
 
 If you find a difference that is not on this list, it is a bug — or it belongs
 on this list with a reason.
@@ -192,3 +194,76 @@ finished designer retains the golden geometry.
     Weather King chips, `designer-colors.js`) are a company's colour list, not
     the building's look, and are not changed; that question is with Alan
     (docs/FOR-ALAN.md, Choices about the product).
+
+## Alan's shop numbers (Oct 2026)
+
+26. **Standard buildings use Alan's shop numbers where he confirmed them**
+    (Alan, Oct 11 2026: "yes match", for every dealer; then, after the
+    before-and-after and proposal pictures, yes to six more styles, "not
+    metal garage"). They are "How it's built" blocks on the library styles
+    in `library/manufacturers/standard.json` (each with its `_source`), so
+    every company on the standard line gets them, and a Dealer Center
+    business can still set its own:
+
+    | Style | Number | Barnwright | Now | Source |
+    |---|---|---|---|---|
+    | Utility Shed, Side Utility, Garage | roof pitch | about 6 1/2/12 (6.48/12) | 5/12 at every width | utility-framing skill: standard A-frame pitch |
+    | Utility Shed, Side Utility, Garage | eave | about 4 7/16 in | 4 in, measured level | utility-framing skill: 4 in beyond each side wall |
+    | Utility Shed, Side Utility, Garage | wall | 7 ft 9 in | 7 ft 9 1/2 in | 89 in studs + three 1 1/2 in plates (derived) |
+    | Dog Kennel, Garden Utility | roof pitch | about 6 1/2/12 | 5/12 (walls as they were) | the same utility pitch, picked by Alan |
+    | Dog Kennel, Garden Utility | eave | about 4 7/16 in | 4 in, measured level | the same utility eave |
+    | Dormer Shed | main roof | about 7 1/4/12 (7.2/12) | 7/12 (eave, walls and dormer as they were) | utility-framing skill: Alan's steep pitch |
+    | Lofted Barn, Side Lofted Barn, Metal Lofted Barn | wall | 6 ft 8 1/16 in (80.04 in) | 6 ft 7 1/2 in | 75 in studs + three 1 1/2 in plates (derived) |
+    | Lofted Barn, Side Lofted Barn, Metal Lofted Barn, Lofted Barn Garage | barn roof height at 8, 10, 12 ft wide, to the top of the trusses | 3 ft 6 3/4 in, 4 ft 5 9/16 in, 5 ft 4 5/16 in (the Metal Lofted Barn 3 ft 5 5/8 in, 4 ft 4 7/16 in, 5 ft 3 3/16 in; the Lofted Barn Garage is sold 12 ft wide only) | 3 ft 7 3/4 in, 4 ft, 4 ft 3 in (the Lofted Barn Garage on its own 6 ft 10 13/16 in walls) | shed-measurements skill: loft truss peaks |
+
+    What "match" means and does not: the peak heights and wall heights match
+    his shop. A barn roof's height is measured where he measured it, from
+    the top of the wall to the top of the trusses; the roof line drawn over
+    the roof deck stands about 1/2 in higher (44 1/4 in on an 8 ft barn).
+    The utility eave's 4 in is out to the edge of the roof deck; the rafter
+    tail under it stops about 3 3/4 in out. The barn roof's knee is drawn where Barnwright drew it, so the
+    drawn slopes are not his truss pieces (at 8 ft wide the upper slope is
+    about 38 5/8 in long against his 34 in piece), and the barn eave moves a
+    little with the lower slope (1 3/4 in out before; now 1 11/16 to
+    1 3/4 in at 8 ft wide, 1 7/8 to 1 15/16 in at 10 ft and 2 1/8 in at
+    12 ft, measured level; the Dealer Center's How it's built box says it
+    width by width). The utility eave is 4 in
+    out but drawn sloping, not his level 2 in end. The Dormer Shed keeps its
+    eave board, which on the 7/12 roof reaches 4 3/8 in out, measured level
+    (4 5/16 in before); its dormer front stays 1 ft 11 3/8 in at 10 and
+    12 ft wide and is 1 ft 7 13/16 in at 8 ft wide (1 ft 8 1/2 in before).
+    The 6 ft Garden Utility's 5/12 roof rises only 1 ft 3 in above the wall
+    (the every-size check shows it as a warning, never a fault). A 14 ft
+    wide lofted barn, and every other width he did not give, keeps the
+    library shape, held so a wider barn is never lower (Alan: the 14 ft
+    barns keep today's height). Its walls are the shop's 6 ft 7 1/2 in like
+    the other widths, so a 14 ft Lofted Barn stands 9/16 in lower overall
+    than Barnwright's. The Metal Garage ("not metal garage"), the
+    Metal Utility (not picked) and the other 11 styles (the cabins, Standard
+    Barn, cottages, Backyard Utility and Single Slope) keep Barnwright's
+    numbers until Alan says yes; a yes is one built block, no code. A
+    business-wide roof pitch does not reach the Dormer Shed's main roof (a
+    style feature): it stays at the shop's 7/12.
+
+    Because those roofs are lower, a gable window whose glass would poke
+    through the roof is not offered on that gable (`model/layout.js
+    gableItemFits`; Barnwright offers it and cuts it off at the roof): the
+    18x24 on 8, 10 and 12 ft Utility Sheds and Side Utilities (on 8 and
+    10 ft it already poked through at Barnwright's pitch), 12 ft Garages and
+    8 and 10 ft Dormer Sheds; the octagon on 8 ft Utility Sheds, Side
+    Utilities and Dog Kennels. Neither ever fitted the 6 ft Garden Utility.
+    A design saved with one there opens with it taken
+    off and one line saying so ("The 18×24 Gable Window is too tall for this
+    gable, so it was taken off."), so the design the customer sends next is
+    priced; the same happens when an owner's Steep roof that made it fit is
+    taken off. Wall upgrades priced by the square foot follow the new walls.
+
+    No sample price list a new business starts with has a Steep roof (Alan,
+    Oct 11 2026: take it out); an owner can still make an option of their own
+    with "Roof pitch at least" (the Options tab).
+
+    Barnwright's own company is the standard line without those blocks
+    (`tools/lib/barnwright-company.mjs barnwrightManufacturer`), so
+    `check-golden`, `check-look` and `check-model-live` still compare with
+    Barnwright number for number; `tools/check-shop-numbers.mjs` holds the
+    shop numbers (the recorded set `test/golden-shop/shop-standard.json`).

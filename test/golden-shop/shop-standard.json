@@ -1,0 +1,1728 @@
+{
+ "_help": [
+  "THE STANDARD BUILDINGS WITH ALAN'S SHOP NUMBERS (Oct 2026, \"yes match\"; more styles Oct 11 2026), recorded by node tools/check-shop-numbers.mjs --record and checked by node tools/check-shop-numbers.mjs.",
+  "For every library style at every size Barnwright sells, drawn with library/manufacturers/standard.json as every Dealer Center business gets it: wallIn (floor to the top of the wall plate), peakIn (the roof line's peak above the wall top), trussPeakIn (a barn roof's trusses' peak above the wall top: what Alan measures), pitch (rise per 12, gable, lean-to and single slope roofs), eaveLeftIn and eaveRightIn (how far the roof edge reaches past each long wall, measured level), gableEndIn (past the gable ends), doorIn (the wooden shop door opening), all in inches to a thousandth.",
+  "triangles and hash (the ten styles with shop numbers only: Utility Shed, Side Utility, Garage, Dog Kennel, Garden Utility, Dormer Shed, Lofted Barn, Side Lofted Barn, Metal Lofted Barn, Lofted Barn Garage): every finished triangle, hashed the golden test's way (tools/lib/golden-cases.mjs).",
+  "Re-record only on purpose (a confirmed shop number changed, or the drawing changed and check-golden still passes), and say why in the commit."
+ ],
+ "styles": {
+  "UT": {
+   "name": "Utility Shed",
+   "sizes": {
+    "8x12": {
+     "wallIn": 93.5,
+     "peakIn": 20,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 1616,
+     "hash": "4c1a61170af73204b963945d2f10e49707c44b5449993547f0213a8d5e300458"
+    },
+    "8x16": {
+     "wallIn": 93.5,
+     "peakIn": 20,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2048,
+     "hash": "3e8029ed18849c498f12a7c8cba4a49a6a73acea640e825144bffe841565e1d8"
+    },
+    "10x12": {
+     "wallIn": 93.5,
+     "peakIn": 25,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 1616,
+     "hash": "5ab0708ef4e7923b887de4aeaf79479c49d326cf31aec95bf70fb49c3a1a18e5"
+    },
+    "10x16": {
+     "wallIn": 93.5,
+     "peakIn": 25,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2048,
+     "hash": "ac4e39ab3b17a59faa4628c0e3de2f9271678c643a75477830b2f297217e97bb"
+    },
+    "10x20": {
+     "wallIn": 93.5,
+     "peakIn": 25,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2336,
+     "hash": "f1a4aee9ad3871d05ce5de6d4bb6ff5a3ea0bdedc8124c5a79ca1b7b4013ac28"
+    },
+    "12x16": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2304,
+     "hash": "5551e9f5dfaa55279241dab834961bfc0e390e79c2c4e661a57345b9082e692a"
+    },
+    "12x20": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2636,
+     "hash": "5f743c8ac70ce266be2e117933715b0043c5354d0c501cf1b61a9ef59c47e00f"
+    },
+    "12x24": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3124,
+     "hash": "f1af975b724ef68c0568d26444509351188724e67168b734607d979e5add2f98"
+    },
+    "12x32": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3960,
+     "hash": "a07ee237a97f75a92c3094b6f3fd897cb1b285532e15544dc79bdcb3a01f037e"
+    },
+    "14x20": {
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2744,
+     "hash": "2df754047eeede9c91f376201ddc82cdafcb966221d6e05b9ee557bd901254d0"
+    },
+    "14x24": {
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3252,
+     "hash": "7e95c37a8f98607275a6e4d320b28266cbaf38775eaadd5aac7e55f1a58fdf3a"
+    },
+    "14x28": {
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3780,
+     "hash": "5c2b9c34ec88604a7f5d769ed1c497160d88bc57acfb06a47a0fca73b39dd75d"
+    },
+    "14x32": {
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 4132,
+     "hash": "bf35ba87941848f1ec2e706d272d80795671bcd7d1580ec1e304c2d6eefc6a29"
+    },
+    "14x40": {
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 5108,
+     "hash": "8049aba8f6bd69bde438a5a9b7240584e2cc33c573715e62425e66338401692c"
+    }
+   }
+  },
+  "SU": {
+   "name": "Side Utility",
+   "sizes": {
+    "8x12": {
+     "wallIn": 93.5,
+     "peakIn": 20,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 1812,
+     "hash": "b53c328bfcf8bc5e193aea8b727f6fd43742e137d28c990eeb695a7ca2278362"
+    },
+    "8x16": {
+     "wallIn": 93.5,
+     "peakIn": 20,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2244,
+     "hash": "c077b0bb376d8c283cf6ca6e12991b5c6ea08eeebeec68c1890318e76bcb734c"
+    },
+    "10x12": {
+     "wallIn": 93.5,
+     "peakIn": 25,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 1812,
+     "hash": "c1ab0140e772c334f737edf53a26501f87c77f6db508fd538f155d736d0b50d8"
+    },
+    "10x14": {
+     "wallIn": 93.5,
+     "peakIn": 25,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 1980,
+     "hash": "ebcbbb97644c129fb3a9333acf22c5ef8d5ce4cf2955644f2fb63c83628d4ddb"
+    },
+    "10x16": {
+     "wallIn": 93.5,
+     "peakIn": 25,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2244,
+     "hash": "b50981723e704b2509cc5b2c86ed50c66ce8e6c2584a3235f8a02977259681dc"
+    },
+    "10x20": {
+     "wallIn": 93.5,
+     "peakIn": 25,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2532,
+     "hash": "91ad6906c47c459a5b967baf39dfed1b62c5af5bf9a9c9dd81287d2de38073df"
+    },
+    "12x16": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2500,
+     "hash": "9fe1baa99ff14c6251da0801ef78eddc7f4c75bad9c9dc3518adee96cb1cee16"
+    },
+    "12x20": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2832,
+     "hash": "bef2b449d405325b03b50ac3930b288d9392c1d1c734f321829bc1aa718fa525"
+    },
+    "12x24": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3320,
+     "hash": "411c510a90ab804c319fe3586bdc1e4e1f47626fe7ad201a423a55f4337a056a"
+    },
+    "12x30": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3952,
+     "hash": "1e1a0c7b9f6b210c4962a6f3ab06ee1a69e7353475d7fd7f21cef005daf1be48"
+    },
+    "12x32": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 4156,
+     "hash": "29b035f265f80a92481c4e7a59101e8541b8d50085725bb21821c8aa1d0a121e"
+    }
+   }
+  },
+  "DS": {
+   "name": "Dormer Shed",
+   "sizes": {
+    "8x12": {
+     "wallIn": 93,
+     "peakIn": 28,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 1936,
+     "hash": "9abf43b3bb26fefedd4f2d37580b3439c5d9e3fe7280fda8feaba1f734b85643"
+    },
+    "8x16": {
+     "wallIn": 93,
+     "peakIn": 28,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2368,
+     "hash": "b14fee0290585cb9bf539b1dd229a4d6adb9a7a84589b50ca0b7ea7676fd97cd"
+    },
+    "10x12": {
+     "wallIn": 93,
+     "peakIn": 35,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2000,
+     "hash": "1053632412a5163e9f00c95e785141921ec1c93f2f870a7266c1ef03c21d091d"
+    },
+    "10x14": {
+     "wallIn": 93,
+     "peakIn": 35,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2180,
+     "hash": "f0e3cf52cf670d95711d6455d029476b1b31cc83b67b15b0f349632382346498"
+    },
+    "10x16": {
+     "wallIn": 93,
+     "peakIn": 35,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2456,
+     "hash": "82385724cbff6152d4ce7b0734ad68b9a40f932038a4dca9aff266475184a73a"
+    },
+    "10x20": {
+     "wallIn": 93,
+     "peakIn": 35,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2764,
+     "hash": "1c6ffcefdedbf1d2a382a6334e96ba13e9c12e7717c66e5f7c77827f52975aac"
+    },
+    "12x16": {
+     "wallIn": 93,
+     "peakIn": 42,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2624,
+     "hash": "83ac25fee7bd818d19f6ca7e60aff6d0d0e8ab11ea03d80646301fd928257716"
+    },
+    "12x20": {
+     "wallIn": 93,
+     "peakIn": 42,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2956,
+     "hash": "632202eea59cee51460759a8ecd878395ba40ca7779689301086861ee8731d66"
+    },
+    "12x24": {
+     "wallIn": 93,
+     "peakIn": 42,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3444,
+     "hash": "be645a19917a16d53914c2814516174f762067f910209ca92ef0d28aabfe7598"
+    },
+    "12x30": {
+     "wallIn": 93,
+     "peakIn": 42,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 4076,
+     "hash": "6cc3651b7fa082afd9a1cb493c04eed828cb87be2eafc9111d22b49fa0a50c86"
+    },
+    "12x32": {
+     "wallIn": 93,
+     "peakIn": 42,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 4280,
+     "hash": "07bbf1c39213416ad59c2d2d4dd5ec63177582340c1b5601c2ce596a5ba32a31"
+    }
+   }
+  },
+  "BU": {
+   "name": "Backyard Utility",
+   "sizes": {
+    "6x8": {
+     "wallIn": 82.8,
+     "peakIn": 12.24,
+     "pitch": 2.04,
+     "eaveLeftIn": 0,
+     "eaveRightIn": 3.939,
+     "gableEndIn": 1.44,
+     "doorIn": 76.5
+    },
+    "6x10": {
+     "wallIn": 82.8,
+     "peakIn": 12.24,
+     "pitch": 2.04,
+     "eaveLeftIn": 0,
+     "eaveRightIn": 3.939,
+     "gableEndIn": 1.44,
+     "doorIn": 76.5
+    },
+    "6x12": {
+     "wallIn": 82.8,
+     "peakIn": 12.24,
+     "pitch": 2.04,
+     "eaveLeftIn": 0,
+     "eaveRightIn": 3.939,
+     "gableEndIn": 1.44,
+     "doorIn": 76.5
+    }
+   }
+  },
+  "GU": {
+   "name": "Garden Utility",
+   "sizes": {
+    "6x8": {
+     "wallIn": 82.8,
+     "peakIn": 15,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5,
+     "triangles": 1087,
+     "hash": "f085461bbe3fad01aefd6c2470a7425f09816aa14db93c7103f5cf735477e093"
+    },
+    "6x10": {
+     "wallIn": 82.8,
+     "peakIn": 15,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5,
+     "triangles": 1207,
+     "hash": "44edcb9234c3048774f2c86035c271afad8c8ff05cd4a94eb4584059133e7c7a"
+    },
+    "6x12": {
+     "wallIn": 82.8,
+     "peakIn": 15,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5,
+     "triangles": 1355,
+     "hash": "96c7ac1191f408bda5d096f344fe0fbcde33655782c38b79a2afeb5e44511c20"
+    }
+   }
+  },
+  "SB": {
+   "name": "Standard Barn",
+   "sizes": {
+    "8x12": {
+     "wallIn": 50.4,
+     "peakIn": 41.16,
+     "trussPeakIn": 40.686,
+     "eaveLeftIn": 2.772,
+     "eaveRightIn": 2.772,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "10x12": {
+     "wallIn": 50.4,
+     "peakIn": 41.16,
+     "trussPeakIn": 40.699,
+     "eaveLeftIn": 3.203,
+     "eaveRightIn": 3.203,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    }
+   }
+  },
+  "LB": {
+   "name": "Lofted Barn",
+   "sizes": {
+    "8x12": {
+     "wallIn": 79.5,
+     "peakIn": 44.214,
+     "trussPeakIn": 43.75,
+     "eaveLeftIn": 1.734,
+     "eaveRightIn": 1.734,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 2780,
+     "hash": "069e675dbb7acdc23a567351763a93848ceb26cfbe558e46c46195e56f713acc"
+    },
+    "8x16": {
+     "wallIn": 79.5,
+     "peakIn": 44.214,
+     "trussPeakIn": 43.75,
+     "eaveLeftIn": 1.734,
+     "eaveRightIn": 1.734,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 3364,
+     "hash": "b7fb35b69b8dd29e21d27f100e20a2cedd4b4d2e000f07ce0c3abcecc21b9022"
+    },
+    "10x12": {
+     "wallIn": 79.5,
+     "peakIn": 48.458,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.943,
+     "eaveRightIn": 1.943,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 2844,
+     "hash": "f7de356246857393fb1b561ae8ab9c879028169516d0f0d8bfb71f10bb47d7c9"
+    },
+    "10x16": {
+     "wallIn": 79.5,
+     "peakIn": 48.458,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.943,
+     "eaveRightIn": 1.943,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 3448,
+     "hash": "f5a52d04cead18fa391762f99c06ae0eef3214879add4fbd8c23f9026f99dce6"
+    },
+    "10x20": {
+     "wallIn": 79.5,
+     "peakIn": 48.458,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.943,
+     "eaveRightIn": 1.943,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 4244,
+     "hash": "7c2311a187125f4875583b6758301acbbb2ee5d36877c8ec5a83bbcd40f0aaa3"
+    },
+    "12x16": {
+     "wallIn": 79.5,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 3616,
+     "hash": "7449ea4fc585dee331bd4ecdbcb798f3068aae08f3bae7ee4510ace890ed4339"
+    },
+    "12x20": {
+     "wallIn": 79.5,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 4436,
+     "hash": "5102bd292fa2ee54fb7e157279f3c712c5c0f3030ed2ed96403a0ea18f992884"
+    },
+    "12x24": {
+     "wallIn": 79.5,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 5312,
+     "hash": "1af8d725efd5b2a6e5d56b752477c72b2050329f0f89975bc6b27ac1fe31a8e2"
+    },
+    "12x32": {
+     "wallIn": 79.5,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 6784,
+     "hash": "78f1be5dec367548dca008c9da5ca18150ae74bfbf71eda94662747f6e8b3b39"
+    },
+    "14x20": {
+     "wallIn": 79.5,
+     "peakIn": 75.6,
+     "trussPeakIn": 75.138,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 4540,
+     "hash": "0d380077986869b3983cc53776823c6035ccf23d926e3c5f01c5fde552722a76"
+    },
+    "14x24": {
+     "wallIn": 79.5,
+     "peakIn": 75.6,
+     "trussPeakIn": 75.138,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 5440,
+     "hash": "91d457a628e2eb0bec78fc05f09e18ee744f0dda3b1bd7ef8b2cb281a1f462e0"
+    },
+    "14x28": {
+     "wallIn": 79.5,
+     "peakIn": 75.6,
+     "trussPeakIn": 75.138,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 6112,
+     "hash": "5169f5e3b2b0244eedc2912b747173d42e0a6742307c36a2e7df848d64fbd313"
+    },
+    "14x32": {
+     "wallIn": 79.5,
+     "peakIn": 75.6,
+     "trussPeakIn": 75.138,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 6952,
+     "hash": "2abcd3924cdac13443a3484045fc0dd27dc3abf5ba81b2002ba65d53e86be226"
+    },
+    "14x40": {
+     "wallIn": 79.5,
+     "peakIn": 75.6,
+     "trussPeakIn": 75.138,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 8464,
+     "hash": "07e0342f89738d50f80d374dbc44af9b519a0ac952fec9ea3afaf62aabffac73"
+    }
+   }
+  },
+  "SLB": {
+   "name": "Side Lofted Barn",
+   "sizes": {
+    "8x12": {
+     "wallIn": 79.5,
+     "peakIn": 44.214,
+     "trussPeakIn": 43.75,
+     "eaveLeftIn": 1.734,
+     "eaveRightIn": 1.734,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 2964,
+     "hash": "24ada8e5191c9274cb0844342287a4f2bbdeb914da9a4a1f0d74a956ab3d8fee"
+    },
+    "8x16": {
+     "wallIn": 79.5,
+     "peakIn": 44.214,
+     "trussPeakIn": 43.75,
+     "eaveLeftIn": 1.734,
+     "eaveRightIn": 1.734,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 3548,
+     "hash": "896ecc47506fc0f1e60cadbbbf05657dee9ee4f14f1db91dfc1d531f9cc767d0"
+    },
+    "10x12": {
+     "wallIn": 79.5,
+     "peakIn": 48.458,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.943,
+     "eaveRightIn": 1.943,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 3028,
+     "hash": "96a24fe3d4bbb8f23dd0be21759d90399323a8ca5b4653e68c39a0eb577bc214"
+    },
+    "10x16": {
+     "wallIn": 79.5,
+     "peakIn": 48.458,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.943,
+     "eaveRightIn": 1.943,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 3632,
+     "hash": "faea89e321995b9f875856706969e97634540acce0cb07a46f1d21980334433d"
+    },
+    "10x20": {
+     "wallIn": 79.5,
+     "peakIn": 48.458,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.943,
+     "eaveRightIn": 1.943,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 4428,
+     "hash": "0d1d3a14a702dfc43c2eda2354ab5016cfa0ce305831265071af8d0849cc00da"
+    },
+    "12x16": {
+     "wallIn": 79.5,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 3800,
+     "hash": "a14d4a3546f28bacea6fbbc755329bf353bce31d7e812c147d6b52b43f8afd60"
+    },
+    "12x20": {
+     "wallIn": 79.5,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 4620,
+     "hash": "da06d99ae7319746157b726c4fb7d8cbd9b7e66815b66992a602c4eb93c29a57"
+    },
+    "12x24": {
+     "wallIn": 79.5,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 5496,
+     "hash": "0e2f7f32d5128d0baedb83bf7fcaaf0acfa4ea071546461ddaeefb2bf6fdb340"
+    },
+    "12x32": {
+     "wallIn": 79.5,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 6968,
+     "hash": "b4e48de9c327b5d262f2432f975aaa0be0b2452f47620057b816d8d32dd68ac5"
+    }
+   }
+  },
+  "CS": {
+   "name": "Cottage Shed",
+   "sizes": {
+    "8x12": {
+     "wallIn": 93,
+     "peakIn": 24.96,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "10x12": {
+     "wallIn": 93,
+     "peakIn": 31.2,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "10x16": {
+     "wallIn": 93,
+     "peakIn": 31.2,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "10x20": {
+     "wallIn": 93,
+     "peakIn": 31.2,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "12x16": {
+     "wallIn": 93,
+     "peakIn": 37.44,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "12x20": {
+     "wallIn": 93,
+     "peakIn": 37.44,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "12x24": {
+     "wallIn": 93,
+     "peakIn": 37.44,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "12x32": {
+     "wallIn": 93,
+     "peakIn": 37.44,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    }
+   }
+  },
+  "SS": {
+   "name": "Single Slope",
+   "sizes": {
+    "8x12": {
+     "wallIn": 84,
+     "peakIn": 26.88,
+     "pitch": 3.36,
+     "eaveLeftIn": 4.044,
+     "eaveRightIn": 13.289,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "8x16": {
+     "wallIn": 84,
+     "peakIn": 26.88,
+     "pitch": 3.36,
+     "eaveLeftIn": 4.044,
+     "eaveRightIn": 13.289,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "10x12": {
+     "wallIn": 84,
+     "peakIn": 33.6,
+     "pitch": 3.36,
+     "eaveLeftIn": 4.044,
+     "eaveRightIn": 13.289,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "10x16": {
+     "wallIn": 84,
+     "peakIn": 33.6,
+     "pitch": 3.36,
+     "eaveLeftIn": 4.044,
+     "eaveRightIn": 13.289,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "10x20": {
+     "wallIn": 84,
+     "peakIn": 33.6,
+     "pitch": 3.36,
+     "eaveLeftIn": 4.044,
+     "eaveRightIn": 13.289,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x16": {
+     "wallIn": 84,
+     "peakIn": 40.32,
+     "pitch": 3.36,
+     "eaveLeftIn": 4.044,
+     "eaveRightIn": 13.289,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x20": {
+     "wallIn": 84,
+     "peakIn": 40.32,
+     "pitch": 3.36,
+     "eaveLeftIn": 4.044,
+     "eaveRightIn": 13.289,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x24": {
+     "wallIn": 84,
+     "peakIn": 40.32,
+     "pitch": 3.36,
+     "eaveLeftIn": 4.044,
+     "eaveRightIn": 13.289,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x32": {
+     "wallIn": 84,
+     "peakIn": 40.32,
+     "pitch": 3.36,
+     "eaveLeftIn": 4.044,
+     "eaveRightIn": 13.289,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    }
+   }
+  },
+  "C": {
+   "name": "Cabin",
+   "sizes": {
+    "8x12": {
+     "wallIn": 88.8,
+     "peakIn": 25.92,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "8x16": {
+     "wallIn": 88.8,
+     "peakIn": 25.92,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "10x16": {
+     "wallIn": 88.8,
+     "peakIn": 32.4,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "10x20": {
+     "wallIn": 88.8,
+     "peakIn": 32.4,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x16": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x20": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x24": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x32": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    }
+   }
+  },
+  "LBC": {
+   "name": "Lofted Barn Cabin",
+   "sizes": {
+    "8x16": {
+     "wallIn": 82.8,
+     "peakIn": 43.2,
+     "trussPeakIn": 42.738,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "10x16": {
+     "wallIn": 82.8,
+     "peakIn": 54,
+     "trussPeakIn": 53.538,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "10x20": {
+     "wallIn": 82.8,
+     "peakIn": 54,
+     "trussPeakIn": 53.538,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x18": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x20": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x24": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x30": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x32": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    }
+   }
+  },
+  "SC": {
+   "name": "Side Cabin",
+   "sizes": {
+    "10x20": {
+     "wallIn": 88.8,
+     "peakIn": 32.4,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x20": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x24": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x30": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x32": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    }
+   }
+  },
+  "LSC": {
+   "name": "Loft Side Cabin",
+   "sizes": {
+    "10x20": {
+     "wallIn": 82.8,
+     "peakIn": 54,
+     "trussPeakIn": 53.538,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x20": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x24": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x30": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x32": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    }
+   }
+  },
+  "DSC": {
+   "name": "Deluxe Side Cabin",
+   "sizes": {
+    "12x20": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x24": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x30": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x32": {
+     "wallIn": 88.8,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    }
+   }
+  },
+  "SLC": {
+   "name": "Deluxe Loft Side Cabin",
+   "sizes": {
+    "12x20": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x24": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x30": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    },
+    "12x32": {
+     "wallIn": 82.8,
+     "peakIn": 64.8,
+     "trussPeakIn": 64.338,
+     "eaveLeftIn": 1.77,
+     "eaveRightIn": 1.77,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5
+    }
+   }
+  },
+  "G": {
+   "name": "Garage",
+   "sizes": {
+    "12x20": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3106,
+     "hash": "2eb0f74cde985434defbf1a3eace7a82d74fcfbd39ce67909f3812e6b85dbb82"
+    },
+    "12x24": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3594,
+     "hash": "91ad207291398d68735a5d227c3ba312f45e9453ef70d62519d6b3f9a8e37e49"
+    },
+    "12x30": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 4226,
+     "hash": "bb3974c742112d8b07645926535ac05b5ac990bb24bb5b7c9de98468fc1825d9"
+    },
+    "12x32": {
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 4430,
+     "hash": "016a6a6c1f5e38f2323ac1a9d5791f91dd2be61eeeef761dee408483b31cb3d3"
+    },
+    "14x20": {
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3214,
+     "hash": "7ceadebbdfb3b0f4db2d419903ddae2fc88513fcbb6c7b72cfd470c40f8ba37a"
+    },
+    "14x24": {
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3722,
+     "hash": "b0c206efa294952e881fd1ad278dd82b901968d430a1c4471f98cca8224fa091"
+    },
+    "14x28": {
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 4250,
+     "hash": "f837327d8563c148d5d2f5b911f6b0d949220425fd867ffb05106cb42444bc64"
+    },
+    "14x32": {
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 4602,
+     "hash": "9452bc7df4ec434f2dafd3ca84a1e137274ac03adf732dfa1f4ab219c2f96290"
+    },
+    "14x40": {
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 5578,
+     "hash": "39044492e3efb72ed35440e6af529f32a9b3f171084c9aebe2ca78b1a21e29f5"
+    }
+   }
+  },
+  "LBG": {
+   "name": "Lofted Barn Garage",
+   "sizes": {
+    "12x20": {
+     "wallIn": 82.8,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 4906,
+     "hash": "1fca8765b42ba0a3bf05f6cd4e8167393142c76a19b6d6113e8d8bc0c2f1bdd9"
+    },
+    "12x24": {
+     "wallIn": 82.8,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 5782,
+     "hash": "106f3e2555b2140b17b9c1b5419027fe371060479d27195491308b18be21423f"
+    },
+    "12x30": {
+     "wallIn": 82.8,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 6926,
+     "hash": "909a3bafb74d76c27c6cb77803e0dfcb89ff61ca26393cf19a737f2a0c3023d4"
+    },
+    "12x32": {
+     "wallIn": 82.8,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 7254,
+     "hash": "5940d8fdb4e7346fee31ac34b0b803e482fc2345648e8cb75a3a41096c2f7344"
+    }
+   }
+  },
+  "MU": {
+   "name": "Metal Utility",
+   "sizes": {
+    "8x12": {
+     "wallIn": 93,
+     "peakIn": 25.92,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "10x12": {
+     "wallIn": 93,
+     "peakIn": 32.4,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "10x16": {
+     "wallIn": 93,
+     "peakIn": 32.4,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "10x20": {
+     "wallIn": 93,
+     "peakIn": 32.4,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x16": {
+     "wallIn": 93,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x20": {
+     "wallIn": 93,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x24": {
+     "wallIn": 93,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x32": {
+     "wallIn": 93,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    }
+   }
+  },
+  "MLB": {
+   "name": "Metal Lofted Barn",
+   "sizes": {
+    "8x12": {
+     "wallIn": 79.5,
+     "peakIn": 45.344,
+     "trussPeakIn": 43.75,
+     "eaveLeftIn": 1.696,
+     "eaveRightIn": 1.696,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 2760,
+     "hash": "d093255943bab1fe2bd1037f25285d90366dbe3c0b189f01413887dcd5a76857"
+    },
+    "10x12": {
+     "wallIn": 79.5,
+     "peakIn": 49.572,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.906,
+     "eaveRightIn": 1.906,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 2824,
+     "hash": "63e53a49bbb6c35f9280bdc4c5db3dabd33d64fe82375ce7c43f37f1839f9e0b"
+    },
+    "10x16": {
+     "wallIn": 79.5,
+     "peakIn": 49.572,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.906,
+     "eaveRightIn": 1.906,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 3428,
+     "hash": "06d6d090baaa7e5ebe359e1d5703ba55f93ee0842b1e3337254c2c11f20deece"
+    },
+    "10x20": {
+     "wallIn": 79.5,
+     "peakIn": 49.572,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.906,
+     "eaveRightIn": 1.906,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 4224,
+     "hash": "c10b2f4ce134f3ccfdf6c8ecdf97868dd275baa45f160fee9d407805950e25fa"
+    },
+    "12x16": {
+     "wallIn": 79.5,
+     "peakIn": 52.557,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.115,
+     "eaveRightIn": 2.115,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 3596,
+     "hash": "9b2ccb4d31af0b4280c498e8ab9edc660c3afae44b44132e400c512afc3eaa88"
+    },
+    "12x20": {
+     "wallIn": 79.5,
+     "peakIn": 52.557,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.115,
+     "eaveRightIn": 2.115,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 4416,
+     "hash": "830a08ca1a08041a265b8b1304db4afe4deedba0c882fa44fc1a117674947f44"
+    },
+    "12x24": {
+     "wallIn": 79.5,
+     "peakIn": 52.557,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.115,
+     "eaveRightIn": 2.115,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 5292,
+     "hash": "0b65c0d57eb1f2d0e63ec4dbaecf27f00f759a2904fb6f20a9626c80ef225dc0"
+    },
+    "12x32": {
+     "wallIn": 79.5,
+     "peakIn": 52.557,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.115,
+     "eaveRightIn": 2.115,
+     "gableEndIn": 1.2,
+     "doorIn": 71.5,
+     "triangles": 6764,
+     "hash": "ba67e9ca25e0da671f71fdcebdc65bbfbf5eb6409c0b5f9a70308816d2166067"
+    }
+   }
+  },
+  "MG": {
+   "name": "Metal Garage",
+   "sizes": {
+    "12x20": {
+     "wallIn": 93,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x24": {
+     "wallIn": 93,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x30": {
+     "wallIn": 93,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    },
+    "12x32": {
+     "wallIn": 93,
+     "peakIn": 38.88,
+     "pitch": 6.48,
+     "eaveLeftIn": 4.435,
+     "eaveRightIn": 4.435,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5
+    }
+   }
+  },
+  "MCS": {
+   "name": "Metal Cottage",
+   "sizes": {
+    "8x12": {
+     "wallIn": 93,
+     "peakIn": 24.96,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "10x12": {
+     "wallIn": 93,
+     "peakIn": 31.2,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "10x16": {
+     "wallIn": 93,
+     "peakIn": 31.2,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "10x20": {
+     "wallIn": 93,
+     "peakIn": 31.2,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "12x16": {
+     "wallIn": 93,
+     "peakIn": 37.44,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "12x20": {
+     "wallIn": 93,
+     "peakIn": 37.44,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "12x24": {
+     "wallIn": 93,
+     "peakIn": 37.44,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    },
+    "12x32": {
+     "wallIn": 93,
+     "peakIn": 37.44,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 8,
+     "gableEndIn": 0.36,
+     "doorIn": 76.5
+    }
+   }
+  },
+  "DK": {
+   "name": "Dog Kennel",
+   "sizes": {
+    "8x12": {
+     "wallIn": 88.8,
+     "peakIn": 20,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 2845,
+     "hash": "e3d89b2a1cf41392611976c23a91bc3da6651f9fa8f6c522d9fa6dfca39d3688"
+    },
+    "8x16": {
+     "wallIn": 88.8,
+     "peakIn": 20,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
+     "gableEndIn": 5.4,
+     "doorIn": 76.5,
+     "triangles": 3373,
+     "hash": "05c27be245bc32bf4440fef53e682e394b09ddc49b5ca6be6cd441999df65c30"
+    }
+   }
+  }
+ }
+}

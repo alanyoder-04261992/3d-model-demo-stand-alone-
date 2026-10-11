@@ -11,6 +11,10 @@
            back on brings back their sizes, prices and names:
            {offer: {key: entry}, items: {id: value}, options: {group: {id: value}}}
    M       the builder's library (library/manufacturers/<id>.json)
+   L       the construction numbers (library/construction.json), for How
+           it's built (views/price-list/built.js)
+   quiet   what the quiet every-size check found when the price list
+           opened: {version, lines, unchecked, running}
 
    The screen (views/price-list.js) sets hooks.edited; a tab calls
    edited() after changing the draft, edited({tab: true}) when the tab
@@ -30,6 +34,8 @@ export const S = {
   draft: null,
   parked: { offer: {}, items: {}, options: {} },
   M: null,
+  L: null,
+  quiet: null,
   example: undefined,
   owner: false,
   tab: "buildings",

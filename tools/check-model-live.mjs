@@ -50,9 +50,7 @@
    step 7, where the drawn triangles are turned back from world coordinates. */
 
 import { openBarnwright } from "./lib/barnwright-page.mjs";
-import { barnwrightCatalogue, barnwrightCompany, golden } from "./lib/barnwright-company.mjs";
-import { readJSON, readManufacturer } from "./lib/load.mjs";
-import { resolve } from "../model/company.js";
+import { barnwrightCatalogue, golden } from "./lib/barnwright-company.mjs";
 import { frameOf } from "../model/frame.js";
 import { roofRise, roofShape, gableBandY, profileYat, cottageEave, gableClip, ROOF_TH } from "../model/roof-shapes.js";
 import { resetItems, clampPos, neighborGaps, snapCenter, freeSpot, pkFixtures, openingRect } from "../model/layout.js";
@@ -362,9 +360,7 @@ try {
     { key: "ex6", name: "Roof liner", input: "sqftR", price: 0.65 },
     { key: "ex7", name: "Tall walls", input: "pct", price: 10 },
   ];
-  const bwx = barnwrightCompany();
-  bwx.options.extras = EXTRAS;
-  const catX = resolve(bwx, readManufacturer("standard"), readJSON("library/construction.json"));
+  const catX = barnwrightCatalogue((c) => { c.options.extras = EXTRAS; });
   const PRICE = [];
   for (const [t, z] of ALL) {
     const s = freshState(t, z); resetItems(s, frameOf(s, cat), cat);

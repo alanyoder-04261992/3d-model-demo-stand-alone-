@@ -45,7 +45,7 @@ construction lists come from `library/`). Where each answer goes:
 | 3. Lots | Lots: name, address, phone, email, hours, website (`embedOrigins`) |
 | 4. Team | Team: owner, manager or dealer, and their lots |
 | 5. Styles, sizes and prices | Price list: `offer` (own names as `name`; a style of their own is a new key with `base`), standard doors and windows |
-| 6. How they build | the `construction` block (the `change-construction` skill); there is no Dealer Center screen for it |
+| 6. How they build | roof pitch, barn roof height, eave and gable-end overhangs, wall height, shop door height, porch depth, side porch lengths, dormer side: How it's built, `offer.<KEY>.built` per style or `built` business-wide (the `how-its-built` skill); studs, joists, trusses, anchors: the `construction` block (the `change-construction` skill); there is no Dealer Center screen for either yet |
 | 7. Doors, windows, options | Price list: `items`, `options` (own names as `{price, name}`), `options.extras` |
 | 8. Colors | Price list: `palettes`, `defaults` |
 | 9. Prices and quotes | Settings: `pricing.show`, `notes.finePrint`, `notes.sizeNotes`, `pricing.rto` (factor = 5000 / (monthly × months)), `leads.fields`, `leads.askPlan`, `leads.smsConsent` |
@@ -117,8 +117,21 @@ current setup; do not ask the company to repeat information already supplied.
    and optionally the page it sits on (`embed.shareUrl`).
 8. **Fine print**, width notes, price display (`price`, `from` or `none`),
    rent-to-own term or none.
-9. **How they build, if not standard** (studs, joists, trusses, anchors, loft
-   depth) -- that part is the `change-construction` skill.
+9. **How they build, if not standard** -- the roof pitch (like 5/12), the
+   wall height (like 7 ft 9 1/2 in), the porch depth and side porch lengths,
+   the overhangs, the barn roof height, the shop door height and the dormer
+   side are How it's built (the `how-its-built` skill); studs, joists,
+   trusses, anchors and loft depth are the `change-construction` skill.
+   The standard already has Alan's shop numbers (Oct 2026): 5/12 roofs and
+   4 in roof edges on the Utility Shed, Side Utility, Garage, Dog Kennel and
+   Garden Utility, with 7 ft 9 1/2 in walls on the first three; the Dormer
+   Shed's main roof at 7/12; barn roofs 3 ft 7 3/4 in, 4 ft and 4 ft 3 in
+   tall at 8, 10 and 12 ft wide on the Lofted Barn, Side Lofted Barn, Metal
+   Lofted Barn and Lofted Barn Garage, with 6 ft 7 1/2 in walls on the
+   first three. Ask only what differs from those. A steep roof they sell as
+   an option is an extra they make with `built.roofPitch` and `styles`
+   (for example "Steep roof" at 7/12 on the Utility Shed and Side
+   Utility); no sample price list has one (Alan, Oct 11 2026).
 
 Also ask Alan: the licence renewal date, and whether this company is
 white-label (no "3D designer by Barnwright" line).
@@ -216,7 +229,12 @@ The ones that usually need a hand edit:
 * `features` -- `framingView`, `buildPlayback`, `floorPlan`.
 * `brand.credit.show` -- `false` only for a white-label licence.
 * `license` -- `plan` (`hosted`), `renews`.
-* `construction` -- only through the `change-construction` skill.
+* `built` and each style's `offer.<KEY>.built` -- only through the
+  `how-its-built` skill. Today's numbers (and the shop standard where Alan
+  confirmed one) need nothing written.
+* `construction` -- only through the `change-construction` skill. A roof
+  pitch, overhang, barn roof height or door height written here is refused:
+  those are How it's built.
 
 ## 5. Validate
 

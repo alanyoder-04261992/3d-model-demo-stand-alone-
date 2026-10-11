@@ -60,7 +60,8 @@ export function createOffice(deps) {
      the customers and the check-in reach it through these. */
   let setup = null;
   const markLive = (how) => setup.markLive(how);
-  const priceList = createPriceList({ store, manufacturer: deps.manufacturer, library: deps.library, templates: deps.templates || {}, now, log, markLive });
+  const priceList = createPriceList({ store, manufacturer: deps.manufacturer, library: deps.library, templates: deps.templates || {}, now, log, markLive,
+    ...(deps.sizeCheckMs != null ? { sizeCheckMs: deps.sizeCheckMs } : {}) });
   const customers = createCustomers({ store, now, lots, priceList, log, markLive });
   const account = createAccount({ store, license: deps.license || null, lots, now, appVersion: deps.appVersion, log, setupReport: () => setup.report() });
   /* the terms this copy ships (deps.termsVersion only in the checks and the local copy) */

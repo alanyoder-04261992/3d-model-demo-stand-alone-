@@ -24,16 +24,36 @@
    BEFORE the price list is replaced. Only the owner can make that save, so
    one that then fails still counts as live, which is the safe way round. */
 
-import { validate, validateManufacturer, resolve, SIZE_RE, ID_RE } from "../../model/company.js";
+import { validate, validateManufacturer, resolve, strictProblems, SIZE_RE, ID_RE } from "../../model/company.js";
 import { fail, OfficeError, text, phone as phoneField, email as emailField } from "./http.js";
+import { describeChanges as builtChanges, describeExtraBuilt, liftRawRules, tidyBuilt } from "../../model/build-settings.js";
+import { drawnOf } from "../../model/built-check.js";
+import { checkChangedStyles, SAVE_BUDGET_MS } from "./built-check.js";
 
 /* The parts of the settings that change what a customer can pick or pay. */
-const PRICE_PARTS = ["offer", "categories", "items", "options", "palettes", "construction"];
+const PRICE_PARTS = ["offer", "categories", "items", "options", "palettes", "construction", "built"];
 const POLICY_PARTS = ["roundTo", "minCharge", "roofAreaFactor"];
 
 export function priceFingerprint(settings) {
   const pricing = settings.pricing || {};
   return JSON.stringify([PRICE_PARTS.map((k) => settings[k] ?? null), POLICY_PARTS.map((k) => pricing[k] ?? null)]);
+}
+
+/* Does a customer's open design need to be told "prices or items have
+   changed"? A How it's built number counts only when it changes what is
+   drawn (model/built-check.js drawnOf): typing the standard's own 5/12 on
+   the Utility Shed changes nothing a customer sees (review F9). */
+function customerSeesChange(before, after, manufacturer) {
+  const noBuilt = (s) => {
+    const c = { ...s, built: undefined };
+    if (s.offer && typeof s.offer === "object") {
+      c.offer = {};
+      for (const k of Object.keys(s.offer)) c.offer[k] = s.offer[k] && typeof s.offer[k] === "object" && !Array.isArray(s.offer[k]) ? { ...s.offer[k], built: undefined } : s.offer[k];
+    }
+    return c;
+  };
+  if (priceFingerprint(noBuilt(before)) !== priceFingerprint(noBuilt(after))) return true;
+  try { return JSON.stringify(drawnOf(before, manufacturer)) !== JSON.stringify(drawnOf(after, manufacturer)); } catch (e) { return true; }
 }
 
 /* Limits on top of model/company.js: whole feet, sensible sizes and
@@ -121,6 +141,24 @@ export function explainProblem(problem, manufacturer, settings = {}) {
   const withoutCodes = (names) => names.replace(/ \([A-Za-z0-9_-]+\)/g, "");
 
   const rules = [
+    /* How it's built (model/build-settings.js): its problems are already in
+       the owner's words, after the settings path */
+    [/^(?:offer\.\w+\.|options\.extras\[\d+\]\.)?built(?:\.\S+)?: (.*)$/, (m) => m[1]],
+    [/^construction\S*?: (The construction settings hold .+)$/, (m) => m[1]],
+    /* a roof length the 3D designer cannot draw (model/construction.js
+       roofValueProblems), already in the owner's words */
+    [/^construction\S*?: (The [^{}]+)$/, (m) => m[1]],
+    /* an extra's construction effect (model/company.js effectProblems) */
+    [/^options\.extras\[(\d+)\]\.construction\S*: An option's construction settings hold the (.+?)\. Set it in How it's built/,
+      (m) => `${extraName(m[1])}: set this extra's ${m[2]} in How it's built.`],
+    [/^options\.extras\[(\d+)\]\.construction\S*?\.([^.\s\[\]]+) is not a construction setting(?:\. Did you mean (\w+)\?)?/,
+      (m) => `${extraName(m[1])}: "${m[2]}" is not a construction setting.${m[3] ? ` Did you mean ${m[3]}?` : ""}`],
+    [/^options\.extras\[(\d+)\]\.construction(\S*?): (.+)$/,
+      (m) => `${extraName(m[1])}${settingWords(m[2]) ? ` (${settingWords(m[2])})` : ""}: ${/[{}]/.test(m[3]) ? "this construction setting is not written right." : m[3]}`],
+    [/^options\.extras\[(\d+)\]\.construction must be/,
+      (m) => `${extraName(m[1])}: how it changes the building could not be read. Take the extra out and add it again.`],
+    [/^offer\.(\w+)\.\S+ is not part of a building style\. Set its (.+?) in How it's built instead\./,
+      (m) => `${styleName(m[1])}: set its ${m[2]} in How it's built.`],
     [/^The company file is not a settings object/, () => "The price list is missing. Reload the page and try again."],
     [/^status must be/, () => "Pick whether the designer is open or closed to customers."],
     [/^manufacturer is /, () => "The builder's library cannot change here."],
@@ -174,6 +212,7 @@ export function explainProblem(problem, manufacturer, settings = {}) {
     [/^options\.extras\[(\d+)\]\.name is missing/, () => "Every extra needs a name."],
     [/^options\.extras\[(\d+)\]\.input/, (m) => `Pick how ${extraName(m[1])} is charged.`],
     [/^options\.extras\[(\d+)\]\.price/, (m) => `${extraName(m[1])} needs a price, $0 or more.`],
+    [/^options\.extras\[(\d+)\]\.styles/, (m) => `${extraName(m[1])}: pick again which buildings it is offered on.`],
     [/^options\.extras/, () => "One of your extras could not be saved. Reload the page and try again."],
     [/^options\.(\w+)\.([^:\s]+): the manufacturer has no/, (m) => `One of the ${OPTION_GROUP_WORDS[m[1]] || "options"} is not in the builder's library. Reload the page and try again.`],
     [/^options\.(\w+)\.([^:\s]+) has no price/, (m) => `${optionWords(m[1], m[2], S, M)} needs a price ($0 is fine).`],
@@ -191,9 +230,22 @@ export function explainProblem(problem, manufacturer, settings = {}) {
     [/^defaults\.size/, () => "The size the designer opens on is not sold any more. Pick another one in Settings."],
     [/^defaults\.colors/, () => "The colors the designer opens on are not on the color lists any more. Pick them again in Settings."],
     [/^defaults\.dormer/, () => "The dormer the designer opens on is not sold any more. Pick another one in Settings."],
-    [/^defaults\.porchLength/, () => "The porch the designer opens on must be 8 or 12 ft long."],
+    [/^defaults\.porchLength/, () => "The porch the designer opens on must be 4 to 20 ft long, in whole feet."],
 
-    [/^construction/, () => "The construction settings could not be saved. Reload the page and try again."],
+    /* the stricter rules (model/company.js strictProblems): a typo is named,
+       with the setting it was most likely meant to be */
+    [/^offer\.(\w+)\.(\S+) is not part of a building style(?:\. Did you mean (\w+)\?)?/,
+      (m) => `${styleName(m[1])}: "${m[2]}" is not part of a building style.${m[3] ? ` Did you mean ${m[3]}?` : ""}`],
+    [/^construction\S*?\.([^.\s\[\]]+) is not a construction setting(?:\. Did you mean (\w+)\?)?/,
+      (m) => `"${m[1]}" is not a construction setting.${m[2] ? ` Did you mean ${m[2]}?` : ""}`],
+    [/^construction\S*?\.([^.\s\[\]]+) is not a roof shape(?:\. Did you mean (\w+)\?)?/,
+      (m) => `"${m[1]}" is not a roof shape.${m[2] ? ` Did you mean ${m[2]}?` : ""}`],
+    [/^construction\S*?\.([^.\s\[\]]+) is not a building width/,
+      (m) => `"${m[1]}" is not a building width. Write the width in whole feet, like 10.`],
+    [/^construction\S*?\.(rise|lowerRise|upperRise|knee|ridge|dormerRise|left|right)(?:\[\d+\]\.value)?: .* is not a length/,
+      () => "One of the roof sizes in the construction settings is not a length. Write it in feet."],
+    [/^construction(\S*?): (.+)$/, (m) => `The construction setting${settingWords(m[1]) ? ` ${settingWords(m[1])}` : "s"}: ${/[{}]/.test(m[2]) ? "it is not written right." : m[2]}`],
+    [/^construction(\S*)/, (m) => `The construction setting${settingWords(m[1]) ? ` ${settingWords(m[1])}` : "s"} ${settingWords(m[1]) ? "is" : "are"} not written right. Take ${settingWords(m[1]) ? "it" : "them"} out, or ask Barnwright to set ${settingWords(m[1]) ? "it" : "them"}.`],
 
     [/^pricing\.show/, () => "Pick how prices show on the designer: the full price, a starting price, or no price."],
     [/^pricing\.(roundTo|minCharge|roofAreaFactor)/, () => "The per-square-foot rounding could not be saved. Reload the page and try again."],
@@ -227,37 +279,6 @@ const fmtSize = (s) => String(s).replace("x", "×");
 const priceOf = (v) => (v && typeof v === "object" ? v.price : v);
 const keys = (o) => Object.keys(o || {}).filter((k) => !k.startsWith("_"));
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
-
-/* A gable roof's pitch, set for one library style by a construction rule
-   (Barnwright's set_roof_pitch, setup-edits.js): the rule list
-   construction.roof.shapes.gable.rise is one {when: {styles: [code]},
-   value: {w: N/24}} per style, then the library's own rise last. A rule
-   for a library style also reaches every style built like it, so the words
-   say so: "Utility Shed and every building built like it: roof pitch
-   6.5/12 (standard) → 5/12". */
-function pitchRules(s) {
-  const rise = s?.construction?.roof?.shapes?.gable?.rise;
-  const rules = new Map();
-  if (!Array.isArray(rise)) return { rules, last: rise };
-  for (const r of rise) {
-    const code = r?.when?.styles?.length === 1 ? r.when.styles[0] : null;
-    if (code && typeof r.value?.w === "number" && !rules.has(code)) rules.set(code, r.value.w);
-  }
-  return { rules, last: rise[rise.length - 1] };
-}
-function pitchChanges(before, after, M) {
-  const a = pitchRules(before), b = pitchRules(after);
-  const standardW = [b.last, a.last].map((x) => x?.value?.w ?? x?.w).find((w) => typeof w === "number");
-  const standard = typeof standardW === "number" ? `${Math.round(standardW * 48) / 2}/12 (standard)` : "standard";
-  const words = (w) => (w === undefined ? standard : `${Math.round(w * 24)}/12`);
-  const name = (code) => (typeof after.offer?.[code]?.name === "string" && after.offer[code].name.trim()) || M.styles?.[code]?.name || code;
-  const out = [];
-  for (const code of [...new Set([...b.rules.keys(), ...a.rules.keys()])]) {
-    const from = words(a.rules.get(code)), to = words(b.rules.get(code));
-    if (from !== to) out.push(`${name(code)} and every building built like it: roof pitch ${from} → ${to}`);
-  }
-  return out;
-}
 
 /* Words customers read, said in the change line itself (the owner's
    History, and what Alan reads before he says yes to a Barnwright change):
@@ -333,8 +354,12 @@ function quoteFormChanges(before, after) {
 /* The words for a change. options.contact says how the business phone,
    email and website are said: "full" (the owner's own History: old → new),
    "new" (Barnwright's door: only the new one, never the one the owner
-   typed) or "hidden" (Barnwright's undo: neither). */
-export function describeChanges(before, after, manufacturer, { contact = "full" } = {}) {
+   typed) or "hidden" (Barnwright's undo: neither). options.library: the
+   builder's library (library/construction.json), which How it's built
+   reads a style's numbers against. A roof pitch Barnwright sets
+   (set_roof_pitch) is a How it's built number now, so it is said with the
+   rest of How it's built ("Utility Shed roof pitch: 5/12 → 7/12"). */
+export function describeChanges(before, after, manufacturer, { contact = "full", library = null } = {}) {
   const out = [];
   const M = manufacturer;
   const styleName = (s, key) => s.offer?.[key]?.name || M.styles?.[key]?.name || s.offer?.[key]?.base && M.styles?.[s.offer[key].base]?.name || key;
@@ -387,7 +412,6 @@ export function describeChanges(before, after, manufacturer, { contact = "full" 
   if (Array.isArray(before.categories) !== Array.isArray(after.categories) || !same(kept(before.categories), kept(after.categories))) {
     out.push("Changed how buildings are grouped");
   }
-  out.push(...pitchChanges(before, after, M));
 
   /* doors, windows, fixtures */
   const oi = before.items || {}, ni = after.items || {};
@@ -419,13 +443,22 @@ export function describeChanges(before, after, manufacturer, { contact = "full" 
   }
   const ox = new Map((before.options?.extras || []).map((x) => [x.key, x]));
   const nx = new Map((after.options?.extras || []).map((x) => [x.key, x]));
+  /* "Steep roof is offered on the Utility Shed and Side Utility" */
+  const offeredOn = (x) => {
+    if (!Array.isArray(x.styles)) return `${x.name} is offered on every building`;
+    const names = x.styles.map((k) => styleName(after, k));
+    return `${x.name} is offered on the ${names.length < 2 ? names.join("") : names.slice(0, -1).join(", ") + " and " + names[names.length - 1]}`;
+  };
   for (const [k, x] of nx) {
     const old = ox.get(k);
-    if (!old) { out.push(`Added the extra "${x.name}" at ${chargeWords(x)}`); continue; }
+    const built = describeExtraBuilt(x.name, old?.built, x.built);
+    const where = (!old ? Array.isArray(x.styles) : !same(old.styles, x.styles)) ? [offeredOn(x)] : [];
+    if (!old) { out.push(`Added the extra "${x.name}" at ${chargeWords(x)}`, ...built, ...where); continue; }
     if (same(old, x)) continue;
     const before0 = out.length;
     if (old.name !== x.name) out.push(`The extra "${old.name}" is now called "${x.name}"`);
     if (old.price !== x.price || old.input !== x.input) out.push(`${x.name}: ${chargeWords(old)} → ${chargeWords(x)}`);
+    out.push(...built, ...where);
     if (out.length === before0) out.push(`Changed the extra "${x.name}"`);
   }
   for (const [k, x] of ox) if (!nx.has(k)) out.push(`Removed the extra "${x.name}"`);
@@ -462,6 +495,9 @@ export function describeChanges(before, after, manufacturer, { contact = "full" 
   out.push(...quoteFormChanges(before.leads, after.leads));
   if (!same(before.features, after.features) || !same(before.look, after.look)) out.push("Changed how the designer looks");
 
+  /* How it's built: "Lofted Barn wall height: 6 ft 8 in → 7 ft" */
+  out.push(...builtChanges(before, after, M, library));
+
   if (!out.length && !same(before, after)) out.push("Changed other settings");
   return [...new Set(out)];
 }
@@ -490,7 +526,29 @@ function brandNames(businessName) {
   };
 }
 
-export function createPriceList({ store, manufacturer, library, templates, now, log = console.error, markLive = null }) {
+/* A construction setting's path in plain words: ".walls.topPlates" -> "top
+   plates", ".floor.spacingIn[1].value" -> "floor spacing in inches". */
+function settingWords(path) {
+  const bits = String(path || "").replace(/\[\d+\]/g, "").split(".").filter((b) => b && b !== "value" && b !== "shapes");
+  if (!bits.length) return "";
+  const last = bits[bits.length - 1], group = bits.length > 1 ? bits[bits.length - 2] : "";
+  const words = (w) => w.replace(/In$/, " in inches").replace(/Ft$/, " in feet").replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+  const one = words(last);
+  return group && !/^\d+$/.test(group) && /^(spacing|size|type)/i.test(last) ? `${words(group)} ${one}` : one;
+}
+
+/* A strict problem with an extra's place in the list (options.extras[3])
+   swapped for the extra's own key, so moving, adding or removing another
+   extra never makes an old problem look new (an older price list keeps
+   saving). */
+function byExtraKey(settings, problem) {
+  return String(problem).replace(/^options\.extras\[(\d+)\]/, (m, i) => {
+    const x = Array.isArray(settings?.options?.extras) ? settings.options.extras[Number(i)] : null;
+    return x && typeof x === "object" && typeof x.key === "string" ? `options.extras[key=${x.key}]` : m;
+  });
+}
+
+export function createPriceList({ store, manufacturer, library, templates, now, log = console.error, markLive = null, sizeCheckMs = SAVE_BUDGET_MS }) {
   const iso = () => now().toISOString();
 
   /* someone saved first: who, when the save that got in was Barnwright's */
@@ -500,12 +558,19 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     fail(409, SAVED_FIRST);
   }
 
-  /* -> the resolved catalogue, or a 422 listing the problems in words. */
-  function check(settings) {
+  /* -> the resolved catalogue, or a 422 listing the problems in words.
+     previous: the price list this one replaces. The stricter rules
+     (strictProblems) refuse only what previous did not already have, so an
+     older price list keeps saving price changes and an old copy can always
+     be put back. With no previous at all (a check of a draft), the strict
+     problems are not refused. */
+  function check(settings, previous) {
     if (!settings || typeof settings !== "object" || Array.isArray(settings)) fail(422, "The price list is missing. Reload the page and try again.");
     const modelProblems = [...validateManufacturer(manufacturer), ...validate(settings, manufacturer)];
+    const fresh = newStrictProblems(settings, previous);
     const words = [...new Set([
       ...modelProblems.map((p) => explainProblem(p, manufacturer, settings)),
+      ...fresh.map((p) => explainProblem(p, manufacturer, settings)),
       ...officeProblems(settings, manufacturer),
     ])];
     if (words.length) {
@@ -514,6 +579,14 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
       throw err;
     }
     return resolve(settings, manufacturer, library);
+  }
+
+  /* The strict problems settings has that previous did not (same path,
+     same words); [] when there is no previous to compare with. */
+  function newStrictProblems(settings, previous) {
+    if (previous === undefined) return [];
+    const had = new Set(previous && typeof previous === "object" ? strictProblems(previous, manufacturer).map((p) => byExtraKey(previous, p)) : []);
+    return strictProblems(settings, manufacturer).filter((p) => !had.has(byExtraKey(settings, p)));
   }
 
   async function current() {
@@ -598,7 +671,7 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     delete settings.license;
     settings.notes = { finePrint: "Prices plus tax. Delivery and setup included within our area.", sizeNotes: settings.notes?.sizeNotes || {} };
     settings.cfg = 1;
-    check(settings);
+    check(settings, null);
     return settings;
   }
 
@@ -657,15 +730,19 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
   }
 
   /* The save worked out without writing anything: the settings it would
-     store (cfg worked out) and the changes in words. Throws what save()
-     would (409 someone saved first, 422 problems in the owner's words).
-     lock(old, next) -> [words] runs first, for Barnwright. lead: a first
-     change line of its own (Barnwright's undo). */
-  function prepared(previous, settings, version, { restoring = null, lock = null, lead = null } = {}) {
+     store (cfg worked out), the changes in words and the every-size check
+     of How it's built (sizeCheck). Throws what save() would (409 someone
+     saved first, 422 problems in the owner's words, 422 what the
+     business's own building numbers cause at some size). lock(old, next)
+     -> [words] runs first, for Barnwright, so a refused change never runs
+     the size check. lead: a first change line of its own (Barnwright's
+     undo). restoredFrom: the copy being put back (the stricter rules
+     compare with it). */
+  function prepared(previous, settings, version, { restoring = null, restoredFrom = undefined, lock = null, lead = null } = {}) {
     if (!settings || typeof settings !== "object" || Array.isArray(settings)) fail(422, "The price list is missing. Reload the page and try again.");
     if (!previous) fail(404, "The price list has not been set up yet.");
     if (version !== previous.data.version) savedFirst(previous);
-    const next = clean(settings);
+    let next = clean(settings);
     const old = previous.data.settings;
     if (lock) {
       const words = [...new Set(lock(old, next))];
@@ -678,12 +755,27 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     }
     if (next.id !== old.id) fail(422, "This price list belongs to a different business. Reload the page and try again.");
     if (next.manufacturer !== old.manufacturer) fail(422, "The builder's library cannot change here.");
-    next.cfg = priceFingerprint(next) === priceFingerprint(old) ? old.cfg : (old.cfg || 1) + 1;
-    check(next);
-    const changes = describeChanges(old, next, manufacturer);
+    /* a roof pitch rule list the Barnwright setup connector wrote moves into
+       How it's built (model/build-settings.js liftRawRules): the same roof */
+    const lifted = liftRawRules(next, manufacturer);
+    next = lifted.settings === next ? next : clean(lifted.settings);
+    /* How it's built numbers are stored as numbers ("5/12" as 5) */
+    const tidied = tidyBuilt(next, manufacturer);
+    next = tidied === next ? next : clean(tidied);
+    next.cfg = customerSeesChange(liftRawRules(old, manufacturer).settings, next, manufacturer) ? (old.cfg || 1) + 1 : old.cfg;
+    /* a stricter rule refuses only what is new: compared with the stored
+       price list, or, when putting an old copy back, with that copy */
+    const cat = check(next, restoredFrom !== undefined ? restoredFrom : old);
+    /* How it's built: every style whose numbers of the business's own
+       changed is drawn at every size (server/office/built-check.js). What
+       those numbers cause refuses the save; putting back an old copy is
+       never refused (what it finds is said instead). */
+    const sizeCheck = sizeCheckOf(old, next, cat, { refuse: !restoring });
+    const changes = describeChanges(old, next, manufacturer, { library });
+    if (lifted.moved.length) changes.push(...lifted.moved);
     if (restoring) changes.unshift(`Put back the price list saved ${restoring}`);
     if (lead && changes.length) changes.unshift(lead);
-    return { next, changes };
+    return { next, changes, sizeCheck };
   }
 
   /* -> {next, changes, version}: what saving these settings over `version`
@@ -697,20 +789,34 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
 
   /* Save the whole price list. The browser sends the version it started
      from; if someone else saved since, nothing is written (409).
-     options: restoring (the day of the price list put back), lock, lead,
-     savedBy (who, when it isn't `by`: Barnwright), ensureHistory (keep a
-     copy of the one in use first, or refuse). */
-  async function save(by, { settings, version }, { restoring = null, lock = null, lead = null, savedBy = null, ensureHistory = false } = {}) {
+     options: restoring (the day of the price list put back), restoredFrom
+     (that copy), lock, lead, savedBy (who, when it isn't `by`:
+     Barnwright), ensureHistory (keep a copy of the one in use first, or
+     refuse). */
+  async function save(by, { settings, version }, { restoring = null, restoredFrom = undefined, lock = null, lead = null, savedBy = null, ensureHistory = false } = {}) {
     const previous = await current();
-    const { next, changes } = prepared(previous, settings, version, { restoring, lock, lead });
+    const { next, changes, sizeCheck } = prepared(previous, settings, version, { restoring, restoredFrom, lock, lead });
     const old = previous.data.settings;
-    if (!changes.length) return { ...previous.data, cfg: old.cfg, changes: [] };
+    if (!changes.length) return { ...previous.data, cfg: old.cfg, changes: [], sizeCheck };
     if (ensureHistory) await keepCopy(previous.data);
     if (next.status !== "suspended" && markLive) await markLive("opened");
     const record = { settings: next, version: previous.data.version + 1, cfg: next.cfg, savedAt: iso(), savedBy: savedBy || { id: by.userId, name: by.name || by.email } };
     if (!(await store.replace("price-list", previous, record))) savedFirst(await current());
     await keepHistory({ version: record.version, savedAt: record.savedAt, savedBy: record.savedBy, changes, settings: next });
-    return { ...record, changes };
+    return { ...record, changes, sizeCheck };
+  }
+
+  /* -> {checked, warnings, unchecked, problems} for the screen; refuses
+     (422) when the business's own numbers cause a problem at some size. */
+  function sizeCheckOf(old, next, cat, { refuse }) {
+    const r = checkChangedStyles(liftRawRules(old, manufacturer).settings, next, manufacturer, library, { cat, budgetMs: sizeCheckMs });
+    if (refuse && r.problems.length) {
+      const words = r.problems;
+      const err = new OfficeError(422, words.slice(0, 8).join(" ") + (words.length > 8 ? ` (and ${words.length - 8} more)` : ""));
+      err.problems = words;
+      throw err;
+    }
+    return { checked: r.checked, styles: r.styles, buildings: r.buildings, problems: refuse ? [] : r.problems, warnings: r.warnings, unchecked: r.unchecked };
   }
 
   async function history() {
@@ -739,7 +845,9 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
       const now = await current();
       if (now) settings = carry(now.data.settings, entry.settings);
     }
-    return save(by, { settings, version: currentVersion }, { ...options, restoring: dayWords(entry.savedAt) });
+    /* the stricter rules compare with the copy put back (as carried), so an
+       old copy can always be put back */
+    return save(by, { settings, version: currentVersion }, { ...options, restoring: dayWords(entry.savedAt), restoredFrom: settings });
   }
 
   return { get, current, catalogue, setup, signupStart, startForBarnwright, takeOver, preview, save, history, restore, check };

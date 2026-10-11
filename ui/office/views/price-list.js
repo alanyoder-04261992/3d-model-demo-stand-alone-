@@ -28,6 +28,7 @@ import { doorsTab } from "./price-list/doors.js";
 import { optionsTab } from "./price-list/options.js";
 import { colorsTab } from "./price-list/colors.js";
 import { historyTab } from "./price-list/history.js";
+import { builtSaved } from "./price-list/built.js";
 
 const TAB_VIEWS = { buildings: buildingsTab, doors: doorsTab, options: optionsTab, colors: colorsTab, history: historyTab };
 const IS_PRICE_LIST = /^#\/price-list(?:[/?]|$)/;
@@ -38,15 +39,20 @@ let page = null;
 
 async function loadLibrary(settings) {
   const id = /^[a-z0-9-]{2,40}$/.test(settings?.manufacturer || "") ? settings.manufacturer : "standard";
-  if (S.M && S.M.id === id) return;
-  let r;
+  if (S.M && S.M.id === id && S.L) return;
+  /* the builder's styles, and the construction numbers How it's built
+     starts from (views/price-list/built.js) */
+  let r, l;
   try {
-    r = await fetch(`/library/manufacturers/${id}.json`, { credentials: "same-origin" });
+    [r, l] = await Promise.all([
+      fetch(`/library/manufacturers/${id}.json`, { credentials: "same-origin" }),
+      fetch("/library/construction.json", { credentials: "same-origin" }),
+    ]);
   } catch {
     throw new Error("The list of buildings didn't load. Check your internet connection, then reload the page.");
   }
-  if (!r.ok) throw new Error("The list of buildings didn't load. Reload the page to try again.");
-  S.M = await r.json();
+  if (!r.ok || !l.ok) throw new Error("The list of buildings didn't load. Reload the page to try again.");
+  [S.M, S.L] = await Promise.all([r.json(), l.json()]);
 }
 
 /* Start (again) from a price list as the server has it. */
@@ -81,9 +87,9 @@ function recompute() {
   tidyCategories(S.draft, S.saved.settings, S.M);
   const notes = tidyDefaults(S.draft, S.M, groupsOf(S.draft, S.M).flatMap((g) => g[1]));
   const ready = prepare(S.draft);
-  S.problems = problemsOf(ready, S.M);
+  S.problems = problemsOf(ready, S.M, S.saved.settings);
   S.locks = lockedItems(ready, S.M);
-  S.changes = describe(S.saved.settings, ready, S.M);
+  S.changes = describe(S.saved.settings, ready, S.M, S.L);
   return notes;
 }
 
@@ -160,12 +166,13 @@ function staleBanner() {
 
 function savedBanner() {
   if (!S.justSaved) return null;
-  const { changes, lotCount } = S.justSaved;
+  const { changes, lotCount, sizeCheck } = S.justSaved;
   const close = h("button", { type: "button", class: "pl-banner-x", "aria-label": "Close" }, icon("x"));
   const el = h("section", { class: "pl-saved", role: "status" },
     h("div", { class: "pl-saved-head" }, h("span", { class: "pl-saved-mark" }, icon("check")),
       h("div", {}, h("h2", {}, savedWords(lotCount)), changes.length ? h("p", {}, `What changed (${changes.length}):`) : null), close),
-    changes.length ? changeList(changes, 8) : null);
+    changes.length ? changeList(changes, 8) : null,
+    builtSaved(sizeCheck));
   close.addEventListener("click", () => { S.justSaved = null; el.remove(); });
   page.saved = el;
   return el;
@@ -383,7 +390,7 @@ async function saveAll() {
     const lotCount = Number.isInteger(answer.lotCount) ? answer.lotCount : S.ctx.app.openLots().length;
     const record = await S.ctx.app.loadPriceList(true);
     startFrom(record);
-    S.justSaved = { changes: answer.changes || [], lotCount };
+    S.justSaved = { changes: answer.changes || [], lotCount, sizeCheck: answer.sizeCheck || null };
     toast(savedWords(lotCount));
     S.ctx.refresh();
   } catch (e) {

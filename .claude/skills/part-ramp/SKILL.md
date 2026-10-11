@@ -36,7 +36,11 @@ the golden checks leave the `ramp` stage out (`NEW_FINISH_STAGES`).
 * `ramp.lengthFt` -- when a ramp option carries it as a construction effect
   (none does yet: the manufacturer file's `lengthFt` is not in the resolved
   catalogue); otherwise Barnwright's rule: r4 -> 4 ft, r6 -> 6 ft, any other
-  ramp id with a number in it, that number; the kit -> none.
+  ramp id with a number in it, that number; the kit -> none. It is a known
+  setting (`CONSTRUCTION_SCHEMA`), and an option's or extra's construction
+  effect is checked like the settings (`effectProblems()` in
+  `model/company.js`): a typo or a value that cannot be built is named, and
+  such an effect changes nothing.
 * `porch.joist` (2x6) -- the stringers.
 * `floor.spacingIn` -- the most the stringers stand apart.
 The boards are 2x6 (5 1/2 in wide, 1/4 in apart: `RAMP_BOARD`).

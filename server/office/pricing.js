@@ -16,8 +16,9 @@
 import { toState, fromState } from "../../model/design.js";
 import { frameOf } from "../../model/frame.js";
 import { standardItems } from "../../model/loadouts.js";
-import { pkFixtures } from "../../model/layout.js";
+import { pkFixtures, fitsOnWall } from "../../model/layout.js";
 import { priceParts } from "../../model/pricing.js";
+import { extraOfferedOn } from "../../model/company.js";
 import { OfficeError } from "./http.js";
 
 export class DesignProblem extends Error {
@@ -65,7 +66,10 @@ function checkDesign(design, cat) {
   for (const key of ["body", "trim", "roof", "door", "shutters"]) isText(design.colors[key], 100);
 
   plainObject(design.porch, ["pLen", "pFlip", "pMid"]);
-  if (![8, 12].includes(design.porch.pLen)) unreadable();
+  /* a side porch length: whole feet, 4 to 20 (the style's own lengths, 8 and
+     12 standard, are checked when the design is read: a length no longer
+     sold is "no longer offered", never "could not be read") */
+  isNumber(design.porch.pLen, 4, 20, true);
   isBool(design.porch.pFlip);
   isBool(design.porch.pMid);
 
@@ -87,7 +91,7 @@ function checkDesign(design, cat) {
   const extras = new Map((cat.OPTX?.extras || []).map((x) => [x.key, x]));
   for (const [key, value] of Object.entries(design.xopt)) {
     const extra = extras.get(key);
-    if (!extra) notOffered();
+    if (!extra || !extraOfferedOn(extra, cat.TYPES[design.type], design.type)) notOffered();
     isNumber(value, 0, extra.input === "qty" ? 99 : extra.input === "lf" ? 200 : 1, true);
   }
 
@@ -142,6 +146,9 @@ export function priceDesign(input, cat) {
 
   for (const item of state.items) {
     const c = cat.CAT[item.cat];
+    /* a gable window too tall for this gable is not offered there
+       (model/layout.js gableItemFits; the designer greys it) */
+    if (!fitsOnWall(c, item.wall, frame)) notOffered();
     if (item.pk) {
       if (item.inc || item.dbl || item.shut || item.lite || !(fixtures.get(item.cat) > 0)) unreadable();
       fixtures.set(item.cat, fixtures.get(item.cat) - 1);

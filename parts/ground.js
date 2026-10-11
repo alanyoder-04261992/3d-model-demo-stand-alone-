@@ -18,7 +18,8 @@
    SC() -> kit.view.scene; cam.fitDist -> kit.view.fitDist; window.__GR = GR
    -> returned as { gr } for assemble; texGrass/texFlat/texAO/texAOv are the
    texture NAMES (engine/tex-names.js); W, L, ws are plan.W, plan.L, plan.ws
-   (L includes the corner porch's 4 ft, as Barnwright's dims() does);
+   (L includes the corner porch's deck -- the porch depth, 4 ft standard --
+   as Barnwright's dims() does);
    setStage added. The lawn uses MAT (not mat): it never glows. */
 
 import { texGrass, texFlat, texAO, texAOv } from "../engine/tex-names.js";

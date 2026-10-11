@@ -29,8 +29,8 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { decodePng } from "../capture-golden.mjs";
-import { barnwrightCompany } from "./barnwright-company.mjs";
-import { readManufacturer, readJSON } from "./load.mjs";
+import { barnwrightCompany, barnwrightManufacturer } from "./barnwright-company.mjs";
+import { readJSON } from "./load.mjs";
 
 const require = createRequire(import.meta.url);
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
@@ -87,12 +87,13 @@ export function loadPlaywright() {
 
 /* The Barnwright company as the page receives it: the company object (built
    from test/golden/barnwright-catalogue.json), the standard manufacturer file
-   and the construction defaults -- the same three things tools/lib/
+   without its "How it's built" blocks (Barnwright's own numbers, not the shop
+   standard) and the construction defaults -- the same three things tools/lib/
    barnwright-company.mjs resolves for the Node checks. */
 export function barnwrightJSON() {
   return JSON.stringify({
     company: barnwrightCompany(),
-    manufacturer: readManufacturer("standard"),
+    manufacturer: barnwrightManufacturer(),
     library: readJSON("library/construction.json"),
   });
 }

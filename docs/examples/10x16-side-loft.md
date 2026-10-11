@@ -675,10 +675,12 @@ The product name **72-inch wooden double doors** and its rough opening are
 different measures: the catalogue draws the pair 6.333 ft wide (about 76 in).
 The recorded shop opening height for this gambrel building is 71 1/2 in,
 drawn as 5.9583 ft. The **2 x 3 window** is stored as 2.1 x 2.9 ft; its top
-sits 5 in below the wall top. The style's wall drawing height is 6.67 ft
-above the floor, separate from the now-confirmed 75 in loft-wall stud cut
-length. This legacy drawing height is not the corrected lesson's derived
-79 1/2 in overall wall height.
+sits 5 in below the wall top. Since October 2026 ("yes match") the
+standard Side Lofted Barn is drawn with the lesson's derived 79 1/2 in
+(6 ft 7 1/2 in) wall: the 75 in loft-wall studs and three 1 1/2 in plates
+(`styles.SLB.built.wallHeight` in the manufacturer file). Barnwright's own
+drawing height, 6.67 ft above the floor, stays in the style's raw `wallH`
+for the golden test.
 See [the item catalogue](../../library/manufacturers/standard.json),
 [opening geometry](../../model/layout.js),
 [door skill](../../.claude/skills/part-door-wood/SKILL.md), and

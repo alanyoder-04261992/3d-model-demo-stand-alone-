@@ -403,7 +403,9 @@ async function boot() {
   function act(reason, fn, opts) {
     opts = opts || {};
     const out = fn ? fn(state) : undefined;
-    normalize(state, null, cat);
+    /* what the rules changed, in words (a gable window too tall once the
+       Steep roof is off comes off): the cards say it where it happened */
+    ctx.said = { reason: reason || "", lines: normalize(state, null, cat) };
     if (state.sel && !itemById(state, state.sel)) state.sel = null;
     if (opts.refresh !== false) {
       refreshUI();

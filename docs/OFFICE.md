@@ -114,6 +114,14 @@ at once.
 * **History.** Every save keeps a copy of the price list and a list of what
   changed in words ("Lofted Barn 10×16: $5,540 → $5,700"). The owner can
   restore an earlier copy.
+* **Stricter checks never break a saved price list.** A save that adds a
+  misspelt setting, a How it's built number past its limits or an extra
+  that changes the roof through its construction settings is refused in
+  plain words ("Side Utility: "sizez" is not part of a building style. Did
+  you mean sizes?"). A problem the stored price list already had does not
+  stop a save, every lot's designer and quotes keep opening on it, and
+  putting an older copy back from History is always allowed
+  (`server/office/price-list.js check(next, previous)`).
 
 ## Building styles
 
@@ -139,6 +147,95 @@ height or door layout) is a new library style: use the `add-a-style` skill.
 
 Sizes are whole feet, width 4–16 and length 4–60 in the Dealer Center. Widths with
 proven drawings and skid tables are 6, 8, 10, 12 and 14.
+
+### How it's built
+
+Each business can build a style its own way without a new version of the
+3D designer: taller walls, another roof pitch, a deeper porch. The owner
+types the numbers the way a shed builder says them ("5/12", "7 ft 9 1/2 in",
+"76 1/2 in") in the Buildings tab, and they are saved in the price list like
+a price (`model/build-settings.js`, the `how-its-built` skill):
+
+* **On a style** (the style's own "How it's built" boxes): roof pitch or
+  barn roof height for each width, eave overhang, gable-end overhang, wall
+  height, wooden shop door height, and where the style has them, porch
+  depth, side porch lengths (chips) and dormer side (chips). Each empty box
+  shows the number the style is built with and where it comes from
+  ("Standard: 7 ft 9 1/2 in", "Built like the Utility Shed: 6/12"); a barn's
+  eave, which differs by width, is said short in the box ("1 3/4 to
+  2 1/8 in") and at each width under it. A style of
+  the business's own follows the style it is built like, unless it has a
+  number of its own.
+* **For the whole business** ("How your buildings are built", at the end
+  of the Buildings tab): the same numbers for every building with one kind
+  of roof, each saying which styles it reaches, which have their own, and
+  which keep a feature of their own ("The Garden Utility keeps its flush
+  gable end").
+* **On an option** (Options tab, "Roof pitch at least"): an option like a
+  steep roof makes the roof at least that steep when a customer picks it;
+  it never makes a roof flatter. "Offered on" picks the buildings it is
+  sold on (every building, or only the ones pressed; a style of the
+  business's own follows the style it is built like); on any other
+  building the 3D designer does not show it, takes it off with one plain
+  line when the customer changes building, and the server refuses it. The
+  pitch box and the chips are folded under "Only on some buildings, or
+  changes the roof", so an option like a ridge vent stays short. Where the
+  pitch changes nothing (a barn or saltbox roof, past a lean-to's 6/12, a
+  roof already that steep) it says so under the option and in a yellow
+  note when the price list opens ("Steep roof does not change the Lofted
+  Barn (it has a barn roof). A customer would pay for nothing there.",
+  `extrasThatChangeNothing`). The 3D designer names the roof it gives
+  ("Steep roof (7/12 roof)"). No example price list a business starts
+  with has one (Alan, Oct 11 2026: take the Steep roof out); an owner who
+  sells a steeper roof makes their own option, for example "Steep roof" at
+  7/12 on the Utility Shed and Side Utility. History says "Steep roof:
+  roof pitch at least 7/12" and "Steep roof is offered on the Utility Shed
+  and Side Utility".
+* **As it is typed**, a number that cannot be read or is past its limits
+  is said under its box ("Roof pitch: write it like 5/12.", "Porch depth
+  72 ft is deeper than 8 ft. Did you mean 72 in (6 ft)?") with the red
+  count on the tab, and Save waits until it is fixed.
+* **Check every size** (on each style) draws the style at every size it is
+  sold in with the numbers on the screen, saved or not, in the browser
+  (`model/built-check.js`, `model/style-check.js`), and says in words what
+  does not fit: a door taller than the wall leaves room for, a roof edge in
+  front of a door, framing that does not build. It draws one size at a
+  time and gives the page back in between, so a style with many sizes never
+  freezes the page. What the same building has with the standard numbers,
+  no worse, never stops a save; it is listed under "Already so in the
+  standard building:" ("Side Utility 8x12: the 72″ Wooden Double Doors and
+  the 2×3 Window on the right side overlap by 2 3/8 in.").
+* **On save** the server does the same for every style whose numbers
+  changed, each also with every option that changes how it is built
+  switched on (a new wall with the business's Steep roof), and for every style a
+  changed option reaches or now reaches (its buildings list widened, a
+  style sold again) (`server/office/built-check.js`): what the new numbers
+  cause refuses the save, in words, like any price list problem; a
+  price-only save draws nothing. It draws the size each style opens on
+  first, for every style, then the smallest and largest, then the rest; it
+  stops after about 3 seconds and lists what is left ("Not checked yet: 14
+  sizes of the Lofted Barn. Press Check every size."), which never stops a
+  save. Putting an older copy back is never refused;
+  what no longer fits is said instead.
+* **History** says each change: "Lofted Barn wall height: 6 ft 7 1/2 in →
+  7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12
+  (Utility Shed, Side Utility and 3 more 5/12 → 6/12; Cabin, Side Cabin and
+  3 more about 6 1/2/12 → 6/12)", naming each style a business-wide number moved,
+  "Steep roof: roof pitch at least 7/12", and "Wall upgrades priced by the
+  square foot follow the new wall height: ..." when a wall height moves
+  what a per-square-foot wall upgrade costs. A change that moves what is
+  drawn raises `cfg`, so open designers redraw; the standard's own number
+  typed on a style is said ("Utility Shed roof pitch: standard (5/12) →
+  5/12 of its own") but draws nothing new, so `cfg` stays. Every number is
+  stored as its number ("5/12" as 5), so sending it again is no change, and
+  a barn width given twice ("08" and "8") is refused.
+* **When the price list opens**, the owner's screen quietly checks the
+  styles with numbers of the business's own for about 1 1/2 seconds and
+  shows a yellow note if a change to the standard means they no longer
+  fit ("Since the last update, your own building numbers do not fit
+  everywhere."), with numbers the 3D designer could not use.
+* **Managers and dealers** see each style's numbers, read only, under
+  "How it's built" on its price card.
 
 ## Data
 
@@ -1914,6 +2011,7 @@ section 19).
 | `server/office/store.js` | reads, create-only and conditional writes, retry on a clash |
 | `server/office/people.js` | sign-in, the first owner, invites, roles |
 | `server/office/price-list.js` | saving, `cfg`, history and the words for each change |
+| `server/office/built-check.js`, `model/built-check.js` | the every-size check on a save with How it's built numbers, and which finding is the business's own |
 | `server/office/lots.js` | lots |
 | `server/office/customers.js` | customers, list rows, activity, quotes, orders |
 | `server/office/website.js` | public lot data and website quote requests |
@@ -1946,6 +2044,8 @@ section 19).
 | `tools/check-control-room.mjs` | the Barnwright account rules, against a pretend control room |
 | `server/office/help.js` | Help: questions to Barnwright, Barnwright's answers, problem reports |
 | `ui/office/views/help.js`, `ui/office/help-answers.js`, `ui/office/help.css` | the Help screen, its short answers and its look |
+| `ui/office/views/price-list/built.js` | How it's built on the price list: a style's boxes, the business-wide card, Check every size, the quiet check on open, the read-only lines |
+| `tools/check-how-its-built.mjs` | How it's built in a real browser (owner, manager, the "try it" demo; 1280 and 390 wide) |
 | `ui/problems.js` | reports an error nothing caught to the site's own server (the Dealer Center and every 3D designer page) |
 | `ui/problems-start.js` | starts it on a 3D designer page before anything else, so a problem while the designer is still loading is reported too |
 | `tools/check-help.mjs` | Help's rules, against a pretend control room and Sales Inbox |
@@ -2022,18 +2122,25 @@ problem shows in plain words next to the box it is about, before saving.
   adds one of the library's styles (example sizes, prices left empty to
   type) or the business's own style built like one of them (code like
   "LB1", never shown). "The 3D designer opens on" picks the first building.
+  Each style's editor ends with its "How it's built" boxes and "Check every
+  size"; the tab ends with "How your buildings are built" (see "How it's
+  built" above), and opens with a yellow note when numbers of the
+  business's own no longer fit.
 * *Doors & windows* — each door, window, light and fixture: name customers
   see, price, "Sell this". One that comes with a sold style or option says
   so and stays sold ($0 is fine).
 * *Options* — dormers, ramps, electrical packages, shutters, door window,
   exterior light and per-square-foot upgrades (sell, price, rename), and the
-  business's own options (name, how it is priced, price).
+  business's own options (name, how it is priced, price, and "Roof pitch
+  at least" for an option like a steep roof).
 * *Colors* — siding, trim and roof swatches to switch on and off, colors of
   the business's own, and the colors the 3D designer opens on.
 A bar at the bottom counts unsaved changes: "6 changes", "See them", "Undo
 changes", "Save for all lots", and what still needs fixing ("2 prices
 missing", "Show me"). Leaving the price list with changes asks first. After
-saving: "Saved. All 3 lots show the new prices now." with the change list.
+saving: "Saved. All 3 lots show the new prices now." with the change list,
+and when building numbers changed, what the every-size check said and "See
+the Lofted Barn in the 3D designer" (a lot's own designer link).
 If someone else saved first, the owner is told and reloads. *History* lists
 every save in words, with who and when, and (owner) "Put this back".
 

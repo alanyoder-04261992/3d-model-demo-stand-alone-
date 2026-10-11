@@ -4,12 +4,12 @@
    WHY. Alan does not read code: README.md, docs/FOR-ALAN.md and
    docs/SELLING.md are how he (and whoever he sells to) knows what this is,
    and the workflow skills (.claude/skills/new-company, add-a-style,
-   add-a-part, check-the-look, change-construction) are how the next Claude
-   session knows what to do. A document that names a tool that is not there,
-   a command flag the tool does not read, a skill nobody wrote or a page that
-   does not exist sends somebody the wrong way -- and nobody notices until
-   they are stuck. This check reads those documents and holds every name in
-   them to the files on disk.
+   add-a-part, check-the-look, change-construction, how-its-built) are how
+   the next Claude session knows what to do. A document that names a tool
+   that is not there, a command flag the tool does not read, a skill nobody
+   wrote or a page that does not exist sends somebody the wrong way -- and
+   nobody notices until they are stuck. This check reads those documents
+   and holds every name in them to the files on disk.
 
    WHAT IT PROVES, for each document:
    1. FILES AND FOLDERS. Every path it names exists: in the repo (models/,
@@ -68,7 +68,7 @@ import { INTERIOR_DEFAULTS } from "../parts/interior.js";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BARNWRIGHT_ROOT = "/home/user/boisterous-lokum-a737e0";   /* read only, never written */
 
-export const WORKFLOW_SKILLS = Object.freeze(["new-company", "add-a-style", "add-a-part", "check-the-look", "change-construction", "shed-customer-setup"]);
+export const WORKFLOW_SKILLS = Object.freeze(["new-company", "add-a-style", "add-a-part", "check-the-look", "change-construction", "shed-customer-setup", "how-its-built"]);
 export const DOCS = Object.freeze(["README.md", "docs/FOR-ALAN.md", "docs/SELLING.md",
   "docs/BUILDING-TERMS.md", "docs/examples/10x16-side-loft.md", ".agents/skills/shed-customer-setup/SKILL.md",
   ...WORKFLOW_SKILLS.map((s) => `.claude/skills/${s}/SKILL.md`)]);

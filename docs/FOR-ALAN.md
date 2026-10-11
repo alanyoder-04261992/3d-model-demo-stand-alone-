@@ -8,10 +8,13 @@
      "What you still need to decide". -->
 
 This is Barnwright's 3D designer, on its own, so you can sell it to a shed
-company that wants the designer and not the rest of Barnwright. Its buildings
-are Barnwright's shape for shape (one check compares every triangle of 148
-buildings, another every pixel of 24 finished pictures), lit the way your own
-Yoder Storage Barns website lights them (see "How the buildings look"). Every
+company that wants the designer and not the rest of Barnwright. It draws
+Barnwright's buildings shape for shape (one check compares every triangle of
+148 buildings, another every pixel of 24 finished pictures), lit the way your
+own Yoder Storage Barns website lights them (see "How the buildings look"),
+and ten of its standard styles (the utility sheds, the Garage, Dog Kennel,
+Garden Utility, Dormer Shed and the lofted barns) are built with your own shop
+numbers (see "Your shop numbers"). Every
 real part of a shed is its own piece with its own notes for Claude, and a new
 company is one settings file rather than new programming.
 
@@ -112,6 +115,59 @@ inside out, so they never appear); a corner board casts a hairline shadow
 instead of a dark band; a door's side boards stop just under its head board;
 the octagon window shrinks to fit a small gable instead of being cut off; and
 a door made from a metal building's siding is steel like the walls.
+
+## Your shop numbers
+
+You said "yes match" in October 2026: the standard buildings every dealer
+gets are built the way your shop builds them, where you gave us the numbers.
+On October 11, after the pictures, you said yes to six more styles.
+
+* **Utility Shed, Side Utility and Garage:** a 5/12 roof at every width (a
+  10 ft wide roof rises 2 ft 1 in instead of 2 ft 8 3/8 in; a 12 ft Garage
+  2 ft 6 in instead of 3 ft 2 7/8 in), the roof edge 4 in past each side
+  wall, and walls 7 ft 9 1/2 in. That wall height is worked out from your
+  89 in studs and three 1 1/2 in plates, not measured; see question 7
+  below.
+* **Dog Kennel and Garden Utility:** the same 5/12 roof and 4 in roof edge;
+  their walls are as they were. The 6 ft wide Garden Utility's roof now
+  rises only 1 ft 3 in above the wall.
+* **Dormer Shed:** the main roof at 7/12, your steep pitch (it was about
+  7 1/4/12). The dormer keeps its room: its front is still 1 ft 11 3/8 in
+  tall on 10 and 12 ft wide ones, 1 ft 7 13/16 in on 8 ft wide ones (was
+  1 ft 8 1/2 in). The eave, walls and dormer are as they were.
+* **Lofted Barn, Side Lofted Barn and Metal Lofted Barn:** walls 6 ft
+  7 1/2 in (worked out from 75 in studs and three plates) and the barn roof
+  3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide, measured
+  where you measured it: from the top of the wall to the top of the trusses.
+  The roof line over the roof deck is about 1/2 in higher.
+* **Lofted Barn Garage:** the same barn roof heights (4 ft 3 in on the
+  12 ft wide ones it is sold in), on its own walls as they were.
+* **14 ft wide lofted barns keep today's height**, about 6 ft 3 in to the
+  top of the trusses, as you said. Their walls are 6 ft 7 1/2 in like the
+  other widths, so a 14 ft Lofted Barn stands 9/16 in lower overall than
+  before.
+* **Everything else is as it was:** the Metal Garage (you said "not metal
+  garage"), the Metal Utility, the cabins, the Standard Barn, the cottages,
+  the Backyard Utility and the Single Slope.
+* **A gable window too tall for the gable is not offered there:** the 18x24
+  on 8, 10 and 12 ft Utility Sheds and Side Utilities, 12 ft Garages and 8
+  and 10 ft Dormer Sheds; the octagon on 8 ft Utility Sheds, Side Utilities
+  and Dog Kennels. With the lower roofs they would poke through. A design
+  saved with one there opens with it taken off and one line saying so.
+* **No Steep roof in the sample price list** any more (you said take it
+  out). A business can still make its own option with "Roof pitch at
+  least" on the Options tab.
+* **Barnwright's own buildings did not change.** The check that compares
+  every triangle with Barnwright still draws Barnwright's numbers.
+* **Each dealer can still change any of these** for its own buildings in the
+  Dealer Center (How it's built).
+
+What matches and what does not yet: the heights match your shop. The barn
+roof's bend is drawn where Barnwright drew it, so the two slopes are not your
+exact truss pieces, and the utility roof edge is drawn sloping rather than
+your level 2 in end. The utility roof's 4 in is out to the edge of the roof
+deck; the rafter tail under it stops about 3 3/4 in out. The before and after pictures go with this change; the
+questions are under "What you still need to decide".
 
 ## Lessons and skills
 
@@ -507,6 +563,44 @@ everybody or for one company):
 All of these live in two files: library/construction.json (how the sheds are
 built) and library/manufacturers/standard.json (the styles, including the
 loft). Any company can build differently in its own settings.
+
+### Your shop numbers: what we still need from you
+
+Each one has an answer we used until you say otherwise. Answered on
+October 11: the Garage (12 and 14 ft wide), Dog Kennel, Garden Utility,
+Dormer Shed, Metal Lofted Barn and Lofted Barn Garage (yes, as in the
+pictures), the Metal Garage (no), the 14 ft lofted barns (keep today's
+height), the gable window (not offered where it does not fit) and the Steep
+roof (out of the sample price list).
+
+1. **The cabins and the Metal Utility** at 5/12 with a 4 in roof edge, like
+   your utility roof? *For now: unchanged.*
+2. **The Standard Barn**: the same trusses as the Lofted Barn? *For now:
+   unchanged.*
+3. **The barn roof's bend.** Give us the 8 and 12 ft tip projections and the
+   slopes can match your truss pieces too. *For now: Barnwright's bend.*
+4. **The utility roof's level 2 in end.** *For now: drawn sloping.*
+5. **A 12 ft wide building is 11 ft 2 in actual.** *For now: drawn 12 ft.*
+6. **Prices by wall area follow the real wall.** In the sample price list
+   the wall moisture barrier on a 10x16 Utility Shed goes from $220 to $225,
+   on a 12x24 Garage from $305 to $310, and on a 12x24 Lofted Barn or Metal
+   Lofted Barn from $265 to $260. *For now: the price follows the wall.*
+7. **The wall heights are worked out, not measured.** 7 ft 9 1/2 in on the
+   Utility Shed, Side Utility and Garage is your 89 in studs plus three
+   1 1/2 in plates; 6 ft 7 1/2 in on the Lofted Barn, Side Lofted Barn and
+   Metal Lofted Barn is 75 in studs plus three plates. Are those right,
+   floor to the top of the wall? *For now: yes.*
+8. **Every dealer at once.** The shop numbers reach every Dealer Center
+   business the next time the site goes live. Quotes already sent keep
+   their price and are drawn with the new numbers. *For now: no note to
+   dealers; you see the pictures first.*
+9. **A smaller gable window?** Where the 18x24 or the octagon no longer fits
+   (listed above), does your shop put a smaller window in those gables?
+   *For now: not offered there.*
+10. **The 14 ft Utility Shed and Side Utility at 5/12** too? *For now:
+    yes, 5/12 is your standard pitch at every width.*
+11. **Who can change How it's built.** *For now: the owner only, like
+    prices; managers and dealers see the numbers.*
 
 ### Choices about the product
 

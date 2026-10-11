@@ -49,8 +49,12 @@ added (Barnwright's `buildShed` line 4043).
 * **`openings.doorHeightIn`** `{gambrel: 71.5, other: 76.5}` -- the opening
   height in inches for this roof shape. Drawn to four decimals of a foot
   (5.9583 / 6.375 -- Barnwright's numbers exactly). A company building a
-  taller door changes this; the door, its trim and the wall framing's header
-  all move together. The opening is then capped as every door is: a full foot
+  taller door sets it in **How it's built** (`doorHeight`: per style
+  `offer.<KEY>.built.doorHeight`, or business-wide by `barn` / `other`; the
+  `how-its-built` skill), which writes this path for that style; a raw
+  `openings.doorHeightIn` in a company's construction is refused on save.
+  An extra may carry a door height too (its `built.doorHeight`). The door,
+  its trim and the wall framing's header all move together. The opening is then capped as every door is: a full foot
   under the roof on a cottage, 0.42 ft under the eave (or belt band) on a
   side wall, and on an end wall up into the gable but 0.14 under the roof line
   and 0.34 under the gable band (`model/layout.js openingRect`).
@@ -134,7 +138,7 @@ And the trim round it (shared, `common.js`; full text in `part-openings`):
    the whole `node tools/check-golden.mjs` (the door's materials -- `doorF`,
    `doorSh`, `iron` -- take their place in the draw order from it).
 3. Every number is look-defining. The door height is the one that belongs to
-   a company: change `openings.doorHeightIn`, not the code.
+   a company: set it in How it's built (`doorHeight`), not the code.
 4. To offer a new wooden door size, add an item with `draw: "shop-door"` (and
    `leaves: 2` for a pair) to the manufacturer file -- no code.
 5. If the look must really change, re-record the golden fixtures on purpose
