@@ -8,7 +8,7 @@
    sent anywhere. model/company.js's validate() is the same check the server
    runs before it saves, so a draft with no problems here saves. */
 
-import { validate, standardSwapNeeds } from "../../../../model/company.js";
+import { validate, standardSwapNeeds, swapNeedProblems } from "../../../../model/company.js";
 import { problems as builtProblems, extraProblems, describeChanges as builtChanges, describeExtraBuilt } from "../../../../model/build-settings.js";
 import { money, size as sizeWords } from "../../words.js";
 
@@ -531,18 +531,53 @@ export function builtProblemsOf(prepared, M, saved) {
 
 /* Every problem with the draft, in words, each with its place. */
 export function problemsOf(prepared, M, saved) {
-  const list = validate(prepared, M).map((p) => explain(p, prepared, M)).concat(officeChecks(prepared, M), builtProblemsOf(prepared, M, saved));
+  const list = validate(prepared, M).map((p) => explain(p, prepared, M)).concat(officeChecks(prepared, M), swapProblemsOf(prepared, M, saved), builtProblemsOf(prepared, M, saved));
   const seen = new Set();
   return list.filter((p) => { const k = `${p.where}|${p.field || ""}|${p.words}`; if (seen.has(k)) return false; seen.add(k); return true; });
 }
 
+/* The buildings a locked item comes with, as the Doors & windows row says
+   them: "8×12 and 10×12 Side Utility" for a door the shop standard swaps in
+   at those sizes, "Side Utility (not the 8×12 or 10×12)" for the door it
+   swaps out, else the style's name. offer: the draft's (or saved) offer. */
+export function lockStyleNames(lock, M, offer) {
+  const either = (sizes, joint) => { const w = sizes.map(sizeWords); return w.length < 2 ? w.join("") : `${w.slice(0, -1).join(", ")} ${joint} ${w[w.length - 1]}`; };
+  return (lock?.styles || []).map((k) => {
+    const name = styleName(M, k, offer?.[k]);
+    if (lock.sizes?.[k]?.length) return `${either(lock.sizes[k], "and")} ${name}`;
+    if (lock.except?.[k]?.length) return `${name} (not the ${either(lock.except[k], "or")})`;
+    return name;
+  });
+}
+
+/* The shop standard's own door at some sizes (the 8x12 and 10x12 Side
+   Utility's 48 in Wooden Door) that the draft does not sell: the server
+   refuses a save that adds that problem (model/company.js strictProblems,
+   compared with the saved price list), so it shows before Save, on the
+   door's own row. */
+export function swapProblemsOf(prepared, M, saved) {
+  const had = new Set(saved ? swapNeedProblems(saved, M) : []);
+  return swapNeedProblems(prepared, M).filter((p) => !had.has(p)).map((p) => explain(p, prepared, M));
+}
+
 /* Doors, windows and fixtures that cannot be switched off: standard on a
-   sold style, or put in by a sold option. {itemId: {styles: [keys], elec, ext}} */
+   sold style, or put in by a sold option.
+   {itemId: {styles: [keys], sizes?: {key: [sizes]}, except?: {key: [sizes]}, elec, ext}}
+   sizes: the style comes with it only at these sizes (a door the shop
+   standard swaps in); except: not at these (the door it swaps out). */
 export function lockedItems(prepared, M) {
-  const copy = { ...prepared, items: {} };
+  /* Each item's lock from a copy that sells nothing, but with the price
+     list's own swapped-in doors kept for the others, so a style is laid out
+     as the price list draws it (model/company.js validate: the door it
+     swaps out is needed only at the sizes that still come with it). */
+  const swaps = standardSwapNeeds(prepared, M);
+  const kept = {};
+  for (const id of Object.keys(swaps)) if (Object.prototype.hasOwnProperty.call(prepared.items || {}, id)) kept[id] = prepared.items[id];
+  const asDrawn = validate({ ...prepared, items: kept }, M).filter((p) => !Object.keys(kept).some((id) => p.startsWith(`items.${id} `)));
+  const keptOwn = Object.keys(kept).length ? validate({ ...prepared, items: {} }, M).filter((p) => Object.keys(kept).some((id) => p.startsWith(`items.${id} `))) : [];
   const locks = {};
   const offered = keysOf(prepared.offer);
-  for (const p of validate(copy, M)) {
+  for (const p of asDrawn.concat(keptOwn)) {
     let m = /^items\.(\w+) needs a price: the .+? \([A-Za-z0-9_-]+\) comes as standard on the (.+)\. 0 is fine/.exec(p);
     if (m) {
       const styles = [...m[2].matchAll(/\(([A-Za-z0-9]+)\)/g)].map((x) => x[1]).filter((k) => offered.includes(k));
@@ -555,11 +590,26 @@ export function lockedItems(prepared, M) {
   }
   /* the shop standard's own door at some sizes (the 8x12 and 10x12 Side
      Utility's 48 in Wooden Door): model/company.js strictProblems wants it
-     sold, so it stays sold here too */
-  const swaps = standardSwapNeeds(prepared, M);
+     sold, so it stays sold here too, and the words name those sizes; the
+     door it swaps out names the sizes that do not come with it */
   for (const id of Object.keys(swaps)) {
     const l = (locks[id] = locks[id] || {});
-    l.styles = [...new Set((l.styles || []).concat(swaps[id].map((x) => x.key).filter((k) => offered.includes(k))))];
+    for (const x of swaps[id]) {
+      if (!offered.includes(x.key)) continue;
+      if ((l.styles || []).includes(x.key)) continue;      /* standard at every size some other way */
+      l.styles = (l.styles || []).concat(x.key);
+      (l.sizes = l.sizes || {})[x.key] = x.sizes;
+    }
+    const from = new Set();
+    for (const k of offered) {
+      const o = prepared.offer[k], s = M.styles?.[o?.base != null ? o.base : k];
+      for (const e of (Array.isArray(s?.built?.standardSwaps) ? s.built.standardSwaps : [])) {
+        if (e?.to !== id || !Object.prototype.hasOwnProperty.call(kept, id)) continue;
+        const lf = locks[e.from];
+        const sizes = (e.sizes || []).filter((z) => Object.prototype.hasOwnProperty.call(o.sizes || {}, z));
+        if (lf && (lf.styles || []).includes(k) && sizes.length && !from.has(`${e.from}|${k}`)) { from.add(`${e.from}|${k}`); (lf.except = lf.except || {})[k] = sizes; }
+      }
+    }
   }
   return locks;
 }

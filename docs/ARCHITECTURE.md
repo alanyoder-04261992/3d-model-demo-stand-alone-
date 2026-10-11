@@ -617,8 +617,11 @@ sizes each standard `from` item becomes `to`, in the same place, with the
 same id. The 8x12 and 10x12 Side Utility come with the 48 in Wooden Door
 there ("replace 6 foot to 4 foot"); Barnwright's company has no built
 blocks, so its recipe is untouched. A price list that does not sell `to`
-keeps `from` and says so in `settingsWarnings`; `strictProblems` (and the
-Dealer Center's lock) keep `to` sold on a new save. `tools/check-companies.mjs`:
+keeps `from` and says so in the catalogue's `swapWarnings` (the owner's
+Buildings tab shows them under their own heading); `strictProblems` (and the
+Dealer Center's lock and draft problems, `swapNeedProblems`) keep `to` sold
+on a new save, and `validate()` lays each style out with the swaps the price
+list sells, so `from` is needed only by sizes that still come with it. `tools/check-companies.mjs`:
 the demo's standard items are Barnwright's at every size but those swaps,
 and its data recipes reproduce thirteen named recipes exactly;
 `tools/check-style-sizes.mjs`: no two standard items overlap at any size

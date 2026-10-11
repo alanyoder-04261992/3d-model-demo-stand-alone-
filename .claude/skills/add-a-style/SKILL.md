@@ -182,12 +182,20 @@ the swap in the style's `built` block, with a `_source`:
 At exactly those sizes every standard `from` becomes `to`, in the same
 place, with the same id (`model/loadouts.js standardItems`); Barnwright's
 company has no built blocks, so the golden test still draws the recipe. A
-price list that does not sell `to` keeps `from` and the owner is told; a
-new save must sell it (`strictProblems`, and the Dealer Center keeps it
-sold). `validateManufacturer` refuses a size or item that is not one, and a
-`from` the style does not come with at that size. The Side Utility's 8x12
-and 10x12 have the 48 in Wooden Door this way. Prove it in
-`tools/check-shop-numbers.mjs` (part 4e) and re-record the changed sizes.
+price list that does not sell `to` keeps `from` and the owner is told
+(`swapWarnings`, under its own heading on the Buildings tab); a new save
+must sell it (`strictProblems`; the Dealer Center shows the problem before
+Save, keeps it sold and names the sizes: "Comes with the 8×12 and 10×12
+Side Utility"). Where `to` is sold, `from` is needed only by the sizes that
+still come with it (`validate`). A design holding the other door of the
+pair -- saved before the swap, or a touched design whose size changed --
+gets the door its size comes with when the customer never swapped it
+(`model/design.js followStandardDoor`, `ui/state.js chooseSize`;
+DIFFERENCES #27). `validateManufacturer` refuses a size or item that is
+not one, and a `from` the style does not come with at that size. The Side
+Utility's 8x12 and 10x12 have the 48 in Wooden Door this way. Prove it in
+`tools/check-shop-numbers.mjs` (part 4e) and `tools/check-design.mjs`
+(part 11), and re-record the changed sizes.
 
 Every item a style comes with must be priced by every company that sells the
 style (0 is fine): included items are charged as the difference when swapped.

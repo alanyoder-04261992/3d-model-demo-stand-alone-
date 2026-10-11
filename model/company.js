@@ -323,6 +323,28 @@ export function standardSwapNeeds(company, manufacturer) {
   return out;
 }
 const timesWords = (sizes) => { const w = sizes.map((z) => String(z).replace("x", "×")); return w.length < 2 ? w.join("") : w.slice(0, -1).join(", ") + " and " + w[w.length - 1]; };
+/* The style as a price list draws it: its library swaps whose "to" item
+   the price list sells (resolve() puts exactly those on the style), so the
+   door it swaps out is needed only at the sizes that still come with it. */
+function withSoldSwaps(t, items) {
+  const list = isObj(t) && isObj(t.built) && Array.isArray(t.built.standardSwaps) ? t.built.standardSwaps : [];
+  const sold = list.filter((e) => isObj(e) && typeof e.to === "string" && own(items, e.to));
+  return sold.length ? Object.assign({}, t, { standardSwaps: sold }) : t;
+}
+/* The swapped-in items a price list must sell, in model/company.js's
+   words (strictProblems; the Dealer Center shows the same sentence before
+   a save): ["items.w48 needs a price: ... at 8×12 and 10×12. 0 is fine ..."] */
+export function swapNeedProblems(company, manufacturer) {
+  const out = [];
+  if (!isObj(company)) return out;
+  const swapNeeds = standardSwapNeeds(company, manufacturer);
+  for (const ic of Object.keys(swapNeeds)) {
+    if (own(company.items, ic)) continue;
+    const it = isObj(manufacturer) && isObj(manufacturer.items) ? manufacturer.items[ic] : null;
+    out.push(`items.${ic} needs a price: the ${it ? it.name : ic} (${ic}) comes as standard on the ${swapNeeds[ic].map((x) => `${x.name} (${x.key}) at ${timesWords(x.sizes)}`).join(", ")}. 0 is fine for one that is never charged.`);
+  }
+  return out;
+}
 
 /* Every item a style's standard layout uses at any of these sizes. */
 function loadoutCats(t, key, sizes, CAT) {
@@ -502,7 +524,7 @@ export function validate(company, manufacturer) {
   const mCAT = manufacturerCAT(manufacturer);
   const needs = {};
   for (const k of offered) {
-    const t = styles[baseOf[k]];          /* a style built like another comes with its doors and windows */
+    const t = withSoldSwaps(styles[baseOf[k]], items);   /* a style built like another comes with its doors and windows */
     let cats;
     try { cats = loadoutCats(t, k, keysOf(offer[k].sizes).filter((z) => SIZE_RE.test(z)), mCAT); }
     catch (e) { err.push(`offer.${k}: its standard doors and windows could not be worked out: ${e.message}`); continue; }
@@ -818,12 +840,7 @@ export function strictProblems(company, manufacturer) {
      (validate() leaves it out, so a stored price list that does not sell
      it still opens: resolve() keeps the recipe's own door and tells the
      owner) -- the same words as validate()'s, so the screens say them */
-  const swapNeeds = standardSwapNeeds(company, manufacturer);
-  for (const ic of Object.keys(swapNeeds)) {
-    if (own(company.items, ic)) continue;
-    const it = isObj(manufacturer.items) ? manufacturer.items[ic] : null;
-    out.push(`items.${ic} needs a price: the ${it ? it.name : ic} (${ic}) comes as standard on the ${swapNeeds[ic].map((x) => `${x.name} (${x.key}) at ${timesWords(x.sizes)}`).join(", ")}. 0 is fine for one that is never charged.`);
-  }
+  out.push(...swapNeedProblems(company, manufacturer));
   /* How it's built: the business's own numbers, checked; a raw construction
      setting on a path a knob owns ("set it in How it's built instead") */
   for (const p of BUILT.problems(company, manufacturer)) out.push(`${p.path}: ${p.words}`);
@@ -990,7 +1007,7 @@ export function resolve(company, manufacturer, library) {
   for (const g of [["dormers", "dormer"], ["ramps", "ramp"], ["elec", "elec"], ["misc", "misc"]]) {
     for (const id of keysOf(mO[g[0]])) if (own(O[g[0]], id) && mO[g[0]][id].construction) optionEffects[g[1] + "." + id] = stripHelp(copy(mO[g[0]][id].construction));
   }
-  const settingsWarnings = built.warnings.concat(swapWarnings);
+  const settingsWarnings = built.warnings.slice();
   const extras = (O.extras || []).map((x) => {
     const e = { key: x.key, name: x.name, input: x.input, price: x.price };
     /* offered only on these buildings (and the styles of the business's own
@@ -1053,6 +1070,10 @@ export function resolve(company, manufacturer, library) {
     /* How it's built numbers that could not be used (a bad value falls back
        to the next layer); the Dealer Center shows them to the owner */
     settingsWarnings,
+    /* a door the shop standard swaps in at some sizes that the price list
+       does not sell (the owner's Buildings tab says it under its own
+       heading, views/price-list/built.js) */
+    swapWarnings,
     pricing: {
       show: pr.show || "price",
       roundTo: pr.roundTo != null ? pr.roundTo : 5,

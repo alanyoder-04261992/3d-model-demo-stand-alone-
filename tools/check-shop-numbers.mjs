@@ -90,10 +90,12 @@ import { ROOT, readJSON } from "./lib/load.mjs";
 import { barnwrightCatalogue, shopStandardCatalogue, standardManufacturer } from "./lib/barnwright-company.mjs";
 import { canonical } from "./lib/headless.mjs";
 import { defaults, setType, fromState, toState } from "../model/design.js";
-import { resolve as resolveCompany, strictProblems, validateManufacturer } from "../model/company.js";
+import { resolve as resolveCompany, strictProblems, validateManufacturer, validate as validateCompany } from "../model/company.js";
 import { optxList, priceParts } from "../model/pricing.js";
 import { checkStyle } from "../model/style-check.js";
-import { lockedItems } from "../ui/office/views/price-list/model.js";
+import * as PRICE_LIST from "../ui/office/views/price-list/model.js";
+const { lockedItems, problemsOf } = PRICE_LIST;
+const lockStyleNames = (...a) => (PRICE_LIST.lockStyleNames ? PRICE_LIST.lockStyleNames(...a) : []);
 import { addItem } from "../ui/state.js";
 import { priceDesign } from "../server/office/pricing.js";
 import { frameOf } from "../model/frame.js";
@@ -420,10 +422,12 @@ let sameLayouts = 0;
   const suOnly = (sizes) => { const c = demoCompany(); c.offer = { SU: { sizes: sizes || c.offer.SU.sizes } }; c.categories = [["Utility & Storage", ["SU"]]]; c.defaults = { style: "SU", size: Object.keys(c.offer.SU.sizes)[0], colors: c.defaults.colors }; delete c.items.w48; return c; };
   const no48 = suOnly();
   const NO48 = resolveCompany(no48, SM, LIB);
-  const told = (NO48.settingsWarnings || []).filter((w) => /48″ Wooden Door/.test(w));
+  const told = (NO48.swapWarnings || []).filter((w) => /48″ Wooden Door/.test(w));
   ok("a price list without the 48″ Wooden Door still opens: its 8×12 Side Utility keeps the 72″ Wooden Double Doors", items(NO48, "SU", "8x12")[0].cat === "w72" && items(NO48, "SU", "10x12")[0].cat === "w72");
-  ok("... and the owner reads why and what to do", told.length === 1 && told[0] === "Side Utility: the 8×12 and 10×12 come with the 48″ Wooden Door. Sell it on Doors & windows ($0 is fine); until then they keep the 72″ Wooden Double Doors.", J(told));
-  ok("... nothing is said to a price list that sells it", !(DEMO.settingsWarnings || []).some((w) => /48″ Wooden Door/.test(w)), J(DEMO.settingsWarnings));
+  ok("... and the owner reads why and what to do, under a heading about a door, not with the numbers that cannot be used (views/price-list/built.js)",
+    told.length === 1 && told[0] === "Side Utility: the 8×12 and 10×12 come with the 48″ Wooden Door. Sell it on Doors & windows ($0 is fine); until then they keep the 72″ Wooden Double Doors."
+    && !(NO48.settingsWarnings || []).some((w) => /Wooden Door/.test(w)), `door: ${J(NO48.swapWarnings)} numbers: ${J(NO48.settingsWarnings)}`);
+  ok("... nothing is said to a price list that sells it", !(DEMO.swapWarnings || []).length && !(DEMO.settingsWarnings || []).some((w) => /48″ Wooden Door/.test(w)), J(DEMO.swapWarnings));
   /* a new price list must sell it (the save refuses only a new problem), and the Dealer Center keeps it sold */
   const want = "items.w48 needs a price: the 48″ Wooden Door (w48) comes as standard on the Side Utility (SU) at 8×12 and 10×12. 0 is fine for one that is never charged.";
   ok(`a price list selling the 8×12 Side Utility without the 48″ Wooden Door has the problem "${want}"`, strictProblems(no48, SM).includes(want), J(strictProblems(no48, SM)));
@@ -437,6 +441,28 @@ let sameLayouts = 0;
   ok("a business cannot hold a swap of its own (\"not a building setting\")", strictProblems(biz, SM).some((p) => /^offer\.SU\.built\.standardSwaps: "standardSwaps" is not a building setting/.test(p)) && items(resolveCompany(biz, SM, LIB), "SU", "8x16")[0].cat === "w72", JSON.stringify(strictProblems(biz, SM)));
   const locks = lockedItems(demoCompany(), SM);
   ok("the Dealer Center's Doors & windows tab keeps the 48″ Wooden Door sold (it comes with the Side Utility)", !!locks.w48 && (locks.w48.styles || []).includes("SU"), J(locks.w48));
+  /* ... and says which sizes: the 48 in door comes with the 8x12 and 10x12
+     Side Utility, the double doors with the rest */
+  const w48names = lockStyleNames(locks.w48, SM, demoCompany().offer), w72names = lockStyleNames(locks.w72, SM, demoCompany().offer);
+  ok("... its words name the sizes: \"8×12 and 10×12 Side Utility\" by the 48″ door, \"Side Utility (not the 8×12 or 10×12)\" by the double doors, and the other buildings by name",
+    w48names.includes("8×12 and 10×12 Side Utility") && w48names.includes("Cottage Shed") && w72names.includes("Side Utility (not the 8×12 or 10×12)") && w72names.includes("Utility Shed"), `${J(w48names)} ${J(w72names)}`);
+  /* the problem shows before Save: a stored price list without the 48 in
+     door that sells the 10x12 Side Utility, and the owner adds the 8x12 (the
+     sentence changes, so it is a new problem on the server too) */
+  const had12 = suOnly({ "10x12": 4000, "10x16": 4500 });
+  const add8 = suOnly({ "10x12": 4000, "10x16": 4500, "8x12": 3500 });
+  const shown = problemsOf(add8, SM, had12).filter((p) => p.where === "item:w48");
+  ok("the Dealer Center shows that problem before Save, on the 48″ Wooden Door's row on Doors & windows (\"It comes with the Side Utility at 8×12 and 10×12, so it must be sold.\")",
+    shown.length === 1 && shown[0].tab === "doors" && shown[0].field === "item:w48" && /^It comes with the Side Utility at 8×12 and 10×12, so it must be sold\./.test(shown[0].words), J(problemsOf(add8, SM, had12)));
+  ok("... and not when the stored price list already had it (the server refuses only a new problem)", !problemsOf(had12, SM, had12).some((p) => p.where === "item:w48") && !problemsOf(demoCompany(), SM, demoCompany()).some((p) => p.where === "item:w48"), J(problemsOf(had12, SM, had12)));
+  /* the double doors are needed only where some size sold still comes with them */
+  const only812 = (extra) => { const c = demoCompany(); c.offer = { SU: { sizes: Object.assign({ "8x12": 3500, "10x12": 4000 }, extra || {}) } }; c.categories = [["Utility & Storage", ["SU"]]]; c.defaults = { style: "SU", size: "8x12", colors: c.defaults.colors }; delete c.items.w72; return c; };
+  const v812 = validateCompany(only812(), SM), v816 = validateCompany(only812({ "10x16": 4500 }), SM);
+  const noW48 = only812(); delete noW48.items.w48;
+  ok("a price list selling the Side Utility only at 8×12 and 10×12, with the 48″ door, need not sell the double doors; with the 10×16 too, or without the 48″ door, it must",
+    !v812.some((p) => /^items\.w72 /.test(p)) && v816.some((p) => /^items\.w72 needs a price/.test(p)) && validateCompany(noW48, SM).some((p) => /^items\.w72 needs a price/.test(p)), `${J(v812)} ${J(v816)}`);
+  const l812 = lockedItems(Object.assign(only812(), { items: Object.assign({}, only812().items, { w72: 325 }) }), SM);
+  ok("... and the Dealer Center does not hold the double doors as always sold for it", !l812.w72, J(l812.w72));
 }
 console.log(`4e. The 8×12 and 10×12 Side Utility come with the 48″ Wooden Door in the middle of the door side, clear of both windows; ${sameLayouts} other buildings have Barnwright's doors and windows, Barnwright's own Side Utility keeps the doubles, and a price list must sell the 48″ door.`);
 

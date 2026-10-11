@@ -497,6 +497,10 @@ export function builtNotes() {
 function paintNotes(box) {
   const cat = memo("saved|" + S.saved.version, () => resolve(S.saved.settings, S.M, S.L));
   const warnings = cat ? [...cat.settingsWarnings] : [];
+  /* a door the shop standard puts in at some sizes that is not sold (the
+     8x12 and 10x12 Side Utility's 48 in Wooden Door): about a door, not a
+     number, so it has its own heading */
+  const doors = cat ? [...(cat.swapWarnings || [])] : [];
   /* an option's roof pitch a customer would pay for and get nothing (review W2) */
   let noChange = [];
   try { noChange = BUILT.extrasThatChangeNothing(S.saved.settings, S.M).map((m) => m.words); } catch { noChange = []; }
@@ -504,6 +508,7 @@ function paintNotes(box) {
   const lines = q ? q.lines : [];
   clear(box,
     warnings.length ? resultBox("warn", "These numbers cannot be used yet, so the 3D designer builds with another:", warnings) : null,
+    doors.length ? resultBox("warn", "A door these buildings come with is not on your price list yet, so the 3D designer puts in another:", doors) : null,
     noChange.length ? resultBox("warn", "Options that change nothing on some buildings they are offered on. Take those buildings off the option on the Options tab:", noChange) : null,
     lines.length ? resultBox("warn", "Since the last update, your own building numbers do not fit everywhere. Change them in How it's built:", lines) : null,
     q && q.unchecked.length ? resultBox("warn", "Not checked yet. Open the style and press Check every size:", q.unchecked) : null);

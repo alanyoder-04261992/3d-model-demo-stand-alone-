@@ -31,6 +31,10 @@
         closed page;
      5. when the price list opens, a style whose own numbers no longer fit
         (the standard changed under them) shows a yellow note with the words;
+     5b. a stored price list that sells the 8x12 Side Utility but not the
+        48 in Wooden Door it comes with says so under a heading about a
+        door, and the door's row on Doors & windows says why it must be
+        sold (with the sizes) while it is not sold yet;
      6. a manager sees the numbers read only, never a box, with the barn
         height and the eave at every width sold; typing one barn width
         keeps the other widths' numbers (the empty boxes say them, and they
@@ -317,6 +321,44 @@ try {
     ok("no errors", p.errors.length === 0, p.errors.slice(0, 3).join(" | "));
     await p.context().close();
     delete raw.data.settings.offer.UT.built;
+    raw.data.version += 1;
+    writeFileSync(file, JSON.stringify(raw));
+  }
+
+  /* ---- 5b ---------------------------------------------------------------- */
+  section("5b. A price list that sells the 8×12 Side Utility but not the 48″ Wooden Door it comes with");
+  {
+    /* stored before the change: the Side Utility only, no 48 in door (it
+       still opens; the 3D designer keeps the double doors there) */
+    const { file, raw } = storedPriceList();
+    const before = JSON.parse(JSON.stringify(raw.data.settings));
+    const st = raw.data.settings;
+    st.offer = { SU: st.offer.SU }; st.categories = [["Utility & Storage", ["SU"]]];
+    st.defaults = { ...st.defaults, style: "SU", size: Object.keys(st.offer.SU.sizes)[0] };
+    delete st.items.w48;
+    raw.data.version += 1;
+    writeFileSync(file, JSON.stringify(raw));
+    const p = await pageFor(OWNER, { width: 390, height: 844 });
+    await openPriceList(p);
+    await p.waitForSelector("[data-built-notes] .pl-built-box", { timeout: 30000 });
+    const boxes = await p.$$eval("[data-built-notes] .pl-built-box", (els) => els.map((e) => e.textContent));
+    const doorBox = boxes.find((t) => /A door these buildings come with is not on your price list yet/.test(t)) || "";
+    ok("the Buildings tab says it under a heading about a door: \"A door these buildings come with is not on your price list yet ...\"",
+      /Side Utility: the 8×12 and 10×12 come with the 48″ Wooden Door\. Sell it on Doors & windows/.test(doorBox), JSON.stringify(boxes).slice(0, 400));
+    ok("... never under \"These numbers cannot be used yet\"", !boxes.some((t) => /These numbers cannot be used yet/.test(t) && /48″ Wooden Door/.test(t)), JSON.stringify(boxes).slice(0, 400));
+    await p.locator("[data-built-notes]").screenshot({ path: `${OUT}/door-not-sold-390.png` });
+    await p.goto(`${BASE}/dealer#/price-list/doors`, { waitUntil: "load" });
+    await p.waitForSelector('.pl-row[data-item="w48"]', { timeout: 30000 });
+    const row = await p.textContent('.pl-row[data-item="w48"]');
+    ok("on Doors & windows, the 48″ Wooden Door's row says why it must be sold while it is not sold yet: \"Comes with the 8×12 and 10×12 Side Utility. $0 is fine.\"",
+      /Comes with the 8×12 and 10×12 Side Utility\. \$0 is fine\./.test(row) && !/Always sold/.test(row), row.slice(0, 300));
+    const row72 = await p.textContent('.pl-row[data-item="w72"]');
+    ok("... and until it is sold, the double doors' row says they still come with every Side Utility size (\"Comes with the Side Utility. $0 is fine.\")",
+      /Comes with the Side Utility\. \$0 is fine\./.test(row72), row72.slice(0, 300));
+    await p.locator('.pl-row[data-item="w48"]').screenshot({ path: `${OUT}/door-not-sold-row-390.png` });
+    ok("no errors", p.errors.length === 0, p.errors.slice(0, 3).join(" | "));
+    await p.context().close();
+    raw.data.settings = before;
     raw.data.version += 1;
     writeFileSync(file, JSON.stringify(raw));
   }
