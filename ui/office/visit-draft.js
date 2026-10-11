@@ -36,11 +36,16 @@ export function dropDraft(kind) {
   try { sessionStorage.removeItem(KEY(kind)); } catch { /* fine */ }
 }
 
-/* This tab is on a Barnwright visit (so a reload goes back to it, not to the sign-in). */
-export function visitMark(on) {
+/* This tab is on a Barnwright visit (so a reload goes back to it, not to
+   the sign-in). Done lets the drafts go too; leaving an ended visit for
+   the Dealer Center's sign-in keeps them (keepDrafts) for a new visit. */
+export function visitMark(on, { keepDrafts = false } = {}) {
   try {
     if (on) sessionStorage.setItem(VISIT, "1");
-    else { sessionStorage.removeItem(VISIT); dropDraft("price-list"); dropDraft("settings"); }
+    else {
+      sessionStorage.removeItem(VISIT);
+      if (!keepDrafts) { dropDraft("price-list"); dropDraft("settings"); }
+    }
   } catch { /* fine */ }
 }
 export function visitMarked() {

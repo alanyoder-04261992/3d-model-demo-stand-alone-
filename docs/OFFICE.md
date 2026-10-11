@@ -92,6 +92,115 @@ door and visit routes (see "Barnwright setup access"), never through the
 team's routes, and it is never a role in `can`. "Access is open" means
 before the business is live, or while the owner's switch is on.
 
+## Signing in and staying signed in
+
+Alan (Oct 2026): "if i sign out it doesn't let me log back in, add save
+login for 30 days". The password goes only to Netlify Identity, straight
+from the page (`ui/office/identity.js`). Identity's answer is handed at once
+to the Dealer Center's own server (`POST session`), which keeps the sign-in
+itself (`server/office/session.js`) and answers with one cookie of its own:
+`__Host-dc_signin`, HttpOnly (no page script can read it), Secure, the whole
+site only (no Domain) and SameSite Strict (another website can't use it).
+Nothing about the sign-in stays in the page: no `gotrue.user` in
+localStorage, no `nf_jwt` or `nf_refresh` cookie, no timer.
+
+* **"Keep me signed in on this device for 30 days"** is under the password
+  on Sign in, on Make your login and on the invite and reset links'
+  Choose a password, with "Leave it off on a computer other people use."
+  It starts unticked, except on the Sign in card of a device whose kept 30
+  days just ran out (the device the person chose to keep). **Ticked**: the
+  cookie has an end date, so closing the browser doesn't sign the person
+  out; it is set by the server, so Safari's 7-day limit on what a page's
+  own script stores doesn't cut it short (the Dealer Center on an iPhone or
+  iPad Home Screen keeps its own cookies, so it is ticked there too). **Not
+  ticked**: signed in until the browser closes -- and because browsers
+  often keep that cookie anyway (Edge and Chrome bring it back with
+  "continue where you left off", Edge keeps running after its window
+  closes, the iPad rarely closes Safari), the server also ends it after
+  **12 hours without use**: "You weren't kept signed in on this device, so
+  you were signed out after 12 hours away. Sign in again." Either way the
+  sign-in ends **30 days** after it started (using it doesn't make it
+  longer); then the Sign in card says "You were kept signed in on this
+  device for 30 days. Sign in again." (the cookie lives two days more so
+  the server can say why). The person menu says "Signed in on this device
+  until Nov 10 at 5:52 PM.", and in the last 24 hours a note on top of
+  every screen says "Your sign-in on this device ends today at 5:52 PM.
+  Sign out and sign in again before then to keep going." If it ends while
+  a screen has changes not saved yet, the next Save never reloads the page
+  (nothing typed is lost): a note says "Your 30 days on this device are
+  up. Your changes are still here: open the Dealer Center in a new tab,
+  sign in, then come back and tap Save." -- and once signed in in that new
+  tab, Save works.
+* **Every request is as strict as before.** The server renews Identity's
+  one-hour token itself when it has under 5 minutes left (one request at a
+  time, so two never spend the same refresh token), and asks Identity whose
+  token it is (remembered a minute) exactly as it asks for a token the page
+  sends. Roles still come only from `people/<userId>`: a person removed from
+  the team is refused at once, kept sign-in or not.
+* **Sign out** ends the sign-in on this device at once (its record goes and
+  the server clears the cookie, and Identity's old `nf_jwt` and
+  `nf_refresh` too, even HttpOnly ones) and lands on a clean Sign in card at
+  `/dealer`. It never asks Identity to sign the person out, so the iPad
+  stays signed in when the computer signs out. A screen with unsaved
+  changes asks first. If the server can't be reached, the page never shows
+  the Dealer Center again until the sign-out is done. **Sign out on every
+  device** (the person menu) ends every Dealer Center sign-in of that
+  person -- found from this device's own record, so it never needs Identity
+  for that -- and then asks Identity to drop every refresh token of theirs.
+  If Identity didn't answer, every Dealer Center sign-in has still ended and
+  the Sign in card says "You're signed out of the Dealer Center on every
+  device, but the sign-in didn't answer. In a minute, sign in and tap Sign
+  out on every device again to finish." If the Dealer Center itself couldn't
+  do it, this device stays signed in and says so (never a card that looks
+  done). **A new password** from a reset link: the password is saved, then
+  every device is signed out the same way with the link's own sign-in (at
+  Identity too, so even a sign-in somebody kept from the old password stops
+  working), and only then is the person signed in with the new password; if
+  Identity breaks half way, the card says "Your new password is saved, but
+  the sign-in didn't answer, so your other devices may still be signed in.
+  Wait a minute, then tap Save password again." and Save password finishes
+  it. The other devices' Sign in card says why ("You signed out on every
+  device.", "Your password was changed.").
+* **Only the team gets a sign-in.** A login that isn't on the team (no
+  person record, no invite, not the first owner) gets no cookie and no
+  record, only "You're not on the team here yet. Ask the owner to add
+  maria@… to the team, then sign in again." So a stranger's own login
+  (anyone can make one) can't fill the store with sign-ins.
+* **The records sign nobody in.** The tokens in a sign-in's record are
+  sealed (AES-256-GCM) with a key made from the cookie's 32 random bytes,
+  which only the browser has; the record's name is the cookie's hash. So
+  whoever can read the store (anyone with a Netlify key for the site) finds
+  nothing that works at Identity or at the Dealer Center. A sign-in that ran
+  out loses its tokens at the check-in every six hours, whether or not that
+  person signs in again. At most 20 sign-ins at once per person: past that,
+  the ones not kept end first, the least recently used first ("You were
+  signed in on more than 20 devices or browsers, so this one was signed
+  out."), so a kept iPad never makes way for leftovers from a lot computer.
+* **Other tabs** of the same browser follow at once: signing out in one tab
+  shows the Sign in card in the others, signing in brings them back (a
+  screen with unsaved changes gets a note instead).
+* **Identity trouble is never "signed out".** Identity too slow (4
+  seconds for each call, so a request stays inside a Netlify function's 10
+  seconds), down or busy answers 503 with code `sign-in-down` and "The
+  sign-in isn't answering right now. Try again in a minute."; the page
+  shows "Can't check your sign-in" with Try again. At Sign in the words say
+  what happened: "That email and password don't match." only for a wrong
+  password; "Too many tries." for Identity's limit; "Can't reach the
+  sign-in right now." when Identity can't be reached; "Your password is
+  right, but the Dealer Center couldn't finish signing you in." when the
+  server can't.
+* **A sign-in from before this** (Identity's tokens left in the browser by
+  `@netlify/identity`): while that browser is still open on it, it moves
+  onto the cookie (not kept); left in a browser that was closed since, it
+  is cleared and never used, so the next person at a lot computer isn't
+  signed in as somebody else. A request carrying Identity's own token
+  (`Authorization: Bearer` or `nf_jwt`) is still taken, so a page open
+  across a deploy keeps working; the cookie always wins over it.
+* **A Barnwright visit** keeps its own cookie (`__Host-bw_setup`); the
+  visit's routes never read the sign-in cookie and the team's routes never
+  read the visit's. A tab still marked from a visit that ended offers "Sign
+  in to this Dealer Center".
+
 ## How a price change reaches every lot
 
 The price list is stored once. A lot stores only its own name, address and
@@ -260,6 +369,7 @@ each other.
 | `price-list-history/<version>` | `{version, savedAt, savedBy, changes:[text], settings}` (the version padded to 6 digits in the key) |
 | `lots/<slug>` | `{slug, name, address, city, state, zip, phone, email, hours, website, embedOrigins[], active, createdAt, updatedAt}` |
 | `people/<userId>` | `{userId, email, name, role, lots[], active, addedAt, addedBy, lastSeenAt}` |
+| `sessions/<user key>/<SHA-256 of the cookie>` | a sign-in (see "Signing in and staying signed in"): `{v: 2, userId, keep, startedAt, endsAt, lastUsedAt, sealed, accessExp, turn, refreshedAt, refreshing?}` -- `sealed` is base64url(12-byte IV, AES-256-GCM of the access and refresh tokens, bound to the record's name) with a key made by HKDF-SHA256 from the cookie's 32 random bytes ("dc-signin tokens v1"), so the record alone signs nobody in; `turn` counts renewals (one at a time); `lastUsedAt` is written at most every 5 minutes. Once ended `{v, userId, keep, startedAt, endsAt, ended: "time"\|"idle"\|"password"\|"everywhere"\|"identity"\|"many", endedAt}` with no tokens, kept two days so the page can say why. Each sign-in tidies that person's own (at most 20 live -- not kept and least recently used end first -- and 20 ended); the check-in every six hours ends what ran out everywhere and removes what is two days past. Only a login on the team gets one. The user key is the first 24 hex of the SHA-256 of `dc-signin:` and the person's Identity id (the cookie starts with it) |
 | `invites/<sha256(email)>` | `{email, name, role, lots[], invitedAt, invitedBy}` |
 | `customers/<id>` | the whole customer (below) |
 | `lists/<slug>` | one row per customer of that lot, for lists, search and the Today screen |
@@ -322,11 +432,17 @@ sentence a dealer can act on"}` with a 4xx/5xx status; a price list that
 cannot be saved (422) also lists every problem as `problems: ["…"]`, in the
 owner's words (never a settings path or a code). Every change
 (`POST/PUT/PATCH/DELETE`) needs an `Origin` header equal to the site's own.
-Responses are `Cache-Control: private, no-store`.
+Responses are `Cache-Control: private, no-store`. Signed in means the
+`__Host-dc_signin` cookie (or Identity's own token, from before it); a
+sign-in that ended answers 401 with `{ended, kept}` (`ended`: `time`,
+`password`, `everywhere`, `identity`, or `gone`), and Identity that can't be
+asked answers 503 `{code: "sign-in-down"}`, never 401.
 
 | Route | Who | Does |
 |---|---|---|
-| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup, and for a login that isn't on the team (`person` null) it leaves out `phone`, `email` and `website`; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access"); `setupNeeded` is true for the owner until First setup is done, which includes a price list Barnwright started before the owner's first sign-in (`business` is then not null, and First setup skips the starting price list: see "Before the owner first signs in") |
+| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup, and for a login that isn't on the team (`person` null) it leaves out `phone`, `email` and `website`; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access"); `session` is `{keep, endsAt}` for a sign-in on the cookie (null for one from before it); `setupNeeded` is true for the owner until First setup is done, which includes a price list Barnwright started before the owner's first sign-in (`business` is then not null, and First setup skips the starting price list: see "Before the owner first signs in") |
+| `POST session` | anyone | `{refreshToken, keep, why?}`: a fresh sign-in from Identity (the page's own password sign-in, or an email link) becomes the sign-in cookie: the refresh token is swapped at Identity at once, only a confirmed email counts, `keep` gives the cookie its 30 days (and two); `why: "reset"` (a page from before this) ends the person's other sign-ins, and when that can't be done nothing is signed in (503) → 201 `{ok, keep, endsAt}` and the cookie; 403 `{code: "not-on-team", email}` "You're not on the team here yet. Ask the owner to add … to the team, then sign in again." for a login with no person record, no invite and no first-owner claim (no cookie, no record); 401 "That sign-in ran out. Sign in again." for a spent or made-up token; 503 when Identity can't be asked |
+| `POST sign-out` | anyone | `{}` ends this device's sign-in. `{everywhere: true, why?: "password"}` ends every Dealer Center sign-in of the person -- the one whose token is in the `Authorization` header (a reset link's), else the one this device's record names, else a sign-in from before the cookie -- then asks Identity to drop every refresh token of theirs → 200 `{ok, everywhere: true, identity: true \| false}` (false: the Dealer Center sign-ins ended, Identity didn't answer), with the sign-in cookie and Identity's old `nf_jwt` and `nf_refresh` cleared; 503 with this device still signed in when the records couldn't be changed, or Identity was needed to find the person and can't be asked |
 | `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright Terms and Conditions.") and the agreement is kept. When Barnwright already started the price list, `start` is left out: the business details are saved into it as the owner's change (only what differs) and the agreement is kept → 200 `{business}` (see "Before the owner first signs in") |
 | `POST terms` | owner | `{agree: true}` agrees to the current Barnwright Terms and Conditions (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
@@ -2024,7 +2140,13 @@ exactly as they were, and nothing here sends email.
   forged lot or company, or "included" flags that would make an extra free
   change nothing.
 * **Sign-in is Netlify Identity.** Only a confirmed email counts. Roles live
-  in `people/<userId>`, never in anything the browser can edit.
+  in `people/<userId>`, never in anything the browser can edit. The
+  password goes only to Identity. The sign-in is kept by the server, in a
+  cookie no page script can read and no other website can use
+  (`__Host-dc_signin`: HttpOnly, Secure, SameSite Strict, no Domain); a
+  record's name is the cookie's hash and its tokens are sealed with a key
+  only the cookie holds, so the store alone signs nobody in; no cookie or
+  token is ever written to an answer, an error, a log or a Help report.
 * **First owner.** The `OWNER_EMAIL` setting names the first owner. The first
   confirmed sign-in with that email claims the business, once; changing the
   setting later does not make another owner.
@@ -2048,6 +2170,7 @@ works the same.
 ```
 npm run office          # http://127.0.0.1:8383/dealer — sample business, sign in as anyone
 npm run office -- --reset   # start the sample data again
+npm run office -- --identity   # the live site's sign-in, against a pretend Netlify Identity
 ```
 
 This local Dealer Center keeps its data in `.office-local/` (never published) and
@@ -2056,7 +2179,13 @@ designer links too (`/d/riverside/`), so a quote sent from the designer
 appears in the Dealer Center. It isn't connected to Barnwright, so Help
 shows its answers and the email to write to;
 `npm run office -- --control-room` connects it to a pretend control room
-and Sales Inbox, so questions and answers work too.
+and Sales Inbox, so questions and answers work too. `npm run office --
+--identity` has the live site's Sign in card instead of the list (every
+sample person's password is `sample-password`), against a pretend Netlify
+Identity (`tools/lib/fake-identity.mjs`) that behaves like Netlify's:
+"Keep me signed in on this device for 30 days", Sign out, the email links.
+Add `--demo` to offer the "try it" demo on that card too, as Alan's
+learning preview and demo site do.
 
 ## Try it without signing in
 
@@ -2249,7 +2378,12 @@ section 19).
 | `dealer.webmanifest`, `ui/office/app-icons/` | the Dealer Center as an app on a computer or phone (Install in Chrome and Edge, Add to Home Screen on a phone): its name, start page and black and gold icons; every build ships them (`tools/build-site.mjs`) |
 | `ui/office/demo.js` | the "try it" demo: the server code running in the page on made-up data (`/dealer?demo`, learning preview and demo site only) |
 | `server/office/sample.js` | the sample business (Sample Storage Barns, 3 lots, 30 customers) for the local Dealer Center, the demo and the checks |
-| `server/office/identity.js` | asks Netlify Identity who is signed in; the autoconfirm guard |
+| `server/office/identity.js` | asks Netlify Identity who is signed in, renews a sign-in and signs out everywhere, each with a time limit (Identity that can't be asked is a 503, never "signed out"); the autoconfirm guard |
+| `server/office/session.js` | the Dealer Center's own sign-in cookie: POST session, POST sign-out, the 30 days, the records |
+| `ui/office/identity.js` | the page's calls to Netlify Identity (sign in, Make your login, Forgot your password, the email links) with plain words for each failure; what a sign-in from before left in the browser |
+| `tools/lib/fake-identity.mjs` | a pretend Netlify Identity that behaves like Netlify's (for the checks and `npm run office -- --identity`) |
+| `tools/check-sign-in.mjs` | proves the sign-in cookie's rules on the server |
+| `tools/check-sign-in-screens.mjs` | signing in, staying signed in and signing out in Chromium |
 | `server/office/hash.js` | SHA-256 and random ids in plain JavaScript (the same on Netlify and in a browser) |
 | `tools/office-local.mjs` | the local Dealer Center with sample data (`npm run office`) |
 | `tools/check-office.mjs` | proves the API rules |
@@ -2412,11 +2546,20 @@ customers or prices) and **Send**; **Your questions** with each one's
 connected (and in the demo): the answers and one line with
 support@barnwrightsoftware.com instead of the box. See "Help" above.
 
-**Sign in** — email and password; "Make your login" (for people the owner
-added); "Forgot your password?"; links from Netlify emails (confirm, invite,
-reset) land here and are handled. Someone signed in but not added yet sees
-"You're signed in as maria@…, but you're not on the team yet.
-Ask the owner to add this email."
+**Sign in** — email and password; "Keep me signed in on this device for 30
+days" (unticked, with "Leave it off on a computer other people use.";
+ticked on day 31 of a device that was kept); "Make
+your login" (for people the owner added; it has the tick too, kept in this
+browser until the email's link opens here); "Forgot your password?"; links
+from Netlify emails (confirm, invite, reset) land here and are handled:
+the invite's "Welcome! Choose a password" and the reset's "Choose a new
+password" (which shows whose email) have the tick and sign the person in.
+Why the last sign-in ended shows above the boxes. A login that isn't on the
+team gets no sign-in: "You're not on the team here yet. Ask the owner to add
+maria@… to the team, then sign in again." (someone removed while signed in
+sees "You're not on the team yet" with Check again). The person menu has
+**Sign out** and **Sign out on every device**, and says until when (day and
+time) a kept sign-in lasts; its last 24 hours a note on top says so too.
 
 **First setup** (`#/setup`, the first owner, once; the menu is hidden
 until it's done) — three steps: your business (your name, business name,

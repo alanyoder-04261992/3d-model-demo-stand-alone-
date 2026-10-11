@@ -5,9 +5,11 @@
    a preview never touches real customers.
 
    Sign-in: Netlify Identity, asked directly about the person's own sign-in
-   (identity.js). Only a confirmed email counts; nothing a person can edit
-   on their own profile is trusted, and invites and the first-owner claim
-   are refused while Identity "autoconfirm" is on.
+   (identity.js), kept by the Dealer Center's own sign-in cookie
+   (session.js; "Keep me signed in on this device for 30 days"). Only a
+   confirmed email counts; nothing a person can edit on their own profile
+   is trusted, and invites and the first-owner claim are refused while
+   Identity "autoconfirm" is on.
 
    Settings (Netlify > Site configuration > Environment variables):
      OWNER_EMAIL       the first owner's email (needed once, at setup)
@@ -101,6 +103,7 @@ export function officeFor(context) {
   office = createOffice({
     blobs,
     identityUser,
+    identity: identityUser.client,
     ownerEmail: env("OWNER_EMAIL") || env("OWNER_BOOTSTRAP_EMAIL"),
     manufacturer, library,
     templates: { full, small },

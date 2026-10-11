@@ -5,7 +5,14 @@
    deps (everything from outside is passed in, so the checks and the local
    Office run the same code as Netlify):
      blobs          a Netlify Blobs store, or MemoryBlobs / a file store
-     identityUser   async (request) -> the signed-in Identity user, or null
+     identityUser   async (request) -> the Identity user whose token the
+                    request carries itself, or null (a 503 when Identity
+                    can't be asked)
+     identity       optional: identity.js identityClient() -- with it, the
+                    Dealer Center's own sign-in cookie works (session.js:
+                    POST session, POST sign-out, and the cookie tried first
+                    on every request). Left out (the local copy, the demo),
+                    sign-out only clears cookies
      ownerEmail     the OWNER_EMAIL setting (the first owner)
      manufacturer   library/manufacturers/standard.json
      library        library/construction.json
@@ -45,16 +52,31 @@ import { createAccount, withinMs } from "./account.js";
 import { createTerms, TERMS, AGREE_FIRST } from "./terms.js";
 import { createHelp } from "./help.js";
 import { createSetupAccess } from "./setup-access.js";
+import { createSessions } from "./session.js";
 
 /* the scheduled check-in's look back for Barnwright setup access, at most */
 const LOOK_BACK_MS = 5000;
+/* the scheduled check-in's tidy of sign-ins that ran out (session.js sweep), at most */
+const SWEEP_MS = 8000;
 
 export function createOffice(deps) {
   const now = deps.now || (() => new Date());
   const log = deps.log || console.error;
   const store = wrapStore(deps.blobs);
   const email = createEmail({ send: deps.sendEmail || null, siteUrl: deps.siteUrl || "" });
-  const people = createPeople({ store, identityUser: deps.identityUser, ownerEmail: deps.ownerEmail, now });
+  /* Who is signing in: the Dealer Center's own sign-in cookie first
+     (session.js), then a token the request carries itself. A cookie whose
+     sign-in ended answers {ended} (never the token behind it). */
+  const sessions = deps.identity ? createSessions({ store, identity: deps.identity, now, log, canJoin: (user) => people.couldJoin(user) }) : null;
+  const signedInUser = async (request) => {
+    if (sessions) {
+      const s = await sessions.from(request);
+      if (s?.user) return { ...s.user, session: s.session };
+      if (s) return { ended: s.ended, keep: s.keep };
+    }
+    return deps.identityUser ? deps.identityUser(request) : null;
+  };
+  const people = createPeople({ store, identityUser: signedInUser, ownerEmail: deps.ownerEmail, now });
   const lots = createLots({ store, now });
   /* Barnwright setup access (setup-access.js), made below: the price list,
      the customers and the check-in reach it through these. */
@@ -121,7 +143,7 @@ export function createOffice(deps) {
     try {
       who = await people.whoIsAsking(req);
     } catch (e) {
-      if (e.status === 401) return json({ error: e.message, signIn }, 401);
+      if (e.status === 401) return json({ ...(e.extra || {}), error: e.message, signIn }, 401);
       throw e;
     }
     if (who.person) await account.checkIn();
@@ -141,6 +163,9 @@ export function createOffice(deps) {
       team: teamNames,
       emailOn: email.on,
       signIn,
+      /* the Dealer Center's sign-in cookie: {keep, endsAt}, or null for a
+         sign-in from before it (the page then moves it onto the cookie) */
+      session: who.session || null,
       /* null when not connected to Barnwright's control room */
       account: who.person ? await account.status() : null,
       /* the Barnwright terms the owner agrees to: null when not connected */
@@ -180,6 +205,15 @@ export function createOffice(deps) {
 
   /* the Office */
   route("GET", /^\/api\/office\/me$/, (req) => me(req));
+
+  /* Signing in and out (session.js). A fresh sign-in from the page becomes
+     the Dealer Center's sign-in cookie; Sign out ends it on this device
+     (and with {everywhere: true} on every device). */
+  route("POST", /^\/api\/office\/session$/, async (req) => {
+    if (!sessions) fail(404, "We couldn't find that.");
+    return sessions.start(req);
+  });
+  route("POST", /^\/api\/office\/sign-out$/, async (req) => (sessions ? sessions.end(req) : json({ ok: true })));
 
   route("POST", /^\/api\/office\/setup$/, async (req) => {
     const who = await writer(req);
@@ -464,12 +498,20 @@ export function createOffice(deps) {
      the lease renews FIRST; only then does Barnwright setup access look
      back (setup-access.js liveRecord), in its own try and for at most 5
      seconds, so nothing about setup access can slow down or stop the
-     lease renewing */
+     lease renewing. Last, on every site (connected or not), sign-ins that
+     ran out end and their tokens go (session.js sweep), in its own try and
+     for at most 8 seconds. */
   async function scheduledCheckIn() {
     await account.checkIn({ force: true });
-    if (!setup.connected) return;
-    try { await withinMs(setup.liveRecord(), LOOK_BACK_MS); } catch (error) {
-      log("Barnwright setup access couldn't look back:", error?.name || "Error");
+    if (setup.connected) {
+      try { await withinMs(setup.liveRecord(), LOOK_BACK_MS); } catch (error) {
+        log("Barnwright setup access couldn't look back:", error?.name || "Error");
+      }
+    }
+    if (sessions) {
+      try { await withinMs(sessions.sweep({ budgetMs: SWEEP_MS - 500 }), SWEEP_MS); } catch (error) {
+        log("Tidying sign-ins that ran out didn't finish:", error?.name || "Error");
+      }
     }
   }
 

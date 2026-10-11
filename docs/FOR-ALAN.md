@@ -281,6 +281,24 @@ site. One shed business runs everything from it:
 * **Team.** The owner adds people by email: an **owner**, a **manager** (sees
   every lot, can't change prices or people) or a **dealer** (sees only their
   own lots). The person makes a login with that email and they're in.
+* **Signing in.** On your own computer, iPad or phone, tick **Keep me
+  signed in on this device for 30 days** when you sign in: you stay signed
+  in for 30 days, even after closing the browser, then it asks once more.
+  Leave it off on a lot computer other people use: then closing the
+  browser signs you out, and so do 12 hours with nobody using it (even if
+  the browser kept you signed in). The last day, a note on top says when
+  it ends; if it ends while you're changing something, nothing you typed
+  is lost: sign in again in a new tab, come back and tap Save. **Sign out**
+  signs out only the computer or phone you're on, so your iPad stays
+  signed in; tap your name, then **Sign out on every device**, to sign out
+  everywhere (a lost iPad, or a stranger at a lot computer) -- it works even
+  when the sign-in is slow, and a new password does the same. The Dealer
+  Center on an iPad or iPhone Home Screen keeps its own sign-in, so tick it
+  there too. Only people on your team get signed in: anyone else is told to
+  ask you to add them. If the sign-in can't be checked, it says so ("Can't
+  check your sign-in") instead of showing an empty Sign in card, and a
+  wrong password is the only thing that says "That email and password
+  don't match".
 * **Customers.** Every quote sent from a lot's 3D designer becomes a customer
   of that lot (the same person sending again is added to their file, not
   doubled up). Walk-ins and phone calls are added by hand. Each customer has

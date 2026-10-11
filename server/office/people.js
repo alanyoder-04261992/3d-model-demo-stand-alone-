@@ -42,10 +42,17 @@ export function publicPerson(p) {
 export function createPeople({ store, identityUser, ownerEmail = "", now }) {
   const iso = () => now().toISOString();
 
-  /* -> {user, person|null}. Throws 401 without a confirmed login. */
+  /* -> {user, person|null, session}. Throws 401 without a confirmed login
+     (with {ended, kept} when the sign-in cookie's sign-in ended, so the
+     page can say why), and 503 when Identity can't be asked (never "not
+     signed in"). */
   async function whoIsAsking(request) {
     let user = null;
-    try { user = await identityUser(request); } catch { user = null; }
+    try { user = await identityUser(request); } catch (e) {
+      if (e?.status === 503) throw e;
+      user = null;
+    }
+    if (user?.ended) fail(401, "Please sign in.", { ended: user.ended, kept: !!user.keep });
     if (!confirmed(user)) fail(401, "Please sign in.");
     const address = user.email.trim().toLowerCase();
     const display = { id: user.id, email: address, name: user.name || user.userMetadata?.full_name || "" };
@@ -57,7 +64,7 @@ export function createPeople({ store, identityUser, ownerEmail = "", now }) {
     if (!person && checked) person = await claimFirstOwner(display);
     if (person && person.active === false) person = null;
     if (person) person = await noteVisit(person);
-    return { user: display, person };
+    return { user: display, person, session: user.session || null };
   }
 
   async function claimInvite(user) {
@@ -86,6 +93,24 @@ export function createPeople({ store, identityUser, ownerEmail = "", now }) {
     return store.get(`people/${user.id}`);
   }
 
+  /* Would this confirmed login be on the team when it signs in: its own
+     person record (not removed), an invite for its email, or the first-owner
+     claim still open for it? Changes nothing (session.js asks before it
+     makes a sign-in cookie, so a stranger's login makes no record). */
+  async function couldJoin(user) {
+    if (!confirmed(user)) return false;
+    const person = await store.get(`people/${user.id}`);
+    if (person) return person.active !== false;
+    if (user.emailVerified === false) return false;
+    const address = user.email.trim().toLowerCase();
+    const invite = await store.get(`invites/${emailKey(address)}`);
+    if (invite && invite.email === address) return true;
+    const wanted = String(ownerEmail || "").trim().toLowerCase();
+    if (!wanted || wanted !== address) return false;
+    const claim = await store.get("setup");
+    return !claim || claim.userId === user.id;
+  }
+
   /* Remember the last visit, at most once an hour (it is shown on the team page). */
   async function noteVisit(person) {
     const last = Date.parse(person.lastSeenAt || 0) || 0;
@@ -111,7 +136,7 @@ export function createPeople({ store, identityUser, ownerEmail = "", now }) {
     return person && person.active !== false ? person : null;
   }
 
-  return { whoIsAsking, member, signedIn };
+  return { whoIsAsking, member, signedIn, couldJoin };
 }
 
 /* ---------------------------------------------------------------------- */
