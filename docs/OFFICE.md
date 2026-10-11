@@ -169,7 +169,7 @@ each other.
 | `barnwright-setup` | `{prelive: "on"\|"stopped", enabled, reason, hours, grantedAt, expiresAt, approvedBy}` — the owner's change switch and setup stop (see "Barnwright setup access") |
 | `barnwright-live` | `{live: true, liveAt, how}` or `{live: false, checkedThrough}` — whether the business is live; `how` is `opened`, `quote`, `order`, `website-quote`, `found-open`, `history`, `customers` or `unsure`; once live, never changed |
 | `barnwright-setup-seen` | `{ids: {<pass id>: expiresAt}}` — setup passes already used |
-| `barnwright-sessions` | `{<SHA-256 of the cookie>: {actor, passId, startedAt, lastAt, endsAt}}` — Barnwright visits (at most 20; ended ones removed on each write) |
+| `barnwright-sessions` | `{<SHA-256 of the cookie>: {actor, passId, startedAt, lastAt, endsAt, mode, grantedAt?, ended?}}` — Barnwright visits (at most 20; ones past their end removed on each write); `mode` and `grantedAt` say what the visit started under, `ended` that access closed since |
 | `barnwright-setup-limits` | `{hour, requests, day, saves}` — Barnwright requests this hour and saves today |
 | `barnwright-help-problems` | `{v: 2, day, team, public, repeats, visitors: {who: n}, seen: {signature: {at, last, extra}}}` — today's shares of the problem reports used (`who` is a visitor's address hashed with the day, never the address), and each kind passed on in the last 24 hours: when it first went, when its count last went, and how many more times it happened since (connected businesses only; see "Help") |
 
@@ -244,7 +244,7 @@ Responses are `Cache-Control: private, no-store`.
 | `POST customers/:id/orders` | lot access | `{quoteId, payment, deposit, deliveryAddress, deliveryDate, deliveryNotes, notes}`; the deposit is never above the total |
 | `PATCH customers/:id/orders/:orderId` | lot access | `{status?, payment?, deposit?, deliveryDate?, …}` |
 | `GET customers.csv` | owner, manager | a spreadsheet of the visible customers |
-| `GET barnwright-help` | owner | `{help: {on, until, reason, log}, setup: {mode, until, why, live, liveAt, prelive, termsOk}}`, both null when not connected to the control room |
+| `GET barnwright-help` | owner | `{help: {on, until, reason, log}, setup: {mode, until, why, live, liveAt, prelive, termsOk, termsOut}}`, both null when not connected to the control room |
 | `POST barnwright-help` | owner | `{on: true, reason, hours: 1–24, level}`: `level` `"checks"` (left out too) lets Barnwright run checks, `"change"` also lets it change the price list and settings; `{on: false}` stops both at once; `{prelive: "stopped"\|"on"}` stops or allows setup access before live (see "Barnwright setup access") |
 | `GET lots/:slug/preview` | lot access | the lot's 3D designer as a preview, as `GET /api/lots/:slug` plus `preview: true`, also while it is closed |
 | `GET help` | everyone | `{connected, canAsk, items}`: the questions asked of Barnwright and Barnwright's answers, newest first (owner and managers every question from the business, a dealer their own); `items: null` with `problem` (plain words) when Barnwright can't be reached; `connected: false` when not connected to the control room; `canAsk: false` when Help isn't set up for it (the control room refusing its key included) |
@@ -528,6 +528,11 @@ What Alan and Claude read for each `why` (the door sends it as `error`):
 | `stopped` | The owner stopped Barnwright's setup access in Settings, Barnwright. |
 | `live-off` | Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright. |
 
+Until this Dealer Center's own terms (`TERMS.version`) are 2.2 or later, no
+owner can agree to them, so `why: "terms"` says instead: "Barnwright's new
+terms (2.2) aren't out yet, so Barnwright can only run checks for now."
+The status fields' `termsOut` says which.
+
 Saving also needs the business's Barnwright account to allow changes (the
 lease, `account.mustWrite()`). When it doesn't, a save answers 423 and
 reading still works.
@@ -559,13 +564,24 @@ Dealer Center looks back. Live if the 3D designer is open now, or any
 has a quote or an order. More than 500 history entries or 500 customers to
 look through, or any read that fails: live (`how: "unsure"`). Nothing
 found: `{live: false, checkedThrough: <current version>}`. First setup
-writes `{live: false, checkedThrough: 1}` straight away.
+writes `{live: false, checkedThrough: 1}` straight away. What the look back
+finds is written quietly, with `liveAt: null`: nobody knows when it went
+live.
 
-The look back runs only inside `access()` (Barnwright requests) and in the
-scheduled check-in function (`netlify/functions/barnwright-check-in.mts`,
-in its own try, before the check-in). Never inside the check-in itself and
-never in `GET me`, so it can't slow down or break a lease renewal or the
-owner's page.
+The owner's log says "Barnwright's setup access ended when ..." only when
+the record said `{live: false}` before (the business was known to be
+setting up). The owner's first save or quote after this ships, in a
+business that has no record yet, looks back first, so an owner whose 3D
+designer was open long ago is never told today that setup access ended.
+Going live ends every Barnwright visit at once.
+
+The look back runs only inside `access()` (Barnwright requests), before a
+business with no record goes live, and in the scheduled check-in function
+(`netlify/functions/barnwright-check-in.mts`, `scheduledCheckIn`: the
+check-in goes first, so the lease always renews; then the look back, in its
+own try, for at most 5 seconds). Never inside the check-in itself and never
+in `GET me`, so it can't slow down or break a lease renewal or the owner's
+page.
 
 ### The preview
 
@@ -714,7 +730,7 @@ fields**, refusals included, so the Control Room always learns the state:
 { "v": 1,
   "live": false, "liveAt": null,
   "access": "prelive", "why": null, "until": null,
-  "prelive": "on", "termsOk": true,
+  "prelive": "on", "termsOk": true, "termsOut": true,
   "priceList": {"version": 1, "savedAt": "<ISO time>", "by": "the owner", "open": false},
   "lastBarnwrightSave": null,
   "canUndo": false,
@@ -723,7 +739,10 @@ fields**, refusals included, so the Control Room always learns the state:
 
 * `access` is `prelive`, `switch` or `closed`; `why` is null unless
   closed; `until` is the switch's end, or null.
-* `liveAt` is an ISO time once live. `prelive` is `on` or `stopped`.
+* `liveAt` is an ISO time once live (null when the look back found it
+  live: nobody knows when). `prelive` is `on` or `stopped`.
+* `termsOk`: the owner agreed to terms 2.2 or later. `termsOut`: this
+  Dealer Center's own terms are 2.2 or later, so the owner can agree.
 * `priceList` is null before First setup. `open` is whether customers can
   use the 3D designer now.
 * `by` names who saved by role, never by name or email: "the owner",
@@ -798,7 +817,21 @@ The answer: the status fields plus
 
 * `changes` are the Dealer Center's own change words
   (`describeChanges`, the same as Price list, History), at most 500;
-  `moreChanges` says how many more. `counts.changes` is all of them.
+  `moreChanges` says how many more. `counts.changes` is all of them (an
+  undo's first line, "Put back the price list from before Barnwright's
+  last change", isn't counted: it says what the change is).
+* Words customers read are said in the line, new words in full (up to 300
+  letters), so Alan reads them himself before he says yes:
+  `The line under the price: "Prices plus tax."`, `The note for 12 ft wide
+  buildings: "..."` (or `taken off`), `Texting permission words: "..."`,
+  `Quote form phone box: required → off`, `Tagline: "..."`,
+  `Rent to own 36 months: 0.6 → 0.06 ($231.48 → $2,314.81 a month on
+  $5,000)`, `Gutters: $5 a foot → 5% of the building price`,
+  `New building group "..."`. Every line stays under 400 letters.
+* The business phone, email and website the owner typed are never in a
+  door answer: `Phone: changed to 941-555-0199` (an edit wrote it),
+  `Phone: taken off`, and for an undo only `Phone: changed`. The owner's
+  own History says them in full (`Phone: 941-555-0100 → 941-555-0199`).
 * `warnings`: see Warnings.
 * `contactDetailsChange` is true when the business phone, email or website
   changes.
@@ -1018,15 +1051,21 @@ are for Alan to read before he says yes. In this order:
    business phone that customers see. Check it with the owner." ("phone and
    email", "phone, email and website" when more change.)
 2. Text customers read that this change writes or changes, with a web
-   address, an email address or a phone number in it: the fine print, a
-   width note, the words under the rent-to-own price, the tagline, or a
-   style, door, window, option or extra name. "The line under the price has
-   a phone number in it. Customers read it, so check it is right."
+   address, an email address or a phone number in it: the business name
+   and short name, the fine print, a width note, the words under the
+   rent-to-own price, the texting permission words, the tagline, a group
+   name, a color of their own, or a style, door, window, option or extra
+   name. "The line under the price has a phone number in it. Customers read
+   it, so check it is right." ("The texting permission words have ... in
+   them. Customers read them, so check they are right.")
 3. A bigger size cheaper than a smaller one (same style, at least as wide
    and as long): "Utility Shed 12×24 ($7,000) costs less than the smaller
    12×20 ($7,290)."
 4. A price that moves more than 40%: "Loft Barn 14×32 moves 45%: $14,490 →
-   $21,000." (doors, windows, options and extras too, by their names).
+   $21,000." (doors, windows, options and extras too, by their names; an
+   extra charged another way than before isn't compared). A rent-to-own
+   factor too: "The rent-to-own factor for 36 months moves 90%: 0.6 →
+   0.06."
 5. A building size under $500 or over $100,000: "Utility Shed 4×6 at $450
    is under $500." / "Garage 14×60 at $120,000 is over $100,000."
 6. Every size of a style at one price (2 sizes or more): "Every size of the
@@ -1039,9 +1078,9 @@ are for Alan to read before he says yes. In this order:
 Warnings 3 to 6 look only at styles and prices this change touches.
 Money and sizes are written as everywhere else ($5,540, 10×16). What counts
 as contact details in text: a web address (`http://`, `https://`, `www.`,
-or a name ending .com, .net, .org, .us, .biz, .info, .co or .io), an email
-address, or a 10-digit phone number in any usual form (941-555-0100,
-(941) 555-0100, 941.555.0100, +1 941 555 0100).
+or any name with a dot and an ending of 2 to 24 letters: othersheds.shop,
+bit.ly/3xYz, t.me/x), an email address, or a 10-digit phone number in any
+usual form (941-555-0100, (941) 555-0100, 941.555.0100, +1 941 555 0100).
 
 ### The lock: what Barnwright may change
 
@@ -1098,18 +1137,27 @@ price list screens, the same ones the owner uses.
 2. The page reads the pass, clears the address at once, and posts it to
    `POST /api/office/barnwright/start` with `Authorization: Bearer <pass>`
    and the body exactly `{"action":"session"}`.
-3. The Dealer Center checks the pass (as above), checks `access()`, and
-   sets the cookie `__Host-bw_setup` (32 random bytes, base64url;
+3. The Dealer Center checks the pass (as above). A visit is Alan by hand,
+   so the pass must be `via: "control-room"` (the Control Room's own Open
+   their price list); a `claude` pass gets 401 "This link ran out. Tap Open
+   their price list again." It checks `access()`, and sets the cookie
+   `__Host-bw_setup` (32 random bytes, base64url;
    `Path=/; Secure; HttpOnly; SameSite=Strict`). Only its SHA-256 is
-   stored, in `barnwright-sessions`. The owner's log gets "Barnwright
-   (alan@...) opened your price list." once, with `until`. Access closed:
+   stored, in `barnwright-sessions`, with what it started under (before
+   live, or the switch turned on at `grantedAt`). The owner's log gets
+   "Barnwright (alan@...) opened your price list." once (no `until`: a
+   visit's end slides, and setup access may end first). Access closed:
    403 `closed` with the words for `why`, and no cookie.
 
 **How long.** A visit lasts while access is open, and at most 8 hours after
 its last request: every request moves its end to 8 hours later, never past
 the switch's end. Every answer sends the cookie again with the new
-`Max-Age`. `access()` is checked on every request, so the switch going
-off, the owner tapping Stop, or the business going live ends it at once.
+`Max-Age`. The switch going off, the owner tapping Stop, or the business
+going live ends every visit at once (each is marked ended), and
+`access()` is checked on every request too. A visit never outlives what it
+started under: one from before live ends once the business is live, and
+one from a switch ends with that switch, so turning the switch on again
+needs a new visit (and the owner's log says so again).
 
 **The routes** (all under `/api/office/barnwright/`, the cookie only; every
 change also needs the site's own Origin, like every `/api/office/` change):
@@ -1132,10 +1180,15 @@ change also needs the site's own Origin, like every `/api/office/` change):
   or the owner's Barnwright card (and can't turn on its own access).
 * A pass that ran out or was used before, at start: 401 or 410 with "This
   link ran out. Tap Open their price list again." Never a sign-in screen.
-* Any other 401 during a visit: `{error: "Your Barnwright visit ended. In
-  your Control Room tap Open their price list, then come back and tap
-  Save.", code: "visit-ended"}`. The page never reloads: the draft stays on
-  screen and in sessionStorage, and comes back on the next visit.
+* A visit that ended while access is still open (its 8 hours, or a new
+  switch): 401 `{error: "Your Barnwright visit ended. In your Control Room
+  tap Open their price list, then come back and tap Save.", code:
+  "visit-ended"}`. One that ended because access closed says why instead:
+  `{error: "Your Barnwright visit ended. <the words for why> Your changes
+  are kept in this tab.", code: "visit-ended", why}`. The page never
+  reloads: the draft stays on screen and in sessionStorage, and comes back
+  on the next visit. Once a new visit has started, Save in the same tab
+  works and the bar comes back.
 * The screens: a bar on top, "Working on <business> as Barnwright until
   3:15 PM. [Done]" (the time in Alan's browser), and only Price list (all
   its tabs, History with Put this back) and Settings: Your business, Logo,
@@ -1165,6 +1218,15 @@ Dealer Center and never depends on the Control Room being up.
   now].
 * Before the owner has agreed to terms 2.2: the change choice says "Agree
   to the new terms at the top of the page first."
+* Before terms 2.2 are out (`setup.termsOut` false: this Dealer Center's
+  own terms are older), the card shows none of the setup access words and
+  no change choice, only "Barnwright's new terms (2.2) aren't out yet, so
+  Barnwright can only run checks for now." and Run checks.
+* Turn off, before live: checks go off and setup access goes on, so the
+  owner reads "Checks are off. Barnwright can still set up your price list
+  until you open it. To stop that too, tap Stop Barnwright's setup
+  access." "Barnwright can't run checks or change anything now." is said
+  only when it is true.
 * The log follows: the newest 10 lines.
 
 **The routes** (the owner only: `people.member` and `can.changeSettings`;
@@ -1172,7 +1234,7 @@ no `mustWrite`, so turning off always works; a visit's cookie is not a
 sign-in):
 
 * `GET /api/office/barnwright-help` →
-  `{help: {on, until, reason, log}, setup: {mode, until, why, live, liveAt, prelive, termsOk}}`;
+  `{help: {on, until, reason, log}, setup: {mode, until, why, live, liveAt, prelive, termsOk, termsOut}}`;
   both null when not connected. `help.on` is checks; `setup.mode` is
   `prelive`, `switch` or null.
 * `POST /api/office/barnwright-help`, one of:
@@ -1184,8 +1246,11 @@ sign-in):
     Barnwright can change your price list and settings." `change` before
     terms 2.2: 422 "Agree to the new Barnwright Terms and Conditions at the
     top of the page first."
-  * `{on: false}`: both off at once, here first.
-  * `{prelive: "stopped"}` or `{prelive: "on"}`: before live only (after:
+  * `{on: false}`: both off at once, here first. Every visit ends when
+    access closes; before live, setup access goes on (and so does a
+    visit), and the log says "Pat Owner turned off Barnwright's checks."
+  * `{prelive: "stopped"}` or `{prelive: "on"}` (Stop ends every visit):
+    before live only (after:
     422 "Your 3D designer is open, so use Run checks and change my price
     list and settings instead.").
   * The answer is the same as GET. After any change, the Dealer Center
@@ -1215,13 +1280,13 @@ time.
   ", and 4 more")
 * "Barnwright (alan@...) put back the price list from before its last
   change."
-* "Barnwright (alan@...) opened your price list." (once a visit, with
-  `until`)
+* "Barnwright (alan@...) opened your price list." (once a visit)
 * "Barnwright looked at your price list." (at most once every 30 minutes)
 * "Pat Owner let Barnwright run checks for 4 hours: <reason>" /
   "Pat Owner let Barnwright run checks and change the price list and
   settings for 4 hours: <reason>" (with `until`)
-* "Pat Owner turned off Barnwright's access." / "Pat Owner stopped
+* "Pat Owner turned off Barnwright's access." (before live: "Pat Owner
+  turned off Barnwright's checks.") / "Pat Owner stopped
   Barnwright's setup access." / "Pat Owner let Barnwright set up the price
   list again."
 * "Barnwright's setup access ended when you opened your 3D designer to
@@ -1242,7 +1307,8 @@ Nothing about any of this is emailed or texted to the owner.
 
 ```
 "setup": { "v": 1, "live": false, "liveAt": null, "access": "prelive",
-           "why": null, "until": null, "prelive": "on", "termsOk": true }
+           "why": null, "until": null, "prelive": "on", "termsOk": true,
+           "termsOut": true }
 ```
 
 These are the same names and values as the status fields, so the Control

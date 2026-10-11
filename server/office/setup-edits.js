@@ -590,7 +590,9 @@ export function applyEdits(settings, edits, { manufacturer: M, mode = "prelive",
 /* ---- warnings ------------------------------------------------------------------------- */
 
 const EMAIL_IN = /[^\s@<>()",;:]+@[^\s@<>()",;:]+\.[A-Za-z]{2,}/g;
-const WEB_IN = /\bhttps?:\/\/|\bwww\.|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|net|org|us|biz|info|co|io)\b/i;
+/* a web address: http://, https://, www., or any name.ending like
+   othersheds.shop, bit.ly/3xYz or t.me/x (an ending of 2 to 24 letters) */
+const WEB_IN = /\bhttps?:\/\/|\bwww\.|\b[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,24}\b/i;
 const PHONE_IN = /(?<!\d)(?:\+?1[\s.-]*)?(?:\(\d{3}\)|\d{3})[\s.-]*\d{3}[\s.-]*\d{4}(?!\d)/;
 
 /* What contact details are in words a customer reads: a web address, an
@@ -605,20 +607,33 @@ export function contactKinds(text) {
 }
 
 /* Every bit of free text customers read: [where, before, after]. */
+const PALETTE_WORDS = { paint: "siding", trim: "trim", metal: "roof" };
 function customerTexts(old, next, M) {
   const out = [];
   const add = (where, a, b) => out.push([where, typeof a === "string" ? a : "", typeof b === "string" ? b : ""]);
+  add("The business name", old.brand?.name, next.brand?.name);
+  add("The short name", old.brand?.short, next.brand?.short);
   add("The line under the price", old.notes?.finePrint, next.notes?.finePrint);
   for (const w of [...new Set([...keysOf(old.notes?.sizeNotes), ...keysOf(next.notes?.sizeNotes)])]) {
     add(`The note for ${w} ft wide buildings`, old.notes?.sizeNotes?.[w], next.notes?.sizeNotes?.[w]);
   }
   add("The words under the rent-to-own price", old.pricing?.rto?.note, next.pricing?.rto?.note);
+  add("The texting permission words", old.leads?.smsConsent, next.leads?.smsConsent);
   add("The tagline", old.brand?.tagline, next.brand?.tagline);
+  const groupNames = (s) => (Array.isArray(s.categories) ? s.categories : []).map((g) => g?.[0]).filter((n) => typeof n === "string");
+  const oldGroups = groupNames(old);
+  for (const g of groupNames(next)) add(`The building group "${g}"`, oldGroups.includes(g) ? g : "", g);
   for (const k of keysOf(next.offer)) add(`The building name "${ownName(next.offer[k])}"`, ownName(old.offer?.[k]), ownName(next.offer[k]));
   for (const k of keysOf(next.items)) add(`The door or window name "${ownName(next.items[k])}"`, ownName(old.items?.[k]), ownName(next.items[k]));
   for (const g of OPTION_GROUPS) for (const k of keysOf(next.options?.[g])) add(`The option name "${ownName(next.options[g][k])}"`, ownName(old.options?.[g]?.[k]), ownName(next.options[g][k]));
   const oldExtras = new Map((Array.isArray(old.options?.extras) ? old.options.extras : []).map((x) => [x?.key, x?.name]));
   for (const x of Array.isArray(next.options?.extras) ? next.options.extras : []) add(`The extra name "${x?.name}"`, oldExtras.get(x?.key), x?.name);
+  /* colors of their own ([name, hex]): the name is on the 3D designer's swatch */
+  const own = (s, g) => (Array.isArray(s.palettes?.[g]) ? s.palettes[g] : []).filter((c) => Array.isArray(c) && typeof c[0] === "string").map((c) => c[0]);
+  for (const g of Object.keys(PALETTE_WORDS)) {
+    const before = own(old, g);
+    for (const name of own(next, g)) add(`The ${PALETTE_WORDS[g]} color "${name}"`, before.includes(name) ? name : "", name);
+  }
   return out;
 }
 
@@ -638,7 +653,8 @@ export function warnings(old, next, M) {
   for (const [where, before, after] of customerTexts(o, n, M)) {
     if (!after || after === before) continue;
     const kinds = contactKinds(after);
-    if (kinds.length) out.push(`${where} has ${listWords(kinds)} in it. Customers read it, so check it is right.`);
+    const many = / words$/.test(where);
+    if (kinds.length) out.push(`${where} ${many ? "have" : "has"} ${listWords(kinds)} in ${many ? "them" : "it"}. Customers read ${many ? "them" : "it"}, so check ${many ? "they are" : "it is"} right.`);
   }
   /* 3 to 6: only the styles and prices this change touches */
   const cheaper = [], moved = [], extreme = [], same = [];
@@ -672,8 +688,18 @@ export function warnings(old, next, M) {
   }
   const oldExtras = new Map((Array.isArray(o.options?.extras) ? o.options.extras : []).map((x) => [x?.key, x]));
   for (const x of Array.isArray(n.options?.extras) ? n.options.extras : []) {
-    const w = oldExtras.has(x?.key) ? movedWords(String(x?.name), oldExtras.get(x.key)?.price, x?.price) : null;
+    const was = oldExtras.get(x?.key);
+    /* charged another way (a foot, a percent): the two prices aren't comparable */
+    if (!was || was.input !== x?.input) continue;
+    const w = x.input === "pct" ? movedWords(String(x?.name), was.price, x.price)?.replace(/\$([\d.,]+)/g, "$1%") : movedWords(String(x?.name), was.price, x?.price);
     if (w) moved.push(w);
+  }
+  /* a rent-to-own factor: the monthly payment customers see moves with it */
+  const factors = (s) => (isObj(s.pricing?.rto?.factors) ? s.pricing.rto.factors : {});
+  const of = factors(o), nf = factors(n);
+  for (const m of Object.keys(nf).filter((m) => /^\d+$/.test(m) && has(of, m)).sort((a, b) => Number(a) - Number(b))) {
+    const a = Number(of[m]), b = Number(nf[m]);
+    if (a > 0 && b > 0 && a !== b && Math.abs(b - a) / a > 0.4) moved.push(`The rent-to-own factor for ${m} months moves ${Math.round((Math.abs(b - a) / a) * 100)}%: ${a} → ${b}.`);
   }
   out.push(...cheaper, ...moved, ...extreme, ...same);
   /* 7. more than half of the building prices */

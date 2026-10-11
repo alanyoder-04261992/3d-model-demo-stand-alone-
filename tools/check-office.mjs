@@ -554,7 +554,7 @@ const versionWithNewLb = saved.version;
 for (const [label, change, words] of [
   ["the business phone", (s) => { s.brand.phone = "(941) 555-0199"; }, "Phone: (941) 555-0100 → (941) 555-0199"],
   ["the business name", (s) => { s.brand.name = "Yoder Barns"; }, "Business name: Yoder Storage Barns → Yoder Barns"],
-  ["the line under the price", (s) => { s.notes.finePrint = "Prices plus tax."; }, "Changed the line under the price"],
+  ["the line under the price", (s) => { s.notes.finePrint = "Prices plus tax."; }, "The line under the price: \"Prices plus tax.\""],
 ]) {
   cur = await want(200, "GET", "/api/office/price-list");
   next = clone(cur.settings);
@@ -618,7 +618,7 @@ step = await saveChange("two extras", (s) => {
     { key: "anchors", name: "Extra ground anchors", input: "qty", price: 45 },
   ];
 });
-ok("adding extras says \"Added the extra \\\"Ridge vent\\\" at $120\"", step.out.changes.includes("Added the extra \"Ridge vent\" at $120") && step.out.changes.includes("Added the extra \"Extra ground anchors\" at $45"), JSON.stringify(step.out.changes));
+ok("adding extras says how each is charged: \"Added the extra \\\"Ridge vent\\\" at $120\", \"... at $45 each\"", step.out.changes.includes("Added the extra \"Ridge vent\" at $120") && step.out.changes.includes("Added the extra \"Extra ground anchors\" at $45 each"), JSON.stringify(step.out.changes));
 step = await saveChange("take Navy off the siding colors", (s) => {
   s.palettes = { paint: manufacturer.palettes.paint.map((c) => (Array.isArray(c) ? c[0] : c)).filter((n) => n !== "Navy") };
 });

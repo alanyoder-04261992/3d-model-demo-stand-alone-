@@ -5,21 +5,16 @@
    site that is not connected to the control room. Netlify runs scheduled
    functions on the published site only.
 
-   First, in its own try, Barnwright setup access looks back once for a
-   business set up before it shipped (setup-access.js liveRecord: was it
-   ever open to customers, or did it ever save a quote?). Whatever happens
-   there, the check-in still goes and the lease still renews. */
+   The check-in goes first, so the lease always renews. Then, in its own
+   try and for at most 5 seconds, Barnwright setup access looks back once
+   for a business set up before it shipped (setup-access.js liveRecord: was
+   it ever open to customers, or did it ever save a quote?). index.js
+   scheduledCheckIn does both. */
 import type { Config, Context } from "@netlify/functions";
 import { officeFor } from "../../server/office/netlify.js";
 
 export default async (_request: Request, context: Context) => {
-  const office = officeFor(context);
-  try {
-    await office.setupLookBack();
-  } catch (error: any) {
-    console.error("Barnwright setup access couldn't look back:", error?.name || "Error");
-  }
-  await office.checkIn({ force: true });
+  await officeFor(context).scheduledCheckIn();
   return new Response(null, { status: 204 });
 };
 

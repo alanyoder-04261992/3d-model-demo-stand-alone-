@@ -259,16 +259,95 @@ function pitchChanges(before, after, M) {
   return out;
 }
 
-export function describeChanges(before, after, manufacturer) {
+/* Words customers read, said in the change line itself (the owner's
+   History, and what Alan reads before he says yes to a Barnwright change):
+   the new words in full, up to TEXT_SHOWN letters, on one line. A change
+   line stays under 400 letters, the most the Control Room passes on. */
+const TEXT_SHOWN = 300;
+function quoted(t) {
+  const s = String(t ?? "").replace(/\s+/g, " ").trim();
+  return `"${s.length > TEXT_SHOWN ? s.slice(0, TEXT_SHOWN - 1) + "…" : s}"`;
+}
+const textLine = (label, before, after) => {
+  const a = typeof before === "string" ? before.trim() : "", b = typeof after === "string" ? after.trim() : "";
+  if (a === b) return null;
+  return b ? `${label}: ${quoted(b)}` : `${label}: taken off`;
+};
+
+/* An extra's price, the way it is charged: "$8 a foot", "5% of the building price". */
+const EXTRA_UNITS = { check: "", qty: " each", lf: " a foot", sqftF: " a sq ft of floor", sqftW: " a sq ft of walls", sqftR: " a sq ft of roof" };
+const chargeWords = (x) => (x?.input === "pct" ? `${Number(x.price)}% of the building price` : `${fmtMoney(x?.price)}${EXTRA_UNITS[x?.input] ?? ""}`);
+
+/* A rent-to-own term: the factor, and what it makes the monthly payment on
+   a $5,000 building (the payment is the price / the factor / the months). */
+const RTO_EXAMPLE = 5000;
+const monthly = (f, m) => fmtMoney(Math.round((RTO_EXAMPLE / f / m) * 100) / 100);
+const factorsOf = (rto) => {
+  const f = rto && typeof rto.factors === "object" && rto.factors ? rto.factors : null;
+  if (!f) return null;
+  const out = new Map();
+  for (const k of Object.keys(f).filter((k) => /^\d+$/.test(k)).sort((x, y) => Number(x) - Number(y))) out.set(Number(k), Number(f[k]));
+  return out;
+};
+const termWords = (m, f) => `${m} months at ${f} (${monthly(f, m)} a month on ${fmtMoney(RTO_EXAMPLE)})`;
+const termShown = (t) => (t == null ? "none" : `${t} months`);
+function rtoChanges(before, after) {
+  const out = [];
+  const o = factorsOf(before), n = factorsOf(after);
+  if (!o && n) {
+    out.push(`Rent to own turned on: ${[...n].map(([m, f]) => termWords(m, f)).join("; ")}`);
+    if (after?.showTerm != null) out.push(`Rent-to-own price shown on the 3D designer: ${termShown(after.showTerm)}`);
+    return out;
+  }
+  if (o && !n) return ["Rent to own turned off"];
+  if (!o || !n) return out;
+  for (const m of [...new Set([...o.keys(), ...n.keys()])].sort((x, y) => x - y)) {
+    if (!o.has(m)) out.push(`Rent to own: added ${termWords(m, n.get(m))}`);
+    else if (!n.has(m)) out.push(`Rent to own: took off ${m} months`);
+    else if (o.get(m) !== n.get(m)) out.push(`Rent to own ${m} months: ${o.get(m)} → ${n.get(m)} (${monthly(o.get(m), m)} → ${monthly(n.get(m), m)} a month on ${fmtMoney(RTO_EXAMPLE)})`);
+  }
+  if ((before?.showTerm ?? null) !== (after?.showTerm ?? null)) out.push(`Rent-to-own price shown on the 3D designer: ${termShown(before?.showTerm)} → ${termShown(after?.showTerm)}`);
+  return out;
+}
+
+/* The quote form: its boxes, the plan question and the texting permission
+   words, said one by one. */
+const BOX_NAMES = { name: "name", phone: "phone", email: "email", zip: "ZIP", address: "street address", note: "note" };
+function quoteFormChanges(before, after) {
+  const out = [];
+  const o = before || {}, n = after || {};
+  const of = o.fields && typeof o.fields === "object" ? o.fields : {}, nf = n.fields && typeof n.fields === "object" ? n.fields : {};
+  for (const k of [...new Set([...Object.keys(of), ...Object.keys(nf)])]) {
+    if ((of[k] ?? "off") !== (nf[k] ?? "off")) out.push(`Quote form ${BOX_NAMES[k] || "box"} box: ${of[k] ?? "off"} → ${nf[k] ?? "off"}`);
+  }
+  if ((o.askPlan !== false) !== (n.askPlan !== false)) out.push(`Quote form asks what they want to do with the quote: ${o.askPlan !== false ? "yes" : "no"} → ${n.askPlan !== false ? "yes" : "no"}`);
+  const sms = textLine("Texting permission words", o.smsConsent, n.smsConsent);
+  if (sms) out.push(sms);
+  const rest = (L) => { const { fields, askPlan, smsConsent, ...r } = L; return r; };
+  const ro = rest(o), rn = rest(n);
+  if (["mode", "url", "email"].some((k) => !same(ro[k], rn[k]))) out.push("Changed where quotes go");
+  else if (!same(ro, rn)) out.push("Changed what the quote form asks for");
+  return out;
+}
+
+/* The words for a change. options.contact says how the business phone,
+   email and website are said: "full" (the owner's own History: old → new),
+   "new" (Barnwright's door: only the new one, never the one the owner
+   typed) or "hidden" (Barnwright's undo: neither). */
+export function describeChanges(before, after, manufacturer, { contact = "full" } = {}) {
   const out = [];
   const M = manufacturer;
   const styleName = (s, key) => s.offer?.[key]?.name || M.styles?.[key]?.name || s.offer?.[key]?.base && M.styles?.[s.offer[key].base]?.name || key;
   const itemName = (s, key) => (s.items?.[key] && typeof s.items[key] === "object" && s.items[key].name) || M.items?.[key]?.name || key;
 
   const b = before.brand || {}, a = after.brand || {};
-  for (const [k, word] of [["name", "Business name"], ["phone", "Phone"], ["email", "Email"], ["website", "Website"], ["tagline", "Tagline"]]) {
-    if ((b[k] || "") !== (a[k] || "")) out.push(`${word}: ${b[k] || "(blank)"} → ${a[k] || "(blank)"}`);
+  for (const [k, word] of [["name", "Business name"], ["short", "Short name"], ["initials", "Initials"], ["phone", "Phone"], ["email", "Email"], ["website", "Website"]]) {
+    if ((b[k] || "") === (a[k] || "")) continue;
+    if (contact !== "full" && ["phone", "email", "website"].includes(k)) out.push(!a[k] ? `${word}: taken off` : contact === "new" ? `${word}: changed to ${a[k]}` : `${word}: changed`);
+    else out.push(`${word}: ${b[k] || "(blank)"} → ${a[k] || "(blank)"}`);
   }
+  const tagline = textLine("Tagline", b.tagline, a.tagline);
+  if (tagline) out.push(tagline);
   if ((b.logo || "") !== (a.logo || "")) out.push(a.logo ? "New logo" : "Removed the logo");
   if (!same(b.colors, a.colors)) out.push("Changed the business colors");
   if ((before.status || "active") !== (after.status || "active")) {
@@ -296,10 +375,15 @@ export function describeChanges(before, after, manufacturer) {
     for (const z of keys(os)) if (!(z in ns)) out.push(`${name}: removed ${fmtSize(z)}`);
   }
   /* Starting or stopping a style moves it in or out of its group; only a
-     real regrouping of the styles sold both before and after is news. */
+     real regrouping of the styles sold both before and after is news. A
+     group's name is words customers read, so a new one is said. */
   const kept = (cats) => (Array.isArray(cats) ? cats : [])
     .map((g) => [g?.[0], (Array.isArray(g?.[1]) ? g[1] : []).filter((k) => oldStyles.includes(k) && newStyles.includes(k))])
     .filter((g) => g[1].length);
+  const groupNames = (cats) => (Array.isArray(cats) ? cats : []).map((g) => g?.[0]).filter((n) => typeof n === "string" && n);
+  const oldGroups = groupNames(before.categories), newGroups = groupNames(after.categories);
+  for (const g of newGroups) if (!oldGroups.includes(g)) out.push(`New building group ${quoted(g)}`);
+  for (const g of oldGroups) if (!newGroups.includes(g)) out.push(`Took away the building group ${quoted(g)}`);
   if (Array.isArray(before.categories) !== Array.isArray(after.categories) || !same(kept(before.categories), kept(after.categories))) {
     out.push("Changed how buildings are grouped");
   }
@@ -337,8 +421,12 @@ export function describeChanges(before, after, manufacturer) {
   const nx = new Map((after.options?.extras || []).map((x) => [x.key, x]));
   for (const [k, x] of nx) {
     const old = ox.get(k);
-    if (!old) out.push(`Added the extra "${x.name}" at ${fmtMoney(x.price)}`);
-    else if (!same(old, x)) out.push(old.price !== x.price ? `${x.name}: ${fmtMoney(old.price)} → ${fmtMoney(x.price)}` : `Changed the extra "${x.name}"`);
+    if (!old) { out.push(`Added the extra "${x.name}" at ${chargeWords(x)}`); continue; }
+    if (same(old, x)) continue;
+    const before0 = out.length;
+    if (old.name !== x.name) out.push(`The extra "${old.name}" is now called "${x.name}"`);
+    if (old.price !== x.price || old.input !== x.input) out.push(`${x.name}: ${chargeWords(old)} → ${chargeWords(x)}`);
+    if (out.length === before0) out.push(`Changed the extra "${x.name}"`);
   }
   for (const [k, x] of ox) if (!nx.has(k)) out.push(`Removed the extra "${x.name}"`);
 
@@ -359,14 +447,19 @@ export function describeChanges(before, after, manufacturer) {
   if ((before.pricing?.show || "price") !== (after.pricing?.show || "price")) {
     out.push(`The designer shows ${showWords[after.pricing?.show || "price"]} (was ${showWords[before.pricing?.show || "price"]})`);
   }
-  const terms = (rto) => ({ factors: rto?.factors, showTerm: rto?.showTerm ?? null });
-  if (!same(terms(before.pricing?.rto), terms(after.pricing?.rto))) out.push("Changed the rent-to-own terms");
-  if ((before.pricing?.rto?.note || "") !== (after.pricing?.rto?.note || "")) out.push("Changed the words under the rent-to-own price");
+  out.push(...rtoChanges(before.pricing?.rto, after.pricing?.rto));
+  const rtoNote = textLine("The words under the rent-to-own price", before.pricing?.rto?.note, after.pricing?.rto?.note);
+  if (rtoNote) out.push(rtoNote);
   for (const k of POLICY_PARTS) if ((before.pricing?.[k] ?? null) !== (after.pricing?.[k] ?? null)) out.push("Changed how per-square-foot prices are rounded");
-  if ((before.notes?.finePrint || "") !== (after.notes?.finePrint || "")) out.push("Changed the line under the price");
-  if (!same(before.notes?.sizeNotes, after.notes?.sizeNotes)) out.push("Changed the notes shown for building widths");
+  const fine = textLine("The line under the price", before.notes?.finePrint, after.notes?.finePrint);
+  if (fine) out.push(fine);
+  const on = before.notes?.sizeNotes || {}, nn = after.notes?.sizeNotes || {};
+  for (const w of [...new Set([...keys(on), ...keys(nn)])].sort((x, y) => Number(x) - Number(y))) {
+    const line = textLine(`The note for ${w} ft wide buildings`, on[w], nn[w]);
+    if (line) out.push(line);
+  }
   if (!same(before.defaults, after.defaults)) out.push("Changed the building the designer opens on");
-  if (!same(before.leads, after.leads)) out.push("Changed what the quote form asks for");
+  out.push(...quoteFormChanges(before.leads, after.leads));
   if (!same(before.features, after.features) || !same(before.look, after.look)) out.push("Changed how the designer looks");
 
   if (!out.length && !same(before, after)) out.push("Changed other settings");

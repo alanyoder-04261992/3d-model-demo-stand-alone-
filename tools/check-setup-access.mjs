@@ -52,7 +52,8 @@ import { createOffice } from "../server/office/index.js";
 import { MemoryBlobs, wrapStore } from "../server/office/store.js";
 import { TenantLicenseClient, createLeaseStore, SETUP_PASS_PREFIX, misconfiguredLicense } from "../server/office/control-room.js";
 import { lockProblems, carryLocked, LOCK_WORDS } from "../server/office/setup-lock.js";
-import { WHY, VISIT_WORDS, OWNER_WORDS, DOOR_WORDS, termsAtLeast } from "../server/office/setup-access.js";
+import { WHY, VISIT_WORDS, OWNER_WORDS, DOOR_WORDS, termsAtLeast, termsOut, whyWords, TERMS_NOT_OUT } from "../server/office/setup-access.js";
+import { TERMS } from "../server/office/terms.js";
 import { BARNWRIGHT_SAVED_FIRST, NO_COPY, describeChanges, createPriceList, priceFingerprint } from "../server/office/price-list.js";
 import { applyEdits, warnings, contactKinds, UNDO_LINE } from "../server/office/setup-edits.js";
 import { readView } from "../server/office/setup-view.js";
@@ -179,13 +180,19 @@ await A.me("pat");
   ok("... a visit can't start (403, the words for no-price-list)", r.status === 403 && r.data.code === "closed" && r.data.why === "no-price-list" && r.data.error === WHY["no-price-list"] && !cookieFrom(r), JSON.stringify(r.data));
 }
 await A.setUp();
+/* First setup agrees to this copy's own terms (2.1 today, 2.2 once they are
+   out): the cases below need an owner who agreed to 2.1 only, whatever
+   TERMS.version is */
+await A.agree("2.1");
 ok("First setup writes the live record at once: not live, checked through version 1",
   JSON.stringify(await A.store.get("barnwright-live")) === JSON.stringify({ live: false, checkedThrough: 1 }), JSON.stringify(await A.store.get("barnwright-live")));
 {
   const v = await A.access();
   ok(`agreed to terms ${(await A.store.get("barnwright-terms"))?.current?.version} only: closed, terms`, v.mode === null && v.why === "terms" && v.termsOk === false, JSON.stringify(v));
   const r = await A.start();
-  ok("... a visit is refused with the terms words, and no cookie", r.status === 403 && r.data.why === "terms" && r.data.error === WHY.terms && !cookieFrom(r), JSON.stringify(r.data));
+  ok("... a visit is refused with the terms words, and no cookie", r.status === 403 && r.data.why === "terms" && r.data.error === whyWords("terms") && !cookieFrom(r), JSON.stringify(r.data));
+  ok("W2: the terms words: while this copy's own terms are older than 2.2 they say the new terms aren't out yet, never to tap a button that isn't there",
+    termsOut() === termsAtLeast(TERMS.version) && whyWords("terms") === (termsOut() ? WHY.terms : TERMS_NOT_OUT) && (termsOut() || !/button|tap/i.test(whyWords("terms"))), whyWords("terms"));
 }
 ok("terms: 2.2 or later counts, as numbers (2.10 is later than 2.9)",
   termsAtLeast("2.2") && termsAtLeast("2.10") && termsAtLeast("3") && !termsAtLeast("2.1") && !termsAtLeast("2.1.9") && !termsAtLeast("") && !termsAtLeast(null) && !termsAtLeast("2.2-beta"));
@@ -215,8 +222,8 @@ let cookie = cookieFrom(r);
     Object.keys(sessions).length === 1 && Object.keys(sessions)[0] === sha256(token) && !JSON.stringify([...A.blobs.values]).includes(token), JSON.stringify(sessions));
   ok("... with who (the pass's actor), the pass's id, and the end", Object.values(sessions)[0].actor === ACTOR && Object.values(sessions)[0].passId === JSON.parse(Buffer.from(pass1.split(".")[0], "base64url")).id);
   const log = await A.log();
-  ok("the owner's log: \"Barnwright (alan@...) opened your price list.\", with until, no time in the words",
-    log[0]?.words === `Barnwright (${ACTOR}) opened your price list.` && log[0].until === r.data.visitEndsAt, JSON.stringify(log[0]));
+  ok("the owner's log: \"Barnwright (alan@...) opened your price list.\", no time in the words and no end (a visit's end slides, and setup access may end first)",
+    log[0]?.words === `Barnwright (${ACTOR}) opened your price list.` && !("until" in log[0]), JSON.stringify(log[0]));
 }
 r = await A.start(pass1);
 ok("the same start pass again: 410, \"This link ran out\", no cookie", r.status === 410 && r.data.code === "pass-used" && r.data.error === VISIT_WORDS.linkRanOut && !cookieFrom(r), JSON.stringify(r.data));
@@ -431,7 +438,7 @@ section("F8. Who saved is said by role, never by name or email");
   const st2 = await A.office.parts.setup.status();
   ok("the owner (who has no name, so their save is under their email) is \"the owner\", and their email is nowhere in the answer",
     st2.priceList.by === "the owner" && !JSON.stringify(st2).includes(USERS.pat.email) && st2.canUndo === false && st2.lastBarnwrightSave?.passId, JSON.stringify(st2));
-  ok("the fields are the contract's, in its order", JSON.stringify(Object.keys(st2)) === JSON.stringify(["v", "live", "liveAt", "access", "why", "until", "prelive", "termsOk", "priceList", "lastBarnwrightSave", "canUndo", "appVersion"]), Object.keys(st2).join(","));
+  ok("the fields are the contract's, in its order", JSON.stringify(Object.keys(st2)) === JSON.stringify(["v", "live", "liveAt", "access", "why", "until", "prelive", "termsOk", "termsOut", "priceList", "lastBarnwrightSave", "canUndo", "appVersion"]), Object.keys(st2).join(","));
   const pl2 = await A.store.get("price-list");
   await A.store.put("price-list", { ...pl2, savedBy: { id: "u-gone", name: "gone@testing.example" } });
   const st3 = await A.office.parts.setup.status();
@@ -450,9 +457,10 @@ section("A3 / F11. The owner's one card: only the owner flips it");
   ok("a visit's cookie alone is refused: 401 Please sign in.", r.status === 401 && r.data.error === "Please sign in.", JSON.stringify(r.data));
   ok("... and the switch record is untouched", (await A.store.get("barnwright-setup")) === null);
   r = await A.call("GET", "/api/office/barnwright-help", undefined, { as: "pat" });
-  ok("GET: {help: {on, until, reason, log}, setup: {mode, until, why, live, liveAt, prelive, termsOk}}",
+  ok("GET: {help: {on, until, reason, log}, setup: {mode, until, why, live, liveAt, prelive, termsOk, termsOut}}",
     r.status === 200 && JSON.stringify(Object.keys(r.data.help)) === JSON.stringify(["on", "until", "reason", "log"])
-    && JSON.stringify(Object.keys(r.data.setup)) === JSON.stringify(["mode", "until", "why", "live", "liveAt", "prelive", "termsOk"]) && r.data.setup.mode === "prelive", JSON.stringify(r.data).slice(0, 400));
+    && JSON.stringify(Object.keys(r.data.setup)) === JSON.stringify(["mode", "until", "why", "live", "liveAt", "prelive", "termsOk", "termsOut"]) && r.data.setup.mode === "prelive"
+    && r.data.setup.termsOut === termsOut(), JSON.stringify(r.data).slice(0, 400));
   ok("me(): the owner gets setup {mode, until} for the banner; a manager gets null", JSON.stringify((await A.me("pat")).setup) === JSON.stringify({ mode: "prelive", until: null, live: false }) && (await A.me("sam")).setup === null);
 }
 
@@ -462,7 +470,8 @@ section("A2. Stop and allow before live take effect at once");
   ok("the owner stops setup access: closed, stopped", r.status === 200 && r.data.setup.mode === null && r.data.setup.why === "stopped" && r.data.setup.prelive === "stopped", JSON.stringify(r.data.setup));
   ok("... in the log: \"<owner> stopped Barnwright's setup access.\"", (await A.log())[0].words === `${USERS.pat.email} stopped Barnwright's setup access.`, (await A.log())[0].words);
   r = await A.visit("GET", "price-list", undefined, cookie);
-  ok("F10: the very next visit request: 401 with the words and code visit-ended", r.status === 401 && r.data.error === VISIT_WORDS.ended && r.data.code === "visit-ended", JSON.stringify(r.data));
+  ok("F10 / W3: the very next visit request: 401 visit-ended, saying why (stopped) and that the changes are kept",
+    r.status === 401 && r.data.code === "visit-ended" && r.data.why === "stopped" && r.data.error === `Your Barnwright visit ended. ${WHY.stopped} Your changes are kept in this tab.`, JSON.stringify(r.data));
   r = await A.start();
   ok("a new visit can't start: 403, the words for stopped", r.status === 403 && r.data.why === "stopped" && r.data.error === WHY.stopped, JSON.stringify(r.data));
   r = await A.owner({ prelive: "on" });
@@ -533,7 +542,7 @@ section("A12 / F7. The check-in carries setup; a report that fails never stops t
   const body = JSON.parse(A.sentLicense.at(-1));
   ok("the check-in sends setup, between dealerCount and siteUrl, with the status fields' names and values",
     JSON.stringify(Object.keys(body)) === JSON.stringify(["customerId", "siteId", "appVersion", "dealerCount", "setup"])
-    && JSON.stringify(body.setup) === JSON.stringify({ v: 1, live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: true }), JSON.stringify(body));
+    && JSON.stringify(body.setup) === JSON.stringify({ v: 1, live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: true, termsOut: termsOut() }), JSON.stringify(body));
   const lease0 = (await A.license.peekAccess()).expiresAt;
   A.clock.t += 2 * HOUR;
   const setup = A.office.parts.setup;
@@ -632,7 +641,7 @@ section("F1 / A2. Live: the first opening, written before the save");
 }
 {
   const T = business();
-  await T.setUp();
+  await T.setUp(); await T.agree("2.1");
   r = await T.owner({ on: true, level: "change", reason: "New prices", hours: 4 });
   ok("change before terms 2.2: refused in plain words, nothing turned on", r.status === 422 && r.data.error === OWNER_WORDS.termsFirstRefusal && (await T.store.get("barnwright-setup")) === null, JSON.stringify(r.data));
 }
@@ -796,7 +805,7 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
       const locked = lockProblems(base, next, { door: true, mode: sm.mode, standardRise: STD_RISE });
       if (locked.length) got = { ok: false, problems: locked };
       else {
-        try { pl.check(next); got = { ok: true, changes: describeChanges(base, next, manufacturer), warnings: warnings(base, next, manufacturer), sha: sha256(JSON.stringify(next)), newCodes: res.newCodes }; }
+        try { pl.check(next); got = { ok: true, changes: describeChanges(base, next, manufacturer, { contact: "new" }), warnings: warnings(base, next, manufacturer), sha: sha256(JSON.stringify(next)), newCodes: res.newCodes }; }
         catch (e) { got = { ok: false, problems: e.problems || [e.message] }; }
       }
     }
@@ -833,8 +842,10 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
 }
 {
   /* F5: contact details in words customers read */
-  const yes = ["Call 941-555-0100", "(941) 555-0100 any time", "941.555.0100", "+1 941 555 0100", "9415550100", "www.testingsheds.com", "testingsheds.com/prices", "https://x.example", "shop.co", "office@testingsheds.example"];
-  const no = ["Prices plus tax. Free delivery within 50 miles.", "10x16 for $5,540", "Built in Florida.", "36 months", "Call us", "Delivery and setup included within our area."];
+  const yes = ["Call 941-555-0100", "(941) 555-0100 any time", "941.555.0100", "+1 941 555 0100", "9415550100", "www.testingsheds.com", "testingsheds.com/prices", "https://x.example", "shop.co", "office@testingsheds.example",
+    "othersheds.shop", "Book at bit.ly/3xYz", "t.me/sheds", "Order at other-sheds.store"];
+  const no = ["Prices plus tax. Free delivery within 50 miles.", "10x16 for $5,540", "Built in Florida.", "36 months", "Call us", "Delivery and setup included within our area.",
+    "St. Petersburg", "e.g. a 10x16", "U.S.A.", "Mr. Smith", "No. 1 in sheds", "3.5/12", "v2.1"];
   ok("F5: a phone number in any usual form, a web address and an email address are found; prices, sizes and plain words aren't",
     yes.every((t) => contactKinds(t).length) && no.every((t) => !contactKinds(t).length), JSON.stringify([...yes.filter((t) => !contactKinds(t).length), ...no.filter((t) => contactKinds(t).length)]));
   ok("... and an email isn't also a web address", JSON.stringify(contactKinds("office@testingsheds.com")) === JSON.stringify(["an email address"]));
@@ -881,7 +892,7 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
 /* THE DOOR: A1, A5, A6, A7, A8, A9 and A11 for the door, F3, F5, F13                       */
 
 const DOOR_URL = SITE + "/.netlify/functions/barnwright-setup";
-const STATUS_KEYS = ["v", "live", "liveAt", "access", "why", "until", "prelive", "termsOk", "priceList", "lastBarnwrightSave", "canUndo", "appVersion"];
+const STATUS_KEYS = ["v", "live", "liveAt", "access", "why", "until", "prelive", "termsOk", "termsOut", "priceList", "lastBarnwrightSave", "canUndo", "appVersion"];
 const passIdOf = (p) => JSON.parse(Buffer.from(p.split(".")[0], "base64url").toString()).id;
 const b64url = (t) => Buffer.from(t).toString("base64url");
 
@@ -981,10 +992,10 @@ const D = await fixtureBusiness();
 }
 {
   const T = withDoor(business());
-  await T.setUp();
+  await T.setUp(); await T.agree("2.1");
   const read = await T.door({ action: "read", part: "summary" });
   ok("before terms 2.2: status still answers, read is refused (403 closed, terms), with the status fields",
-    (await T.door({ action: "status" })).data.why === "terms" && read.status === 403 && read.data.code === "closed" && read.data.why === "terms" && read.data.error === WHY.terms && read.data.termsOk === false, JSON.stringify(read.data));
+    (await T.door({ action: "status" })).data.why === "terms" && read.status === 403 && read.data.code === "closed" && read.data.why === "terms" && read.data.error === whyWords("terms") && read.data.termsOk === false && read.data.termsOut === termsOut(), JSON.stringify(read.data));
   const again = await T.door({ action: "read", part: "summary" }, { pass: read.pass });
   ok("... a pass refused for another reason is still spent (410)", again.status === 410 && again.data.code === "pass-used");
   const U = withDoor(business({ connected: false }));
@@ -1085,7 +1096,7 @@ const S = withDoor(await fixtureBusiness());
       "The option name \"Shutters, call 941-555-0100\" has a phone number in it. Customers read it, so check it is right."]) && r.data.contactDetailsChange === true, JSON.stringify(r.data.warnings));
   const v = (await S.store.get("price-list")).version;
   r = await S.door({ action: "check", version: v, edits: [{ do: "set_business", tagline: "Sheds that last" }] });
-  ok("F5: while the switch is on, the door may still change the tagline and the name (not the contact details)", r.status === 200 && r.data.changes[0] === "Tagline: Portable storage buildings → Sheds that last", JSON.stringify(r.data));
+  ok("F5: while the switch is on, the door may still change the tagline and the name (not the contact details)", r.status === 200 && r.data.changes[0] === "Tagline: \"Sheds that last\"", JSON.stringify(r.data));
 }
 {
   /* F13 through the door */
@@ -1223,6 +1234,8 @@ section("A8. undo: the price list from before Barnwright's last change");
   ok("check an undo: the fixtures' words (\"Put back the price list from before Barnwright's last change\" first) and settingsSha256",
     cu.status === 200 && cu.data.changes[0] === UNDO_LINE && JSON.stringify(cu.data.changes) === JSON.stringify(conv("check an undo").changes)
     && cu.data.settingsSha256 === conv("check an undo").settingsSha256 && cu.data.counts.edits === 0, JSON.stringify(cu.data));
+  ok("W6: the undo's first line isn't counted as a change (2 real changes: counts.changes 2)",
+    cu.data.changes.length === 3 && cu.data.counts.changes === 2 && conv("check an undo").counts.changes === 2, JSON.stringify(cu.data.counts));
   r = await U.door({ action: "undo", version: 2, settingsSha256: cu.data.settingsSha256 });
   const pl = await U.store.get("price-list");
   ok("undo: version 3 is the price list of version 1 again, saved by Barnwright", r.status === 200 && r.data.versionBefore === 2 && r.data.version === 3
@@ -1238,6 +1251,186 @@ section("A8. undo: the price list from before Barnwright's last change");
   ok("once the owner saved after it: 409 cant-undo, \"The owner saved the price list after your change...\"", r.status === 409 && r.data.code === "cant-undo" && r.data.error === DOOR_WORDS.cantUndo && r.data.canUndo === false, JSON.stringify(r.data));
   r = await U.door({ action: "undo", version: 5, settingsSha256: "f".repeat(64) });
   ok("... and the undo itself too, with nothing saved", r.status === 409 && r.data.code === "cant-undo" && (await U.store.get("price-list")).version === 5);
+}
+
+/* ======================================================================================== */
+/* THE REVIEW'S FIXES (each fails on the code before them)                                   */
+
+section("A10 / DCSEC-3. Turning off, Stop and going live end every visit; a new grant needs a new visit");
+{
+  /* the owner's switch: on, a visit, off, on again (a new grant) */
+  const V = business();
+  await V.setUp(); await V.agree("2.2");
+  await V.ownerSave((s) => { s.status = "active"; });
+  await V.owner({ on: true, level: "change", reason: "first window", hours: 24 });
+  let x = await V.start();
+  const old = cookieFrom(x);
+  ok("(a visit starts while the switch is on)", x.status === 200 && x.data.mode === "switch" && !!old);
+  const kept = await V.store.get("barnwright-sessions");
+  V.clock.t += 10 * MIN;
+  await V.owner({ on: false });
+  ok("Turn off: the visit is ended at once, with no visit request in between", Object.values((await V.store.get("barnwright-sessions")) || {}).every((s2) => s2.ended === true), JSON.stringify(await V.store.get("barnwright-sessions")));
+  V.clock.t += HOUR;
+  await V.owner({ on: true, level: "change", reason: "second window", hours: 1 });
+  const logBefore = (await V.log()).length;
+  x = await V.visit("GET", "me", undefined, old);
+  ok("... a new switch an hour later doesn't bring the old visit back (401 visit-ended)", x.status === 401 && x.data.code === "visit-ended", JSON.stringify(x.data));
+  /* the second guard: even if ending the visits had failed, a visit belongs to the switch it started under */
+  await V.store.put("barnwright-sessions", kept);
+  x = await V.visit("GET", "me", undefined, old);
+  ok("... and even a visit record that wasn't ended can't ride a later switch (it started under another one)", x.status === 401 && x.data.code === "visit-ended", JSON.stringify(x.data));
+  x = await V.start();
+  ok("... a new visit starts, and the owner's log says so", x.status === 200 && (await V.log()).length === logBefore + 1 && (await V.log())[0].words === `Barnwright (${ACTOR}) opened your price list.`);
+}
+{
+  /* before live: Stop, then allow again */
+  const V = business();
+  await V.setUp(); await V.agree("2.2");
+  let x = await V.start();
+  const old = cookieFrom(x);
+  await V.owner({ prelive: "stopped" });
+  await V.owner({ prelive: "on" });
+  x = await V.visit("GET", "me", undefined, old);
+  ok("Stop, then Let Barnwright set it up again: the visit from before Stop stays ended (401 visit-ended)", x.status === 401 && x.data.code === "visit-ended" && x.data.error === VISIT_WORDS.ended, JSON.stringify(x.data));
+}
+{
+  /* a visit before live, the owner opens to customers, later the switch goes on */
+  const V = business();
+  await V.setUp(); await V.agree("2.2");
+  let x = await V.start();
+  const old = cookieFrom(x);
+  await V.ownerSave((s) => { s.status = "active"; });
+  ok("going live ends every visit at once", Object.values((await V.store.get("barnwright-sessions")) || {}).every((s2) => s2.ended === true));
+  V.clock.t += 2 * HOUR;
+  await V.owner({ on: true, level: "change", reason: "New prices", hours: 1 });
+  x = await V.visit("GET", "me", undefined, old);
+  ok("... the visit from before live is refused once the switch is on (401 visit-ended)", x.status === 401 && x.data.code === "visit-ended", JSON.stringify(x.data));
+}
+{
+  /* W1: before live, turning off Run checks leaves setup access on, and says so */
+  const V = business();
+  await V.setUp(); await V.agree("2.2");
+  let x = await V.start();
+  const c = cookieFrom(x);
+  await V.owner({ on: true, reason: "Check the quotes", hours: 4 });
+  x = await V.owner({ on: false });
+  ok("W1: before live, Turn off: \"<owner> turned off Barnwright's checks.\", and setup access is still on", x.status === 200 && x.data.help.on === false && x.data.setup.mode === "prelive"
+    && (await V.log())[0].words === `${USERS.pat.email} turned off Barnwright's checks.`, JSON.stringify([x.data.setup, (await V.log())[0]]));
+  x = await V.visit("GET", "me", undefined, c);
+  ok("... and Alan's visit goes on (access never closed)", x.status === 200, JSON.stringify(x.data));
+}
+
+section("A10 / DCSEC-4. A visit is Alan by hand: never from a pass the Claude connector asked for");
+{
+  const V = business();
+  await V.setUp(); await V.agree("2.2");
+  await V.ownerSave((s) => { s.status = "active"; });
+  await V.owner({ on: true, level: "change", reason: "New prices", hours: 4 });
+  const p = V.pass({ via: "claude" });
+  let x = await V.start(p);
+  ok("a session pass with via claude: 401, \"This link ran out\", no cookie, no visit", x.status === 401 && x.data.code === "pass" && x.data.error === VISIT_WORDS.linkRanOut && !cookieFrom(x)
+    && Object.keys((await V.store.get("barnwright-sessions")) || {}).length === 0, JSON.stringify(x.data));
+  x = await V.start(p);
+  ok("... and the pass is spent (410)", x.status === 410);
+  ok("... while the Control Room's own pass still starts one", (await V.start(V.pass({ via: "control-room" }))).status === 200);
+}
+
+section("F8 / DCSEC-5. The business phone, email and website the owner typed never reach the door");
+{
+  const E = withDoor(business());
+  await E.me("pat");
+  await E.call("POST", "/api/office/setup", { businessName: "Testing Sheds", phone: "941-555-0100", email: "pat.owner@gmail.com", website: "https://testingsheds.example", start: "small", agreeTerms: true });
+  await E.agree("2.2");
+  const answers = [];
+  let x = await E.door({ action: "check", version: 1, edits: [{ do: "set_business", phone: "", email: "" }] });
+  answers.push(x.data);
+  ok("check: \"Phone: taken off\", \"Email: taken off\" (never the old ones)", x.status === 200 && JSON.stringify(x.data.changes) === JSON.stringify(["Phone: taken off", "Email: taken off"]) && x.data.contactDetailsChange === true, JSON.stringify(x.data.changes));
+  const edits = [{ do: "set_business", phone: "941-555-0123", website: "https://www.testingsheds.com" }];
+  x = await E.door({ action: "check", version: 1, edits });
+  answers.push(x.data);
+  ok("check: a new number or address is said (an edit wrote it): \"Phone: changed to 941-555-0123\"",
+    JSON.stringify(x.data.changes) === JSON.stringify(["Phone: changed to 941-555-0123", "Website: changed to https://www.testingsheds.com"]), JSON.stringify(x.data.changes));
+  x = await E.door({ action: "save", version: 1, edits, settingsSha256: x.data.settingsSha256 });
+  answers.push(x.data);
+  ok("save: the same words", x.status === 200 && x.data.changes[0] === "Phone: changed to 941-555-0123", JSON.stringify(x.data.changes));
+  x = await E.door({ action: "check", version: 2, undo: true });
+  answers.push(x.data);
+  ok("an undo puts back the owner's own: \"Phone: changed\", without the number", x.status === 200 && x.data.changes.includes("Phone: changed") && x.data.changes.includes("Website: changed"), JSON.stringify(x.data.changes));
+  x = await E.door({ action: "undo", version: 2, settingsSha256: x.data.settingsSha256 });
+  answers.push(x.data);
+  answers.push((await E.door({ action: "read" })).data, (await E.door({ action: "status" })).data);
+  const text = JSON.stringify(answers);
+  ok("no door answer has the owner's business phone, email or website", !["941-555-0100", "pat.owner@gmail.com", "https://testingsheds.example"].some((t) => text.includes(t)), text.slice(0, 300));
+  const hist = await E.store.get("price-list-history/000002");
+  ok("... while the owner's own History still says it in full", hist.changes.includes("Phone: 941-555-0100 → 941-555-0123"), JSON.stringify(hist.changes));
+}
+
+section("A6 / DCSEC-1. The change words say what is written, so Alan reads the new words himself");
+{
+  const base = FX.edits.baseSettings;
+  const linesFor = (edits) => {
+    const res = applyEdits(base, edits, { manufacturer, standardRise: STD_RISE });
+    return res.problems.length ? res.problems : describeChanges(base, res.settings, manufacturer, { contact: "new" });
+  };
+  const long = ("Prices plus tax. " + "Delivery and setup included within our area, on level ground with room for the truck. ".repeat(3) + "Deposits are paid only by gift card at the lot.").slice(0, 300).trim();
+  const cases = [
+    ["the line under the price", [{ do: "set_fine_print", text: "Deposits are paid only by gift card at the lot." }], ["The line under the price", "Deposits are paid only by gift card at the lot."]],
+    ["a width note", [{ do: "set_size_note", width: 12, text: "12 ft wide buildings ship only after full payment." }], ["12 ft wide", "12 ft wide buildings ship only after full payment."]],
+    ["a width note taken off", [{ do: "set_size_note", width: 14, text: null }], ["14 ft wide buildings: taken off"]],
+    ["a rent-to-own factor", [{ do: "set_rent_to_own", terms: [{ months: 36, factor: 0.06 }, { months: 48, factor: 0.53 }, { months: 60, factor: 0.45 }] }], ["Rent to own 36 months: 0.6 → 0.06", "$231.48 → $2,314.81 a month"]],
+    ["the words under the rent-to-own price", [{ do: "set_rent_to_own", terms: [{ months: 36, factor: 0.6 }, { months: 48, factor: 0.53 }, { months: 60, factor: 0.45 }], note: "No credit check." }], ["The words under the rent-to-own price", "No credit check."]],
+    ["the texting permission words", [{ do: "set_quote_form", sms_consent: "By sending, you agree to marketing texts from us and our partners." }], ["Texting permission words", "marketing texts from us and our partners"]],
+    ["a quote form box", [{ do: "set_quote_form", fields: { phone: "off" } }], ["Quote form phone box: required → off"]],
+    ["an extra charged another way", [{ do: "set_extra", key: "ridge-vent", name: "Ridge vent", charged: "pct", price: 5 }], ["Ridge vent: $120 → 5% of the building price"]],
+    ["the tagline", [{ do: "set_business", tagline: "Sheds that last" }], ["Tagline", "Sheds that last"]],
+  ];
+  const wrong = [];
+  for (const [name, edits, want] of cases) {
+    const lines = linesFor(edits).join(" | ");
+    if (!want.every((w) => lines.includes(w))) wrong.push(`${name}: ${lines}`);
+  }
+  ok(`each of ${cases.length} edits customers read says the new words in its change line`, wrong.length === 0, wrong.join("\n       "));
+  const longLines = linesFor([{ do: "set_fine_print", text: long }, { do: "set_quote_form", sms_consent: long }, { do: "set_size_note", width: 16, text: long }]);
+  ok("a 300-letter text is said in full, and every line stays under 400 letters (the most the Control Room passes on)",
+    longLines.length === 3 && longLines.every((l) => l.length < 400 && l.includes(long.trim())), longLines.map((l) => l.length).join(", "));
+}
+
+section("F1 / COR-5. A business live before this shipped is never told today that setup access ended");
+{
+  const O = await oldBusiness(async (O2) => { await O2.ownerSave((s) => { s.status = "active"; }); });
+  await O.store.put("barnwright-help-log", { entries: [] });
+  O.clock.t += 3 * 86400_000;
+  const x = await O.ownerSave((s) => { s.offer.LB.sizes["10x16"] += 10; });
+  const live = await O.store.get("barnwright-live");
+  ok("the owner's first price save after the deploy: no \"setup access ended\" line in their log", x.status === 200 && (await O.log()).length === 0, JSON.stringify(await O.log()));
+  ok("... the live record says it was found open, with no made-up date", live?.live === true && live.how === "found-open" && live.liveAt === null, JSON.stringify(live));
+}
+{
+  const O = await oldBusiness();
+  await O.store.put("barnwright-help-log", { entries: [] });
+  await O.ownerSave((s) => { s.status = "active"; });
+  ok("a business set up before this shipped and never open: opening it now says setup access ended", (await O.log()).some((e) => e.words === "Barnwright's setup access ended when you opened your 3D designer to customers.")
+    && (await O.store.get("barnwright-live")).how === "opened", JSON.stringify(await O.log()));
+}
+
+section("A12 / F7 / DCSEC-6. The scheduled check-in renews the lease first, then looks back");
+{
+  const O = await oldBusiness();
+  const setup = O.office.parts.setup;
+  const real = setup.liveRecord;
+  const lease0 = (await O.license.peekAccess()).expiresAt;
+  O.clock.t += 2 * HOUR;
+  let leaseWhenLooked = null;
+  setup.liveRecord = async () => { leaseWhenLooked = (await O.license.peekAccess()).expiresAt; return real(); };
+  await O.office.scheduledCheckIn();
+  ok("the lease renews before the look back starts", leaseWhenLooked > lease0, `${lease0} -> ${leaseWhenLooked}`);
+  ok("... and the look back still writes the live record", (await O.store.get("barnwright-live"))?.live === false);
+  O.clock.t += 2 * HOUR;
+  setup.liveRecord = async () => { throw new Error("history store down"); };
+  let threw = false;
+  try { await O.office.scheduledCheckIn(); } catch { threw = true; }
+  ok("a look back that fails never stops the scheduled check-in", !threw && (await O.license.peekAccess()).expiresAt > leaseWhenLooked);
+  setup.liveRecord = real;
 }
 
 console.log("");

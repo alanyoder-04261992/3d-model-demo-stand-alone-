@@ -74,6 +74,8 @@ export const WHY = {
   stopped: "The owner stopped Barnwright's setup access in Settings, Barnwright.",
   "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
 };
+/* why "terms" while this Dealer Center's own terms are older than 2.2 (termsOut: false): no owner can agree yet */
+export const TERMS_NOT_OUT = "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.";
 
 export const REFUSALS = {
   method: { status: 405, error: "Use POST." },
@@ -99,6 +101,7 @@ const TOO_MANY_SAVES = "Barnwright has saved 60 changes here today. Try again to
 export const VISIT_WORDS = {
   linkRanOut: "This link ran out. Tap Open their price list again.",
   ended: "Your Barnwright visit ended. In your Control Room tap Open their price list, then come back and tap Save.",
+  closed: "Your Barnwright visit ended. <the words for why> Your changes are kept in this tab.",
   bar: "Working on <business> as Barnwright until <time>.",
   preview: "Preview. Your customers can't see this until you open it in Settings.",
 };
@@ -119,7 +122,8 @@ export const LOCK = {
 
 export const WARN = {
   contact: (which) => `This changes the business ${listWords(which)} that customers see. Check it with the owner.`,
-  contactInText: (where, kinds) => `${where} has ${listWords(kinds)} in it. Customers read it, so check it is right.`,
+  contactInText: (where, kinds) => (/ words$/.test(where) ? `${where} have ${listWords(kinds)} in them. Customers read them, so check they are right.` : `${where} has ${listWords(kinds)} in it. Customers read it, so check it is right.`),
+  rtoMoved: (months, was, now) => `The rent-to-own factor for ${months} months moves ${Math.round((Math.abs(now - was) / was) * 100)}%: ${was} → ${now}.`,
   cheaper: (style, big, bigPrice, small, smallPrice) => `${style} ${big} (${money(bigPrice)}) costs less than the smaller ${small} (${money(smallPrice)}).`,
   moved: (what, was, now) => `${what} moves ${Math.round((Math.abs(now - was) / was) * 100)}%: ${money(was)} → ${money(now)}.`,
   low: (style, size, price) => `${style} ${size} at ${money(price)} is under $500.`,
@@ -133,6 +137,7 @@ const WARN_TEXT = {
   contactInText: "<Where> has <a web address, an email address and a phone number> in it. Customers read it, so check it is right.",
   cheaper: "<Style> <bigger size> (<price>) costs less than the smaller <size> (<price>).",
   moved: "<Style> <size> (or the door, window, option or extra) moves <n>%: <old price> → <new price>.",
+  rtoMoved: "The rent-to-own factor for <months> months moves <n>%: <old factor> → <new factor>.",
   low: "<Style> <size> at <price> is under $500.",
   high: "<Style> <size> at <price> is over $100,000.",
   samePrice: "Every size of the <style> is <price>.",
@@ -172,6 +177,7 @@ export const LOG_WORDS = {
   checksOn: "<Owner> let Barnwright run checks for <n> hours: <reason>",
   changeOn: "<Owner> let Barnwright run checks and change the price list and settings for <n> hours: <reason>",
   off: "<Owner> turned off Barnwright's access.",
+  offChecks: "<Owner> turned off Barnwright's checks. (before live: setup access goes on)",
   stopped: "<Owner> stopped Barnwright's setup access.",
   allowed: "<Owner> let Barnwright set up the price list again.",
   liveOpened: "Barnwright's setup access ended when you opened your 3D designer to customers.",
@@ -403,7 +409,7 @@ function sampleSet(base, pl) {
     apply(after);
     settle(base, after);
     pl.check(after);                                  /* throws when the sample would not save */
-    const changes = more.changes || describeChanges(base, after, M);
+    const changes = more.changes || describeChanges(base, after, M, { contact: "new" });
     const paths = {};
     for (const p of more.paths || []) paths[p] = p.split(".").reduce((v, k) => (v == null ? undefined : v[k]), after);
     const contact = ["phone", "email", "website"].some((k) => (base.brand[k] || "") !== (after.brand[k] || ""));
@@ -506,6 +512,24 @@ function sampleSet(base, pl) {
   }, { paths: ["offer", "categories", "defaults"], warnings: [WARN.stopped(["Utility Shed", "Loft Barn", "Garage"])] });
   ok("warning: free text customers read with a phone number in it (listed first)", [{ do: "set_fine_print", text: "Call 941-555-0100 to book delivery." }],
     (s) => { s.notes.finePrint = "Call 941-555-0100 to book delivery."; }, { warnings: [WARN.contactInText("The line under the price", ["a phone number"])] });
+  ok("warning: any web address, like bit.ly/3xYz or othersheds.shop", [{ do: "set_fine_print", text: "Book online at bit.ly/3xYz" }],
+    (s) => { s.notes.finePrint = "Book online at bit.ly/3xYz"; }, { warnings: [WARN.contactInText("The line under the price", ["a web address"])] });
+  ok("warning: the business name with a phone number in it", [{ do: "set_business", name: "Testing Sheds, call 941-555-0199" }],
+    (s) => { s.brand.name = "Testing Sheds, call 941-555-0199"; }, { warnings: [WARN.contactInText("The business name", ["a phone number"])] });
+  ok("warning: the short name with a phone number in it", [{ do: "set_business", short: "Sheds 941-555-0199" }],
+    (s) => { s.brand.short = "Sheds 941-555-0199"; }, { warnings: [WARN.contactInText("The short name", ["a phone number"])] });
+  ok("warning: the texting permission words with a web address in them", [{ do: "set_quote_form", sms_consent: "Yes, text me. Or order at othersheds.shop" }],
+    (s) => { s.leads.smsConsent = "Yes, text me. Or order at othersheds.shop"; }, { warnings: [WARN.contactInText("The texting permission words", ["a web address"])] });
+  ok("warning: a group name with a web address in it", [{ do: "sell_style", style: "GU", group: "Order at www.other-sheds.com", sizes: { "8x12": 3290 } }],
+    (s) => { s.offer.GU = { sizes: { "8x12": 3290 } }; s.categories.push(["Order at www.other-sheds.com", ["GU"]]); },
+    { paths: ["categories"], warnings: [WARN.contactInText("The building group \"Order at www.other-sheds.com\"", ["a web address"])] });
+  ok("warning: a color of their own with a phone number in its name", [{ do: "set_colors", which: "trim", colors: ["White", "Black", { name: "Forest", hex: "#2F4A3B" }, { name: "Cedar", hex: "#8B5A3C" }, { name: "Call 9415550199", hex: "#123456" }] }],
+    (s) => { s.palettes.trim = ["White", "Black", ["Forest", "#2F4A3B"], ["Cedar", "#8B5A3C"], ["Call 9415550199", "#123456"]]; },
+    { warnings: [WARN.contactInText("The trim color \"Call 9415550199\"", ["a phone number"])] });
+  ok("warning: a rent-to-own factor moved more than 40%", [{ do: "set_rent_to_own", terms: [{ months: 36, factor: 0.06 }, { months: 48, factor: 0.53 }, { months: 60, factor: 0.45 }] }],
+    (s) => { s.pricing.rto = { ...s.pricing.rto, factors: { 36: 0.06, 48: 0.53, 60: 0.45 } }; }, { paths: ["pricing.rto"], warnings: [WARN.rtoMoved(36, 0.6, 0.06)] });
+  ok("set_extra: charged another way is said with both ways", [{ do: "set_extra", key: "anchors", name: "Extra ground anchors", charged: "lf", price: 45 }],
+    (s) => { s.options.extras[1] = { key: "anchors", name: "Extra ground anchors", input: "lf", price: 45 }; }, { paths: ["options.extras"] });
 
   /* refused: nothing is saved, every problem is listed */
   refused("an unknown edit", [{ do: "set_status", status: "active" }], ["Edit 1: there is no edit called set_status."]);
@@ -582,12 +606,12 @@ async function make(old) {
   v2.items.w48 = 175;
   settle(base, v2);
   pl.check(v2);
-  const v2Changes = describeChanges(base, v2, M);
+  const v2Changes = describeChanges(base, v2, M, { contact: "new" });
   const v2Sha = sha256(JSON.stringify(v2));
   bodies.save = bodyOf({ action: "save", version: 1, edits: JSON.parse(bodies.check).edits, settingsSha256: v2Sha });
   const v3 = settle(v2, structuredClone(base));
   v3.cfg = (v2.cfg || 1) + 1;
-  const v3Changes = [UNDO_LINE, ...describeChanges(v2, v3, M)];
+  const v3Changes = [UNDO_LINE, ...describeChanges(v2, v3, M, { contact: "hidden" })];
   const v3Sha = sha256(JSON.stringify(v3));
   const undoCheckBody = bodyOf({ action: "check", version: 2, undo: true });
   bodies.undo = bodyOf({ action: "undo", version: 2, settingsSha256: v3Sha });
@@ -601,7 +625,7 @@ async function make(old) {
   /* status fields at each step of the conversation */
   const at = (s) => iso(NOW + s * 1000);
   const S0 = {
-    live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: true,
+    live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: true, termsOut: true,
     priceList: { version: 1, savedAt: SET_UP_AT, by: "the owner", open: false }, lastBarnwrightSave: null, canUndo: false,
   };
   const savePassId = passes.save.claims.id, undoPassId = passes.undo.claims.id;
@@ -633,7 +657,7 @@ async function make(old) {
   ex("save", "Right after the check, with its settingsSha256.", request(passes.save.pass, bodies.save), okAnswer(S1, { versionBefore: 1, version: 2, changes: v2Changes, newCodes: {} }));
   const undoCheckPass = passFor(claimsFor("check-undo", "check", undoCheckBody));
   ex("check an undo", "After the save above. Nothing is written.", request(undoCheckPass.pass, undoCheckBody), okAnswer(S1, {
-    version: 2, changes: v3Changes, moreChanges: 0, warnings: [], counts: { edits: 0, changes: v3Changes.length, warnings: 0 },
+    version: 2, changes: v3Changes, moreChanges: 0, warnings: [], counts: { edits: 0, changes: v3Changes.length - 1, warnings: 0 },
     contactDetailsChange: false, newCodes: {}, settingsSha256: v3Sha,
   }));
   ex("undo", "Right after checking the undo, with its settingsSha256.", request(passes.undo.pass, bodies.undo), okAnswer(S2, { versionBefore: 2, version: 3, changes: v3Changes }));
@@ -666,8 +690,11 @@ async function make(old) {
   ex("refused: open to customers and the switch is off", "The owner opened the 3D designer to customers half an hour ago.",
     request(fresh("live-off", bodies.check).pass, bodies.check), refusal("closed", S_live, { error: WHY["live-off"], extra: { why: "live-off" } }));
   const S_terms = { ...S0, access: "closed", why: "terms", termsOk: false };
-  ex("refused: the owner hasn't agreed to terms 2.2", "The owner agreed to terms 2.1 only (every business until terms 2.2 is out).",
+  ex("refused: the owner hasn't agreed to terms 2.2", "Terms 2.2 are out; the owner agreed to terms 2.1 only.",
     request(fresh("terms", bodies.check).pass, bodies.check), refusal("closed", S_terms, { error: WHY.terms, extra: { why: "terms" } }));
+  const S_notOut = { ...S_terms, termsOut: false };
+  ex("refused: terms 2.2 aren't out yet", "This Dealer Center's own terms are older than 2.2 (termsOut: false), so no owner can agree to them yet.",
+    request(fresh("terms-not-out", bodies.check).pass, bodies.check), refusal("closed", S_notOut, { error: TERMS_NOT_OUT, extra: { why: "terms" } }));
   const S_noList = { ...S0, access: "closed", why: "no-price-list", priceList: null };
   ex("refused: no price list yet", "The owner hasn't done First setup.",
     request(fresh("no-list", readSummary).pass, readSummary),
@@ -758,6 +785,9 @@ async function make(old) {
     { name: "start with a pass that ran out", given: "The pass is more than 2 minutes old.",
       request: { method: "POST", url: site + "/api/office/barnwright/start", headers: { Authorization: "Bearer <an expired session pass>", "Content-Type": "application/json", Origin: site }, body: bodies.session },
       answer: { status: 401, body: { ok: false, code: "pass", error: VISIT_WORDS.linkRanOut } } },
+    { name: "start with a pass the Claude connector asked for", given: "A session pass with via \"claude\". A visit is Alan by hand: only the Control Room's own Open their price list (via \"control-room\") starts one.",
+      request: { method: "POST", url: site + "/api/office/barnwright/start", headers: { Authorization: "Bearer <a session pass with via claude>", "Content-Type": "application/json", Origin: site }, body: bodies.session },
+      answer: { status: 401, body: { ok: false, code: "pass", error: VISIT_WORDS.linkRanOut } } },
     { name: "start with a pass already used", given: "The same link opened twice.",
       request: { method: "POST", url: site + "/api/office/barnwright/start", headers: { Authorization: `Bearer ${passes.session.pass}`, "Content-Type": "application/json", Origin: site }, body: bodies.session },
       answer: { status: 410, body: { ok: false, code: "pass-used", error: VISIT_WORDS.linkRanOut } } },
@@ -771,9 +801,12 @@ async function make(old) {
       request: { method: "PUT", url: site + "/api/office/barnwright/price-list", headers: { Cookie: `${cookie}=${cookieValue}`, "Content-Type": "application/json", Origin: site },
         body: "{\"settings\": <the price list with status \"active\">, \"version\": 2}" },
       answer: { status: 422, body: { error: LOCK.status, problems: [LOCK.status] } } },
-    { name: "the visit ended", given: "The owner turned the switch off (or opened the designer, or the visit's 8 hours since its last request passed).",
+    { name: "the visit ended", given: "The visit's 8 hours since its last request passed (or the owner's switch was turned off and on again: a new switch needs a new visit).",
       request: { method: "PUT", url: site + "/api/office/barnwright/price-list", headers: { Cookie: `${cookie}=${cookieValue}`, "Content-Type": "application/json", Origin: site }, body: "{\"settings\": <...>, \"version\": 2}" },
       answer: { status: 401, body: { error: VISIT_WORDS.ended, code: "visit-ended" } } },
+    { name: "the visit ended because access closed", given: "The owner tapped Stop Barnwright's setup access (or turned the switch off, or opened the designer to customers). Every visit ends then.",
+      request: { method: "PUT", url: site + "/api/office/barnwright/price-list", headers: { Cookie: `${cookie}=${cookieValue}`, "Content-Type": "application/json", Origin: site }, body: "{\"settings\": <...>, \"version\": 2}" },
+      answer: { status: 401, body: { error: VISIT_WORDS.closed.replace("<the words for why>", WHY.stopped), code: "visit-ended", why: "stopped" } } },
     { name: "the owner's routes ignore the visit's cookie", given: "During the visit.",
       request: { method: "GET", url: site + "/api/office/customers", headers: { Cookie: `${cookie}=${cookieValue}` } },
       answer: { status: 401, body: { error: "Please sign in." } } },
@@ -786,7 +819,7 @@ async function make(old) {
   ];
 
   /* the owner's one card: Settings, Barnwright */
-  const ownerSetup = (o) => ({ mode: "prelive", until: null, why: null, live: false, liveAt: null, prelive: "on", termsOk: true, ...o });
+  const ownerSetup = (o) => ({ mode: "prelive", until: null, why: null, live: false, liveAt: null, prelive: "on", termsOk: true, termsOut: true, ...o });
   const log = (words, s, extra = {}) => ({ at: at(s), words, ...extra });
   const changedLine = logChanged(v2Changes);
   const owner = [
@@ -804,6 +837,9 @@ async function make(old) {
       request: { method: "POST", url: site + "/api/office/barnwright-help", headers: { Authorization: "Bearer <the owner's Identity token>", Origin: site, "Content-Type": "application/json" }, body: bodyOf({ on: true, level: "change", reason: "New 2027 prices", hours: 4 }) },
       answer: { status: 200, body: { help: { on: false, until: null, reason: "", log: ["<the same line as above>"] }, setup: ownerSetup({ mode: "switch", until: at(4 * 3600), live: true, liveAt: at(-86400) }),
         notice: OWNER_WORDS.notReached } } },
+    { name: "turn off checks before live", given: "As in status, and the owner had turned on Run checks. Setup access goes on until the business is live.",
+      request: { method: "POST", url: site + "/api/office/barnwright-help", headers: { Authorization: "Bearer <the owner's Identity token>", Origin: site, "Content-Type": "application/json" }, body: bodyOf({ on: false }) },
+      answer: { status: 200, body: { help: { on: false, until: null, reason: "", log: [log("Pat Owner turned off Barnwright's checks.", 120)] }, setup: ownerSetup({}) } } },
     { name: "turn off", given: "The switch is on.",
       request: { method: "POST", url: site + "/api/office/barnwright-help", headers: { Authorization: "Bearer <the owner's Identity token>", Origin: site, "Content-Type": "application/json" }, body: bodyOf({ on: false }) },
       answer: { status: 200, body: { help: { on: false, until: null, reason: "", log: [log("Pat Owner turned off Barnwright's access.", 120)] }, setup: ownerSetup({ mode: null, why: "live-off", live: true, liveAt: at(-86400) }) } } },
@@ -823,11 +859,11 @@ async function make(old) {
     { name: "a check-in with setup", given: "As in status.",
       request: { method: "POST", url: "https://barnwright-control-room.netlify.app/api/license", headers: { Authorization: "Bearer <the activation key>", "Content-Type": "application/json" },
         body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, appVersion: APP_VERSION, dealerCount: 1,
-          setup: { v: 1, live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: true }, siteUrl: DEALER.siteUrl }) } },
+          setup: { v: 1, live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: true, termsOut: true }, siteUrl: DEALER.siteUrl }) } },
     { name: "a check-in while the switch is on", given: "Open to customers since yesterday; the owner's switch is on for 4 hours.",
       request: { method: "POST", url: "https://barnwright-control-room.netlify.app/api/license", headers: { Authorization: "Bearer <the activation key>", "Content-Type": "application/json" },
         body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, appVersion: APP_VERSION, dealerCount: 1,
-          setup: { v: 1, live: true, liveAt: at(-86400), access: "switch", why: null, until: at(4 * 3600), prelive: "on", termsOk: true }, siteUrl: DEALER.siteUrl }) } },
+          setup: { v: 1, live: true, liveAt: at(-86400), access: "switch", why: null, until: at(4 * 3600), prelive: "on", termsOk: true, termsOut: true }, siteUrl: DEALER.siteUrl }) } },
     { name: "a check-in without setup", given: "setup.report() failed or took over 500 ms, or barnwright-live isn't written yet. The lease still renews.",
       request: { method: "POST", url: "https://barnwright-control-room.netlify.app/api/license", headers: { Authorization: "Bearer <the activation key>", "Content-Type": "application/json" },
         body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, appVersion: APP_VERSION, dealerCount: 1, siteUrl: DEALER.siteUrl }) } },
@@ -857,7 +893,7 @@ async function make(old) {
     door: {
       url: DOOR_URL, maxBodyBytes: DOOR_MAX_BYTES, actions: DOOR_ACTIONS, parts: PARTS,
       limits: { requestsPerHour: 120, savesPerDay: 60, editsPerCheck: 300, changeLinesShown: 500, historyShown: 20, changesPerHistoryEntry: 5 },
-      refusals: REFUSALS, why: WHY, examples,
+      refusals: REFUSALS, why: WHY, whyTermsNotOut: TERMS_NOT_OUT, examples,
     },
     visit: { cookie, lastsMs: 8 * 3600_000, words: VISIT_WORDS, examples: visit },
     owner: { examples: owner },

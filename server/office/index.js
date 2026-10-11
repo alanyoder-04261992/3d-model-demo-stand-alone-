@@ -37,10 +37,13 @@ import { createLots, website as websiteAddress } from "./lots.js";
 import { createCustomers } from "./customers.js";
 import { createWebsite } from "./website.js";
 import { createEmail } from "./email.js";
-import { createAccount } from "./account.js";
+import { createAccount, withinMs } from "./account.js";
 import { createTerms, TERMS, AGREE_FIRST } from "./terms.js";
 import { createHelp } from "./help.js";
 import { createSetupAccess } from "./setup-access.js";
+
+/* the scheduled check-in's look back for Barnwright setup access, at most */
+const LOOK_BACK_MS = 5000;
 
 export function createOffice(deps) {
   const now = deps.now || (() => new Date());
@@ -422,6 +425,18 @@ export function createOffice(deps) {
     checkIn: account.checkIn,
     /* the scheduled check-in looks back for Barnwright setup access first, in its own try */
     setupLookBack: async () => { if (setup.connected) await setup.liveRecord(); },
+    /* the check-in every six hours (netlify/functions/barnwright-check-in.mts):
+       the lease renews FIRST; only then does Barnwright setup access look
+       back (setup-access.js liveRecord), in its own try and for at most 5
+       seconds, so nothing about setup access can slow down or stop the
+       lease renewing */
+    scheduledCheckIn: async () => {
+      await account.checkIn({ force: true });
+      if (!setup.connected) return;
+      try { await withinMs(setup.liveRecord(), LOOK_BACK_MS); } catch (error) {
+        log("Barnwright setup access couldn't look back:", error?.name || "Error");
+      }
+    },
     /* Barnwright's setup door (netlify/functions/barnwright-setup.mts): the control room's server only */
     setupDoor: (request) => setup.door(request),
     parts: { store, people, lots, priceList, customers, team, website, account, help, setup },

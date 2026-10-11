@@ -57,9 +57,10 @@ import { sha256Hex } from "./hash.js";
 import { KEEP } from "./store.js";
 import { withinMs } from "./account.js";
 import { lockProblems, carryLocked } from "./setup-lock.js";
-import { versionAtLeast } from "./terms.js";
+import { versionAtLeast, TERMS } from "./terms.js";
 import { applyEdits, warnings, UNDO_LINE, TOO_MANY_EDITS } from "./setup-edits.js";
 import { readView, PARTS } from "./setup-view.js";
+import { describeChanges } from "./price-list.js";
 
 const SETUP = "barnwright-setup";
 const LIVE = "barnwright-live";
@@ -87,9 +88,16 @@ export const WHY = Object.freeze({
   "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
 });
 
+/* Until this Dealer Center's own terms are 2.2 or later, no owner can agree
+   to them, so the words for why "terms" say so instead of pointing at a
+   button that isn't there. */
+export const TERMS_NOT_OUT = "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.";
+
 export const VISIT_WORDS = Object.freeze({
   linkRanOut: "This link ran out. Tap Open their price list again.",
   ended: "Your Barnwright visit ended. In your Control Room tap Open their price list, then come back and tap Save.",
+  /* access closed while Alan worked: why, and that his work is kept */
+  closed: (why) => `Your Barnwright visit ended. ${why} Your changes are kept in this tab.`,
 });
 
 export const OWNER_WORDS = Object.freeze({
@@ -134,6 +142,10 @@ const historyKey = (version) => `price-list-history/${String(version).padStart(6
 
 /* "2.2" or later ("2.10" is later than "2.9"). */
 export const termsAtLeast = (version, need = TERMS_NEEDED) => versionAtLeast(version, need);
+/* Terms 2.2 are out: this Dealer Center asks owners to agree to them. */
+export const termsOut = () => termsAtLeast(TERMS.version);
+/* The words for a reason access is closed. */
+export const whyWords = (why) => (why === "terms" && !termsOut() ? TERMS_NOT_OUT : WHY[why] || WHY["live-off"]);
 
 /* The owner's log line for a Barnwright save: the first 3 change lines and a count. */
 export function changedWords(actor, lines) {
@@ -170,22 +182,53 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
 
   /* Write the live record (once: it never changes after). how: opened,
      quote, order, website-quote (the change about to be saved), or what the
-     look back found (found-open, history, customers, unsure). */
+     look back found (found-open, history, customers, unsure: quiet, with
+     no liveAt, as nobody knows when).
+
+     The owner's log says setup access ended only when this business was
+     known to be setting up (a record {live: false}). A business set up
+     before the record existed is looked back through first, so an owner
+     whose 3D designer was open long ago isn't told it ended today. Every
+     Barnwright visit ends with it. */
   async function markLive(how, { quiet = false } = {}) {
     if (knownLive) return knownLive;
-    let changed = false;
+    if (!quiet && connected) {
+      try { if (!(await store.get(LIVE))) await liveRecord({ scan: true }); } catch (e) {
+        log("Barnwright's look back before going live failed:", e?.name || "Error");
+      }
+    }
+    let changed = false, wasSettingUp = false;
     const rec = await store.change(LIVE, (doc) => {
       changed = false;
       if (doc?.live) return KEEP;
       changed = true;
-      return { live: true, liveAt: iso(), how };
+      wasSettingUp = doc?.live === false;
+      return { live: true, liveAt: wasSettingUp && !quiet ? iso() : null, how };
     });
     if (rec?.live) knownLive = rec;
-    if (changed && !quiet && connected) {
+    if (changed) await endVisits();
+    if (changed && wasSettingUp && !quiet && connected) {
       await note(how === "opened" ? "Barnwright's setup access ended when you opened your 3D designer to customers."
         : "Barnwright's setup access ended when your first quote was saved.");
     }
     return rec;
+  }
+
+  /* Access ended (the owner's switch off, Stop, going live): every visit
+     ends now, so none comes back when access opens again. Each is marked
+     ended (kept until its own end, so its next request can still say why). */
+  async function endVisits() {
+    try {
+      await store.change(SESSIONS, (doc) => {
+        const open = Object.entries(doc || {}).filter(([, v]) => v && !v.ended);
+        if (!open.length) return KEEP;
+        const d = { ...doc };
+        for (const [k, v] of open) d[k] = { ...v, ended: true };
+        return d;
+      });
+    } catch (e) {
+      log("Barnwright's visits couldn't be ended:", e?.name || "Error");
+    }
   }
 
   /* First setup: not live, nothing to look back through. */
@@ -268,7 +311,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     else mode = "prelive";
     return {
       mode, until: mode === "switch" ? rec.expiresAt : null, why: mode ? null : why,
-      live, liveAt: liveRec?.live ? liveRec.liveAt || null : null, prelive, termsOk: ok, record, switchRecord: rec,
+      live, liveAt: liveRec?.live ? liveRec.liveAt || null : null, prelive, termsOk: ok, termsOut: termsOut(), record, switchRecord: rec,
     };
   }
   const access = () => view({ scan: true });
@@ -301,7 +344,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     const data = v.record?.data || null;
     return {
       v: 1, live: v.live, liveAt: v.liveAt, access: v.mode || "closed", why: v.mode ? null : v.why, until: v.until,
-      prelive: v.prelive, termsOk: v.termsOk,
+      prelive: v.prelive, termsOk: v.termsOk, termsOut: v.termsOut,
       priceList: data ? { version: data.version, savedAt: data.savedAt, by: await byWords(data.savedBy), open: data.settings.status !== "suspended" } : null,
       lastBarnwrightSave: await lastBarnwrightSave(data),
       canUndo: data?.savedBy?.id === "barnwright",
@@ -317,7 +360,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       if (!(await store.get(LIVE))) return null;
       const v = await view({ scan: false });
       if (!v || v.why === "unknown") return null;
-      return { v: 1, live: v.live, liveAt: v.liveAt, access: v.mode || "closed", why: v.mode ? null : v.why, until: v.until, prelive: v.prelive, termsOk: v.termsOk };
+      return { v: 1, live: v.live, liveAt: v.liveAt, access: v.mode || "closed", why: v.mode ? null : v.why, until: v.until, prelive: v.prelive, termsOk: v.termsOk, termsOut: v.termsOut };
     })();
     try { return await withinMs(work, REPORT_MS); } catch (e) {
       log("The Barnwright setup report was skipped:", e?.name || "Error");
@@ -337,7 +380,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
   async function ownerView() {
     const v = await view({ scan: true });
     if (!v) return null;
-    return { mode: v.mode, until: v.until, why: v.why === "unknown" ? null : v.why, live: v.live, liveAt: v.liveAt, prelive: v.prelive, termsOk: v.termsOk };
+    return { mode: v.mode, until: v.until, why: v.why === "unknown" ? null : v.why, live: v.live, liveAt: v.liveAt, prelive: v.prelive, termsOk: v.termsOk, termsOut: v.termsOut };
   }
 
   async function ownerGet() {
@@ -378,12 +421,16 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       /* both off at once, here first */
       await store.change(SETUP, (doc) => ({ ...(doc || {}), prelive: doc?.prelive === "stopped" ? "stopped" : "on", enabled: false, expiresAt: iso() }));
       await account.setHelp(person, { on: false }, { quiet: true });
-      await note(`${who} turned off Barnwright's access.`);
+      /* before live, setup access goes on: say only what stopped */
+      const still = connected ? (await view({ scan: false }))?.mode : null;
+      if (!still) await endVisits();
+      await note(still === "prelive" ? `${who} turned off Barnwright's checks.` : `${who} turned off Barnwright's access.`);
     } else if (data?.prelive === "stopped" || data?.prelive === "on") {
       if (!connected) fail(404, WHY["not-connected"]);
       const v = await view({ scan: true });
       if (v.live) fail(422, OWNER_WORDS.afterLivePrelive);
       await store.change(SETUP, (doc) => ({ enabled: false, ...(doc || {}), prelive: data.prelive }));
+      if (data.prelive === "stopped" && !(await view({ scan: false }))?.mode) await endVisits();
       await note(data.prelive === "stopped" ? `${who} stopped Barnwright's setup access.` : `${who} let Barnwright set up the price list again.`);
     } else {
       fail(422, OWNER_WORDS.say);
@@ -442,6 +489,14 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
 
   const cookieLine = (token, seconds) => `${COOKIE}=${token}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=${Math.max(0, Math.floor(seconds))}`;
   const ended = () => new OfficeError(401, VISIT_WORDS.ended, { code: "visit-ended" });
+  /* What a visit started under: before live, or the owner's switch turned
+     on at grantedAt. A visit never outlives it: a visit from before live
+     ends once the business is live, and one from a switch ends with that
+     switch (a later switch is a new grant, and needs a new visit). Ending
+     every visit when access ends (endVisits) does the same; this is the
+     second guard. */
+  const grantOf = (v) => (v.mode === "switch" ? { mode: "switch", grantedAt: v.switchRecord?.grantedAt || null } : { mode: "prelive" });
+  const sameGrant = (s, v) => (s.mode === "prelive" ? !v.live : s.mode === "switch" && v.mode === "switch" && !!s.grantedAt && s.grantedAt === v.switchRecord?.grantedAt);
   const visitEnd = (v) => {
     const t = ms() + VISIT_MS;
     return new Date(v.mode === "switch" ? Math.min(t, Date.parse(v.until)) : t).toISOString();
@@ -468,15 +523,21 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       throw refusal(401, "pass", VISIT_WORDS.linkRanOut);
     }
     if (!(await spend(claims))) throw refusal(410, "pass-used", VISIT_WORDS.linkRanOut);
+    /* a visit is Alan by hand: the Control Room's own Open their price list,
+       never a pass the Claude connector asked for */
+    if (claims.via !== "control-room") {
+      log("A Barnwright visit's pass was refused:", "via");
+      throw refusal(401, "pass", VISIT_WORDS.linkRanOut);
+    }
     await count();
     const v = await access();
-    if (!v.mode) throw refusal(403, "closed", WHY[v.why] || WHY["live-off"], { why: v.why });
+    if (!v.mode) throw refusal(403, "closed", whyWords(v.why), { why: v.why });
     const bytes = new Uint8Array(32);
     globalThis.crypto.getRandomValues(bytes);
     const session = b64url(bytes);
     const at = iso(), endsAt = visitEnd(v);
-    await store.change(SESSIONS, (doc) => ({ ...prune(doc, ms()), [sha256Hex(session)]: { actor: claims.actor, passId: claims.id, startedAt: at, lastAt: at, endsAt } }));
-    await note(`Barnwright (${claims.actor}) opened your price list.`, { until: endsAt });
+    await store.change(SESSIONS, (doc) => ({ ...prune(doc, ms()), [sha256Hex(session)]: { actor: claims.actor, passId: claims.id, startedAt: at, lastAt: at, endsAt, ...grantOf(v) } }));
+    await note(`Barnwright (${claims.actor}) opened your price list.`);
     const name = v.record?.data.settings.brand?.name || "";
     return json({ ok: true, mode: v.mode, until: v.until, visitEndsAt: endsAt, business: { name } }, 200,
       { "Set-Cookie": cookieLine(session, (Date.parse(endsAt) - ms()) / 1000) });
@@ -493,9 +554,11 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     const s = (await store.get(SESSIONS))?.[key];
     if (!s || Date.parse(s.endsAt) <= ms()) throw ended();
     const v = await access();
-    if (!v.mode) {
+    const why = !v.mode ? v.why : !s.ended && sameGrant(s, v) ? null : "ended";
+    if (why) {
       await store.change(SESSIONS, (doc) => (doc?.[key] ? (() => { const d = { ...doc }; delete d[key]; return d; })() : KEEP));
-      throw ended();
+      if (why === "ended") throw ended();
+      throw new OfficeError(401, VISIT_WORDS.closed(whyWords(why === "unknown" ? "live-off" : why)), { code: "visit-ended", why: why === "unknown" ? "live-off" : why });
     }
     await count();
     const endsAt = visitEnd(v);
@@ -616,8 +679,13 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       }
       throw e;
     }
+    /* The door's change words: the owner's own History words, except that
+       the business phone, email and website the owner typed are never said
+       (only a new one an edit writes; for an undo, neither). */
+    const changes = describeChanges(current.settings, prepared.next, manufacturer, { contact: undo ? "hidden" : "new" });
+    if (lead && changes.length) changes.unshift(lead);
     return {
-      next: prepared.next, changes: prepared.changes, warnings: warnings(current.settings, prepared.next, manufacturer),
+      next: prepared.next, changes, warnings: warnings(current.settings, prepared.next, manufacturer),
       newCodes, edits, lead, sha: sha256Hex(JSON.stringify(prepared.next)),
       contact: ["phone", "email", "website"].some((k) => (current.settings.brand?.[k] || "") !== (prepared.next.brand?.[k] || "")),
     };
@@ -628,7 +696,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     const v = await access();
     seen.open = !!v.mode;
     if (action === "status") return {};
-    if (!v.mode) throw doorNo(403, "closed", WHY[v.why] || WHY["live-off"], { why: v.why === "unknown" ? "live-off" : v.why });
+    if (!v.mode) throw doorNo(403, "closed", whyWords(v.why === "unknown" ? "live-off" : v.why), { why: v.why === "unknown" ? "live-off" : v.why });
     if (action === "read") {
       const part = data.part === undefined ? "summary" : data.part;
       if (!PARTS.includes(part)) throw doorNo(400, "bad-request", BAD_REQUEST);
@@ -642,9 +710,11 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       if (data.undo !== undefined && !undo) throw doorNo(400, "bad-request", BAD_REQUEST);
       if (!undo && !Array.isArray(data.edits)) throw doorNo(422, "problems", TOO_MANY_EDITS, { problems: [TOO_MANY_EDITS] });
       const p = await plan(v, data, undo);
+      /* the undo's first line ("Put back the price list from before ...") says what this is; it isn't a change of its own */
+      const counted = p.changes.length - (p.lead && p.changes[0] === p.lead ? 1 : 0);
       return {
         version: data.version, changes: p.changes.slice(0, CHANGE_LINES), moreChanges: Math.max(0, p.changes.length - CHANGE_LINES),
-        warnings: p.warnings, counts: { edits: p.edits, changes: p.changes.length, warnings: p.warnings.length },
+        warnings: p.warnings, counts: { edits: p.edits, changes: counted, warnings: p.warnings.length },
         contactDetailsChange: p.contact, newCodes: p.newCodes, settingsSha256: p.sha,
       };
     }
@@ -670,7 +740,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     }
     if (saved.changes?.length) await note(undo ? `Barnwright (${claims.actor}) put back the price list from before its last change.` : changedWords(claims.actor, saved.changes));
     return {
-      versionBefore: data.version, version: saved.version, changes: (saved.changes || []).slice(0, CHANGE_LINES),
+      versionBefore: data.version, version: saved.version, changes: (saved.changes?.length ? p.changes : []).slice(0, CHANGE_LINES),
       ...(undo ? {} : { newCodes: p.newCodes }),
     };
   }

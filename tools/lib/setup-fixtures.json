@@ -726,6 +726,7 @@
       "stopped": "The owner stopped Barnwright's setup access in Settings, Barnwright.",
       "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright."
     },
+    "whyTermsNotOut": "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
     "examples": [
       {
         "name": "status",
@@ -751,6 +752,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -787,6 +789,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -884,6 +887,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -997,6 +1001,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -1144,6 +1149,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -1264,6 +1270,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -1410,6 +1417,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -1513,6 +1521,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2097,6 +2106,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2148,6 +2158,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 2,
               "savedAt": "2026-10-11T15:00:04.000Z",
@@ -2195,6 +2206,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 2,
               "savedAt": "2026-10-11T15:00:04.000Z",
@@ -2218,7 +2230,7 @@
             "warnings": [],
             "counts": {
               "edits": 0,
-              "changes": 3,
+              "changes": 2,
               "warnings": 0
             },
             "contactDetailsChange": false,
@@ -2251,6 +2263,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 3,
               "savedAt": "2026-10-11T15:00:06.000Z",
@@ -2490,6 +2503,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2528,6 +2542,7 @@
             "until": null,
             "prelive": "stopped",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2566,6 +2581,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2580,7 +2596,7 @@
       },
       {
         "name": "refused: the owner hasn't agreed to terms 2.2",
-        "given": "The owner agreed to terms 2.1 only (every business until terms 2.2 is out).",
+        "given": "Terms 2.2 are out; the owner agreed to terms 2.1 only.",
         "request": {
           "method": "POST",
           "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
@@ -2604,6 +2620,46 @@
             "until": null,
             "prelive": "on",
             "termsOk": false,
+            "termsOut": true,
+            "priceList": {
+              "version": 1,
+              "savedAt": "2026-10-11T14:00:00.000Z",
+              "by": "the owner",
+              "open": false
+            },
+            "lastBarnwrightSave": null,
+            "canUndo": false,
+            "appVersion": "dealer-center test"
+          }
+        }
+      },
+      {
+        "name": "refused: terms 2.2 aren't out yet",
+        "given": "This Dealer Center's own terms are older than 2.2 (termsOut: false), so no owner can agree to them yet.",
+        "request": {
+          "method": "POST",
+          "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+          "headers": {
+            "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiVF9rY1BpUE1XbU1Zc0JBSEphZzRwQSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJjaGVjayIsImJvZHlTaGEyNTYiOiI3NDg3YjZiNDBlMjg2MTU2NWI1ZmRjYzE2NDVhNmM3YjdiMTg1ZTE1MTEyN2RiOTIxOTQ0ZTg0MDg4NjVhNmZmIiwiaXNzdWVkQXQiOjE3OTE3MzA4MDAwMDAsImV4cGlyZXNBdCI6MTc5MTczMDkyMDAwMH0.2vi5pJqbRrHW5jGnlGHJbHoNOdERoA3-GU2SkQK4gLJk8TSe_wWjT4IX6a-j2K2nJdbfPFVSAy99Bsrq8SF9rg",
+            "Content-Type": "application/json"
+          },
+          "body": "{\"action\":\"check\",\"version\":1,\"edits\":[{\"do\":\"set_price\",\"style\":\"LB\",\"size\":\"10x16\",\"price\":5700},{\"do\":\"set_item\",\"item\":\"w48\",\"price\":175}]}"
+        },
+        "answer": {
+          "status": 403,
+          "body": {
+            "ok": false,
+            "code": "closed",
+            "error": "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
+            "why": "terms",
+            "v": 1,
+            "live": false,
+            "liveAt": null,
+            "access": "closed",
+            "until": null,
+            "prelive": "on",
+            "termsOk": false,
+            "termsOut": false,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2642,6 +2698,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": null,
             "lastBarnwrightSave": null,
             "canUndo": false,
@@ -2675,6 +2732,7 @@
             "until": "2026-10-11T19:00:00.000Z",
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2734,6 +2792,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 3,
               "savedAt": "2026-10-11T15:00:06.000Z",
@@ -2776,6 +2835,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2814,6 +2874,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 4,
               "savedAt": "2026-10-11T15:01:00.000Z",
@@ -2856,6 +2917,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2898,6 +2960,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2939,6 +3002,7 @@
             "until": "2026-10-11T19:00:00.000Z",
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2977,6 +3041,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -3015,6 +3080,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -3053,6 +3119,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -3091,6 +3158,7 @@
             "until": null,
             "prelive": "on",
             "termsOk": true,
+            "termsOut": true,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -3132,6 +3200,7 @@
     "words": {
       "linkRanOut": "This link ran out. Tap Open their price list again.",
       "ended": "Your Barnwright visit ended. In your Control Room tap Open their price list, then come back and tap Save.",
+      "closed": "Your Barnwright visit ended. <the words for why> Your changes are kept in this tab.",
       "bar": "Working on <business> as Barnwright until <time>.",
       "preview": "Preview. Your customers can't see this until you open it in Settings."
     },
@@ -3173,6 +3242,28 @@
           "url": "https://testing.barnwrightsoftware.com/api/office/barnwright/start",
           "headers": {
             "Authorization": "Bearer <an expired session pass>",
+            "Content-Type": "application/json",
+            "Origin": "https://testing.barnwrightsoftware.com"
+          },
+          "body": "{\"action\":\"session\"}"
+        },
+        "answer": {
+          "status": 401,
+          "body": {
+            "ok": false,
+            "code": "pass",
+            "error": "This link ran out. Tap Open their price list again."
+          }
+        }
+      },
+      {
+        "name": "start with a pass the Claude connector asked for",
+        "given": "A session pass with via \"claude\". A visit is Alan by hand: only the Control Room's own Open their price list (via \"control-room\") starts one.",
+        "request": {
+          "method": "POST",
+          "url": "https://testing.barnwrightsoftware.com/api/office/barnwright/start",
+          "headers": {
+            "Authorization": "Bearer <a session pass with via claude>",
             "Content-Type": "application/json",
             "Origin": "https://testing.barnwrightsoftware.com"
           },
@@ -3304,7 +3395,7 @@
       },
       {
         "name": "the visit ended",
-        "given": "The owner turned the switch off (or opened the designer, or the visit's 8 hours since its last request passed).",
+        "given": "The visit's 8 hours since its last request passed (or the owner's switch was turned off and on again: a new switch needs a new visit).",
         "request": {
           "method": "PUT",
           "url": "https://testing.barnwrightsoftware.com/api/office/barnwright/price-list",
@@ -3320,6 +3411,28 @@
           "body": {
             "error": "Your Barnwright visit ended. In your Control Room tap Open their price list, then come back and tap Save.",
             "code": "visit-ended"
+          }
+        }
+      },
+      {
+        "name": "the visit ended because access closed",
+        "given": "The owner tapped Stop Barnwright's setup access (or turned the switch off, or opened the designer to customers). Every visit ends then.",
+        "request": {
+          "method": "PUT",
+          "url": "https://testing.barnwrightsoftware.com/api/office/barnwright/price-list",
+          "headers": {
+            "Cookie": "__Host-bw_setup=XaIDqwRKWEoO_SL5J-uVFvQRtlrP1Vv8bNYzMkFClqI",
+            "Content-Type": "application/json",
+            "Origin": "https://testing.barnwrightsoftware.com"
+          },
+          "body": "{\"settings\": <...>, \"version\": 2}"
+        },
+        "answer": {
+          "status": 401,
+          "body": {
+            "error": "Your Barnwright visit ended. The owner stopped Barnwright's setup access in Settings, Barnwright. Your changes are kept in this tab.",
+            "code": "visit-ended",
+            "why": "stopped"
           }
         }
       },
@@ -3418,7 +3531,8 @@
               "live": false,
               "liveAt": null,
               "prelive": "on",
-              "termsOk": true
+              "termsOk": true,
+              "termsOut": true
             }
           }
         }
@@ -3461,7 +3575,8 @@
               "live": false,
               "liveAt": null,
               "prelive": "stopped",
-              "termsOk": true
+              "termsOk": true,
+              "termsOut": true
             }
           }
         }
@@ -3501,7 +3616,8 @@
               "live": true,
               "liveAt": "2026-10-10T15:00:00.000Z",
               "prelive": "on",
-              "termsOk": true
+              "termsOk": true,
+              "termsOut": true
             }
           }
         }
@@ -3537,9 +3653,50 @@
               "live": true,
               "liveAt": "2026-10-10T15:00:00.000Z",
               "prelive": "on",
-              "termsOk": true
+              "termsOk": true,
+              "termsOut": true
             },
             "notice": "Barnwright couldn't be reached just now, so checks are off. Barnwright can change your price list and settings."
+          }
+        }
+      },
+      {
+        "name": "turn off checks before live",
+        "given": "As in status, and the owner had turned on Run checks. Setup access goes on until the business is live.",
+        "request": {
+          "method": "POST",
+          "url": "https://testing.barnwrightsoftware.com/api/office/barnwright-help",
+          "headers": {
+            "Authorization": "Bearer <the owner's Identity token>",
+            "Origin": "https://testing.barnwrightsoftware.com",
+            "Content-Type": "application/json"
+          },
+          "body": "{\"on\":false}"
+        },
+        "answer": {
+          "status": 200,
+          "body": {
+            "help": {
+              "on": false,
+              "until": null,
+              "reason": "",
+              "log": [
+                {
+                  "at": "2026-10-11T15:02:00.000Z",
+                  "words": "Pat Owner turned off Barnwright's checks."
+                }
+              ]
+            },
+            "setup": {
+              "mode": "prelive",
+              "until": null,
+              "why": null,
+              "live": false,
+              "liveAt": null,
+              "prelive": "on",
+              "termsOk": true,
+              "termsOut": true
+            }
           }
         }
       },
@@ -3577,7 +3734,8 @@
               "live": true,
               "liveAt": "2026-10-10T15:00:00.000Z",
               "prelive": "on",
-              "termsOk": true
+              "termsOk": true,
+              "termsOut": true
             }
           }
         }
@@ -3656,7 +3814,7 @@
             "Authorization": "Bearer <the activation key>",
             "Content-Type": "application/json"
           },
-          "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"appVersion\":\"dealer-center test\",\"dealerCount\":1,\"setup\":{\"v\":1,\"live\":false,\"liveAt\":null,\"access\":\"prelive\",\"why\":null,\"until\":null,\"prelive\":\"on\",\"termsOk\":true},\"siteUrl\":\"https://testing.barnwrightsoftware.com\"}"
+          "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"appVersion\":\"dealer-center test\",\"dealerCount\":1,\"setup\":{\"v\":1,\"live\":false,\"liveAt\":null,\"access\":\"prelive\",\"why\":null,\"until\":null,\"prelive\":\"on\",\"termsOk\":true,\"termsOut\":true},\"siteUrl\":\"https://testing.barnwrightsoftware.com\"}"
         }
       },
       {
@@ -3669,7 +3827,7 @@
             "Authorization": "Bearer <the activation key>",
             "Content-Type": "application/json"
           },
-          "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"appVersion\":\"dealer-center test\",\"dealerCount\":1,\"setup\":{\"v\":1,\"live\":true,\"liveAt\":\"2026-10-10T15:00:00.000Z\",\"access\":\"switch\",\"why\":null,\"until\":\"2026-10-11T19:00:00.000Z\",\"prelive\":\"on\",\"termsOk\":true},\"siteUrl\":\"https://testing.barnwrightsoftware.com\"}"
+          "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"appVersion\":\"dealer-center test\",\"dealerCount\":1,\"setup\":{\"v\":1,\"live\":true,\"liveAt\":\"2026-10-10T15:00:00.000Z\",\"access\":\"switch\",\"why\":null,\"until\":\"2026-10-11T19:00:00.000Z\",\"prelive\":\"on\",\"termsOk\":true,\"termsOut\":true},\"siteUrl\":\"https://testing.barnwrightsoftware.com\"}"
         }
       },
       {
@@ -4157,7 +4315,8 @@
         "expect": {
           "ok": true,
           "changes": [
-            "Stopped selling the Garage"
+            "Stopped selling the Garage",
+            "Took away the building group \"Garages\""
           ],
           "warnings": [],
           "contactDetailsChange": false,
@@ -4450,7 +4609,7 @@
         "expect": {
           "ok": true,
           "changes": [
-            "Added the extra \"Gutters\" at $8"
+            "Added the extra \"Gutters\" at $8 a foot"
           ],
           "warnings": [],
           "contactDetailsChange": false,
@@ -4656,7 +4815,7 @@
         "expect": {
           "ok": true,
           "changes": [
-            "Changed the line under the price"
+            "The line under the price: \"Prices plus tax. Free delivery within 50 miles.\""
           ],
           "warnings": [],
           "contactDetailsChange": false,
@@ -4680,7 +4839,7 @@
         "expect": {
           "ok": true,
           "changes": [
-            "Changed the notes shown for building widths"
+            "The note for 12 ft wide buildings: \"12 ft wide buildings fit most driveways.\""
           ],
           "warnings": [],
           "contactDetailsChange": false,
@@ -4724,7 +4883,8 @@
         "expect": {
           "ok": true,
           "changes": [
-            "Changed the rent-to-own terms"
+            "Rent to own: added 72 months at 0.4 ($173.61 a month on $5,000)",
+            "Rent-to-own price shown on the 3D designer: 60 months → 72 months"
           ],
           "warnings": [],
           "contactDetailsChange": false,
@@ -4755,7 +4915,7 @@
         "expect": {
           "ok": true,
           "changes": [
-            "Changed the rent-to-own terms"
+            "Rent to own turned off"
           ],
           "warnings": [],
           "contactDetailsChange": false,
@@ -4786,7 +4946,8 @@
         "expect": {
           "ok": true,
           "changes": [
-            "Changed what the quote form asks for"
+            "Quote form email box: optional → required",
+            "Quote form asks what they want to do with the quote: yes → no"
           ],
           "warnings": [],
           "contactDetailsChange": false,
@@ -4818,8 +4979,8 @@
         "expect": {
           "ok": true,
           "changes": [
-            "Phone: 941-555-0100 → 941-555-0199",
-            "Tagline: Portable storage buildings → Built in Florida"
+            "Phone: changed to 941-555-0199",
+            "Tagline: \"Built in Florida\""
           ],
           "warnings": [
             "This changes the business phone that customers see. Check it with the owner."
@@ -5063,6 +5224,7 @@
             "Stopped selling the Utility Shed",
             "Stopped selling the Loft Barn",
             "Stopped selling the Garage",
+            "Took away the building group \"Garages\"",
             "Changed the building the designer opens on"
           ],
           "warnings": [
@@ -5111,7 +5273,7 @@
         "expect": {
           "ok": true,
           "changes": [
-            "Changed the line under the price"
+            "The line under the price: \"Call 941-555-0100 to book delivery.\""
           ],
           "warnings": [
             "The line under the price has a phone number in it. Customers read it, so check it is right."
@@ -5120,6 +5282,271 @@
           "newCodes": {},
           "paths": {},
           "settingsSha256": "ff8df831fd9be7e8e297f0e672919c4eb5143012ccf46c45e4ba894f8205492c"
+        }
+      },
+      {
+        "name": "warning: any web address, like bit.ly/3xYz or othersheds.shop",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_fine_print",
+            "text": "Book online at bit.ly/3xYz"
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "The line under the price: \"Book online at bit.ly/3xYz\""
+          ],
+          "warnings": [
+            "The line under the price has a web address in it. Customers read it, so check it is right."
+          ],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {},
+          "settingsSha256": "f3fc60f769ffccb64d78ba9820f8ca1aa8df69a1a0c754d2e5d5084b23d596fe"
+        }
+      },
+      {
+        "name": "warning: the business name with a phone number in it",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_business",
+            "name": "Testing Sheds, call 941-555-0199"
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Business name: Testing Sheds → Testing Sheds, call 941-555-0199"
+          ],
+          "warnings": [
+            "The business name has a phone number in it. Customers read it, so check it is right."
+          ],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {},
+          "settingsSha256": "97ae82117c5ac223f10ea4ac2a918809641856a391130a6c70a5e591c176f7be"
+        }
+      },
+      {
+        "name": "warning: the short name with a phone number in it",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_business",
+            "short": "Sheds 941-555-0199"
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Short name: Testing Sheds → Sheds 941-555-0199"
+          ],
+          "warnings": [
+            "The short name has a phone number in it. Customers read it, so check it is right."
+          ],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {},
+          "settingsSha256": "dbe93bc3aa3ae689bbdb1f390de3a96bb2ef5f5aa7cbae003c2c3b6da541b521"
+        }
+      },
+      {
+        "name": "warning: the texting permission words with a web address in them",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_quote_form",
+            "sms_consent": "Yes, text me. Or order at othersheds.shop"
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Texting permission words: \"Yes, text me. Or order at othersheds.shop\""
+          ],
+          "warnings": [
+            "The texting permission words have a web address in them. Customers read them, so check they are right."
+          ],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {},
+          "settingsSha256": "5906b8e96fe0c546fef1813a1e445411161fa9bf5bc7cbb153dd9b116ef8cdd7"
+        }
+      },
+      {
+        "name": "warning: a group name with a web address in it",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "sell_style",
+            "style": "GU",
+            "group": "Order at www.other-sheds.com",
+            "sizes": {
+              "8x12": 3290
+            }
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Started selling the Garden Utility in 1 size",
+            "New building group \"Order at www.other-sheds.com\""
+          ],
+          "warnings": [
+            "The building group \"Order at www.other-sheds.com\" has a web address in it. Customers read it, so check it is right."
+          ],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {
+            "categories": [
+              [
+                "Sheds",
+                [
+                  "UT",
+                  "LB"
+                ]
+              ],
+              [
+                "Garages",
+                [
+                  "G"
+                ]
+              ],
+              [
+                "Order at www.other-sheds.com",
+                [
+                  "GU"
+                ]
+              ]
+            ]
+          },
+          "settingsSha256": "3b9f16b80cb5f44e834773c39259b8ec0dc5eddb6f742a2e909b442d68ceafbc"
+        }
+      },
+      {
+        "name": "warning: a color of their own with a phone number in its name",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_colors",
+            "which": "trim",
+            "colors": [
+              "White",
+              "Black",
+              {
+                "name": "Forest",
+                "hex": "#2F4A3B"
+              },
+              {
+                "name": "Cedar",
+                "hex": "#8B5A3C"
+              },
+              {
+                "name": "Call 9415550199",
+                "hex": "#123456"
+              }
+            ]
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Trim colors: added Call 9415550199"
+          ],
+          "warnings": [
+            "The trim color \"Call 9415550199\" has a phone number in it. Customers read it, so check it is right."
+          ],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {},
+          "settingsSha256": "ce742d6b8b64b779883847b3d17c2a4326270ff05bf842eaf77b7fc95cda35b1"
+        }
+      },
+      {
+        "name": "warning: a rent-to-own factor moved more than 40%",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_rent_to_own",
+            "terms": [
+              {
+                "months": 36,
+                "factor": 0.06
+              },
+              {
+                "months": 48,
+                "factor": 0.53
+              },
+              {
+                "months": 60,
+                "factor": 0.45
+              }
+            ]
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Rent to own 36 months: 0.6 → 0.06 ($231.48 → $2,314.81 a month on $5,000)"
+          ],
+          "warnings": [
+            "The rent-to-own factor for 36 months moves 90%: 0.6 → 0.06."
+          ],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {
+            "pricing.rto": {
+              "factors": {
+                "36": 0.06,
+                "48": 0.53,
+                "60": 0.45
+              },
+              "showTerm": 60
+            }
+          },
+          "settingsSha256": "ca0414114dd17c8617799dfb7883032464dcd2b67977b33c3a5c47746b0ce156"
+        }
+      },
+      {
+        "name": "set_extra: charged another way is said with both ways",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "set_extra",
+            "key": "anchors",
+            "name": "Extra ground anchors",
+            "charged": "lf",
+            "price": 45
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Extra ground anchors: $45 each → $45 a foot"
+          ],
+          "warnings": [],
+          "contactDetailsChange": false,
+          "newCodes": {},
+          "paths": {
+            "options.extras": [
+              {
+                "key": "ridge-vent",
+                "name": "Ridge vent",
+                "input": "check",
+                "price": 120
+              },
+              {
+                "key": "anchors",
+                "name": "Extra ground anchors",
+                "input": "lf",
+                "price": 45
+              }
+            ]
+          },
+          "settingsSha256": "058589f78612f62bbdb8e41732c3531243e84aa1a3454464fa9c4a4b13ad4fe9"
         }
       },
       {
@@ -5432,6 +5859,7 @@
       "contactInText": "<Where> has <a web address, an email address and a phone number> in it. Customers read it, so check it is right.",
       "cheaper": "<Style> <bigger size> (<price>) costs less than the smaller <size> (<price>).",
       "moved": "<Style> <size> (or the door, window, option or extra) moves <n>%: <old price> → <new price>.",
+      "rtoMoved": "The rent-to-own factor for <months> months moves <n>%: <old factor> → <new factor>.",
       "low": "<Style> <size> at <price> is under $500.",
       "high": "<Style> <size> at <price> is over $100,000.",
       "samePrice": "Every size of the <style> is <price>.",
@@ -5487,6 +5915,7 @@
       "checksOn": "<Owner> let Barnwright run checks for <n> hours: <reason>",
       "changeOn": "<Owner> let Barnwright run checks and change the price list and settings for <n> hours: <reason>",
       "off": "<Owner> turned off Barnwright's access.",
+      "offChecks": "<Owner> turned off Barnwright's checks. (before live: setup access goes on)",
       "stopped": "<Owner> stopped Barnwright's setup access.",
       "allowed": "<Owner> let Barnwright set up the price list again.",
       "liveOpened": "Barnwright's setup access ended when you opened your 3D designer to customers.",
