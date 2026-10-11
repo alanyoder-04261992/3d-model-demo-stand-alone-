@@ -285,7 +285,8 @@ function fmtIn(inches) {
   const ft = Math.floor(s16 / 192); s16 -= ft * 192;
   const whole = Math.floor(s16 / 16); let frac = s16 - whole * 16, den = 16;
   while (frac && frac % 2 === 0) { frac /= 2; den /= 2; }
-  const inWords = whole && frac ? `${whole} ${frac}/${den}` : frac ? `${frac}/${den}` : `${whole}`;
+  /* "1 ft 0 1/4 in", the way a tape is read, never "1 ft 1/4 in" */
+  const inWords = whole && frac ? `${whole} ${frac}/${den}` : frac ? `${ft ? "0 " : ""}${frac}/${den}` : `${whole}`;
   const out = ft ? (whole || frac ? `${ft} ft ${inWords} in` : `${ft} ft`) : `${inWords} in`;
   return (neg ? "-" : "") + out;
 }

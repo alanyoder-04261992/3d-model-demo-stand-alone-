@@ -749,7 +749,9 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   const pubOld = await want(200, "GET", "/api/lots/port-charlotte", undefined, { label: "a lot's designer on a price list saved before the stricter rules" });
   ok("(a) a price list with an old typo still opens on the lot's designer (validate finds nothing)", validate(pubOld.company, manufacturer).length === 0, JSON.stringify(validate(pubOld.company, manufacturer)));
   let catOld = null; try { catOld = (await office.parts.priceList.catalogue()).cat; } catch (e) { catOld = null; }
-  ok("(a) ... and prices quotes from it (the catalogue resolves)", !!catOld && catOld.TYPES.UT.wallH === manufacturer.styles.UT.wallH);
+  /* (the old typo offer.UT.wallH 8.5 is ignored: the wall is the shop standard's, 7 ft 9 1/2 in since "yes match") */
+  const standardUtWall = manufacturer.styles.UT.built && manufacturer.styles.UT.built.wallHeight != null ? manufacturer.styles.UT.built.wallHeight / 12 : manufacturer.styles.UT.wallH;
+  ok("(a) ... and prices quotes from it (the catalogue resolves)", !!catOld && catOld.TYPES.UT.wallH === standardUtWall, String(catOld && catOld.TYPES.UT.wallH));
   let olderNow = await want(200, "GET", "/api/office/price-list");
   const priceOnly = clone(olderNow.settings); priceOnly.offer.LB.sizes["10x16"] += 1;
   const savedOld = await want(200, "PUT", "/api/office/price-list", { settings: priceOnly, version: olderNow.version }, { label: "(b) a price change on a price list holding an old typo" });
@@ -779,7 +781,8 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   const lbName = cur.settings.offer.LB.name || manufacturer.styles.LB.name;
   let s = clone(cur.settings); s.offer.LB.built = { wallHeight: 84 };
   let out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "saving a Lofted Barn wall height of 7 ft" });
-  ok(`... History says "${lbName} wall height: 6 ft 8 1/16 in → 7 ft"`, out.changes.includes(`${lbName} wall height: 6 ft 8 1/16 in → 7 ft`), JSON.stringify(out.changes));
+  /* from the shop standard's 79 1/2 in lofted wall ("yes match") */
+  ok(`... History says "${lbName} wall height: 6 ft 7 1/2 in → 7 ft"`, out.changes.includes(`${lbName} wall height: 6 ft 7 1/2 in → 7 ft`), JSON.stringify(out.changes));
   ok("... and cfg goes up, so open designers redraw", out.cfg === cur.cfg + 1);
   ok("... the lot's designer draws the 7 ft walls", (await liveCat()).TYPES.LB.wallH === 7);
   cur = await want(200, "GET", "/api/office/price-list");
@@ -819,7 +822,8 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   ok("a 5 ft Utility Shed wall under its 76 1/2 in shop door is refused (422)", low.status === 422, `${low.status} ${low.text.slice(0, 200)}`);
   ok("... with the door words, at the size the designer opens on and the others",
     new RegExp(`${utName} \\d+x\\d+: the 72″ Wooden Double Doors on the front should be 76 1/2 in tall, but the wall leaves room for 55 5/8 in\\. The same at .+ more\\.`).test(low.data.error || ""), low.data.error);
-  ok("... and the roof edge too low to walk under", /the roof edge over the left side is only 4 ft 9 5\/8 in above the floor \(6 ft at least\)/.test(low.data.error || ""), low.data.error);
+  /* (the shop standard's 5/12 roof with its 4 in eave measured level) */
+  ok("... and the roof edge too low to walk under", /the roof edge over the left side is only 4 ft 10 3\/8 in above the floor \(6 ft at least\)/.test(low.data.error || ""), low.data.error);
   ok("... every line in the owner's words, never a settings path", Array.isArray(low.data.problems) && low.data.problems.length >= 2 && low.data.problems.every((p) => !PATHS.test(p) && !/[{}]/.test(p)), JSON.stringify(low.data.problems));
   ok("... a gable window the standard Utility Shed has the same trouble with is not the owner's", !(low.data.problems || []).some((p) => /Gable Window/.test(p)), JSON.stringify(low.data.problems));
   ok("... and nothing was saved", (await want(200, "GET", "/api/office/price-list")).version === cur.version);

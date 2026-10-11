@@ -537,7 +537,7 @@ the Barnwright setup connector's roof pitch rule list, which
 read, for real on save: "Roof pitch rules moved into How it's built (no
 building changes)"). Top-level `built` is a price part, so a change raises
 `cfg`, open designers redraw and History says it ("Lofted Barn wall height:
-6 ft 8 1/16 in → 7 ft").
+6 ft 7 1/2 in → 7 ft").
 
 **Checked at every size, on save and on the screen.** `model/built-check.js`
 says which styles a change reaches (`changedStyles`: numbers changed, sizes

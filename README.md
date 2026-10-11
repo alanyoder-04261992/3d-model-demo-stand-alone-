@@ -297,6 +297,7 @@ Chromium's software graphics, each on its own port.
 | `check-framing.mjs` | no | the floor, wall, foundation, porch-deck and inside framing is built like a real shed on 1,000+ buildings (and changes nothing in the finished view) |
 | `check-framing-roof.mjs` | no | the trusses, gable studs, roof deck, loft and dormer framing fit inside the roof as drawn and follow the construction numbers |
 | `check-style-sizes.mjs` | no | every style at every size it is sold in is a building a shop could build: doors and windows on their walls and clear of each other, everything under the roof, the roof, dormer, porch and loft in shape, the framing builds; every check caught on a broken test style; kept problems listed with their reasons |
+| `check-shop-numbers.mjs` | no | the standard buildings use Alan's shop numbers where he confirmed them (5/12 roofs, 4 in eaves and 7 ft 9 1/2 in walls on the Utility Shed and Side Utility; 6 ft 7 1/2 in walls and 3 ft 7 3/4 in, 4 ft and 4 ft 3 in barn roofs at 8, 10 and 12 ft wide on the Lofted Barn and Side Lofted Barn) and Barnwright's numbers everywhere else; every library style at every size is exactly as recorded in `test/golden-shop/shop-standard.json` (`--record` writes it again, on purpose) |
 | `check-companies.mjs` | yes | a company is one checked settings file, never given a price it did not set; about 35 mistakes give the right plain-English error |
 | `check-design.mjs` | no | a design saved, shared and opened again is the same building at the same price; nothing missing is dropped silently |
 | `check-floor-lesson.mjs` | no | the lesson starts with supports; all eight selections preserve original floor geometry, and measurements match drawn pieces |
@@ -335,10 +336,14 @@ Chromium's software graphics, each on its own port.
    wears the Yoder site's look; the checks open it at `?light=warm`, its
    untouched warm light). Its files are only ever read, by the golden
    capture and the live comparisons.
-2. **The finished building is Barnwright's shape for shape, lit the way the
-   Yoder site lights it.** A red `check-golden.mjs` is a look change: fix the
-   code (see the `check-the-look` skill). True colour is the standard light;
-   Barnwright's warm light is kept for the golden and look checks.
+2. **The engine draws Barnwright's buildings shape for shape, lit the way
+   the Yoder site lights them, and the standard buildings use Alan's shop
+   numbers where he confirmed them** (Utility Shed, Side Utility, Lofted Barn,
+   Side Lofted Barn). A red `check-golden.mjs` is an engine change: fix the
+   code (see the `check-the-look` skill). The golden and look checks draw
+   Barnwright's own company with Barnwright's numbers and warm light;
+   `check-shop-numbers.mjs` holds the shop numbers. True colour is the
+   standard light.
 3. **One real-life part = one file in `parts/` + one skill.** Read the part's
    skill before changing it; update the skill after (the `add-a-part` skill
    for a new one).

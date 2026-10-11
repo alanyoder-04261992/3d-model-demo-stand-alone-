@@ -153,7 +153,7 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   height, wooden shop door height, and where the style has them, porch
   depth, side porch lengths (chips) and dormer side (chips). Each empty box
   shows the number the style is built with and where it comes from
-  ("Standard: 7 ft 9 in", "Built like the Utility Shed: 6/12"). A style of
+  ("Standard: 7 ft 9 1/2 in", "Built like the Utility Shed: 6/12"). A style of
   the business's own follows the style it is built like, unless it has a
   number of its own.
 * **For the whole business** ("How your buildings are built", at the end
@@ -182,7 +182,7 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   checked yet: 14 sizes of the Lofted Barn. Press Check every size."),
   which never stops a save. Putting an older copy back is never refused;
   what no longer fits is said instead.
-* **History** says each change: "Lofted Barn wall height: 6 ft 8 1/16 in →
+* **History** says each change: "Lofted Barn wall height: 6 ft 7 1/2 in →
   7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12",
   "Steep roof: roof pitch at least 7/12", and "Wall upgrades priced by the
   square foot follow the new wall height: ..." when a wall height moves

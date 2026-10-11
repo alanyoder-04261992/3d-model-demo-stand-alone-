@@ -43,10 +43,20 @@
        (it used to be copied in unchecked), a typo or a value that cannot be
        built is a problem on save, never on read, and is not drawn; a good
        one still works; a builder's option is held to the same rule.
+   13. The shop standard (Oct 2026, "yes match"; BUILDFAST-SPEC E.2, E.3):
+       the demo company -- like every company on the standard manufacturer --
+       draws Alan's shop numbers: a Utility Shed or Side Utility 10x16 roof
+       rises 25 in above its 93 1/2 in walls (5/12) and its eave ends 4 in
+       past the wall; Lofted Barn and Side Lofted Barn walls are 79 1/2 in
+       and their barn roofs 43 3/4, 48 and 51 in tall at 8, 10 and 12 ft
+       wide; an 11 ft barn is no taller than 51 in; the 14 ft barn, the
+       Garage, the Dormer Shed and every other style are exactly Barnwright's;
+       Barnwright's own company keeps 6.48/12; the screens say "5/12" from
+       "standard"; and every style still passes the every-size check.
    Prints PROVED with the counts, or FAIL with what broke. */
 
-import { readJSON } from "./lib/load.mjs";
-import { barnwrightCompany, barnwrightManufacturer } from "./lib/barnwright-company.mjs";
+import { readJSON, loadCatalogue } from "./lib/load.mjs";
+import { barnwrightCompany, barnwrightManufacturer, barnwrightCatalogue, standardManufacturer } from "./lib/barnwright-company.mjs";
 import { resolve, validate, validateManufacturer, strictProblems } from "../model/company.js";
 import * as BUILT from "../model/build-settings.js";
 import { gableEndOverhangOf } from "../parts/roofing.js";
@@ -440,6 +450,47 @@ group("12. an extra's construction settings");
   ok("... and the standard library's own options pass", validateManufacturer(M).length === 0, J(validateManufacturer(M)));
 }
 
+/* ------------------------------------------------------------------ 13 */
+group("13. the shop standard (Alan's numbers)");
+{
+  const DEMO = loadCatalogue("demo"), BW = barnwrightCatalogue(), SM = standardManufacturer();
+  const fr = (cat, t, z) => frameOf(stateOf(cat, t, z), cat);
+  const peakIn = (cat, t, z) => { const f = fr(cat, t, z); return (Math.max(...f.prof.map((p) => p[1])) - f.topY) * 12; };
+  const wallIn = (cat, t, z) => fr(cat, t, z).t.wallH * 12;
+  for (const t of ["UT", "SU"]) {
+    ok(`${t} 10x16: the roof rises 25 in above the wall (5/12; Barnwright 32.4 in)`, near(peakIn(DEMO, t, "10x16"), 25, 1e-9), String(peakIn(DEMO, t, "10x16")));
+    ok(`${t} 10x16: walls 93 1/2 in (Barnwright 93 in)`, near(wallIn(DEMO, t, "10x16"), 93.5, 1e-9), String(wallIn(DEMO, t, "10x16")));
+    const sec = roofSection(makePlan(stateOf(DEMO, t, "10x16"), DEMO));
+    ok(`${t} 10x16: the eave ends 4 in past each wall, measured level`, near(-5 - sec.P[0][0], 4 / 12) && near(sec.P[sec.P.length - 1][0] - 5, 4 / 12), J(sec.P[0]));
+    ok(`${t} 8x12, 12x16 and 14 ft: 5/12 at every width`, [["8x12", 4], ["12x16", 6]].every(([z, run]) => near(peakIn(DEMO, t, z), run * 12 * 5 / 12, 1e-9)) && (!DEMO.P[t]["14x24"] || near(peakIn(DEMO, t, "14x24"), 7 * 12 * 5 / 12, 1e-9)));
+  }
+  for (const t of ["LB", "SLB"]) {
+    const sizes = Object.keys(DEMO.P[t]);
+    const at = (w) => sizes.find((z) => +z.split("x")[0] === w);
+    ok(`${t}: barn roofs 43 3/4, 48 and 51 in tall at 8, 10 and 12 ft wide`, [[8, 43.75], [10, 48], [12, 51]].every(([w, h]) => at(w) && near(peakIn(DEMO, t, at(w)), h, 1e-9)), J([8, 10, 12].map((w) => at(w) && peakIn(DEMO, t, at(w)))));
+    ok(`${t}: walls 79 1/2 in (Barnwright 80.04 in)`, sizes.every((z) => near(wallIn(DEMO, t, z), 79.5, 1e-9)));
+    const w14 = at(14);
+    ok(`${t}: the 14 ft barn is unchanged (not confirmed): ${w14 ? (peakIn(DEMO, t, w14) / 12).toFixed(2) + " ft" : "not sold"}`, !w14 || near(peakIn(DEMO, t, w14), peakIn(BW, t, w14), 1e-9));
+  }
+  const c11 = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json"))); c11.offer.LB.sizes["11x16"] = 7000;
+  const cat11 = resolve(c11, SM, LIB);
+  ok("an 11 ft Lofted Barn is no taller than the 12 ft one (51 in)", peakIn(cat11, "LB", "11x16") <= 51 + 1e-9, String(peakIn(cat11, "LB", "11x16")));
+  /* every other style is Barnwright's, number for number */
+  const same = Object.keys(DEMO.TYPES).filter((k) => ["UT", "SU", "LB", "SLB"].indexOf(k) < 0);
+  const differs = same.filter((k) => Object.keys(DEMO.P[k]).some((z) => J(fr(DEMO, k, z).prof) !== J(fr(BW, k, z).prof) || fr(DEMO, k, z).t.wallH !== fr(BW, k, z).t.wallH));
+  ok(`the other ${same.length} styles (the Garage, the Dormer Shed ...) draw Barnwright's roof and walls at every size`, same.length === 19 && differs.length === 0, differs.join(", "));
+  ok("G 12x24 and DS 10x16 unchanged", near(peakIn(DEMO, "G", "12x24"), 38.88, 1e-9) && near(peakIn(DEMO, "DS", "10x16"), 36, 1e-9));
+  ok("Barnwright's own company keeps Barnwright's numbers (6.48/12, 93 in, 54 in at 10 ft)", near(peakIn(BW, "UT", "10x16"), 32.4, 1e-9) && near(wallIn(BW, "UT", "10x16"), 93, 1e-9) && near(peakIn(BW, "LB", "10x16"), 54, 1e-9));
+  const eff = BUILT.effective(DEMO, "UT");
+  const pitch = eff.find((e) => e.id === "roofPitch"), wall = eff.find((e) => e.id === "wallHeight");
+  ok("the screens say 5/12 and 7 ft 9 1/2 in, from the standard", pitch && pitch.words === "5/12" && pitch.from === "standard" && wall && wall.words === "7 ft 9 1/2 in" && wall.from === "standard", J(eff));
+  ok("the manufacturer file's shop numbers have no problems", validateManufacturer(SM).length === 0 && BUILT.libraryProblems(SM).length === 0, J(BUILT.libraryProblems(SM)));
+  ok("each shop number says where it came from (_source)", ["UT", "SU", "LB", "SLB"].every((k) => SM.styles[k].built && /Alan's shop numbers/.test(SM.styles[k].built._source || "")));
+  /* a business's own number still wins over the shop standard */
+  const own = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json"))); own.offer.UT.built = { roofPitch: 6 };
+  ok("a business's own roof pitch (6/12) beats the shop standard's 5/12", near(peakIn(resolve(own, SM, LIB), "UT", "10x16"), 30, 1e-9));
+}
+
 /* ---------------------------------------------------------------- report */
 console.log("How it's built:");
 for (const g of groups) console.log(`  ${g.bad ? "FAIL" : "ok  "} ${g.title}: ${g.n - g.bad} of ${g.n}`);
@@ -449,4 +500,4 @@ if (failures.length) {
   console.log(`\nFAIL: ${failures.length} of ${passed + failures.length} checks failed.`);
   process.exit(1);
 }
-console.log(`\nPROVED (${passed} checks): the porch depth, the side porch lengths, the dormer side, the barn roof's gable-end overhang, its height by width and eaves measured level are settings the drawing follows; How it's built numbers are typed, checked and layered; an extra's construction settings are checked like the rest; and with today's numbers every building is drawn as before.`);
+console.log(`\nPROVED (${passed} checks): the porch depth, the side porch lengths, the dormer side, the barn roof's gable-end overhang, its height by width and eaves measured level are settings the drawing follows; How it's built numbers are typed, checked and layered; an extra's construction settings are checked like the rest; with no setting every building is drawn as Barnwright's numbers say; and every company on the standard manufacturer draws Alan's shop numbers on the Utility Shed, Side Utility, Lofted Barn and Side Lofted Barn, and Barnwright's on the rest.`);

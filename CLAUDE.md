@@ -24,11 +24,23 @@ Yoder Storage Barns site lights them (true colour), and nothing else moved.
    for there (Oct 10 2026, "yes change"): Barnwright's 3D designer wears the
    Yoder site's look too; its warm light is kept at `3ddesign.html?light=warm`,
    which is how every check here opens it (`BARNWRIGHT_PAGE`).
-2. **The finished building is Barnwright's shape for shape, lit the way the
-   Yoder Storage Barns site lights it.** The golden test
-   (`node tools/check-golden.mjs`) compares every triangle with Barnwright's
-   (in Barnwright's warm light). A red golden test is a look change — fix the
-   code, or re-record on purpose with a reason. The light is the Yoder site's
+2. **The engine draws Barnwright's buildings shape for shape, and the
+   standard buildings use Alan's shop numbers where he confirmed them.** The
+   golden test (`node tools/check-golden.mjs`) draws Barnwright's own company
+   with Barnwright's numbers (the standard library without its "How it's
+   built" blocks, `tools/lib/barnwright-company.mjs`) and compares every
+   triangle with Barnwright's (in Barnwright's warm light). Every other
+   company gets the shop standard (Oct 2026, "yes match"): 5/12 roofs, 4 in
+   eaves and 7 ft 9 1/2 in walls on the Utility Shed and Side Utility;
+   6 ft 7 1/2 in walls and barn roofs 3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall
+   at 8, 10 and 12 ft wide on the Lofted Barn and Side Lofted Barn. Other
+   styles keep Barnwright's numbers until Alan says yes.
+   `node tools/check-shop-numbers.mjs` holds the shop numbers (the recorded
+   set `test/golden-shop/`) and `node tools/check-style-sizes.mjs` checks
+   every style at every size. A red golden test is an engine change: fix the
+   code, or re-record on purpose with a reason. A business can change how
+   its own buildings are built in the Dealer Center (How it's built). The
+   light is the Yoder site's
    true colour (`look.trueColour`, on for the demo and by default; its shader,
    rooms and contact shadow are read against
    `yoder-storage-barns/design.html` by `node tools/check-shaders.mjs`). The

@@ -23,7 +23,7 @@
         does not fit, in words; saving it is refused by the server with the
         same words;
      4. a 7 ft Lofted Barn wall saves, the "Saved" box says what changed
-        ("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft"), that every size
+        ("Lofted Barn wall height: 6 ft 7 1/2 in → 7 ft"), that every size
         was drawn and fits, and links to a lot's 3D designer; History says
         it too;
      5. when the price list opens, a style whose own numbers no longer fit
@@ -127,7 +127,7 @@ try {
       ["Barn roof height", "Eave overhang", "Gable-end overhang", "Wall height", "Wooden shop door height"].every((f) => fields.includes(f)) && !fields.includes("Roof pitch"));
     const wall = await page.getAttribute('[data-field="built:LB:wallHeight"]', "placeholder");
     const from = await page.$eval('[data-built="LB"] [data-field="built:LB:wallHeight"] ~ .hint .pl-built-from', (el) => el.textContent).catch(() => "");
-    ok(`${width} wide: an empty box shows the number it builds with ("${wall}") and where it comes from ("${from}")`, wall === "6 ft 8 1/16 in" && from === "Standard: 6 ft 8 1/16 in", `${wall} | ${from}`);
+    ok(`${width} wide: an empty box shows the number it builds with ("${wall}") and where it comes from ("${from}")`, wall === "6 ft 7 1/2 in" && from === "Standard: 6 ft 7 1/2 in", `${wall} | ${from}`);
     ok(`${width} wide: the business-wide card "How your buildings are built" is there`, !!(await page.$(".pl-built-card")) && /Reaches the/.test(await page.textContent(".pl-built-card")));
     ok(`${width} wide: no sideways scrolling`, (await sideways(page)) <= 0, String(await sideways(page)));
     const small = [...await smallTaps(page, '[data-built="LB"]'), ...await smallTaps(page, ".pl-built-card")];
@@ -189,13 +189,13 @@ try {
   await page.click(".pl-bar .btn-accent");
   await page.waitForSelector(".pl-saved", { timeout: 30000 });
   const saved = await page.textContent(".pl-saved");
-  ok("the Saved box says \"Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft\"", saved.includes("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft"), saved.slice(0, 300));
+  ok("the Saved box says \"Lofted Barn wall height: 6 ft 7 1/2 in → 7 ft\"", saved.includes("Lofted Barn wall height: 6 ft 7 1/2 in → 7 ft"), saved.slice(0, 300));
   ok("... that every size was drawn and fits", /Every size of the Lofted Barn was drawn with your numbers and fits\./.test(saved), saved.slice(0, 300));
   const link = await page.getAttribute(".pl-saved a.btn", "href").catch(() => null);
   ok(`... with a link to see it in a lot's 3D designer (${link ? link.slice(0, 40) + "…" : "none"})`, !!link && /^\/d\/[a-z0-9-]+\/#d=/.test(link) && /See the Lofted Barn in the 3D designer/.test(saved), link);
   await page.screenshot({ path: `${OUT}/saved-1280.png` });
   const history = await page.evaluate(async () => (await (await fetch("/api/office/price-list/history", { credentials: "same-origin" })).json()).entries[0].changes);
-  ok("History has the line", history.includes("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft"), JSON.stringify(history));
+  ok("History has the line", history.includes("Lofted Barn wall height: 6 ft 7 1/2 in → 7 ft"), JSON.stringify(history));
 
   /* an option like a steep roof: "Roof pitch at least" on the Options tab */
   await page.click('.tab[data-key="options"]');
@@ -251,7 +251,7 @@ try {
     const lb = p.locator(".pl-sheet-card", { hasText: "Lofted Barn" }).first();
     await lb.locator(".pl-built-ro summary").click();
     const lines = await lb.locator(".pl-built-ro").textContent();
-    ok(`${width} wide: the Lofted Barn's numbers show, with its own 7 ft wall`, /Wall height\s*7 ft/.test(lines) && /Barn roof height, 10 ft wide\s*4 ft 6 in/.test(lines), lines.slice(0, 200));
+    ok(`${width} wide: the Lofted Barn's numbers show, with its own 7 ft wall`, /Wall height\s*7 ft/.test(lines) && /Barn roof height, 10 ft wide\s*4 ft(?!\s*\d)/.test(lines), lines.slice(0, 200));
     ok(`${width} wide: no sideways scrolling`, (await sideways(p)) <= 0);
     const small = await smallTaps(p, ".pl-built-ro");
     ok(`${width} wide: the "How it's built" line is at least 44 px tall`, small.length === 0, small.join("; "));
@@ -276,7 +276,7 @@ try {
     await p.click(".pl-bar .btn-accent");
     await p.waitForSelector(".pl-saved", { timeout: 60000 });
     const saved = await p.textContent(".pl-saved");
-    ok("the demo saves a 7 ft Lofted Barn wall, checked at every size, in the page", saved.includes("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft") && /Every size of the Lofted Barn was drawn/.test(saved), saved.slice(0, 300));
+    ok("the demo saves a 7 ft Lofted Barn wall, checked at every size, in the page", saved.includes("Lofted Barn wall height: 6 ft 7 1/2 in → 7 ft") && /Every size of the Lofted Barn was drawn/.test(saved), saved.slice(0, 300));
     ok("... and never calls the real server", calls.length === 0, calls.slice(0, 3).join(" "));
     ok("no errors in the demo", p.errors.length === 0, p.errors.slice(0, 3).join(" | "));
     await p.context().close();

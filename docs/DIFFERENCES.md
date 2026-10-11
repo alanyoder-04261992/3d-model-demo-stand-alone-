@@ -1,11 +1,13 @@
 # Where this designer deliberately behaves differently from Barnwright's
 
-The finished building is drawn exactly like Barnwright's (the golden test proves
-it triangle for triangle). This list is everything ELSE that behaves
-differently on purpose, with the reason. Each change is either a real bug in
-Barnwright's designer that this product should not inherit, or something a
-standalone product needs. None of them changes the shape of a finished
-building; one (#25) changes its light, because Alan chose the Yoder site's.
+The drawing engine draws a building exactly like Barnwright's (the golden test
+proves it triangle for triangle, on Barnwright's own company with Barnwright's
+numbers). This list is everything ELSE that behaves differently on purpose,
+with the reason. Each change is either a real bug in Barnwright's designer
+that this product should not inherit, or something a standalone product
+needs, or Alan's own choice. Only #26 changes the shape of a finished
+building (Alan's shop numbers on four standard styles); one (#25) changes its
+light, because Alan chose the Yoder site's.
 
 If you find a difference that is not on this list, it is a bug — or it belongs
 on this list with a reason.
@@ -192,3 +194,43 @@ finished designer retains the golden geometry.
     Weather King chips, `designer-colors.js`) are a company's colour list, not
     the building's look, and are not changed; that question is with Alan
     (docs/FOR-ALAN.md, Choices about the product).
+
+## Alan's shop numbers (Oct 2026)
+
+26. **Standard buildings use Alan's shop numbers where he confirmed them**
+    (Alan, Oct 11 2026: "yes match", for every dealer). They are "How it's
+    built" blocks on the library styles in
+    `library/manufacturers/standard.json` (each with its `_source`), so every
+    company on the standard line gets them, and a Dealer Center business can
+    still set its own:
+
+    | Style | Number | Barnwright | Now | Source |
+    |---|---|---|---|---|
+    | Utility Shed, Side Utility | roof pitch | about 6 1/2/12 (6.48/12) | 5/12 at every width | utility-framing skill: standard A-frame pitch |
+    | Utility Shed, Side Utility | eave | about 4 7/16 in | 4 in, measured level | utility-framing skill: 4 in beyond each side wall |
+    | Utility Shed, Side Utility | wall | 7 ft 9 in | 7 ft 9 1/2 in | 89 in studs + three 1 1/2 in plates (derived) |
+    | Lofted Barn, Side Lofted Barn | wall | 6 ft 8 in | 6 ft 7 1/2 in | 75 in studs + three 1 1/2 in plates (derived) |
+    | Lofted Barn, Side Lofted Barn | barn roof height at 8, 10, 12 ft wide | 3 ft 7 3/16 in, 4 ft 6 in, 5 ft 4 13/16 in | 3 ft 7 3/4 in, 4 ft, 4 ft 3 in | shed-measurements skill: loft truss peaks |
+
+    What "match" means and does not: the peak heights and wall heights match
+    his shop. The barn roof's knee is drawn where Barnwright drew it, so the
+    drawn slopes are not his truss pieces (at 8 ft wide the upper slope is
+    about 38 5/8 in long against his 34 in piece). The utility eave is 4 in
+    out but drawn sloping, not his level 2 in end. A 14 ft wide lofted barn,
+    and every other width he did not give, keeps the library shape, held so a
+    wider barn is never lower. The other 19 styles (garages, metal buildings,
+    Dog Kennel, Garden Utility, Dormer Shed, Metal Lofted Barn, Lofted Barn
+    Garage, cabins, Standard Barn, cottages) keep Barnwright's numbers until
+    Alan says yes; a yes is one built block, no code.
+
+    Because a 5/12 roof is lower, the 18x24 gable window no longer fits the
+    gable of an 8, 10 or 12 ft Utility Shed or Side Utility (on 8 and 10 ft it
+    already poked through at Barnwright's pitch), so it is not offered there
+    (`model/layout.js gableItemFits`; Barnwright offers it and cuts it off at
+    the roof). Wall upgrades priced by the square foot follow the new walls.
+
+    Barnwright's own company is the standard line without those blocks
+    (`tools/lib/barnwright-company.mjs barnwrightManufacturer`), so
+    `check-golden`, `check-look` and `check-model-live` still compare with
+    Barnwright number for number; `tools/check-shop-numbers.mjs` holds the
+    shop numbers (the recorded set `test/golden-shop/shop-standard.json`).
