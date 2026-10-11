@@ -11,6 +11,8 @@
                                 and remembers the reported lot count
      POST /api/support-consent  the owner's "help from Barnwright" switch
      POST /api/support-verify   checks a support pass it issued
+     POST /api/setup-service    a Barnwright change saved by hand in a
+                                visit, one service line for each version
      POST /api/help-pass        a help pass good for 10 minutes for the
                                 Sales Inbox ("question", "thread" or
                                 "problem"), for every business whose key
@@ -36,7 +38,8 @@ export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "si
     name: "Sample Storage Barns", contact: "Chris Walker", email: "chris@samplebarns.example", siteUrl: "https://samplebarns.barnwrightsoftware.com", audit: [],
   };
   /* helpPasses: every help pass asked for ({kind, subject}), for the checks */
-  const room = { down: false, calls: [], helpPasses: [], business, publicKeyPem, origin: "https://control-room.test" };
+  /* setupService: the visit saves told to the service record (POST /api/setup-service) */
+  const room = { down: false, calls: [], helpPasses: [], setupService: [], business, publicKeyPem, origin: "https://control-room.test" };
   const now = () => clock.t;
 
   const answer = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
@@ -128,6 +131,16 @@ export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "si
     if (path === "/api/support-verify") {
       try { return answer({ ok: true, claims: verifySupport(body.token, c, t) }); }
       catch { return answer({ error: "Support access is not valid." }, 403); }
+    }
+    /* a Barnwright change saved by hand in a visit (control-room.ts
+       recordSetupService): one service line for each version */
+    if (path === "/api/setup-service") {
+      if (body.action !== "setup-saved" || !Number.isSafeInteger(body.version) || body.version < 1) return answer({ error: "Choose a supported service action." }, 400);
+      if (body.changes !== undefined && (!Array.isArray(body.changes) || body.changes.length > 500)) return answer({ error: "Send at most 500 change lines." }, 400);
+      const eventId = `setup:${c.id}:${body.version}`;
+      const duplicate = room.setupService.some((x) => x.eventId === eventId);
+      if (!duplicate) room.setupService.push({ eventId, ...body });
+      return answer({ ok: true, eventId, duplicate });
     }
     if (path === "/api/help-pass") {
       const kinds = ["question", "thread", "problem"];

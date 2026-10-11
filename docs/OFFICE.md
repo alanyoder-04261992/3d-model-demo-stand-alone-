@@ -1206,6 +1206,13 @@ change also needs the site's own Origin, like every `/api/office/` change):
 * When the owner saves over a Barnwright save, their 409 says "Barnwright
   saved a change while you were working. Reload to see it, then make yours
   again." with `savedAt` for the browser to show the time.
+* Each save and put back in a visit is told to the Control Room's service
+  record, as the door's saves already are: `POST /api/setup-service` on
+  the control room, signed in with the activation key like the check-in,
+  `{customerId, siteId, action: "setup-saved", version, versionBefore,
+  changes (the first 500), more, actor, undo}` (`undo` is true for a put
+  back). The control room writes one line for each version. Best effort,
+  3 seconds at most: when it can't be reached, the save still stands.
 
 ### The owner's card: Settings, Barnwright
 

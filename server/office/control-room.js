@@ -30,6 +30,9 @@
      verifySetupPass() Barnwright setup access (added here): checks a setup
                       pass offline with the control room's public key
                       (docs/OFFICE.md, "The pass")
+     forwardSetupService() Barnwright setup access (added here): a change
+                      Alan saved by hand in a visit, for the control room's
+                      service record
 
    Never import this file into the browser (it uses node:crypto), and never
    into server/office/index.js (the in-browser demo runs that file). */
@@ -281,6 +284,26 @@ export class TenantLicenseClient {
     return { id: c.id, actor: c.actor, via: c.via, action: c.action, issuedAt: c.issuedAt, expiresAt: c.expiresAt };
   }
 
+  /* Added in the Dealer Center: a Barnwright change saved by hand in a
+     visit (Open their price list), told to the control room's service
+     record: POST /api/setup-service, signed in like /api/license with the
+     activation key. The control room writes one line for each version
+     (setup:<business>:<version>), so telling it twice writes nothing more.
+     report: {version, versionBefore, changes, actor, undo}. The door's own
+     saves are written there by the control room itself. */
+  async forwardSetupService({ version, versionBefore, changes = [], actor, undo = false }, { timeoutMs } = {}) {
+    if (!Number.isSafeInteger(version) || version < 1 || !Number.isSafeInteger(versionBefore) || versionBefore < 0) throw new Error("Invalid setup service report");
+    const lines = (Array.isArray(changes) ? changes : []).filter((x) => typeof x === "string").map((x) => x.slice(0, 300));
+    const response = await this.request(`${this.origin}/api/setup-service`, {
+      method: "POST", redirect: "error", signal: AbortSignal.timeout(timeoutMs ?? this.options.timeoutMs ?? 10_000),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${this.options.activationKey}` },
+      body: JSON.stringify({ customerId: this.options.customerId, siteId: this.options.siteId, action: "setup-saved", version, versionBefore,
+        changes: lines.slice(0, 500), more: Math.max(0, lines.length - 500), actor: String(actor || "").slice(0, 200), undo: undo === true }),
+    });
+    if (!response.ok) throw new Error("The setup service line could not be written");
+    return true;
+  }
+
   /* Added in the Dealer Center (not in the SDK): the control room's POST
      /api/help-pass, signed in like /api/license with the activation key.
      kind: "question" (someone asks; subject is the question's first words,
@@ -351,5 +374,6 @@ export function misconfiguredLicense() {
     verifySupportAccess: async () => refuse(),
     helpPass: async () => refuse(),
     verifySetupPass: () => refuse(),
+    forwardSetupService: async () => refuse(),
   };
 }

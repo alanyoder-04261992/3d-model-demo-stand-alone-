@@ -1439,6 +1439,38 @@ section("A12 / F7 / DCSEC-6. The scheduled check-in renews the lease first, then
   setup.liveRecord = real;
 }
 
+section("A10 / E2E-1. A visit's save is told to the Control Room's service record, best effort");
+{
+  /* found end to end: the door's saves reach the Control Room's service
+     record, but a change Alan saved by hand in a visit never did */
+  const V = business();
+  await V.setUp(); await V.agree("2.2");
+  const c = cookieFrom(await V.start(V.pass()));
+  let pl = (await V.visit("GET", "price-list", undefined, c)).data;
+  let s = structuredClone(pl.settings);
+  s.offer.UT.sizes["10x16"] = 5390;
+  let x = await V.visit("PUT", "price-list", { settings: s, version: pl.version }, c);
+  const told = V.room.setupService;
+  ok("a visit's save tells the Control Room: setup-saved, the new version, the one before, the change words, who", x.status === 200 && told.length === 1
+    && told[0].eventId === "setup:cust_testing:2" && told[0].action === "setup-saved" && told[0].version === 2 && told[0].versionBefore === 1
+    && JSON.stringify(told[0].changes) === JSON.stringify(["Utility Shed 10×16: $5,190 → $5,390"]) && told[0].actor === ACTOR && told[0].undo === false
+    && told[0].customerId === "cust_testing" && told[0].siteId === "site-testing-1", JSON.stringify(told));
+  x = await V.visit("POST", "price-list/restore", { version: 1, current: 2 }, c);
+  ok("... and a put back in the visit, as a put back (undo)", x.status === 200 && told.length === 2 && told[1].version === 3 && told[1].versionBefore === 2 && told[1].undo === true, JSON.stringify(told[1] || x.data).slice(0, 300));
+  V.room.down = true;
+  pl = (await V.visit("GET", "price-list", undefined, c)).data;
+  s = structuredClone(pl.settings);
+  s.offer.UT.sizes["10x16"] = 5490;
+  x = await V.visit("PUT", "price-list", { settings: s, version: pl.version }, c);
+  ok("a Control Room that can't be reached changes nothing: the save stands", x.status === 200 && x.data.version === 4 && (await V.priceList()).version === 4 && told.length === 2, JSON.stringify(x.data).slice(0, 200));
+  V.room.down = false;
+  const door = V.room.calls.filter((p) => p === "/api/setup-service").length;
+  pl = (await V.visit("GET", "price-list", undefined, c)).data;
+  x = await V.visit("PUT", "price-list", { settings: pl.settings, version: pl.version }, c);
+  ok("a save that changes nothing tells nothing", x.status === 200 && V.room.calls.filter((p) => p === "/api/setup-service").length === door, JSON.stringify(x.data).slice(0, 200));
+  ok("an unconnected copy's misconfigured license refuses to tell anything", await misconfiguredLicense().forwardSetupService({ version: 2, versionBefore: 1 }).then(() => false, () => true));
+}
+
 console.log("");
 if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} setup access checks failed.`);

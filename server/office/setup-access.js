@@ -590,8 +590,22 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       if (e?.locked) await refusedNote(e.problems?.[0] || e.message);
       throw e;
     }
-    if (saved.changes?.length) await note(changedWords(s.actor, saved.changes));
+    if (saved.changes?.length) {
+      await note(changedWords(s.actor, saved.changes));
+      await tellRoom({ version: saved.version, versionBefore: saved.version - 1, changes: saved.changes, actor: s.actor, undo: restore });
+    }
     return saved;
+  }
+
+  /* A visit's save, told to the Control Room's service record (POST
+     /api/setup-service, one line for each version there), as the door's
+     saves already are. Best effort, 3 seconds at most: a Control Room that
+     is down or slow changes nothing here, and the save stands. */
+  async function tellRoom(report) {
+    if (!connected || typeof license.forwardSetupService !== "function") return;
+    try { await withinMs(license.forwardSetupService(report, { timeoutMs: 3000 }), 3000); } catch (e) {
+      log("A Barnwright visit's save couldn't be told to the Control Room:", e?.name || "Error");
+    }
   }
 
   /* POST /api/office/barnwright/end: Done. */
