@@ -18,7 +18,10 @@
                                     invite with its password) or "recovery"
                                     -> a token pair
      POST /recover                  a reset link for an email (same answer
-                                    whether it exists or not)
+                                    whether it exists or not); like /token and
+                                    /signup it finds the login by its email
+                                    exactly as saved, and sends one link a
+                                    minute at most (429 inside the minute)
 
    fakeIdentity({clock}) -> {
      handle(request)         the answer to a browser's request (any origin)
@@ -29,6 +32,9 @@
      linkToken(type, email)  the token an email link would carry: "invite"
                              (makes the invited login), "signup", "recovery"
      trouble                 {server: null | "down" | "slow" | 429 | 503,
+                              serverUser: null | 503 (only the server's
+                              GET /user: a refresh token it spent, then
+                              Identity broke before it could ask whose),
                               browser: null | "slow" | 429 | 503,
                               logout: null | "hang"} -- "down" fails like
                              a network error, "slow" waits until the caller
@@ -56,7 +62,7 @@ export function fakeIdentity({ clock = () => Date.now(), ttl = 3600 } = {}) {
   const refresh = new Map();      /* token -> {userId, spent} */
   const links = new Map();        /* token -> {type, email} */
   const calls = [];
-  const trouble = { server: null, browser: null, logout: null };
+  const trouble = { server: null, serverUser: null, browser: null, logout: null };
   const me = { users, calls, trouble, ttl, short };
 
   me.addUser = ({ id = randomUUID(), email, password = null, name = "", confirmed = true }) => {
@@ -65,6 +71,8 @@ export function fakeIdentity({ clock = () => Date.now(), ttl = 3600 } = {}) {
     return u;
   };
   const byEmail = (email) => users.find((u) => u.email.toLowerCase() === String(email || "").toLowerCase());
+  /* netlify/gotrue's own lookup (FindUserByEmailAndAudience): "email = ?", exactly as saved */
+  const exactly = (email) => users.find((u) => u.email === String(email || ""));
   me.linkToken = (type, email) => {
     if (type === "invite" && !byEmail(email)) me.addUser({ email, confirmed: false });
     const token = randomBytes(12).toString("base64url");
@@ -137,8 +145,8 @@ export function fakeIdentity({ clock = () => Date.now(), ttl = 3600 } = {}) {
     }
     if (path === "/signup" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
-      if (byEmail(body.email)?.confirmed_at) return J({ code: 400, msg: "A user with this email address has already been registered" }, 400);
-      const u = byEmail(body.email) || me.addUser({ email: body.email, confirmed: false });
+      if (exactly(body.email)?.confirmed_at) return J({ code: 400, msg: "A user with this email address has already been registered" }, 400);
+      const u = exactly(body.email) || me.addUser({ email: body.email, confirmed: false });
       u.password = body.password;
       u.name = body.data?.full_name || "";
       me.lastSignup = me.linkToken("signup", u.email);
@@ -160,7 +168,13 @@ export function fakeIdentity({ clock = () => Date.now(), ttl = 3600 } = {}) {
     }
     if (path === "/recover" && req.method === "POST") {
       const body = await req.json().catch(() => ({}));
-      if (byEmail(body.email)) me.lastRecovery = me.linkToken("recovery", body.email);
+      const u = exactly(body.email);
+      if (u) {
+        if (u.recoverySentAt && clock() - u.recoverySentAt < 60000) return J({ code: 429, msg: "Rate limit exceeded, try again later" }, 429);
+        u.recoverySentAt = clock();
+        me.lastRecovery = me.linkToken("recovery", u.email);
+        me.recoveries = (me.recoveries || 0) + 1;
+      }
       return J({});
     }
     return J({ code: 404, msg: "Not found" }, 404);
@@ -195,6 +209,7 @@ export function fakeIdentity({ clock = () => Date.now(), ttl = 3600 } = {}) {
     if (t === "down") { calls.push({ ...note, status: "network error" }); throw new TypeError("fetch failed"); }
     if (t === "slow") { calls.push({ ...note, status: "too slow" }); return slow(init.signal); }
     if ((t === 429 || t === 503) && path !== "/settings") { calls.push({ ...note, status: t }); return J({ code: t, msg: "Try later" }, t); }
+    if (trouble.serverUser && path === "/user") { calls.push({ ...note, status: trouble.serverUser }); return J({ code: trouble.serverUser, msg: "Try later" }, trouble.serverUser); }
     const res = await answer(req, path);
     calls.push({ ...note, status: res.status });
     return res;

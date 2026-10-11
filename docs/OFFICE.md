@@ -107,16 +107,30 @@ localStorage, no `nf_jwt` or `nf_refresh` cookie, no timer.
 * **"Keep me signed in on this device for 30 days"** is under the password
   on Sign in, on Make your login and on the invite and reset links'
   Choose a password, with "Leave it off on a computer other people use."
-  It starts unticked every time. **Ticked**: the cookie has an end date, so
-  closing the browser doesn't sign the person out; it is set by the server,
-  so Safari's 7-day limit on what a page's own script stores doesn't cut it
-  short (the Dealer Center on an iPhone or iPad Home Screen keeps its own
-  cookies, so it is ticked there too). **Not ticked**: signed in until the
-  browser closes. Either way the sign-in ends **30 days** after it started
-  (using it doesn't make it longer); then the Sign in card says "You were
-  kept signed in on this device for 30 days. Sign in again." (the cookie
-  lives two days more so the server can say why). The person menu says
-  "Signed in on this device until Nov 10."
+  It starts unticked, except on the Sign in card of a device whose kept 30
+  days just ran out (the device the person chose to keep). **Ticked**: the
+  cookie has an end date, so closing the browser doesn't sign the person
+  out; it is set by the server, so Safari's 7-day limit on what a page's
+  own script stores doesn't cut it short (the Dealer Center on an iPhone or
+  iPad Home Screen keeps its own cookies, so it is ticked there too). **Not
+  ticked**: signed in until the browser closes -- and because browsers
+  often keep that cookie anyway (Edge and Chrome bring it back with
+  "continue where you left off", Edge keeps running after its window
+  closes, the iPad rarely closes Safari), the server also ends it after
+  **12 hours without use**: "You weren't kept signed in on this device, so
+  you were signed out after 12 hours away. Sign in again." Either way the
+  sign-in ends **30 days** after it started (using it doesn't make it
+  longer); then the Sign in card says "You were kept signed in on this
+  device for 30 days. Sign in again." (the cookie lives two days more so
+  the server can say why). The person menu says "Signed in on this device
+  until Nov 10 at 5:52 PM.", and in the last 24 hours a note on top of
+  every screen says "Your sign-in on this device ends today at 5:52 PM.
+  Sign out and sign in again before then to keep going." If it ends while
+  a screen has changes not saved yet, the next Save never reloads the page
+  (nothing typed is lost): a note says "Your 30 days on this device are
+  up. Your changes are still here: open the Dealer Center in a new tab,
+  sign in, then come back and tap Save." -- and once signed in in that new
+  tab, Save works.
 * **Every request is as strict as before.** The server renews Identity's
   one-hour token itself when it has under 5 minutes left (one request at a
   time, so two never spend the same refresh token), and asks Identity whose
@@ -130,10 +144,38 @@ localStorage, no `nf_jwt` or `nf_refresh` cookie, no timer.
   stays signed in when the computer signs out. A screen with unsaved
   changes asks first. If the server can't be reached, the page never shows
   the Dealer Center again until the sign-out is done. **Sign out on every
-  device** (the person menu) ends every sign-in of that person, here and at
-  Identity. Choosing a new password from a reset link ends the person's
-  other sign-ins. The other devices' Sign in card says why ("You signed out
-  on every device.", "Your password was changed.").
+  device** (the person menu) ends every Dealer Center sign-in of that
+  person -- found from this device's own record, so it never needs Identity
+  for that -- and then asks Identity to drop every refresh token of theirs.
+  If Identity didn't answer, every Dealer Center sign-in has still ended and
+  the Sign in card says "You're signed out of the Dealer Center on every
+  device, but the sign-in didn't answer. In a minute, sign in and tap Sign
+  out on every device again to finish." If the Dealer Center itself couldn't
+  do it, this device stays signed in and says so (never a card that looks
+  done). **A new password** from a reset link: the password is saved, then
+  every device is signed out the same way with the link's own sign-in (at
+  Identity too, so even a sign-in somebody kept from the old password stops
+  working), and only then is the person signed in with the new password; if
+  Identity breaks half way, the card says "Your new password is saved, but
+  the sign-in didn't answer, so your other devices may still be signed in.
+  Wait a minute, then tap Save password again." and Save password finishes
+  it. The other devices' Sign in card says why ("You signed out on every
+  device.", "Your password was changed.").
+* **Only the team gets a sign-in.** A login that isn't on the team (no
+  person record, no invite, not the first owner) gets no cookie and no
+  record, only "You're not on the team here yet. Ask the owner to add
+  maria@… to the team, then sign in again." So a stranger's own login
+  (anyone can make one) can't fill the store with sign-ins.
+* **The records sign nobody in.** The tokens in a sign-in's record are
+  sealed (AES-256-GCM) with a key made from the cookie's 32 random bytes,
+  which only the browser has; the record's name is the cookie's hash. So
+  whoever can read the store (anyone with a Netlify key for the site) finds
+  nothing that works at Identity or at the Dealer Center. A sign-in that ran
+  out loses its tokens at the check-in every six hours, whether or not that
+  person signs in again. At most 20 sign-ins at once per person: past that,
+  the ones not kept end first, the least recently used first ("You were
+  signed in on more than 20 devices or browsers, so this one was signed
+  out."), so a kept iPad never makes way for leftovers from a lot computer.
 * **Other tabs** of the same browser follow at once: signing out in one tab
   shows the Sign in card in the others, signing in brings them back (a
   screen with unsaved changes gets a note instead).
@@ -327,7 +369,7 @@ each other.
 | `price-list-history/<version>` | `{version, savedAt, savedBy, changes:[text], settings}` (the version padded to 6 digits in the key) |
 | `lots/<slug>` | `{slug, name, address, city, state, zip, phone, email, hours, website, embedOrigins[], active, createdAt, updatedAt}` |
 | `people/<userId>` | `{userId, email, name, role, lots[], active, addedAt, addedBy, lastSeenAt}` |
-| `sessions/<user key>/<SHA-256 of the cookie>` | a sign-in (see "Signing in and staying signed in"): `{v, userId, keep, startedAt, endsAt, accessToken, accessExp, refreshToken, refreshedAt, refreshing?}`; once ended `{userId, keep, startedAt, endsAt, ended: "time"\|"password"\|"everywhere"\|"identity", endedAt}` with no tokens, kept two days so the page can say why; each sign-in tidies that person's own (at most 20 at once). The user key is the first 24 hex of the SHA-256 of `dc-signin:` and the person's Identity id (the cookie starts with it); only the cookie's hash is kept |
+| `sessions/<user key>/<SHA-256 of the cookie>` | a sign-in (see "Signing in and staying signed in"): `{v: 2, userId, keep, startedAt, endsAt, lastUsedAt, sealed, accessExp, turn, refreshedAt, refreshing?}` -- `sealed` is base64url(12-byte IV, AES-256-GCM of the access and refresh tokens, bound to the record's name) with a key made by HKDF-SHA256 from the cookie's 32 random bytes ("dc-signin tokens v1"), so the record alone signs nobody in; `turn` counts renewals (one at a time); `lastUsedAt` is written at most every 5 minutes. Once ended `{v, userId, keep, startedAt, endsAt, ended: "time"\|"idle"\|"password"\|"everywhere"\|"identity"\|"many", endedAt}` with no tokens, kept two days so the page can say why. Each sign-in tidies that person's own (at most 20 live -- not kept and least recently used end first -- and 20 ended); the check-in every six hours ends what ran out everywhere and removes what is two days past. Only a login on the team gets one. The user key is the first 24 hex of the SHA-256 of `dc-signin:` and the person's Identity id (the cookie starts with it) |
 | `invites/<sha256(email)>` | `{email, name, role, lots[], invitedAt, invitedBy}` |
 | `customers/<id>` | the whole customer (below) |
 | `lists/<slug>` | one row per customer of that lot, for lists, search and the Today screen |
@@ -399,8 +441,8 @@ asked answers 503 `{code: "sign-in-down"}`, never 401.
 | Route | Who | Does |
 |---|---|---|
 | `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup, and for a login that isn't on the team (`person` null) it leaves out `phone`, `email` and `website`; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access"); `session` is `{keep, endsAt}` for a sign-in on the cookie (null for one from before it); `setupNeeded` is true for the owner until First setup is done, which includes a price list Barnwright started before the owner's first sign-in (`business` is then not null, and First setup skips the starting price list: see "Before the owner first signs in") |
-| `POST session` | anyone | `{refreshToken, keep, why?}`: a fresh sign-in from Identity (the page's own password sign-in, or an email link) becomes the sign-in cookie: the refresh token is swapped at Identity at once, only a confirmed email counts, `keep` gives the cookie its 30 days (and two), `why: "reset"` (a new password) ends the person's other sign-ins → 201 `{ok, keep, endsAt}` and the cookie; 401 "That sign-in ran out. Sign in again." for a spent or made-up token; 503 when Identity can't be asked |
-| `POST sign-out` | anyone | `{}` ends this device's sign-in; `{everywhere: true}` ends every sign-in of the person and signs them out of Identity → 200, with the sign-in cookie and Identity's old `nf_jwt` and `nf_refresh` cleared |
+| `POST session` | anyone | `{refreshToken, keep, why?}`: a fresh sign-in from Identity (the page's own password sign-in, or an email link) becomes the sign-in cookie: the refresh token is swapped at Identity at once, only a confirmed email counts, `keep` gives the cookie its 30 days (and two); `why: "reset"` (a page from before this) ends the person's other sign-ins, and when that can't be done nothing is signed in (503) → 201 `{ok, keep, endsAt}` and the cookie; 403 `{code: "not-on-team", email}` "You're not on the team here yet. Ask the owner to add … to the team, then sign in again." for a login with no person record, no invite and no first-owner claim (no cookie, no record); 401 "That sign-in ran out. Sign in again." for a spent or made-up token; 503 when Identity can't be asked |
+| `POST sign-out` | anyone | `{}` ends this device's sign-in. `{everywhere: true, why?: "password"}` ends every Dealer Center sign-in of the person -- the one whose token is in the `Authorization` header (a reset link's), else the one this device's record names, else a sign-in from before the cookie -- then asks Identity to drop every refresh token of theirs → 200 `{ok, everywhere: true, identity: true \| false}` (false: the Dealer Center sign-ins ended, Identity didn't answer), with the sign-in cookie and Identity's old `nf_jwt` and `nf_refresh` cleared; 503 with this device still signed in when the records couldn't be changed, or Identity was needed to find the person and can't be asked |
 | `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright Terms and Conditions.") and the agreement is kept. When Barnwright already started the price list, `start` is left out: the business details are saved into it as the owner's change (only what differs) and the agreement is kept → 200 `{business}` (see "Before the owner first signs in") |
 | `POST terms` | owner | `{agree: true}` agrees to the current Barnwright Terms and Conditions (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
@@ -2101,9 +2143,10 @@ exactly as they were, and nothing here sends email.
   in `people/<userId>`, never in anything the browser can edit. The
   password goes only to Identity. The sign-in is kept by the server, in a
   cookie no page script can read and no other website can use
-  (`__Host-dc_signin`: HttpOnly, Secure, SameSite Strict, no Domain); the
-  records keep only the cookie's hash; no cookie or token is ever written
-  to an answer, an error, a log or a Help report.
+  (`__Host-dc_signin`: HttpOnly, Secure, SameSite Strict, no Domain); a
+  record's name is the cookie's hash and its tokens are sealed with a key
+  only the cookie holds, so the store alone signs nobody in; no cookie or
+  token is ever written to an answer, an error, a log or a Help report.
 * **First owner.** The `OWNER_EMAIL` setting names the first owner. The first
   confirmed sign-in with that email claims the business, once; changing the
   setting later does not make another owner.
@@ -2141,6 +2184,8 @@ and Sales Inbox, so questions and answers work too. `npm run office --
 sample person's password is `sample-password`), against a pretend Netlify
 Identity (`tools/lib/fake-identity.mjs`) that behaves like Netlify's:
 "Keep me signed in on this device for 30 days", Sign out, the email links.
+Add `--demo` to offer the "try it" demo on that card too, as Alan's
+learning preview and demo site do.
 
 ## Try it without signing in
 
@@ -2502,16 +2547,19 @@ connected (and in the demo): the answers and one line with
 support@barnwrightsoftware.com instead of the box. See "Help" above.
 
 **Sign in** — email and password; "Keep me signed in on this device for 30
-days" (unticked, with "Leave it off on a computer other people use."); "Make
+days" (unticked, with "Leave it off on a computer other people use.";
+ticked on day 31 of a device that was kept); "Make
 your login" (for people the owner added; it has the tick too, kept in this
 browser until the email's link opens here); "Forgot your password?"; links
 from Netlify emails (confirm, invite, reset) land here and are handled:
 the invite's "Welcome! Choose a password" and the reset's "Choose a new
 password" (which shows whose email) have the tick and sign the person in.
-Why the last sign-in ended shows above the boxes. Someone signed in but not
-added yet sees "You're signed in as maria@…, but you're not on the team yet.
-Ask the owner to add this email." The person menu has **Sign out** and
-**Sign out on every device**, and says until when a kept sign-in lasts.
+Why the last sign-in ended shows above the boxes. A login that isn't on the
+team gets no sign-in: "You're not on the team here yet. Ask the owner to add
+maria@… to the team, then sign in again." (someone removed while signed in
+sees "You're not on the team yet" with Check again). The person menu has
+**Sign out** and **Sign out on every device**, and says until when (day and
+time) a kept sign-in lasts; its last 24 hours a note on top says so too.
 
 **First setup** (`#/setup`, the first owner, once; the menu is hidden
 until it's done) — three steps: your business (your name, business name,

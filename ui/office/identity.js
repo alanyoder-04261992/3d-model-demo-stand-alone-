@@ -9,7 +9,9 @@
 
      passwordSignIn(email, password)  -> refresh token
      signup(email, password, name)    "Make your login" (Identity emails a link)
-     recover(email)                   "Forgot your password?" (same answer either way)
+     recover(email)                   "Forgot your password?" (as typed, and once
+                                      more in small letters when it has capitals;
+                                      the same answer either way)
      verify(type, token, password?)   a link from an email: "signup" (confirm,
                                       or an invite with its new password),
                                       "recovery" -> {access, refresh}
@@ -118,8 +120,17 @@ export async function signup(email, password, name) {
   throw new SignInError("refused", status);
 }
 
+/* Identity finds the login by its email exactly as it was saved: a login
+   made before "Make your login" saved emails in small letters may have
+   capitals. So the email as typed first, then (when it has capitals) in
+   small letters, the same rule as passwordSignIn. Identity sends one email
+   at most: a second ask for the same login inside a minute is refused. */
 export async function recover(email) {
-  try { await ask("/recover", { method: "POST", body: { email: String(email).trim().toLowerCase() } }); } catch { /* the same answer either way */ }
+  const typed = String(email || "").trim();
+  const lower = typed.toLowerCase();
+  for (const address of lower === typed ? [typed] : [typed, lower]) {
+    try { await ask("/recover", { method: "POST", body: { email: address } }); } catch { /* the same answer either way */ }
+  }
 }
 
 export async function verify(type, token, password) {

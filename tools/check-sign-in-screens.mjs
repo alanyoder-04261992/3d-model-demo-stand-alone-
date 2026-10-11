@@ -51,7 +51,25 @@
         never used to sign anybody in;
     13. a tab still marked from a Barnwright visit that ended offers "Sign
         in to this Dealer Center", which leads to the Sign in card;
-    14. the local Dealer Center's "pick who you are" has no tick.
+    14. the local Dealer Center's "pick who you are" has no tick;
+    15. day 30 ends while Settings has a change not saved yet: Save never
+        reloads (no "Leave site?" box), the typed words stay, a note says
+        to sign in in a new tab, and then Save saves;
+    16. not ticked, the browser kept the cookie (Edge's "continue where
+        you left off", an iPad that never closes Safari): 12 hours later
+        it asks to sign in, saying why;
+    17. "Forgot your password?" with a login saved with capitals sends the
+        link; a login that isn't on the team gets no sign-in, only words;
+    18. signing out of the "try it" demo leaves a real Dealer Center tab in
+        the same browser alone.
+   Also in 5b: Sign out on every device while Identity can't be asked
+   still signs the iPad out (and says Identity didn't answer), and when the
+   Dealer Center couldn't do it this device stays signed in and says so; in
+   10: the last 24 hours a note says when this device's sign-in ends, the
+   person menu says the time, and the day-31 card starts ticked; in 11:
+   the reset link survives Identity breaking half way (Save password again
+   finishes it), and a refresh token kept from the old password stops
+   working.
 
    Pictures go to test/out/sign-in-screens/. --keep leaves the server
    running; --only 4,8b runs just those parts. */
@@ -86,7 +104,15 @@ const WORDS = {
   day31: "You were kept signed in on this device for 30 days. Sign in again.",
   everywhere: "You signed out on every device. Sign in again.",
   password: "Your password was changed. Sign in with the new one.",
+  everywhereHalf: "You're signed out of the Dealer Center on every device, but the sign-in didn't answer. In a minute, sign in and tap Sign out on every device again to finish.",
+  resetNotOut: "Your new password is saved, but the sign-in didn't answer, so your other devices may still be signed in. Wait a minute, then tap Save password again.",
+  idle: "You weren't kept signed in on this device, so you were signed out after 12 hours away. Sign in again.",
+  endsSoon: "Your sign-in on this device ends ",
+  endsSoonTail: "Sign out and sign in again before then to keep going.",
+  midwork: "Your 30 days on this device are up. Your changes are still here: open the Dealer Center in a new tab, sign in, then come back and tap Save.",
+  notOnTeam: "You're not on the team here yet. Ask the owner to add ",
 };
+const HOUR = 3600000;
 const DAY = 86400000;
 
 let pass = 0, fail = 0;
@@ -103,7 +129,7 @@ async function part(title, fn) {
   try { await fn(); } catch (e) { ok(`${title.replace(/^\d+\. /, "")}: the walk got to the end`, false, String(e?.message || e).split("\n")[0]); }
   /* whatever happened, the next part starts from today with Identity well */
   await setClock(0).catch(() => {});
-  await identity({ server: null, browser: null, logout: null }).catch(() => {});
+  await identity({ server: null, serverUser: null, browser: null, logout: null }).catch(() => {});
 }
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -216,6 +242,7 @@ async function reopened(context, opts = {}) {
   return device({ ...opts, state });
 }
 const shot = (page, name) => page.screenshot({ path: resolve(OUT, name + ".png") }).catch(() => {});
+const textOf = (page, sel) => page.evaluate((q) => [...document.querySelectorAll(q)].map((e) => e.textContent.trim()).join(" | "), sel).catch(() => "");
 async function noSideways(page) { return page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1); }
 
 /* ---- 1 -------------------------------------------------------------------- */
@@ -360,6 +387,38 @@ await part("5. The computer and the iPad", async () => {
   await ipad.close();
 });
 
+await part("5b. Sign out on every device when it can't all be done", async () => {
+  const computer = await device();
+  const ipad = await device({ width: 820, height: 1180 });
+  const pc = await open(computer);
+  const pi = await open(ipad);
+  await signIn(pc, OWNER, { keep: true });
+  await signIn(pi, OWNER, { keep: true });
+  /* the Dealer Center's server can't reach Identity, past its one-minute memory */
+  await setClock(2 * 60000);
+  await identity({ server: "down" });
+  const s = await signOut(pc, { everywhere: true });
+  ok("Identity down: Sign out on every device still lands on the Sign in card, saying the sign-in didn't answer", isSignIn(s) && s.note.includes(WORDS.everywhereHalf), JSON.stringify(s));
+  await shot(pc, "everywhere-identity-down-1280");
+  await identity({ server: null });
+  await pi.reload();
+  await settle(pi);
+  const si = await screen(pi);
+  ok("... Identity back: the iPad asks to sign in, saying so", isSignIn(si) && si.note.includes(WORDS.everywhere), JSON.stringify(si));
+  ok("... with the tick off (only a device whose kept 30 days ran out starts ticked)", !(await pi.getByLabel(WORDS.keep).isChecked()));
+  /* the Dealer Center itself can't do it right now */
+  await signIn(pc, OWNER, { keep: true });
+  await pc.route("**/api/office/sign-out", (r) => r.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Something went wrong on our end. Try again in a minute." }) }));
+  await openMenu(pc);
+  await pc.locator(".person-menu").getByRole("button", { name: "Sign out on every device", exact: true }).click();
+  await sleep(2000);
+  await settle(pc);
+  ok("the Dealer Center couldn't do it: still in the Dealer Center here, saying so (never a card that looks done)", isIn(await screen(pc)) && (await textOf(pc, ".toast")).includes("Something went wrong on our end"), JSON.stringify(await screen(pc)) + " " + (await textOf(pc, ".toast")));
+  await pc.unroute("**/api/office/sign-out");
+  await computer.close();
+  await ipad.close();
+});
+
 /* ---- 6 -------------------------------------------------------------------- */
 await part("6. Two tabs", async () => {
   const ctx = await device();
@@ -465,15 +524,30 @@ await part("10. Day 31", async () => {
   const ctx = await device({ width: 390, height: 844 });
   const page = await open(ctx);
   await signIn(page, OWNER, { keep: true });
+  await setClock(28 * DAY);
+  await page.reload();
+  await settle(page);
+  ok("day 28: no note yet about the sign-in ending", isIn(await screen(page)) && !(await textOf(page, ".sign-in-ends")));
   await setClock(29 * DAY);
   await page.reload();
   await settle(page);
   ok("day 29: still in", isIn(await screen(page)));
+  await setClock(29 * DAY + 12 * HOUR);
+  await page.reload();
+  await settle(page);
+  const soon = await textOf(page, ".sign-in-ends");
+  ok("the last 24 hours: a note on top says when this device's sign-in ends and what to do", soon.startsWith(WORDS.endsSoon) && /(today|tomorrow) at \d{1,2}:\d{2} [AP]M/.test(soon) && soon.includes(WORDS.endsSoonTail), soon);
+  ok("... no sideways scrolling at 390 with it", await noSideways(page));
+  await shot(page, "ends-soon-390");
+  await page.locator(".person-button").click();
+  const menu = await page.locator(".person-menu").innerText().catch(() => "");
+  ok("... the person menu says the day and the time", /Signed in on this device until [A-Z][a-z]{2} \d{1,2} at \d{1,2}:\d{2} [AP]M/.test(menu), menu);
   await setClock(30 * DAY + 60000);
   await page.reload();
   await settle(page);
   const s = await screen(page);
   ok("30 days and a minute: asked to sign in again, with the 30-day words", isSignIn(s) && s.note.includes(WORDS.day31), JSON.stringify(s));
+  ok("... the tick starts ticked: this is the device the person chose to keep", await page.getByLabel(WORDS.keep).isChecked());
   ok("... no sideways scrolling at 390", await noSideways(page));
   await shot(page, "day-31-390");
   ok("... signing in again works", isIn(await signIn(page, OWNER, { keep: true })));
@@ -525,8 +599,8 @@ await part("11. The email links", async () => {
   /* the email's link opens a new tab */
   const p3 = await open(c2, `/dealer#confirmation_token=${st.lastSignup}`);
   const after = await screen(p3);
-  ok("... the confirmation link signs in (not on the team yet, so that screen)", after.screen === "card" && /not on the team yet/.test(after.heading), JSON.stringify(after));
-  ok("... kept, as ticked, and the email was saved in small letters", ((await signInCookie(c2))?.expires || 0) > 0 && /lee\.new@samplebarns\.example/.test(after.words), after.words);
+  ok("... the confirmation link of a login that isn't on the team: no sign-in, the card says to ask the owner", isSignIn(after) && after.note.includes(WORDS.notOnTeam), JSON.stringify(after));
+  ok("... with the email, saved in small letters, and no sign-in cookie made", after.note.includes("lee.new@samplebarns.example") && !(await signInCookie(c2)), after.note);
   await c2.close();
 
   /* a link that ran out */
@@ -548,16 +622,31 @@ await part("11. The email links", async () => {
   await pp.waitForSelector(".form-status:not(:empty)", { timeout: 10000 });
   const { lastRecovery } = await identity({});
   await pp.close();
+  /* somebody who knew the old password kept an Identity sign-in of their own */
+  const kept = await dp.evaluate(async (who) => {
+    const r = await fetch("/.netlify/identity/token", { method: "POST", headers: { "Content-Type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "password", username: who.email, password: who.password }) });
+    return (await r.json()).refresh_token;
+  }, DEALER);
   const rp = await open(phone, `/dealer#recovery_token=${lastRecovery}`);
   s = await screen(rp);
   ok("the reset link: \"Choose a new password\", showing whose", s.heading === "Choose a new password" && (await rp.getByLabel("Email", { exact: true }).inputValue()) === DEALER.email, JSON.stringify(s));
   await shot(rp, "reset-390");
   await rp.getByLabel("Password", { exact: true }).fill("mikes-new-password");
   await rp.getByLabel("Type it again").fill("mikes-new-password");
+  /* Identity breaks half way, for the Dealer Center's server only */
+  await identity({ serverUser: 503 });
+  await rp.getByRole("button", { name: "Save password" }).click();
+  await rp.waitForSelector(".form-status:not(:empty)", { timeout: 15000 }).catch(() => {});
+  const half = await screen(rp);
+  ok("... Identity breaks half way: the password is saved, and it says to tap Save password again", half.screen === "card" && half.status === WORDS.resetNotOut, JSON.stringify(half));
+  await shot(rp, "reset-half-390");
+  await identity({ serverUser: null });
   await rp.getByRole("button", { name: "Save password" }).click();
   await rp.waitForSelector(".topbar", { timeout: 15000 }).catch(() => {});
   await settle(rp);
-  ok("... Save password: in", isIn(await screen(rp)));
+  ok("... Save password again: in", isIn(await screen(rp)), JSON.stringify(await screen(rp)));
+  const reused = await rp.evaluate(async (t) => (await fetch("/api/office/session", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ refreshToken: t, keep: true }) })).status, kept);
+  ok("... a refresh token kept from the old password no longer signs anybody in", reused === 401, String(reused));
   await dp.reload();
   await settle(dp);
   const ds = await screen(dp);
@@ -642,6 +731,135 @@ await part("13. A tab still marked from a Barnwright visit", async () => {
   await ctx.close();
 });
 
+/* ---- 15 ------------------------------------------------------------------- */
+await part("15. Day 30 ends in the middle of a change", async () => {
+  const ctx = await device();
+  const page = await open(ctx);
+  await signIn(page, OWNER, { keep: true });
+  await setClock(30 * DAY - 10 * 60000);
+  await page.goto(BASE + "/dealer#/settings");
+  await page.reload();
+  await settle(page);
+  const box = page.locator('input[type="tel"]').first();
+  const before = await box.inputValue();
+  const typed = "(555) 010-0199";
+  await box.fill(typed);
+  await settle(page, 1000);
+  ok("10 minutes before the 30 days end: Settings, a new phone typed, and the note on top says it ends soon", (await textOf(page, ".sign-in-ends")).startsWith(WORDS.endsSoon), await textOf(page, ".sign-in-ends"));
+  await setClock(30 * DAY + 60000);
+  let reloads = 0;
+  page.on("load", () => { reloads++; });
+  page.removeAllListeners("dialog");
+  const asked = [];
+  page.on("dialog", (d) => { asked.push(d.type()); d.dismiss().catch(() => {}); });
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await sleep(2000);
+  ok("the 30 days end, then Save settings: no reload, and no \"Leave site?\" box", reloads === 0 && asked.length === 0, `reloads ${reloads}, dialogs ${asked.join(",")}`);
+  ok("... the typed phone is still there", (await box.inputValue().catch(() => "")) === typed, await box.inputValue().catch(() => "(gone)"));
+  ok("... a note that stays says what happened and what to do", (await textOf(page, ".banner.signed-out")) === WORDS.midwork, await textOf(page, ".banner.signed-out"));
+  await shot(page, "day-30-mid-change-1280");
+  /* sign in again in a new tab, as the note says */
+  const t2 = await open(ctx);
+  ok("a new tab: the Sign in card, ticked (the same device)", isSignIn(await screen(t2)) && (await t2.getByLabel(WORDS.keep).isChecked()));
+  ok("... signs in", isIn(await signIn(t2, OWNER, { keep: true })));
+  await page.bringToFront();
+  await sleep(1500);
+  ok("back in the first tab: the note is gone, the phone still typed", !(await textOf(page, ".banner.signed-out")) && (await box.inputValue()) === typed);
+  await page.getByRole("button", { name: "Save settings" }).click();
+  await page.waitForFunction(() => /Saved/.test(document.querySelector(".toasts")?.textContent || ""), null, { timeout: 10000 }).catch(() => {});
+  ok("... Save settings saves", /Saved/.test(await textOf(page, ".toast")), await textOf(page, ".toast"));
+  await page.reload();
+  await settle(page);
+  ok("... and after a reload the new phone is there", (await page.locator('input[type="tel"]').first().inputValue()) === typed && before !== typed);
+  await ctx.close();
+});
+
+/* ---- 16 ------------------------------------------------------------------- */
+await part("16. Not ticked: 12 hours away ends it, whatever the browser kept", async () => {
+  const ctx = await device();
+  const page = await open(ctx);
+  await signIn(page, OWNER);
+  await setClock(11 * HOUR);
+  await page.reload();
+  await settle(page);
+  ok("not ticked, the browser never closed: still in 11 hours later", isIn(await screen(page)));
+  await setClock(11 * HOUR + 13 * HOUR);
+  await page.reload();
+  await settle(page);
+  const s = await screen(page);
+  ok("... 13 hours with nobody using it: the Sign in card, saying why", isSignIn(s) && s.note.includes(WORDS.idle), JSON.stringify(s));
+  ok("... with the tick off", !(await page.getByLabel(WORDS.keep).isChecked()));
+  await shot(page, "idle-12-hours-1280");
+  await ctx.close();
+});
+
+/* ---- 17 ------------------------------------------------------------------- */
+await part("17. Logins with capitals, and logins not on the team", async () => {
+  /* a login made before "Make your login" saved emails in small letters */
+  await identity({ addUser: { email: "Pat.Old@SampleBarns.example", password: "pats-password-1", name: "Pat Old" } });
+  const ctx = await device();
+  const page = await open(ctx);
+  const before = (await identity({})).recoveries;
+  await page.getByRole("button", { name: "Forgot your password?" }).click();
+  await page.getByLabel("Email", { exact: true }).fill("Pat.Old@SampleBarns.example");
+  await page.getByRole("button", { name: "Email me a link" }).click();
+  await page.waitForSelector(".form-status:not(:empty)", { timeout: 10000 }).catch(() => {});
+  const after = await identity({});
+  ok("Forgot your password? for a login saved with capitals, typed as made: the link goes", after.recoveries === before + 1, `${before} -> ${after.recoveries}`);
+  await page.getByRole("button", { name: "Back to sign in" }).click();
+  /* a login that isn't on the team: no sign-in, words */
+  await identity({ addUser: { email: "stranger@elsewhere.example", password: "strangers-password", name: "A Stranger" } });
+  const s = await signIn(page, { email: "stranger@elsewhere.example", password: "strangers-password" }, { expect: "words" });
+  ok("a login that isn't on the team: the card says to ask the owner, with the email", isSignIn(s) && s.status.startsWith(WORDS.notOnTeam) && s.status.includes("stranger@elsewhere.example"), JSON.stringify(s));
+  ok("... and no sign-in cookie", !(await signInCookie(ctx)));
+  await shot(page, "not-on-team-1280");
+  await ctx.close();
+});
+
+/* ---- 18 ------------------------------------------------------------------- */
+if (!ONLY || ONLY.includes("18")) {
+  section("18. Signing out of the \"try it\" demo");
+  const port3 = PORT + 2;
+  const demoSite = startServer(port3, DATA + "-demo", ["--identity", "--demo"]);
+  try {
+    if (await waitFor(demoSite)) {
+      const base3 = `http://127.0.0.1:${port3}`;
+      const ctx = await browser.newContext({ viewport: { width: 1280, height: 860 } });
+      const real = await ctx.newPage();
+      real.on("dialog", (d) => d.accept().catch(() => {}));
+      await real.goto(base3 + "/dealer");
+      await settle(real);
+      await real.getByLabel("Email", { exact: true }).fill(OWNER.email);
+      await real.getByLabel("Password", { exact: true }).fill(OWNER.password);
+      const loaded = real.waitForEvent("load", { timeout: 15000 }).catch(() => null);
+      await real.getByRole("button", { name: "Sign in", exact: true }).click();
+      await loaded;
+      await settle(real);
+      ok("a real sign-in in one tab (a site that also offers the demo)", isIn(await screen(real)), JSON.stringify(await screen(real)));
+      const demo = await ctx.newPage();
+      await demo.goto(base3 + "/dealer?demo");
+      await demo.waitForSelector(".person-pick", { timeout: 20000 });
+      let l = demo.waitForEvent("load", { timeout: 15000 }).catch(() => null);
+      await demo.locator(".person-pick").first().click();
+      await l;
+      await demo.waitForSelector(".topbar", { timeout: 30000 }).catch(() => {});
+      let reloads = 0;
+      real.on("load", () => { reloads++; });
+      await demo.locator(".person-button").click();
+      l = demo.waitForEvent("load", { timeout: 15000 }).catch(() => null);
+      await demo.locator(".person-menu").getByRole("button", { name: "Sign out", exact: true }).click();
+      await l;
+      await sleep(2500);
+      ok("signing out of the demo in another tab: the real tab doesn't reload and stays in", reloads === 0 && isIn(await screen(real)), `reloads ${reloads} ${JSON.stringify(await screen(real))}`);
+      await ctx.close();
+    } else ok("the local Dealer Center with the demo started", false, demoSite.log());
+  } catch (e) {
+    ok("18: the walk got to the end", false, String(e?.message || e).split("\n")[0]);
+  }
+  demoSite.proc.kill();
+  rmSync(resolve(ROOT, DATA + "-demo"), { recursive: true, force: true });
+}
+
 /* ---- 14 --------------------------------------------------------------------- */
 if (!ONLY || ONLY.includes("14")) {
 section("14. The local Dealer Center's \"pick who you are\"");
@@ -668,4 +886,4 @@ if (fail) {
   console.log(`\nFAIL: ${fail} of ${pass + fail} checks failed:\n  ${failures.join("\n  ")}`);
   process.exit(1);
 }
-console.log(`\nPROVED (${pass} checks): in Chromium, the Sign in card has "${WORDS.keep}" (unticked, with its hint, a full-size row, at 390, 820 and 1280); ticked stays signed in through closing the browser with nothing a page script can read; unticked ends with the browser; Sign out lands on a clean card at /dealer, asks first with unsaved changes, signs in again at once, leaves the iPad signed in (two hours later too) and redraws other tabs; Sign out on every device, a new password and day 31 each say why; a leftover nf_jwt no longer loops; Identity trouble says so (never "don't match" or a bare card); Sign out never gets stuck; the invite, confirmation and reset links sign in; a sign-in from before moves onto the cookie (or is cleared after the browser closed); an ended Barnwright visit's tab offers the sign-in; pictures in test/out/sign-in-screens/.`);
+console.log(`\nPROVED (${pass} checks): in Chromium, the Sign in card has "${WORDS.keep}" (unticked, with its hint, a full-size row, at 390, 820 and 1280); ticked stays signed in through closing the browser with nothing a page script can read; unticked ends with the browser, or 12 hours unused when the browser keeps it; Sign out lands on a clean card at /dealer, asks first with unsaved changes, signs in again at once, leaves the iPad signed in (two hours later too) and redraws other tabs; Sign out on every device signs the iPad out even while Identity can't be asked, and never looks done when it isn't; a new password and day 31 each say why, the last day says when it ends, and day 31 starts ticked; day 30 ending mid-change keeps the change and Save works after signing in in a new tab; a leftover nf_jwt no longer loops; Identity trouble says so (never "don't match" or a bare card); Sign out never gets stuck; the invite and reset links sign in (the reset survives Identity breaking half way and stops a token kept from the old password); a login with capitals gets its reset link; a login not on the team gets words and no sign-in; the demo's Sign out leaves a real tab alone; a sign-in from before moves onto the cookie (or is cleared after the browser closed); an ended Barnwright visit's tab offers the sign-in; pictures in test/out/sign-in-screens/.`);

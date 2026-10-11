@@ -10,11 +10,22 @@
 
    "Keep me signed in on this device for 30 days" is under the password on
    every form that signs somebody in (Sign in, Make your login, the invite
-   and reset links). It starts unticked every time: a lot computer is
-   shared. Ticked, the sign-in lasts 30 days on this device, closing the
-   browser or not; unticked, until the browser closes. The tick on "Make
-   your login" is kept in this browser only until the email's link opens
-   here (two days at most), since that link is where the sign-in happens.
+   and reset links). It starts unticked (a lot computer is shared) -- except
+   on the Sign in card of a device whose kept 30 days just ran out, which
+   is the same device the person chose to keep. Ticked, the sign-in lasts
+   30 days on this device, closing the browser or not; unticked, until the
+   browser closes, or 12 hours without use (the server ends it then,
+   whatever the browser keeps). The tick on "Make your login" is kept in
+   this browser only until the email's link opens here (two days at most),
+   since that link is where the sign-in happens.
+
+   A reset link: the new password is saved, then every device is signed
+   out -- every Dealer Center sign-in, and at Identity every refresh token
+   of this person, so even one kept from the old password stops working --
+   and only then a fresh sign-in with the new password, which Save password
+   can try again (the link's own sign-in can't be used twice). A login
+   that isn't on the team gets no sign-in at all: the card says to ask the
+   owner.
 
    On the local Dealer Center (npm run office) there are no passwords: pick
    who you are from the sample team (no tick there, nor in the "try it"
@@ -26,16 +37,16 @@
    tools/build-site.mjs). */
 
 import { h, clear, button, field, form, icon, checkbox } from "./dom.js";
-import { startSession, tellOtherTabs } from "./api.js";
-import { passwordSignIn, signup, recover, verify, setPassword as saveNewPassword, emailOf, SIGN_IN_WORDS } from "./identity.js";
+import { startSession, tellOtherTabs, signOutEverywhereWith } from "./api.js";
+import { passwordSignIn, signup, recover, verify, setPassword as saveNewPassword, emailOf, SIGN_IN_WORDS, SignInError } from "./identity.js";
 import { ROLE_WORDS } from "./words.js";
 
 export const KEEP_WORDS = "Keep me signed in on this device for 30 days";
 export const KEEP_HINT = "Leave it off on a computer other people use.";
 
-/* The tick, unticked. */
-function keepBox() {
-  const box = checkbox(KEEP_WORDS, false, { hint: KEEP_HINT });
+/* The tick (unticked unless on). */
+function keepBox(on = false) {
+  const box = checkbox(KEEP_WORDS, !!on, { hint: KEEP_HINT });
   box.wrap.classList.add("keep");
   box.input.name = "keep";
   return box;
@@ -60,8 +71,10 @@ function takeKeep() {
 /* Why the last sign-in on this device ended (the server's {ended, kept}). */
 export function endedWords(ended, kept) {
   if (ended === "time") return kept ? "You were kept signed in on this device for 30 days. Sign in again." : "Your sign-in ran out after 30 days. Sign in again.";
+  if (ended === "idle") return "You weren't kept signed in on this device, so you were signed out after 12 hours away. Sign in again.";
   if (ended === "password") return "Your password was changed. Sign in with the new one.";
   if (ended === "everywhere") return "You signed out on every device. Sign in again.";
+  if (ended === "many") return "You were signed in on more than 20 devices or browsers, so this one was signed out. Sign in again.";
   if (ended === "identity") return "You were signed out. Sign in again.";
   return null;
 }
@@ -115,16 +128,21 @@ export async function handleEmailLink(root) {
     tellOtherTabs("in");
     return { message: null };
   }
-  /* a reset link: the new password, then signed in -- and signed out on
-     every other device */
+  /* a reset link: the new password, then signed out on every device (at
+     Identity too), then signed in here with the new password -- each step
+     done once, and Save password tries again from where it stopped */
   let tokens;
   try { tokens = await verify("recovery", token); } catch (e) { return failed(e); }
-  const email = await emailOf(tokens.access);
+  let email = await emailOf(tokens.access);
+  let saved = null, outEverywhere = false;
   await new Promise((done) => choosePassword(root, {
     title: "Choose a new password", intro: "Then you're signed in.", email,
     save: async (password, keep) => {
-      await saveNewPassword(tokens.access, password);
-      await startSession(tokens.refresh, { keep, why: "reset" });
+      if (saved !== password) { await saveNewPassword(tokens.access, password); saved = password; }
+      if (!outEverywhere) { await signOutEverywhereWith(tokens.access); outEverywhere = true; }
+      if (!email) email = await emailOf(tokens.access);
+      if (!email) throw new SignInError("down");
+      await startSession(await passwordSignIn(email, password), { keep });
       done();
     },
   }));
@@ -147,8 +165,9 @@ function choosePassword(root, { title, intro, email, save }) {
 
 /* The sign-in screen. mode: "netlify" | "local". note: words in green
    (Your email is confirmed); ended: plain words above the boxes (why the
-   last sign-in ended, or that an email's link didn't work). */
-export function signInScreen(root, { mode, business, note, ended }) {
+   last sign-in ended, or that an email's link didn't work); keepTicked:
+   start with the tick on (this device's kept 30 days just ran out). */
+export function signInScreen(root, { mode, business, note, ended, keepTicked = false }) {
   if (mode === "local") return localPicker(root, { business, note });
   const name = business?.name;
   let view = "in";
@@ -157,7 +176,7 @@ export function signInScreen(root, { mode, business, note, ended }) {
     if (view === "in") {
       const email = field("Email", { type: "email", required: !__DEALER_DEMO__, autocomplete: "username", inputmode: "email" });
       const password = field("Password", { type: "password", required: !__DEALER_DEMO__, autocomplete: "current-password" });
-      const keep = keepBox();
+      const keep = keepBox(keepTicked);
       frame(root, "Sign in", name ? `The Dealer Center for ${name}.` : "The Dealer Center.",
         ended ? h("p", { class: "auth-note info", role: "status" }, ended) : null,
         note ? h("p", { class: "auth-note" }, note) : null,

@@ -9,8 +9,15 @@
    left in a browser that was closed is cleared, never used.
 
    Sign out (and Sign out on every device) asks a screen with unsaved
-   changes first, and lands on a clean sign-in card at /dealer. Signing in
-   or out in one tab redraws this browser's other Dealer Center tabs.
+   changes first, and lands on a clean sign-in card at /dealer (Sign out on
+   every device only once the server said every device is out; otherwise
+   it says so and stays). Signing in or out in one tab redraws this
+   browser's other Dealer Center tabs -- unless the same person is still
+   signed in here (the "try it" demo signing out, or another tab signing
+   in again). A sign-in that ends while a screen has unsaved changes never
+   reloads: a lasting note says to sign in in a new tab and tap Save again,
+   and the changes stay. The person menu says until when this device is
+   signed in, and the last 24 hours a note on top says so too.
 
    Screens live in ui/office/views/<name>.js. Each exports
    render(ctx) -> an element (or a promise of one). ctx carries the shared
@@ -28,10 +35,10 @@
 
 import { h, clear, icon, button, linkButton, toast, loading, emptyState } from "./dom.js";
 import { app } from "./app.js";
-import { configureApi, signOut, finishSignOut, startSession, onOtherTabs, post, get, startVisit, endVisit, VISIT_ENDED } from "./api.js";
+import { configureApi, signOut, finishSignOut, startSession, onOtherTabs, post, get, startVisit, endVisit, VISIT_ENDED, takeSignInNote } from "./api.js";
 import { signInScreen, notOnTeam, handleEmailLink, endedWords } from "./auth.js";
 import { oldSignIn, forgetOldSignIn } from "./identity.js";
-import { ROLE_WORDS, initials, dayWords, todayKey, untilWords } from "./words.js";
+import { ROLE_WORDS, initials, dayWords, todayKey, untilWords, when } from "./words.js";
 import { visitMark, visitMarked } from "./visit-draft.js";
 import { watchProblems, reportProblem, screenOf } from "../problems.js";
 
@@ -135,21 +142,37 @@ function badge(business) {
 /* Sign out: a screen with unsaved changes asks first (Stay keeps
    everything as it was). */
 async function signOutHere({ everywhere = false } = {}) {
-  if (app.leaveGuard) {
-    const question = app.leaveGuard();
+  const guard = app.leaveGuard;
+  if (guard) {
+    const question = guard();
     if (question && !confirm(question)) return;
   }
   app.leaveGuard = null;
-  await signOut({ everywhere });
+  try {
+    await signOut({ everywhere });
+  } catch (e) {
+    /* Sign out on every device didn't finish: still signed in here, nothing lost */
+    app.leaveGuard = guard;
+    toast(e.message, { error: true, ms: 12000 });
+  }
+}
+
+/* When this device's sign-in ends, in this browser's own time (the server
+   says how long is left, so a computer clock that is off doesn't matter). */
+function signInEnds() {
+  const s = app.me?.session;
+  const at = s?.endsLocal || s?.endsAt;
+  const d = at ? new Date(at) : null;
+  return d && !Number.isNaN(d.valueOf()) ? d : null;
 }
 
 function personMenu() {
   const p = app.person;
-  const kept = app.me?.session?.keep ? app.me.session.endsAt : null;
+  const ends = app.me?.session?.keep ? signInEnds() : null;
   const menu = h("div", { class: "person-menu", hidden: true },
     h("div", { class: "person-menu-who" }, h("strong", {}, p.name || p.email), h("span", {}, p.email),
       h("span", { class: "role-tag" }, ROLE_WORDS[p.role] + (p.role === "dealer" ? ` · ${p.lots.map((s) => app.lotName(s)).join(", ")}` : "")),
-      kept ? h("span", { class: "kept" }, `Signed in on this device until ${dayWords(todayKey(new Date(kept)))}.`) : null),
+      ends ? h("span", { class: "kept" }, `Signed in on this device until ${when(ends.toISOString())}.`) : null),
     button("Sign out", () => signOutHere(), { kind: "quiet", icon: "signOut" }),
     app.me?.signIn === "netlify" ? button("Sign out on every device", () => signOutHere({ everywhere: true }), { kind: "quiet" }) : null);
   const toggle = h("button", { type: "button", class: "person-button", "aria-haspopup": "true", "aria-expanded": "false",
@@ -292,6 +315,42 @@ function visitBar() {
     h("span", {}, `Working on ${app.business?.name || "this business"} as Barnwright until ${untilWords(b.visitEndsAt)}.`),
     lot ? linkButton("Look at the preview", app.previewUrl(lot.slug), { small: true, newTab: true, icon: "cube" }) : null,
     button("Done", doneVisit, { kind: "primary", small: true }));
+}
+
+/* The last 24 hours of this device's sign-in: say when it ends, so it
+   never ends in the middle of something without warning. */
+function signInEndsBanner() {
+  if (app.demo || app.barnwright) return null;
+  const ends = signInEnds();
+  if (!ends) return null;
+  const left = ends.getTime() - Date.now();
+  if (left <= 0 || left > 86400000) return null;
+  const day = todayKey(ends) === todayKey() ? "today" : "tomorrow";
+  const time = ends.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return h("div", { class: "banner info sign-in-ends", role: "status" }, icon("clock"),
+    h("span", {}, `Your sign-in on this device ends ${day} at ${time}. Sign out and sign in again before then to keep going.`));
+}
+
+/* The server said the sign-in ended (a 401 on a tap). Nothing unsaved:
+   start again on the Sign in card. Unsaved changes: never reload -- a note
+   that stays says what to do, and the changes stay on the screen; Save
+   works again once this browser is signed in (in another tab). -> the
+   words the tap shows, or null. */
+const SIGNED_OUT_KEEP = {
+  time: "Your 30 days on this device are up. Your changes are still here: open the Dealer Center in a new tab, sign in, then come back and tap Save.",
+  other: "You were signed out. Your changes are still here: open the Dealer Center in a new tab, sign in, then come back and tap Save.",
+  tap: "You were signed out. Sign in in a new tab, then tap Save again.",
+};
+function signedOutHere(data) {
+  const question = main && app.leaveGuard ? app.leaveGuard() : null;
+  if (!question) {
+    location.reload();
+    return null;
+  }
+  main.querySelector(".banner.signed-out")?.remove();
+  main.prepend(h("div", { class: "banner warn signed-out", role: "alert" }, icon("alert"),
+    h("span", {}, data?.ended === "time" && data?.kept ? SIGNED_OUT_KEEP.time : SIGNED_OUT_KEEP.other)));
+  return SIGNED_OUT_KEEP.tap;
 }
 
 function closedBanner() {
@@ -438,7 +497,7 @@ async function render() {
     };
     const el = await mod.render(ctx);
     if (seq !== renderSeq) return;
-    clear(main, closedBanner(), el);
+    clear(main, closedBanner(), signInEndsBanner(), el);
     main.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   } catch (e) {
@@ -539,9 +598,19 @@ async function oldSignInHere(me) {
 /* Another tab of this browser signed in or out: show this one as it is
    now (a screen with unsaved changes says so instead of losing them). */
 async function otherTab(what) {
-  if (what === "in" && main && app.me?.user) {
-    /* still the same person here: nothing to redraw */
-    try { if ((await get("me")).user?.id === app.me.user.id) return; } catch { /* redraw */ }
+  if (main && app.me?.user) {
+    /* still the same person signed in here (another tab signed in again,
+       or the "try it" demo signed out of nothing real): nothing to redraw;
+       a note that this tab was signed out goes, and Save works again */
+    try {
+      const now = await get("me");
+      if (now.user?.id === app.me.user.id) {
+        if (Number.isFinite(now.session?.left)) app.me.session = { ...now.session, endsLocal: new Date(Date.now() + now.session.left).toISOString() };
+        const gone = main.querySelector(".banner.signed-out");
+        if (gone) { gone.remove(); toast("You're signed in again. Tap Save to keep your changes.", { ms: 8000 }); }
+        return;
+      }
+    } catch { /* redraw */ }
   }
   const question = main && app.leaveGuard ? app.leaveGuard() : null;
   if (question) {
@@ -596,10 +665,17 @@ async function start() {
   } catch (e) {
     return notAnswering(e.data?.code === "sign-in-down" ? "Can't check your sign-in" : "The Dealer Center isn't answering", e.message);
   }
-  configureApi({ mode: me.signIn, signedOut: () => location.reload() });
+  configureApi({ mode: me.signIn, demo: !!app.demo, signedOut: signedOutHere });
   if (!app.demo) onOtherTabs(otherTab);
   if (me.signIn === "netlify" && oldSignIn()) me = await oldSignInHere(me);
-  if (me.status === 401) return signInScreen(root, { mode: me.signIn || "netlify", business: null, note, ended: warning || endedWords(me.ended, me.kept) });
+  if (me.status === 401) {
+    return signInScreen(root, {
+      mode: me.signIn || "netlify", business: null, note,
+      ended: warning || takeSignInNote() || endedWords(me.ended, me.kept),
+      /* this device's kept 30 days ran out: the same device, kept again unless untouched */
+      keepTicked: me.ended === "time" && me.kept === true,
+    });
+  }
   if (!me.person) return notOnTeam(root, { email: me.user.email, signOut: () => signOutHere() });
   if (me.setupNeeded) {
     frameUp();

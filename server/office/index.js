@@ -56,6 +56,8 @@ import { createSessions } from "./session.js";
 
 /* the scheduled check-in's look back for Barnwright setup access, at most */
 const LOOK_BACK_MS = 5000;
+/* the scheduled check-in's tidy of sign-ins that ran out (session.js sweep), at most */
+const SWEEP_MS = 8000;
 
 export function createOffice(deps) {
   const now = deps.now || (() => new Date());
@@ -65,7 +67,7 @@ export function createOffice(deps) {
   /* Who is signing in: the Dealer Center's own sign-in cookie first
      (session.js), then a token the request carries itself. A cookie whose
      sign-in ended answers {ended} (never the token behind it). */
-  const sessions = deps.identity ? createSessions({ store, identity: deps.identity, now, log }) : null;
+  const sessions = deps.identity ? createSessions({ store, identity: deps.identity, now, log, canJoin: (user) => people.couldJoin(user) }) : null;
   const signedInUser = async (request) => {
     if (sessions) {
       const s = await sessions.from(request);
@@ -496,12 +498,20 @@ export function createOffice(deps) {
      the lease renews FIRST; only then does Barnwright setup access look
      back (setup-access.js liveRecord), in its own try and for at most 5
      seconds, so nothing about setup access can slow down or stop the
-     lease renewing */
+     lease renewing. Last, on every site (connected or not), sign-ins that
+     ran out end and their tokens go (session.js sweep), in its own try and
+     for at most 8 seconds. */
   async function scheduledCheckIn() {
     await account.checkIn({ force: true });
-    if (!setup.connected) return;
-    try { await withinMs(setup.liveRecord(), LOOK_BACK_MS); } catch (error) {
-      log("Barnwright setup access couldn't look back:", error?.name || "Error");
+    if (setup.connected) {
+      try { await withinMs(setup.liveRecord(), LOOK_BACK_MS); } catch (error) {
+        log("Barnwright setup access couldn't look back:", error?.name || "Error");
+      }
+    }
+    if (sessions) {
+      try { await withinMs(sessions.sweep({ budgetMs: SWEEP_MS - 500 }), SWEEP_MS); } catch (error) {
+        log("Tidying sign-ins that ran out didn't finish:", error?.name || "Error");
+      }
     }
   }
 

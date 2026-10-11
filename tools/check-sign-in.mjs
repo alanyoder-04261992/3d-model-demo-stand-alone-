@@ -80,7 +80,20 @@ const OWNER = SAMPLE_PEOPLE[0], DEALER = SAMPLE_PEOPLE[2];   /* chris (owner), m
 
 const logged = [];
 const blobs = new MemoryBlobs();
-const client = identityClient({ fetchImpl: idp.fetch, now: () => clock.t, timeoutMs: 300, refreshMs: 300 });
+/* every token Identity ever hands out, to the server or to the page: none
+   may be found in the store, an answer or the log */
+const issued = new Set();
+const noteTokens = async (r) => {
+  if (r.status !== 200) return;
+  const d = await r.clone().json().catch(() => null);
+  for (const t of [d?.access_token, d?.refresh_token]) if (typeof t === "string" && t) issued.add(t);
+};
+const serverFetch = async (url, init) => {
+  const r = await idp.fetch(url, init);
+  await noteTokens(r);
+  return r;
+};
+const client = identityClient({ fetchImpl: serverFetch, now: () => clock.t, timeoutMs: 300, refreshMs: 300 });
 let seeding = null;
 const office = createOffice({
   blobs, manufacturer, library, templates, ownerEmail: OWNER.email, siteUrl: SITE,
@@ -110,8 +123,22 @@ async function call(method, path, { cookie = "", body, origin = SITE, headers = 
 /* what Identity gives the page for a password: the refresh token (and the access token) */
 async function passwordTokens(email, password = PASSWORD) {
   const r = await idp.handle(new Request(`${SITE}/.netlify/identity/token`, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "password", username: email, password }) }));
+  await noteTokens(r);
   return r.json();
 }
+/* the page's own calls to Identity (a browser's request) */
+async function idpCall(path, { method = "POST", body, form, token } = {}) {
+  const headers = {};
+  if (token) headers.authorization = `Bearer ${token}`;
+  if (form) headers["content-type"] = "application/x-www-form-urlencoded";
+  else if (body !== undefined) headers["content-type"] = "application/json";
+  const r = await idp.handle(new Request(`${SITE}/.netlify/identity${path}`, { method, headers, body: form ? new URLSearchParams(form) : body !== undefined ? JSON.stringify(body) : undefined }));
+  await noteTokens(r);
+  return { status: r.status, data: await r.json().catch(() => null) };
+}
+const sessionRecords = () => [...blobs.values.entries()].filter(([k]) => k.startsWith("sessions/")).map(([key, v]) => ({ key, ...v.data }));
+/* every string inside a record, however deep */
+const stringsOf = (v) => (typeof v === "string" ? [v] : v && typeof v === "object" ? Object.values(v).flatMap(stringsOf) : []);
 const cookieValue = (lines) => (lines.map((l) => /^__Host-dc_signin=([^;]*)/.exec(l)?.[1]).find((v) => v != null) ?? null);
 /* a browser: sign in (keep or not) -> the Cookie header it then sends */
 async function signIn(person, { keep = true, why } = {}) {
@@ -315,15 +342,213 @@ section("7. No way around it");
   const left = [...blobs.values.entries()].filter(([k, v]) => k.startsWith("sessions/") && v.data.userId === SAMPLE_PEOPLE[1].id && v.data.ended && Date.parse(v.data.endedAt) + 2 * DAY <= clock.t);
   ok("ended records go two days later, at that person's next sign-in", left.length === 0, String(left.length));
   /* nothing secret in any answer or the log */
-  const secrets = [...blobs.values.entries()].filter(([k]) => k.startsWith("sessions/")).flatMap(([, v]) => [v.data.refreshToken, v.data.accessToken]).filter(Boolean);
+  const secrets = [...issued];
   const cookieValues = [owner.cookie, dealer.cookie].map((c) => c.split("=")[1]);
   const all = answers.join("\n") + "\n" + logged.join("\n");
-  ok("no answer body and no log line ever holds a sign-in cookie or a token the server keeps", [...secrets, ...cookieValues].every((s) => !all.includes(s)), String(secrets.length));
+  ok("no answer body and no log line ever holds a sign-in cookie or any token Identity handed out", secrets.length > 20 && [...secrets, ...cookieValues].every((s) => !all.includes(s)), String(secrets.length));
   ok("the records hold only the cookie's hash", [...blobs.values.keys()].filter((k) => k.startsWith("sessions/")).every((k) => /^sessions\/[a-f0-9]{24}\/[a-f0-9]{64}$/.test(k) && !cookieValues.some((v) => k.includes(v))));
+}
+
+
+/* ---- 8 ---------------------------------------------------------------------- */
+section("8. The records sign nobody in (SEC-LOGIN-1)");
+{
+  const kept = await signIn(OWNER, { keep: true });
+  const loose = await signIn(DEALER, { keep: false });
+  clock.t += 2 * HOUR;   /* a renewal, so the records hold renewed tokens too */
+  ok("both signed in, renewed on the server", (await call("GET", "/api/office/me", { cookie: kept.cookie })).status === 200 && (await call("GET", "/api/office/me", { cookie: loose.cookie })).status === 200);
+  const records = sessionRecords();
+  const store = JSON.stringify(records);
+  ok("no token Identity handed out is anywhere in the store's sign-in records", [...issued].every((t) => !store.includes(t)), `${issued.size} tokens, ${records.length} records`);
+  ok("... a live record keeps its tokens sealed, in one field, and nothing named like a token", records.filter((r) => !r.ended).every((r) => typeof r.sealed === "string" && !Object.keys(r).some((k) => /token/i.test(k))), JSON.stringify(Object.keys(records.find((r) => !r.ended) || {})));
+  /* whoever can read the store tries every string in every record, every way */
+  const tried = [...new Set(records.flatMap((r) => stringsOf(r)))].filter((v) => v.length >= 8);
+  let worked = [];
+  for (const v of tried) {
+    const asRefresh = await call("POST", "/api/office/session", { body: { refreshToken: v.slice(0, 512), keep: true } });
+    if (asRefresh.status === 201) worked.push("session:" + v.slice(0, 6));
+    const asBearer = await call("GET", "/api/office/me", { headers: { authorization: `Bearer ${v}` } });
+    if (asBearer.status === 200) worked.push("bearer:" + v.slice(0, 6));
+    if ((await idpCall("/user", { method: "GET", token: v })).status === 200) worked.push("identity-user:" + v.slice(0, 6));
+    if ((await idpCall("/token", { form: { grant_type: "refresh_token", refresh_token: v } })).status === 200) worked.push("identity-token:" + v.slice(0, 6));
+  }
+  ok("nothing read straight from the store works at /api/office/session, as a Bearer token, or at Identity", tried.length > 10 && worked.length === 0, `${tried.length} tried; worked: ${worked.join(", ")}`);
+  ok("... and the cookies still work (the store's copy is only useless without them)", (await call("GET", "/api/office/me", { cookie: kept.cookie })).status === 200 && (await call("GET", "/api/office/me", { cookie: loose.cookie })).status === 200);
+
+  /* the check-in every six hours: sign-ins that ran out lose their tokens, without anybody signing in again */
+  const left = await signIn(DEALER, { keep: false });   /* the browser closed: its cookie never comes back */
+  const leftKey = sessionRecords().find((r) => r.startedAt === new Date(clock.t).toISOString() && r.userId === DEALER.id && !r.ended)?.key;
+  clock.t += 13 * HOUR;
+  await office.scheduledCheckIn();
+  const swept = blobs.values.get(leftKey)?.data;
+  ok("the check-in every six hours: a sign-in not kept and unused for 12 hours ends, its tokens gone", !!leftKey && swept?.ended === "idle" && !("sealed" in swept), JSON.stringify(swept && Object.keys(swept)));
+  clock.t += 31 * DAY;
+  await office.scheduledCheckIn();
+  const after = sessionRecords();
+  ok("... and every sign-in past its 30 days too, and all of them gone two days later", after.every((r) => r.ended && !("sealed" in r)), JSON.stringify(after.filter((r) => !r.ended).map((r) => r.endsAt)));
+  clock.t += 3 * DAY;
+  await office.scheduledCheckIn();
+  ok("... two days on, the store holds no sign-in records at all", sessionRecords().length === 0, String(sessionRecords().length));
+  void left;
+  owner = await signIn(OWNER, { keep: true });
+  dealer = await signIn(DEALER, { keep: true });
+}
+
+/* ---- 9 ---------------------------------------------------------------------- */
+section("9. Sign out on every device while Identity can't be asked (SEC-LOGIN-2, REG-1)");
+for (const trouble of [429, "down"]) {
+  const ipad = await signIn(OWNER, { keep: true });
+  const pc = await signIn(OWNER, { keep: true });
+  clock.t += trouble === 429 ? 2 * HOUR : 2 * 60000;   /* past the token's hour, or past the one-minute memory */
+  idp.trouble.server = trouble;
+  const all = await call("POST", "/api/office/sign-out", { cookie: pc.cookie, body: { everywhere: true } });
+  idp.trouble.server = null;
+  ok(`Identity ${trouble}: every device's Dealer Center sign-in still ends, and the answer says Identity didn't answer`, all.status === 200 && all.data.everywhere === true && all.data.identity === false, `${all.status} ${JSON.stringify(all.data)}`);
+  const ip = await call("GET", "/api/office/me", { cookie: ipad.cookie });
+  ok(`... Identity back: the iPad is signed out, saying why (${trouble})`, ip.status === 401 && ip.data.ended === "everywhere", `${ip.status} ${JSON.stringify(ip.data)}`);
+  ok(`... and this device too (${trouble})`, (await call("GET", "/api/office/me", { cookie: pc.cookie })).status === 401);
+}
+{
+  const ipad = await signIn(OWNER, { keep: true });
+  const pc = await signIn(OWNER, { keep: true });
+  const all = await call("POST", "/api/office/sign-out", { cookie: pc.cookie, body: { everywhere: true } });
+  ok("Identity answering: identity true, and Identity dropped every refresh token", all.data.identity === true && idp.liveRefresh(OWNER.id).length === 0, JSON.stringify(all.data));
+  ok("... the iPad is out", (await call("GET", "/api/office/me", { cookie: ipad.cookie })).data?.ended === "everywhere");
+  /* the store can't be changed: nothing is said to be done, and this device stays signed in to try again */
+  const ipad2 = await signIn(OWNER, { keep: true });
+  const pc2 = await signIn(OWNER, { keep: true });
+  const realList = blobs.list.bind(blobs);
+  blobs.list = function (o) { if (o?.prefix?.startsWith("sessions/")) throw new Error("blobs 502"); return realList(o); };
+  const broken = await call("POST", "/api/office/sign-out", { cookie: pc2.cookie, body: { everywhere: true } });
+  blobs.list = realList;
+  ok("the store can't be changed: 503, never 'done'", broken.status === 503 && !broken.cookies.some((l) => l.startsWith("__Host-dc_signin=;")), `${broken.status} ${JSON.stringify(broken.data)}`);
+  ok("... this device is still signed in, to try again", (await call("GET", "/api/office/me", { cookie: pc2.cookie })).status === 200);
+  const again = await call("POST", "/api/office/sign-out", { cookie: pc2.cookie, body: { everywhere: true } });
+  ok("... trying again works: the iPad is out", again.data?.everywhere === true && (await call("GET", "/api/office/me", { cookie: ipad2.cookie })).data?.ended === "everywhere");
+  owner = await signIn(OWNER, { keep: true });
+}
+
+/* ---- 10 --------------------------------------------------------------------- */
+section("10. A new password ends every other sign-in (SEC-LOGIN-3)");
+{
+  /* what the reset link's page does (ui/office/auth.js): save the new
+     password, sign out on every device with the link's own token, then
+     sign in with the new password -- which can be tried again */
+  const thief = await signIn(OWNER, { keep: true });                 /* a cookie somebody else has */
+  const outside = await passwordTokens(OWNER.email);                 /* a refresh token kept with the old password */
+  await idpCall("/recover", { body: { email: OWNER.email } });
+  const link = await idpCall("/verify", { body: { type: "recovery", token: idp.lastRecovery } });
+  ok("the reset link gives a sign-in", link.status === 200);
+  const put = await idpCall("/user", { method: "PUT", token: link.data.access_token, body: { password: "brand-new-password" } });
+  ok("... the new password is saved", put.status === 200);
+  const out = await call("POST", "/api/office/sign-out", { body: { everywhere: true, why: "password" }, headers: { authorization: `Bearer ${link.data.access_token}` } });
+  ok("... signing out on every device with the link's token: done, at Identity too", out.status === 200 && out.data.everywhere === true && out.data.identity === true, `${out.status} ${JSON.stringify(out.data)}`);
+  /* Identity hiccups while the new sign-in is handed over: the page tries again with a new password sign-in */
+  let first = null;
+  const realFetch = idp.fetch;
+  let once = true;
+  idp.fetch = async (url, init) => (once && new URL(url).pathname.endsWith("/user") ? ((once = false), new Response("{}", { status: 503 })) : realFetch(url, init));
+  const t1 = await passwordTokens(OWNER.email, "brand-new-password");
+  first = await call("POST", "/api/office/session", { body: { refreshToken: t1.refresh_token, keep: true } });
+  idp.fetch = realFetch;
+  const t2 = await passwordTokens(OWNER.email, "brand-new-password");
+  const second = await call("POST", "/api/office/session", { body: { refreshToken: t2.refresh_token, keep: true } });
+  ok("... Identity hiccups once: 503, and Try again signs in (a fresh sign-in each time)", first.status === 503 && second.status === 201, `${first.status} ${second.status}`);
+  const th = await call("GET", "/api/office/me", { cookie: thief.cookie });
+  ok("... the other cookie is signed out, saying the password was changed", th.status === 401 && th.data.ended === "password", `${th.status} ${JSON.stringify(th.data)}`);
+  const kept = await call("POST", "/api/office/session", { body: { refreshToken: outside.refresh_token, keep: true } });
+  ok("... a refresh token kept from the old password is refused", kept.status === 401, `${kept.status} ${JSON.stringify(kept.data)}`);
+  clock.t += 29 * DAY;
+  ok("... and still refused 29 days later", (await call("GET", "/api/office/me", { cookie: thief.cookie })).status === 401);
+  idp.users.find((u) => u.id === OWNER.id).password = PASSWORD;
+  /* a page from before (it still sends why "reset"): a store hiccup is never swallowed */
+  const thief2 = await signIn(OWNER, { keep: true });
+  const liveOwner = () => sessionRecords().filter((x) => x.userId === OWNER.id && !x.ended).length;
+  const liveBefore = liveOwner();
+  const realList = blobs.list.bind(blobs);
+  let failOnce = true;
+  blobs.list = function (o) { if (failOnce && o?.prefix?.startsWith("sessions/")) { failOnce = false; throw new Error("blobs 502"); } return realList(o); };
+  const r = await signIn(OWNER, { keep: true, why: "reset" });
+  blobs.list = realList;
+  ok("a reset sign-in whose tidy fails: 503 and no cookie, so the page tries again", r.r.status === 503 && !r.r.cookies.some((l) => l.startsWith("__Host-dc_signin=") && !l.startsWith("__Host-dc_signin=;")), `${r.r.status} ${JSON.stringify(r.r.data)}`);
+  ok("... nothing about it was kept (no new live record)", liveOwner() === liveBefore, `${liveBefore} -> ${liveOwner()}`);
+  const r2 = await signIn(OWNER, { keep: true, why: "reset" });
+  ok("... the try again works and signs the other cookie out", r2.r.status === 201 && (await call("GET", "/api/office/me", { cookie: thief2.cookie })).data?.ended === "password");
+  owner = await signIn(OWNER, { keep: true });
+  dealer = await signIn(DEALER, { keep: true });
+}
+
+/* ---- 11 --------------------------------------------------------------------- */
+section("11. Not kept: 12 hours without use ends it (SEC-LOGIN-4, SHARED-UNTICKED)");
+{
+  const LEE = SAMPLE_PEOPLE[4];
+  const loose = await signIn(LEE, { keep: false });
+  const kept = await signIn(LEE, { keep: true });
+  clock.t += 11 * HOUR;
+  ok("not kept, used after 11 hours: still in", (await call("GET", "/api/office/me", { cookie: loose.cookie })).status === 200);
+  clock.t += 11 * HOUR;
+  ok("... used again 11 hours after that (22 in all): still in, using it keeps it going", (await call("GET", "/api/office/me", { cookie: loose.cookie })).status === 200);
+  clock.t += 13 * HOUR;
+  const m = await call("GET", "/api/office/me", { cookie: loose.cookie });
+  ok("... 13 hours with no use (the browser kept the cookie): asked to sign in, saying why", m.status === 401 && m.data.ended === "idle" && m.data.kept === false, `${m.status} ${JSON.stringify(m.data)}`);
+  ok("a kept sign-in left 35 hours: still in", (await call("GET", "/api/office/me", { cookie: kept.cookie })).status === 200);
+  clock.t += 6 * DAY;
+  ok("... and 7 days later", (await call("GET", "/api/office/me", { cookie: kept.cookie })).status === 200);
+}
+
+/* ---- 12 --------------------------------------------------------------------- */
+section("12. At most 20 at once never ends the kept iPad first (CAP-ENDS-KEPT-IPAD)");
+{
+  const DANA = SAMPLE_PEOPLE[3];
+  const ipad = await signIn(DANA, { keep: true });
+  /* a lot computer each morning, not kept, its browser closed without Sign out */
+  const mornings = [];
+  for (let i = 0; i < 21; i++) { clock.t += DAY; mornings.push(await signIn(DANA, { keep: false })); }
+  const ip = await call("GET", "/api/office/me", { cookie: ipad.cookie });
+  ok("1 kept iPad and 21 mornings on the lot computer: the iPad is still signed in", ip.status === 200, `${ip.status} ${JSON.stringify(ip.data?.ended)}`);
+  ok("... today's lot computer too", (await call("GET", "/api/office/me", { cookie: mornings[20].cookie })).status === 200);
+  /* 20 not kept, all in use at once (no time between): the kept one still stays */
+  const now = [];
+  for (let i = 0; i < 21; i++) { clock.t += 1000; now.push(await signIn(DANA, { keep: false })); }
+  ok("1 kept and 21 not kept in use at once: the kept iPad stays", (await call("GET", "/api/office/me", { cookie: ipad.cookie })).status === 200);
+  const first = await call("GET", "/api/office/me", { cookie: now[0].cookie });
+  ok("... the least recently used one not kept ends instead, saying why", first.status === 401 && first.data.ended === "many", `${first.status} ${JSON.stringify(first.data)}`);
+  const live = sessionRecords().filter((r) => r.userId === DANA.id && !r.ended).length;
+  ok("... 20 live at once", live === 20, String(live));
+}
+
+/* ---- 13 --------------------------------------------------------------------- */
+section("13. A login that isn't on the team makes no sign-in (SEC-LOGIN-5)");
+{
+  idp.addUser({ id: "u-stranger", email: "stranger@elsewhere.example", password: PASSWORD });
+  const before = sessionRecords().length;
+  let made = 0, words = null;
+  for (let i = 0; i < 200; i++) {
+    const s = await signIn({ email: "stranger@elsewhere.example" }, { keep: false });
+    if (s.r.status === 201) made++;
+    words = s.r;
+  }
+  ok("200 sign-ins by a stranger (not on the team): every one refused, 403 with the email", made === 0 && words.status === 403 && words.data.code === "not-on-team" && words.data.email === "stranger@elsewhere.example", `${made} made; ${words.status} ${JSON.stringify(words.data)}`);
+  ok("... with words that say what to do", words.data.error === "You're not on the team here yet. Ask the owner to add stranger@elsewhere.example to the team, then sign in again.", words.data.error);
+  ok("... no cookie, and not one sign-in record more in the store", !words.cookies.some((l) => /^__Host-dc_signin=[^;]/.test(l)) && sessionRecords().length === before, `${before} -> ${sessionRecords().length}`);
+  /* the owner adds them: an invite, then they're in */
+  const add = await call("POST", "/api/office/team", { cookie: owner.cookie, body: { email: "stranger@elsewhere.example", name: "Sam New", role: "dealer", lots: ["riverside"] } });
+  ok("the owner adds that email to the team", add.status === 201, `${add.status} ${JSON.stringify(add.data)}`);
+  const s = await signIn({ email: "stranger@elsewhere.example" }, { keep: true });
+  const me = await call("GET", "/api/office/me", { cookie: s.cookie });
+  ok("... now the same login signs in, and is a dealer on Riverside", s.r.status === 201 && me.data?.person?.role === "dealer", `${s.r.status} ${JSON.stringify(me.data?.person)}`);
+  /* the first owner, before anybody claimed the business, can sign in (OWNER_EMAIL) */
+  const removed = await call("PATCH", `/api/office/team/u-stranger`, { cookie: owner.cookie, body: { active: false } });
+  const back = await signIn({ email: "stranger@elsewhere.example" }, { keep: true });
+  ok("somebody removed from the team: refused at sign-in too", removed.status === 200 && back.r.status === 403, `${removed.status} ${back.r.status}`);
+  /* a team member signing in 200 times leaves at most 40 records */
+  for (let i = 0; i < 200; i++) await signIn(SAMPLE_PEOPLE[1], { keep: i % 2 === 0 });
+  const sarah = sessionRecords().filter((r) => r.userId === SAMPLE_PEOPLE[1].id);
+  ok("a team member signing in 200 times: at most 20 live and 20 ended records", sarah.filter((r) => !r.ended).length <= 20 && sarah.filter((r) => r.ended).length <= 20, `${sarah.filter((r) => !r.ended).length} live, ${sarah.filter((r) => r.ended).length} ended`);
 }
 
 if (failures.length) {
   console.log(`\nFAIL: ${failures.length} of ${passed + failures.length} checks failed:\n  ${failures.join("\n  ")}`);
   process.exit(1);
 }
-console.log(`\nPROVED (${passed} checks): the Dealer Center's own sign-in cookie (__Host-, HttpOnly, Secure, SameSite=Strict) keeps a person signed in 30 days when kept and until the browser closes when not, renews Identity's token on the server (once for two requests), ends on day 31 saying why, keeps every role and lot rule and refuses a removed person at once, signs out this device only (or every device, or after a new password) without signing out the iPad, answers 503 instead of "Please sign in" when Identity is slow, down or busy, and can't be made up, borrowed by another site, beaten by a leftover nf_jwt or found in an answer or the log.`);
+console.log(`\nPROVED (${passed} checks): the Dealer Center's own sign-in cookie (__Host-, HttpOnly, Secure, SameSite=Strict) keeps a person signed in 30 days when kept and until the browser closes (or 12 hours unused) when not, renews Identity's token on the server (once for two requests), ends on day 31 saying why, keeps every role and lot rule and refuses a removed person at once, signs out this device only (or every device -- even while Identity can't be asked -- or after a new password, which also drops tokens kept from the old one) without signing out the iPad, answers 503 instead of "Please sign in" when Identity is slow, down or busy, keeps the tokens sealed so nothing in the store signs anybody in, tidies what ran out every six hours, never ends a kept iPad for leftovers, makes no record for a login that isn't on the team, and can't be made up, borrowed by another site, beaten by a leftover nf_jwt or found in an answer or the log.`);

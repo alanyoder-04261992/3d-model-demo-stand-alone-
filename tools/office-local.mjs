@@ -22,7 +22,10 @@
                                         with the Dealer Center's own sign-in
                                         cookie and "Keep me signed in on this
                                         device for 30 days" (every sample
-                                        person's password: sample-password)
+                                        person's password: sample-password);
+                                        add --demo to offer the "try it" demo
+                                        on that card too, as Alan's learning
+                                        preview and demo site do
 
    Then open http://127.0.0.1:8383/dealer
 
@@ -68,6 +71,7 @@ const OWNER_EMAIL = value("--owner", EMPTY ? "owner@example.com" : SAMPLE_PEOPLE
 const CONTROL_ROOM = flag("--control-room") || flag("--control-room-off");
 const TERMS_VERSION = value("--terms-version", "");
 const IDENTITY = flag("--identity");
+const WITH_DEMO = flag("--demo");
 const SAMPLE_PASSWORD = "sample-password";
 if (TERMS_VERSION && !/^\d{1,4}(\.\d{1,4}){0,3}$/.test(TERMS_VERSION)) {
   console.log("FAIL: --terms-version takes a version like 2.2.");
@@ -114,10 +118,13 @@ const blobs = new FileBlobs(DATA);
 /* --identity: a pretend Netlify Identity at /.netlify/identity, with every
    sample person (and the owner's email) as a confirmed login. POST
    /__local/identity changes it: {ttl: seconds}, {server: "down" | "slow" |
-   429 | 503 | null} (the Dealer Center server's own calls), {browser: 429 |
+   429 | 503 | null} (the Dealer Center server's own calls), {serverUser: 503
+   | null} (only the server's "whose sign-in is this"), {browser: 429 |
    503 | "slow" | null}, {logout: "hang" | null}, {link: {type: "invite" |
    "recovery" | "signup", email}} -> {token} (what an email link would
-   carry); the answer also lists the calls it had. */
+   carry), {addUser: {email, password, name}} (a login saved exactly as
+   typed, capitals and all); the answer also lists the calls it had and
+   how many reset links went out (recoveries). */
 const idp = IDENTITY ? fakeIdentity({ clock: () => Date.now() + clock.shift }) : null;
 if (idp) {
   for (const p of SAMPLE_PEOPLE) idp.addUser({ id: p.id, email: p.email, password: SAMPLE_PASSWORD, name: p.name });
@@ -201,7 +208,7 @@ const bundler = await esbuildContext({
   entryPoints: [resolve(ROOT, "ui/office/main.js")], bundle: true, format: "esm", platform: "browser",
   target: "es2022", write: false, outfile: "main.js", logLevel: "silent", sourcemap: "inline",
   /* the local copy offers the "try it" demo; with --identity it is the live site's sign-in card */
-  define: { __DEALER_DEMO__: IDENTITY ? "false" : "true" },
+  define: { __DEALER_DEMO__: IDENTITY && !WITH_DEMO ? "false" : "true" },
 });
 async function officeBundle() {
   const r = await bundler.rebuild();
@@ -289,9 +296,10 @@ async function route(request) {
   if (idp && path === "/__local/identity" && request.method === "POST") {
     const body = await request.json().catch(() => ({}));
     if (Number.isFinite(body.ttl) && body.ttl > 0) idp.ttl = body.ttl;
-    for (const k of ["server", "browser", "logout"]) if (k in body) idp.trouble[k] = body[k] ?? null;
+    for (const k of ["server", "serverUser", "browser", "logout"]) if (k in body) idp.trouble[k] = body[k] ?? null;
     const token = body.link && typeof body.link.email === "string" ? idp.linkToken(body.link.type, body.link.email) : undefined;
-    return Response.json({ ttl: idp.ttl, trouble: idp.trouble, ...(token ? { token } : {}), lastSignup: idp.lastSignup || null, lastRecovery: idp.lastRecovery || null, calls: idp.calls.slice(-200), live: idp.liveRefresh().length });
+    if (body.addUser && typeof body.addUser.email === "string") idp.addUser({ email: body.addUser.email, password: String(body.addUser.password || SAMPLE_PASSWORD), name: String(body.addUser.name || "") });
+    return Response.json({ ttl: idp.ttl, trouble: idp.trouble, ...(token ? { token } : {}), lastSignup: idp.lastSignup || null, lastRecovery: idp.lastRecovery || null, recoveries: idp.recoveries || 0, calls: idp.calls.slice(-200), live: idp.liveRefresh().length });
   }
   if (idp && path === "/__local/clock" && request.method === "POST") {
     const body = await request.json().catch(() => ({}));

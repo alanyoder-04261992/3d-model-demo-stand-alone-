@@ -15,7 +15,13 @@
    asking Identity, so the person's other devices stay signed in -- with a
    time limit, and never leaves the page signed in or stuck: until the
    server has said the sign-in is gone, a note in this browser makes the
-   next start ask again first.
+   next start ask again first. signOut({everywhere: true}) reloads only
+   once the server said every device is out; when it couldn't, it throws
+   the words and this device stays signed in to try again. A 401 on a tap
+   calls the signedOut handler (main.js), whose answer, when it keeps the
+   screen (unsaved changes), is the words the call throws.
+   signOutEverywhereWith(access) is the reset link's: every device out,
+   with the link's own token.
 
    BARNWRIGHT MODE (a Barnwright visit, docs/OFFICE.md "The visit"): every
    path goes to /api/office/barnwright/<path>, signed in by the visit's own
@@ -41,12 +47,14 @@ export class ApiError extends Error {
 export const VISIT_ENDED = "Your Barnwright visit ended. In your Control Room tap Open their price list, then come back and tap Save.";
 
 let signInMode = "netlify";
+let demo = false;
 let onSignedOut = () => {};
 let barnwright = false;
 let onVisitEnded = () => {};
 let onVisitBack = () => {};
-export function configureApi({ mode, signedOut, barnwright: visit, visitEnded, visitBack }) {
+export function configureApi({ mode, demo: inDemo, signedOut, barnwright: visit, visitEnded, visitBack }) {
   if (mode) signInMode = mode;
+  if (inDemo !== undefined) demo = !!inDemo;
   if (signedOut) onSignedOut = signedOut;
   if (visit !== undefined) barnwright = !!visit;
   if (visitEnded) onVisitEnded = visitEnded;
@@ -79,8 +87,8 @@ export async function api(path, options = {}) {
   }
   if (barnwright && r.ok) onVisitBack();
   if (r.status === 401 && path !== "me") {
-    onSignedOut(data);
-    throw new ApiError(401, "You were signed out. Sign in again.");
+    const words = onSignedOut(data);
+    throw new ApiError(401, typeof words === "string" && words ? words : "You were signed out. Sign in again.", null, data);
   }
   if (!r.ok && !(path === "me" && r.status === 401)) {
     throw new ApiError(r.status, data?.error || "Something went wrong on our end. Try again in a minute.", data?.problems || null, data);
@@ -173,17 +181,43 @@ export async function startSession(refreshToken, { keep = false, why } = {}) {
   return data;
 }
 
-/* Ask the server to end this device's sign-in. -> true when it did. */
-async function endOnServer(everywhere) {
+/* Words for the next Sign in card in this tab (after the reload). */
+const CARD_NOTE = "dealer-center:sign-in-note";
+export function takeSignInNote() {
+  try {
+    const words = sessionStorage.getItem(CARD_NOTE);
+    sessionStorage.removeItem(CARD_NOTE);
+    return words || null;
+  } catch { return null; }
+}
+function noteForCard(words) {
+  try { sessionStorage.setItem(CARD_NOTE, words); } catch { /* the card shows without them */ }
+}
+
+export const SIGN_OUT_WORDS = {
+  /* every Dealer Center sign-in ended, but Identity's own sign-out didn't answer */
+  everywhereHalf: "You're signed out of the Dealer Center on every device, but the sign-in didn't answer. In a minute, sign in and tap Sign out on every device again to finish.",
+  everywhereNot: "Couldn't sign out on every device. You're still signed in here. Try again in a minute.",
+  cantReach: "Can't reach the Dealer Center. Check your internet connection and try again.",
+  /* the reset link's sign out on every device didn't finish */
+  resetNotOut: "Your new password is saved, but the sign-in didn't answer, so your other devices may still be signed in. Wait a minute, then tap Save password again.",
+};
+
+/* Ask the server to end this device's sign-in (and with everywhere, every
+   device's; token: a reset link's own sign-in). -> {ok, status, data};
+   status 0 when it couldn't be reached in time. */
+async function endOnServer(everywhere, { token = null, why = null, ms = SIGN_OUT_MS } = {}) {
   try {
     const r = await fetchWithin("/api/office/sign-out", {
       method: "POST", credentials: "same-origin", cache: "no-store",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(everywhere ? { everywhere: true } : {}),
-    }, SIGN_OUT_MS);
-    return r.ok;
+      headers: { "Content-Type": "application/json", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      body: JSON.stringify(everywhere ? { everywhere: true, ...(why ? { why } : {}) } : {}),
+    }, ms);
+    let data = null;
+    try { data = await r.json(); } catch { data = null; }
+    return { ok: r.ok, status: r.status, data };
   } catch {
-    return false;
+    return { ok: false, status: 0, data: null };
   }
 }
 
@@ -191,21 +225,42 @@ async function endOnServer(everywhere) {
    asked again when the page starts. -> true when nothing is left over. */
 export async function finishSignOut() {
   if (noted(SIGNING_OUT) == null) return true;
-  if (!(await endOnServer(false))) return false;
+  if (!(await endOnServer(false)).ok) return false;
   note(SIGNING_OUT, null);
   return true;
 }
 
+/* The reset link: every device signed out -- every Dealer Center sign-in,
+   and at Identity every refresh token of this person, even one somebody
+   kept from the old password -- with the link's own token. Throws an
+   ApiError with words to show unless all of that happened. */
+export async function signOutEverywhereWith(access) {
+  const out = await endOnServer(true, { token: access, why: "password", ms: SIGN_OUT_MS * 2 });
+  if (out.status === 0) throw new ApiError(0, SIGN_OUT_WORDS.cantReach);
+  if (!out.ok || out.data?.everywhere !== true || out.data?.identity !== true) throw new ApiError(out.status, SIGN_OUT_WORDS.resetNotOut, null, out.data);
+  return out.data;
+}
+
 /* Sign out: this device only (or every device with everywhere). The
-   page then starts again on a clean sign-in card at /dealer. */
+   page then starts again on a clean sign-in card at /dealer. Every device:
+   only once the server said so -- otherwise this throws the words and this
+   device stays signed in to try again; when Identity itself didn't answer,
+   the card says so. */
 export async function signOut({ everywhere = false } = {}) {
   if (signInMode === "local") {
     try { await fetchWithin("/__local/sign-out", { method: "POST", credentials: "same-origin" }, SIGN_OUT_MS); } catch { /* the reload asks again */ }
+  } else if (everywhere) {
+    const out = await endOnServer(true, { ms: SIGN_OUT_MS * 2 });
+    /* (ok without everywhere, or 401: this device was signed out already -- start again) */
+    if (!out.ok && out.status !== 401) throw new ApiError(out.status, out.status === 0 ? SIGN_OUT_WORDS.cantReach : out.data?.error || SIGN_OUT_WORDS.everywhereNot, null, out.data);
+    if (out.data?.everywhere === true && out.data?.identity === false) noteForCard(SIGN_OUT_WORDS.everywhereHalf);
+    forgetOldSignIn();
   } else {
     note(SIGNING_OUT, "1");
-    if (await endOnServer(everywhere)) note(SIGNING_OUT, null);
+    if ((await endOnServer(false)).ok) note(SIGNING_OUT, null);
     forgetOldSignIn();
   }
-  tellOtherTabs("out");
+  /* the "try it" demo signs out of nothing real: the other tabs stay as they are */
+  if (!demo) tellOtherTabs("out");
   location.replace(location.pathname + location.search);
 }
