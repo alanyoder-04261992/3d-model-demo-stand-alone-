@@ -106,6 +106,14 @@ at once.
 * **History.** Every save keeps a copy of the price list and a list of what
   changed in words ("Lofted Barn 10×16: $5,540 → $5,700"). The owner can
   restore an earlier copy.
+* **Stricter checks never break a saved price list.** A save that adds a
+  misspelt setting, a How it's built number past its limits or an extra
+  that changes the roof through its construction settings is refused in
+  plain words ("Side Utility: "sizez" is not part of a building style. Did
+  you mean sizes?"). A problem the stored price list already had does not
+  stop a save, every lot's designer and quotes keep opening on it, and
+  putting an older copy back from History is always allowed
+  (`server/office/price-list.js check(next, previous)`).
 
 ## Building styles
 

@@ -63,7 +63,12 @@ Read through `model/layout.js openingRect` and `model/construction.js`:
 * **`openings.doorHeightIn`** `{gambrel: 71.5, other: 76.5}` -- the wooden
   shop door's opening height in inches by roof shape (`doorHeightFt`, drawn
   to four decimals of a foot: 5.9583 and 6.375, Barnwright's numbers). Set in
-  `eachItem` on the shop door, and used by the window-top rule.
+  `eachItem` on the shop door, and used by the window-top rule. A company's
+  own height is a How it's built number (`doorHeight`, the `how-its-built`
+  skill), which reaches this path through the style's own construction
+  layer; so a taller door also raises the window tops on the roofs where
+  they sit level with the door head (an 80 in door on a Utility Shed: door
+  and window tops at 6.6667 ft instead of 6.375).
 * **`openings.windowTop`** -- on gambrel (loft) builds a window's top sits
   `belowWallTopIn` (5) under the wall top; on other roofs it is level with the
   door head, never closer than `minBelowWallTopFt` (0.15) to the wall top.
@@ -200,8 +205,9 @@ The primitives (`common.js`):
    `appliesTo`), list it in `DRAW_MODULES`, add its label to `OPENING_TAGS`
    in `parts/index.js`, give its items that `draw` trait in the manufacturer
    file, and write its skill. Never test an item's code (`it.cat`).
-4. A different door height or window-top rule for a company: change its
-   construction (`openings.doorHeightIn`, `openings.windowTop`), not the code.
+4. A different door height for a company: How it's built (`doorHeight`). A
+   different window-top rule: its construction (`openings.windowTop`). Never
+   the code.
 5. If the finished look must really change, re-record the golden fixtures on
    purpose (`node tools/capture-golden.mjs`, with a reason) and say so in
    `docs/DIFFERENCES.md`.

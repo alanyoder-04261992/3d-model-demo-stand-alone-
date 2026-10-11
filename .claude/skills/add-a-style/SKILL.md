@@ -19,6 +19,11 @@ there -- every company that sells the style prices it in its own file. Read
 * **Same building sold twice, under two names and two prices** (a "Premium
   Lofted Barn" next to the Lofted Barn) -- no new style either: see "A style
   built like another one" below.
+* **Same building, built a little differently by one business** (a 6/12
+  roof, 7 ft walls, a 6 ft porch, 10 and 14 ft side porches, the dormer on
+  the back, a 6 in gable-end overhang, a taller barn roof, a taller shop
+  door) -- no new style: that is **How it's built** (`offer.<KEY>.built`),
+  the `how-its-built` skill.
 * **A building the traits below can describe** (a roof shape that exists, a
   wall height, a porch, a loft, a dormer, metal or painted, its own doors and
   windows) -- a new style entry, no code. This skill.
@@ -54,8 +59,9 @@ new code and a `base`:
 It is drawn, framed, fitted and priced exactly like its base:
 `model/company.js` copies the base's traits into it with `"base": "LB"`, and
 a construction rule that tests `"styles": ["LB"]` covers both (a rule naming
-`LBX1` is refused). `node tools/check-style-variants.mjs` proves it for every
-style at every size.
+`LBX1` is refused). It is built like its base in How it's built too: it
+follows `offer.LB.built` unless it has its own `built`. `node
+tools/check-style-variants.mjs` proves it for every style at every size.
 
 **When the shape is different** -- another wall height, roof, porch, loft or
 standard door and window layout -- it is a new library style: carry on below.
@@ -110,6 +116,19 @@ hold those to Barnwright's own numbers. A new style has a new key.
   "depthFt": 4}` -- a loft depth nobody has confirmed carries
   `"assumed": true`, and `docs/FOR-ALAN.md` must list it (check-docs holds
   that).
+* porch and dormer traits (each defaults to today's number, so leave them
+  out unless the style differs): `porchDepthFt` (a front, side or wrap
+  porch's depth in feet, 4), `sidePorch: {"lengthsFt": [8, 12]}` (the side
+  porch lengths it sells, whole feet; the shortest is used under 20 ft
+  long), `dormerSide` (`"door"` or `"back"`).
+* `built` -- the shop standard's How it's built numbers for this style
+  (`{"roofPitch": 5, "wallHeight": 93.5}`), only where Alan confirmed them;
+  every business gets them unless it sets its own (the `how-its-built`
+  skill). `validateManufacturer` checks them like a business's.
+* A key the style entry does not know (`"wallHeight"` instead of `wallH`,
+  `"porchDepth"`) is named with a did-you-mean by `validateManufacturer`, and
+  a business's `offer` entry likewise ("Side Utility: "sizez" is not part of
+  a building style. Did you mean sizes?").
 
 ## 3. The standard doors and windows (the loadout)
 

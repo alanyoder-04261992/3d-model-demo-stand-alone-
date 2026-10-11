@@ -1,0 +1,119 @@
+---
+name: how-its-built
+description: The "How it's built" settings -- roof pitch, barn roof height by width, eave and gable-end overhangs, wall height, wooden shop door height, porch depth, side porch lengths and dormer side -- for one style, a whole business or the shop standard; use when a business builds a style differently, when Alan confirms a shop number for the standard, when adding a new knob, or when a save is refused with a How it's built problem.
+---
+
+# How it's built
+
+Alan (Oct 2026, "lets all 5"): a business types how its buildings are built
+-- the roof pitch like 5/12, the wall height like 7 ft 9 1/2 in -- with sane
+limits, a plain error on a typo, and every change in History. The module is
+`model/build-settings.js` (pure: the designer, the server and the checks all
+use it). Read it with `docs/ARCHITECTURE.md` "How it's built".
+
+## The knobs
+
+| id | words | unit (stored as a number) | limits | applies to |
+|---|---|---|---|---|
+| `roofPitch` | Roof pitch | rise per 12 (5 = 5/12) | gable 3-12, lean-to 1-6, single slope 1-8; typed in quarter steps | gable, lean-to, single slope roofs |
+| `barnPeak` | Barn roof height | inches above the wall top, by width in feet `{"10": 48}` | 24-96 in, widths 6-16, 1-8 widths, a wider barn never lower | barn (gambrel) roofs |
+| `eaveOverhang` | Eave overhang | inches, measured level out from the long walls | gable 0-12, barn 0-3 | gable and barn roofs (not the cottages) |
+| `gableEndOverhang` | Gable-end overhang | inches | 0-12 | every roof |
+| `wallHeight` | Wall height | inches, floor to the top of the wall plate | 48-120 | every style; never business-wide |
+| `doorHeight` | Wooden shop door height | inches | 60-96 | every style |
+| `porchDepth` | Porch depth | feet | 3-8, 4 ft of room left inside; a wrap porch at most 7 ft and W - 6 | porch styles |
+| `sidePorchLengths` | Side porch lengths | whole feet, a list | 1-4 lengths, 4-20 ft, none twice | side porch styles |
+| `dormerSide` | Dormer side | "door" or "back" | -- | dormer styles |
+
+`parse(id, text, {kind})` reads what a person types ("5/12", "5 1/2/12",
+"7 ft 9 1/2 in", "93 1/2", a bare number in the box's unit) and says what is
+wrong in plain words ("Porch depth 72 ft is deeper than 8 ft. Did you mean
+72 in (6 ft)?"). `format(id, value)` writes it back the way a shed builder
+says it.
+
+## Where a number lives, and which wins (first found)
+
+1. `offer.<KEY>.built` -- this style's own.
+2. `offer.<BASE>.built` -- for a style of the business's own (`base`), the
+   style it is built like.
+3. `built` (top level) -- business-wide, by roof kind
+   (`{"roofPitch": {"gable": 6}, "doorHeight": {"barn": 71.5, "other": 76.5}}`),
+   unless the style has a **style feature** for that knob: the flush gable
+   ends of the Garden Utility and the cottages (`rakeOverhang`), the Standard
+   Barn's own shoulders (`gambrel`), the Dormer Shed's own main roof. A
+   number set on that style itself replaces the feature.
+4. `library/manufacturers/<m>.json` `styles.<KEY>.built` -- the shop
+   standard, except on a construction path the business's own raw
+   `construction` already sets.
+5. The library's raw number (`library/construction.json`, the style's raw
+   traits).
+
+An extra (`options.extras[i].built`) may hold roof pitch, barn roof height,
+eave and gable-end overhang and door height. Its roof pitch only ever makes
+a roof steeper (`constructionFor`'s "at least"); its other numbers replace
+the style's for that design. An extra may not change the wall height, the
+porch or the dormer.
+
+## How a number reaches the drawing
+
+`resolve()` (`model/company.js`) calls `apply()`: traits are set on the
+style (`wallH`, `porchDepthFt`, `sidePorch`, `dormerSide`; a replaced
+feature is deleted) and roof and door numbers go into the style's own
+construction layer `t.construction` (plain values: `roof.shapes.gable.rise =
+{"w": p/24}`, `roof.dormerRise` on the Dormer Shed, `roof.shapes.gambrel.peakIn`,
+`eaveOverhang {"flatIn": n}`, `rakeOverhang` / `endOverhang` in feet,
+`openings.doorHeightIn`). `constructionFor()` merges library < manufacturer
+< company < `t.construction` < the chosen options. `t.built` keeps where
+each number came from; `effective(cat, key)` gives the screens every knob's
+number, its words and its source.
+
+## Reading never fails; saving refuses only new problems
+
+* `validate()` keeps its old rules: the lot's designer and quotes open on any
+  price list that opened before.
+* `strictProblems()` (model/company.js) holds the new ones: every
+  `problems()` line here, a raw construction value on a path a knob owns
+  (`KNOB_PATHS`: "The construction settings hold the roof pitch. Set it in
+  How it's built instead."), an extra's knob it may not hold, and an extra's
+  or an option's `construction` effect (`effectProblems()`: a path the code
+  never reads, a value that cannot be built, or a path a knob owns -- the
+  owner reads "Steep roof: set this extra's roof pitch in How it's
+  built."). The Dealer
+  Center's save (`server/office/price-list.js check(next, previous)`) refuses
+  only the ones the stored price list did not already have; putting an old
+  copy back is always allowed.
+* On read, a bad value is skipped -- the next layer wins -- and said in
+  `cat.settingsWarnings` for the owner. An extra whose `construction` effect
+  has a problem changes nothing ("Steep roof: its construction settings
+  could not be used, so it does not change how the building is built.").
+* `liftRawRules()`: the Barnwright setup connector's raw roof pitch rule
+  list (one `{"when": {"styles": [K]}, "value": {"w": N}}` per gable style,
+  then the library's rise) becomes `offer.K.built.roofPitch`. `resolve()`
+  lifts in memory, `save()` for real ("Roof pitch rules moved into How it's
+  built (no building changes)"); the drawn roof is identical.
+* History: `describeChanges()` -- "Lofted Barn wall height: 6 ft 8 1/16 in
+  → 7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12".
+  Top-level `built` is a price part, so a change raises `cfg` and open
+  designers redraw.
+
+## Adding a knob
+
+1. Add it to `KNOBS` (words, unit, business-wide keys, `inExtra`), its limits,
+   `knobsFor()` (which styles), `mapKnob()` (which trait or construction path)
+   and `KNOB_PATHS` if it owns a construction path; `plainValue()` for what a
+   style has without it.
+2. The drawing must already read that trait or path with today's number as
+   its default -- the golden check (`node tools/check-golden.mjs`) must stay
+   the same.
+3. Prove it in `tools/check-build-settings.mjs` (it moves the drawing, typing
+   and errors, which layer wins) and, for a save, `tools/check-office.mjs`.
+4. Update this skill, the part skills it reaches and `docs/ARCHITECTURE.md`.
+
+## Checks
+
+* `node tools/check-build-settings.mjs` -- every seam, parse and format, the
+  order of the layers, features, extras, the lift, problems and History.
+* `node tools/check-office.mjs` -- saves refuse new problems in plain words,
+  an older price list keeps working, History lines, cfg.
+* `node tools/check-golden.mjs` -- with no settings, every building is
+  Barnwright's triangle for triangle.

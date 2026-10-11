@@ -293,6 +293,7 @@ Chromium's software graphics, each on its own port.
 | `check-imports.mjs` | no | every file meant to run without a browser really does; no JSON imports; no stray `Math.random` |
 | `check-parts.mjs` | no | every part is a valid part, its caption fills in, it has its skill, and every skill has its part |
 | `check-construction.mjs` | no | the construction settings are read, merged and settled per building the way the contract says |
+| `check-build-settings.mjs` | no | How it's built: the porch depth, side porch lengths, dormer side, barn roof height and overhangs and eaves measured level are settings the drawing follows; typed numbers like 5/12 or 7 ft 9 1/2 in are read and said back; which number wins; an extra's construction settings are checked; and with no setting every building is drawn as before |
 | `check-framing.mjs` | no | the floor, wall, foundation, porch-deck and inside framing is built like a real shed on 1,000+ buildings (and changes nothing in the finished view) |
 | `check-framing-roof.mjs` | no | the trusses, gable studs, roof deck, loft and dormer framing fit inside the roof as drawn and follow the construction numbers |
 | `check-companies.mjs` | yes | a company is one checked settings file, never given a price it did not set; about 35 mistakes give the right plain-English error |
