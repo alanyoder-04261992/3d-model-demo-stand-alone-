@@ -56,6 +56,7 @@
 import { constructionProblems, mergeConstruction, strictConstructionProblems, effectsToTree, didYouMean } from "./construction.js";
 import { standardItems, NAMED_RECIPES } from "./loadouts.js";
 import { dims, pSpan, wallDefs, sidePorchLengthsOf } from "./frame.js";
+import * as BUILT from "./build-settings.js";
 
 export const ID_RE = /^[a-z0-9-]{2,40}$/;
 export const SIZE_RE = /^(\d{1,3}(?:\.\d+)?)x(\d{1,3}(?:\.\d+)?)$/;
@@ -70,13 +71,15 @@ export const DRAWS = ["shop-door", "steel-6panel", "lite-door", "roll-up", "wind
   "faux-loft", "light", "porch-post", "bench", "shelf", "outlet", "overhead-light"];
 export const SCENES = ["studio", "yard", "paper"];
 const TOP_KEYS = ["id", "status", "manufacturer", "brand", "offer", "categories", "items", "options", "palettes", "defaults",
-  "construction", "pricing", "notes", "leads", "embed", "look", "features", "license", "renames", "cfg"];
+  "construction", "built", "pricing", "notes", "leads", "embed", "look", "features", "license", "renames", "cfg"];
 const OPTION_GROUPS = ["dormers", "ramps", "elec", "misc", "rates", "extras"];
 /* What an offer entry and a manufacturer style may hold. Anything else is a
    typo that used to be ignored without a word (offer.UT.wallH, sizez). */
-export const OFFER_KEYS = ["sizes", "name", "base"];
+export const OFFER_KEYS = ["sizes", "name", "base", "built"];
 export const STYLE_KEYS = ["name", "category", "roof", "wallH", "side", "dormer", "porch", "metal", "kennel", "cottage",
-  "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft", "loadout", "porchDepthFt", "sidePorch", "dormerSide"];
+  "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft", "loadout", "porchDepthFt", "sidePorch", "dormerSide", "built"];
+/* A style trait typed on an offer entry is set in How it's built instead. */
+const TRAIT_KNOB_WORDS = { wallH: "wall height", porchDepthFt: "porch depth", sidePorch: "side porch lengths", dormerSide: "dormer side", rakeOverhang: "gable-end overhang", gambrel: "barn roof height" };
 
 const DEFAULT_CREDIT = { text: "3D designer by Barnwright", url: "", show: true };
 
@@ -222,6 +225,8 @@ export function validateManufacturer(m) {
   }
   err.push(...constructionProblems(m.construction || {}, "manufacturer construction"));
   err.push(...strictConstructionProblems(m.construction || {}, "construction"));
+  /* the shop standard's "How it's built" numbers (styles.<KEY>.built) */
+  err.push(...BUILT.libraryProblems(m));
   /* an option's effect on how the building is built (rates.jo12: floor.spacingIn 12) */
   for (const g of ["dormers", "ramps", "elec", "misc", "rates"]) {
     for (const id of keysOf(O[g])) {
@@ -695,10 +700,19 @@ export function strictProblems(company, manufacturer) {
     if (!isObj(o)) continue;
     for (const f of Object.keys(o)) {
       if (f.startsWith("_") || OFFER_KEYS.indexOf(f) >= 0) continue;
-      out.push(`offer.${k}.${f} is not part of a building style${didYouMean(f, OFFER_KEYS)}`);
+      out.push(TRAIT_KNOB_WORDS[f] ? `offer.${k}.${f} is not part of a building style. Set its ${TRAIT_KNOB_WORDS[f]} in How it's built instead.`
+        : `offer.${k}.${f} is not part of a building style${didYouMean(f, OFFER_KEYS)}`);
     }
   }
   if (isObj(company.construction)) out.push(...strictConstructionProblems(company.construction, "construction"));
+  /* How it's built: the business's own numbers, checked; a raw construction
+     setting on a path a knob owns ("set it in How it's built instead") */
+  for (const p of BUILT.problems(company, manufacturer)) out.push(`${p.path}: ${p.words}`);
+  /* an extra's built: only the knobs an extra may hold */
+  const extras = isObj(company.options) && Array.isArray(company.options.extras) ? company.options.extras : [];
+  extras.forEach((x, i) => {
+    if (isObj(x)) for (const p of BUILT.extraProblems(x.built, `options.extras[${i}].built`, x.name)) out.push(`${p.path}: ${p.words}`);
+  });
   return out;
 }
 
@@ -729,7 +743,11 @@ export function resolve(company, manufacturer, library) {
     e.problems = all;
     throw e;
   }
-  const c = company, m = manufacturer, mO = m.options || {}, O = c.options || {};
+  /* a roof pitch rule list the Barnwright setup connector wrote is read as
+     How it's built (the drawn roof is the same either way) */
+  const c = BUILT.liftRawRules(company, manufacturer).settings, m = manufacturer, mO = m.options || {}, O = c.options || {};
+  /* How it's built: each offered style's own numbers (model/build-settings.js) */
+  const built = BUILT.apply(c, m);
   const COLORS = {
     paint: resolvePalette(c.palettes && c.palettes.paint, m, "paint"),
     trim: resolvePalette(c.palettes && c.palettes.trim, m, "trim"),
@@ -746,6 +764,13 @@ export function resolve(company, manufacturer, library) {
     t.loadout = copy(s.loadout);
     t.category = s.category || "";
     if (o.base != null) t.base = base;
+    const B = built.styles[k];
+    if (B) {
+      Object.assign(t, copy(B.traits));
+      for (const f of B.drop) delete t[f];
+      if (Object.keys(B.construction).length) t.construction = copy(B.construction);
+      if (Object.keys(B.built).length) t.built = copy(B.built);
+    }
     TYPES[k] = t;
     P[k] = {};
     for (const z of keysOf(o.sizes)) P[k][z] = o.sizes[z];
@@ -819,6 +844,14 @@ export function resolve(company, manufacturer, library) {
   const extras = (O.extras || []).map((x) => {
     const e = { key: x.key, name: x.name, input: x.input, price: x.price };
     if (x.construction) optionEffects[x.key] = stripHelp(copy(x.construction));
+    /* an extra's How it's built numbers, worked out for each style it
+       reaches (its roof pitch only ever makes a roof steeper) */
+    if (isObj(x.built)) {
+      for (const k of Object.keys(TYPES)) {
+        const fx = BUILT.optionEffectFor(x.built, TYPES[k]);
+        if (fx) (TYPES[k].optionEffects = TYPES[k].optionEffects || {})[x.key] = fx;
+      }
+    }
     return e;
   });
   const LISTS = {};
@@ -854,6 +887,9 @@ export function resolve(company, manufacturer, library) {
     defaults,
     construction: mergeConstruction(library || {}, m.construction || {}, c.construction || {}),
     optionEffects,
+    /* How it's built numbers that could not be used (a bad value falls back
+       to the next layer); the Dealer Center shows them to the owner */
+    settingsWarnings: built.warnings.slice(),
     pricing: {
       show: pr.show || "price",
       roundTo: pr.roundTo != null ? pr.roundTo : 5,

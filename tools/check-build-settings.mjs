@@ -36,7 +36,9 @@
 
 import { readJSON, readManufacturer } from "./lib/load.mjs";
 import { barnwrightCompany } from "./lib/barnwright-company.mjs";
-import { resolve } from "../model/company.js";
+import { resolve, validate, validateManufacturer, strictProblems } from "../model/company.js";
+import * as BUILT from "../model/build-settings.js";
+import { gableEndOverhangOf } from "../parts/roofing.js";
 import { defaults, setType, setSize } from "../model/design.js";
 import { frameOf } from "../model/frame.js";
 import { makePlan } from "../model/plan.js";
@@ -106,6 +108,7 @@ function boxes(list, mirror) {
 }
 
 const BASE = catalogue();
+const gableEndOf = (plan) => gableEndOverhangOf(plan);
 
 /* ------------------------------------------------------------------ 1 */
 group("1. porch depth");
@@ -241,6 +244,123 @@ group("8. today's numbers written out draw today's buildings");
   ok(`every building of those styles is the same (${same} of ${n})`, same === n && n > 50);
   const a = partVerts(makePlan(stateOf(cat, "DSC", "12x20"), cat), "porch"), b = partVerts(makePlan(stateOf(BASE, "DSC", "12x20"), BASE), "porch");
   ok("... and a wrap porch draws the same triangles", J(a) === J(b));
+}
+
+/* ------------------------------------------------------------------ 9 */
+group("9. typing a value: parse, format and the plain errors");
+{
+  const P = (id, v, c) => BUILT.parse(id, v, c || {});
+  ok("5/12 reads as 5", P("roofPitch", "5/12", { kind: "gable" }).value === 5);
+  ok("5 1/2/12, 5.5/12 and 5 in 12 read too", P("roofPitch", "5 1/2/12").value === 5.5 && P("roofPitch", "5.5/12").value === 5.5 && P("roofPitch", "5 in 12").value === 5);
+  ok("\"5\\12\" is a typo: \"Roof pitch: write it like 5/12.\"", P("roofPitch", "5\\12").problem === "Roof pitch: write it like 5/12.", J(P("roofPitch", "5\\12")));
+  ok("15/12 is past the limit, in words", P("roofPitch", "15/12", { kind: "gable" }).problem === "Roof pitch 15/12 is steeper than 12/12, the steepest the 3D designer draws.");
+  ok("\"roofPich\" says \"Did you mean roof pitch?\"", P("roofPich", "5/12").problem === "\"roofPich\" is not a building setting. Did you mean roof pitch?");
+  ok("93.5 in writes as 7 ft 9 1/2 in", BUILT.format("wallHeight", 93.5) === "7 ft 9 1/2 in");
+  ok("7 ft 9 1/2 in, 7' 9 1/2\" and 93 1/2 all read as 93.5", P("wallHeight", "7 ft 9 1/2 in").value === 93.5 && P("wallHeight", "7' 9 1/2\"").value === 93.5 && P("wallHeight", "93 1/2").value === 93.5);
+  ok("a porch depth of \"6\" is 6 ft (the box's unit)", P("porchDepth", "6").value === 6);
+  ok("\"72\" in the porch depth suggests inches", P("porchDepth", "72").problem === "Porch depth 72 ft is deeper than 8 ft. Did you mean 72 in (6 ft)?", P("porchDepth", "72").problem);
+  ok("a 6 in eave is refused on a barn roof", P("eaveOverhang", "6", { kind: "barn" }).problem === "Eave overhang 6 in is more than a barn roof can take: 3 in at most.");
+  ok("barn heights must not drop as the barn gets wider", /the 12 ft wide barn \(4 ft\) is lower than the 10 ft wide barn \(4 ft 3 in\)/.test(P("barnPeak", { 10: 51, 12: 48 }).problem || ""));
+  ok("side porch lengths: listed twice is said", P("sidePorchLengths", [8, 8]).problem === "Side porch lengths: 8 ft is listed twice.");
+  ok("pitches write as a shed builder says them", BUILT.format("roofPitch", 5) === "5/12" && BUILT.format("roofPitch", 5.25) === "5 1/4/12" && BUILT.format("barnPeak", { 8: 43.75, 10: 48 }) === "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft");
+}
+
+/* ------------------------------------------------------------------ 10 */
+group("10. which number wins");
+{
+  const rise = (cat, t, z = "10x16") => { const fr = frameOf(stateOf(cat, t, z), cat); return Math.max(...fr.prof.map((p) => p[1])) - fr.topY; };
+  const pitchOf = (cat, t, z = "10x16") => rise(cat, t, z) / (+z.split("x")[0] / 2) * 12;
+  const co = (more) => Object.assign(barnwrightCompany(), more || {});
+  const withBuilt = (fn, m = M) => { const c = barnwrightCompany(); fn(c); return resolve(c, m, LIB); };
+  /* a manufacturer with a shop standard of 5/12 on the Utility Shed */
+  const MS = copy(M); MS.styles.UT.built = { roofPitch: 5 }; MS.styles.GU.built = { roofPitch: 4 };
+  ok("the library's own (no setting anywhere): 6.48/12", near(pitchOf(BASE, "UT"), 6.48));
+  ok("the shop standard (styles.UT.built) beats the library: 5/12", near(pitchOf(withBuilt(() => {}, MS), "UT"), 5));
+  ok("business-wide beats the standard: 6/12", near(pitchOf(withBuilt((c) => { c.built = { roofPitch: { gable: 6 } }; }, MS), "UT"), 6));
+  ok("the style's own beats business-wide: 8/12", near(pitchOf(withBuilt((c) => { c.built = { roofPitch: { gable: 6 } }; c.offer.UT.built = { roofPitch: 8 }; }, MS), "UT"), 8));
+  ok("the business's raw construction keeps the standard off its path", near(pitchOf(withBuilt((c) => { c.construction = { roof: { shapes: { gable: { rise: { w: 0.25 } } } } }; }, MS), "UT"), 6));
+  const prem = withBuilt((c) => { c.offer.UTX1 = { base: "UT", name: "Premium Utility", sizes: { "10x16": 6000 } }; c.categories[0][1].push("UTX1"); c.offer.UT.built = { roofPitch: 6 }; });
+  ok("\"Premium Utility\" (built like the Utility Shed) follows offer.UT.built.roofPitch 6", near(pitchOf(prem, "UTX1"), 6) && near(pitchOf(prem, "UT"), 6));
+  const prem2 = withBuilt((c) => { c.offer.UTX1 = { base: "UT", name: "Premium Utility", sizes: { "10x16": 6000 }, built: { roofPitch: 7 } }; c.categories[0][1].push("UTX1"); c.offer.UT.built = { roofPitch: 6 }; });
+  ok("... unless it has its own number", near(pitchOf(prem2, "UTX1"), 7) && near(pitchOf(prem2, "UT"), 6));
+  /* style features */
+  const biz = withBuilt((c) => { c.built = { roofPitch: { gable: 4 }, gableEndOverhang: { gable: 6 } }; });
+  ok("a business-wide gable-end overhang does not reach the Garden Utility's flush end", near(frameOf(stateOf(biz, "GU", "8x12"), biz).t.rakeOverhang, 0.03) && biz.TYPES.GU.built.gableEndOverhang.from === "style feature");
+  ok("... nor a business-wide pitch the Dormer Shed's own main roof", near(rise(biz, "DS"), 10 * 0.30) && near(pitchOf(biz, "UT"), 4));
+  const own = withBuilt((c) => { c.offer.GU.built = { gableEndOverhang: 6 }; c.offer.DS.built = { roofPitch: 8 }; });
+  const gu = makePlan(stateOf(own, "GU", "8x12"), own);
+  ok("set on the Garden Utility itself, it replaces the flush end (6 in)", near(roofSection(gu).ov !== undefined ? roofSection(gu).ov : gableEndOf(gu), 0.5) && own.TYPES.GU.rakeOverhang === undefined, J(own.TYPES.GU));
+  ok("set on the Dormer Shed itself, its main roof is 8/12", near(rise(own, "DS"), 10 * 8 / 24));
+  /* the wall height used to be ignored */
+  const lb = withBuilt((c) => { c.offer.LB.built = { wallHeight: 84 }; });
+  ok("offer.LB.built.wallHeight 84 draws 7 ft walls", near(frameOf(stateOf(lb, "LB", "10x16"), lb).topY - frameOf(stateOf(BASE, "LB", "10x16"), BASE).topY, 7 - 6.67));
+  /* a bad value falls through, with a warning for the owner */
+  const bad = withBuilt((c) => { c.offer.UT.built = { roofPitch: 20 }; }, MS);
+  ok("a value past the limits is skipped (the standard 5/12 is used) and said", near(pitchOf(bad, "UT"), 5) && bad.settingsWarnings.some((w) => /Roof pitch 20\/12 is steeper/.test(w)), J(bad.settingsWarnings));
+  /* extras: a roof pitch only ever makes a roof steeper */
+  const ex = (pitch) => withBuilt((c) => { c.offer.UT.built = { roofPitch: pitch }; c.options.extras = [{ key: "steep", name: "Steep roof", input: "check", price: 300, built: { roofPitch: 7 } }]; });
+  const on = (cat) => { const s = stateOf(cat, "UT", "10x16"); s.xopt = { steep: 1 }; return s; };
+  const pOn = (cat) => { const fr = frameOf(on(cat), cat); return (Math.max(...fr.prof.map((p) => p[1])) - fr.topY) / 5 * 12; };
+  ok("an extra with roof pitch 7 on a Utility Shed set to 8/12 leaves it at 8/12", near(pOn(ex(8)), 8), String(pOn(ex(8))));
+  ok("... and makes a 5/12 one 7/12", near(pOn(ex(5)), 7), String(pOn(ex(5))));
+  ok("... only while it is picked", near(pitchOf(ex(5), "UT"), 5));
+  /* the setup connector's raw rule list lifts, drawing the same roof */
+  const rule = withBuilt((c) => { c.construction = { roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 5 / 24 } }, { value: { w: LIB.roof.shapes.gable.rise.w } }] } } } }; });
+  const raw = barnwrightCompany(); raw.construction = { roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 5 / 24 } }, { value: { w: LIB.roof.shapes.gable.rise.w } }] } } } };
+  const lifted = BUILT.liftRawRules(raw, M);
+  ok("the connector's rule for the Utility Shed lifts to offer.UT.built.roofPitch 5", lifted.settings.offer.UT.built.roofPitch === 5 && lifted.settings.construction === undefined && lifted.moved.length === 1, J(lifted.settings.construction));
+  const after = resolve(lifted.settings, M, LIB);
+  ok("... and draws the same roof before and after, every size", Object.keys(BASE.P.UT).every((z) => J(frameOf(stateOf(rule, "UT", z), rule).prof) === J(frameOf(stateOf(after, "UT", z), after).prof)) && near(pitchOf(after, "UT"), 5));
+  ok("... while a rule list of another shape stays raw", BUILT.liftRawRules({ offer: raw.offer, construction: { roof: { shapes: { gable: { rise: [{ when: { maxW: 8 }, value: { w: 0.3 } }, { value: { w: 0.27 } }] } } } } }, M).moved.length === 0);
+}
+
+/* ------------------------------------------------------------------ 11 */
+group("11. problems, screens and History words");
+{
+  const c = barnwrightCompany();
+  c.offer.LB.built = { roofPitch: 6, wallHeigth: 84 };
+  c.offer.UT.built = { porchDepth: 6 };
+  c.built = { roofPich: { gable: 5 }, wallHeight: 90, eaveOverhang: { barn: 6 } };
+  c.options.extras = [{ key: "tall", name: "Tall walls", input: "check", price: 100, built: { wallHeight: 96 } }];
+  const p = BUILT.problems(c, M).map((x) => `${x.path}: ${x.words}`);
+  const has = (re) => p.some((x) => re.test(x));
+  ok("a barn style has no roof pitch: said with the path first", has(/^offer\.LB\.built\.roofPitch: The Lofted Barn has a barn roof, so it has no roof pitch\. Set its barn roof height instead\.$/), J(p));
+  ok("a typo in a knob on a style: did you mean", has(/^offer\.LB\.built\.wallHeigth: "wallHeigth" is not a building setting\. Did you mean wall height\?$/));
+  ok("a porch depth on a style with no porch", has(/^offer\.UT\.built\.porchDepth: The Utility Shed has no porch\.$/));
+  ok("a business-wide typo", has(/^built\.roofPich: "roofPich" is not a building setting\. Did you mean roof pitch\?$/));
+  ok("no business-wide wall height", has(/^built\.wallHeight: Wall height is set on each style/));
+  ok("a business-wide barn eave of 6 in", has(/^built\.eaveOverhang\.barn: Eave overhang 6 in is more than a barn roof can take: 3 in at most\.$/));
+  const sp = strictProblems(c, M);
+  ok("an extra cannot change the wall height", sp.includes("options.extras[0].built.wallHeight: An extra cannot change the wall height. Set it on the style in How it's built."), J(sp.filter((x) => /extras/.test(x))));
+  ok("every one of them is a strict problem (refused on save when new, never on read)", p.every((x) => sp.includes(x)) && validate(c, M).length === 0);
+  const raw = barnwrightCompany(); raw.construction = { roof: { shapes: { gable: { rise: { w: 0.3 } } } } };
+  ok("a raw roof rise is \"set in the construction settings\"", strictProblems(raw, M).includes("construction.roof.shapes.gable.rise: Roof pitch is set in the construction settings. Set it in How it's built instead."));
+  const wide = barnwrightCompany(); wide.built = { porchDepth: 7 };
+  ok("a wrap porch too deep for its narrowest size is said", BUILT.problems(wide, M).some((x) => x.path === "built.porchDepth" && x.words === "Porch depth 7 ft leaves the 12 ft wide Deluxe Side Cabin no angled wall: 6 ft at most."), J(BUILT.problems(wide, M)));
+  ok("... and a side porch that leaves too little room", BUILT.problems(wide, M).some((x) => x.words === "Porch depth 7 ft leaves the 10 ft wide Side Cabin less than 4 ft of room inside."));
+  /* the shop standard in the manufacturer file is checked as errors */
+  const MS = copy(M); MS.styles.LB.built = { roofPitch: 5 };
+  ok("the shop standard's mistakes are manufacturer errors", validateManufacturer(MS).some((x) => /^styles\.LB\.built\.roofPitch: The Lofted Barn has a barn roof/.test(x)));
+  /* what the screens show */
+  const cat = (() => { const x = barnwrightCompany(); x.offer.UT.built = { roofPitch: 6 }; x.built = { eaveOverhang: { gable: 5 } }; return resolve(x, M, LIB); })();
+  const eff = Object.fromEntries(BUILT.effective(cat, "UT").map((e) => [e.id, e]));
+  ok("effective: the style's own pitch, from this style", eff.roofPitch.words === "6/12" && eff.roofPitch.from === "this style");
+  ok("effective: a business-wide eave", eff.eaveOverhang.words === "5 in" && eff.eaveOverhang.from === "business-wide");
+  ok("effective: the library's wall, in a builder's words", eff.wallHeight.words === "7 ft 9 in" && eff.wallHeight.from === "library", J(eff.wallHeight));
+  const effLB = Object.fromEntries(BUILT.effective(BASE, "LB").map((e) => [e.id, e]));
+  ok("effective: the library's barn roof heights by width", /^8 ft wide: 3 ft 7 3\/16 in, 10 ft wide: 4 ft 6 in/.test(effLB.barnPeak.words), effLB.barnPeak.words);
+  /* History */
+  const before = barnwrightCompany(), after = copy(before);
+  after.offer.LB.built = { wallHeight: 84 }; after.built = { roofPitch: { gable: 6 } };
+  const lines = BUILT.describeChanges(before, after, M);
+  ok("History: \"Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft\"", lines.includes("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft"), J(lines));
+  ok("History: \"Business-wide roof pitch for gable roofs: standard → 6/12\"", lines.includes("Business-wide roof pitch for gable roofs: standard → 6/12"), J(lines));
+  /* a pure edit */
+  const e1 = BUILT.setBuilt(before, { style: "UT", knob: "roofPitch", value: "5/12" });
+  ok("setBuilt writes the number", e1.problems.length === 0 && e1.settings.offer.UT.built.roofPitch === 5 && before.offer.UT.built === undefined);
+  const e2 = BUILT.setBuilt(e1.settings, { style: "UT", knob: "roofPitch", value: null });
+  ok("... and null puts the standard back", e2.settings.offer.UT.built === undefined);
+  ok("... a typo comes back as words", BUILT.setBuilt(before, { style: "UT", knob: "roofPitch", value: "5\\12" }).problems[0].words === "Roof pitch: write it like 5/12.");
 }
 
 /* ---------------------------------------------------------------- report */

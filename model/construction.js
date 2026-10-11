@@ -30,6 +30,7 @@
      doorHeightFt / windowTopFt               the two opening-height shop rules */
 
 import { STAGES, STAGE_ID } from "../parts/stages.js";
+import { lengthOf } from "./roof-shapes.js";
 
 export const BUILDING_WHEN = ["minW", "maxW", "minL", "maxL", "styles", "roof", "metal"];
 export const OPENING_WHEN = ["minSpanFt", "maxSpanFt"];
@@ -451,8 +452,31 @@ export function chosenOptionKeys(state, t) {
 export function constructionFor(cat, state, t, d) {
   const effects = (cat && cat.optionEffects) || {};
   const layers = [cat && cat.construction, t && t.construction];
-  for (const k of chosenOptionKeys(state, t)) if (effects[k]) layers.push(effectsToTree(effects[k]));
-  return resolveConstruction(mergeConstruction(...layers), buildingFacts(state.type, t, d));
+  const chosen = chosenOptionKeys(state, t);
+  for (const k of chosen) if (effects[k]) layers.push(effectsToTree(effects[k]));
+  const facts = buildingFacts(state.type, t, d);
+  /* an extra's How it's built numbers for this style (model/build-settings.js
+     optionEffectFor): they replace the style's, except a roof rise marked
+     "at least", which is kept when the building's own is steeper already */
+  const own = (t && t.optionEffects) || {};
+  const extra = chosen.filter((k) => own[k]);
+  if (!extra.length) return resolveConstruction(mergeConstruction(...layers), facts);
+  const before = resolveConstruction(mergeConstruction(...layers), facts);
+  const after = resolveConstruction(mergeConstruction(before, ...extra.map((k) => own[k].tree)), facts);
+  for (const k of extra) {
+    for (const path of own[k].atLeast || []) {
+      const a = atPath(before, path), b = atPath(after, path);
+      if (a !== undefined && b !== undefined && lengthOf(a, d.W) > lengthOf(b, d.W)) putPath(after, path, clone(a));
+    }
+  }
+  return after;
+}
+function atPath(tree, path) { return path.split(".").reduce((o, k) => (isPlainObject(o) ? o[k] : undefined), tree); }
+function putPath(tree, path, v) {
+  const bits = path.split(".");
+  let o = tree;
+  for (let i = 0; i < bits.length - 1; i++) { if (!isPlainObject(o[bits[i]])) o[bits[i]] = {}; o = o[bits[i]]; }
+  o[bits[bits.length - 1]] = v;
 }
 
 /* The wooden shop-door opening height in FEET for this roof. The settings say

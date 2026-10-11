@@ -15,9 +15,10 @@
 
 import { validate, validateManufacturer, resolve, strictProblems, SIZE_RE, ID_RE } from "../../model/company.js";
 import { fail, OfficeError } from "./http.js";
+import { describeChanges as builtChanges, liftRawRules } from "../../model/build-settings.js";
 
 /* The parts of the settings that change what a customer can pick or pay. */
-const PRICE_PARTS = ["offer", "categories", "items", "options", "palettes", "construction"];
+const PRICE_PARTS = ["offer", "categories", "items", "options", "palettes", "construction", "built"];
 const POLICY_PARTS = ["roundTo", "minCharge", "roofAreaFactor"];
 
 export function priceFingerprint(settings) {
@@ -110,6 +111,12 @@ export function explainProblem(problem, manufacturer, settings = {}) {
   const withoutCodes = (names) => names.replace(/ \([A-Za-z0-9_-]+\)/g, "");
 
   const rules = [
+    /* How it's built (model/build-settings.js): its problems are already in
+       the owner's words, after the settings path */
+    [/^(?:offer\.\w+\.|options\.extras\[\d+\]\.)?built(?:\.\S+)?: (.*)$/, (m) => m[1]],
+    [/^construction\S*?: (.+ is set in the construction settings.*)$/, (m) => m[1]],
+    [/^offer\.(\w+)\.\S+ is not part of a building style\. Set its (.+?) in How it's built instead\./,
+      (m) => `${styleName(m[1])}: set its ${m[2]} in How it's built.`],
     [/^The company file is not a settings object/, () => "The price list is missing. Reload the page and try again."],
     [/^status must be/, () => "Pick whether the designer is open or closed to customers."],
     [/^manufacturer is /, () => "The builder's library cannot change here."],
@@ -338,6 +345,9 @@ export function describeChanges(before, after, manufacturer) {
   if (!same(before.leads, after.leads)) out.push("Changed what the quote form asks for");
   if (!same(before.features, after.features) || !same(before.look, after.look)) out.push("Changed how the designer looks");
 
+  /* How it's built: "Lofted Barn wall height: 6 ft 8 in → 7 ft" */
+  out.push(...builtChanges(before, after, M));
+
   if (!out.length && !same(before, after)) out.push("Changed other settings");
   return [...new Set(out)];
 }
@@ -462,15 +472,20 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     const previous = await current();
     if (!previous) fail(404, "The price list has not been set up yet.");
     if (version !== previous.data.version) fail(409, SAVED_FIRST);
-    const next = clean(settings);
+    let next = clean(settings);
     const old = previous.data.settings;
     if (next.id !== old.id) fail(422, "This price list belongs to a different business. Reload the page and try again.");
     if (next.manufacturer !== old.manufacturer) fail(422, "The builder's library cannot change here.");
-    next.cfg = priceFingerprint(next) === priceFingerprint(old) ? old.cfg : (old.cfg || 1) + 1;
+    /* a roof pitch rule list the Barnwright setup connector wrote moves into
+       How it's built (model/build-settings.js liftRawRules): the same roof */
+    const lifted = liftRawRules(next, manufacturer);
+    next = lifted.settings === next ? next : clean(lifted.settings);
+    next.cfg = priceFingerprint(next) === priceFingerprint(liftRawRules(old, manufacturer).settings) ? old.cfg : (old.cfg || 1) + 1;
     /* a stricter rule refuses only what is new: compared with the stored
        price list, or, when putting an old copy back, with that copy */
     check(next, restoredFrom !== undefined ? restoredFrom : old);
     const changes = describeChanges(old, next, manufacturer);
+    if (lifted.moved.length) changes.push(...lifted.moved);
     if (restoring) changes.unshift(`Put back the price list saved ${restoring}`);
     if (!changes.length) return { ...previous.data, cfg: old.cfg, changes: [] };
     const record = { settings: next, version: previous.data.version + 1, cfg: next.cfg, savedAt: iso(), savedBy: { id: by.userId, name: by.name || by.email } };

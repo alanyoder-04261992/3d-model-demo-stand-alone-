@@ -695,6 +695,10 @@ const BROKEN = [
   ["a quote form sent nowhere", (s) => { s.leads.mode = "webhook"; }, /quote form settings/],
   ["a look nobody knows", (s) => { s.look = { scene: "moon" }; }, /look could not be saved/],
   ["two styles with one name", (s) => { s.offer.UT.name = "Lofted Barn"; }, /Two building styles are called Lofted Barn/],
+  ["a roof pitch on a barn roof", (s) => { s.offer.LB.built = { roofPitch: 6 }; }, /has a barn roof, so it has no roof pitch\. Set its barn roof height instead\./],
+  ["a How it's built setting misspelled", (s) => { s.built = { roofPich: { gable: 5 } }; }, /"roofPich" is not a building setting\. Did you mean roof pitch\?/],
+  ["a roof pitch past the limit", (s) => { s.offer.UT.built = { roofPitch: 15 }; }, /Roof pitch 15\/12 is steeper than 12\/12/],
+  ["an extra that changes the wall height", (s) => { s.options.extras = [{ key: "tall", name: "Tall walls", input: "check", price: 1, built: { wallHeight: 96 } }]; }, /An extra cannot change the wall height\. Set it on the style in How it's built\./],
 ];
 for (const [label, change, words] of BROKEN) {
   const s = clone(cur.settings);
@@ -760,6 +764,41 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   olderNow = await want(200, "GET", "/api/office/price-list");
   const fixed = await want(200, "PUT", "/api/office/price-list", { settings: clean, version: olderNow.version }, { label: "taking the old typos out again" });
   ok("taking the old typos out is always allowed", same(fixed.settings.offer, clean.offer) && same(fixed.settings.construction ?? null, clean.construction ?? null));
+}
+
+/* HOW IT'S BUILT ON SAVE: a style's own wall height is saved, raises cfg
+   (open designers redraw) and says so in History; the setup connector's raw
+   roof pitch rule moves into How it's built with no building change. */
+{
+  let cur = await want(200, "GET", "/api/office/price-list");
+  const lbName = cur.settings.offer.LB.name || manufacturer.styles.LB.name;
+  let s = clone(cur.settings); s.offer.LB.built = { wallHeight: 84 };
+  let out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "saving a Lofted Barn wall height of 7 ft" });
+  ok(`... History says "${lbName} wall height: 6 ft 8 1/16 in → 7 ft"`, out.changes.includes(`${lbName} wall height: 6 ft 8 1/16 in → 7 ft`), JSON.stringify(out.changes));
+  ok("... and cfg goes up, so open designers redraw", out.cfg === cur.cfg + 1);
+  ok("... the lot's designer draws the 7 ft walls", (await liveCat()).TYPES.LB.wallH === 7);
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.built = { roofPitch: { gable: 6 } };
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "saving a business-wide roof pitch" });
+  ok("a business-wide roof pitch says so in History and raises cfg", out.changes.includes("Business-wide roof pitch for gable roofs: standard → 6/12") && out.cfg === cur.cfg + 1, JSON.stringify(out.changes));
+  /* the connector's rule list, as it writes it */
+  cur = await want(200, "GET", "/api/office/price-list");
+  const raw = await S.read("price-list");
+  const withRule = clone(raw.data.settings);
+  delete withRule.built; delete withRule.offer.LB.built;
+  withRule.construction = { roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 5 / 24 } }, { value: { w: library.roof.shapes.gable.rise.w } }] } } } };
+  await S.put("price-list", { ...raw.data, settings: withRule, version: raw.data.version + 1 });
+  const catRule = await liveCat();
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.UT.sizes["8x12"] += 1;
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "a price change on a price list holding the connector's roof pitch rule" });
+  ok("the connector's roof pitch rule moves into How it's built on the next save", out.settings.offer.UT.built?.roofPitch === 5 && out.settings.construction === undefined
+    && out.changes.includes("Roof pitch rules moved into How it's built (no building changes)"), JSON.stringify([out.settings.construction, out.settings.offer.UT.built, out.changes]));
+  const catLifted = await liveCat();
+  ok("... and the Utility Shed's roof is the same", same(frameOf(designOf(catRule, "UT", "10x16").state, catRule).prof, frameOf(designOf(catLifted, "UT", "10x16").state, catLifted).prof));
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); delete s.offer.UT.built;
+  await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "putting the standard pitch back" });
 }
 sectionDone();
 
