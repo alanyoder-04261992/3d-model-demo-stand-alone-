@@ -401,9 +401,9 @@ function reachWords(reach, offer) {
   return out.join(" ");
 }
 
-/* "Built now: 5/12 on the Utility Shed and Side Utility; about 6 1/2/12 on
-   the Garden Utility, Cabin and 6 more." -- "standard" is not one number
-   (review W4) */
+/* "Built now: 5/12 on the Utility Shed, Side Utility and 3 more; about
+   6 1/2/12 on the Cabin, Side Cabin and 3 more." -- "standard" is not one
+   number (review W4) */
 function nowWords(id, keys, offer) {
   if (id === "barnPeak" || !keys.length) return "";
   const cat = catOf(S.draft);

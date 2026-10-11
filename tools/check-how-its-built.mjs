@@ -134,7 +134,9 @@ try {
     /* "standard" is not one number: the card says what each style is built
        with now (review W4) */
     const card = await page.textContent(".pl-built-card");
-    ok(`${width} wide: ... and what each style is built with now ("Built now: 5/12 on the Utility Shed and Side Utility; about 6 1/2/12 on the ...")`, /Built now: 5\/12 on the Utility Shed and Side Utility; about 6 1\/2\/12 on the /.test(card), card.slice(0, 400));
+    /* five gable styles have the shop's 5/12 since Oct 11 2026 (the Garage,
+       Dog Kennel and Garden Utility too); the Dormer Shed keeps its own */
+    ok(`${width} wide: ... and what each style is built with now ("Built now: 5/12 on the Utility Shed, Side Utility and 3 more; about 6 1/2/12 on the ...")`, /Built now: 5\/12 on the Utility Shed, Side Utility and 3 more; about 6 1\/2\/12 on the /.test(card), card.slice(card.indexOf("Built now"), card.indexOf("Built now") + 300));
     ok(`${width} wide: no sideways scrolling`, (await sideways(page)) <= 0, String(await sideways(page)));
     const small = [...await smallTaps(page, '[data-built="LB"]'), ...await smallTaps(page, ".pl-built-card")];
     ok(`${width} wide: every box, chip and button is at least 44 px tall`, small.length === 0, small.slice(0, 5).join("; "));
