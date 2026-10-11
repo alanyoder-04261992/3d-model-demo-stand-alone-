@@ -111,8 +111,8 @@ room.down = false;
 m = await me();
 ok("opening the Dealer Center checks in with the control room", room.calls.includes("/api/license") && m.account?.canWrite === true && m.account.reason === "active", JSON.stringify(m.account));
 ok("... and reports this copy and its open lots", room.business.appVersion === "dealer-center check" && room.business.dealerCount === 0);
-ok("the owner is asked to agree to the Barnwright Terms and Conditions (version 2.0, October 2026), with a link to read them",
-  m.terms?.version === "2.0" && m.terms.version === TERMS.version && m.terms.title === "Barnwright Terms and Conditions" && m.terms.date === "October 2026"
+ok("the owner is asked to agree to the Barnwright Terms and Conditions (version 2.1, October 11, 2026), with a link to read them",
+  m.terms?.version === "2.1" && m.terms.version === TERMS.version && m.terms.title === "Barnwright Terms and Conditions" && m.terms.date === "October 11, 2026"
   && m.terms.url === "/legal/barnwright-terms.pdf" && m.terms.agreed === null, JSON.stringify(m.terms));
 {
   /* the version asked for is the one on the papers: the PDF the link opens and the

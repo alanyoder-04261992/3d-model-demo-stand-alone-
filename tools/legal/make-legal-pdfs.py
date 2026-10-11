@@ -38,9 +38,9 @@ Run:  python3 tools/legal/make-legal-pdfs.py            (into the repository)
       python3 tools/legal/make-legal-pdfs.py <folder>   (all of them there, to look at)
 Needs: pip install reportlab
 
-When the terms change: change TERMS_VERSION (and TERMS_DATE) here and
-TERMS.version in server/office/terms.js together, so every owner is asked to
-agree again."""
+When the terms change: change TERMS_VERSION and TERMS_DATE here and
+TERMS.version and TERMS.date in server/office/terms.js together, so every
+owner is asked to agree again."""
 
 import sys, os, re, json, html
 from xml.sax.saxutils import escape
@@ -57,8 +57,8 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else None
 if OUT: os.makedirs(OUT, exist_ok=True)
 
 TERMS_TITLE = "Barnwright Terms and Conditions"
-TERMS_VERSION = "2.0"               # server/office/terms.js TERMS.version says the same
-TERMS_DATE = "October 2026"
+TERMS_VERSION = "2.1"               # server/office/terms.js TERMS.version says the same
+TERMS_DATE = "October 11, 2026"
 VERSION = f"Version {TERMS_VERSION}, {TERMS_DATE}"   # at the top of every paper, and in papers.json
 DOMAIN = "barnwrightsoftware.com"   # every business's web address is <their name>.barnwrightsoftware.com
 MONTHLY_FEE = 250                   # a month from the start date, for any number of lots; it includes the first lot. No setup fee
@@ -218,6 +218,10 @@ def section_band(text):
 # the PDF and of docs/legal/terms.json; TERMS_SUMMARY is the short version the
 # sign-up page shows above "I agree". TERMS_TITLE, TERMS_VERSION and
 # TERMS_DATE are at the top of this file.
+# Version 2.1 (Alan, Oct 11 2026: "Change wording from web address to
+# something else maybe 3d configurator web address and webhook to put in
+# our own website"): "web address" became "3D designer web address" (1.1(c),
+# 1.4, 2.1 and the short version), and the website code is named.
 
 TERMS_INTRO = [
     "These are the rules for using the Barnwright 3D designer. \"We\" and \"us\" mean Barnwright Software. \"You\" means the business that signs up.",
@@ -229,13 +233,13 @@ TERMS = [
         ("1.1", "The <b>Barnwright 3D designer</b>. It includes:"),
         ("(a)", "your <b>3D designer</b>, where your customers pick a building, its size, colors, doors, windows and options, see the price, and send you a quote request;", "sub"),
         ("(b)", "your <b>Dealer Center</b>, where you keep your price list, your lots, your team, and your customers, quotes and orders; and", "sub"),
-        ("(c)", "your own web address, hosting, updates and fixes, for as long as you use it.", "sub"),
+        ("(c)", "your own 3D designer web address, a website code to show your 3D designer on your own website, hosting, updates and fixes, for as long as you use it.", "sub"),
         ("1.2", "It works alongside the software you already use, such as your website, your accounting and your rent-to-own company. It does not replace them."),
         ("1.3", "We may add, change or improve features. We will tell you at least 30 days before we take away a main feature you use."),
-        ("1.4", "<b>Your web address</b> is under " + DOMAIN + ", such as yourbusiness." + DOMAIN + ". We pick it with you. Barnwright owns " + DOMAIN + ". You can use your address while you use the 3D designer, and you can also show your 3D designer on your own websites."),
+        ("1.4", "<b>Your 3D designer web address</b> is under " + DOMAIN + ", such as yourbusiness." + DOMAIN + ". We pick it with you. Barnwright owns " + DOMAIN + ". You can use this address while you use the 3D designer. You also get a website code to show your 3D designer on your own websites."),
     ]),
     ("2. Getting set up", [
-        ("2.1", "We set up your 3D designer for you at no charge: your buildings, sizes, prices, options, colors, logo, lots and web address."),
+        ("2.1", "We set up your 3D designer for you at no charge: your buildings, sizes, prices, options, colors, logo, lots and 3D designer web address."),
         ("2.2", "To do that we need your price list, photos of your buildings, and your options and colors. Please get them to us correct and on time."),
         ("2.3", "Before your customers can use it, we show you your buildings and prices. You check them and tell us they are right. You are responsible for the prices you approve."),
     ]),
@@ -341,9 +345,11 @@ TERMS = [
 ]
 
 # The short version the sign-up page shows above "I agree" (the full terms are
-# one tap away). Each line points at the section it sums up.
+# one tap away). Each line points at the section it sums up. Keep long
+# addresses out of it (section 1.4 gives the example): it shows without a tap,
+# and a sign-up page that can't break a long address would run off a phone.
 TERMS_SUMMARY = [
-    ("What you get", "Your 3D designer and your Dealer Center, on your own web address. We set it up for you (sections 1 and 2)."),
+    ("What you get", "Your 3D designer and your Dealer Center, on your own 3D designer web address. You also get a website code to show your 3D designer on your own website. We set it up for you (sections 1 and 2)."),
     ("What it costs", "No setup fee. You save a card when you sign up; nothing is charged that day except one-time fees for any extra lots. The monthly fee is charged to your card from the day your 3D designer is ready, and it includes your first lot (section 3)."),
     ("Stopping", "Month to month. Either of us can stop with 30 days' notice by email (section 4)."),
     ("Your prices", "You check your price list and you are responsible for your prices, your buildings and your rent-to-own contracts. The 3D pictures are not construction drawings (section 6)."),
@@ -455,7 +461,7 @@ PARTS = [
         ]),
         ("Send the owner the sign-up link", [
             "Tap <b>Send sign-up link</b>, then <b>Text it</b> (or <b>Email it</b>). Your phone's messages open with the link already written. Tap Send.",
-            "The owner opens it on their phone, fills in or checks their details and their web address, reads the short version of the terms, ticks <b>I agree</b>, types their name and taps <b>Sign up and save my card</b>. Stripe's page asks for their card. Nothing is charged that day, except their extra lots if they have more than one. It takes about three minutes.",
+            "The owner opens it on their phone, fills in or checks their details and their 3D designer web address, reads the short version of the terms, ticks <b>I agree</b>, types their name and taps <b>Sign up and save my card</b>. Stripe's page asks for their card. Nothing is charged that day, except their extra lots if they have more than one. It takes about three minutes.",
             "Your Control Room fills in everything they typed and shows <b>Signed</b> and <b>Card saved</b>, with their name and the time.",
         ]),
         ("Take the photos", [
@@ -468,15 +474,15 @@ PARTS = [
     ]),
     ("Part 2. Make their Dealer Center", "One button, about 3 minutes.", [
         ("Make their Dealer Center", [
-            "On the customer, tap <b>Make their Dealer Center</b>. Check their web address name (for example <b>cedar-ridge-sheds</b>) and tap <b>Make it</b>.",
-            "Your Control Room makes their site in Netlify, gives it their web address, turns on sign-in, connects it to your Control Room and starts it. It takes about 3 minutes.",
+            "On the customer, tap <b>Make their Dealer Center</b>. Check their 3D designer web address name (for example <b>cedar-ridge-sheds</b>) and tap <b>Make it</b>.",
+            "Your Control Room makes their site in Netlify, gives it their 3D designer web address, turns on sign-in, connects it to your Control Room and starts it. It takes about 3 minutes.",
             "If it says <b>One more step</b>, tap the link it shows, then <b>Enable Identity</b> in Netlify.",
             "When their Dealer Center first opens, your Control Room shows <b>Connected</b>.",
         ]),
     ]),
     ("Part 3. At the owner's computer", "About 30 minutes, with the owner.", [
         ("The owner's login", [
-            "On the owner's computer, open <b>https://(their web address)/dealer</b>, for example https://cedar-ridge-sheds." + DOMAIN + "/dealer.",
+            "On the owner's computer, open <b>https://(their 3D designer web address)/dealer</b>, for example https://cedar-ridge-sheds." + DOMAIN + "/dealer.",
             "They tap <b>Make your login</b>, type the email from their sign-up and a password, then open the email that comes and tap the link in it.",
             "They sign in. The first setup asks for their business, has them tick <b>I agree</b> to the terms, makes a starting price list and their first lot.",
         ]),
@@ -660,7 +666,7 @@ def questions_pdf(path):
     part("1.  YOUR BUSINESS", first=[row(Field("q_business_name", "Business name, as your customers should see it", half), Field("q_short_name", "A short name, if that one is long", half), widths=[half + 12, half])])
     s.append(row(Field("q_phone", "Main phone", third), Field("q_email", "Main email", third), Field("q_website", "Website", third), widths=[third + 12, third + 12, third]))
     s.append(row(Field("q_contact", "Who we set things up with", third), Field("q_contact_phone", "Their phone", third), Field("q_contact_email", "Their email", third), widths=[third + 12, third + 12, third]))
-    s.append(row(Field("q_web_1", "Your web address, first choice", half, suffix="." + DOMAIN), Field("q_web_2", "Second choice", half, suffix="." + DOMAIN), widths=[half + 12, half]))
+    s.append(row(Field("q_web_1", "Your 3D designer web address, first choice", half, suffix="." + DOMAIN), Field("q_web_2", "Second choice", half, suffix="." + DOMAIN), widths=[half + 12, half]))
 
     # ---- 2. look
     part("2.  YOUR LOOK", "Your 3D designer and your Dealer Center use your logo and two colors. Send your logo as a PNG, SVG or JPG, the biggest and clearest one you have.",
@@ -938,7 +944,7 @@ def flyer_pdf(path):
     FW = W - 2 * MARGIN
     half = (FW - 18) / 2
     s = [hero("Let your customers build their shed in 3D.",
-              "Your buildings, sizes, colors and prices, on your own web address. "
+              "Your buildings, sizes, colors and prices, on your own 3D designer web address. "
               "Customers design the building they want, see the price, and send you a quote.", FW),
          Spacer(1, 10)]
     pw = FW * 0.84
@@ -954,7 +960,7 @@ def flyer_pdf(path):
         "Send you a quote with their building, from your website or your lot.",
     ])
     right = [Paragraph("What you get", col_head)] + ticks([
-        "<b>Your 3D designer</b> with your logo, colors and prices, on yourname." + DOMAIN + " and your own website.",
+        "<b>Your 3D designer</b> with your logo, colors and prices, on your own 3D designer web address, like yourbusiness." + DOMAIN + ". Plus a website code to show it on your own website.",
         "<b>Your Dealer Center</b>: one price list for every lot, and every customer, quote, follow-up and order.",
         "Your team: an owner, managers and dealers, each seeing their own lots.",
         "Works alongside the software you already use. We set it all up for you.",
@@ -975,8 +981,8 @@ def price_pdf(path):
     cell_b = ParagraphStyle("cell_b", parent=cell, fontName="Helvetica-Bold")
     money = ParagraphStyle("money", parent=cell_b, alignment=2)
     rows = [
-        ("Setup", "Your price list, styles, sizes, colors, logo, web address and website code, set up by us from photos of your buildings, price list and options.", "$0"),
-        ("Monthly fee", "Your 3D designer and Dealer Center for your first lot, on your own web address, with hosting, updates, fixes and help. Starts the day your 3D designer is ready.", f"${MONTHLY_FEE} a month"),
+        ("Setup", "Your price list, styles, sizes, colors, logo, 3D designer web address and website code, set up by us from photos of your buildings, price list and options.", "$0"),
+        ("Monthly fee", "Your 3D designer and Dealer Center for your first lot, on your own 3D designer web address, with hosting, updates, fixes and help. Starts the day your 3D designer is ready.", f"${MONTHLY_FEE} a month"),
         ("Each extra lot", "Its own 3D designer link, its own customers and its own team. Paid once, before the lot opens.", f"${LOT_FEE} one time"),
     ]
     t = Table([[Paragraph(a, cell_b), Paragraph(b, cell), Paragraph(c, money)] for a, b, c in rows],
@@ -999,7 +1005,7 @@ def price_pdf(path):
     s += [Paragraph("Everything is included", h1)] + ticks([
         "Your 3D designer: every style, size, color, door, window and option you sell, with your prices and rent to own.",
         "Your Dealer Center: your price list, lots, team, customers, quotes, follow-ups and orders.",
-        "Your web address (yourname." + DOMAIN + "), and the code to show your 3D designer on your own website.",
+        "Your 3D designer web address (yourbusiness." + DOMAIN + "), and the website code to show your 3D designer on your own website.",
         "Hosting, updates, fixes and help.",
     ])
     s += [Paragraph("How to start", h1)] + [Paragraph(f"<b>{i}.</b>&nbsp; {x}", tick_line) for i, x in enumerate([
@@ -1022,7 +1028,7 @@ def price_pdf(path):
 WELCOME_TITLE = "Welcome to your Barnwright 3D designer"
 WELCOME_SUBTITLE = "Everything you need to get started, on one page"
 WELCOME = [
-    ("Your Dealer Center", "Open <b>https://(your web address)/dealer</b> and sign in with your email and password. Your web address: ____________________." + DOMAIN),
+    ("Your Dealer Center", "Open <b>https://(your 3D designer web address)/dealer</b> and sign in with your email and password. Your 3D designer web address: ____________________." + DOMAIN),
     ("Keep it on your computer", "In Chrome or Edge, click <b>Install</b> at the right end of the address bar. On your phone: <b>Share</b>, <b>Add to Home Screen</b>."),
     ("Your prices", "<b>Price list</b>: your styles, sizes, doors, windows and options. Change a price and every lot has it at once."),
     ("Your lots", "<b>Lots</b>, <b>Add a lot</b>. Each lot has its own 3D designer link and its own customer list."),

@@ -22,11 +22,12 @@
 import { fail } from "./http.js";
 import { KEEP } from "./store.js";
 
-/* Change the version (with TERMS_VERSION in tools/legal/make-legal-pdfs.py,
-   and run it) when the terms change: every owner is asked again. */
+/* Change the version and date (with TERMS_VERSION and TERMS_DATE in
+   tools/legal/make-legal-pdfs.py, and run it) when the terms change: every
+   owner is asked again. */
 export const TERMS = Object.freeze({
-  version: "2.0",
-  date: "October 2026",
+  version: "2.1",
+  date: "October 11, 2026",
   url: "/legal/barnwright-terms.pdf",
   title: "Barnwright Terms and Conditions",
 });

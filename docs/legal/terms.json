@@ -1,7 +1,7 @@
 {
   "title": "Barnwright Terms and Conditions",
-  "version": "2.0",
-  "date": "October 2026",
+  "version": "2.1",
+  "date": "October 11, 2026",
   "pdf": "legal/barnwright-terms.pdf",
   "intro": [
     "These are the rules for using the Barnwright 3D designer. \"We\" and \"us\" mean Barnwright Software. \"You\" means the business that signs up.",
@@ -10,7 +10,7 @@
   "summary": [
     {
       "title": "What you get",
-      "text": "Your 3D designer and your Dealer Center, on your own web address. We set it up for you (sections 1 and 2)."
+      "text": "Your 3D designer and your Dealer Center, on your own 3D designer web address. You also get a website code to show your 3D designer on your own website. We set it up for you (sections 1 and 2)."
     },
     {
       "title": "What it costs",
@@ -58,7 +58,7 @@
         },
         {
           "n": "(c)",
-          "text": "your own web address, hosting, updates and fixes, for as long as you use it.",
+          "text": "your own 3D designer web address, a website code to show your 3D designer on your own website, hosting, updates and fixes, for as long as you use it.",
           "sub": true
         },
         {
@@ -73,7 +73,7 @@
         },
         {
           "n": "1.4",
-          "text": "Your web address is under barnwrightsoftware.com, such as yourbusiness.barnwrightsoftware.com. We pick it with you. Barnwright owns barnwrightsoftware.com. You can use your address while you use the 3D designer, and you can also show your 3D designer on your own websites.",
+          "text": "Your 3D designer web address is under barnwrightsoftware.com, such as yourbusiness.barnwrightsoftware.com. We pick it with you. Barnwright owns barnwrightsoftware.com. You can use this address while you use the 3D designer. You also get a website code to show your 3D designer on your own websites.",
           "sub": false
         }
       ]
@@ -83,7 +83,7 @@
       "items": [
         {
           "n": "2.1",
-          "text": "We set up your 3D designer for you at no charge: your buildings, sizes, prices, options, colors, logo, lots and web address.",
+          "text": "We set up your 3D designer for you at no charge: your buildings, sizes, prices, options, colors, logo, lots and 3D designer web address.",
           "sub": false
         },
         {
