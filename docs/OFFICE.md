@@ -246,7 +246,7 @@ Responses are `Cache-Control: private, no-store`.
 | `GET customers.csv` | owner, manager | a spreadsheet of the visible customers |
 | `GET barnwright-help` | owner | `{help: {on, until, reason, log}, setup: {mode, until, why, live, liveAt, prelive, termsOk, termsOut}}`, both null when not connected to the control room |
 | `POST barnwright-help` | owner | `{on: true, reason, hours: 1–24, level}`: `level` `"checks"` (left out too) lets Barnwright run checks, `"change"` also lets it change the price list and settings; `{on: false}` stops both at once; `{prelive: "stopped"\|"on"}` stops or allows setup access before live (see "Barnwright setup access") |
-| `GET lots/:slug/preview` | lot access | the lot's 3D designer as a preview, as `GET /api/lots/:slug` plus `preview: true`, also while it is closed |
+| `GET lots/:slug/preview` | lot access | the lot's 3D designer as a preview, as `GET /api/lots/:slug` plus `preview: true` and `closed` (`business`, `lot` or null), also while it is closed |
 | `GET help` | everyone | `{connected, canAsk, items}`: the questions asked of Barnwright and Barnwright's answers, newest first (owner and managers every question from the business, a dealer their own); `items: null` with `problem` (plain words) when Barnwright can't be reached; `connected: false` when not connected to the control room; `canAsk: false` when Help isn't set up for it (the control room refusing its key included) |
 | `POST help` | everyone | `{text, page, details: {browser, screen, language, timezone, errors}}` asks Barnwright (see "Help"); the asker is the person signed in, never the body; works while changes are stopped → `{ok, id, at, email}` (201) |
 
@@ -588,12 +588,15 @@ page.
 A closed 3D designer can be looked at without opening it. The owner and the
 team (signed in, for the lots they can see) and a Barnwright visit see a
 lot's 3D designer as a **preview**, with a bar on top: "Preview. Your
-customers can't see this until you open it in Settings."
+customers can't see this until you open it in Settings." When the business
+is open and only that lot is closed, the bar says: "Preview. Your customers
+can't see this lot until you open it in Lots."
 
 * `GET /api/office/lots/:slug/preview` (the team) and
   `GET /api/office/barnwright/lots/:slug/preview` (the visit) answer like
-  `GET /api/lots/:slug`, plus `preview: true`, also while the 3D designer or
-  that lot is closed.
+  `GET /api/lots/:slug`, plus `preview: true` and `closed` (`"business"`
+  when the whole 3D designer is closed, `"lot"` when only that lot is, null
+  when it is open), also while the 3D designer or that lot is closed.
 * The pages: `/d/<lot>/?preview=1` (the team; the Lots screen's and the
   closed banner's **Look at the preview**) and `/d/<lot>/?preview=barnwright`
   (the visit). Each serves the lot's 3D designer page even while it is
@@ -1195,6 +1198,11 @@ change also needs the site's own Origin, like every `/api/office/` change):
   Colors, the 3D designer's prices and words (how prices show, rent to own,
   the line under the price, width notes, the building it opens on, never
   Open or Closed), and the quote form's boxes (never where quotes go).
+  Any other screen says "A Barnwright visit has only the price list and
+  settings." with Go to the price list. On a phone the bar's buttons are
+  full touch size (44 px).
+* A draft kept in the tab comes back once: Undo changes, Reload or leaving
+  the screen let it go for good.
 * When the owner saves over a Barnwright save, their 409 says "Barnwright
   saved a change while you were working. Reload to see it, then make yours
   again." with `savedAt` for the browser to show the time.
