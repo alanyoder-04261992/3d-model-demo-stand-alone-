@@ -892,8 +892,8 @@ export function createSetupAccess({
       const part = data.part === undefined ? "summary" : data.part;
       if (!PARTS.includes(part)) throw doorNo(400, "bad-request", BAD_REQUEST);
       /* nothing is written before there is a price list but the pass, the limits and the remembered agreement */
-      if (start) return { part, view: readView(start, part, manufacturer), history: [] };
-      const view = readView(v.record.data.settings, part, manufacturer);
+      if (start) return { part, view: readView(start, part, manufacturer, library), history: [] };
+      const view = readView(v.record.data.settings, part, manufacturer, library);
       const history = await doorHistory();
       await lookedNote();
       return { part, view, history };

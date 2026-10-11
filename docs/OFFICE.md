@@ -942,11 +942,39 @@ gets "Barnwright looked at your price list." at most once every 30 minutes.
 | `options` | `dormers`, `ramps`, `elec`, `misc`, `rates` as `[{key, name, price}]` (`rates` add `per`: "sq ft of floor", "wall" or "roof"); `extras [{key, name, charged, price}]` |
 | `colors` | `paint`, `trim`, `metal` as `[{name, hex, own}]` in order; `opensOn {body, trim, roof}` |
 | `prices_and_quotes` | `show`, `finePrint`, `sizeNotes`, `rentToOwn` (`{terms: [{months, factor}], showTerm, note}` or null), `quoteForm {fields, askPlan, smsConsent}`, `business` with `initials` and `colors` |
-| `library` | the builder's `styles [{code, name, roof, group, sold}]`, `items [{code, name, sold}]`, `options {group: [{key, name}]}`, `colors {group: [{name, hex}]}` and `gableStyles`: codes and names, no prices |
+| `library` | the builder's `styles [{code, name, roof, group, sold, built}]`, `items [{code, name, sold}]`, `options {group: [{key, name}]}`, `colors {group: [{name, hex}]}` and `gableStyles`: codes and names, no prices. `built` is each style's How it's built numbers (below) |
 
 Before a price list exists (`priceList: null`, access open), `read`
 answers the parts of the starting price list the first save would make,
 with `history: []` (see "Before the owner first signs in").
+
+Each library style's `built` lists the How it's built numbers that apply to
+it, so Claude can compare a dealer's building in a photo with the drawing
+(the roof, the walls, the doors) and knows what `set_built` would change:
+`[{setting, name, now, standard, from}]`, for example
+
+```
+{"setting": "wallHeight", "name": "Wall height", "now": "8 ft", "standard": "7 ft 9 1/2 in", "from": "their own number for this style"}
+{"setting": "barnHeights", "name": "Barn roof height", "now": "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 3 1/8 in", "standard": "...", "from": "standard"}
+```
+
+* `setting` is `set_built`'s part name (`roofPitch`, `barnHeights`,
+  `eaveOverhang`, `gableOverhang`, `wallHeight`, `doorHeight`,
+  `porchDepth`, `sidePorchLength`, `dormerSide`) and `name` How it's
+  built's own name for it.
+* `now` is what the style is built with for this business, in a builder's
+  words, as the owner's own How it's built box says it; `standard` is what
+  the standard building has (none of the business's own numbers, nor its
+  construction settings: the shop standard, or the library's).
+* `from` says where `now` comes from: `standard`, `their own number for
+  this style`, `their number for the whole business` or `their
+  construction settings`.
+* A style they sell is read at the sizes they sell (a barn's heights and
+  eaves width by width); a style they don't sell as it would be if they
+  sold it, at 8, 10, 12 and 14 ft wide (a side or wrap porch style from 10
+  ft), 20 ft long.
+* Styles of their own are not library styles; their numbers follow the
+  style they are built like unless `set_built` gave them their own.
 
 `business` is `{name, short, tagline, hasPhone, hasEmail, hasWebsite,
 logo}`. The business's phone, email and website are never in a read: only
@@ -1268,6 +1296,8 @@ dealer's building match the photos: its roof, its walls, its doors.
   tap in the Control Room, as every save does).
 * How it's built for the whole business (`built`), the construction
   settings and an extra's numbers stay the owner's.
+* `read` part `library` gives each library style's numbers now and the
+  standard's, by these same part names.
 
 **Roof pitch** (Alan: "make sure roof pitch is the same").
 `set_roof_pitch {style, pitch}`, with `pitch` `"N/12"` (N a whole number, 3

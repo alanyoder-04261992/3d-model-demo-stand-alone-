@@ -29,7 +29,7 @@
 import { lockedItems, newStyleKey, placeStyle, groupsOf, sortSizes, paletteNames, nameKey } from "../../ui/office/views/price-list/model.js";
 import { LOCK_WORDS, GABLE_STYLES } from "./setup-lock.js";
 import { liftRawRules, setBuilt, parse as parseBuilt, checkStyleNumber, KNOBS, KNOB_PATHS } from "../../model/build-settings.js";
-import { styleName, itemName, optionName } from "./setup-view.js";
+import { styleName, itemName, optionName, BUILT_PARTS } from "./setup-view.js";
 
 export const MAX_EDITS = 300;
 export const TOO_MANY_EDITS = "Send 1 to 300 edits at a time.";
@@ -50,20 +50,9 @@ const HEX = /^#[0-9a-fA-F]{6}$/;
 const CODE = /^[A-Za-z0-9]{1,8}$/;
 const EMAIL_RE = /^[^\s@<>()",;]+@[^\s@<>()",;]+\.[^\s@<>()",;]+$/;
 
-/* set_built's parts: How it's built's knobs (model/build-settings.js KNOBS),
-   by the names the door uses, each with an example in a builder's words for
-   the refusals. In KNOBS order, the order they are written in. */
-const BUILT_PARTS = Object.freeze({
-  roofPitch: { knob: "roofPitch", like: "5/12" },
-  barnHeights: { knob: "barnPeak", like: "10 ft wide: 4 ft" },
-  eaveOverhang: { knob: "eaveOverhang", like: "4 in" },
-  gableOverhang: { knob: "gableEndOverhang", like: "4 in" },
-  wallHeight: { knob: "wallHeight", like: "7 ft 9 1/2 in" },
-  doorHeight: { knob: "doorHeight", like: "76 1/2 in" },
-  porchDepth: { knob: "porchDepth", like: "6 ft" },
-  sidePorchLength: { knob: "sidePorchLengths", like: "8 ft, 12 ft" },
-  dormerSide: { knob: "dormerSide", like: "door side" },
-});
+/* set_built's parts: How it's built's knobs by the names the door uses
+   (setup-view.js BUILT_PARTS, the library part's names too), in the order
+   they are written in. */
 export const BUILT_PART_NAMES = Object.freeze(Object.keys(BUILT_PARTS));
 const BUILT_WORDS_MAX = 120;
 

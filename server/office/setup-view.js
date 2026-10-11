@@ -5,7 +5,8 @@
    record itself. It asks for one part at a time and gets it in readable
    pieces: the buildings, the doors and windows, the options, the colors,
    how prices and quotes show, a summary, or the builder's library (codes
-   and names, no prices), so it can write edits (setup-edits.js).
+   and names, no prices, and each style's How it's built numbers now and
+   the standard's), so it can write edits (setup-edits.js).
 
    Never in a read:
      * the business's phone, email and website: only whether each is
@@ -18,7 +19,7 @@
    Pure: no store, no clock. Node-safe and browser-safe. */
 
 import { GABLE_STYLES } from "./setup-lock.js";
-import { apply as builtOf, liftRawRules, format as formatBuilt } from "../../model/build-settings.js";
+import { apply as builtOf, liftRawRules, format as formatBuilt, libraryNumbers, KNOBS } from "../../model/build-settings.js";
 
 export const PARTS = Object.freeze(["summary", "buildings", "doors_windows", "options", "colors", "prices_and_quotes", "library"]);
 const OPTION_GROUPS = ["dormers", "ramps", "elec", "misc", "rates"];
@@ -47,6 +48,51 @@ export function optionName(s, g, k, M) {
 }
 
 const logoOf = (logo) => ({ present: !!logo, kb: logo ? Math.ceil(String(logo).length / 1024) : 0 });
+
+/* How it's built's knobs (model/build-settings.js KNOBS) by the names the
+   door uses: set_built's parts (setup-edits.js) and the library part's
+   `setting`, each with an example in a builder's words for set_built's
+   refusals. In KNOBS order. */
+export const BUILT_PARTS = Object.freeze({
+  roofPitch: { knob: "roofPitch", like: "5/12" },
+  barnHeights: { knob: "barnPeak", like: "10 ft wide: 4 ft" },
+  eaveOverhang: { knob: "eaveOverhang", like: "4 in" },
+  gableOverhang: { knob: "gableEndOverhang", like: "4 in" },
+  wallHeight: { knob: "wallHeight", like: "7 ft 9 1/2 in" },
+  doorHeight: { knob: "doorHeight", like: "76 1/2 in" },
+  porchDepth: { knob: "porchDepth", like: "6 ft" },
+  sidePorchLength: { knob: "sidePorchLengths", like: "8 ft, 12 ft" },
+  dormerSide: { knob: "dormerSide", like: "door side" },
+});
+const PART_OF = Object.fromEntries(Object.entries(BUILT_PARTS).map(([p, x]) => [x.knob, p]));
+const KNOB_WORDS = Object.fromEntries(KNOBS.map((k) => [k.id, k.Words]));
+/* where a style's number comes from, in words (build-settings.js effective's `from`) */
+function fromWords(from) {
+  if (from === "this style") return "their own number for this style";
+  if (/^built like /.test(String(from || ""))) return "their own number for the style it is built like";
+  if (from === "business-wide") return "their number for the whole business";
+  if (from === "your construction settings") return "their construction settings";
+  return "standard";
+}
+
+/* Each library style's How it's built numbers: what it is built with now
+   for this business (a style they don't sell as it would be if they sold
+   it) and what the standard building has, in a builder's words, by
+   set_built's part names: [{setting, name, now, standard, from}]. So
+   Claude can compare a dealer's building in a photo with the drawing (roof
+   pitch, barn roof height, walls, doors) and know what set_built would
+   change. -> {code: rows} */
+function builtRows(s, M, library) {
+  let numbers = {};
+  try { numbers = libraryNumbers(s, M, library); } catch { numbers = {}; }
+  const out = {};
+  for (const k of Object.keys(numbers)) {
+    out[k] = numbers[k].filter((r) => PART_OF[r.id]).map((r) => ({
+      setting: PART_OF[r.id], name: KNOB_WORDS[r.id], now: r.now.words, standard: r.standard.words, from: fromWords(r.from),
+    }));
+  }
+  return out;
+}
 
 /* The roof pitch of each offered style with a gable roof Barnwright may
    change: "5/12" when the business set one in How it's built (on the style,
@@ -106,8 +152,10 @@ function optionList(s, g, M) {
   }));
 }
 
-/* -> the readable part of these settings (part one of PARTS). */
-export function readView(settings, part, M) {
+/* -> the readable part of these settings (part one of PARTS). library:
+   the builder's construction library (library/construction.json), which
+   How it's built reads a style's numbers against (the library part). */
+export function readView(settings, part, M, library = null) {
   const s = isObj(settings) ? settings : {};
   switch (part) {
     case "summary": return {
@@ -161,13 +209,16 @@ export function readView(settings, part, M) {
         business: { ...business(s), initials: s.brand?.initials || "", colors: isObj(s.brand?.colors) ? s.brand.colors : {} },
       };
     }
-    case "library": return {
-      styles: keysOf(M.styles).map((k) => ({ code: k, name: M.styles[k].name, roof: M.styles[k].roof, group: M.styles[k].category || "Buildings", sold: keysOf(s.offer).includes(k) })),
+    case "library": {
+      const built = builtRows(s, M, library);
+      return {
+      styles: keysOf(M.styles).map((k) => ({ code: k, name: M.styles[k].name, roof: M.styles[k].roof, group: M.styles[k].category || "Buildings", sold: keysOf(s.offer).includes(k), built: built[k] || [] })),
       items: keysOf(M.items).map((k) => ({ code: k, name: M.items[k].name, sold: keysOf(s.items).includes(k) })),
       options: Object.fromEntries(OPTION_GROUPS.map((g) => [g, keysOf(M.options?.[g]).map((k) => ({ key: k, name: optionName({}, g, k, M) }))])),
       colors: Object.fromEntries(COLOR_GROUPS.map((g) => [g, (M.palettes?.[g] || []).map((c) => ({ name: c[0], hex: c[1] }))])),
       gableStyles: [...GABLE_STYLES],
-    };
+      };
+    }
     default: throw new Error("There is no part " + part);
   }
 }

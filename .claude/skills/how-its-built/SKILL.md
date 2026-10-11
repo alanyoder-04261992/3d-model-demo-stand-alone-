@@ -206,6 +206,9 @@ is one number, measured level, at every width.
   the knobs that apply, checked with `checkStyleNumber()` (the style's own
   box limits), written with `setBuilt()`, then the owner's own check and
   the every-size check, whose warnings come back in the door's answer.
+  The door's `read` part `library` gives every library style's numbers
+  now and the standard's (`libraryNumbers()`, the same rows as
+  `effective()`; a style they don't sell read at 8 to 14 ft wide).
 * History: `describeChanges()` (per style and business-wide; a style
   started in the same save says its own numbers, "Tall Loft Barn wall
   height: 7 ft of its own"),

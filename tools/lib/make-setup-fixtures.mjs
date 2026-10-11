@@ -41,7 +41,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { readJSON, ROOT } from "./load.mjs";
 import { createPriceList, describeChanges as describeAll, priceFingerprint } from "../../server/office/price-list.js";
-import { format as formatBuilt } from "../../model/build-settings.js";
+import { format as formatBuilt, libraryNumbers, KNOBS } from "../../model/build-settings.js";
 import { checkChangedStyles } from "../../server/office/built-check.js";
 import { MemoryBlobs, wrapStore } from "../../server/office/store.js";
 import { canonicalLease, LEASE_DURATION_MS } from "../../server/office/license-core.js";
@@ -425,6 +425,21 @@ function optionList(s, g) {
   }));
 }
 
+/* the library part's How it's built rows: each style's numbers now and the
+   standard's (model/build-settings.js libraryNumbers), by set_built's part
+   names, in a builder's words */
+const PART_NAMES = { roofPitch: "roofPitch", barnPeak: "barnHeights", eaveOverhang: "eaveOverhang", gableEndOverhang: "gableOverhang",
+  wallHeight: "wallHeight", doorHeight: "doorHeight", porchDepth: "porchDepth", sidePorchLengths: "sidePorchLength", dormerSide: "dormerSide" };
+const FROM_WORDS = { "this style": "their own number for this style", "business-wide": "their number for the whole business", "your construction settings": "their construction settings" };
+function builtRows(s) {
+  const n = libraryNumbers(s, M, LIB);
+  const words = Object.fromEntries(KNOBS.map((k) => [k.id, k.Words]));
+  return Object.fromEntries(Object.entries(n).map(([k, rows]) => [k, rows.map((r) => ({
+    setting: PART_NAMES[r.id], name: words[r.id], now: r.now.words, standard: r.standard.words,
+    from: FROM_WORDS[r.from] || (/^built like /.test(r.from) ? "their own number for the style it is built like" : "standard"),
+  }))]));
+}
+
 export function view(s, part) {
   switch (part) {
     case "summary": return {
@@ -470,13 +485,16 @@ export function view(s, part) {
         business: { ...business(s), initials: s.brand.initials || "", colors: s.brand.colors || {} },
       };
     }
-    case "library": return {
-      styles: keysOf(M.styles).map((k) => ({ code: k, name: M.styles[k].name, roof: M.styles[k].roof, group: M.styles[k].category || "Buildings", sold: k in s.offer })),
+    case "library": {
+      const built = builtRows(s);
+      return {
+      styles: keysOf(M.styles).map((k) => ({ code: k, name: M.styles[k].name, roof: M.styles[k].roof, group: M.styles[k].category || "Buildings", sold: k in s.offer, built: built[k] || [] })),
       items: keysOf(M.items).map((k) => ({ code: k, name: M.items[k].name, sold: k in (s.items || {}) })),
       options: Object.fromEntries(["dormers", "ramps", "elec", "misc", "rates"].map((g) => [g, keysOf(M.options?.[g]).map((k) => ({ key: k, name: optionName({}, g, k) }))])),
       colors: Object.fromEntries(["paint", "trim", "metal"].map((g) => [g, (M.palettes?.[g] || []).map((c) => ({ name: c[0], hex: c[1] }))])),
       gableStyles: GABLE_STYLES,
-    };
+      };
+    }
     default: throw new Error("No part " + part);
   }
 }

@@ -62,6 +62,9 @@
           size check's warnings and the sizes it had no time for in the
           check answer, what it finds that doesn't build refused in words;
           set_roof_pitch is its short form
+     RL   read part library: every library style's How it's built numbers
+          now and the standard's, by set_built's names, only those that
+          apply, the same as the owner's own screen says
    (A13, nothing but netlify.js imports control-room.js, is in
    tools/check-imports.mjs; A14, the screens, in tools/check-setup-screens.mjs.) */
 
@@ -83,6 +86,7 @@ import { readView } from "../server/office/setup-view.js";
 import { checkChangedStyles } from "../server/office/built-check.js";
 import { canonicalLease } from "../server/office/license-core.js";
 import { validate, resolve as resolveCatalogue } from "../model/company.js";
+import { effective, format as formatBuilt } from "../model/build-settings.js";
 import { defaults as designDefaults, setType } from "../model/design.js";
 import { frameOf } from "../model/frame.js";
 import { fakeControlRoom } from "./lib/fake-control-room.mjs";
@@ -915,9 +919,9 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
   ok("odd edits are words, never a crash: an edit name, a style or a door that only looks like one, an unknown part, not an object",
     JSON.stringify(odd.problems) === JSON.stringify(["Edit 1: there is no edit called constructor.", "Edit 2: there is no building style toString in their price list.", "Edit 3: prise isn't part of set_price.",
       "Edit 4: every edit needs do: the name of the edit.", "Edit 5: there is no door or window called __proto__ in the builder's library."]), JSON.stringify(odd.problems));
-  const viewsWrong = FX.door.parts.filter((part) => JSON.stringify(readView(base, part, manufacturer)) !== JSON.stringify(fxExample(`read ${part}`).answer.body.view));
+  const viewsWrong = FX.door.parts.filter((part) => JSON.stringify(readView(base, part, manufacturer, library)) !== JSON.stringify(fxExample(`read ${part}`).answer.body.view));
   ok(`read: each of the ${FX.door.parts.length} parts is the contract's (the fixtures' view, word for word)`, viewsWrong.length === 0, viewsWrong.join(", "));
-  const all = JSON.stringify(FX.door.parts.map((part) => readView(base, part, manufacturer)));
+  const all = JSON.stringify(FX.door.parts.map((part) => readView(base, part, manufacturer, library)));
   ok("read: never the business phone, email or website, nor the logo itself", !["941-555-0100", "office@testingsheds.example", "https://testingsheds.example"].some((t) => all.includes(t)));
 }
 {
@@ -2113,9 +2117,55 @@ section("SB. set_built: a building style's own numbers in How it's built, in a b
     && !!lifted.settings && lockProblems(older, lifted.settings, { door: true, manufacturer }).length === 0, JSON.stringify([lifted.problems, lifted.settings?.offer?.UT]));
 }
 
+section("RL. read library: each style's How it's built numbers now and the standard's, by set_built's names");
+{
+  const PARTS_BY_KNOB = { roofPitch: "roofPitch", barnPeak: "barnHeights", eaveOverhang: "eaveOverhang", gableEndOverhang: "gableOverhang", wallHeight: "wallHeight",
+    doorHeight: "doorHeight", porchDepth: "porchDepth", sidePorchLengths: "sidePorchLength", dormerSide: "dormerSide" };
+  const L = await fixtureBusiness();
+  /* the owner sets How it's built for the whole business (6/12 gable roofs); Barnwright the Utility Shed's own walls */
+  await L.ownerSave((x) => { x.built = { roofPitch: { gable: 6 } }; });
+  const c = await L.door({ action: "check", version: 2, edits: [{ do: "set_built", style: "UT", wallHeight: "8 ft" }] });
+  await L.door({ action: "save", version: 2, edits: [{ do: "set_built", style: "UT", wallHeight: "8 ft" }], settingsSha256: c.data.settingsSha256 });
+  const r = await L.door({ action: "read", part: "library" });
+  const styles = r.data.view?.styles || [];
+  const row = (code, setting) => (styles.find((x) => x.code === code)?.built || []).find((b) => b.setting === setting);
+  ok("RL: read library gives every library style its How it's built numbers, as set_built's parts (old code: none)",
+    r.status === 200 && styles.length === Object.keys(manufacturer.styles).length && styles.every((x) => Array.isArray(x.built) && x.built.length >= 3
+      && x.built.every((b) => Object.values(PARTS_BY_KNOB).includes(b.setting) && typeof b.name === "string" && typeof b.now === "string" && b.now && typeof b.standard === "string" && b.standard && typeof b.from === "string")),
+    JSON.stringify(styles.slice(0, 2)).slice(0, 400));
+  ok("RL: ... only the numbers that apply: a barn roof's heights and no pitch, a gable roof's pitch and no barn heights, porches and the dormer where there are",
+    row("LB", "barnHeights") && !row("LB", "roofPitch") && row("UT", "roofPitch") && !row("UT", "barnHeights") && !row("UT", "porchDepth")
+    && row("SC", "porchDepth") && row("SC", "sidePorchLength") && row("DS", "dormerSide") && !row("CS", "roofPitch"), JSON.stringify([row("LB", "roofPitch"), row("UT", "barnHeights")]));
+  ok("RL: ... now and standard in a builder's words, and where now comes from: the Utility Shed's own 8 ft walls (standard 7 ft 9 1/2 in), the whole business's 6/12 (standard 5/12)",
+    JSON.stringify(row("UT", "wallHeight")) === JSON.stringify({ setting: "wallHeight", name: "Wall height", now: "8 ft", standard: "7 ft 9 1/2 in", from: "their own number for this style" })
+    && JSON.stringify(row("UT", "roofPitch")) === JSON.stringify({ setting: "roofPitch", name: "Roof pitch", now: "6/12", standard: "5/12", from: "their number for the whole business" })
+    && JSON.stringify(row("G", "wallHeight")) === JSON.stringify({ setting: "wallHeight", name: "Wall height", now: "7 ft 9 1/2 in", standard: "7 ft 9 1/2 in", from: "standard" }),
+    JSON.stringify([row("UT", "wallHeight"), row("UT", "roofPitch"), row("G", "wallHeight")]));
+  ok("RL: ... a style they don't sell as it would be if they sold it (the whole business's 6/12 reaches the Side Utility), the Dormer Shed's own main roof kept",
+    row("SU", "roofPitch")?.now === "6/12" && row("SU", "roofPitch")?.standard === "5/12" && styles.find((x) => x.code === "SU")?.sold === false
+    && row("DS", "roofPitch")?.now === "7/12" && row("DS", "roofPitch")?.from === "standard", JSON.stringify([row("SU", "roofPitch"), row("DS", "roofPitch")]));
+  ok("RL: ... the shop standard's own numbers: the Loft Barn's barn roof 3 ft 7 3/4 in, 4 ft and 4 ft 3 in at 8, 10 and 12 ft wide, its 6 ft 7 1/2 in walls, a 71 1/2 in barn door",
+    /8 ft wide: 3 ft 7 3\/4 in, 10 ft wide: 4 ft, 12 ft wide: 4 ft 3 in/.test(row("LB", "barnHeights")?.standard || "") && row("LB", "wallHeight")?.standard === formatBuilt("wallHeight", manufacturer.styles.LB.built.wallHeight)
+    && row("LB", "doorHeight")?.standard === "71 1/2 in", JSON.stringify([row("LB", "barnHeights"), row("LB", "wallHeight"), row("LB", "doorHeight")]));
+  /* the same numbers the owner's How it's built screen shows (effective()), for every style they sell */
+  const saved = (await L.store.get("price-list")).settings;
+  const cat = resolveCatalogue(saved, manufacturer, library);
+  const differ = [];
+  for (const k of Object.keys(saved.offer)) {
+    if (!manufacturer.styles[k]) continue;
+    for (const e of effective(cat, k)) if (row(k, PARTS_BY_KNOB[e.id])?.now !== e.words) differ.push(`${k} ${e.id}: ${row(k, PARTS_BY_KNOB[e.id])?.now} / ${e.words}`);
+  }
+  ok("RL: ... now is what the owner's own How it's built screen says for each style they sell, number for number", differ.length === 0, differ.join("; "));
+  const B0 = await signupBusiness();
+  const libBody = { action: "read", part: "library" };
+  const r0 = await B0.door(libBody, { pass: B0.room.setupPass({ action: "read", body: JSON.stringify(libBody), actor: ACTOR, signup: BS.signup }) });
+  ok("RL: before a price list exists (version 0), read library gives the starting price list's numbers too",
+    r0.status === 200 && (r0.data.view?.styles || []).every((x) => Array.isArray(x.built) && x.built.length >= 3), JSON.stringify(r0.data).slice(0, 300));
+}
+
 console.log("");
 if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} setup access checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, the construction settings, How it's built for the whole business, an extra that changes how a building is built and a web address logo, and putting back carries them forward, while a building style's own How it's built numbers pass to the owner's own checks and the every-size check (set_roof_pitch writes the style's roof pitch there, and an older rule list reads as the pitch it draws); a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set; set_built writes a building style's own How it's built numbers from a builder's words, only those that apply, checked with How it's built's limits and the every-size check, whose warnings and unchecked sizes come back with the check; the door takes only a one-use pass made for its exact body from the Control Room's server, reads in parts with no contact details, refuses what the owner's own save refuses, saves exactly what was checked with a copy kept first, saves for Claude only before live, and undoes only Barnwright's last change.`);
+console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, the construction settings, How it's built for the whole business, an extra that changes how a building is built and a web address logo, and putting back carries them forward, while a building style's own How it's built numbers pass to the owner's own checks and the every-size check (set_roof_pitch writes the style's roof pitch there, and an older rule list reads as the pitch it draws); a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set; set_built writes a building style's own How it's built numbers from a builder's words, only those that apply, checked with How it's built's limits and the every-size check, whose warnings and unchecked sizes come back with the check; read part library gives every library style's numbers now and the standard's; the door takes only a one-use pass made for its exact body from the Control Room's server, reads in parts with no contact details, refuses what the owner's own save refuses, saves exactly what was checked with a copy kept first, saves for Claude only before live, and undoes only Barnwright's last change.`);

@@ -46,6 +46,7 @@
      problems(settings, manufacturer), libraryProblems(manufacturer),
      apply(settings, manufacturer, library), optionEffectFor(built, t),
      extraProblems(built, at), effective(cat, key),
+     libraryNumbers(settings, manufacturer, library),
      businessReach(settings, manufacturer, id, kind), roofKindOf(t),
      describeExtraBuilt(name, before, after),
      describeChanges(before, after, manufacturer, library), setBuilt(settings, edit),
@@ -792,10 +793,17 @@ export function effective(cat, key) {
   const t = cat && cat.TYPES && cat.TYPES[key];
   if (!t) return [];
   const sizes = Object.keys((cat.P && cat.P[key]) || {});
-  const merged = mergeTwo(cat.construction || {}, t.construction || {});
+  return rowsFor(t, t.built, mergeTwo(cat.construction || {}, t.construction || {}), sizes);
+}
+
+/* Every knob of a style with traits t: its number (where a layer gave one,
+   else read off the drawing's own numbers), in words, and where it came
+   from (built: what apply() found). merged: the construction it is drawn
+   with. */
+function rowsFor(t, built, merged, sizes) {
   const out = [];
   for (const id of knobsFor(t)) {
-    const b = (t.built && t.built[id]) || { from: "library" };
+    const b = (built && built[id]) || { from: "library" };
     let value = b.value !== undefined ? b.value : plainValue(id, t, merged, sizes);
     /* barn heights at every width sold, as drawn: a width no number names
        (the Lofted Barn's 14 ft) shows the height it is built at (review W6) */
@@ -804,6 +812,70 @@ export function effective(cat, key) {
       if (isObj(drawn)) value = Object.assign({}, drawn, Object.fromEntries(Object.keys(value).filter((w) => own(drawn, w)).map((w) => [w, value[w]])));
     }
     out.push({ id, value, words: value === undefined ? "" : format(id, value), from: b.from, feature: b.feature });
+  }
+  return out;
+}
+
+/* The widths a style they don't sell is read at (libraryNumbers): the
+   widths a shop sells most, and a porch style from 10 ft wide (a 4 ft wrap
+   porch needs 10). 20 ft long. */
+const READ_WIDTHS = [8, 10, 12, 14];
+function readSizes(t) {
+  const ws = t.porch === "S" || t.porch === "C" ? READ_WIDTHS.filter((w) => w >= 10) : READ_WIDTHS;
+  return ws.map((w) => `${w}x20`);
+}
+
+/* Every knob of every style in the builder's library, for one business:
+   what each is built with NOW (their own numbers for that style, their
+   numbers for the whole business, the shop standard, the library; a style
+   they don't sell as it would be if they sold it) and what the STANDARD
+   building has (none of the business's own numbers, nor its construction
+   settings). Read at the sizes they sell, or, for a style they don't sell,
+   8 to 14 ft wide (READ_WIDTHS). For Barnwright's door (server/office/
+   setup-view.js, read part "library"), so Claude can compare a dealer's
+   building in a photo with the drawing: roof pitch, barn roof height,
+   walls, doors. -> {KEY: [{id, now, standard, from, feature}]}, now and
+   standard as effective() gives them ({value, words}). Never fails: a
+   style that can't be read is left out. */
+export function libraryNumbers(settings, manufacturer, library) {
+  const M = manufacturer || {}, styles = M.styles || {};
+  const S = copy(liftRawRules(settings || {}, M).settings) || {};
+  S.offer = isObj(S.offer) ? S.offer : {};
+  const sizesOf = {};
+  for (const k of keysOf(styles)) {
+    if (!isObj(styles[k])) continue;
+    if (isObj(S.offer[k])) { sizesOf[k] = keysOf(S.offer[k].sizes); continue; }
+    sizesOf[k] = readSizes(styles[k]);
+    S.offer[k] = { sizes: Object.fromEntries(sizesOf[k].map((z) => [z, 1])) };
+  }
+  /* the standard: no number of the business's own, nor its construction settings */
+  const std = copy(S);
+  delete std.built;
+  delete std.construction;
+  for (const k of keysOf(std.offer)) if (isObj(std.offer[k])) delete std.offer[k].built;
+  const read = (X) => {
+    const applied = apply(X, M, library).styles;
+    const base = mergeTwo(mergeTwo(baseOf(library), M.construction || {}), X.construction || {});
+    const out = {};
+    for (const k of Object.keys(sizesOf)) {
+      const a = applied[k];
+      if (!a) continue;
+      try {
+        const t = Object.assign({}, styles[k], copy(a.traits));
+        for (const f of a.drop) delete t[f];
+        out[k] = rowsFor(t, a.built, mergeTwo(base, a.construction), sizesOf[k]);
+      } catch (e) { /* left out */ }
+    }
+    return out;
+  };
+  const now = read(S), was = read(std);
+  const out = {};
+  for (const k of Object.keys(now)) {
+    if (!was[k]) continue;
+    out[k] = now[k].map((r) => {
+      const st = was[k].find((x) => x.id === r.id) || { value: undefined, words: "" };
+      return { id: r.id, now: { value: r.value, words: r.words }, standard: { value: st.value, words: st.words }, from: r.from, feature: r.feature };
+    });
   }
   return out;
 }

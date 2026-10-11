@@ -1551,161 +1551,1033 @@
                   "name": "Utility Shed",
                   "roof": "gable",
                   "group": "Utility & Storage",
-                  "sold": true
+                  "sold": true,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "5/12",
+                      "standard": "5/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 in",
+                      "standard": "4 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 9 1/2 in",
+                      "standard": "7 ft 9 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "SU",
                   "name": "Side Utility",
                   "roof": "gable",
                   "group": "Utility & Storage",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "5/12",
+                      "standard": "5/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 in",
+                      "standard": "4 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 9 1/2 in",
+                      "standard": "7 ft 9 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "DS",
                   "name": "Dormer Shed",
                   "roof": "gable",
                   "group": "Utility & Storage",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "7/12",
+                      "standard": "7/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 3/8 in",
+                      "standard": "4 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 9 in",
+                      "standard": "7 ft 9 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "dormerSide",
+                      "name": "Dormer side",
+                      "now": "door side",
+                      "standard": "door side",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "BU",
                   "name": "Backyard Utility",
                   "roof": "lean",
                   "group": "Utility & Storage",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "about 2/12",
+                      "standard": "about 2/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "1 7/16 in",
+                      "standard": "1 7/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "6 ft 10 13/16 in",
+                      "standard": "6 ft 10 13/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "GU",
                   "name": "Garden Utility",
                   "roof": "gable",
                   "group": "Utility & Storage",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "5/12",
+                      "standard": "5/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 in",
+                      "standard": "4 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "3/8 in",
+                      "standard": "3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "6 ft 10 13/16 in",
+                      "standard": "6 ft 10 13/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "SB",
                   "name": "Standard Barn",
                   "roof": "gambrel",
                   "group": "Barns",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "barnHeights",
+                      "name": "Barn roof height",
+                      "now": "8 ft wide: 3 ft 4 11/16 in, 10 ft wide: 3 ft 4 11/16 in, 12 ft wide: 3 ft 4 11/16 in, 14 ft wide: 3 ft 4 11/16 in",
+                      "standard": "8 ft wide: 3 ft 4 11/16 in, 10 ft wide: 3 ft 4 11/16 in, 12 ft wide: 3 ft 4 11/16 in, 14 ft wide: 3 ft 4 11/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "2 3/4 in at 8 ft wide, 3 3/16 in at 10 ft wide, 3 9/16 in at 12 ft wide and 3 13/16 in at 14 ft wide",
+                      "standard": "2 3/4 in at 8 ft wide, 3 3/16 in at 10 ft wide, 3 9/16 in at 12 ft wide and 3 13/16 in at 14 ft wide",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "1 3/16 in",
+                      "standard": "1 3/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "4 ft 2 3/8 in",
+                      "standard": "4 ft 2 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "71 1/2 in",
+                      "standard": "71 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "LB",
                   "name": "Lofted Barn",
                   "roof": "gambrel",
                   "group": "Barns",
-                  "sold": true
+                  "sold": true,
+                  "built": [
+                    {
+                      "setting": "barnHeights",
+                      "name": "Barn roof height",
+                      "now": "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "standard": "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "1 3/4 in at 8 ft wide, 1 15/16 in at 10 ft wide, 2 1/8 in at 12 ft wide and 1 3/4 in at 14 ft wide",
+                      "standard": "1 3/4 in at 8 ft wide, 1 15/16 in at 10 ft wide, 2 1/8 in at 12 ft wide and 1 3/4 in at 14 ft wide",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "1 3/16 in",
+                      "standard": "1 3/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "6 ft 7 1/2 in",
+                      "standard": "6 ft 7 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "71 1/2 in",
+                      "standard": "71 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "SLB",
                   "name": "Side Lofted Barn",
                   "roof": "gambrel",
                   "group": "Barns",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "barnHeights",
+                      "name": "Barn roof height",
+                      "now": "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "standard": "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "1 3/4 in at 8 ft wide, 1 15/16 in at 10 ft wide, 2 1/8 in at 12 ft wide and 1 3/4 in at 14 ft wide",
+                      "standard": "1 3/4 in at 8 ft wide, 1 15/16 in at 10 ft wide, 2 1/8 in at 12 ft wide and 1 3/4 in at 14 ft wide",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "1 3/16 in",
+                      "standard": "1 3/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "6 ft 7 1/2 in",
+                      "standard": "6 ft 7 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "71 1/2 in",
+                      "standard": "71 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "CS",
                   "name": "Cottage Shed",
                   "roof": "salt",
                   "group": "Barns",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "3/8 in",
+                      "standard": "3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 9 in",
+                      "standard": "7 ft 9 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "SS",
                   "name": "Single Slope",
                   "roof": "slope",
                   "group": "Barns",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "about 3 1/4/12",
+                      "standard": "about 3 1/4/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft",
+                      "standard": "7 ft",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "C",
                   "name": "Cabin",
                   "roof": "gable",
                   "group": "Cabins",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "about 6 1/2/12",
+                      "standard": "about 6 1/2/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 7/16 in",
+                      "standard": "4 7/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 4 13/16 in",
+                      "standard": "7 ft 4 13/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "porchDepth",
+                      "name": "Porch depth",
+                      "now": "4 ft",
+                      "standard": "4 ft",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "LBC",
                   "name": "Lofted Barn Cabin",
                   "roof": "gambrel",
                   "group": "Cabins",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "barnHeights",
+                      "name": "Barn roof height",
+                      "now": "8 ft wide: 3 ft 6 3/4 in, 10 ft wide: 4 ft 5 9/16 in, 12 ft wide: 5 ft 4 5/16 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "standard": "8 ft wide: 3 ft 6 3/4 in, 10 ft wide: 4 ft 5 9/16 in, 12 ft wide: 5 ft 4 5/16 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "1 3/4 in",
+                      "standard": "1 3/4 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "1 3/16 in",
+                      "standard": "1 3/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "6 ft 10 13/16 in",
+                      "standard": "6 ft 10 13/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "71 1/2 in",
+                      "standard": "71 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "porchDepth",
+                      "name": "Porch depth",
+                      "now": "4 ft",
+                      "standard": "4 ft",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "SC",
                   "name": "Side Cabin",
                   "roof": "gable",
                   "group": "Cabins",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "about 6 1/2/12",
+                      "standard": "about 6 1/2/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 7/16 in",
+                      "standard": "4 7/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 4 13/16 in",
+                      "standard": "7 ft 4 13/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "porchDepth",
+                      "name": "Porch depth",
+                      "now": "4 ft",
+                      "standard": "4 ft",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "sidePorchLength",
+                      "name": "Side porch lengths",
+                      "now": "8 ft and 12 ft",
+                      "standard": "8 ft and 12 ft",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "LSC",
                   "name": "Loft Side Cabin",
                   "roof": "gambrel",
                   "group": "Cabins",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "barnHeights",
+                      "name": "Barn roof height",
+                      "now": "10 ft wide: 4 ft 5 9/16 in, 12 ft wide: 5 ft 4 5/16 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "standard": "10 ft wide: 4 ft 5 9/16 in, 12 ft wide: 5 ft 4 5/16 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "1 3/4 in",
+                      "standard": "1 3/4 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "1 3/16 in",
+                      "standard": "1 3/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "6 ft 10 13/16 in",
+                      "standard": "6 ft 10 13/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "71 1/2 in",
+                      "standard": "71 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "porchDepth",
+                      "name": "Porch depth",
+                      "now": "4 ft",
+                      "standard": "4 ft",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "sidePorchLength",
+                      "name": "Side porch lengths",
+                      "now": "8 ft and 12 ft",
+                      "standard": "8 ft and 12 ft",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "DSC",
                   "name": "Deluxe Side Cabin",
                   "roof": "gable",
                   "group": "Cabins",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "about 6 1/2/12",
+                      "standard": "about 6 1/2/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 7/16 in",
+                      "standard": "4 7/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 4 13/16 in",
+                      "standard": "7 ft 4 13/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "porchDepth",
+                      "name": "Porch depth",
+                      "now": "4 ft",
+                      "standard": "4 ft",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "SLC",
                   "name": "Deluxe Loft Side Cabin",
                   "roof": "gambrel",
                   "group": "Cabins",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "barnHeights",
+                      "name": "Barn roof height",
+                      "now": "10 ft wide: 4 ft 5 9/16 in, 12 ft wide: 5 ft 4 5/16 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "standard": "10 ft wide: 4 ft 5 9/16 in, 12 ft wide: 5 ft 4 5/16 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "1 3/4 in",
+                      "standard": "1 3/4 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "1 3/16 in",
+                      "standard": "1 3/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "6 ft 10 13/16 in",
+                      "standard": "6 ft 10 13/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "71 1/2 in",
+                      "standard": "71 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "porchDepth",
+                      "name": "Porch depth",
+                      "now": "4 ft",
+                      "standard": "4 ft",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "G",
                   "name": "Garage",
                   "roof": "gable",
                   "group": "Garages",
-                  "sold": true
+                  "sold": true,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "5/12",
+                      "standard": "5/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 in",
+                      "standard": "4 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 9 1/2 in",
+                      "standard": "7 ft 9 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "LBG",
                   "name": "Lofted Barn Garage",
                   "roof": "gambrel",
                   "group": "Garages",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "barnHeights",
+                      "name": "Barn roof height",
+                      "now": "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "standard": "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 3 1/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "1 3/4 in at 8 ft wide, 1 15/16 in at 10 ft wide, 2 1/8 in at 12 ft wide and 1 3/4 in at 14 ft wide",
+                      "standard": "1 3/4 in at 8 ft wide, 1 15/16 in at 10 ft wide, 2 1/8 in at 12 ft wide and 1 3/4 in at 14 ft wide",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "1 3/16 in",
+                      "standard": "1 3/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "6 ft 10 13/16 in",
+                      "standard": "6 ft 10 13/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "71 1/2 in",
+                      "standard": "71 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "MU",
                   "name": "Metal Utility",
                   "roof": "gable",
                   "group": "Metal Buildings",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "about 6 1/2/12",
+                      "standard": "about 6 1/2/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 7/16 in",
+                      "standard": "4 7/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 9 in",
+                      "standard": "7 ft 9 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "MLB",
                   "name": "Metal Lofted Barn",
                   "roof": "gambrel",
                   "group": "Metal Buildings",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "barnHeights",
+                      "name": "Barn roof height",
+                      "now": "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 2 in",
+                      "standard": "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "1 11/16 in at 8 ft wide, 1 7/8 in at 10 ft wide, 2 1/8 in at 12 ft wide and 1 3/4 in at 14 ft wide",
+                      "standard": "1 11/16 in at 8 ft wide, 1 7/8 in at 10 ft wide, 2 1/8 in at 12 ft wide and 1 3/4 in at 14 ft wide",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "1 3/16 in",
+                      "standard": "1 3/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "6 ft 7 1/2 in",
+                      "standard": "6 ft 7 1/2 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "71 1/2 in",
+                      "standard": "71 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "MG",
                   "name": "Metal Garage",
                   "roof": "gable",
                   "group": "Metal Buildings",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "about 6 1/2/12",
+                      "standard": "about 6 1/2/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 7/16 in",
+                      "standard": "4 7/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 9 in",
+                      "standard": "7 ft 9 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "MCS",
                   "name": "Metal Cottage",
                   "roof": "salt",
                   "group": "Metal Buildings",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "3/8 in",
+                      "standard": "3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 9 in",
+                      "standard": "7 ft 9 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 },
                 {
                   "code": "DK",
                   "name": "Dog Kennel",
                   "roof": "gable",
                   "group": "Dog Kennels",
-                  "sold": false
+                  "sold": false,
+                  "built": [
+                    {
+                      "setting": "roofPitch",
+                      "name": "Roof pitch",
+                      "now": "5/12",
+                      "standard": "5/12",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "eaveOverhang",
+                      "name": "Eave overhang",
+                      "now": "4 in",
+                      "standard": "4 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "gableOverhang",
+                      "name": "Gable-end overhang",
+                      "now": "5 3/8 in",
+                      "standard": "5 3/8 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "wallHeight",
+                      "name": "Wall height",
+                      "now": "7 ft 4 13/16 in",
+                      "standard": "7 ft 4 13/16 in",
+                      "from": "standard"
+                    },
+                    {
+                      "setting": "doorHeight",
+                      "name": "Wooden shop door height",
+                      "now": "76 1/2 in",
+                      "standard": "76 1/2 in",
+                      "from": "standard"
+                    }
+                  ]
                 }
               ],
               "items": [
