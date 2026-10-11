@@ -545,6 +545,14 @@ Each one has an answer we used until you say otherwise.
 7. **A 12 ft wide building is 11 ft 2 in actual.** *For now: drawn 12 ft.*
 8. **The Steep roof price** in the sample price list. *For now: $350, an
    example like the other sample prices.*
+9. **Prices by wall area follow the real wall.** In the sample price list
+   the wall moisture barrier on a 10x16 Utility Shed goes from $220 to $225
+   and on a 12x24 Lofted Barn from $265 to $260. *For now: the price follows
+   the wall.*
+10. **Every dealer at once.** The shop numbers reach every Dealer Center
+    business the next time the site goes live. Quotes already sent keep
+    their price and are drawn with the new numbers. *For now: no note to
+    dealers; you see the pictures first.*
 
 ### Choices about the product
 
