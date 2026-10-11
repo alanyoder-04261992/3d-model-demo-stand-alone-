@@ -81,8 +81,9 @@ changes which gable windows fit. `gableItemFits(c, frame)` and
 `fitsOnWall(c, wall, frame)` in `model/layout.js` keep a gable window whose
 glass would poke through the roof (even under the peak, as low as it may
 go) off that building's gable ends: the designer greys it and the server
-refuses it. A saved design holding one draws as before. See the
-`part-gable-window` skill.
+refuses it. A saved design holding one opens with it taken off and one
+plain line (`model/design.js normalize`), so what is drawn and what is
+priced agree. See the `part-gable-window` skill.
 
 ## Where it came from in Barnwright
 

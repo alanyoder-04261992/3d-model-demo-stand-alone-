@@ -225,9 +225,14 @@ finished designer retains the golden geometry.
 
     Because a 5/12 roof is lower, the 18x24 gable window no longer fits the
     gable of an 8, 10 or 12 ft Utility Shed or Side Utility (on 8 and 10 ft it
-    already poked through at Barnwright's pitch), so it is not offered there
-    (`model/layout.js gableItemFits`; Barnwright offers it and cuts it off at
-    the roof). Wall upgrades priced by the square foot follow the new walls.
+    already poked through at Barnwright's pitch), and the octagon gable
+    window no longer fits the gable of an 8 ft one, so neither is offered
+    there (`model/layout.js gableItemFits`; Barnwright offers them and cuts
+    them off at the roof). A design saved with one there opens with it taken
+    off and one line saying so ("The 18×24 Gable Window is too tall for this
+    gable, so it was taken off."), so the design the customer sends next is
+    priced; the same happens when a Steep roof that made it fit is taken off.
+    Wall upgrades priced by the square foot follow the new walls.
 
     Barnwright's own company is the standard line without those blocks
     (`tools/lib/barnwright-company.mjs barnwrightManufacturer`), so

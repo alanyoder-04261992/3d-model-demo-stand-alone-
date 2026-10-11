@@ -46,11 +46,17 @@ Where it goes:
   the Front and Back chips are greyed for it, `ui/state.js` refuses it, and
   the server refuses a design holding one on a gable end (409, "no longer
   offered"). High on a side wall it is still offered. The faux loft window
-  has no glass and always fits. A saved design holding one opens and is
-  drawn exactly as before (the cut). With the shop's 5/12 roofs the 18x24 is
+  has no glass and always fits. A design holding one on a gable end (saved
+  before the roof got flatter, or whose Steep roof was just taken off) has
+  it taken off by `model/design.js normalize`, with one line ("The 18×24
+  Gable Window is too tall for this gable, so it was taken off."): on
+  opening, that line is among the design's warnings; in the designer the
+  extras card says it. So the designer and the server always agree, and the
+  design the customer sends next is priced (only a stale tab still holding
+  it gets the 409 refresh words). With the shop's 5/12 roofs the 18x24 is
   not offered on 8, 10 and 12 ft Utility Sheds and Side Utilities (8 and
   10 ft already poked through at Barnwright's pitch), nor the octagon on
-  6 ft buildings. The every-size check (`gable-item`) tries every gable
+  8 ft ones (it fits at 10 ft and up). The every-size check (`gable-item`) tries every gable
   window the business sells under each gable, so one that is offered and
   does not fit fails `node tools/check-style-sizes.mjs`.
 

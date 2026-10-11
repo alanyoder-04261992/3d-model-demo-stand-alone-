@@ -202,6 +202,11 @@ export function createPanels(ctx) {
       }
       box.appendChild(row);
     });
+    /* what turning an extra on or off changed besides itself (a gable
+       window too tall for the gable without the Steep roof comes off) */
+    const said = ctx.said && ctx.said.reason === "extra" ? ctx.said.lines : [];
+    const note = el("xoptnote");
+    if (note) note.textContent = said.join(" ");
   }
 
   /* ---------- the whole side panel (Barnwright refreshUI 5114-5198) ---------- */

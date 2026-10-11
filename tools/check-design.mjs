@@ -97,7 +97,9 @@ function sampleStates(cat, rnd) {
       const add = (it) => { it.id = "i" + (s.seq++); clampPos(it, s, fr); s.items.push(it); };
       add({ cat: "w23", wall: "L", pos: freeSpot("L", 2.1, s, fr), inc: false, shut: true });
       add({ cat: "tr", wall: "B", pos: freeSpot("B", 1, s, fr), inc: false, shut: false, rot: true });
-      add({ cat: "g1824", wall: "B", pos: 0, inc: false, shut: false, vy: 0.4 });
+      /* on the back gable where the designer offers it there, else high on
+         the left side (a gable too low for it: model/layout.js gableItemFits) */
+      add(LAYOUT.fitsOnWall(cat.CAT.g1824, "B", fr) ? { cat: "g1824", wall: "B", pos: 0, inc: false, shut: false, vy: 0.4 } : { cat: "g1824", wall: "L", pos: freeSpot("L", 1.6, s, fr), inc: false, shut: false, vy: 0.4 });
       add({ cat: "bench", wall: "IN", px: 0.7, pz: -1.3, ln: 6, rot: rnd() < 0.5, inc: false, shut: false });
       add({ cat: "shelf", wall: "IN", px: -1, pz: 2.25, ln: 9, rot: false, inc: false, shut: false });
       add({ cat: "light", wall: "R", pos: 1.37, vy: 1.3, inc: false, shut: false });
@@ -387,8 +389,9 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
 {
   /* BUILDFAST-SPEC E.4: a gable window whose glass would poke through the
      roof even at its lowest, under the peak, is not offered on a gable end;
-     the server refuses a new one; a saved design holding one opens and is
-     drawn as before. A 12 ft Utility Shed at 5/12 (the shop's pitch). */
+     the server refuses a new one; a saved design holding one opens with it
+     taken off and one plain line. A 12 ft Utility Shed at 5/12 (the shop's
+     pitch). */
   const G9 = "gable windows that do not fit are not offered";
   const fiveTwelve = barnwrightCatalogue((c) => { c.offer.UT.built = { roofPitch: 5 }; });
   const st = (cat, size) => { const s = defaults(cat); setType(s, "UT", cat); s.size = size; resetItems(s, frameOf(s, cat), cat); return s; };
@@ -413,12 +416,37 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   check(G9, err9 && err9.status === 409 && /no longer offered/.test(err9.message), `the server took an 18x24 on a 5/12 gable: ${err9 ? err9.status + " " + err9.message : "priced"}`);
   let ok9 = null; try { ok9 = priceDesign(fromState(sC, fiveTwelve), fiveTwelve); } catch (e) { ok9 = e; }
   check(G9, ok9 && ok9.price && ok9.price.total > 0, `the 18x24 high on a side wall was refused: ${ok9 && ok9.message}`);
-  /* a saved design holding one opens with nothing said and draws as before */
-  const back = toState(fromState(onGable, fiveTwelve), fiveTwelve);
-  const r0 = LAYOUT.openingRect(onGable.items[onGable.items.length - 1], Object.assign({ state: onGable }, frameOf(onGable, fiveTwelve)));
-  const kept = back.state.items.find((i) => i.cat === "g1824" && i.wall === "F");
-  const r1 = kept && LAYOUT.openingRect(kept, Object.assign({ state: back.state }, frameOf(back.state, fiveTwelve)));
-  check(G9, back.warnings.length === 0 && kept && J(r0) === J(r1), `the saved design changed on opening: ${J(back.warnings)}`);
+  /* A DESIGN SAVED WHEN IT FITTED (Barnwright's 6 1/2/12, before the shop's
+     5/12; review GL-2, F2): the designer and the server must agree. It
+     opens with the window taken off and one plain line; the design the
+     designer sends next is priced; only the stale design is refused, with
+     the refresh words (a refresh opens it again, without the window). */
+  const sOld = st(BW, "12x16"); const gOld = S.addItem(sOld, "g1824", BW, 0);
+  check(G9, gOld && gOld.wall === "F", "at Barnwright's pitch the 18x24 should go on the front gable of a 12 ft Utility Shed");
+  const saved = fromState(sOld, BW);
+  const back = toState(saved, fiveTwelve);
+  check(G9, !back.state.items.some((i) => i.cat === "g1824" && (i.wall === "F" || i.wall === "B")) && back.warnings.includes(`The ${fiveTwelve.CAT.g1824.n} is too tall for this gable, so it was taken off.`),
+    `the saved design kept the window, or said nothing: ${J(back.warnings)}`);
+  let sent = null; try { sent = priceDesign(fromState(back.state, fiveTwelve), fiveTwelve); } catch (e) { sent = e; }
+  check(G9, sent && sent.price && sent.price.total > 0, `the design the designer sends after opening it was refused: ${sent && (sent.status + " " + sent.message)}`);
+  let stale = null; try { priceDesign(saved, fiveTwelve); } catch (e) { stale = e; }
+  check(G9, stale && stale.status === 409 && /Refresh the page/.test(stale.message), `the stale design (still holding the window) was not asked to refresh: ${stale ? stale.status + " " + stale.message : "priced"}`);
+  /* the same when the Steep roof that made it fit is taken off again */
+  const steepCat = barnwrightCatalogue((c) => { c.offer.UT.built = { roofPitch: 5 }; c.options.extras = [{ key: "steep", name: "Steep roof", input: "check", price: 350, styles: ["UT"], built: { roofPitch: 7 } }]; });
+  const sS = st(steepCat, "12x16"); sS.xopt = { steep: 1 };
+  const gS = S.addItem(sS, "g1824", steepCat, 0);
+  check(G9, gS && gS.wall === "F", "with the Steep roof (7/12) on, the 18x24 should go on the gable of a 12 ft Utility Shed");
+  let withSteep = null; try { withSteep = priceDesign(fromState(sS, steepCat), steepCat); } catch (e) { withSteep = e; }
+  check(G9, withSteep && withSteep.price, `the 18x24 under the Steep roof was refused: ${withSteep && withSteep.message}`);
+  S.setExtra(sS, steepCat.OPTX.extras[0]);
+  const said = normalize(sS, null, steepCat);
+  check(G9, !sS.xopt.steep && !sS.items.some((i) => i.cat === "g1824") && said.includes(`The ${steepCat.CAT.g1824.n} is too tall for this gable, so it was taken off.`), `with the Steep roof off the window stayed, or nothing was said: ${J(said)}`);
+  let noSteep = null; try { noSteep = priceDesign(fromState(sS, steepCat), steepCat); } catch (e) { noSteep = e; }
+  check(G9, noSteep && noSteep.price, `the design without the Steep roof was refused: ${noSteep && (noSteep.status + " " + noSteep.message)}`);
+  /* a gable window that still fits is kept, with nothing said */
+  const sK = st(fiveTwelve, "12x16"); S.addItem(sK, "oct", fiveTwelve, 0);
+  const kept = toState(fromState(sK, fiveTwelve), fiveTwelve);
+  check(G9, kept.warnings.length === 0 && kept.state.items.some((i) => i.cat === "oct" && i.wall === "F"), `an octagon that fits came off: ${J(kept.warnings)}`);
 }
 
 /* ---------------------------------------------------------------- 10 an option on some buildings only */

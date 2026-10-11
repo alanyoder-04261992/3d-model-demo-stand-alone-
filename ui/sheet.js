@@ -126,7 +126,9 @@ export function createSheet(ctx) {
       else label = (ck ? ck.n : kk) + (ck ? pr(ck.p, ck.perFt) : "");
       if (elecCtx && it.pk && kk === it.cat && !(ck && ck.switch)) label = ck.n + " — in package";
       /* a gable window too tall for this gable is not offered on a gable end
-         (model/layout.js gableItemFits); one already there stays as it is */
+         (model/layout.js gableItemFits); one already there (a design saved
+         before the roof got flatter) comes off with words when the design
+         opens (model/design.js normalize) */
       if (ck && ck.gable && !fitsOnWall(ck, "FBRL".indexOf(it.wall) < 0 ? "F" : it.wall, fr)) {
         label += " — too tall for this gable";
         if (kk !== it.cat) o.disabled = true;

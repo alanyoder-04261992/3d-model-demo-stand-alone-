@@ -40,7 +40,7 @@
                              do the same without compression. */
 
 import { frameOf, porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, porchLengthFor } from "./frame.js";
-import { resetItems, clampPos, keepOnWall, pkFixtures } from "./layout.js";
+import { resetItems, clampPos, keepOnWall, pkFixtures, fitsOnWall } from "./layout.js";
 import { standardItems } from "./loadouts.js";
 import { pPrice, pSizes, priceParts } from "./pricing.js";
 import { colorName, hexOfName, pickByName, sidingPalette, extraOfferedOn } from "./company.js";
@@ -173,6 +173,20 @@ export function normalize(state, frame, cat) {
     changed.push(`The ${state.dormer} ft dormer is not offered; it is now ${fallback === "none" ? "no dormer" : fallback + " ft"}.`);
     state.dormer = fallback;
   }
+  /* A GABLE WINDOW TOO TALL FOR THIS GABLE (model/layout.js gableItemFits):
+     a design saved before the roof got flatter (the shop's 5/12, an owner's
+     own pitch), or one whose Steep roof was taken off. The designer would
+     not offer it and the server refuses it, so it comes off here, with
+     words, and what is drawn, saved and priced agree. */
+  const tooTall = [];
+  const frNow = state.items.some((it) => cat.CAT[it.cat] && cat.CAT[it.cat].gable) ? frameOf(state, cat) : fr;   /* after any extra above came off */
+  state.items = state.items.filter((it) => {
+    const c = cat.CAT[it.cat];
+    if (!c || !c.gable || fitsOnWall(c, it.wall, frNow)) return true;
+    tooTall.push(`The ${c.n} is too tall for this gable, so it was taken off.`);
+    return false;
+  });
+  changed.push(...new Set(tooTall));
   if ((cat.MISC || {}).shutter == null) state.items.forEach((it) => { if (it.shut) { it.shut = false; changed.push("Shutters are not offered, so they were taken off."); } });
   if ((cat.MISC || {}).lite == null) state.items.forEach((it) => { if (it.lite) { it.lite = false; changed.push("A window in a wooden door is not offered, so it was taken off."); } });
   return changed;
