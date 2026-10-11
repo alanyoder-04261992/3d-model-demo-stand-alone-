@@ -175,11 +175,12 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   note when the price list opens ("Steep roof does not change the Lofted
   Barn (it has a barn roof). A customer would pay for nothing there.",
   `extrasThatChangeNothing`). The 3D designer names the roof it gives
-  ("Steep roof (7/12 roof)"). The example price list starts with **Steep
-  roof** at 7/12 on the Utility Shed and Side Utility (Alan's steep A-frame
-  roof, $350 as an example price; whether it ships is a question for Alan).
-  History says "Steep roof (7/12) is offered on the Utility Shed and Side
-  Utility".
+  ("Steep roof (7/12 roof)"). No example price list a business starts
+  with has one (Alan, Oct 11 2026: take the Steep roof out); an owner who
+  sells a steeper roof makes their own option, for example "Steep roof" at
+  7/12 on the Utility Shed and Side Utility. History says "Steep roof:
+  roof pitch at least 7/12" and "Steep roof is offered on the Utility Shed
+  and Side Utility".
 * **As it is typed**, a number that cannot be read or is past its limits
   is said under its box ("Roof pitch: write it like 5/12.", "Porch depth
   72 ft is deeper than 8 ft. Did you mean 72 in (6 ft)?") with the red
@@ -196,7 +197,7 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   the 2×3 Window on the right side overlap by 2 3/8 in.").
 * **On save** the server does the same for every style whose numbers
   changed, each also with every option that changes how it is built
-  switched on (a new wall with the Steep roof), and for every style a
+  switched on (a new wall with the business's Steep roof), and for every style a
   changed option reaches or now reaches (its buildings list widened, a
   style sold again) (`server/office/built-check.js`): what the new numbers
   cause refuses the save, in words, like any price list problem; a
@@ -208,8 +209,8 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   what no longer fits is said instead.
 * **History** says each change: "Lofted Barn wall height: 6 ft 7 1/2 in →
   7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12
-  (Utility Shed and Side Utility 5/12 → 6/12; Garden Utility, Cabin and 6
-  more about 6 1/2/12 → 6/12)", naming each style a business-wide number moved,
+  (Utility Shed, Side Utility and 3 more 5/12 → 6/12; Cabin, Side Cabin and
+  3 more about 6 1/2/12 → 6/12)", naming each style a business-wide number moved,
   "Steep roof: roof pitch at least 7/12", and "Wall upgrades priced by the
   square foot follow the new wall height: ..." when a wall height moves
   what a per-square-foot wall upgrade costs. A change that moves what is

@@ -297,7 +297,7 @@ Chromium's software graphics, each on its own port.
 | `check-framing.mjs` | no | the floor, wall, foundation, porch-deck and inside framing is built like a real shed on 1,000+ buildings (and changes nothing in the finished view) |
 | `check-framing-roof.mjs` | no | the trusses, gable studs, roof deck, loft and dormer framing fit inside the roof as drawn and follow the construction numbers |
 | `check-style-sizes.mjs` | no | every style at every size it is sold in is a building a shop could build: doors and windows on their walls and clear of each other, everything under the roof, the roof, dormer, porch and loft in shape, the framing builds; every check caught on a broken test style; kept problems listed with their reasons |
-| `check-shop-numbers.mjs` | no | the standard buildings use Alan's shop numbers where he confirmed them (5/12 roofs, 4 in eaves and 7 ft 9 1/2 in walls on the Utility Shed and Side Utility; 6 ft 7 1/2 in walls and 3 ft 7 3/4 in, 4 ft and 4 ft 3 in barn roofs at 8, 10 and 12 ft wide on the Lofted Barn and Side Lofted Barn) and Barnwright's numbers everywhere else; every library style at every size is exactly as recorded in `test/golden-shop/shop-standard.json` (`--record` writes it again, on purpose) |
+| `check-shop-numbers.mjs` | no | the standard buildings use Alan's shop numbers where he gave them (5/12 roofs and 4 in eaves on the Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility, 7 ft 9 1/2 in walls on the first three; the Dormer Shed's main roof at 7/12; 3 ft 7 3/4 in, 4 ft and 4 ft 3 in barn roofs at 8, 10 and 12 ft wide on the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage, 6 ft 7 1/2 in walls on the first three) and Barnwright's numbers everywhere else (the Metal Garage and Metal Utility too); 14 ft barns keep their height; a gable window too tall for the gable is not offered; no sample price list has a Steep roof; every library style at every size is exactly as recorded in `test/golden-shop/shop-standard.json` (`--record` writes it again, on purpose) |
 | `check-companies.mjs` | yes | a company is one checked settings file, never given a price it did not set; about 35 mistakes give the right plain-English error |
 | `check-design.mjs` | no | a design saved, shared and opened again is the same building at the same price; nothing missing is dropped silently |
 | `check-floor-lesson.mjs` | no | the lesson starts with supports; all eight selections preserve original floor geometry, and measurements match drawn pieces |
@@ -338,8 +338,9 @@ Chromium's software graphics, each on its own port.
    capture and the live comparisons.
 2. **The engine draws Barnwright's buildings shape for shape, lit the way
    the Yoder site lights them, and the standard buildings use Alan's shop
-   numbers where he confirmed them** (Utility Shed, Side Utility, Lofted Barn,
-   Side Lofted Barn). A red `check-golden.mjs` is an engine change: fix the
+   numbers where he confirmed them** (Utility Shed, Side Utility, Garage, Dog
+   Kennel, Garden Utility, Dormer Shed, Lofted Barn, Side Lofted Barn, Metal
+   Lofted Barn, Lofted Barn Garage). A red `check-golden.mjs` is an engine change: fix the
    code (see the `check-the-look` skill). The golden and look checks draw
    Barnwright's own company with Barnwright's numbers and warm light;
    `check-shop-numbers.mjs` holds the shop numbers. True colour is the

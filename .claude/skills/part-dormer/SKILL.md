@@ -30,8 +30,14 @@ Its width along the building is the customer's pick -- the design's dormer
 size, `plan.state.dormer` ("6", "9" or "12" on the standard line; the id IS
 the width in feet) -- but never more than the building's length less 2 ft.
 It sits on the +x (door) side, always. A dormer style's main roof is a little
-steeper (`roof.dormerRise`, Barnwright's W x 0.30), which gives it the room to
-stand.
+steeper (`roof.dormerRise`, Barnwright's W x 0.30, about 7 1/4/12), which
+gives it the room to stand. The shop standard (Alan, Oct 11 2026) builds the
+Dormer Shed's main roof at 7/12 (`styles.DS.built.roofPitch`, the
+`how-its-built` skill): the dormer front is still 1 ft 11 3/8 in tall at 10
+and 12 ft wide and 1 ft 7 13/16 in at 8 ft wide (1 ft 8 1/2 in at
+Barnwright's pitch), its windows 9 5/8 in there (7 in at least); at 5/12 it
+would have no room. A business-wide roof pitch never reaches this main
+roof: the Dormer Shed keeps the standard's 7/12.
 
 ## Stage
 
@@ -47,8 +53,9 @@ whose dormer is not "none" (`appliesTo`).
 
 None read by the part. The main roof it sits on comes from `plan.prof`,
 whose dormer-style rise is `roof.dormerRise` (default `{"w": 0.30}`,
-`library/construction.json`) -- change that and the dormer's face height
-follows it.
+`library/construction.json`; `{"w": 7/24}` from the shop standard's 7/12)
+-- change that and the dormer's face height follows it. It is set in How
+it's built (the Dormer Shed's roof pitch), never raw.
 
 The manufacturer file's dormer `widthFt` (6, 9, 12) is NOT read: the resolved
 catalogue does not carry it, so the width is `+plan.state.dormer`, as in

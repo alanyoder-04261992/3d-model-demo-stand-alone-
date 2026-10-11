@@ -139,10 +139,12 @@ chose. When he answers:
   `built` block in `library/manufacturers/standard.json` with a `_source`
   note, never in `library/construction.json` or the raw traits, which keep
   Barnwright's numbers for the golden test (Oct 2026, "yes match": the
-  Utility Shed, Side Utility, Lofted Barn and Side Lofted Barn; the
-  `how-its-built` skill). Then add the style and its numbers to
-  `tools/check-shop-numbers.mjs` (`MATCHED` and the checks of Alan's
-  numbers), run it with `--record`, say why in the commit, and run
+  Utility Shed, Side Utility, Lofted Barn and Side Lofted Barn; Oct 11
+  2026: the Garage, Dog Kennel, Garden Utility, Dormer Shed, Metal Lofted
+  Barn and Lofted Barn Garage; the `how-its-built` skill). Then add the
+  style and its numbers to `SHOP_NUMBERS` in `tools/check-shop-numbers.mjs`
+  (and `NOT_OFFERED` for a gable window that no longer fits), run it with
+  `--record`, say why in the commit, and run
   `node tools/check-style-sizes.mjs`;
 * take the ASSUMPTION note off: `site.anchorsAssumed` in
   `library/construction.json`, `"assumed": true` on a style's `loft`, and the

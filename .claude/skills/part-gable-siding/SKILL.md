@@ -40,12 +40,14 @@ then the vent gives every material the same triangles in the same order.
 * The gable, gambrel and saltbox fills are `plan.prof` (the roof profile,
   itself built from `roof.shapes.*`), so they follow the How it's built
   roof pitch and barn roof height. With the shop standard (Oct 2026) the
-  Utility Shed and Side Utility gable is a 5/12 triangle and the Lofted Barn
-  and Side Lofted Barn gable is lower at 10 and 12 ft wide; a gable window
-  too tall for the smaller gable is no longer offered there
-  (`gableItemFits`, the `part-gable-window` skill). The golden test still
-  draws Barnwright's numbers; `node tools/check-shop-numbers.mjs` holds
-  every triangle of the four changed styles.
+  Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility gable is
+  a 5/12 triangle, the Dormer Shed's a 7/12 one, and the Lofted Barn, Side
+  Lofted Barn, Metal Lofted Barn and Lofted Barn Garage gable is lower at
+  10 and 12 ft wide; a gable window too tall for the smaller gable is no
+  longer offered there (`gableItemFits`, the `part-gable-window` skill).
+  The golden test still draws Barnwright's numbers;
+  `node tools/check-shop-numbers.mjs` holds every triangle of the ten
+  changed styles.
 
 ## Where it came from in Barnwright
 

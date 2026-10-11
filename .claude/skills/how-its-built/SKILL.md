@@ -41,14 +41,22 @@ says it.
    unless the style has a **style feature** for that knob: the flush gable
    ends of the Garden Utility and the cottages (`rakeOverhang`), the Standard
    Barn's own shoulders (`gambrel`), the Dormer Shed's own main roof. A
-   number set on that style itself replaces the feature.
+   number set on that style itself replaces the feature. A feature only
+   keeps the business-wide number off: the shop standard behind it still
+   holds (`layersOf`), so under a business-wide 6/12 the Dormer Shed keeps
+   the standard 7/12, not the library's 7 1/4/12.
 4. `library/manufacturers/<m>.json` `styles.<KEY>.built` -- the shop
    standard, except on a construction path the business's own raw
-   `construction` already sets. Today the Utility Shed and Side Utility
-   (5/12, a 4 in eave, 93 1/2 in walls) and the Lofted Barn and Side Lofted
-   Barn (79 1/2 in walls, barn roofs 43 3/4, 48 and 51 in at 8, 10 and
-   12 ft wide) carry Alan's shop numbers (Oct 2026, "yes match"), each with
-   a `_source` note. Barnwright's own company in the checks is the standard
+   `construction` already sets. Today ten styles carry Alan's shop numbers
+   (Oct 2026, "yes match"; six more on Oct 11 2026 after the pictures),
+   each with a `_source` note: the Utility Shed, Side Utility and Garage
+   (5/12, a 4 in eave, 93 1/2 in walls); the Dog Kennel and Garden Utility
+   (5/12 and a 4 in eave, their own walls); the Dormer Shed (main roof
+   7/12); the Lofted Barn, Side Lofted Barn and Metal Lofted Barn (79 1/2 in
+   walls, barn roofs 43 3/4, 48 and 51 in at 8, 10 and 12 ft wide); the
+   Lofted Barn Garage (those barn roofs, its own walls). Not the Metal
+   Garage ("not metal garage") nor the Metal Utility; 14 ft wide barns keep
+   their height. Barnwright's own company in the checks is the standard
    without these blocks (`tools/lib/barnwright-company.mjs`), so the golden
    test still draws Barnwright's numbers; `node tools/check-shop-numbers.mjs`
    holds the shop numbers (`test/golden-shop/`).
@@ -76,8 +84,10 @@ only on those buildings and the styles built like them
 (`model/company.js extraOfferedOn`): the designer's list
 (`model/pricing.js optxList(cat, state)`), `normalize` (takes it off in
 words), the server (409) and the Options tab ("Offered on" chips) all
-follow it. The example price list's **Steep roof (7/12)** is one: Alan's
-steep A-frame pitch, on the Utility Shed and Side Utility.
+follow it. No sample price list has one (Alan, Oct 11 2026: take the
+Steep roof out of the sample price list); an owner makes their own, for
+example "Steep roof" at 7/12 (Alan's steep A-frame pitch) on the Utility
+Shed and Side Utility, and the checks build that one themselves.
 
 ## How a number reaches the drawing
 
@@ -90,7 +100,13 @@ construction layer `t.construction` (plain values: `roof.shapes.gable.rise =
 `openings.doorHeightIn`). `constructionFor()` merges library < manufacturer
 < company < `t.construction` < the chosen options. `t.built` keeps where
 each number came from; `effective(cat, key)` gives the screens every knob's
-number, its words and its source.
+number, its words and its source. A number no setting holds is read off the
+drawing's own numbers (`plainValue`): an eave given along the slope is said
+measured level on the roof it hangs from -- on the Dormer Shed its own main
+roof (`roof.dormerRise`), so it says 4 3/8 in on the 7/12 roof, not the plain
+gable's 4 7/16 in. A barn eave is still said from the library's lower slope
+(1 3/4 in), while the drawn one moves a little with the barn roof height
+(1 11/16 to 2 1/8 in with the shop's heights): not fixed yet.
 
 ## Reading never fails; saving refuses only new problems
 
@@ -121,10 +137,11 @@ number, its words and its source.
   built (no building changes)"); the drawn roof is identical.
 * History: `describeChanges()` -- "Lofted Barn wall height: 6 ft 7 1/2 in
   → 7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12
-  (Utility Shed and Side Utility 5/12 → 6/12; Garden Utility, Cabin and 6
-  more about 6 1/2/12 → 6/12)" (`groupByWords`, `namesWords`); the
-  business-wide card says "Built now: 5/12 on the Utility Shed and Side
-  Utility; about 6 1/2/12 on the ..." under each box.
+  (Utility Shed, Side Utility and 3 more 5/12 → 6/12; Cabin, Side Cabin
+  and 3 more about 6 1/2/12 → 6/12)" (`groupByWords`, `namesWords`; the
+  Dormer Shed is not among them, its main roof is a feature); the
+  business-wide card says "Built now: 5/12 on the Utility Shed, Side
+  Utility, ...; about 6 1/2/12 on the ..." under each box.
   A change that moves what is drawn (`drawnOf`) raises `cfg` and open
   designers redraw; the standard's number typed on a style says "standard
   (5/12) → 5/12 of its own" and keeps `cfg`; the same number in other words
@@ -155,7 +172,7 @@ number, its words and its source.
   they are built like, or the business's raw construction settings for that
   roof -- (or gained sizes, or are newly sold) at every size, and each of
   them again with every extra that changes how it is built switched on (the
-  sample's Steep roof with a new wall); an extra whose numbers or
+  owner's Steep roof with a new wall); an extra whose numbers or
   construction changed, or that reaches a style it did not reach before
   (its styles list widened, a style it lists is sold again), is drawn on
   each style it reaches (`changedStyles`). Within about 3 s, the size each

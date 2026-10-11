@@ -519,9 +519,14 @@ for a style of the business's own, its base's `offer.<BASE>.built`; the
 business-wide `built` (by roof kind), unless the style has a style feature
 for that knob (the flush gable ends of the Garden Utility and the cottages,
 the Standard Barn's shoulders, the Dormer Shed's main roof) -- a number on
-that style itself replaces the feature; the shop standard
-`styles.<KEY>.built` in the manufacturer file, unless the business's raw
-`construction` already sets that path; the library. Barn roof heights are
+that style itself replaces the feature; where a feature keeps a
+business-wide number off, the shop standard still holds (the Dormer Shed
+keeps the standard 7/12 under a business-wide pitch); the shop standard `styles.<KEY>.built` in the manufacturer file
+(Alan's shop numbers on the Utility Shed, Side Utility, Garage, Dog Kennel,
+Garden Utility, Dormer Shed, Lofted Barn, Side Lofted Barn, Metal Lofted
+Barn and Lofted Barn Garage: docs/DIFFERENCES.md
+#26), unless the business's raw `construction` already sets that path; the
+library. Barn roof heights are
 found width by width (each width from the first layer that names it), so
 one width typed keeps the others. `resolve()` calls
 `apply()`, which sets the traits and writes the roof and door numbers into

@@ -53,10 +53,14 @@ Where it goes:
   opening, that line is among the design's warnings; in the designer the
   extras card says it. So the designer and the server always agree, and the
   design the customer sends next is priced (only a stale tab still holding
-  it gets the 409 refresh words). With the shop's 5/12 roofs the 18x24 is
-  not offered on 8, 10 and 12 ft Utility Sheds and Side Utilities (8 and
-  10 ft already poked through at Barnwright's pitch), nor the octagon on
-  8 ft ones (it fits at 10 ft and up). The every-size check (`gable-item`) tries every gable
+  it gets the 409 refresh words). With the shop's 5/12 and 7/12 roofs the
+  18x24 is not offered on 8, 10 and 12 ft Utility Sheds and Side Utilities
+  (8 and 10 ft already poked through at Barnwright's pitch), 12 ft Garages
+  or 8 and 10 ft Dormer Sheds (8 ft already did), nor the octagon on 8 ft
+  Utility Sheds, Side Utilities and Dog Kennels (it fits at 10 ft and up);
+  neither ever fitted the 6 ft Garden Utility. Alan (Oct 11 2026): keep it
+  off where it does not fit, on the newly changed styles too
+  (`tools/check-shop-numbers.mjs` part 4b holds the list). The every-size check (`gable-item`) tries every gable
   window the business sells under each gable, so one that is offered and
   does not fit fails `node tools/check-style-sizes.mjs`.
 

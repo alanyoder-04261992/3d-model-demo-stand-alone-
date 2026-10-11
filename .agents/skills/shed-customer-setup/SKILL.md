@@ -14,10 +14,14 @@ navigation. Reuse confirmed rules in the appropriate customer settings
 and model, preserving each builder's scope and outstanding measurements.
 
 **Alan's shop numbers are the standard** where he confirmed them (Oct 2026,
-"yes match ... for every dealer"): the standard Utility Shed and Side
-Utility have a 5/12 roof, a 4 in roof edge and 7 ft 9 1/2 in walls; the
-standard Lofted Barn and Side Lofted Barn have 6 ft 7 1/2 in walls and barn
-roofs 3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide. They
+"yes match ... for every dealer"; six more styles on Oct 11 2026): the
+standard Utility Shed, Side Utility and Garage have a 5/12 roof, a 4 in roof
+edge and 7 ft 9 1/2 in walls; the Dog Kennel and Garden Utility the 5/12
+roof and 4 in roof edge on their own walls; the Dormer Shed a 7/12 main
+roof; the standard Lofted Barn, Side Lofted Barn and Metal Lofted Barn have
+6 ft 7 1/2 in walls and barn roofs 3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall
+at 8, 10 and 12 ft wide, and the Lofted Barn Garage those barn roofs on its
+own walls. Not the Metal Garage or Metal Utility. They
 are `styles.<code>.built` blocks in `library/manufacturers/standard.json`,
 each with a `_source` note, and every customer gets them without writing
 anything. A customer that builds differently sets its own numbers in its
@@ -82,9 +86,10 @@ For Alan's utility style, use [utility framing](../utility-framing/SKILL.md)
 and [its phone lesson](../../../utility-framing.html): 89 in wall studs,
 one flat **top window plate** whose top is 12.5 in below the bottom of
 the wall top plate, studs filling space above openings, and an **A-frame
-roof** with 5/12 standard or 7/12 steep pitch (the standard draws 5/12;
-7/12 is the sample price list's Steep roof (7/12) option, offered only on
-the Utility Shed and Side Utility). Roof stock is 2x4 through
+roof** with 5/12 standard or 7/12 steep pitch (the standard draws 5/12, and
+7/12 on the Dormer Shed's main roof; no sample price list has a Steep roof,
+so a customer that sells one makes its own option with "Roof pitch at
+least", offered only on the buildings it names). Roof stock is 2x4 through
 nominal 10-wide, then 2x6; side projection is 4 in and end height 2 in.
 Keep nominal stock selection separate from actual-width geometry. Preserve the
 lofted wall/roof rules separately; utility does not inherit its header.

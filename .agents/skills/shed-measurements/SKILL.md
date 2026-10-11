@@ -9,9 +9,13 @@ This is internal setup knowledge: calculate and verify a builder's rules
 so customer buildings can be configured faster. Lessons, framing studies
 and their controls are development aids, not features to ship to the
 customer designer. Alan's confirmed rules are the standard for every
-dealer where he said so (Oct 2026, "yes match"): the utility pitch, roof
-edge and wall, the lofted wall and the 8, 10 and 12-wide barn roof heights
-are `built` blocks in `library/manufacturers/standard.json`. Transfer any
+dealer where he said so (Oct 2026, "yes match"; more styles Oct 11 2026):
+the utility pitch, roof edge and wall (Utility Shed, Side Utility, Garage;
+pitch and edge on the Dog Kennel and Garden Utility; the steep 7/12 on the
+Dormer Shed's main roof), the lofted wall and the 8, 10 and 12-wide barn
+roof heights (Lofted Barn, Side Lofted Barn, Metal Lofted Barn; the heights
+on the Lofted Barn Garage) are `built` blocks in
+`library/manufacturers/standard.json`. Transfer any
 other rule only once Alan confirms it; a business that builds differently
 sets its own numbers in How it's built (the `how-its-built` skill).
 
@@ -85,12 +89,14 @@ The 6.25-inch projection belongs to the 10-wide lesson; 8/12-wide projections
 and the actual 8-wide width remain unspecified. Do not fabricate full
 trusses from old angles.
 
-The peak heights are the standard Lofted Barn and Side Lofted Barn roofs
-(Oct 2026, "yes match"): `styles.LB.built.barnPeak` and
-`styles.SLB.built.barnPeak` = `{"8": 43.75, "10": 48, "12": 51}` in
+The peak heights are the standard Lofted Barn, Side Lofted Barn, Metal
+Lofted Barn and Lofted Barn Garage roofs (Oct 2026, "yes match"; the last
+two Oct 11 2026): `styles.<code>.built.barnPeak` =
+`{"8": 43.75, "10": 48, "12": 51}` in
 `library/manufacturers/standard.json`, measured the same way (wall top to
 peak). The drawn roof keeps Barnwright's bend, so its two slopes are not
-these upper and lower pieces yet; a 14-wide barn keeps Barnwright's height.
+these upper and lower pieces yet; a 14-wide barn keeps Barnwright's height
+(Alan, Oct 11 2026: keep today's height).
 
 Store `construction.trussStudy.byNominalWidthFt`, with
 `referenceNominalWidthFt: 10`. `trussSizeRule(plan)` selects from nominal
@@ -122,9 +128,10 @@ carry the provenance of a reusable rule and mark new results as derived.
 Read [utility framing](../utility-framing/SKILL.md) for Alan's October 1
 rules. Utility studs cut to **89 in**; the lofted stud cut stays 75 in.
 With the current three 1.5 in plates, utility wall height is a derived
-**93.5 in above flooring** (the standard Utility Shed and Side Utility wall,
-`styles.UT.built.wallHeight`; the lofted 79.5 in likewise on the Lofted Barn
-and Side Lofted Barn). Plate count/corners are carried preview rules.
+**93.5 in above flooring** (the standard Utility Shed, Side Utility and
+Garage wall, `styles.UT.built.wallHeight`; the lofted 79.5 in likewise on the
+Lofted Barn, Side Lofted Barn and Metal Lofted Barn). Plate count/corners are
+carried preview rules.
 The **top window plate** is one flat 2x4 with studs above it, separate
 from the lofted window's three-board header. Its **top is 12.5 in below
 the bottom of the wall top plate**; upper studs cut to 12.5 in.

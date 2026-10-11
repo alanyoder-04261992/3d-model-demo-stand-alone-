@@ -149,18 +149,22 @@ width 0.52, lap 0.34 x 0.024.
   taller of 0.45 W and that line so the camera never cuts the top off). `tools/check-build-settings.mjs` proves each.
 * **The shop standard (Oct 2026, Alan: "yes match").** The standard
   manufacturer's How it's built blocks (`styles.<KEY>.built` in
-  `library/manufacturers/standard.json`) give the Utility Shed and Side
-  Utility a 5/12 roof at every width (Barnwright: about 6 1/2/12) and an
-  eave 4 in out from the wall measured level (`{"flatIn": 4}`; Barnwright:
-  0.42 ft along the slope), and the Lofted Barn and Side Lofted Barn a barn
-  roof 43 3/4, 48 and 51 in above the wall at 8, 10 and 12 ft wide
-  (`peakIn`; Barnwright: 0.45 of the width; 14 ft unchanged). The knee
+  `library/manufacturers/standard.json`) give the Utility Shed, Side
+  Utility, Garage, Dog Kennel and Garden Utility a 5/12 roof at every width
+  (Barnwright: about 6 1/2/12) and an eave 4 in out from the wall measured
+  level (`{"flatIn": 4}`; Barnwright: 0.42 ft along the slope), the Dormer
+  Shed's main roof 7/12 (`roof.dormerRise`; Barnwright about 7 1/4/12; its
+  eave stays 0.42 ft along the slope), and the Lofted Barn, Side Lofted
+  Barn, Metal Lofted Barn and Lofted Barn Garage a barn roof 43 3/4, 48 and
+  51 in above the wall at 8, 10 and 12 ft wide (`peakIn`; Barnwright: 0.45
+  of the width; 14 ft unchanged). Not the Metal Garage or Metal Utility
+  (Alan: "not metal garage"). The knee
   stays where Barnwright put it, so the slopes are not Alan's truss pieces
   yet. Barnwright's own company leaves these blocks out, so
   `check-golden.mjs --part roofing` still compares Barnwright's numbers;
   `node tools/check-shop-numbers.mjs` holds the shop numbers (every roof
   height, pitch and eave of every style and size, and every triangle of the
-  four styles that changed).
+  ten styles that changed).
 
 ## Where it came from in Barnwright
 

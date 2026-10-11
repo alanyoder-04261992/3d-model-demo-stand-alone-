@@ -30,11 +30,16 @@ Yoder Storage Barns site lights them (true colour), and nothing else moved.
    with Barnwright's numbers (the standard library without its "How it's
    built" blocks, `tools/lib/barnwright-company.mjs`) and compares every
    triangle with Barnwright's (in Barnwright's warm light). Every other
-   company gets the shop standard (Oct 2026, "yes match"): 5/12 roofs, 4 in
-   eaves and 7 ft 9 1/2 in walls on the Utility Shed and Side Utility;
-   6 ft 7 1/2 in walls and barn roofs 3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall
-   at 8, 10 and 12 ft wide on the Lofted Barn and Side Lofted Barn. Other
-   styles keep Barnwright's numbers until Alan says yes.
+   company gets the shop standard (Oct 2026, "yes match"; more styles
+   Oct 11 2026): 5/12 roofs and 4 in eaves on the Utility Shed, Side
+   Utility, Garage, Dog Kennel and Garden Utility, with 7 ft 9 1/2 in walls
+   on the first three; the Dormer Shed's main roof at 7/12; barn roofs
+   3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide on the
+   Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage,
+   with 6 ft 7 1/2 in walls on the first three (14 ft wide barns keep their
+   height). Not the Metal Garage or Metal Utility; every other style keeps
+   Barnwright's numbers until Alan says yes. No sample price list has a
+   Steep roof; an owner can make one ("Roof pitch at least").
    `node tools/check-shop-numbers.mjs` holds the shop numbers (the recorded
    set `test/golden-shop/`) and `node tools/check-style-sizes.mjs` checks
    every style at every size. A red golden test is an engine change: fix the

@@ -9,10 +9,13 @@ This is internal knowledge for Alan and the setup agent to learn a builder's
 construction and configure customer buildings faster. The lesson pages,
 framing previews and study settings are development aids; do not ship them
 as customer designer features. Alan's confirmed rules are now the standard
-for every dealer (Oct 2026, "yes match"): the standard Utility Shed and Side
-Utility (`styles.UT.built` and `styles.SU.built` in
-`library/manufacturers/standard.json`) have the 5/12 roof, the 4 in roof
-edge and the derived 93.5 in wall. A business that builds differently sets
+for every dealer (Oct 2026, "yes match"): the standard Utility Shed, Side
+Utility and (Oct 11 2026) Garage (`styles.UT.built`, `styles.SU.built` and
+`styles.G.built` in `library/manufacturers/standard.json`) have the 5/12
+roof, the 4 in roof edge and the derived 93.5 in wall; the Dog Kennel and
+Garden Utility have the 5/12 roof and 4 in roof edge on their own walls;
+the Dormer Shed's main roof is the 7/12 steep pitch. Not the Metal Garage
+or Metal Utility. A business that builds differently sets
 its own numbers in the Dealer Center (How it's built, the `how-its-built`
 skill); a rule not yet on the standard waits for Alan's yes.
 
@@ -30,9 +33,11 @@ the utility lesson distinct from the learned lofted wall.
 - Roof name: **A-frame roof**, also **utility-style roof**. Standard pitch
   is **5/12**; steep is **7/12**. The denominator is horizontal run, not
   distance along the sloping board. Rise = horizontal run × rise/run ratio.
-  The standard draws 5/12 at every width; 7/12 is the sample price list's
-  **Steep roof (7/12)** option (`options.extras` with `built.roofPitch: 7`,
-  offered only on the Utility Shed and Side Utility).
+  The standard draws 5/12 at every width, and 7/12 on the Dormer Shed's
+  main roof. No sample price list sells a steep roof (Alan, Oct 11 2026);
+  a business that does makes its own option (`options.extras` with
+  `built.roofPitch: 7` and `styles`, "Roof pitch at least" in the Dealer
+  Center).
 - Roof stock follows the **nominal sales width**: **10-wide and under
   use 2x4** (actual 1.5 x 3.5); wider uses **2x6** (actual 1.5 x 5.5).
   Actual building width is a separate geometry input (12-wide is 134 in).
