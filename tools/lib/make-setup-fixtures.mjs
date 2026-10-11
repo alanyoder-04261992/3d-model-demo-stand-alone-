@@ -228,8 +228,13 @@ export const CHECK_THE_REST = "To check the rest, tap Open their price list and 
 /* set_roof_pitch's change line: the owner's own History words for a style's
    own roof pitch (model/build-settings.js describeChanges). The pitch
    reaches every style of their own built like it that has no pitch of its
-   own. */
+   own, and the line names them (builtLikeWords). */
 const pitchLine = (style, from, to) => `${style} roof pitch: ${from} → ${to}`;
+/* A library style's own number (set_built, set_roof_pitch) reaches the
+   styles of their own built like it with no number of their own for that
+   setting: the line ends naming them (model/build-settings.js
+   describeChanges). */
+const builtLikeWords = (names) => ` (and ${names.length < 2 ? names[0] : names.slice(0, -1).join(", ") + " and " + names[names.length - 1]}, built like it)`;
 
 /* ---- keys and signing ------------------------------------------------------------------ */
 
@@ -568,6 +573,10 @@ function sampleSet(base, pl) {
   ok("set_roof_pitch: one gable style's own roof pitch in How it's built (every building built like it too)", [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }],
     (s) => { s.offer.UT.built = { roofPitch: 6 }; },
     { paths: ["offer.UT.built", "construction"], wantChanges: [pitchLine("Utility Shed", STANDARD_PITCH, "6/12")], wantSizeWarnings: 1 });
+  ok("set_roof_pitch: a style of their own built like it is drawn at that pitch too, and the change words name it", [{ do: "add_own_style", built_like: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }, { do: "set_roof_pitch", style: "UT", pitch: "6/12" }],
+    (s) => { s.offer.UT.built = { roofPitch: 6 }; s.offer.UT1 = { base: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }; s.categories[0][1].splice(1, 0, "UT1"); },
+    { paths: ["offer.UT.built", "offer.UT1", "categories"], newCodes: { "Premium Utility": "UT1" },
+      wantChanges: ["Started selling the Premium Utility (built like the Utility Shed) in 1 size", `${pitchLine("Utility Shed", STANDARD_PITCH, "6/12")}${builtLikeWords(["Premium Utility"])}`] });
   ok("set_built: a style's own roof pitch, eave, gable-end overhang, wall height and door height, in a builder's words", [{ do: "set_built", style: "UT", roofPitch: "6/12", eaveOverhang: "6 in", gableOverhang: "3 in", wallHeight: "8 ft", doorHeight: "80 in" }],
     (s) => { s.offer.UT.built = { roofPitch: 6, eaveOverhang: 6, gableEndOverhang: 3, wallHeight: 96, doorHeight: 80 }; },
     { paths: ["offer.UT.built", "construction"] });
@@ -1420,7 +1429,7 @@ async function make(old) {
     },
     beforeSignIn,
     words: {
-      lock: LOCK, warnings: WARN_TEXT, undoLine: UNDO_LINE, roofPitchLine: pitchLine("<Style>", "<old pitch>", "<new pitch>"), standardPitch: STANDARD_PITCH,
+      lock: LOCK, warnings: WARN_TEXT, undoLine: UNDO_LINE, roofPitchLine: pitchLine("<Style>", "<old pitch>", "<new pitch>"), builtLike: builtLikeWords(["<Style of their own>"]), standardPitch: STANDARD_PITCH,
       nothingToUndo: NOTHING_TO_UNDO, nothingBeforeStart: NOTHING_BEFORE_START, tooManySaves: TOO_MANY_SAVES, refusedLog: REFUSED_LOG,
       savedBy: ["the owner", "a manager", "Barnwright (<actor>)", "someone no longer on the team"],
       ownerSavedFirst: "Barnwright saved a change while you were working. Reload to see it, then make yours again.",

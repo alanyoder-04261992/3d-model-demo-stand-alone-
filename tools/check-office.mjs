@@ -814,7 +814,8 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   let s = clone(cur.settings); s.offer.LB.built = { wallHeight: 84 };
   let out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "saving a Lofted Barn wall height of 7 ft" });
   /* from the shop standard's 79 1/2 in lofted wall ("yes match") */
-  ok(`... History says "${lbName} wall height: 6 ft 7 1/2 in → 7 ft"`, out.changes.includes(`${lbName} wall height: 6 ft 7 1/2 in → 7 ft`), JSON.stringify(out.changes));
+  /* ... naming the Premium Lofted Barn (built like it, no wall of its own), which the 7 ft wall reaches too */
+  ok(`... History says "${lbName} wall height: 6 ft 7 1/2 in → 7 ft (and Premium Lofted Barn, built like it)"`, out.changes.includes(`${lbName} wall height: 6 ft 7 1/2 in → 7 ft (and Premium Lofted Barn, built like it)`), JSON.stringify(out.changes));
   ok("... and cfg goes up, so open designers redraw", out.cfg === cur.cfg + 1);
   ok("... the lot's designer draws the 7 ft walls", (await liveCat()).TYPES.LB.wallH === 7);
   /* a number is stored as its number, the same number in other words is no
@@ -891,7 +892,7 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   const lbSizes = Object.keys(cur.settings.offer.LB.sizes).length;
   ok(`... is drawn at all ${lbSizes} of its sizes before it saves`, out.sizeCheck?.checked?.includes(cur.settings.offer.LB.name || manufacturer.styles.LB.name) && out.sizeCheck.buildings >= lbSizes && !out.sizeCheck.unchecked.length, JSON.stringify(out.sizeCheck));
   ok("... History says the wall height and that the wall upgrades follow it",
-    out.changes.some((c) => /wall height: .+ → 7 ft$/.test(c)) && out.changes.some((c) => /^Wall upgrades priced by the square foot follow the new wall height: .*Moisture barrier — walls/.test(c)), JSON.stringify(out.changes));
+    out.changes.some((c) => /wall height: .+ → 7 ft \(and Premium Lofted Barn, built like it\)$/.test(c)) && out.changes.some((c) => /^Wall upgrades priced by the square foot follow the new wall height: .*Moisture barrier — walls/.test(c)), JSON.stringify(out.changes));
 
   /* a price change draws nothing */
   cur = await want(200, "GET", "/api/office/price-list");

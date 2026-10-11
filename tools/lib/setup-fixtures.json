@@ -5327,6 +5327,68 @@
         }
       },
       {
+        "name": "set_roof_pitch: a style of their own built like it is drawn at that pitch too, and the change words name it",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "add_own_style",
+            "built_like": "UT",
+            "name": "Premium Utility",
+            "sizes": {
+              "10x16": 6290
+            }
+          },
+          {
+            "do": "set_roof_pitch",
+            "style": "UT",
+            "pitch": "6/12"
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Started selling the Premium Utility (built like the Utility Shed) in 1 size",
+            "Utility Shed roof pitch: 5/12 → 6/12 (and Premium Utility, built like it)"
+          ],
+          "warnings": [
+            "Utility Shed 12x20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 12x24 and 12x16."
+          ],
+          "contactDetailsChange": false,
+          "newCodes": {
+            "Premium Utility": "UT1"
+          },
+          "paths": {
+            "offer.UT.built": {
+              "roofPitch": 6
+            },
+            "offer.UT1": {
+              "base": "UT",
+              "name": "Premium Utility",
+              "sizes": {
+                "10x16": 6290
+              }
+            },
+            "categories": [
+              [
+                "Sheds",
+                [
+                  "UT",
+                  "UT1",
+                  "LB"
+                ]
+              ],
+              [
+                "Garages",
+                [
+                  "G"
+                ]
+              ]
+            ]
+          },
+          "settingsSha256": "73cc716070c2df0b8e8a3e53984a344216542989cef41d4698f71a03c2c92ecd"
+        }
+      },
+      {
         "name": "set_built: a style's own roof pitch, eave, gable-end overhang, wall height and door height, in a builder's words",
         "mode": "prelive",
         "edits": [
@@ -10154,6 +10216,7 @@
     },
     "undoLine": "Put back the price list from before Barnwright's last change",
     "roofPitchLine": "<Style> roof pitch: <old pitch> → <new pitch>",
+    "builtLike": " (and <Style of their own>, built like it)",
     "standardPitch": "5/12",
     "nothingToUndo": "Barnwright hasn't changed this price list, so there is nothing to undo.",
     "nothingBeforeStart": "This is the starting price list Barnwright set up, so there is nothing before it to put back.",

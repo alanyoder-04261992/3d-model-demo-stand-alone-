@@ -966,6 +966,19 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
     JSON.stringify(describeChanges(base, two.settings, manufacturer, { library })) === JSON.stringify([`Utility Shed roof pitch: ${std(shopUT)} → 7/12`, `Garage roof pitch: ${std(shopG)} → 8/12`])
     && JSON.stringify(describeChanges(two.settings, back.settings, manufacturer, { library })) === JSON.stringify([`Utility Shed roof pitch: 7/12 → ${std(shopUT)}`, `Garage roof pitch: 8/12 → ${std(shopG)}`]),
     JSON.stringify([describeChanges(base, two.settings, manufacturer, { library }), describeChanges(two.settings, back.settings, manufacturer, { library })]));
+  /* the Premium Utility (a style of their own built like the Utility Shed) is
+     drawn at the Utility Shed's new pitch: the words Alan says yes to name it
+     (review M2; lane/dc-setup said "Utility Shed and every building built
+     like it") */
+  const pu = applyEdits(base, [{ do: "add_own_style", built_like: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }], opts).settings;
+  const puPitch = applyEdits(pu, [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }], opts).settings;
+  const puOwn = applyEdits(pu, [{ do: "set_built", style: "UT1", roofPitch: "7/12" }], opts).settings;
+  const puOwnPitch = applyEdits(puOwn, [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }], opts).settings;
+  ok("F13: the change words name each style of their own built like it that the new pitch reaches (old code: only the Utility Shed); one with its own pitch isn't named",
+    JSON.stringify(describeChanges(pu, puPitch, manufacturer, { library })) === JSON.stringify([`Utility Shed roof pitch: ${std(shopUT)} → 6/12 (and Premium Utility, built like it)`])
+    && JSON.stringify(describeChanges(puOwn, puOwnPitch, manufacturer, { library })) === JSON.stringify([`Utility Shed roof pitch: ${std(shopUT)} → 6/12`])
+    && Math.abs(pitched(puPitch, "UT1") - 6) < 0.01 && Math.abs(pitched(puOwnPitch, "UT1") - 7) < 0.01,
+    JSON.stringify([describeChanges(pu, puPitch, manufacturer, { library }), describeChanges(puOwn, puOwnPitch, manufacturer, { library })]));
   const views = (st) => JSON.stringify(readView(st, "buildings", manufacturer).styles.map((x) => [x.code, x.pitch]));
   ok("F13: read says each style's own pitch (old code: standard), its own style built like it the same, and standard again after",
     views(two.settings) === JSON.stringify([["UT", "7/12"], ["LB", null], ["G", "8/12"]]) && views(back.settings) === JSON.stringify([["UT", "standard"], ["LB", null], ["G", "standard"]])
@@ -2067,6 +2080,20 @@ section("SB. set_built: a building style's own numbers in How it's built, in a b
   const back = await D2.door({ action: "check", version: 2, edits: [{ do: "set_built", style: "UT", wallHeight: "standard", doorHeight: "standard" }] });
   ok("SB: standard takes them out again, said with the standard's own numbers",
     back.status === 200 && JSON.stringify(back.data.changes) === JSON.stringify(["Utility Shed wall height: 8 ft → 7 ft 9 1/2 in", "Utility Shed wooden shop door height: 80 in → 76 1/2 in"]), JSON.stringify(back.data));
+  /* a library style's own number reaches every style of theirs built like
+     it with no number of its own: the words Alan says yes to, the History
+     and the owner's log name them (review SEC-BUILT-4) */
+  const R2 = await fixtureBusiness();
+  const pr = await R2.ownerSave((x) => { x.offer.UT1 = { base: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }; x.offer.LB1 = { base: "LB", name: "Tall Loft Barn", sizes: { "10x16": 6490 }, built: { wallHeight: 84 } }; x.categories[0][1].push("UT1", "LB1"); });
+  const reachEdits = [{ do: "set_built", style: "UT", wallHeight: "8 ft 6 in" }, { do: "set_built", style: "LB", wallHeight: "7 ft", barnHeights: { 10: "4 ft 2 in" } }];
+  const rc = await R2.door({ action: "check", version: 2, edits: reachEdits });
+  const rs = await R2.door({ action: "save", version: 2, edits: reachEdits, settingsSha256: rc.data.settingsSha256 });
+  const rcat = resolveCatalogue((await R2.store.get("price-list")).settings, manufacturer, library);
+  const reachWords = ["Utility Shed wall height: 7 ft 9 1/2 in → 8 ft 6 in (and Premium Utility, built like it)", "Loft Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in (and Tall Loft Barn, built like it)", "Loft Barn wall height: 6 ft 7 1/2 in → 7 ft"];
+  ok("SB: set_built on a library style names each style of theirs built like it that the number reaches (old code: only the library style); one with its own number isn't named",
+    pr.status === 200 && rc.status === 200 && rs.status === 200 && JSON.stringify(rc.data.changes) === JSON.stringify(reachWords)
+    && JSON.stringify((await R2.store.get("price-list-history/000003"))?.changes) === JSON.stringify(reachWords)
+    && Math.abs(rcat.TYPES.UT1.wallH * 12 - 102) < 1e-9 && Math.abs(rcat.TYPES.LB1.wallH * 12 - 84) < 1e-9, JSON.stringify([pr.data?.error, rc.data.changes]));
 
   /* the every-size result in the check answer: what it warns, and what it had no time for */
   /* (set_roof_pitch, set_built's short form, so the old code can be asked too) */

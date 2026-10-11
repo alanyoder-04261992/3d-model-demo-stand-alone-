@@ -221,7 +221,9 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12
   (Utility Shed, Side Utility and 3 more 5/12 → 6/12; Cabin, Side Cabin and
   3 more about 6 1/2/12 → 6/12)", naming each style a business-wide number moved,
-  "Steep roof: roof pitch at least 7/12", and "Wall upgrades priced by the
+  "Utility Shed wall height: 7 ft 9 1/2 in → 8 ft (and Premium Utility,
+  built like it)", naming each style of their own a library style's own
+  number reaches, "Steep roof: roof pitch at least 7/12", and "Wall upgrades priced by the
   square foot follow the new wall height: ..." when a wall height moves
   what a per-square-foot wall upgrade costs. A change that moves what is
   drawn raises `cfg`, so open designers redraw; the standard's own number
@@ -1291,7 +1293,12 @@ dealer's building match the photos: its roof, its walls, its doors.
   → 8 ft", "Loft Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in", and
   back with `"standard"` "Utility Shed wall height: 8 ft → 7 ft 9 1/2 in". A
   style started in the same change says its own numbers after "Started
-  selling ...": "Tall Loft Barn wall height: 7 ft of its own".
+  selling ...": "Tall Loft Barn wall height: 7 ft of its own". A library
+  style's line names every style of theirs built like it that the number
+  reaches (no number of its own for that setting): "Utility Shed wall
+  height: 7 ft 9 1/2 in → 8 ft 6 in (and Premium Utility, built like it)".
+  Alan says yes to these words, so a building that changes is always
+  named.
 * Before live, and while the owner's switch is on (a save then needs Alan's
   tap in the Control Room, as every save does).
 * How it's built for the whole business (`built`), the construction
@@ -1332,7 +1339,8 @@ with stricter limits and its own words, kept as they were.
   building's pitch is used again: the shop standard where there is one
   (the Utility Shed's 5/12), or the library's.
 * The pitch also reaches every style of their own built like it that has
-  no pitch of its own. Nothing is written in the construction settings.
+  no pitch of its own, and the change words name them. Nothing is written
+  in the construction settings.
 * A price list from before How it's built may hold the rule list this edit
   used to write (`construction.roof.shapes.gable.rise`: one `{when:
   {styles: [code]}, value: {w: N / 24}}` for each style, then the library's
@@ -1340,7 +1348,9 @@ with stricter limits and its own words, kept as they were.
   the same move every save makes), so each style keeps the pitch it had.
 * The change words are the owner's own History words for How it's built,
   with the standard said as its number: "Utility Shed roof pitch: 5/12 →
-  6/12", and back again "Utility Shed roof pitch: 6/12 → 5/12".
+  6/12", and back again "Utility Shed roof pitch: 6/12 → 5/12". When a
+  style of their own is built like it with no pitch of its own: "Utility
+  Shed roof pitch: 5/12 → 6/12 (and Premium Utility, built like it)".
 * The save is checked like the owner's own: How it's built's limits, then
   every size of that style (the every-size check, `server/office/
   built-check.js`); a problem the new pitch causes refuses the save in

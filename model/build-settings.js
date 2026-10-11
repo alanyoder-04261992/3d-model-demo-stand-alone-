@@ -1165,6 +1165,31 @@ export function describeChanges(before, after, manufacturer, library) {
     const groups = groupByWords(list);
     return groups.length ? ` (${groups.map((g) => `${namesWords(g.names)} ${g.words}`).join("; ")})` : "";
   };
+  /* A library style's own number reaches every style of theirs built like
+     it that has no number of its own for that setting (A.1 step 2), so its
+     line names them, the way a business-wide line names the styles it moves
+     (reviews M2, SEC-BUILT-4): "Utility Shed roof pitch: 5/12 → 6/12 (and
+     Premium Utility, built like it)". Named: those whose building it
+     moved, and those new in this change (drawn with it from the start). W:
+     one barn width, for a barn roof height said width by width. */
+  const builtLike = (k, id, W) => {
+    if (!isObj(a.offer[k]) || a.offer[k].base != null) return "";
+    const t = (M.styles || {})[k];
+    const names = [];
+    for (const k2 of keysOf(a.offer)) {
+      const o2 = a.offer[k2];
+      if (k2 === k || !isObj(o2) || o2.base !== k || (isObj(o2.built) && own(o2.built, id))) continue;
+      const was = isObj(b.offer) && own(b.offer, k2) && isObj(b.offer[k2]);
+      /* it had a number of its own before: its own line says the change */
+      if (was && isObj(b.offer[k2].built) && own(b.offer[k2].built, id)) continue;
+      if (W != null) {
+        if (!keysOf(o2.sizes).some((z) => +String(z).split("x")[0] === W)) continue;
+        if (was && drawnBarnWords(b, ea, k2, t, W) === drawnBarnWords(a, eb, k2, t, W)) continue;
+      } else if (was && builtWords(b, ea, k2, id) === builtWords(a, eb, k2, id)) continue;
+      names.push(styleName(a, M, k2));
+    }
+    return names.length ? ` (and ${namesWords(names)}, built like it)` : "";
+  };
   for (const id of KNOB_IDS) {
     const K = KNOB[id];
     if (Array.isArray(K.business)) {
@@ -1184,10 +1209,10 @@ export function describeChanges(before, after, manufacturer, library) {
         if (oa[id] === undefined) continue;
         const r = parse(id, oa[id], {});
         if (id === "barnPeak" && isObj(r.value)) {
-          for (const w of Object.keys(r.value).map(Number).sort((x, y) => x - y)) out.push(`${name} ${KNOB[id].words} at ${w} ft wide: ${fmtIn(r.value[w])} of its own`);
+          for (const w of Object.keys(r.value).map(Number).sort((x, y) => x - y)) out.push(`${name} ${KNOB[id].words} at ${w} ft wide: ${fmtIn(r.value[w])} of its own${builtLike(k, id, w)}`);
           continue;
         }
-        out.push(`${name} ${KNOB[id].words}: ${r.value !== undefined ? format(id, r.value) : `"${String(oa[id]).slice(0, 40)}"`} of its own`);
+        out.push(`${name} ${KNOB[id].words}: ${r.value !== undefined ? format(id, r.value) : `"${String(oa[id]).slice(0, 40)}"`} of its own${r.value !== undefined ? builtLike(k, id) : ""}`);
       }
       continue;
     }
@@ -1213,7 +1238,7 @@ export function describeChanges(before, after, manufacturer, library) {
           const lines = [];
           for (const W of soldWidths(b, a, k)) {
             const x = drawnBarnWords(b, ea, k, s, W), y = drawnBarnWords(a, eb, k, s, W);
-            if (x && y && x !== y) lines.push(`${name} ${KNOB[id].words} at ${W} ft wide: ${x} → ${y}`);
+            if (x && y && x !== y) lines.push(`${name} ${KNOB[id].words} at ${W} ft wide: ${x} → ${y}${builtLike(k, id, W)}`);
           }
           if (lines.length) { out.push(...lines); continue; }
         }
@@ -1233,7 +1258,7 @@ export function describeChanges(before, after, manufacturer, library) {
         }
         continue;
       }
-      out.push(`${name} ${KNOB[id].words}: ${was} → ${now}`);
+      out.push(`${name} ${KNOB[id].words}: ${was} → ${now}${builtLike(k, id)}`);
     }
   }
   /* a new wall height changes what a wall upgrade priced by the square foot
