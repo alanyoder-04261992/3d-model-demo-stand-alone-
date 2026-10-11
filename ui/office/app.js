@@ -48,6 +48,9 @@ export const app = {
 
   async loadMe() {
     this.me = await get("me");
+    /* when this device's sign-in ends, in this browser's own time */
+    const s = this.me?.session;
+    if (s && Number.isFinite(s.left)) s.endsLocal = new Date(Date.now() + s.left).toISOString();
     this.lots = this.me.lots || [];
     let saved = "all";
     try { saved = localStorage.getItem(`${LOT_KEY}:${this.me?.user?.id}`) || "all"; } catch { /* private mode */ }

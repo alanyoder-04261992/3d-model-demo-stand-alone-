@@ -640,6 +640,11 @@ function rawKnobProblems(S) {
   return out;
 }
 
+/* What a library style's built block may hold besides the knobs: the shop
+   standard's own door at some sizes (standardSwaps, model/loadouts.js). A
+   business's offer.<KEY>.built may not (problems: "not a building setting"). */
+export const LIBRARY_ONLY = Object.freeze(["standardSwaps"]);
+
 /* The same checks for the shop standard in a manufacturer file
    (styles.<KEY>.built): -> ["styles.LB.built.wallHeight: ..."] */
 export function libraryProblems(manufacturer) {
@@ -653,6 +658,9 @@ export function libraryProblems(manufacturer) {
     const applies = knobsFor(s);
     for (const id of Object.keys(s.built)) {
       if (id.startsWith("_")) continue;
+      /* the shop standard's own doors at some sizes: library-only, never a
+         knob (model/company.js validateManufacturer checks it) */
+      if (LIBRARY_ONLY.indexOf(id) >= 0) continue;
       if (!KNOB[id]) { out.push(`${at}.${id}: "${id}" is not a building setting${dym(id)}`); continue; }
       if (applies.indexOf(id) < 0) { out.push(`${at}.${id}: ${notApplying(id, s.name || k, s)}`); continue; }
       const r = parse(id, s.built[id], { kind: kindOf(s), metal: !!s.metal, name: s.name });

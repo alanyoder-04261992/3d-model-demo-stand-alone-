@@ -1,9 +1,23 @@
 /* THE DEALER CENTER: start-up, the frame around every screen, and the
    address (#/customers/abc) that says which screen is showing.
 
-   Start-up: handle a link from a Netlify email -> ask the server who this
-   is -> sign-in screen, "not on the team yet", first setup, or the Dealer
-   Center itself.
+   Start-up: handle a link from a Netlify email -> finish a Sign out the
+   server never confirmed -> ask the server who this is -> sign-in screen
+   (saying why the last sign-in ended), "not on the team yet", first setup,
+   or the Dealer Center itself. A sign-in from before the Dealer Center had
+   its own cookie moves onto the cookie (until the browser closes); one
+   left in a browser that was closed is cleared, never used.
+
+   Sign out (and Sign out on every device) asks a screen with unsaved
+   changes first, and lands on a clean sign-in card at /dealer (Sign out on
+   every device only once the server said every device is out; otherwise
+   it says so and stays). Signing in or out in one tab redraws this
+   browser's other Dealer Center tabs -- unless the same person is still
+   signed in here (the "try it" demo signing out, or another tab signing
+   in again). A sign-in that ends while a screen has unsaved changes never
+   reloads: a lasting note says to sign in in a new tab and tap Save again,
+   and the changes stay. The person menu says until when this device is
+   signed in, and the last 24 hours a note on top says so too.
 
    Screens live in ui/office/views/<name>.js. Each exports
    render(ctx) -> an element (or a promise of one). ctx carries the shared
@@ -21,9 +35,10 @@
 
 import { h, clear, icon, button, linkButton, toast, loading, emptyState } from "./dom.js";
 import { app } from "./app.js";
-import { configureApi, signOut, post, get, startVisit, endVisit, VISIT_ENDED } from "./api.js";
-import { signInScreen, notOnTeam, handleEmailLink } from "./auth.js";
-import { ROLE_WORDS, initials, dayWords, todayKey, untilWords } from "./words.js";
+import { configureApi, signOut, finishSignOut, startSession, onOtherTabs, post, get, startVisit, endVisit, VISIT_ENDED, takeSignInNote } from "./api.js";
+import { signInScreen, notOnTeam, handleEmailLink, endedWords } from "./auth.js";
+import { oldSignIn, forgetOldSignIn } from "./identity.js";
+import { ROLE_WORDS, initials, dayWords, todayKey, untilWords, when } from "./words.js";
 import { visitMark, visitMarked } from "./visit-draft.js";
 import { watchProblems, reportProblem, screenOf } from "../problems.js";
 
@@ -124,12 +139,42 @@ function badge(business) {
   return h("span", { class: "brand-initials", "aria-hidden": "true" }, business?.initials || initials(business?.name || "DC"));
 }
 
+/* Sign out: a screen with unsaved changes asks first (Stay keeps
+   everything as it was). */
+async function signOutHere({ everywhere = false } = {}) {
+  const guard = app.leaveGuard;
+  if (guard) {
+    const question = guard();
+    if (question && !confirm(question)) return;
+  }
+  app.leaveGuard = null;
+  try {
+    await signOut({ everywhere });
+  } catch (e) {
+    /* Sign out on every device didn't finish: still signed in here, nothing lost */
+    app.leaveGuard = guard;
+    toast(e.message, { error: true, ms: 12000 });
+  }
+}
+
+/* When this device's sign-in ends, in this browser's own time (the server
+   says how long is left, so a computer clock that is off doesn't matter). */
+function signInEnds() {
+  const s = app.me?.session;
+  const at = s?.endsLocal || s?.endsAt;
+  const d = at ? new Date(at) : null;
+  return d && !Number.isNaN(d.valueOf()) ? d : null;
+}
+
 function personMenu() {
   const p = app.person;
+  const ends = app.me?.session?.keep ? signInEnds() : null;
   const menu = h("div", { class: "person-menu", hidden: true },
     h("div", { class: "person-menu-who" }, h("strong", {}, p.name || p.email), h("span", {}, p.email),
-      h("span", { class: "role-tag" }, ROLE_WORDS[p.role] + (p.role === "dealer" ? ` · ${p.lots.map((s) => app.lotName(s)).join(", ")}` : ""))),
-    button("Sign out", signOut, { kind: "quiet", icon: "signOut" }));
+      h("span", { class: "role-tag" }, ROLE_WORDS[p.role] + (p.role === "dealer" ? ` · ${p.lots.map((s) => app.lotName(s)).join(", ")}` : "")),
+      ends ? h("span", { class: "kept" }, `Signed in on this device until ${when(ends.toISOString())}.`) : null),
+    button("Sign out", () => signOutHere(), { kind: "quiet", icon: "signOut" }),
+    app.me?.signIn === "netlify" ? button("Sign out on every device", () => signOutHere({ everywhere: true }), { kind: "quiet" }) : null);
   const toggle = h("button", { type: "button", class: "person-button", "aria-haspopup": "true", "aria-expanded": "false",
     onclick: () => { menu.hidden = !menu.hidden; toggle.setAttribute("aria-expanded", String(!menu.hidden)); } },
   h("span", { class: "avatar" }, initials(p.name || p.email)), h("span", { class: "person-name" }, (p.name || p.email).split(" ")[0]));
@@ -159,7 +204,7 @@ function frameUp() {
   const more = items.slice(4);
   const moreSheet = h("div", { class: "more-sheet", hidden: true },
     more.map((n) => h("a", { href: "#" + n.path, class: "more-item", dataset: { path: n.path }, onclick: () => { moreSheet.hidden = true; } }, icon(n.icon), h("span", {}, n.label))),
-    visit ? null : h("button", { type: "button", class: "more-item", onclick: signOut }, icon("signOut"), h("span", {}, "Sign out")));
+    visit ? null : h("button", { type: "button", class: "more-item", onclick: () => signOutHere() }, icon("signOut"), h("span", {}, "Sign out")));
   const moreBtn = h("button", { type: "button", class: "tab-item", onclick: () => { moreSheet.hidden = !moreSheet.hidden; } }, icon("menu"), h("span", {}, "More"));
   lotPicker = visit ? null : buildLotPicker();
   main = h("main", { id: "main", class: "main", tabindex: "-1" });
@@ -272,6 +317,42 @@ function visitBar() {
     button("Done", doneVisit, { kind: "primary", small: true }));
 }
 
+/* The last 24 hours of this device's sign-in: say when it ends, so it
+   never ends in the middle of something without warning. */
+function signInEndsBanner() {
+  if (app.demo || app.barnwright) return null;
+  const ends = signInEnds();
+  if (!ends) return null;
+  const left = ends.getTime() - Date.now();
+  if (left <= 0 || left > 86400000) return null;
+  const day = todayKey(ends) === todayKey() ? "today" : "tomorrow";
+  const time = ends.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+  return h("div", { class: "banner info sign-in-ends", role: "status" }, icon("clock"),
+    h("span", {}, `Your sign-in on this device ends ${day} at ${time}. Sign out and sign in again before then to keep going.`));
+}
+
+/* The server said the sign-in ended (a 401 on a tap). Nothing unsaved:
+   start again on the Sign in card. Unsaved changes: never reload -- a note
+   that stays says what to do, and the changes stay on the screen; Save
+   works again once this browser is signed in (in another tab). -> the
+   words the tap shows, or null. */
+const SIGNED_OUT_KEEP = {
+  time: "Your 30 days on this device are up. Your changes are still here: open the Dealer Center in a new tab, sign in, then come back and tap Save.",
+  other: "You were signed out. Your changes are still here: open the Dealer Center in a new tab, sign in, then come back and tap Save.",
+  tap: "You were signed out. Sign in in a new tab, then tap Save again.",
+};
+function signedOutHere(data) {
+  const question = main && app.leaveGuard ? app.leaveGuard() : null;
+  if (!question) {
+    location.reload();
+    return null;
+  }
+  main.querySelector(".banner.signed-out")?.remove();
+  main.prepend(h("div", { class: "banner warn signed-out", role: "alert" }, icon("alert"),
+    h("span", {}, data?.ended === "time" && data?.kept ? SIGNED_OUT_KEEP.time : SIGNED_OUT_KEEP.other)));
+  return SIGNED_OUT_KEEP.tap;
+}
+
 function closedBanner() {
   if (app.demo) return demoBanner();
   if (app.barnwright) return visitBar();
@@ -293,9 +374,20 @@ function closedBanner() {
 
 /* ---- a Barnwright visit --------------------------------------------------------------- */
 
-/* A screen with words and nothing to sign in to. */
-function visitScreen(title, words) {
-  clear(root, h("main", { class: "auth" }, h("div", { class: "auth-card bw-card" }, h("h1", {}, title), h("p", {}, words))));
+/* A screen with words and nothing to sign in to (and, when given, one button). */
+function visitScreen(title, words, action = null) {
+  clear(root, h("main", { class: "auth" }, h("div", { class: "auth-card bw-card" }, h("h1", {}, title), h("p", {}, words), action)));
+}
+
+/* A tab that once held a Barnwright visit goes back to it on every
+   reload. Once that visit has ended, the person in front of it can leave
+   it for the Dealer Center's own sign-in (the visit's unsaved work stays
+   kept in this tab for a new visit). */
+function leaveVisitButton() {
+  return h("div", { class: "actions center" }, button("Sign in to this Dealer Center", () => {
+    visitMark(false, { keepDrafts: true });
+    location.replace(location.pathname);
+  }, { kind: "ghost" }));
 }
 
 /* The visit ended while Alan was working: say so on top, keep everything on screen. */
@@ -353,7 +445,7 @@ async function startBarnwright(pass) {
   try {
     await app.loadMe();
   } catch (e) {
-    return visitScreen("Your Barnwright visit ended", e.message || VISIT_ENDED);
+    return visitScreen("Your Barnwright visit ended", e.message || VISIT_ENDED, pass ? null : leaveVisitButton());
   }
   try { app.lots = (await get("lots")).lots || []; } catch { app.lots = []; }
   frameUp();
@@ -405,7 +497,7 @@ async function render() {
     };
     const el = await mod.render(ctx);
     if (seq !== renderSeq) return;
-    clear(main, closedBanner(), el);
+    clear(main, closedBanner(), signInEndsBanner(), el);
     main.focus({ preventScroll: true });
     window.scrollTo(0, 0);
   } catch (e) {
@@ -480,6 +572,54 @@ window.addEventListener("dealer:lots", () => {
    not fold it into this file. */
 const DEMO_MODULE = __DEALER_DEMO__ ? "/ui/office/demo.js" : "";
 
+/* What a sign-in from before the Dealer Center's own cookie left in this
+   browser (Identity's tokens in localStorage and two cookies a page can
+   read). While this browser is still open on it -- the server took its
+   token, or its cookies are still here (they go when the browser closes) --
+   it moves onto the cookie, until the browser closes, as it would have
+   lasted. Left from a browser that was closed since, it is cleared and
+   never used: the next person at a lot computer is not signed in as
+   somebody else. -> me, asked again when it moved. */
+async function oldSignInHere(me) {
+  const open = /(?:^|;\s*)nf_(jwt|refresh)=/.test(document.cookie);
+  if (me.session || (me.status === 401 && !open)) {
+    forgetOldSignIn();
+    return me;
+  }
+  try {
+    await startSession(oldSignIn(), { keep: false });
+    return me.status === 401 ? await app.loadMe() : me;
+  } catch (e) {
+    if (e.status !== 0 && e.status !== 503) forgetOldSignIn();
+    return me;
+  }
+}
+
+/* Another tab of this browser signed in or out: show this one as it is
+   now (a screen with unsaved changes says so instead of losing them). */
+async function otherTab(what) {
+  if (main && app.me?.user) {
+    /* still the same person signed in here (another tab signed in again,
+       or the "try it" demo signed out of nothing real): nothing to redraw;
+       a note that this tab was signed out goes, and Save works again */
+    try {
+      const now = await get("me");
+      if (now.user?.id === app.me.user.id) {
+        if (Number.isFinite(now.session?.left)) app.me.session = { ...now.session, endsLocal: new Date(Date.now() + now.session.left).toISOString() };
+        const gone = main.querySelector(".banner.signed-out");
+        if (gone) { gone.remove(); toast("You're signed in again. Tap Save to keep your changes.", { ms: 8000 }); }
+        return;
+      }
+    } catch { /* redraw */ }
+  }
+  const question = main && app.leaveGuard ? app.leaveGuard() : null;
+  if (question) {
+    toast(what === "out" ? "You signed out in another window. Copy what you typed, then sign in again." : "Somebody else signed in in another window. Copy what you typed, then reload this page.", { ms: 12000 });
+    return;
+  }
+  location.reload();
+}
+
 /* __DEALER_DEMO__ (true or false) is written in by whatever bundles this
    file: tools/build-site.mjs says true only for Alan's learning preview and
    his demo site (tools/site-profiles.mjs), so a client build leaves every bit
@@ -497,7 +637,7 @@ async function start() {
     return startBarnwright(visitPass);
   }
   clear(root, h("div", { class: "boot" }, loading("Opening the Dealer Center…")));
-  let note = null;
+  let note = null, warning = null;
   if (__DEALER_DEMO__ && new URLSearchParams(location.search).has("demo")) {
     try {
       await (await import(DEMO_MODULE)).startDemo();
@@ -511,27 +651,39 @@ async function start() {
   } else {
     try {
       const linked = await handleEmailLink(root);
-      note = linked?.message || null;
+      if (linked?.warn) warning = linked.message;
+      else note = linked?.message || null;
     } catch { /* carry on to sign in */ }
   }
+  const notAnswering = (title, words) => clear(root, h("main", { class: "auth" }, h("div", { class: "auth-card" },
+    h("h1", {}, title), h("p", {}, words), button("Try again", () => location.reload(), { kind: "primary" }))));
+  /* a Sign out the server never confirmed: never show the Dealer Center before it is */
+  if (!app.demo && !(await finishSignOut())) return notAnswering("The Dealer Center isn't answering", "Can't reach the Dealer Center to finish signing you out. Check your internet connection and try again.");
   let me;
   try {
     me = await app.loadMe();
   } catch (e) {
-    clear(root, h("main", { class: "auth" }, h("div", { class: "auth-card" },
-      h("h1", {}, "The Dealer Center isn't answering"), h("p", {}, e.message), button("Try again", () => location.reload(), { kind: "primary" }))));
-    return;
+    return notAnswering(e.data?.code === "sign-in-down" ? "Can't check your sign-in" : "The Dealer Center isn't answering", e.message);
   }
-  configureApi({ mode: me.signIn, signedOut: () => location.reload() });
-  if (me.status === 401) return signInScreen(root, { mode: me.signIn || "netlify", business: null, note });
-  if (!me.person) return notOnTeam(root, { email: me.user.email, signOut });
+  configureApi({ mode: me.signIn, demo: !!app.demo, signedOut: signedOutHere });
+  if (!app.demo) onOtherTabs(otherTab);
+  if (me.signIn === "netlify" && oldSignIn()) me = await oldSignInHere(me);
+  if (me.status === 401) {
+    return signInScreen(root, {
+      mode: me.signIn || "netlify", business: null, note,
+      ended: warning || takeSignInNote() || endedWords(me.ended, me.kept),
+      /* this device's kept 30 days ran out: the same device, kept again unless untouched */
+      keepTicked: me.ended === "time" && me.kept === true,
+    });
+  }
+  if (!me.person) return notOnTeam(root, { email: me.user.email, signOut: () => signOutHere() });
   if (me.setupNeeded) {
     frameUp();
     if (currentPath().path !== "/setup") { history.replaceState(null, "", "#/setup"); lastHash = "#/setup"; }
     return render();
   }
   frameUp();
-  if (note) toast(note);
+  if (note || warning) toast(note || warning, { error: !!warning });
   render();
 }
 

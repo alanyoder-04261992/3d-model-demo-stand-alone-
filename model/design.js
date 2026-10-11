@@ -33,7 +33,11 @@
                              depends on whether the screen was drawn: a side
                              porch is 4x8 under 20 ft, and anything the company
                              does not offer (a package, ramp, upgrade, extra,
-                             dormer size, shutters, door window) is switched off.
+                             dormer size, shutters, door window) is switched off;
+                             a door of the shop standard's own pair (the
+                             8x12 and 10x12 Side Utility's 48 in Wooden Door)
+                             that is not the one the building comes with
+                             follows it (followStandardDoor).
    encode(design) / decode(text)   the share link: short keys, defaults left
                              out, items as tuples, UTF-8, optional deflate-raw
                              (a "z" in front), base64url. encodeSync / decodeSync
@@ -191,7 +195,82 @@ export function normalize(state, frame, cat) {
   changed.push(...new Set(tooTall));
   if ((cat.MISC || {}).shutter == null) state.items.forEach((it) => { if (it.shut) { it.shut = false; changed.push("Shutters are not offered, so they were taken off."); } });
   if ((cat.MISC || {}).lite == null) state.items.forEach((it) => { if (it.lite) { it.lite = false; changed.push("A window in a wooden door is not offered, so it was taken off."); } });
+  changed.push(...doorWords(state, cat));
   return changed;
+}
+
+/* THE SHOP STANDARD'S OWN DOOR AT SOME SIZES (the style's standardSwaps:
+   the 8x12 and 10x12 Side Utility come with the 48 in Wooden Door, its
+   other sizes with the 72 in Wooden Double Doors; Alan, Oct 11 2026,
+   "replace 6 foot to 4 foot"). A design can hold the other door of the
+   pair as the one it came with: a design saved before the change, or one
+   whose size changed after the customer touched the doors and windows (the
+   size chip keeps them, DIFFERENCES #12). The server prices only what the
+   building comes with (server/office/pricing.js), so:
+   - a door of the pair the customer never swapped (it is still the door it
+     came as) becomes the door this size comes with, with the same id, wall
+     and place, then kept inside the wall: the building's own door, at no
+     charge, so the price does not go up;
+   - a door the customer swapped it for is kept, now in the place of the
+     door this size comes with, priced as that swap (the difference, never
+     a credit).
+   Matched the server's way: every included item that is one the building
+   comes with keeps it, in order; only one left over whose door is one of
+   the pair is changed. Nothing else is touched, so a style with no swaps
+   (every Barnwright building, the Cottage too) keeps its items exactly as
+   Barnwright does. ui/state.js chooseSize runs this without words;
+   normalize says each change in one line (DIFFERENCES #27).
+   -> [{it, was, to, swapped}] */
+export function followStandardDoor(state, cat) {
+  const out = [];
+  const t = cat.TYPES[state.type];
+  const pairs = [];
+  for (const e of (t && Array.isArray(t.standardSwaps) ? t.standardSwaps : [])) {
+    if (e && cat.CAT[e.from] && cat.CAT[e.to]) pairs.push([e.from, e.to]);
+  }
+  if (!pairs.length) return out;
+  const inc = (state.items || []).filter((it) => it.inc && !it.pk && cat.CAT[it.cat]);
+  if (!inc.length) return out;
+  const fr = frameOf(state, cat);
+  let std;
+  try { std = standardItems(fr.t, fr.d.W, fr.d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws }, state.type); } catch (e) { return out; }
+  const left = new Map();
+  for (const s of std) left.set(s.cat, (left.get(s.cat) || 0) + 1);
+  const over = [];
+  for (const it of inc) {
+    const o = it.origCat || it.cat;
+    if (left.get(o) > 0) left.set(o, left.get(o) - 1); else over.push(it);
+  }
+  const L = cat.LISTS || {};
+  const swapsFor = (id) => { const k = cat.CAT[id] && cat.CAT[id].k; return k === "win" ? (L.sheetWindow || []) : (k === "door" || k === "ru") ? (L.sheetDoor || []) : []; };
+  for (const it of over) {
+    const was = it.origCat || it.cat;
+    const pair = pairs.find((p) => (p[0] === was || p[1] === was) && left.get(p[0] === was ? p[1] : p[0]) > 0);
+    if (!pair) continue;
+    const to = pair[0] === was ? pair[1] : pair[0];
+    if (it.cat === was) {
+      it.cat = to; it.origCat = to;
+      clampPos(it, state, fr);
+    } else {
+      if (it.cat !== to && swapsFor(to).indexOf(it.cat) < 0) continue;
+      it.origCat = to;
+    }
+    left.set(to, left.get(to) - 1);
+    out.push({ it, was, to, swapped: it.cat !== to });
+  }
+  return out;
+}
+
+/* followStandardDoor in words, one line for each change. */
+function doorWords(state, cat) {
+  const t = cat.TYPES[state.type], C = cat.CAT;
+  const plural = (name) => /s$/.test(name);
+  return [...new Set(followStandardDoor(state, cat).map((x) => {
+    const theirs = C[x.to], mine = C[x.it.cat];
+    if (!x.swapped) return `The ${times(state.size)} ${t.name} comes with the ${theirs.n}, so ${plural(theirs.n) ? "they take" : "it takes"} the place of the ${C[x.was].n}.`;
+    const up = (mine.p || 0) - (theirs.p || 0) > 0;
+    return `The ${times(state.size)} ${t.name} comes with the ${theirs.n}, so the ${mine.n} ${plural(mine.n) ? "are" : "is"} kept in ${plural(theirs.n) ? "their" : "its"} place${up ? " as an upgrade" : ""}.`;
+  }))];
 }
 
 /* ------------------------------------------------------------------------ */

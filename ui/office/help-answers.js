@@ -230,19 +230,23 @@ export const ANSWERS = Object.freeze([
       "They need to be on your team first: the owner adds their email on **Team**.",
       "New people tap **Make your login** on the sign-in screen, use the email the owner added, then open the link we email them to confirm it.",
       "Forgot the password? Tap **Forgot your password?** on the sign-in screen for a link to choose a new one.",
-      "Signed in and told they're not on the team yet? The owner added another email. Check it on **Team**.",
+      "Told they're not on the team yet? The owner added another email. Check it on **Team**.",
+      "To stay signed in, tick **Keep me signed in on this device for 30 days** when you sign in. Then closing the browser doesn't sign you out. Leave it off on a computer other people use: then it signs out when the browser closes, or after 12 hours with nobody using it.",
+      "**Sign out** signs out only the computer or phone you're on. To sign out everywhere (a lost phone, or a shared computer), tap your name, then **Sign out on every device**.",
     ],
-    find: "login log in password reset forgot invite email access",
+    find: "login log in password reset forgot invite email access stay signed in keep remember 30 days 12 hours sign out every device lost",
     link: ["#/team", "Open the team"],
   },
   {
-    /* the buttons named here are the browser's own, not the Dealer Center's, so none is in bold */
+    /* the buttons named here are the browser's own, not the Dealer Center's, so they are not in
+       bold; only the Dealer Center's own tick on its sign-in card is */
     id: "install",
     title: "Put the Dealer Center on your computer or phone",
     lines: [
       "On a computer, in Chrome or Edge: click Install at the right end of the address bar, then Install. The Dealer Center gets its own icon and opens in its own window.",
       "No Install button? Bookmark the page, or in Chrome open the menu, then Cast, save and share, then Create shortcut.",
       "On an iPhone: open your Dealer Center in Safari, tap Share, then Add to Home Screen.",
+      "The Dealer Center on a Home Screen keeps its own sign-in, apart from Safari: sign in there once, and tick **Keep me signed in on this device for 30 days** there too.",
       "On an Android phone: open it in Chrome, tap the menu, then Add to Home screen or Install app.",
     ],
     find: "app install icon desktop shortcut bookmark home screen iphone android chrome edge safari phone computer window",

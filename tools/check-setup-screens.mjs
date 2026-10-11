@@ -482,14 +482,16 @@ try {
   await owner.click(".set-card:has(.card-title:text-is('Barnwright')) button[type=submit]");
   await owner.waitForTimeout(1500);
   const on = await text(owner, ".set-card:has(.card-title:text-is('Barnwright'))");
-  ok("on: \"Barnwright can change your price list and settings until <time>.\" with Turn off now", /Barnwright can change your price list and settings until \d{1,2}:\d{2} [AP]M\./.test(on || "") && on.includes("Turn off now"), on);
-  ok("... and the log line, no time inside the words", /let Barnwright run checks and change the price list and settings for 4 hours: New 2027 prices \(until \d{1,2}:\d{2} [AP]M\)/.test(on || ""), on);
+  /* the switch lasts 4 hours: turned on after 8 pm it ends tomorrow, and the
+     card, log line and banner say the day too */
+  ok("on:\"Barnwright can change your price list and settings until <time>.\" with Turn off now", /Barnwright can change your price list and settings until (?:[A-Z][a-z]{2} \d{1,2} at )?\d{1,2}:\d{2} [AP]M\./.test(on || "") && on.includes("Turn off now"), on);
+  ok("... and the log line, no time inside the words", /let Barnwright run checks and change the price list and settings for 4 hours: New 2027 prices \(until (?:[A-Z][a-z]{2} \d{1,2} at )?\d{1,2}:\d{2} [AP]M\)/.test(on || ""), on);
   ok("W12: a visit's log line has no end time after its period", /opened your price list\./.test(on || "") && !/opened your price list\. \(until/.test(on || ""), on);
   await owner.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
   await shot(owner, "7-owner-card-on");
   await open(owner, "/");
   const banner = await text(owner, "#main .banner.setup-switch");
-  ok("the owner's banner: \"Barnwright can change your price list and settings until <time>.\" with Turn off", /^Barnwright can change your price list and settings until \d{1,2}:\d{2} [AP]M\.\s*Turn off$/.test(banner || ""), banner);
+  ok("the owner's banner: \"Barnwright can change your price list and settings until <time>.\" with Turn off", /^Barnwright can change your price list and settings until (?:[A-Z][a-z]{2} \d{1,2} at )?\d{1,2}:\d{2} [AP]M\.\s*Turn off$/.test(banner || ""), banner);
   await shot(owner, "7-owner-banner-on");
   await owner.click("#main .banner.setup-switch button");
   await owner.waitForTimeout(1200);

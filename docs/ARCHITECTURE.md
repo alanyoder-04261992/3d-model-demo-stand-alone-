@@ -13,7 +13,7 @@ critiques of version 1 — see git history.)
 | "3D rendering of each part of a shed" | one module per real part in `parts/`, and `parts.html` shows each on its own | `tools/check-parts.mjs`, `tools/check-framing.mjs` |
 | "a skill for each part" | `.claude/skills/part-<id>/SKILL.md` for every part | `tools/check-parts.mjs` (no part without a skill, no skill without a part) |
 | "when there is a new design it builds it like in real life" | internal construction lessons and part skills inform the model; customers use the finished building and floor plan | `tools/check-framing.mjs`, `tools/check-views.mjs` |
-| "fast to set up new companies" | a company is one settings file on top of a shared manufacturer file; `tools/new-company.mjs`, `tools/import-prices.mjs`, `setup.html` contact sheet | `tools/check-companies.mjs`, `tools/check-loadouts.mjs`, `tools/check-starter.mjs` |
+| "fast to set up new companies" | a company is one settings file on top of a shared manufacturer file; `tools/new-company.mjs`, `tools/import-prices.mjs`, `setup.html` contact sheet | `tools/check-companies.mjs`, `tools/check-style-sizes.mjs`, `tools/check-starter.mjs` |
 | "a company that just buys my 3D design, not the software" | the Dealer Center (owner's price list for every lot, lot links, customers and orders); `embed.js`; optional legacy lead integrations | `tools/check-embed.mjs`, `tools/check-leads.mjs` |
 | "not touch Barnwright" | Barnwright is only ever read, by the golden capture | nothing in this repo writes outside it |
 | "lets all 5" (Oct 2026: a business types how its own buildings are built) | How it's built (`model/build-settings.js`): roof pitch, barn roof height, overhangs, wall and door height, porch depth and lengths, dormer side | `tools/check-build-settings.mjs`, `tools/check-office.mjs`, `tools/check-golden.mjs` (no setting: no change) |
@@ -597,7 +597,7 @@ makes, shared by every dealer of that builder, **no prices**:
 | `porchDepthFt` | the 4 ft porch fixed in `frame.js` and the parts | a porch's depth in feet (4) |
 | `sidePorch: {lengthsFt}` | the 8 or 12 ft side porch | the side porch lengths sold, whole feet (`[8, 12]`; the shortest under 20 ft long; never one that leaves under 4 ft of side wall) |
 | `dormerSide` | the dormer always on the door side | `"door"` (default) or `"back"` (every triangle mirrored) |
-| `built` | (new) | the shop standard's How it's built numbers for this style |
+| `built` | (new) | the shop standard's How it's built numbers for this style; and, library only (never a box), `standardSwaps`: the shop's own door at some sizes, `[{"sizes": ["8x12", "10x12"], "from": "w72", "to": "w48"}]` on the Side Utility (Alan, Oct 11 2026) |
 
 A key a style entry does not know is named with a did-you-mean
 (`validateManufacturer`; for a business's `offer` entry, a strict problem).
@@ -610,9 +610,23 @@ Barnwright recipe — `"barnwright:UT"` … one per `includedItems` branch, port
 exactly — or a data recipe: a list of
 `{ cat, wall, at: "center" | {fromStart} | {fromEnd} | {sym: "L/4+1.4"}, when: {minL,maxL,minW,maxW}, dbl, ifFits, repeat: {count, spread} }`
 with formulas over `W L q` and catalogue widths, evaluated by a small safe
-parser (no `eval`). `tools/check-loadouts.mjs`: for every company, style and
-offered size, the standard items land without `clampPos` moving them and
-without overlapping; the demo reproduces the golden `includedItems` exactly.
+parser (no `eval`). Then the shop standard's own swaps (`standardItems`,
+`t.standardSwaps`, put on the style by `resolve()` from the library
+style's `built.standardSwaps` when the price list sells the item): at those
+sizes each standard `from` item becomes `to`, in the same place, with the
+same id. The 8x12 and 10x12 Side Utility come with the 48 in Wooden Door
+there ("replace 6 foot to 4 foot"); Barnwright's company has no built
+blocks, so its recipe is untouched. A price list that does not sell `to`
+keeps `from` and says so in the catalogue's `swapWarnings` (the owner's
+Buildings tab shows them under their own heading); `strictProblems` (and the
+Dealer Center's lock and draft problems, `swapNeedProblems`) keep `to` sold
+on a new save, and `validate()` lays each style out with the swaps the price
+list sells, so `from` is needed only by sizes that still come with it. `tools/check-companies.mjs`:
+the demo's standard items are Barnwright's at every size but those swaps,
+and its data recipes reproduce thirteen named recipes exactly;
+`tools/check-style-sizes.mjs`: no two standard items overlap at any size
+sold, but the ones on its known list; `tools/check-shop-numbers.mjs` part 4e:
+the swap, and nothing else moved.
 
 **Company file** (`companies/<id>/company.json`):
 
@@ -701,7 +715,19 @@ case (same items, same `priceParts`).
 
 **`normalize(state, frame, cat)`** holds the rules Barnwright applied while
 rendering the UI (4x8 porch under 20 ft, hidden packages/options switched off),
-so pricing never depends on whether the screen was drawn.
+so pricing never depends on whether the screen was drawn. One rule is new
+(`followStandardDoor`, DIFFERENCES #27): on a style with a library swap
+(the 8x12 and 10x12 Side Utility's 48 in door), an included door of the
+pair that is not the one the building comes with -- a design saved before
+the change -- becomes that door when the customer never swapped it (at no
+charge, so the price the customer saw stays), or, when they swapped it for
+another door, is kept in its place as that swap (the difference, never a
+credit); one line of words each. `ui/state.js chooseSize` makes the same
+change, without words, when a touched design changes size. It is matched
+the way `server/office/pricing.js` matches, so what the designer prices the
+server prices; the stale design itself is "no longer offered" (409), never
+"could not be read" (422). A style without a swap (every Barnwright
+building) is left exactly as Barnwright leaves it.
 
 **`makePlan(state, cat)`** = `structuredClone` + `frameOf` + deep freeze. Parts
 only ever see this frozen copy.
