@@ -57,10 +57,10 @@ import { sha256Hex } from "./hash.js";
 import { KEEP } from "./store.js";
 import { withinMs } from "./account.js";
 import { lockProblems, carryLocked } from "./setup-lock.js";
-import { versionAtLeast, TERMS } from "./terms.js";
-import { applyEdits, warnings, UNDO_LINE, TOO_MANY_EDITS } from "./setup-edits.js";
+import { versionAtLeast, TERMS, signupCounts, termsCopies } from "./terms.js";
+import { applyEdits, warnings, UNDO_LINE, TOO_MANY_EDITS, MAX_EDITS } from "./setup-edits.js";
 import { readView, PARTS } from "./setup-view.js";
-import { describeChanges } from "./price-list.js";
+import { describeChanges, START_LINE } from "./price-list.js";
 
 const SETUP = "barnwright-setup";
 const LIVE = "barnwright-live";
@@ -68,6 +68,15 @@ const SEEN = "barnwright-setup-seen";
 const SESSIONS = "barnwright-sessions";
 const LIMITS = "barnwright-setup-limits";
 const TERMS_RECORD = "barnwright-terms";
+/* the owner's sign-up agreement, as the first pass that carried one that
+   counts brought it (create-only, never changed; never a phone, email or
+   business name) */
+const SIGNUP_RECORD = "barnwright-signup-agreement";
+/* the first owner's claim, written at the owner's first confirmed sign-in
+   (people.js): until it exists, no owner has signed in */
+const OWNER_CLAIM = "setup";
+/* the status fields' version: 2 knows sign-up agreements and version 0 */
+export const STATUS_V = 2;
 
 export const TERMS_NEEDED = "2.2";
 export const COOKIE = "__Host-bw_setup";
@@ -84,6 +93,8 @@ export const WHY = Object.freeze({
   "not-connected": "This Dealer Center isn't connected to Barnwright.",
   "no-price-list": "The owner hasn't finished First setup yet, so there is no price list to change.",
   terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center.",
+  "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
+  "signup-unknown": "Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy.",
   stopped: "The owner stopped Barnwright's setup access in Settings, Barnwright.",
   "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
 });
@@ -134,6 +145,7 @@ export const DOOR_WORDS = Object.freeze({
   changed: "The result isn't the one you checked. Check the change again.",
   cantUndo: "The owner saved the price list after your change, so undo would take theirs away too. The owner can put back an earlier price list in Price list, History.",
   nothingToUndo: "Barnwright hasn't changed this price list, so there is nothing to undo.",
+  nothingBeforeStart: "This is the starting price list Barnwright set up, so there is nothing before it to put back.",
   copyGone: "The copy from before Barnwright's last change is gone, so it can't be put back here. The owner can put back an earlier price list in Price list, History.",
   accountOff: "Their Dealer Center can't save changes right now: its Barnwright account is off or hasn't checked in for 7 days. Reading still works.",
   error: "Something went wrong on their Dealer Center. Try again in a minute.",
@@ -160,6 +172,8 @@ export const whyWords = (why) => (why === "terms" && !termsOut() ? TERMS_NOT_OUT
 export function changedWords(actor, lines) {
   return `Barnwright (${actor}) changed your price list: ${lines.slice(0, 3).join("; ")}${lines.length > 3 ? `, and ${lines.length - 3} more` : ""}.`;
 }
+/* The owner's log line when Barnwright starts the price list before the owner first signs in. */
+export const startedWords = (actor) => `Barnwright (${actor}) started your price list from Every standard building, using the terms you agreed to when you signed up.`;
 
 function b64url(bytes) {
   let s = "";
@@ -170,9 +184,18 @@ function b64url(bytes) {
 /* deps: store, license (null when not connected), priceList, account,
    lots, website, now, log, appVersion, manufacturer (the builder's
    library, for the door's edits and reads), standardRise (the library's
-   own gable rise, for the lock and the roof pitch). */
-export function createSetupAccess({ store, license, priceList, account, lots, website, now, log = console.error, appVersion = "dealer-center", manufacturer = {}, standardRise = null }) {
+   own gable rise, for the lock and the roof pitch), terms (the terms this
+   copy ships: TERMS; the checks and the local copy may pretend to ship
+   newer ones) and copies (this copy's own copies of the terms by version,
+   docs/legal/terms-sha256.json), for the owner's sign-up agreement. */
+export function createSetupAccess({
+  store, license, priceList, account, lots, website, now, log = console.error, appVersion = "dealer-center", manufacturer = {}, standardRise = null,
+  terms = TERMS, copies = termsCopies(),
+}) {
   const connected = !!license && !license.misconfigured;
+  /* this copy's own terms are 2.2 or later, so an owner can agree to them */
+  const termsOutHere = termsAtLeast(terms.version);
+  const whyHere = (why) => (why === "terms" && !termsOutHere ? TERMS_NOT_OUT : WHY[why] || WHY["live-off"]);
   const iso = () => now().toISOString();
   const ms = () => now().getTime();
   let knownLive = null;
@@ -300,30 +323,69 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
 
   /* ---- access --------------------------------------------------------------------------- */
 
+  /* The owner's sign-up agreement (docs/OFFICE.md, "Before the owner first
+     signs in"): the pass's when it counts, otherwise the one remembered,
+     checked by the same rule each time. -> {present, counts, why, fromPass}. */
+  async function signupAgreement(passSignup) {
+    const rule = (s) => signupCounts(s, { ships: terms.version, ownCopies: copies });
+    const remembered = await store.get(SIGNUP_RECORD);
+    const pass = passSignup ? rule(passSignup) : null;
+    if (pass?.counts) return { present: true, counts: true, why: null, fromPass: true };
+    const kept = remembered ? rule(remembered) : null;
+    if (kept?.counts) return { present: true, counts: true, why: null, fromPass: false };
+    if (pass) return { present: true, counts: false, why: pass.why, fromPass: false };
+    if (kept) return { present: true, counts: false, why: kept.why, fromPass: false };
+    return { present: false, counts: false, why: null, fromPass: false };
+  }
+
+  /* An owner has signed in: the first owner's claim exists (or, for a
+     business older than the claim, the owner has agreed to terms here). */
+  async function ownerSignedIn() {
+    if (await store.get(OWNER_CLAIM)) return true;
+    return !!(await store.get(TERMS_RECORD))?.current;
+  }
+
   /* Where access stands. null when not connected. scan as liveRecord;
-     without it and with no live record yet, nothing is said to be open. */
-  async function view({ scan = true, pl } = {}) {
+     without it and with no live record yet, nothing is said to be open.
+     signup: the sign-up agreement the pass carries, if any. The order is
+     the contract's (docs/OFFICE.md, When Barnwright may change things). */
+  async function view({ scan = true, pl, signup = null } = {}) {
     if (!connected) return null;
     const record = pl !== undefined ? pl : await priceList.current();
     const rec = (await store.get(SETUP)) || {};
     const ok = await termsOk();
+    const ownerIn = await ownerSignedIn();
+    const sign = ownerIn ? { present: false, counts: false, why: null, fromPass: false } : await signupAgreement(signup);
+    const agreement = ownerIn ? (ok ? "owner" : null) : sign.counts ? "signup" : null;
     const prelive = rec.prelive === "stopped" ? "stopped" : "on";
     const liveRec = record ? await liveRecord({ scan, pl: record }) : null;
     const live = !!liveRec?.live || (!!record && record.data.settings.status !== "suspended");
     let mode = null, why = null;
-    if (!record) why = "no-price-list";
-    else if (!ok) why = "terms";
+    if (!record && (ownerIn || !sign.present)) why = "no-price-list";
+    else if (!agreement) why = ownerIn ? "terms" : sign.why || "terms";
     else if (switchOn(rec)) mode = "switch";
     else if (live) why = "live-off";
-    else if (!liveRec) why = "unknown";
+    else if (record && !liveRec) why = "unknown";
     else if (prelive === "stopped") why = "stopped";
     else mode = "prelive";
     return {
       mode, until: mode === "switch" ? rec.expiresAt : null, why: mode ? null : why,
-      live, liveAt: liveRec?.live ? liveRec.liveAt || null : null, prelive, termsOk: ok, termsOut: termsOut(), record, switchRecord: rec,
+      live, liveAt: liveRec?.live ? liveRec.liveAt || null : null, prelive, termsOk: ok, termsOut: termsOutHere, agreement,
+      record, switchRecord: rec, ownerIn, signupFromPass: sign.fromPass,
     };
   }
-  const access = () => view({ scan: true });
+  const access = (signup = null) => view({ scan: true, signup });
+
+  /* The first pass whose sign-up agreement counts writes it, once (create-only). */
+  async function rememberSignup(v, claims) {
+    if (!v?.signupFromPass || !claims?.signup) return;
+    const s = claims.signup;
+    try {
+      await store.create(SIGNUP_RECORD, { termsVersion: s.termsVersion, termsSha256: s.termsSha256, signature: s.signature, signedAt: s.signedAt, at: iso(), passId: claims.id });
+    } catch (e) {
+      log("The owner's sign-up agreement couldn't be remembered:", e?.name || "Error");
+    }
+  }
 
   /* Who saved, by role, never by name or email (F8). */
   async function byWords(savedBy) {
@@ -346,17 +408,18 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     return null;
   }
 
-  /* The status fields every door answer carries. */
-  async function status(v = null) {
-    v ||= await access();
+  /* The status fields every door answer carries. signup: the pass's. */
+  async function status(v = null, { signup = null } = {}) {
+    v ||= await access(signup);
     if (!v) return null;
     const data = v.record?.data || null;
     return {
-      v: 1, live: v.live, liveAt: v.liveAt, access: v.mode || "closed", why: v.mode ? null : v.why, until: v.until,
-      prelive: v.prelive, termsOk: v.termsOk, termsOut: v.termsOut,
+      v: STATUS_V, live: v.live, liveAt: v.liveAt, access: v.mode || "closed", why: v.mode ? null : v.why, until: v.until,
+      prelive: v.prelive, termsOk: v.termsOk, termsOut: v.termsOut, agreement: v.agreement,
       priceList: data ? { version: data.version, savedAt: data.savedAt, by: await byWords(data.savedBy), open: data.settings.status !== "suspended" } : null,
       lastBarnwrightSave: await lastBarnwrightSave(data),
-      canUndo: data?.savedBy?.id === "barnwright",
+      /* the starting price list Barnwright made (version 1) has nothing before it */
+      canUndo: data?.savedBy?.id === "barnwright" && data.version > 1,
       appVersion,
     };
   }
@@ -366,10 +429,17 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
   async function report() {
     if (!connected) return null;
     const work = (async () => {
-      if (!(await store.get(LIVE))) return null;
-      const v = await view({ scan: false });
+      /* a price list with no live record yet is a business set up before
+         this shipped: only the look back can say (never here). With no
+         price list there is nothing to look back through. */
+      const pl = await priceList.current();
+      if (pl && !(await store.get(LIVE))) return null;
+      const v = await view({ scan: false, pl });
       if (!v || v.why === "unknown") return null;
-      return { v: 1, live: v.live, liveAt: v.liveAt, access: v.mode || "closed", why: v.mode ? null : v.why, until: v.until, prelive: v.prelive, termsOk: v.termsOk, termsOut: v.termsOut };
+      return {
+        v: STATUS_V, live: v.live, liveAt: v.liveAt, access: v.mode || "closed", why: v.mode ? null : v.why, until: v.until,
+        prelive: v.prelive, termsOk: v.termsOk, termsOut: v.termsOut, agreement: v.agreement,
+      };
     })();
     try { return await withinMs(work, REPORT_MS); } catch (e) {
       log("The Barnwright setup report was skipped:", e?.name || "Error");
@@ -505,8 +575,11 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
      switch (a later switch is a new grant, and needs a new visit). Ending
      every visit when access ends (endVisits) does the same; this is the
      second guard. */
-  const grantOf = (v) => (v.mode === "switch" ? { mode: "switch", grantedAt: v.switchRecord?.grantedAt || null } : { mode: "prelive" });
-  const sameGrant = (s, v) => (s.mode === "prelive" ? !v.live : s.mode === "switch" && v.mode === "switch" && !!s.grantedAt && s.grantedAt === v.switchRecord?.grantedAt);
+  const grantOf = (v) => (v.mode === "switch" ? { mode: "switch", agreement: v.agreement, grantedAt: v.switchRecord?.grantedAt || null } : { mode: "prelive", agreement: v.agreement });
+  /* ...and a visit started on the owner's sign-up agreement ends once an
+     owner has signed in, even after they agree: Alan opens a new one. */
+  const sameGrant = (s, v) => (s.agreement === "signup" && v.agreement !== "signup" ? false
+    : s.mode === "prelive" ? !v.live : s.mode === "switch" && v.mode === "switch" && !!s.grantedAt && s.grantedAt === v.switchRecord?.grantedAt);
   const visitEnd = (v) => {
     const t = ms() + VISIT_MS;
     return new Date(v.mode === "switch" ? Math.min(t, Date.parse(v.until)) : t).toISOString();
@@ -540,8 +613,27 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       throw refusal(401, "pass", VISIT_WORDS.linkRanOut);
     }
     await count();
-    const v = await access();
-    if (!v.mode) throw refusal(403, "closed", whyWords(v.why), { why: v.why });
+    let v = await access(claims.signup);
+    await rememberSignup(v, claims);
+    if (!v.mode) throw refusal(403, "closed", whyHere(v.why), { why: v.why });
+    /* Before a price list exists, the visit starts it: the starting price
+       list, made exactly as a version-0 door save with no edits */
+    let started = false;
+    if (!v.record) {
+      const start = startingFor(claims);
+      try { await mustWriteToStart(); } catch (e) {
+        if (e instanceof OfficeError && e.status === 423) throw refusal(423, "account-off", DOOR_WORDS.accountOff);
+        throw e;
+      }
+      await count({ save: true });
+      const made = await priceList.startForBarnwright(start, { id: "barnwright", name: `Barnwright (${claims.actor})`, passId: claims.id });
+      if (!made) throw refusal(409, "version", DOOR_WORDS.version);
+      await afterStart(claims.actor);
+      await tellRoom({ version: 1, versionBefore: 0, changes: [START_LINE], actor: claims.actor, undo: false });
+      started = true;
+      v = await access(claims.signup);
+      if (!v.mode) throw refusal(403, "closed", whyHere(v.why), { why: v.why });
+    }
     const bytes = new Uint8Array(32);
     globalThis.crypto.getRandomValues(bytes);
     const session = b64url(bytes);
@@ -549,7 +641,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     await store.change(SESSIONS, (doc) => ({ ...prune(doc, ms()), [sha256Hex(session)]: { actor: claims.actor, passId: claims.id, startedAt: at, lastAt: at, endsAt, ...grantOf(v) } }));
     await note(`Barnwright (${claims.actor}) opened your price list.`);
     const name = v.record?.data.settings.brand?.name || "";
-    return json({ ok: true, mode: v.mode, until: v.until, visitEndsAt: endsAt, business: { name } }, 200,
+    return json({ ok: true, mode: v.mode, until: v.until, visitEndsAt: endsAt, business: { name }, ...(started ? { started: true } : {}) }, 200,
       { "Set-Cookie": cookieLine(session, (Date.parse(endsAt) - ms()) / 1000) });
   }
 
@@ -568,7 +660,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     if (why) {
       await store.change(SESSIONS, (doc) => (doc?.[key] ? (() => { const d = { ...doc }; delete d[key]; return d; })() : KEEP));
       if (why === "ended") throw ended();
-      throw new OfficeError(401, VISIT_WORDS.closed(whyWords(why === "unknown" ? "live-off" : why)), { code: "visit-ended", why: why === "unknown" ? "live-off" : why });
+      throw new OfficeError(401, VISIT_WORDS.closed(whyHere(why === "unknown" ? "live-off" : why)), { code: "visit-ended", why: why === "unknown" ? "live-off" : why });
     }
     await count();
     const endsAt = visitEnd(v);
@@ -667,24 +759,63 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     return out;
   }
 
+  /* Before a price list exists (docs/OFFICE.md, "Before the owner first
+     signs in"): the starting price list the pass's sign-up details make,
+     at version 0. Those details are used for nothing else and kept
+     nowhere. A pass that carries none can't start one. */
+  function startingFor(claims) {
+    if (!claims?.signup) throw refusal(403, "closed", WHY["no-price-list"], { why: "no-price-list" });
+    return priceList.signupStart(claims.signup);
+  }
+
+  /* The lease, before Barnwright starts a price list. A Dealer Center the
+     Control Room has just made may not have checked in yet (when the
+     check-in right after its deploy didn't come, and nobody has opened it):
+     then it checks in once first, so the start isn't refused for a lease
+     it never asked for. Otherwise as account.mustWrite(). */
+  async function mustWriteToStart() {
+    try { return await account.mustWrite(); } catch (e) {
+      if (!(e instanceof OfficeError && e.status === 423)) throw e;
+      let never = false;
+      try { never = !(await account.status())?.checkedAt; } catch { never = false; }
+      if (!never) throw e;
+      try { await withinMs(account.checkIn({ force: true }), 6000); } catch { /* the lease decides below */ }
+      return account.mustWrite();
+    }
+  }
+
+  /* After the starting price list is made (version 1): not live, checked
+     through version 1, and the owner's log says how it started. */
+  async function afterStart(actor) {
+    await started();
+    await note(startedWords(actor));
+  }
+
   /* What a check, save or undo would store: the edits (or the price list
      from before Barnwright's last change), then the lock, then the owner's
-     own check(). -> {next, changes, warnings, newCodes, edits, sha, lead}. */
-  async function plan(v, data, undo) {
-    const current = v.record.data;
+     own check(). start: the starting price list when there is none yet
+     (version 0). -> {next, changes, warnings, newCodes, edits, sha, lead}. */
+  async function plan(v, data, undo, start = null) {
+    const current = v.record ? v.record.data : { settings: start, version: 0 };
     const version = data.version;
     if (!Number.isSafeInteger(version)) throw doorNo(400, "bad-request", BAD_REQUEST);
     if (version !== current.version) throw doorNo(409, "version", DOOR_WORDS.version);
     let settings, newCodes = {}, edits = 0, lead = null;
     if (undo) {
       if (data.edits !== undefined) throw doorNo(400, "bad-request", BAD_REQUEST);
+      if (!v.record) throw doorNo(409, "cant-undo", DOOR_WORDS.nothingToUndo);
       if (current.savedBy?.id !== "barnwright") {
         throw doorNo(409, "cant-undo", (await lastBarnwrightSave(current)) ? DOOR_WORDS.cantUndo : DOOR_WORDS.nothingToUndo);
       }
+      /* version 1 saved by Barnwright is only ever the starting price list */
+      if (current.version === 1) throw doorNo(409, "cant-undo", DOOR_WORDS.nothingBeforeStart);
       const before = await store.get(historyKey(current.version - 1));
       if (!before?.settings) throw doorNo(409, "cant-undo", DOOR_WORDS.copyGone);
       settings = carryLocked(current.settings, before.settings);
       lead = UNDO_LINE;
+    } else if (!v.record && (data.edits === undefined || (Array.isArray(data.edits) && data.edits.length === 0))) {
+      /* version 0 with no edits: the starting price list alone */
+      settings = structuredClone(start);
     } else {
       const r = applyEdits(current.settings, data.edits, { manufacturer, mode: v.mode, standardRise });
       if (r.problems.length) throw doorNo(422, "problems", r.problems.join(" "), { problems: r.problems });
@@ -694,7 +825,10 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     }
     let prepared;
     try {
-      prepared = await priceList.preview(settings, version, { lock: (o, n) => lockProblems(o, n, { door: true, mode: v.mode, standardRise }), lead });
+      prepared = await priceList.preview(settings, version, {
+        lock: (o, n) => lockProblems(o, n, { door: true, mode: v.mode, standardRise }), lead,
+        ...(v.record ? {} : { previous: { data: current } }),
+      });
     } catch (e) {
       if (e instanceof OfficeError && e.status === 409) throw doorNo(409, "version", DOOR_WORDS.version);
       if (e instanceof OfficeError && e.status === 422) {
@@ -715,15 +849,28 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     };
   }
 
+  /* The edits a check or save carries: 1 to 300, or (version 0, before a
+     price list exists) 0 to 300, left out meaning none. */
+  function editsOk(v, data) {
+    if (!v.record && data.version === 0 && data.edits === undefined) return;
+    if (Array.isArray(data.edits) && data.edits.length <= MAX_EDITS && (data.edits.length >= 1 || (!v.record && data.version === 0))) return;
+    throw doorNo(422, "problems", TOO_MANY_EDITS, { problems: [TOO_MANY_EDITS] });
+  }
+
   /* One door action, once the pass is spent and counted. -> the answer's own fields. */
   async function doorAction(action, data, claims, seen) {
-    const v = await access();
+    const v = await access(claims.signup);
     seen.open = !!v.mode;
+    await rememberSignup(v, claims);
     if (action === "status") return {};
-    if (!v.mode) throw doorNo(403, "closed", whyWords(v.why === "unknown" ? "live-off" : v.why), { why: v.why === "unknown" ? "live-off" : v.why });
+    if (!v.mode) throw doorNo(403, "closed", whyHere(v.why === "unknown" ? "live-off" : v.why), { why: v.why === "unknown" ? "live-off" : v.why });
+    /* before a price list exists, version 0 is the starting price list */
+    const start = v.record ? null : startingFor(claims);
     if (action === "read") {
       const part = data.part === undefined ? "summary" : data.part;
       if (!PARTS.includes(part)) throw doorNo(400, "bad-request", BAD_REQUEST);
+      /* nothing is written before there is a price list but the pass, the limits and the remembered agreement */
+      if (start) return { part, view: readView(start, part, manufacturer), history: [] };
       const view = readView(v.record.data.settings, part, manufacturer);
       const history = await doorHistory();
       await lookedNote();
@@ -732,8 +879,8 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     if (action === "check") {
       const undo = data.undo === true;
       if (data.undo !== undefined && !undo) throw doorNo(400, "bad-request", BAD_REQUEST);
-      if (!undo && !Array.isArray(data.edits)) throw doorNo(422, "problems", TOO_MANY_EDITS, { problems: [TOO_MANY_EDITS] });
-      const p = await plan(v, data, undo);
+      if (!undo) editsOk(v, data);
+      const p = await plan(v, data, undo, start);
       /* the undo's first line ("Put back the price list from before ...") says what this is; it isn't a change of its own */
       const counted = p.changes.length - (p.lead && p.changes[0] === p.lead ? 1 : 0);
       return {
@@ -743,19 +890,28 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       };
     }
     /* save and undo: the lease, then (while the switch is on) Alan's own tap */
-    try { await account.mustWrite(); } catch (e) {
+    try { await (start ? mustWriteToStart() : account.mustWrite()); } catch (e) {
       if (e instanceof OfficeError && e.status === 423) throw doorNo(423, "account-off", DOOR_WORDS.accountOff);
       throw e;
     }
     if (v.mode === "switch" && claims.via !== "control-room") throw doorNo(403, "needs-alan", DOOR_WORDS.needsAlan);
     const undo = action === "undo";
-    if (!undo && !Array.isArray(data.edits)) throw doorNo(422, "problems", TOO_MANY_EDITS, { problems: [TOO_MANY_EDITS] });
-    const p = await plan(v, data, undo);
+    if (!undo) editsOk(v, data);
+    const p = await plan(v, data, undo, start);
     if (typeof data.settingsSha256 !== "string" || data.settingsSha256 !== p.sha) throw doorNo(409, "changed", DOOR_WORDS.changed);
     const savedBy = { id: "barnwright", name: `Barnwright (${claims.actor})`, passId: claims.id };
+    let from = data.version;
+    if (start) {
+      /* version 0: the starting price list first (version 1, create-only), then the edits (version 2) */
+      const made = await priceList.startForBarnwright(start, savedBy);
+      if (!made) throw doorNo(409, "version", DOOR_WORDS.version);
+      await afterStart(claims.actor);
+      if (!p.edits) return { versionBefore: 0, version: 1, changes: [], newCodes: p.newCodes };
+      from = 1;
+    }
     let saved;
     try {
-      saved = await priceList.save(null, { settings: p.next, version: data.version }, {
+      saved = await priceList.save(null, { settings: p.next, version: from }, {
         lock: (o, n) => lockProblems(o, n, { door: true, mode: v.mode, standardRise }), lead: p.lead, savedBy, ensureHistory: true,
       });
     } catch (e) {
@@ -811,7 +967,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       }
     }
     let fields;
-    try { fields = await status(); } catch (e) {
+    try { fields = await status(null, { signup: claims.signup }); } catch (e) {
       log("The Barnwright door couldn't say where access stands:", e?.name || "Error");
       return answer(503, { ok: false, code: "error", error: DOOR_WORDS.error });
     }

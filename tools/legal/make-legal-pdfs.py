@@ -33,6 +33,12 @@ ticks "I agree" and types their name.
                                              with the first lot, $250 each lot after
   docs/legal/papers.json                     the list the Control Room's Papers
                                              page reads (from main on GitHub)
+  docs/legal/terms-sha256.json               the SHA-256 of every terms.json
+                                             written for terms 2.2 or later, by
+                                             version (added, never removed): the
+                                             sign-up agreements a Dealer Center
+                                             can take before the owner first
+                                             signs in (terms_sha256.py)
 
 Run:  python3 tools/legal/make-legal-pdfs.py            (into the repository)
       python3 tools/legal/make-legal-pdfs.py <folder>   (all of them there, to look at)
@@ -1083,6 +1089,12 @@ else:
     price_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Price-Sheet.pdf")
 terms_pdf(terms_out)
 write_json(terms_json_out, terms_json())
+if len(sys.argv) == 1:
+    # the copies of the terms this Dealer Center has (docs/legal/terms-sha256.json)
+    sys.path.insert(0, HERE)
+    import terms_sha256
+    with open(terms_json_out, "rb") as f:
+        terms_sha256.add(os.path.join(ROOT, "docs", "legal", "terms-sha256.json"), TERMS_VERSION, f.read())
 steps_pdf(steps_out)
 welcome_pdf(welcome_out)
 questions_pdf(questions_out)

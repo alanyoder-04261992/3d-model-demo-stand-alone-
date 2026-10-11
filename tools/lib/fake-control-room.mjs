@@ -29,8 +29,9 @@
 import { generateKeyPairSync, sign, verify, createPublicKey, randomBytes, createHash } from "node:crypto";
 import { canonicalLease, LEASE_DURATION_MS } from "../../server/office/license-core.js";
 
-export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "site-yoder-1", activationKey = "bwk_" + "x".repeat(40), dealerLimit = 2 } = {}) {
-  const { privateKey, publicKey } = generateKeyPairSync("ec", { namedCurve: "prime256v1" });
+export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "site-yoder-1", activationKey = "bwk_" + "x".repeat(40), dealerLimit = 2, keyPair = null } = {}) {
+  /* keyPair: {privateKey, publicKey} KeyObjects to sign with (the fixtures' TEST ONLY pair, so their passes work here); a new pair when left out */
+  const { privateKey, publicKey } = keyPair || generateKeyPairSync("ec", { namedCurve: "prime256v1" });
   const publicKeyPem = publicKey.export({ type: "spki", format: "pem" });
   const business = {
     id: customerId, siteId, key: activationKey, status: "active", dealerLimit, addons: [],
@@ -77,11 +78,13 @@ export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "si
      the request will carry ("{\"action\":\"session\"}" for a visit's
      start). over: claims to change (a pass that must be refused);
      prefix / key: sign it some other way (also to be refused). */
-  room.setupPass = ({ action = "session", body = JSON.stringify({ action }), actor = "alan@barnwright.test", via = "control-room", over = {}, prefix = "barnwright-setup-pass/v1.", key = privateKey } = {}) => {
+  /* signup: the owner's sign-up agreement and details, as the Control Room puts them on every setup pass for a customer who signed up (always last) */
+  room.setupPass = ({ action = "session", body = JSON.stringify({ action }), actor = "alan@barnwright.test", via = "control-room", over = {}, prefix = "barnwright-setup-pass/v1.", key = privateKey, signup } = {}) => {
     const t = now();
     const claims = {
       v: 1, purpose: "setup-pass", id: randomBytes(16).toString("base64url"), customerId: business.id, siteId: business.siteId,
       actor, via, action, bodySha256: createHash("sha256").update(body).digest("hex"), issuedAt: t, expiresAt: t + 120_000, ...over,
+      ...(signup !== undefined ? { signup } : {}),
     };
     const head = Buffer.from(JSON.stringify(claims)).toString("base64url");
     return `${head}.${sign("sha256", Buffer.from(prefix + head), { key, dsaEncoding: "ieee-p1363" }).toString("base64url")}`;

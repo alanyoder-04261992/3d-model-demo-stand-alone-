@@ -21,6 +21,10 @@
                     Left out, the Dealer Center is not connected and nothing
                     is limited (Alan's own business, this computer, the demo).
      appVersion     optional: what this copy reports to the control room
+     termsVersion   optional, for the checks and the local copy only: the
+                    Barnwright terms version this copy pretends to ship
+                    (TERMS.version when left out), to try terms that
+                    aren't out yet
      help           optional: Barnwright's Sales Inbox for the Help screen,
                     {url, fetch?, timeoutMs?, budgetMs?, allowLocal?}
                     (help.js; budgetMs: all of one request's calls). Used
@@ -59,7 +63,9 @@ export function createOffice(deps) {
   const priceList = createPriceList({ store, manufacturer: deps.manufacturer, library: deps.library, templates: deps.templates || {}, now, log, markLive });
   const customers = createCustomers({ store, now, lots, priceList, log, markLive });
   const account = createAccount({ store, license: deps.license || null, lots, now, appVersion: deps.appVersion, log, setupReport: () => setup.report() });
-  const terms = createTerms({ store, account, now });
+  /* the terms this copy ships (deps.termsVersion only in the checks and the local copy) */
+  const shipped = deps.termsVersion ? Object.freeze({ ...TERMS, version: String(deps.termsVersion) }) : TERMS;
+  const terms = createTerms({ store, account, now, terms: shipped });
   const help = createHelp({
     store, license: deps.license || null, inbox: deps.help || null, account, lots, priceList,
     emailOn: email.on, appVersion: deps.appVersion || "dealer-center", now, log,
@@ -79,6 +85,7 @@ export function createOffice(deps) {
     store, license: deps.license || null, priceList, account, lots, website, now, log,
     appVersion: deps.appVersion || "dealer-center", manufacturer: deps.manufacturer || {},
     standardRise: deps.library?.roof?.shapes?.gable?.rise?.w ?? null,
+    terms: shipped,
   });
   const signIn = deps.signIn || "netlify";
 
@@ -90,6 +97,16 @@ export function createOffice(deps) {
       logo: s.brand.logo || "", colors: s.brand.colors || {}, phone: s.brand.phone || "", email: s.brand.email || "",
       website: s.brand.website || "", open: s.status !== "suspended",
     };
+  }
+
+  /* A price list Barnwright started before the owner first signed in, on
+     the owner's sign-up agreement, which the owner hasn't taken on yet in
+     First setup (they have never agreed to any terms here). An existing
+     business never has the sign-up record, so it is never sent back to
+     First setup. */
+  async function startedForOwner(record) {
+    if (!record || !setup.connected) return false;
+    return !!(await store.get("barnwright-signup-agreement")) && (await terms.neverAgreed());
   }
 
   async function me(req) {
@@ -112,7 +129,7 @@ export function createOffice(deps) {
       user: who.user,
       person: who.person ? publicPerson(who.person) : null,
       business: business(record),
-      setupNeeded: !!(who.person && who.person.role === "owner" && !record),
+      setupNeeded: !!(who.person && who.person.role === "owner" && (!record || (await startedForOwner(record)))),
       lots: visible,
       team: teamNames,
       emailOn: email.on,
@@ -163,6 +180,24 @@ export function createOffice(deps) {
     const data = await readBody(req);
     terms.mustHaveAgreed(data);
     const yourName = text(data.yourName, 80, "Your name");
+    const current = await priceList.current();
+    if (current && (await startedForOwner(current.data))) {
+      /* First setup on the price list Barnwright started before the owner
+         first signed in: the details that differ are saved into it as the
+         owner's change, and the agreement is kept as the owner's own */
+      const details = {
+        businessName: text(data.businessName, 80, "Business name", { required: true }),
+        phone: phone(data.phone, "Business phone"),
+        email: emailField(data.email, "Business email"),
+        website: websiteAddress(data.website),
+      };
+      if (yourName) await store.change(`people/${who.person.userId}`, (p) => { if (p) p.name = yourName; });
+      const owner = { ...who.person, name: yourName || who.person.name };
+      const record = await priceList.takeOver(owner, details);
+      if (terms.asks()) await terms.agree(owner);
+      await setup.started();
+      return json({ business: business(record) }, 200);
+    }
     if (yourName) await store.change(`people/${who.person.userId}`, (p) => { if (p) p.name = yourName; });
     const record = await priceList.setup({ ...who.person, name: yourName || who.person.name }, {
       businessName: text(data.businessName, 80, "Business name", { required: true }),
