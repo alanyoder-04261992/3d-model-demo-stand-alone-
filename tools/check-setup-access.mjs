@@ -100,6 +100,10 @@ const USERS = {
   mike: { id: "u-mike", email: "mike@testing.example", confirmedAt: "2026-01-01T00:00:00Z", emailVerified: true },
   /* the owner who signed up on the Control Room's sign-up page (the fixtures' beforeSignIn) */
   signup: { id: "u-signup", email: FX.beforeSignIn.ownerEmail, confirmedAt: "2026-01-01T00:00:00Z", emailVerified: true },
+  /* anyone can make a login (Identity registration is open): confirmed, on no team */
+  stranger: { id: "u-stranger", email: "someone@elsewhere.example", confirmedAt: "2026-01-01T00:00:00Z", emailVerified: true },
+  /* the owner's email, not yet checked by Identity: not the owner yet */
+  unchecked: { id: "u-unchecked", email: FX.beforeSignIn.ownerEmail, confirmedAt: "2026-01-01T00:00:00Z", emailVerified: false },
 };
 
 /* One business: a store, a pretend control room, the Dealer Center server.
@@ -1610,6 +1614,19 @@ section("F15. The door before the owner first signs in");
     && saveEx.history.every((e) => e.by === h1.savedBy.name && e.by === h2.savedBy.name) && h1.savedAt === saveEx.history[1].savedAt && sha256(JSON.stringify(h1.settings)) === BS.startingPriceList.settingsSha256, asJson([h1?.changes, h2?.changes, h1?.savedBy]));
   ok("... the owner's log: the start line, then the changed line", asJson((await S1.log()).slice(0, 2).map((e) => e.words)) === asJson(saveEx.log), asJson((await S1.log()).slice(0, 3).map((e) => e.words)));
   ok("... and the business is not live: barnwright-live {live: false}, checked through the price list's versions", (await S1.store.get("barnwright-live"))?.live === false && (await S1.store.get("barnwright-live")).checkedThrough >= 1, asJson(await S1.store.get("barnwright-live")));
+  /* SEC-F15-1: the starting price list's phone and email are the ones the
+     owner typed on the sign-up page (the email is their login), so a login
+     that isn't on the team gets the business without them */
+  const leaked = [];
+  for (const as of ["stranger", "unchecked"]) {
+    const r = await S1.call("GET", "/api/office/me", undefined, { as });
+    /* (user is the login's own email: the unchecked one typed the owner's) */
+    const said = asJson({ ...r.data, user: undefined });
+    if (r.status !== 200 || r.data.person !== null || r.data.business?.name !== BS.signup.business) leaked.push(`${as}: ${r.status} ${said.slice(0, 200)}`);
+    else if ([BS.signup.phone, BS.signup.email].some((t) => said.includes(t)) || ["phone", "email", "website"].some((k) => k in r.data.business)) leaked.push(`${as}: ${said.slice(0, 300)}`);
+  }
+  ok("GET me for a login on no team (a stranger, or the owner's email not yet checked) after the start: the business's name, never the sign-up's phone or email (no phone, email or website at all)",
+    leaked.length === 0, leaked.join("\n       "));
   x = await S1.replay(doorEx("refused: version 0 once a price list exists").request);
   ok("version 0 once a price list exists: 409 version (the fixtures' answer)", sameAnswer(x, doorEx("refused: version 0 once a price list exists")), asJson(x.data).slice(0, 300));
   const answers = JSON.stringify([...(await S1.log()).map((e) => e.words), h1?.changes, h2?.changes, x.data]);
@@ -1701,6 +1718,10 @@ section("F15. The visit that starts the price list");
   ok("... and the Control Room's service record is told: version 1, versionBefore 0, the start line", !!told && Object.entries(wantTold).every(([k, v]) => asJson(told[k]) === asJson(v)), asJson(told));
   const sess = Object.values((await V.store.get("barnwright-sessions")) || {})[0] || {};
   ok("... the visit records what it started under: before live, on the sign-up agreement", sess?.mode === "prelive" && sess.agreement === "signup", asJson(sess));
+  const strangerMe = await V.call("GET", "/api/office/me", undefined, { as: "stranger" });
+  ok("... and a login on no team that asks GET me now gets the business without the sign-up's phone or email",
+    strangerMe.status === 200 && strangerMe.data.person === null && strangerMe.data.business?.name === BS.signup.business
+    && ![BS.signup.phone, BS.signup.email].some((t) => asJson(strangerMe.data).includes(t)), asJson(strangerMe.data).slice(0, 300));
   const cookie = (line || "__Host-bw_setup=none").split(";")[0];
   const got = await V.visit("GET", "price-list", undefined, cookie);
   ok("the price list screens open on it, ready to edit (GET price-list during the visit: version 1)", got.status === 200 && got.data.version === 1 && got.data.settings.brand.name === BS.signup.business, asJson(got.data).slice(0, 200));

@@ -222,7 +222,7 @@ Responses are `Cache-Control: private, no-store`.
 
 | Route | Who | Does |
 |---|---|---|
-| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access"); `setupNeeded` is true for the owner until First setup is done, which includes a price list Barnwright started before the owner's first sign-in (`business` is then not null, and First setup skips the starting price list: see "Before the owner first signs in") |
+| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup, and for a login that isn't on the team (`person` null) it leaves out `phone`, `email` and `website`; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access"); `setupNeeded` is true for the owner until First setup is done, which includes a price list Barnwright started before the owner's first sign-in (`business` is then not null, and First setup skips the starting price list: see "Before the owner first signs in") |
 | `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright Terms and Conditions.") and the agreement is kept. When Barnwright already started the price list, `start` is left out: the business details are saved into it as the owner's change (only what differs) and the agreement is kept → 200 `{business}` (see "Before the owner first signs in") |
 | `POST terms` | owner | `{agree: true}` agrees to the current Barnwright Terms and Conditions (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
@@ -1557,7 +1557,10 @@ their sign-up, as before. `GET me` says `setupNeeded: true` with `business`
 not null when the price list exists, `barnwright-signup-agreement` exists
 and the owner has never agreed to any terms in the Dealer Center (an
 existing business never has the record, so it is never sent back to First
-setup). First setup then:
+setup). Until then the business phone and email are the ones the owner
+typed on the sign-up page (the email is their login), and anyone can make
+a login, so `GET me` gives a login that isn't on the team the business
+without its phone, email and website. First setup then:
 
 * has two steps, **Your business** and **Your first lot**, skips "Your
   starting price list", and says above them: "Barnwright set up your price

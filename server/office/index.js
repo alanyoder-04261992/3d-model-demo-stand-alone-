@@ -89,13 +89,19 @@ export function createOffice(deps) {
   });
   const signIn = deps.signIn || "netlify";
 
-  function business(record) {
+  /* contact: false leaves out the business phone, email and website, for a
+     login that isn't on the team. Before the owner first signs in they are
+     the ones the owner typed on the Control Room's sign-up page (the owner's
+     email is their login), and anyone can make a login, so they go only to
+     the team (the owner fills them in First setup from here). */
+  function business(record, { contact = true } = {}) {
     if (!record) return null;
     const s = record.settings;
     return {
       id: s.id, name: s.brand.name, short: s.brand.short || s.brand.name, initials: s.brand.initials || "",
-      logo: s.brand.logo || "", colors: s.brand.colors || {}, phone: s.brand.phone || "", email: s.brand.email || "",
-      website: s.brand.website || "", open: s.status !== "suspended",
+      logo: s.brand.logo || "", colors: s.brand.colors || {},
+      ...(contact ? { phone: s.brand.phone || "", email: s.brand.email || "", website: s.brand.website || "" } : {}),
+      open: s.status !== "suspended",
     };
   }
 
@@ -128,7 +134,7 @@ export function createOffice(deps) {
     return json({
       user: who.user,
       person: who.person ? publicPerson(who.person) : null,
-      business: business(record),
+      business: business(record, { contact: !!who.person }),
       setupNeeded: !!(who.person && who.person.role === "owner" && (!record || (await startedForOwner(record)))),
       lots: visible,
       team: teamNames,
