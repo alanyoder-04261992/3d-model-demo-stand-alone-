@@ -901,8 +901,11 @@ sample price list's opening colours, and works the facts out with the model
 code (`tools/lib/style-facts.mjs`; only "what tells it apart" is written by
 hand there). `node tools/check-style-refs.mjs` works every fact out again
 without a browser and fails when `styles.json`, a picture or the library
-disagree, and when a website build, the client package or a Netlify function
-would carry the pictures. Remake them when a library style, a shop number
+disagree, when a barn roof's height is not tied to its own width or is not
+How it's built's number to the 1/16 in, when a line of words is longer than
+the Control Room's strict reader takes (400 characters, the about and pitch
+notes 1,500), and when a website build, the client package or a Netlify
+function would carry the pictures. Remake them when a library style, a shop number
 or the construction numbers change (the `add-a-style` skill) or the look
 changes (the `check-the-look` skill).
 

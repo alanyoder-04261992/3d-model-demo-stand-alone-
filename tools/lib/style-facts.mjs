@@ -179,7 +179,12 @@ function pitchOf(rise, run) {
   const p = rise / run * 12;
   return { pitch: `${num(p)}/12`, degrees: r1(Math.atan2(rise, run) * 180 / Math.PI), value: p };
 }
-const plural = (n, word) => (n === 1 ? word : `${n} x ${word}`);
+/* How many of one door or window, in words: "two 2×3 Windows", "eight
+   36×12 Transom Windows", "two sets of 72″ Wooden Double Doors" -- never
+   "2 x 2×3 Window", a count that reads like a size beside one. */
+const COUNT_WORDS = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten",
+  "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen", "seventeen", "eighteen", "nineteen", "twenty"];
+const plural = (n, name) => (n === 1 ? name : `${COUNT_WORDS[n] || n} ${/s$/.test(name) ? `sets of ${name}` : `${name}s`}`);
 
 /* {width, height} from a JPEG's frame header, or null when it is not a JPEG. */
 export function jpegSize(buf) {
@@ -313,10 +318,12 @@ function changesWithSize(cat, code, sizes) {
     for (const it of s.items) {
       if (!isOpening(it, cat.CAT)) continue;
       const c = cat.CAT[it.cat];
-      const key = `${c.n}${it.dbl ? " (double)" : ""} ${c.gable ? `in the ${it.wall === "B" ? "back" : "front"} gable` : `on ${WALL_WORDS[it.wall] || it.wall}`}`;
-      counts.set(key, (counts.get(key) || 0) + 1);
+      const dbl = it.dbl ? " (double)" : "", where = c.gable ? `in the ${it.wall === "B" ? "back" : "front"} gable` : `on ${WALL_WORDS[it.wall] || it.wall}`;
+      const key = `${c.n}${dbl} ${where}`;
+      const was = counts.get(key);
+      counts.set(key, { name: c.n, dbl, where, n: (was ? was.n : 0) + 1 });
     }
-    const list = [...counts.entries()].map(([k, n]) => plural(n, k));
+    const list = [...counts.values()].map((x) => `${plural(x.n, x.name)}${x.dbl} ${x.where}`);
     const sig = JSON.stringify(list);
     const g = groups.find((x) => x.sig === sig);
     if (g) g.sizes.push(size); else groups.push({ sig, sizes: [size], doors_windows: list });

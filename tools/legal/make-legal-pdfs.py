@@ -471,7 +471,7 @@ PARTS = [
             "Your Control Room fills in everything they typed and shows <b>Signed</b> and <b>Card saved</b>, with their name and the time.",
         ]),
         ("Take the photos", [
-            "On the customer, tap <b>Take photos</b> and pick what you are shooting: <b>Buildings</b>, <b>Price list</b>, <b>Options and colors</b> or <b>Other</b>. Your camera opens. Take as many as you like.",
+            "On the customer, tap <b>Add photos or files</b> and pick what you are adding: <b>Buildings</b>, <b>Price list</b>, <b>Options and colors</b> or <b>Other</b>. Then <b>Take Photo</b> and take as many as you like, or <b>Choose File</b> for a PDF price list.",
             "<b>Buildings</b>: each style they sell, the front and the side, and the inside if they show it.",
             "<b>Price list</b>: every page, flat, in good light, close enough that every number is easy to read.",
             "<b>Options and colors</b>: their doors, windows and options with prices, their color cards (siding, trim, roof), and their logo or sign.",

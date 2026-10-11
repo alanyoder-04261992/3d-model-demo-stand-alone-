@@ -46,6 +46,9 @@ let page = null;   /* this screen's state while it is showing */
 
 /* The owner's Barnwright card (docs/OFFICE.md, "The owner's card"). */
 const CARD = {
+  about: "Let Barnwright run checks on your Dealer Center, or change your price list and settings, for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team.",
+  /* terms 2.2 aren't out yet: Barnwright can only run checks */
+  aboutChecks: "Let Barnwright run checks on your Dealer Center for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team, and can't change anything.",
   beforeLive: "Barnwright is setting up your 3D designer. Until you open it to customers, they can change your price list and settings for you. Every change is listed here and in Price list, History.",
   stopped: "Stopped. Barnwright can't change your price list or settings.",
   off: "Off. Barnwright can't run checks or change your price list or settings.",
@@ -794,7 +797,7 @@ function barnwrightCard() {
     const parts = [];
     /* terms 2.2 aren't out yet (so no owner has agreed to them): no setup
        access words, no change choice */
-    const notOut = !!setup && setup.termsOut === false && !setup.termsOk;
+    const notOut = termsNotOut(setup);
     if (notOut) parts.push(h("div", { class: "help-state bw-terms-not-out" }, icon("note"), h("span", {}, CARD.termsNotOut)));
     /* before the business is live: Barnwright is setting it up */
     if (setup && !setup.live && !notOut) {
@@ -848,7 +851,11 @@ function barnwrightCard() {
     t.agreed ? `${t.agreed.by.name || t.agreed.by.email} agreed to the ${t.title} (version ${t.agreed.version}) on ${when(t.agreed.agreedAt)}. `
       : `Nobody has agreed to the ${t.title} (version ${t.version}) yet. `,
     h("a", { href: t.url, target: "_blank", rel: "noopener" }, "Read the terms"))) : null;
+  /* the card's own line says only what the terms let Barnwright do */
   return cardOf("user", "Barnwright",
-    "Let Barnwright run checks on your Dealer Center, or change your price list and settings, for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team.",
+    page.card?.setup && !termsNotOut(page.card.setup) ? CARD.about : CARD.aboutChecks,
     box, termsLine);
 }
+/* the terms don't let Barnwright change anything yet: this copy's terms
+   are older than 2.2 and the owner hasn't agreed to 2.2 */
+const termsNotOut = (setup) => !!setup && setup.termsOut === false && !setup.termsOk;

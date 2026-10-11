@@ -51,7 +51,8 @@ export async function render(ctx) {
   const known = app.me?.help || null;
   const connected = known ? known.connected : !!app.account;
 
-  const answers = answersCard(app, connected);
+  /* the terms decide whether Barnwright can change things (the Barnwright card's rule) */
+  const answers = answersCard(app, connected, app.me?.terms || null);
   const ask = h("section", { class: "card hp-ask", id: "hp-ask" },
     h("h2", { class: "card-title" }, icon("send"), "Ask Barnwright"), h("div", { class: "hp-ask-body" }, loading()));
   const questions = h("section", { class: "card flush hp-questions", id: "hp-questions", hidden: true });
@@ -120,14 +121,14 @@ export async function render(ctx) {
 
 /* ---- the short answers ---------------------------------------------------------- */
 
-function answersCard(app, connected) {
+function answersCard(app, connected, terms) {
   const search = h("input", { type: "search", placeholder: "Search, like website or price", "aria-label": "Search the answers", autocomplete: "off", enterKeyHint: "search" });
   const list = h("div", { class: "hp-list" });
   const none = h("div", { class: "hp-none", hidden: true });
-  const count = h("span", { class: "crm-count" }, String(answersFor(connected).length));
+  const count = h("span", { class: "crm-count" }, String(answersFor(connected, terms).length));
   const draw = () => {
     const typed = search.value.trim();
-    const found = findAnswers(typed, connected);
+    const found = findAnswers(typed, connected, terms);
     clear(list, found.map((a) => answerItem(app, a, !!typed && found.length === 1)));
     count.textContent = String(found.length);
     none.hidden = found.length > 0;
