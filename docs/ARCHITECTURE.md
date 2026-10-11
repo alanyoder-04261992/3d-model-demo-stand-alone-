@@ -75,6 +75,8 @@ model/                pure rules, Node-safe
   layout.js           itemW clampPos snapCenter neighborGaps openingRect resetItems freeSpot
   loadouts.js         standard doors/windows: named Barnwright recipes + data recipes
   pricing.js          basePrice itemCharge priceParts money sqftCharge
+  style-check.js      the every-size check: checkBuilding checkStyle variantsOf (tools/check-style-sizes.mjs)
+  framing-geometry.js solids, overlaps, where framing may stand, bearing (the framing checks share it)
   design.js           defaults, toState / fromState, normalize, encode / decode (share link)
   construction.js     resolve construction rules for one building (rule form, options)
   plan.js             makePlan(state, cat) -> frozen copy the parts read
@@ -427,6 +429,14 @@ Frame parts fit INTO it; the caption names the real lumber.
    never outside the fascia or soffit. Also: no two members overlap by more than
    0.01 ft, no bearing gap over 0.01 ft, every opening has kings, jacks and a
    header, member spacing matches `plan.construction`.
+6. **`tools/check-style-sizes.mjs`** (`model/style-check.js`) holds every
+   style at every size it is sold in to rules 3 to 5 and to how the finished
+   building fits together: openings on their walls and clear of each other,
+   heads under the wall top, gable band and roof, gable windows under the
+   roof, the eave clear of door heads and 6 ft up, the shop door its full
+   height, the roof, dormer, porch and loft in shape, and a wider building
+   never lower. Kept problems are listed in `test/style-sizes-known.json`
+   with their reasons.
 
 ## Construction settings (`library/construction.json`, `model/construction.js`)
 

@@ -1,0 +1,65 @@
+{
+  "_help": "Problems the every-size check (node tools/check-style-sizes.mjs, model/style-check.js) finds in today's standard buildings that are kept on purpose. Each line turns exactly that problem into a warning, with its reason; any problem NOT listed here fails the check. A line that no longer matches anything also fails, so take it out when the building is fixed. Add a line only with a reason a person can read. Fields: styles (the library style codes; a style of a business's own is matched by the style it is built like), sizes (leave out for every size), variants (leave out for every variant), code and id (exactly as the check prints them), reason.",
+  "known": [
+    {
+      "styles": ["SU", "DS", "SLB"], "sizes": ["8x12", "10x12"], "code": "overlap", "id": "overlap:R:w23/w72",
+      "reason": "Barnwright's standard layout: on a 12 ft long side wall the window is pushed 2 3/8 in into the double doors' opening. Kept for the golden test (BUILDFAST-SPEC C.5, question I.11)."
+    },
+    {
+      "styles": ["BU"], "sizes": ["6x10"], "code": "overlap", "id": "overlap:R:w23/w48",
+      "reason": "Barnwright's standard layout: on the 6x10 Backyard Utility the window is pushed 1 in into the door's opening. Kept for the golden test (BUILDFAST-SPEC C.5, question I.11)."
+    },
+    {
+      "styles": ["SB"], "sizes": ["8x12", "10x12"], "code": "eave", "id": "eave:L:floor",
+      "reason": "The Standard Barn is a mini barn with 4 ft 2 in walls: its roof edge is 3 ft 10 in above the floor by design, nobody walks under it, and its doors are in the end walls."
+    },
+    {
+      "styles": ["SB"], "sizes": ["8x12", "10x12"], "code": "eave", "id": "eave:R:floor",
+      "reason": "The Standard Barn is a mini barn with 4 ft 2 in walls: its roof edge is 3 ft 10 in above the floor by design, nobody walks under it, and its doors are in the end walls."
+    },
+    {
+      "styles": ["LBG"], "sizes": ["12x20", "12x24", "12x30", "12x32"], "code": "eave", "id": "eave:R:d36in",
+      "reason": "Barnwright's standard layout: the barn roof's edge comes down 3/4 in in front of the head of the side door on the 12 ft wide Lofted Barn Garage. Kept for the golden test; reported to Alan (Oct 2026)."
+    },
+    {
+      "styles": ["UT"], "sizes": ["8x12", "8x16", "10x12", "10x16", "10x20"], "code": "gable-item", "id": "gable-item:g1824",
+      "reason": "Today the 3D designer offers the 18x24 gable window here and its glass pokes through the roof (Barnwright does the same; the roof cuts off what shows). The fit rule that comes with the shop numbers (BUILDFAST-SPEC E.4) stops offering it where it does not fit; take this line out then."
+    },
+    {
+      "styles": ["SU"], "sizes": ["8x12", "8x16", "10x12", "10x14", "10x16", "10x20"], "code": "gable-item", "id": "gable-item:g1824",
+      "reason": "Today the 3D designer offers the 18x24 gable window here and its glass pokes through the roof (Barnwright does the same). The fit rule (BUILDFAST-SPEC E.4) stops offering it; take this line out then."
+    },
+    {
+      "styles": ["DS"], "sizes": ["8x12", "8x16"], "code": "gable-item", "id": "gable-item:g1824",
+      "reason": "Today the 3D designer offers the 18x24 gable window here and its glass pokes through the roof (Barnwright does the same). The fit rule (BUILDFAST-SPEC E.4) stops offering it; take this line out then."
+    },
+    {
+      "styles": ["BU", "GU"], "sizes": ["6x8", "6x10", "6x12"], "code": "gable-item", "id": "gable-item:g1824",
+      "reason": "Today the 3D designer offers the 18x24 gable window on these 6 ft wide buildings and it pokes far through the roof (Barnwright does the same). The fit rule (BUILDFAST-SPEC E.4) stops offering it; take this line out then."
+    },
+    {
+      "styles": ["BU", "GU"], "sizes": ["6x8", "6x10", "6x12"], "code": "gable-item", "id": "gable-item:oct",
+      "reason": "Today the 3D designer offers the octagon gable window on these 6 ft wide buildings and it pokes through the roof (Barnwright does the same). The fit rule (BUILDFAST-SPEC E.4) stops offering it; take this line out then."
+    },
+    {
+      "styles": ["CS", "MCS"], "sizes": ["8x12", "10x12", "10x16", "10x20"], "code": "gable-item", "id": "gable-item:g1824",
+      "reason": "Today the 3D designer offers the 18x24 gable window on the 8 and 10 ft wide cottages and it pokes through the roof even under the ridge (Barnwright does the same). The fit rule (BUILDFAST-SPEC E.4) stops offering it; take this line out then."
+    },
+    {
+      "styles": ["SS"], "sizes": ["8x12", "8x16", "10x12", "10x16", "10x20"], "code": "gable-item", "id": "gable-item:g1824",
+      "reason": "Today the 3D designer offers the 18x24 gable window on the 8 and 10 ft wide Single Slope and it pokes through the roof even at the high side (Barnwright does the same). The fit rule (BUILDFAST-SPEC E.4) stops offering it; take this line out then."
+    },
+    {
+      "styles": ["C", "MU"], "sizes": ["8x12", "8x16", "10x12", "10x16", "10x20"], "code": "gable-item", "id": "gable-item:g1824",
+      "reason": "Today the 3D designer offers the 18x24 gable window here and its glass pokes through the roof (Barnwright does the same). The fit rule (BUILDFAST-SPEC E.4) stops offering it; take this line out then."
+    },
+    {
+      "styles": ["SC"], "sizes": ["10x20"], "code": "gable-item", "id": "gable-item:g1824",
+      "reason": "Today the 3D designer offers the 18x24 gable window here and its glass pokes through the roof (Barnwright does the same). The fit rule (BUILDFAST-SPEC E.4) stops offering it; take this line out then."
+    },
+    {
+      "styles": ["DK"], "sizes": ["8x12", "8x16"], "code": "gable-item", "id": "gable-item:g1824",
+      "reason": "Today the 3D designer offers the 18x24 gable window here and its glass pokes through the roof (Barnwright does the same). The fit rule (BUILDFAST-SPEC E.4) stops offering it; take this line out then."
+    }
+  ]
+}
