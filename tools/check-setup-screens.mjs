@@ -24,7 +24,14 @@
      7. after live, the card has the one choice (Run checks, or Run checks
         and change my price list and settings); turned on, it says until
         when, and the owner's banner says so with Turn off;
-     8. on a phone the visit fits with no sideways scrolling.
+     8. on a phone the visit fits with no sideways scrolling, and the bars'
+        buttons are full touch size (44 px);
+     and the review's fixes: a kept draft comes back once (Undo changes
+     lets it go), a new visit opened in another tab brings the bar back,
+     the visit's words say why it ended, Turn off before live says that
+     setup access goes on, the card says so when terms 2.2 aren't out yet,
+     a closed lot's preview points to Lots, and the log's end time reads
+     right.
 
    Pictures go to test/out/setup-screens/. --keep leaves the server running. */
 
@@ -49,6 +56,11 @@ const WORDS = {
   beforeLive: "Barnwright is setting up your 3D designer. Until you open it to customers, they can change your price list and settings for you. Every change is listed here and in Price list, History.",
   preview: "Preview. Your customers can't see this until you open it in Settings.",
   ended: "Your Barnwright visit ended. In your Control Room tap Open their price list, then come back and tap Save.",
+  endedStopped: "Your Barnwright visit ended. The owner stopped Barnwright's setup access in Settings, Barnwright. Your changes are kept in this tab.",
+  checksOff: "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access.",
+  termsNotOut: "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
+  previewLot: "Preview. Your customers can't see this lot until you open it in Lots.",
+  visitOnly: "A Barnwright visit has only the price list and settings.",
   opening: "Opening ends Barnwright's setup access. After this, Barnwright needs your switch to change your prices.",
   change: "Run checks and change my price list and settings",
 };
@@ -117,8 +129,27 @@ try {
   await call("/api/office/me");
   const setup = await call("/api/office/setup", { method: "POST", body: { businessName: "Testing Sheds", phone: "941-555-0100", start: "small", agreeTerms: true } });
   const lot = await call("/api/office/lots", { method: "POST", body: { name: "Riverside", phone: "941-555-0140" } });
-  await call("/__local/barnwright", { method: "POST", body: { terms: "2.2" } });
   if (setup.status !== 201 || lot.status !== 201) throw new Error("setting up the business failed: " + JSON.stringify([setup, lot]));
+
+  section("0. W2: before terms 2.2 are out, the card doesn't promise setup access");
+  {
+    const st = (await call("/api/office/barnwright-help")).data.setup;
+    const c0 = await contextFor(OWNER);
+    const o0 = await pageIn(c0);
+    await open(o0, "/settings");
+    const card0 = await text(o0, ".set-card:has(.card-title:text-is('Barnwright'))");
+    if (st.termsOut === false) {
+      ok("terms 2.2 aren't out yet: one line says so, with no setup access words, no Stop and no change choice",
+        card0?.includes(WORDS.termsNotOut) && !card0.includes(WORDS.beforeLive) && !card0.includes("Stop Barnwright's setup access") && !card0.includes(WORDS.change)
+        && !card0.includes("Agree to the new terms") && card0.includes("Turn on"), card0);
+      await o0.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
+      await shot(o0, "0-owner-card-terms-not-out");
+    } else {
+      ok("terms 2.2 are out, and First setup agreed to them: the card says Barnwright is setting up", st.termsOk === true && card0?.includes(WORDS.beforeLive), card0);
+    }
+    await c0.close();
+  }
+  await call("/__local/barnwright", { method: "POST", body: { terms: "2.2" } });
 
   section("1. Before live: the owner's banner and the one Barnwright card");
   const ownerCtx = await contextFor(OWNER);
@@ -137,6 +168,16 @@ try {
   ok("... and Run checks still works as Help did (its own form, Turn on)", card?.includes("Run checks") && card.includes("Turn on") && !card.includes(WORDS.change), card);
   await owner.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
   await shot(owner, "1-owner-card-before-live");
+  /* W1: Run checks on, then Turn off now: setup access goes on, and the words say so */
+  await owner.fill(".set-card:has(.card-title:text-is('Barnwright')) input[required]", "Quotes from Riverside aren't arriving");
+  await owner.click(".set-card:has(.card-title:text-is('Barnwright')) button[type=submit]");
+  await owner.waitForSelector(".set-card:has(.card-title:text-is('Barnwright')) button:has-text('Turn off now')", { timeout: 8000 }).catch(() => {});
+  await owner.click(".set-card:has(.card-title:text-is('Barnwright')) button:has-text('Turn off now')");
+  await owner.waitForTimeout(1200);
+  const offToasts = await owner.$$eval(".toast", (els) => els.map((e) => e.textContent.trim())).catch(() => []);
+  const offCard = await text(owner, ".set-card:has(.card-title:text-is('Barnwright'))");
+  ok("W1: before live, Turn off now says checks are off and Barnwright can still set up the price list", offToasts.includes(WORDS.checksOff) && !offToasts.some((t) => /can't run checks or change anything/.test(t)), offToasts.join(" | "));
+  ok("... the card still says Barnwright is setting up, and the log says checks were turned off", offCard?.includes(WORDS.beforeLive) && offCard.includes("turned off Barnwright's checks."), offCard);
 
   section("2. The preview of a closed 3D designer (F2)");
   const preview = await pageIn(ownerCtx);
@@ -180,7 +221,8 @@ try {
   await shot(alan, "3-visit-settings");
   await alan.goto(`${BASE}/dealer#/customers`);
   await settle(alan);
-  ok("any other screen: Nothing here, with the way back to the price list", /Nothing here/.test(await alan.textContent("#main")) && !!(await alan.$("#main a[href='#/price-list']")));
+  ok("W13: any other screen says a visit has only the price list and settings, with the way back to the price list",
+    (await alan.textContent("#main")).includes(WORDS.visitOnly) && !/Nothing here|doesn't exist/.test(await alan.textContent("#main")) && !!(await alan.$("#main a[href='#/price-list']")), await text(alan, "#main"));
   const pv = await pageIn(alanCtx);
   await pv.goto(`${BASE}/d/riverside/?preview=barnwright`);
   await pv.waitForSelector("#previewbar", { timeout: 30000 }).catch(() => {});
@@ -198,7 +240,7 @@ try {
   await call("/api/office/barnwright-help", { method: "POST", body: { prelive: "stopped" } });
   await alan.click(".pl-bar .btn-accent");
   await alan.waitForSelector(".bw-bar.warn", { timeout: 10000 }).catch(() => {});
-  ok("the bar says the visit ended and what to do", (await text(alan, ".bw-bar")) === WORDS.ended, await text(alan, ".bw-bar"));
+  ok("W3: the bar says the visit ended, why (the owner stopped it), and that the changes are kept", (await text(alan, ".bw-bar")) === WORDS.endedStopped, await text(alan, ".bw-bar"));
   ok("the page did not reload and shows no sign-in", (await alan.evaluate(() => window.__sameLoad)) === marker && !(await alan.$(".auth")) && !(await alan.$(".person-pick")));
   ok("the change is still on screen", (await alan.inputValue("input[data-field='size:UT:10x16']")) === "5995");
   const kept = await alan.evaluate(() => JSON.parse(sessionStorage.getItem("dealer-center:barnwright-draft:price-list") || "null"));
@@ -216,6 +258,55 @@ try {
   const saved = (await call("/api/office/price-list")).data;
   ok("Save works: saved by Barnwright", saved.settings.offer.UT.sizes["10x16"] === 5995 && saved.savedBy?.id === "barnwright", JSON.stringify(saved.savedBy));
   ok("... and the kept draft is gone", (await alan.evaluate(() => sessionStorage.getItem("dealer-center:barnwright-draft:price-list"))) === null);
+
+  section("4b. COR-2: a kept draft comes back once; Undo changes lets it go");
+  {
+    const priceBox = "input[data-field='size:UT:10x16']";
+    const openUT = async () => { await alan.click(".pl-style[data-style='UT'] .pl-style-open"); await alan.waitForSelector(priceBox); };
+    await openUT();
+    await alan.fill(priceBox, "6100");
+    await alan.waitForTimeout(300);
+    await call("/api/office/barnwright-help", { method: "POST", body: { prelive: "stopped" } });
+    await alan.click(".pl-bar .btn-accent");
+    await alan.waitForSelector(".bw-bar.warn", { timeout: 10000 }).catch(() => {});
+    await call("/api/office/barnwright-help", { method: "POST", body: { prelive: "on" } });
+    await alan.goto(BASE + await visitLink());
+    await settle(alan);
+    ok("(the change comes back with the next visit: 1 change)", /1 change/.test((await text(alan, ".pl-bar-count")) || ""), await text(alan, ".pl-bar-count"));
+    ok("... and it left this tab's storage as it came back", (await alan.evaluate(() => sessionStorage.getItem("dealer-center:barnwright-draft:price-list"))) === null);
+    await alan.click(".pl-bar button:has-text('Undo changes')");
+    await alan.waitForSelector("dialog button:has-text('Undo changes')", { timeout: 5000 }).catch(() => {});
+    await alan.click("dialog button:has-text('Undo changes')");
+    await alan.waitForTimeout(800);
+    await openUT();
+    ok("Undo changes: the saved price is back and the bar goes", (await alan.inputValue(priceBox)) === "5995" && await alan.$eval(".pl-bar", (el) => el.hidden), await alan.inputValue(priceBox));
+    ok("... and nothing is kept in the tab", (await alan.evaluate(() => sessionStorage.getItem("dealer-center:barnwright-draft:price-list"))) === null);
+    await alan.reload();
+    await settle(alan);
+    await openUT();
+    ok("... a reload doesn't bring the undone change back", (await alan.inputValue(priceBox)) === "5995" && await alan.$eval(".pl-bar", (el) => el.hidden), await alan.inputValue(priceBox));
+  }
+
+  section("4c. COR-8: after a new visit opened in another tab, Save in this tab works and the bar comes back");
+  {
+    const priceBox = "input[data-field='size:UT:10x16']";
+    await alan.fill(priceBox, "6200");
+    await alan.waitForTimeout(300);
+    await call("/api/office/barnwright-help", { method: "POST", body: { prelive: "stopped" } });
+    await alan.click(".pl-bar .btn-accent");
+    await alan.waitForSelector(".bw-bar.warn", { timeout: 10000 }).catch(() => {});
+    await call("/api/office/barnwright-help", { method: "POST", body: { prelive: "on" } });
+    const other = await pageIn(alanCtx);
+    await other.goto(BASE + await visitLink());
+    await settle(other);
+    await other.close();
+    await alan.click(".pl-bar .btn-accent");
+    await alan.waitForTimeout(1500);
+    const saved2 = (await call("/api/office/price-list")).data;
+    const bar2 = await text(alan, ".bw-bar");
+    ok("Save works: saved by Barnwright", saved2.settings.offer.UT.sizes["10x16"] === 6200 && saved2.savedBy?.id === "barnwright", JSON.stringify(saved2.savedBy));
+    ok("... and the bar says who and until when again, with Done", /^Working on Testing Sheds as Barnwright until \d{1,2}:\d{2} [AP]M\./.test(bar2 || "") && bar2.includes("Done") && !(await alan.$(".bw-bar.warn")), bar2);
+  }
 
   section("5. Done");
   await alan.click(".bw-bar .btn-primary");
@@ -257,6 +348,7 @@ try {
   const on = await text(owner, ".set-card:has(.card-title:text-is('Barnwright'))");
   ok("on: \"Barnwright can change your price list and settings until <time>.\" with Turn off now", /Barnwright can change your price list and settings until \d{1,2}:\d{2} [AP]M\./.test(on || "") && on.includes("Turn off now"), on);
   ok("... and the log line, no time inside the words", /let Barnwright run checks and change the price list and settings for 4 hours: New 2027 prices \(until \d{1,2}:\d{2} [AP]M\)/.test(on || ""), on);
+  ok("W12: a visit's log line has no end time after its period", /opened your price list\./.test(on || "") && !/opened your price list\. \(until/.test(on || ""), on);
   await owner.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
   await shot(owner, "7-owner-card-on");
   await open(owner, "/");
@@ -268,6 +360,14 @@ try {
   ok("Turn off: the banner goes", !(await owner.$("#main .banner.setup-switch")));
   const manager = (await call("/api/office/me", { email: OWNER })).data.setup;
   ok("(me.setup is back to closed)", manager?.mode === null, JSON.stringify(manager));
+  /* W7: a closed lot of an open business: its preview points to Lots */
+  await call("/api/office/lots", { method: "POST", body: { name: "Northside", phone: "941-555-0150" } });
+  await call("/api/office/lots/northside", { method: "PATCH", body: { active: false } });
+  const lotPreview = await pageIn(ownerCtx);
+  await lotPreview.goto(`${BASE}/d/northside/?preview=1`);
+  await lotPreview.waitForSelector("#previewbar", { timeout: 30000 }).catch(() => {});
+  ok("W7: a closed lot of an open business: \"Preview. Your customers can't see this lot until you open it in Lots.\"", (await text(lotPreview, "#previewbar")) === WORDS.previewLot, await text(lotPreview, "#previewbar"));
+  await lotPreview.close();
 
   section("8. A visit on a phone");
   await call("/api/office/barnwright-help", { method: "POST", body: { on: true, level: "change", reason: "Phone check", hours: 1 } });
@@ -279,10 +379,18 @@ try {
   ok("the bar and the price list fit a phone, with no sideways scrolling", !wide && /until/.test((await text(phone, ".bw-bar")) || ""));
   const tabs = await phone.$$eval(".tabbar .tab-item", (els) => els.map((e) => e.textContent.trim()));
   ok("the phone's tab bar has only Price list and Settings", JSON.stringify(tabs) === JSON.stringify(["Price list", "Settings"]), tabs.join(", "));
+  const barButtons = await phone.$$eval(".bw-bar .btn", (els) => els.map((e) => [e.textContent.trim(), Math.round(e.getBoundingClientRect().height)]));
+  ok("W9: on a phone the bar's Done and Look at the preview are full touch size (44 px)", barButtons.length >= 2 && barButtons.every(([, hgt]) => hgt >= 44), JSON.stringify(barButtons));
   await shot(phone, "8-visit-phone");
+  const ownerPhone = await pageIn(await contextFor(OWNER, { width: 390, height: 844, mobile: true }));
+  await ownerPhone.goto(`${BASE}/dealer#/`);
+  await settle(ownerPhone);
+  const offButton = await ownerPhone.$$eval("#main .banner.setup-switch .btn", (els) => els.map((e) => Math.round(e.getBoundingClientRect().height)));
+  ok("W9: ... and the owner's Turn off in the banner too", offButton.length === 1 && offButton[0] >= 44, JSON.stringify(offButton));
+  await shot(ownerPhone, "8-owner-banner-phone");
 
   /* the customer's ?preview=1 was refused on purpose (401): that one line is expected */
-  const errors = [owner, alan, customer, phone].flatMap((p) => p.errors).filter((e) => !/preview \(the server said 401\)/.test(e));
+  const errors = [owner, alan, customer, phone, ownerPhone].flatMap((p) => p.errors).filter((e) => !/preview \(the server said 401\)/.test(e));
   ok("no errors in any page (but the customer's refused preview)", errors.length === 0, errors.join(" | "));
 } catch (e) {
   fail++;

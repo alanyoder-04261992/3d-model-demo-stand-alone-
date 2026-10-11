@@ -338,6 +338,7 @@ async function undoAll() {
     `The price list goes back to how it was saved ${dayWords(S.saved.savedAt)}. Your lots keep showing those prices.`,
     { yes: "Undo changes", danger: true });
   if (!ok) return;
+  dropDraft("price-list");
   startFrom(S.latest);
   S.justSaved = null;
   toast("Changes undone. Nothing was saved.");
@@ -347,6 +348,7 @@ async function undoAll() {
 async function reloadFresh() {
   try {
     const record = await S.ctx.app.loadPriceList(true);
+    dropDraft("price-list");
     startFrom(record);
     S.justSaved = null;
     toast("Reloaded. This is the newest price list.");
@@ -443,6 +445,9 @@ window.addEventListener("pagehide", keepForVisit);
 window.addEventListener("hashchange", () => {
   if (IS_PRICE_LIST.test(location.hash)) return;
   document.body.classList.remove("pl-bar-on");
+  /* main.js asked first: leaving lets the changes go, kept or not (a new
+     visit's link opened in this tab keeps them: main.js reloads with them) */
+  if (!location.hash.startsWith("#barnwright=")) dropDraft("price-list");
   if (S.saved) {
     S.draft = null;
     S.parked = freshParked();

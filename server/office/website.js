@@ -59,7 +59,10 @@ export function createWebsite({ store, now, lots, priceList, customers, account 
     const lot = await lots.get(slug);
     const record = lot ? await priceList.current() : null;
     if (!lot || !record) fail(404, "We couldn't find that lot.");
-    return { company: record.data.settings, lot: publicLotFields(lot), version: record.data.version, preview: true };
+    /* why customers can't see it: the whole 3D designer is closed (opened in
+       Settings), or only this lot is (opened in Lots); null when it is open */
+    const closed = record.data.settings.status === "suspended" ? "business" : lot.active === false ? "lot" : null;
+    return { company: record.data.settings, lot: publicLotFields(lot), version: record.data.version, preview: true, closed };
   }
 
   /* A counter per time window, safe when many arrive at once. */

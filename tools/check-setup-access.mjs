@@ -780,6 +780,12 @@ section("F2. The preview of a closed 3D designer, for the team");
   await P.me("mike");
   ok("a dealer sees their own lot's preview, not another lot's", (await P.call("GET", "/api/office/lots/north-port/preview", undefined, { as: "mike" })).status === 200
     && (await P.call("GET", "/api/office/lots/riverside/preview", undefined, { as: "mike" })).status === 404);
+  /* W7: the preview says why customers can't see it, so its bar points to the right place */
+  const closedWhy = async () => (await P.call("GET", "/api/office/lots/north-port/preview", undefined, { as: "pat" })).data.closed;
+  const whileClosed = await closedWhy();
+  await P.ownerSave((s) => { s.status = "active"; });
+  await P.call("PATCH", "/api/office/lots/north-port", { active: false }, { as: "pat" });
+  ok("W7: the preview says what is closed: the whole 3D designer (Settings), or only this lot (Lots)", whileClosed === "business" && (await closedWhy()) === "lot", `${whileClosed} ${await closedWhy()}`);
 }
 
 const fxExample = (name) => FX.door.examples.find((e) => e.name === name);

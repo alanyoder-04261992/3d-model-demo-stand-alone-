@@ -245,7 +245,10 @@ function switchBanner() {
     try {
       await post("barnwright-help", { on: false });
       await app.loadMe();
-      toast("Barnwright can't change anything now.");
+      /* before live, setup access goes on: say only what stopped */
+      toast(app.me?.setup?.mode === "prelive"
+        ? "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access."
+        : "Barnwright can't change anything now.", { ms: 8000 });
       render();
     } catch (e) {
       btn.disabled = false;
@@ -256,9 +259,11 @@ function switchBanner() {
     h("span", {}, `Barnwright can change your price list and settings until ${untilWords(s.until)}.`), btn);
 }
 
-/* The bar on top of every screen during a Barnwright visit. */
+/* The bar on top of every screen during a Barnwright visit. Once it ended,
+   the server's own words: why, when access closed (the owner stopped it,
+   the switch went off, the designer opened), or what to tap. */
 function visitBar() {
-  if (app.visitEnded) return h("div", { class: "banner warn bw-bar", role: "alert" }, icon("alert"), h("span", {}, VISIT_ENDED));
+  if (app.visitEnded) return h("div", { class: "banner warn bw-bar", role: "alert" }, icon("alert"), h("span", {}, app.visitEndedWords || VISIT_ENDED));
   const b = app.barnwright;
   const lot = app.lots[0];
   return h("div", { class: "banner info bw-bar", role: "status" }, icon("user"),
@@ -292,13 +297,33 @@ function visitScreen(title, words) {
 }
 
 /* The visit ended while Alan was working: say so on top, keep everything on screen. */
-function visitEnded() {
-  if (app.visitEnded) return;
+function visitEnded(data) {
+  const words = data?.code === "visit-ended" && typeof data.error === "string" ? data.error : null;
+  const first = !app.visitEnded;
+  if (!first && words === app.visitEndedWords) return;
   app.visitEnded = true;
-  window.dispatchEvent(new Event("dealer:visit-ended"));
+  app.visitEndedWords = words;
+  if (first) window.dispatchEvent(new Event("dealer:visit-ended"));
+  drawVisitBar();
+}
+function drawVisitBar() {
   const old = main && [...main.children].find((el) => el.matches(".bw-bar"));
   if (old) old.replaceWith(visitBar());
   else if (main) main.prepend(visitBar());
+}
+
+/* A request worked again after the visit ended: Alan opened a new visit
+   from his Control Room (its cookie is this whole browser's) and came back
+   to this tab. The bar says who and until when again, with Done. */
+let visitComingBack = false;
+async function visitBack() {
+  if (!app.visitEnded || visitComingBack) return;
+  visitComingBack = true;
+  app.visitEnded = false;
+  app.visitEndedWords = null;
+  try { await app.loadMe(); } catch { /* a 401 says so again */ }
+  visitComingBack = false;
+  if (!app.visitEnded) drawVisitBar();
 }
 
 async function doneVisit() {
@@ -314,7 +339,7 @@ async function doneVisit() {
 }
 
 async function startBarnwright(pass) {
-  configureApi({ barnwright: true, visitEnded });
+  configureApi({ barnwright: true, visitEnded, visitBack });
   if (pass) {
     const out = await startVisit(pass);
     if (out.status !== 200) {
@@ -326,7 +351,7 @@ async function startBarnwright(pass) {
   try {
     await app.loadMe();
   } catch (e) {
-    return visitScreen("Your Barnwright visit ended", e.status === 401 ? VISIT_ENDED : e.message);
+    return visitScreen("Your Barnwright visit ended", e.message || VISIT_ENDED);
   }
   try { app.lots = (await get("lots")).lots || []; } catch { app.lots = []; }
   frameUp();
@@ -362,9 +387,11 @@ async function render() {
     viewName = null;
   }
   if (!viewName) {
-    clear(main, closedBanner(), emptyState("Nothing here", "That page doesn't exist.", app.barnwright
-      ? h("a", { href: "#/price-list", class: "btn btn-primary" }, "Go to the price list")
-      : h("a", { href: "#/", class: "btn btn-primary" }, "Go to Today")));
+    clear(main, closedBanner(), app.barnwright
+      /* the page is there for the team; a visit just doesn't include it */
+      ? emptyState("Only the price list and settings", "A Barnwright visit has only the price list and settings.",
+        h("a", { href: "#/price-list", class: "btn btn-primary" }, "Go to the price list"))
+      : emptyState("Nothing here", "That page doesn't exist.", h("a", { href: "#/", class: "btn btn-primary" }, "Go to Today")));
     return;
   }
   try {

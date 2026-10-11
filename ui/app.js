@@ -244,11 +244,13 @@ function lotClosedMessage(closed, phone) {
    visit (?preview=1 or ?preview=barnwright): a plain bar on top, and no
    quote form (ui/load.js gives it nowhere to send one). */
 const PREVIEW_BAR = "Preview. Your customers can't see this until you open it in Settings.";
-function previewBar() {
+/* only this lot is closed (the business is open): it opens in Lots */
+const PREVIEW_BAR_LOT = "Preview. Your customers can't see this lot until you open it in Lots.";
+function previewBar(closed) {
   const bar = document.createElement("div");
   bar.id = "previewbar";
   bar.setAttribute("role", "status");
-  bar.textContent = PREVIEW_BAR;
+  bar.textContent = closed === "lot" ? PREVIEW_BAR_LOT : PREVIEW_BAR;
   bar.style.cssText = "position:sticky;top:0;z-index:50;padding:10px 16px;background:#16130E;color:#F3E7C2;font:600 15px/1.35 system-ui,sans-serif;text-align:center;border-bottom:2px solid #C9A227";
   document.body.prepend(bar);
   const card = el("quotecard");
@@ -302,7 +304,7 @@ async function boot() {
   /* 3. the company's colours and name */
   applyTheme(cat.brand.colors);
   brandHeader(cat);
-  if (cat.managed && cat.managed.preview) previewBar();
+  if (cat.managed && cat.managed.preview) previewBar(cat.managed.closed);
   else if (cat.status === "suspended" && cat.managed) {
     lotClosedMessage(true, cat.brand.phone);
     return null;

@@ -50,6 +50,11 @@ const CARD = {
   stopped: "Stopped. Barnwright can't change your price list or settings.",
   off: "Off. Barnwright can't run checks or change your price list or settings.",
   termsFirst: "Agree to the new terms at the top of the page first.",
+  /* terms 2.2 aren't out yet (this Dealer Center's own terms are older): nothing to agree to */
+  termsNotOut: "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
+  /* Turn off, before live: checks stop, setup access goes on */
+  checksOff: "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access.",
+  allOff: "Barnwright can't run checks or change anything now.",
   opening: "Opening ends Barnwright's setup access. After this, Barnwright needs your switch to change your prices.",
 };
 const LEVELS = [["checks", "Run checks"], ["change", "Run checks and change my price list and settings"]];
@@ -63,7 +68,11 @@ window.addEventListener("pagehide", keepForVisit);
 
 /* the save bar lifts the toasts; put them back when leaving the screen */
 window.addEventListener("hashchange", () => {
-  if (!/^#\/settings(?:[/?]|$)/.test(location.hash)) document.body.classList.remove("set-bar-on");
+  if (/^#\/settings(?:[/?]|$)/.test(location.hash)) return;
+  document.body.classList.remove("set-bar-on");
+  /* main.js asked first: leaving lets the changes go, kept or not (a new
+     visit's link opened in this tab keeps them: main.js reloads with them) */
+  if (!location.hash.startsWith("#barnwright=")) dropDraft("settings");
 });
 
 export async function render(ctx) {
@@ -676,6 +685,7 @@ function drawBar() {
 /* someone else saved first: start again from what they saved */
 async function reload() {
   const record = await page.ctx.app.loadPriceList(true);
+  dropDraft("settings");
   page.saved = record;
   page.draft = normalized(record.settings);
   page.stale = false;
@@ -687,6 +697,7 @@ async function reload() {
 async function undo() {
   const yes = await confirmBox("Undo your changes?", "Your settings go back to how they were last saved.", { yes: "Undo changes" });
   if (!yes) return;
+  dropDraft("settings");
   page.draft = normalized(page.saved.settings);
   page.error = null;
   rerender();
@@ -747,6 +758,15 @@ async function save(e) {
    changing the price list and settings is the switch kept here. Times come
    from the server as fields and show in this browser's own time. */
 
+/* A log line with its end, in this browser's own time: "... for 4 hours:
+   New prices (until 4:26 PM)", the period kept last when the words end
+   with one. */
+function logWords(e) {
+  if (!e.until) return e.words;
+  const until = `until ${untilWords(e.until)}`;
+  return /\.$/.test(e.words) ? `${e.words.slice(0, -1)} (${until}).` : `${e.words} (${until})`;
+}
+
 function barnwrightCard() {
   const box = h("div", { class: "stack" });
   const act = (body, done) => async (ev) => {
@@ -757,7 +777,8 @@ function barnwrightCard() {
       show({ help: out.help, setup: out.setup || null });
       await page.ctx.app.loadMe().catch(() => null);
       window.dispatchEvent(new Event("dealer:brand"));
-      toast(out.notice || done, { ms: out.notice ? 8000 : 4000 });
+      const words = out.notice || (typeof done === "function" ? done(out) : done);
+      toast(words, { ms: out.notice || words.length > 60 ? 8000 : 4000 });
     } catch (e) {
       if (btn) btn.disabled = false;
       toast(e.message, { error: true });
@@ -768,12 +789,15 @@ function barnwrightCard() {
     const { help, setup } = state;
     const log = help.log?.length
       ? h("div", { class: "stack" }, h("h3", { class: "set-sub" }, "What happened"),
-        h("ul", { class: "help-log" }, help.log.map((e) => h("li", {}, h("time", { dateTime: e.at }, when(e.at)),
-          e.words + (e.until ? ` (until ${untilWords(e.until)})` : "")))))
+        h("ul", { class: "help-log" }, help.log.map((e) => h("li", {}, h("time", { dateTime: e.at }, when(e.at)), logWords(e)))))
       : null;
     const parts = [];
+    /* terms 2.2 aren't out yet (so no owner has agreed to them): no setup
+       access words, no change choice */
+    const notOut = !!setup && setup.termsOut === false && !setup.termsOk;
+    if (notOut) parts.push(h("div", { class: "help-state bw-terms-not-out" }, icon("note"), h("span", {}, CARD.termsNotOut)));
     /* before the business is live: Barnwright is setting it up */
-    if (setup && !setup.live) {
+    if (setup && !setup.live && !notOut) {
       const on = setup.prelive !== "stopped";
       parts.push(h("div", { class: ["help-state", on && setup.termsOk && "on"] }, icon(on ? "check" : "alert"), h("span", {}, on ? CARD.beforeLive : CARD.stopped)));
       if (on && !setup.termsOk) parts.push(h("p", { class: "set-problem bw-terms" }, CARD.termsFirst));
@@ -786,10 +810,10 @@ function barnwrightCard() {
       parts.push(h("div", { class: "help-state on" }, icon("check"), h("span", {},
         h("strong", {}, switchOn ? `Barnwright can change your price list and settings until ${untilWords(setup.until)}.` : `Barnwright can run checks until ${untilWords(help.until)}.`),
         " ", help.on && help.reason ? `You asked for: ${help.reason}` : "")),
-      h("div", { class: "actions" }, button("Turn off now", act({ on: false }, "Barnwright can't run checks or change anything now."))));
+      h("div", { class: "actions" }, button("Turn off now", act({ on: false }, (out) => (out.setup?.mode === "prelive" ? CARD.checksOff : CARD.allOff)))));
     } else {
       const afterLive = !!setup?.live;
-      const choices = afterLive ? LEVELS : LEVELS.slice(0, 1);
+      const choices = afterLive && !notOut ? LEVELS : LEVELS.slice(0, 1);
       let level = "checks";
       const group = nextId("level");
       const levelPart = choices.length > 1 ? h("div", { class: "set-block" },
@@ -801,7 +825,7 @@ function barnwrightCard() {
         }))) : null;
       const reason = field("What should Barnwright do?", { required: true, maxLength: 300, wide: true, placeholder: afterLive ? "New 2027 prices" : "Quotes from the Riverside lot aren't showing up" });
       const hours = field("For how long", { type: "select", value: "4", options: [["1", "1 hour"], ["4", "4 hours"], ["8", "8 hours"], ["24", "24 hours"]] });
-      if (afterLive || !setup) parts.push(h("div", { class: "help-state" }, icon("alert"), h("span", {}, CARD.off)));
+      if ((afterLive || !setup) && !notOut) parts.push(h("div", { class: "help-state" }, icon("alert"), h("span", {}, CARD.off)));
       else parts.push(h("h3", { class: "set-sub" }, "Run checks"));
       parts.push(form([
         levelPart,

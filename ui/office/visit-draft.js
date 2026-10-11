@@ -18,12 +18,17 @@ export function keepDraft(kind, version, draft) {
 }
 
 /* -> {draft} when one was kept for this version, {older: true} when the
-   one kept was made from another version (it is let go), or null. */
+   one kept was made from another version (it is let go), or null. A draft
+   comes back once: it leaves this tab's storage as it goes back on screen
+   (the screen keeps it again if the visit ends or the page goes away with
+   changes still on it), so Undo changes, Reload or leaving the screen
+   really let it go. */
 export function takeDraft(kind, version) {
   let kept = null;
   try { kept = JSON.parse(sessionStorage.getItem(KEY(kind)) || "null"); } catch { kept = null; }
   if (!kept || typeof kept !== "object" || !kept.draft) return null;
-  if (kept.version !== version) { dropDraft(kind); return { older: true }; }
+  dropDraft(kind);
+  if (kept.version !== version) return { older: true };
   return { draft: kept.draft };
 }
 

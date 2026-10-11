@@ -11,7 +11,9 @@
    cookie, never by Identity. A 401 there means the visit ended: the page
    never reloads (the work on screen stays, and the screens keep it in this
    tab's sessionStorage); visitEnded() is told and the call throws the
-   server's words. */
+   server's words. When a request works again (a new visit was opened from
+   the Control Room; its cookie is the whole browser's), visitBack() is
+   told. */
 
 import * as identity from "@netlify/identity";
 
@@ -31,11 +33,13 @@ let signInMode = "netlify";
 let onSignedOut = () => {};
 let barnwright = false;
 let onVisitEnded = () => {};
-export function configureApi({ mode, signedOut, barnwright: visit, visitEnded }) {
+let onVisitBack = () => {};
+export function configureApi({ mode, signedOut, barnwright: visit, visitEnded, visitBack }) {
   if (mode) signInMode = mode;
   if (signedOut) onSignedOut = signedOut;
   if (visit !== undefined) barnwright = !!visit;
   if (visitEnded) onVisitEnded = visitEnded;
+  if (visitBack) onVisitBack = visitBack;
 }
 export const inBarnwrightMode = () => barnwright;
 
@@ -66,6 +70,7 @@ export async function api(path, options = {}) {
     onVisitEnded(data);
     throw new ApiError(401, data?.error || VISIT_ENDED, null, data);
   }
+  if (barnwright && r.ok) onVisitBack();
   if (r.status === 401 && path !== "me") {
     onSignedOut();
     throw new ApiError(401, "You were signed out. Sign in again.");
