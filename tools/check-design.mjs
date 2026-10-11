@@ -36,7 +36,7 @@
       size), a new visitor starts exactly where Barnwright's page starts, and a
       style change keeps the electrical package's fixtures. */
 
-import { barnwrightCatalogue, barnwrightCompany, golden } from "./lib/barnwright-company.mjs";
+import { barnwrightCatalogue, golden } from "./lib/barnwright-company.mjs";
 import { readJSON, readManufacturer, loadCatalogue } from "./lib/load.mjs";
 import { resolve } from "../model/company.js";
 import { frameOf } from "../model/frame.js";
@@ -65,8 +65,7 @@ const EXTRAS = [
   { key: "ex3", name: "Trim run", input: "lf", price: 4.5 },
   { key: "ex4", name: "Spray foam", input: "sqftF", price: 1.1 },
 ];
-const bx = barnwrightCompany(); bx.options.extras = EXTRAS;
-const BWX = resolve(bx, M, LIB);
+const BWX = barnwrightCatalogue((c) => { c.options.extras = EXTRAS; });
 
 /* ---------------------------------------------------------------- sample states */
 function sampleStates(cat, rnd) {

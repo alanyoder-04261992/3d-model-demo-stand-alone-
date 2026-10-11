@@ -37,8 +37,8 @@
    It prints a table (style, sizes, buildings, problems, warnings, time)
    and how long the whole run took. */
 
-import { readJSON, readManufacturer, loadCatalogue } from "./lib/load.mjs";
-import { barnwrightCompany, barnwrightCatalogue } from "./lib/barnwright-company.mjs";
+import { readJSON, loadCatalogue } from "./lib/load.mjs";
+import { barnwrightCompany, barnwrightCatalogue, barnwrightManufacturer, shopStandardCatalogue } from "./lib/barnwright-company.mjs";
 import { resolve } from "../model/company.js";
 import { makePlan } from "../model/plan.js";
 import { frameOf } from "../model/frame.js";
@@ -75,10 +75,11 @@ for (const [i, k] of KNOWN.entries()) {
 /* ------------------------------------------------------------ test buildings */
 
 /* A price list that sells only `offer` ({KEY: ["8x12", ...]}), built from
-   the standard manufacturer with `styles` changed and the business's own
-   `construction` on top: the broken test styles. */
+   the standard manufacturer with Barnwright's numbers (no shop standard
+   built blocks, so a changed trait is what is drawn), `styles` changed and
+   the business's own `construction` on top: the broken test styles. */
 function testCatalogue({ styles, construction, offer }) {
-  const M = structuredClone(readManufacturer("standard"));
+  const M = barnwrightManufacturer();
   for (const [k, v] of Object.entries(styles || {})) Object.assign(M.styles[k], v);
   const c = structuredClone(barnwrightCompany());
   c.offer = {};
@@ -243,7 +244,7 @@ function fingerprint(cat, key) {
   const items = Object.keys(cat.CAT).sort().map((k) => { const c = Object.assign({}, cat.CAT[k]); delete c.n; delete c.p; return [k, c]; });
   return JSON.stringify([t, Object.keys(cat.P[key]), cat.construction, items, (cat.DORMERS || []).map((d) => d[0])]);
 }
-const shopStandard = resolve(barnwrightCompany(), readManufacturer("standard"), LIB);
+const shopStandard = shopStandardCatalogue();
 const barnwrightNumbers = barnwrightCatalogue();
 const sameNumbers = JSON.stringify([shopStandard.TYPES, shopStandard.construction]) === JSON.stringify([barnwrightNumbers.TYPES, barnwrightNumbers.construction]);
 const RUNS = [

@@ -45,8 +45,8 @@
        one still works; a builder's option is held to the same rule.
    Prints PROVED with the counts, or FAIL with what broke. */
 
-import { readJSON, readManufacturer } from "./lib/load.mjs";
-import { barnwrightCompany } from "./lib/barnwright-company.mjs";
+import { readJSON } from "./lib/load.mjs";
+import { barnwrightCompany, barnwrightManufacturer } from "./lib/barnwright-company.mjs";
 import { resolve, validate, validateManufacturer, strictProblems } from "../model/company.js";
 import * as BUILT from "../model/build-settings.js";
 import { gableEndOverhangOf } from "../parts/roofing.js";
@@ -63,7 +63,10 @@ import { constructionFor } from "../model/construction.js";
 import { checkStyle } from "../model/style-check.js";
 
 const LIB = readJSON("library/construction.json");
-const M = readManufacturer("standard");
+/* Barnwright's own numbers (the standard manufacturer without the shop
+   standard's built blocks): every seam is proved against them, and the
+   shop standard layer is built by hand where a test needs one (MS). */
+const M = barnwrightManufacturer();
 const copy = (v) => JSON.parse(JSON.stringify(v));
 const J = (v) => JSON.stringify(v);
 const near = (a, b, eps = 1e-9) => Math.abs(a - b) <= eps;

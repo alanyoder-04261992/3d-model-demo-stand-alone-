@@ -18,7 +18,8 @@
 
    Only this repo is served, read only. Ports 8360 (the web server) and 8361
    (kept free for a second page server if one is ever needed) belong to the
-   look check. */
+   look check; LOOK_PORT moves both (LOOK_PORT and LOOK_PORT + 1), so two
+   copies of the repo can draw at the same time. */
 
 import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
@@ -26,13 +27,14 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { decodePng } from "../capture-golden.mjs";
-import { barnwrightCompany } from "./barnwright-company.mjs";
-import { readManufacturer, readJSON } from "./load.mjs";
+import { barnwrightCompany, barnwrightManufacturer } from "./barnwright-company.mjs";
+import { readJSON } from "./load.mjs";
 
 const require = createRequire(import.meta.url);
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
-export const PORT = 8360;
-export const SPARE_PORT = 8361;
+const ENV_PORT = Number(process.env.LOOK_PORT);
+export const PORT = Number.isInteger(ENV_PORT) && ENV_PORT > 1024 && ENV_PORT < 65535 ? ENV_PORT : 8360;
+export const SPARE_PORT = PORT + 1;
 export const VIEWPORT = Object.freeze({ width: 1440, height: 900 });
 export const DEVICE_SCALE_FACTOR = 1;
 export const CHROMIUM_ARGS = Object.freeze(["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]);
@@ -79,12 +81,13 @@ export function loadPlaywright() {
 
 /* The Barnwright company as the page receives it: the company object (built
    from test/golden/barnwright-catalogue.json), the standard manufacturer file
-   and the construction defaults -- the same three things tools/lib/
+   without its "How it's built" blocks (Barnwright's own numbers, not the shop
+   standard) and the construction defaults -- the same three things tools/lib/
    barnwright-company.mjs resolves for the Node checks. */
 export function barnwrightJSON() {
   return JSON.stringify({
     company: barnwrightCompany(),
-    manufacturer: readManufacturer("standard"),
+    manufacturer: barnwrightManufacturer(),
     library: readJSON("library/construction.json"),
   });
 }
