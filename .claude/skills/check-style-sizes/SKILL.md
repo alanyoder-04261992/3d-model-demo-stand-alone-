@@ -23,6 +23,14 @@ nobody can look at every size after every change.
   each check on a broken test style. In `check-all`. About 2 seconds.
 * `test/style-sizes-known.json` -- the problems in today's buildings that are
   kept on purpose, each with its reason.
+* `model/built-check.js` -- the same checks for a business's own How it's
+  built numbers: which styles a change reaches, and each finding compared
+  with the same building drawn with the standard numbers (what the standard
+  building has too is never the business's, so the known list is not
+  needed there). `server/office/built-check.js` runs it on every Dealer
+  Center save (about 3 s, then lists what is left); the price list's "Check
+  every size" button and the quiet check when it opens run it in the
+  browser (`ui/office/views/price-list/built.js`, the `how-its-built` skill).
 
 ## What it looks at
 

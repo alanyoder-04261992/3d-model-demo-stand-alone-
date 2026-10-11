@@ -76,6 +76,7 @@ model/                pure rules, Node-safe
   loadouts.js         standard doors/windows: named Barnwright recipes + data recipes
   pricing.js          basePrice itemCharge priceParts money sqftCharge
   style-check.js      the every-size check: checkBuilding checkStyle variantsOf (tools/check-style-sizes.mjs)
+  built-check.js      which styles a How it's built change reaches, and what its numbers cause next to the standard building
   framing-geometry.js solids, overlaps, where framing may stand, bearing (the framing checks share it)
   design.js           defaults, toState / fromState, normalize, encode / decode (share link)
   construction.js     resolve construction rules for one building (rule form, options)
@@ -537,6 +538,21 @@ read, for real on save: "Roof pitch rules moved into How it's built (no
 building changes)"). Top-level `built` is a price part, so a change raises
 `cfg`, open designers redraw and History says it ("Lofted Barn wall height:
 6 ft 8 1/16 in → 7 ft").
+
+**Checked at every size, on save and on the screen.** `model/built-check.js`
+says which styles a change reaches (`changedStyles`: numbers changed, sizes
+added, a changed extra with numbers, with that extra on) and runs
+`model/style-check.js` on them, comparing each finding with the same
+building drawn with no number of the business's own (`withoutOwnNumbers`):
+what the standard building has too is never the business's.
+`server/office/built-check.js` runs it on every Dealer Center save within
+about 3 s (`SAVE_BUDGET_MS`; what is left is listed, never refused): a
+problem the business's numbers cause refuses the save in words, like any
+price list problem; a price-only save draws nothing. The owner's screen
+(`ui/office/views/price-list/built.js`) runs the same check for one style
+("Check every size") and quietly for the styles with numbers of their own
+when the price list opens, so a change to the standard under those numbers
+shows as a yellow note.
 
 ## Catalogue: manufacturer + company
 

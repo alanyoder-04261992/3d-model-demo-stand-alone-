@@ -96,6 +96,37 @@ number, its words and its source.
   Top-level `built` is a price part, so a change raises `cfg` and open
   designers redraw.
 
+## In the Dealer Center (the screens and the save)
+
+* `ui/office/views/price-list/built.js`: each style's editor ends with
+  "How it's built" -- one box per knob that applies, the number an empty box
+  builds with as the placeholder and where it comes from ("Standard: 7 ft
+  9 in", "Built like the Utility Shed: 6/12"), chips for dormer side and
+  side porch lengths, and "Check every size". The Buildings tab ends with
+  "How your buildings are built" (business-wide, by roof kind, each box
+  saying which styles it reaches, `businessReach()`), and opens with a
+  yellow note for numbers the 3D designer could not use
+  (`cat.settingsWarnings`) and what the quiet check found. The Options tab
+  gives each extra "Roof pitch at least". Managers and dealers see the
+  numbers read only. A box that cannot be read keeps the typed words in the
+  draft, so `ui/office/views/price-list/model.js builtProblemsOf()` shows
+  the problem under it (data-field / data-msgs `built:<KEY>:<knob>`,
+  `built:biz:<knob>:<kind>`, `extra:<i>:roofPitch`) and Save waits.
+* `model/built-check.js` + `server/office/built-check.js`: every save draws
+  the styles whose numbers changed (or gained sizes, or that a changed extra
+  with numbers reaches) at every size within about 3 s; a problem the
+  business's numbers cause -- not one the standard building has too --
+  refuses the save in words. What is left after 3 s is listed ("Not
+  checked yet: ... Press Check every size.") and never refuses. Putting an
+  old copy back is never refused; what does not fit is said instead.
+* History: `describeChanges()` (per style and business-wide),
+  `describeExtraBuilt()` ("Steep roof: roof pitch at least 7/12"), and
+  "Wall upgrades priced by the square foot follow the new wall height: ..."
+  when a wall height moves a per-square-foot wall price.
+* Words: a pitch between quarters is said "about 6 1/2/12"; a door opening
+  in inches ("76 1/2 in"); walls, barn heights and overhangs in feet and
+  inches ("7 ft 9 1/2 in", "4 ft 3 in", "4 in").
+
 ## Adding a knob
 
 1. Add it to `KNOBS` (words, unit, business-wide keys, `inExtra`), its limits,
@@ -114,6 +145,13 @@ number, its words and its source.
 * `node tools/check-build-settings.mjs` -- every seam, parse and format, the
   order of the layers, features, extras, the lift, problems and History.
 * `node tools/check-office.mjs` -- saves refuse new problems in plain words,
-  an older price list keeps working, History lines, cfg.
+  an older price list keeps working, History lines, cfg, and the every-size
+  check on save (a 5 ft wall refused with the door words, a price change
+  draws nothing, a 1 ms budget still saves, a Steep roof extra checked on
+  the gable styles).
+* `node tools/check-how-its-built.mjs` -- the screens in Chromium: typing,
+  problems under the box, Check every size, the refused and the good save,
+  the quiet check, a manager's read-only numbers and the "try it" demo, at
+  1280 and 390 wide.
 * `node tools/check-golden.mjs` -- with no settings, every building is
   Barnwright's triangle for triangle.
