@@ -28,6 +28,8 @@
    tools check fails, a save is refused); a WARNING is shown only.
 
    THE CHECKS (BUILDFAST-SPEC section C.2):
+     draws       (checkStyle) the size can be laid out and drawn at all; a
+                 size that throws is a problem, never a crash of the check
      past-wall   each door's and window's trim stays on its wall (problem:
                  past the corner; warning: under 1 in from it)
      overlap     no two openings on one wall overlap (problem); their trim
@@ -89,7 +91,7 @@ import { dormerGeom, loftZones, roofSection, envY } from "../parts/roof-frame.js
 import { porchOutlines, roomOutline, pointInPoly } from "../parts/floor-frame.js";
 import * as G from "./framing-geometry.js";
 
-export const CODES = Object.freeze(["past-wall", "overlap", "too-high", "gable-item", "eave", "door-fit", "roof", "roof-widths", "dormer", "porch", "framing", "loft"]);
+export const CODES = Object.freeze(["draws", "past-wall", "overlap", "too-high", "gable-item", "eave", "door-fit", "roof", "roof-widths", "dormer", "porch", "framing", "loft"]);
 
 /* The roof pitch a style may have, rise per 12 in of run: the same limits
    as the How it's built roof pitch setting (BUILDFAST-SPEC A.2). A barn roof
@@ -562,7 +564,8 @@ function knownMatch(known, styleKey, size, variant, f) {
 function checkWidths(cat, key, base, sizes, add) {
   const byW = new Map();
   for (const z of sizes) {
-    const fr = frameOf(Object.assign({}, base, { size: z }), cat);
+    let fr;
+    try { fr = frameOf(Object.assign({}, base, { size: z }), cat); } catch (e) { continue; }   /* checkStyle reports it */
     let top = -Infinity;
     for (const p of fr.prof) top = Math.max(top, p[1]);
     const rise = top - fr.topY, g = byW.get(fr.W) || { lo: Infinity, hi: -Infinity };
@@ -614,21 +617,35 @@ export function checkStyle(cat, key, opts) {
     const f = { code, id: code + ":" + id, words: t.name + ": " + detail, detail, where: {} };
     if (level === "problem") file(f, "", ""); else res.warnings.push(f);
   });
+  /* a size that cannot even be laid out is a problem in plain words, never
+     a crash of the whole check (a save must still get its answer) */
+  function cannotDraw(z, v, label, e) {
+    const detail = `this building could not be drawn: ${String(e && e.message || e).replace(/\.?\s*$/, "")}.`;
+    return { problems: [{ code: "draws", id: "draws:" + z, words: label + ": " + detail, detail, where: {} }], warnings: [], ms: 0 };
+  }
   for (const z of sizes) {
     const seen = new Set();
     let first = true;
     for (const v of variants) {
+      const label = t.name + " " + z + (v.words ? " " + v.words : "");
       const st = structuredClone(base);
       st.size = z;
       Object.assign(st, v.set);
-      const fr = frameOf(st, cat);
-      const sig = JSON.stringify([fr.span, t.dormer ? st.dormer : null]);
-      if (seen.has(sig)) continue;          /* a 12 ft side porch on a building under 20 ft is the 8 ft one */
-      seen.add(sig);
-      const label = t.name + " " + z + (v.words ? " " + v.words : "");
+      let fr = null, r = null;
+      try { fr = frameOf(st, cat); } catch (e) { r = cannotDraw(z, v, label, e); }
+      if (fr) {
+        const sig = JSON.stringify([fr.span, t.dormer ? st.dormer : null]);
+        if (seen.has(sig)) continue;          /* a 12 ft side porch on a building under 20 ft is the 8 ft one */
+        seen.add(sig);
+      } else if (seen.has("cannot draw")) continue;
+      else seen.add("cannot draw");
       if (now() - t0 > budget) { res.unchecked.push({ size: z, variant: v.id, words: label }); continue; }
-      LAYOUT.resetItems(st, fr, cat);
-      const r = checkBuilding(makePlan(st, cat), { label, gableItems: first, framing: opts.framing, allGableItems: opts.allGableItems });
+      if (!r) {
+        try {
+          LAYOUT.resetItems(st, fr, cat);
+          r = checkBuilding(makePlan(st, cat), { label, gableItems: first, framing: opts.framing, allGableItems: opts.allGableItems });
+        } catch (e) { r = cannotDraw(z, v, label, e); }
+      }
       first = false;
       res.buildings++;
       const row = { size: z, variant: v.id, label, problems: [], warnings: r.warnings.slice(), ms: r.ms };

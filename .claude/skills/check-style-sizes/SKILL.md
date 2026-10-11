@@ -32,6 +32,7 @@ Each building is drawn from the model's own geometry (`openingRect`,
 
 | Check | Problem (fails) | Warning (shown) |
 |---|---|---|
+| `draws` | a size that cannot even be laid out (reported in plain words, never a crash, so a save still gets its answer) | |
 | `past-wall` | a door's or window's trim runs past the corner | trim under 1 in from the corner |
 | `overlap` | two openings on one wall overlap | their casings touch or lap |
 | `too-high` | head board above a side wall's top; on an end wall into the gable trim band or above the roof line; a gable window's glass above the roof | a gable window's trim cut by the roof; a porch header band above the wall or into the gable band |

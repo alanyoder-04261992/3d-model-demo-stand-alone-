@@ -114,6 +114,10 @@ const peakRules = (byW) => ({
    it must say, and the same building without the fault (the control),
    which must not have that problem. */
 const FIXTURES = [
+  { name: "a size that cannot be laid out (\"10xA\" slipped into a price list)", code: "draws",
+    words: /^Utility Shed 10xA: this building could not be drawn: "10xA" is not a size \(it should look like 10x20\)\.$/,
+    style: () => { const c = structuredClone(testCatalogue({ offer: { UT: ["10x16"] } })); c.P.UT["10xA"] = 1000; return checkStyle(c, "UT", { framing: false }); },
+    control: () => checkStyle(testCatalogue({ offer: { UT: ["10x16"] } }), "UT", { framing: false }) },
   { name: "a 5 ft wall with a 76 1/2 in wooden door", code: "door-fit",
     words: /^Utility Shed 10x16: the 72″ Wooden Double Doors on the front should be 76 1\/2 in tall, but the wall leaves room for 55 5\/8 in\.$/,
     style: () => checkStyle(testCatalogue({ styles: { UT: { wallH: 5 } }, offer: { UT: ["10x16"] } }), "UT"),
