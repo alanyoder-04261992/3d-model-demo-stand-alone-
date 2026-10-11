@@ -179,3 +179,9 @@ Say plainly in your report which of these you looked at.
 * `node tools/check-construction.mjs`, `node tools/check-parts.mjs` (every
   caption fills in), `node tools/check-imports.mjs`, then
   `node tools/check-all.mjs --fast`.
+* A style in `standard.json` also needs its reference pictures and facts
+  for Barnwright's Control Room: write what tells it apart in a photo in
+  `TELLS` (`tools/lib/style-facts.mjs`), make sure the sample price list
+  (`companies/demo`) sells it, then run `node tools/make-style-refs.mjs`
+  (a browser, under a minute) and `node tools/check-style-refs.mjs`. Commit
+  the new pictures in `library/style-refs/` with the style.

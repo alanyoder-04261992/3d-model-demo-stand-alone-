@@ -81,6 +81,8 @@ library/
   construction.json   default real-life construction numbers (schema below)
   manufacturers/standard.json   the standard portable-building line as Barnwright draws it:
                       styles, items (sizes + draw traits), palettes, loadouts, construction overrides. NO PRICES.
+  style-refs/         each library style's reference pictures and facts, for Barnwright's Control Room
+                      (made by tools/make-style-refs.mjs; never shipped in a build)
 parts/
   stages.js           the stage table
   index.js            PIPELINE
@@ -724,6 +726,37 @@ names the case, bucket, part and first differing triangle.
 viewport, `deviceScaleFactor`, camera, `hasShadow = true`, `DPRCAP = 2`,
 watchdogs frozen, and per-texture seeded painters; it draws and reads pixels in
 one task and compares the canvases (Finished view, `look.trueColour` off).
+
+## Style reference pictures (`library/style-refs/`)
+
+When Claude helps Alan set up a dealer's price list from their photos, Alan's
+Control Room shows it what each library style looks like
+(`get_style_reference`). It reads these files from this repository's main
+branch on GitHub, the way it reads the papers and the terms
+(`netlify/functions/_shared/papers.ts` in the Control Room):
+
+* `<code>.jpg`: the style from its front corner (the designer's opening
+  view), and `<code>-end.jpg`: straight at its front end, where the roof's
+  pitch can be measured. 1024 px JPEGs, each under 100 KB.
+* `sheet.jpg`: every corner picture on one page, labelled with its code.
+* `styles.json`: per style the roof type and the pitch of each slope as N/12,
+  the wall height in feet and inches, the standard doors and windows (and how
+  they change with size), what tells it apart in a photo and the styles that
+  look like it, the standard sizes, each picture's sha256, and the library's
+  version (the sha256 of `standard.json` and `construction.json`). The
+  pitches are the library's own numbers, which are Barnwright's drawing, not
+  a shop's measurements, and the file says so.
+
+`node tools/make-style-refs.mjs` draws them with the look harness
+(`tools/look.html`) at the size the designer lands on for each style, in the
+sample price list's opening colours, and works the facts out with the model
+code (`tools/lib/style-facts.mjs`; only "what tells it apart" is written by
+hand there). `node tools/check-style-refs.mjs` works every fact out again
+without a browser and fails when `styles.json`, a picture or the library
+disagree, and when a website build, the client package or a Netlify function
+would carry the pictures. Remake them when a library style or the
+construction numbers change (the `add-a-style` skill) or the look changes
+(the `check-the-look` skill).
 
 ## Porting rules (the only edits allowed to Barnwright code)
 

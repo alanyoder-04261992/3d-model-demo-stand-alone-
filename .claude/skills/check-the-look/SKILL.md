@@ -87,6 +87,17 @@ table, the roof numbers); and the Barnwright style entries in
 `node tools/check-all.mjs --fast` runs the Node ones (1); `node
 tools/check-all.mjs` runs all of them.
 
+**After a change that moves the finished look on purpose** (or the roof
+numbers, the standard doors and windows, or a style entry), make the style
+reference pictures again: `node tools/make-style-refs.mjs` (a browser, under
+a minute; `--port` when 8362 is taken), then
+`node tools/check-style-refs.mjs`, and commit `library/style-refs/`. Those
+are the pictures Barnwright's Control Room shows Claude when it matches a
+dealer's photos to a style (docs/ARCHITECTURE.md, "Style reference
+pictures"). The check catches a changed library number by itself, but not a
+change in the drawing code, so this step is yours. When nothing in the
+picture moved, the remake writes the same bytes and git shows no change.
+
 ## When check-golden goes red
 
 A red golden check is a look change. **Fix the code**; do not re-record.

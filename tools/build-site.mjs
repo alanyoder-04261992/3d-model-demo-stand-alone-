@@ -6,7 +6,9 @@
    and its app manifest, dealer.webmanifest, with the icons it names),
    the fonts, the builder's library, the example companies and legal/ (the
    Barnwright terms the Dealer Center's "I agree" box links to,
-   server/office/terms.js). Never shipped:
+   server/office/terms.js). Never shipped: the style reference pictures
+   (library/style-refs/, which only Barnwright's Control Room reads, from
+   GitHub; the designer never loads them),
    lesson pages, skills, reference photos, tests, tools, docs, server code or
    source maps. Only Alan's learning preview adds the lesson pages. The
    Dealer Center's "try it" demo (ui/office/demo.js) is on the learning
@@ -49,9 +51,15 @@ function copy(path) {
   mkdirSync(dirname(dest), { recursive: true });
   copyFileSync(source, dest); copied.add(path);
 }
+// The style reference pictures and facts (tools/make-style-refs.mjs): about
+// 1.8 MB that Barnwright's Control Room reads from GitHub for setting a dealer
+// up. No page of the designer or the Dealer Center loads them, so no website
+// and no client package carries them (tools/check-style-refs.mjs).
+const NOT_SHIPPED = new Set(["library/style-refs"]);
 function tree(path) {
   for (const entry of readdirSync(resolve(root, path), { withFileTypes: true })) {
     const child = `${path}/${entry.name}`;
+    if (NOT_SHIPPED.has(child)) continue;
     if (entry.isDirectory()) tree(child); else copy(child);
   }
 }
