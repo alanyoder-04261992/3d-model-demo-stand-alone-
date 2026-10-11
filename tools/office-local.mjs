@@ -112,7 +112,11 @@ const deps = {
    with {terms: "2.2"} records the owner's agreement to a terms version
    (terms 2.2 aren't out yet, and nothing works before them), and with
    {visit: true} answers {url}: the link Alan's Control Room would open,
-   /dealer#barnwright=<a one-use pass from the pretend control room>. */
+   /dealer#barnwright=<a one-use pass from the pretend control room>; with
+   {door: {action: "status"}} (any door request) answers {door: {pass,
+   body}}, a pass for exactly that body, to send to the door,
+   POST /.netlify/functions/barnwright-setup (add {via: "claude"} for a
+   pass as Claude's). */
 const roomClock = { get t() { return (clock.at || new Date()).getTime(); } };
 const room = CONTROL_ROOM ? fakeControlRoom({ clock: roomClock, dealerLimit: 3 }) : null;
 const helpInbox = room ? fakeHelpInbox({ clock: roomClock, publicKeyPem: room.publicKeyPem }) : null;
@@ -207,7 +211,14 @@ async function route(request) {
       await office.parts.store.put("barnwright-terms", { current: entry, history: [entry, ...(doc?.history || [])].slice(0, 20) });
     }
     const pass = body.visit === true ? room.setupPass({ actor: "alan@barnwright.example" }) : null;
-    return Response.json({ ok: true, ...(pass ? { url: `/dealer#barnwright=${pass}` } : {}) });
+    /* {door: {action, ...}}: a pass for that exact door request, to send to
+       POST /.netlify/functions/barnwright-setup (with curl, say) */
+    let door = null;
+    if (body.door && typeof body.door === "object" && !Array.isArray(body.door) && typeof body.door.action === "string") {
+      const doorBody = JSON.stringify(body.door);
+      door = { pass: room.setupPass({ action: body.door.action, body: doorBody, actor: "alan@barnwright.example", via: body.via === "claude" ? "claude" : "control-room" }), body: doorBody };
+    }
+    return Response.json({ ok: true, ...(pass ? { url: `/dealer#barnwright=${pass}` } : {}), ...(door ? { door } : {}) });
   }
   if (helpInbox && path === "/__local/help-inbox" && request.method === "POST") {
     const body = await request.json().catch(() => ({}));
@@ -220,6 +231,7 @@ async function route(request) {
     });
   }
   if (path === "/.netlify/functions/tenant-diagnostics") return office.diagnostics(request);
+  if (path === "/.netlify/functions/barnwright-setup") return office.setupDoor(request);
   if (path === "/__local/people" && request.method === "GET") {
     const people = (await office.parts.store.all("people/")).filter((p) => p.active !== false)
       .map((p) => ({ email: p.email, name: p.name, role: p.role, lots: p.lots }));

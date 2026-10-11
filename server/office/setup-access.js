@@ -38,6 +38,16 @@
    is never a person on the team or a role in `can`, so the visit can never
    reach customers, orders, the team, Help or the owner's own card.
 
+   THE DOOR (door(request), the function barnwright-setup): the Control
+   Room's server, for Alan and for Claude through the Control Room, with a
+   one-use setup pass for each request, made for that request's exact body.
+   It can tell where access stands (status), read the price list in parts
+   (read, setup-view.js), check a list of edits without saving anything
+   (check, setup-edits.js), save exactly what was checked (save: the
+   settings' SHA-256 must match), and put back the price list from before
+   Barnwright's last change (undo). While the owner's switch is on, only a
+   save Alan tapped in the Control Room goes through (via "control-room").
+
    This module is given no way to send email or texts. Node-safe and
    browser-safe: it never imports control-room.js (that is handed in as
    `license` by netlify.js), so the in-browser demo still runs. */
@@ -48,6 +58,8 @@ import { KEEP } from "./store.js";
 import { withinMs } from "./account.js";
 import { lockProblems, carryLocked } from "./setup-lock.js";
 import { versionAtLeast } from "./terms.js";
+import { applyEdits, warnings, UNDO_LINE, TOO_MANY_EDITS } from "./setup-edits.js";
+import { readView, PARTS } from "./setup-view.js";
 
 const SETUP = "barnwright-setup";
 const LIVE = "barnwright-live";
@@ -93,6 +105,30 @@ const TOO_MANY = "Too many Barnwright requests for this Dealer Center this hour.
 const TOO_MANY_SAVES = "Barnwright has saved 60 changes here today. Try again tomorrow.";
 const BAD_REQUEST = "The Control Room sent a request this Dealer Center can't read.";
 
+/* The door's own refusals (docs/OFFICE.md, The door, Refusals). */
+export const DOOR_WORDS = Object.freeze({
+  method: "Use POST.",
+  badRequest: BAD_REQUEST,
+  tooBig: "That request is too big. Send at most 64 KB.",
+  pass: "The pass for this request isn't valid. Try again from the Control Room.",
+  passUsed: "This pass was already used. Each request needs a new pass.",
+  needsAlan: "Their 3D designer is open, so this change has to be made from your Control Room's Make the change page.",
+  version: "The price list was saved since you read it. Read it again, then check the change again.",
+  changed: "The result isn't the one you checked. Check the change again.",
+  cantUndo: "The owner saved the price list after your change, so undo would take theirs away too. The owner can put back an earlier price list in Price list, History.",
+  nothingToUndo: "Barnwright hasn't changed this price list, so there is nothing to undo.",
+  copyGone: "The copy from before Barnwright's last change is gone, so it can't be put back here. The owner can put back an earlier price list in Price list, History.",
+  accountOff: "Their Dealer Center can't save changes right now: its Barnwright account is off or hasn't checked in for 7 days. Reading still works.",
+  error: "Something went wrong on their Dealer Center. Try again in a minute.",
+});
+const DOOR_ACTIONS = ["status", "read", "check", "save", "undo"];
+const DOOR_MAX_BYTES = 64 * 1024;
+const CHANGE_LINES = 500;
+const HISTORY_SHOWN = 20;
+const LOOKED = "Barnwright looked at your price list.";
+const LOOKED_EVERY = 30 * 60_000;
+const HELP_LOG = "barnwright-help-log";
+
 const hoursWords = (n) => `${n} hour${n === 1 ? "" : "s"}`;
 const historyKey = (version) => `price-list-history/${String(version).padStart(6, "0")}`;
 
@@ -111,9 +147,10 @@ function b64url(bytes) {
 }
 
 /* deps: store, license (null when not connected), priceList, account,
-   lots, website, now, log, appVersion, standardRise (the library's own
-   gable rise, for the lock). */
-export function createSetupAccess({ store, license, priceList, account, lots, website, now, log = console.error, appVersion = "dealer-center", standardRise = null }) {
+   lots, website, now, log, appVersion, manufacturer (the builder's
+   library, for the door's edits and reads), standardRise (the library's
+   own gable rise, for the lock and the roof pitch). */
+export function createSetupAccess({ store, license, priceList, account, lots, website, now, log = console.error, appVersion = "dealer-center", manufacturer = {}, standardRise = null }) {
   const connected = !!license && !license.misconfigured;
   const iso = () => now().toISOString();
   const ms = () => now().getTime();
@@ -257,7 +294,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     return null;
   }
 
-  /* The status fields every door answer carries (the door is part 2). */
+  /* The status fields every door answer carries. */
   async function status(v = null) {
     v ||= await access();
     if (!v) return null;
@@ -509,12 +546,179 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     return json({ ok: true }, 200, { "Set-Cookie": cookieLine("", 0) });
   }
 
+  /* ---- the door ----------------------------------------------------------------------------- */
+
+  const doorNo = (status, code, words, extra = {}) => new OfficeError(status, words, { code, ...extra });
+  const answer = (status, body) => json(body, status);
+
+  /* "Barnwright looked at your price list.", at most once every 30 minutes */
+  async function lookedNote() {
+    const entries = (await store.get(HELP_LOG))?.entries || [];
+    if (entries.some((e) => e?.words === LOOKED && ms() - Date.parse(e.at) < LOOKED_EVERY)) return;
+    await note(LOOKED);
+  }
+
+  /* the newest 20 saves, who said by role (never by name or email) */
+  async function doorHistory() {
+    const names = (await store.keys("price-list-history/")).sort().reverse().slice(0, HISTORY_SHOWN);
+    const out = [];
+    for (const key of names) {
+      const e = await store.get(key);
+      if (!e) continue;
+      const changes = Array.isArray(e.changes) ? e.changes : [];
+      out.push({ version: e.version, savedAt: e.savedAt, by: await byWords(e.savedBy), changes: changes.slice(0, 5), more: Math.max(0, changes.length - 5) });
+    }
+    return out;
+  }
+
+  /* What a check, save or undo would store: the edits (or the price list
+     from before Barnwright's last change), then the lock, then the owner's
+     own check(). -> {next, changes, warnings, newCodes, edits, sha, lead}. */
+  async function plan(v, data, undo) {
+    const current = v.record.data;
+    const version = data.version;
+    if (!Number.isSafeInteger(version)) throw doorNo(400, "bad-request", BAD_REQUEST);
+    if (version !== current.version) throw doorNo(409, "version", DOOR_WORDS.version);
+    let settings, newCodes = {}, edits = 0, lead = null;
+    if (undo) {
+      if (data.edits !== undefined) throw doorNo(400, "bad-request", BAD_REQUEST);
+      if (current.savedBy?.id !== "barnwright") {
+        throw doorNo(409, "cant-undo", (await lastBarnwrightSave(current)) ? DOOR_WORDS.cantUndo : DOOR_WORDS.nothingToUndo);
+      }
+      const before = await store.get(historyKey(current.version - 1));
+      if (!before?.settings) throw doorNo(409, "cant-undo", DOOR_WORDS.copyGone);
+      settings = carryLocked(current.settings, before.settings);
+      lead = UNDO_LINE;
+    } else {
+      const r = applyEdits(current.settings, data.edits, { manufacturer, mode: v.mode, standardRise });
+      if (r.problems.length) throw doorNo(422, "problems", r.problems.join(" "), { problems: r.problems });
+      settings = r.settings;
+      newCodes = r.newCodes;
+      edits = data.edits.length;
+    }
+    let prepared;
+    try {
+      prepared = await priceList.preview(settings, version, { lock: (o, n) => lockProblems(o, n, { door: true, mode: v.mode, standardRise }), lead });
+    } catch (e) {
+      if (e instanceof OfficeError && e.status === 409) throw doorNo(409, "version", DOOR_WORDS.version);
+      if (e instanceof OfficeError && e.status === 422) {
+        const problems = e.problems || [e.message];
+        throw Object.assign(doorNo(422, "problems", problems.join(" "), { problems }), { locked: !!e.locked });
+      }
+      throw e;
+    }
+    return {
+      next: prepared.next, changes: prepared.changes, warnings: warnings(current.settings, prepared.next, manufacturer),
+      newCodes, edits, lead, sha: sha256Hex(JSON.stringify(prepared.next)),
+      contact: ["phone", "email", "website"].some((k) => (current.settings.brand?.[k] || "") !== (prepared.next.brand?.[k] || "")),
+    };
+  }
+
+  /* One door action, once the pass is spent and counted. -> the answer's own fields. */
+  async function doorAction(action, data, claims, seen) {
+    const v = await access();
+    seen.open = !!v.mode;
+    if (action === "status") return {};
+    if (!v.mode) throw doorNo(403, "closed", WHY[v.why] || WHY["live-off"], { why: v.why === "unknown" ? "live-off" : v.why });
+    if (action === "read") {
+      const part = data.part === undefined ? "summary" : data.part;
+      if (!PARTS.includes(part)) throw doorNo(400, "bad-request", BAD_REQUEST);
+      const view = readView(v.record.data.settings, part, manufacturer);
+      const history = await doorHistory();
+      await lookedNote();
+      return { part, view, history };
+    }
+    if (action === "check") {
+      const undo = data.undo === true;
+      if (data.undo !== undefined && !undo) throw doorNo(400, "bad-request", BAD_REQUEST);
+      if (!undo && !Array.isArray(data.edits)) throw doorNo(422, "problems", TOO_MANY_EDITS, { problems: [TOO_MANY_EDITS] });
+      const p = await plan(v, data, undo);
+      return {
+        version: data.version, changes: p.changes.slice(0, CHANGE_LINES), moreChanges: Math.max(0, p.changes.length - CHANGE_LINES),
+        warnings: p.warnings, counts: { edits: p.edits, changes: p.changes.length, warnings: p.warnings.length },
+        contactDetailsChange: p.contact, newCodes: p.newCodes, settingsSha256: p.sha,
+      };
+    }
+    /* save and undo: the lease, then (while the switch is on) Alan's own tap */
+    try { await account.mustWrite(); } catch (e) {
+      if (e instanceof OfficeError && e.status === 423) throw doorNo(423, "account-off", DOOR_WORDS.accountOff);
+      throw e;
+    }
+    if (v.mode === "switch" && claims.via !== "control-room") throw doorNo(403, "needs-alan", DOOR_WORDS.needsAlan);
+    const undo = action === "undo";
+    if (!undo && !Array.isArray(data.edits)) throw doorNo(422, "problems", TOO_MANY_EDITS, { problems: [TOO_MANY_EDITS] });
+    const p = await plan(v, data, undo);
+    if (typeof data.settingsSha256 !== "string" || data.settingsSha256 !== p.sha) throw doorNo(409, "changed", DOOR_WORDS.changed);
+    const savedBy = { id: "barnwright", name: `Barnwright (${claims.actor})`, passId: claims.id };
+    let saved;
+    try {
+      saved = await priceList.save(null, { settings: p.next, version: data.version }, {
+        lock: (o, n) => lockProblems(o, n, { door: true, mode: v.mode, standardRise }), lead: p.lead, savedBy, ensureHistory: true,
+      });
+    } catch (e) {
+      if (e instanceof OfficeError && e.status === 409) throw doorNo(409, "version", DOOR_WORDS.version);
+      throw e;
+    }
+    if (saved.changes?.length) await note(undo ? `Barnwright (${claims.actor}) put back the price list from before its last change.` : changedWords(claims.actor, saved.changes));
+    return {
+      versionBefore: data.version, version: saved.version, changes: (saved.changes || []).slice(0, CHANGE_LINES),
+      ...(undo ? {} : { newCodes: p.newCodes }),
+    };
+  }
+
+  /* POST /.netlify/functions/barnwright-setup: the Control Room's server
+     only, with a one-use setup pass. Answers the first check that fails, in
+     the contract's order. */
+  async function door(request) {
+    if (!connected) return answer(404, { ok: false, code: "not-connected", error: WHY["not-connected"] });
+    if (request.method !== "POST") return answer(405, { ok: false, code: "method", error: DOOR_WORDS.method });
+    const bad = () => answer(400, { ok: false, code: "bad-request", error: BAD_REQUEST });
+    const h = request.headers;
+    if (h.has("origin") || h.has("cookie") || !(h.get("content-type") || "").toLowerCase().startsWith("application/json")) return bad();
+    let data, raw;
+    try { ({ data, raw } = await readJsonRaw(request, { maxBytes: DOOR_MAX_BYTES })); } catch (e) {
+      return e?.tooBig ? answer(413, { ok: false, code: "too-big", error: DOOR_WORDS.tooBig }) : bad();
+    }
+    if (!DOOR_ACTIONS.includes(data.action)) return bad();
+    const auth = h.get("authorization") || "";
+    let claims;
+    try { claims = license.verifySetupPass(auth.startsWith("Bearer ") ? auth.slice(7).trim() : "", { action: data.action, bodyBytes: raw }); } catch (e) {
+      log("A Barnwright setup pass was refused:", e?.reason || "pass");
+      return answer(401, { ok: false, code: "pass", error: DOOR_WORDS.pass });
+    }
+    /* from here every answer carries the status fields */
+    const seen = { open: false };
+    let body, httpStatus = 200;
+    try {
+      if (!(await spend(claims))) throw doorNo(410, "pass-used", DOOR_WORDS.passUsed);
+      await count();
+      if (data.action === "save" || data.action === "undo") await count({ save: true });
+      body = { ok: true, ...(await doorAction(data.action, data, claims, seen)) };
+    } catch (e) {
+      if (!(e instanceof OfficeError)) {
+        log("The Barnwright door failed:", e?.name || "Error");
+        return answer(503, { ok: false, code: "error", error: DOOR_WORDS.error });
+      }
+      const code = e.extra?.code || (e.status === 422 ? "problems" : "error");
+      httpStatus = code === "error" ? 503 : e.status;
+      const words = code === "error" ? DOOR_WORDS.error : e.message;
+      body = { ok: false, code, error: words, ...(e.extra?.why ? { why: e.extra.why } : {}), ...(e.problems || e.extra?.problems ? { problems: e.problems || e.extra.problems } : {}) };
+      if (seen.open && (data.action === "save" || data.action === "undo" || e.locked) && !["too-many", "pass-used"].includes(code)) await refusedNote(words);
+    }
+    let fields;
+    try { fields = await status(); } catch (e) {
+      log("The Barnwright door couldn't say where access stands:", e?.name || "Error");
+      return answer(503, { ok: false, code: "error", error: DOOR_WORDS.error });
+    }
+    return answer(httpStatus, body.ok ? { ok: true, ...fields, ...body } : { ...body, ...fields });
+  }
+
   async function lotList() {
     return { lots: (await lots.all()).map((l) => ({ slug: l.slug, name: l.name, active: l.active !== false })) };
   }
 
   return {
-    connected, access, view, status, report, mine, liveRecord, markLive, started, termsOk,
+    connected, access, view, status, report, mine, liveRecord, markLive, started, termsOk, door,
     owner: { get: ownerGet, set: ownerSet },
     visit: { start, from, keep, save, end, lots: lotList, preview: (slug) => website.previewLot(slug) },
   };

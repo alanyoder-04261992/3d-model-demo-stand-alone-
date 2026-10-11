@@ -34,6 +34,13 @@
      A6   every edit in the contract gives the fixtures' change words,
           warnings and exact settings; F5 contact details in words
           customers read; F13 a gable roof's pitch, drawn as set
+     A1   the door: a one-use pass made for one request's exact body, from
+          the Control Room's server only; the support check never takes one
+     A5   the door refuses exactly what the owner's own save refuses
+     A7   the door's save: exactly what was checked, by Barnwright, a copy
+          kept first, within the limits; F3 while the owner's switch is on,
+          only Alan's own tap in the Control Room saves
+     A8   undo: the price list from before Barnwright's last change
    (A13, nothing but netlify.js imports control-room.js, is in
    tools/check-imports.mjs; A14, the screens, in tools/check-setup-screens.mjs.) */
 
@@ -43,12 +50,13 @@ import { fileURLToPath } from "node:url";
 import { createHash, generateKeyPairSync } from "node:crypto";
 import { createOffice } from "../server/office/index.js";
 import { MemoryBlobs, wrapStore } from "../server/office/store.js";
-import { TenantLicenseClient, createLeaseStore, SETUP_PASS_PREFIX } from "../server/office/control-room.js";
+import { TenantLicenseClient, createLeaseStore, SETUP_PASS_PREFIX, misconfiguredLicense } from "../server/office/control-room.js";
 import { lockProblems, carryLocked, LOCK_WORDS } from "../server/office/setup-lock.js";
-import { WHY, VISIT_WORDS, OWNER_WORDS, termsAtLeast } from "../server/office/setup-access.js";
+import { WHY, VISIT_WORDS, OWNER_WORDS, DOOR_WORDS, termsAtLeast } from "../server/office/setup-access.js";
 import { BARNWRIGHT_SAVED_FIRST, NO_COPY, describeChanges, createPriceList, priceFingerprint } from "../server/office/price-list.js";
-import { applyEdits, warnings, contactKinds } from "../server/office/setup-edits.js";
+import { applyEdits, warnings, contactKinds, UNDO_LINE } from "../server/office/setup-edits.js";
 import { readView } from "../server/office/setup-view.js";
+import { canonicalLease } from "../server/office/license-core.js";
 import { validate, resolve as resolveCatalogue } from "../model/company.js";
 import { defaults as designDefaults, setType } from "../model/design.js";
 import { frameOf } from "../model/frame.js";
@@ -869,9 +877,364 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
     applyEdits(hand, [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }], opts).problems[0] === "Edit 1: Their gable roofs were set up another way, so the pitch can't be changed here.");
 }
 
+/* ======================================================================================== */
+/* THE DOOR: A1, A5, A6, A7, A8, A9 and A11 for the door, F3, F5, F13                       */
+
+const DOOR_URL = SITE + "/.netlify/functions/barnwright-setup";
+const STATUS_KEYS = ["v", "live", "liveAt", "access", "why", "until", "prelive", "termsOk", "priceList", "lastBarnwrightSave", "canUndo", "appVersion"];
+const passIdOf = (p) => JSON.parse(Buffer.from(p.split(".")[0], "base64url").toString()).id;
+const b64url = (t) => Buffer.from(t).toString("base64url");
+
+/* A door request, as the Control Room's server sends it: a fresh pass for these exact bytes. */
+function withDoor(b) {
+  b.door = async (body, { via, actor = ACTOR, over, prefix, key, raw, headers = {}, method = "POST", pass, auth } = {}) => {
+    const text = raw ?? JSON.stringify(body);
+    const p = pass ?? b.room.setupPass({ action: body?.action ?? "status", body: text, via, actor, over, prefix, key });
+    const h = { "content-type": "application/json", ...(auth === null ? {} : { authorization: auth ?? `Bearer ${p}` }), ...headers };
+    const res = await b.office.setupDoor(new Request(DOOR_URL, { method, headers: h, body: method === "GET" ? undefined : text }));
+    const t = await res.text();
+    let data; try { data = JSON.parse(t); } catch { data = t; }
+    return { status: res.status, data, headers: res.headers, pass: p };
+  };
+  b.fresh = async () => b.store.remove("barnwright-setup-limits");
+  return b;
+}
+
+/* A business being set up whose price list is the fixtures' base (First
+   setup with the small starting price list), owner agreed to terms 2.2. */
+async function fixtureBusiness() {
+  const F = withDoor(business());
+  await F.setUp(); await F.agree("2.2");
+  const pl = await F.store.get("price-list");
+  const settings = structuredClone(FX.edits.baseSettings);
+  await F.store.put("price-list", { ...pl, settings, version: 1, cfg: settings.cfg });
+  await F.store.put("price-list-history/000001", { version: 1, savedAt: pl.savedAt, savedBy: pl.savedBy, changes: ["Set up the business with a starting price list"], settings });
+  return F;
+}
+
+section("A1. The door: a one-use setup pass for each request, from the Control Room's server only");
+const D = await fixtureBusiness();
+{
+  r = await D.door({ action: "status" });
+  ok("status: 200 ok, with the status fields in the contract's order, said by role",
+    r.status === 200 && r.data.ok === true && JSON.stringify(Object.keys(r.data)) === JSON.stringify(["ok", ...STATUS_KEYS])
+    && r.data.access === "prelive" && r.data.priceList.version === 1 && r.data.priceList.by === "the owner" && r.data.priceList.open === false, JSON.stringify(r.data));
+  ok("... never cached, and no CORS headers", r.headers.get("cache-control") === "private, no-store" && ![...r.headers.keys()].some((k) => k.startsWith("access-control-")), [...r.headers.keys()].join(","));
+  const again = await D.door({ action: "status" }, { pass: r.pass });
+  ok("the same pass again: 410 pass-used, with the status fields", again.status === 410 && again.data.code === "pass-used"
+    && again.data.error === "This pass was already used. Each request needs a new pass." && again.data.access === "prelive", JSON.stringify(again.data));
+  const seen = await D.store.get("barnwright-setup-seen");
+  ok("the pass's id is kept as spent until it expires", seen?.ids?.[passIdOf(r.pass)] === D.clock.t + 120_000, JSON.stringify(seen));
+}
+{
+  const t = D.clock.t;
+  const statusText = JSON.stringify({ action: "status" });
+  const env = await D.license.getEnvelope();
+  const leaseToken = `${b64url(canonicalLease(env.payload))}.${env.signature}`;
+  const supportHead = b64url(JSON.stringify({ purpose: "support-diagnostics", customerId: D.room.business.id, siteId: D.room.business.siteId, actor: ACTOR, grantAt: new Date(t).toISOString(), issuedAt: t, expiresAt: t + 900_000 }));
+  const bad = [
+    ["a help pass", { prefix: "barnwright-help-pass/v1." }],
+    ["a support pass (signed with no prefix)", { prefix: "", over: { purpose: "support-diagnostics" } }],
+    ["a lease, signed by the same key", { pass: leaseToken }],
+    ["a support pass's shape with a blank signature", { pass: `${supportHead}.${Buffer.alloc(64).toString("base64url")}` }],
+    ["another business's customer", { over: { customerId: "cust_other" } }],
+    ["another business's site", { over: { siteId: "site-other-1" } }],
+    ["expired", { over: { issuedAt: t - 200_000, expiresAt: t - 80_000 } }],
+    ["a window over 5 minutes", { over: { expiresAt: t + 6 * MIN } }],
+    ["issued more than 60 s ahead", { over: { issuedAt: t + 61_000, expiresAt: t + 181_000 } }],
+    ["made for another body", { pass: D.room.setupPass({ action: "status", body: JSON.stringify({ action: "status", part: "x" }) }) }],
+    ["made for another action", { pass: D.room.setupPass({ action: "read", body: statusText }) }],
+    ["a visit's start pass", { pass: D.room.setupPass({ action: "session", body: statusText }) }],
+    ["signed by another key", { key: generateKeyPairSync("ec", { namedCurve: "prime256v1" }).privateKey }],
+    ["no pass", { auth: null }],
+    ["not a pass", { pass: "not.a-pass" }],
+  ];
+  const wrong = [];
+  for (const [name, opts] of bad) {
+    const x = await D.door({ action: "status" }, opts);
+    if (!(x.status === 401 && x.data.code === "pass" && x.data.error === "The pass for this request isn't valid. Try again from the Control Room." && !("access" in x.data))) wrong.push(`${name}: ${x.status} ${x.data.code}`);
+  }
+  ok(`every pass that isn't right gets 401 pass, the same words, and no status (${bad.length} kinds)`, wrong.length === 0, wrong.join("; "));
+}
+{
+  const shapes = [
+    ["an Origin header", {}, { headers: { origin: SITE } }, 400, "bad-request"],
+    ["a Cookie header", {}, { headers: { cookie: COOKIE + "=x" } }, 400, "bad-request"],
+    ["not application/json", {}, { headers: { "content-type": "text/plain" } }, 400, "bad-request"],
+    ["GET", {}, { method: "GET" }, 405, "method"],
+    ["an action the door doesn't have", { action: "publish" }, {}, 400, "bad-request"],
+    ["a visit's start body", { action: "session" }, {}, 400, "bad-request"],
+    ["not a JSON object", null, { raw: "[1,2]" }, 400, "bad-request"],
+    ["24 levels deep and more", null, { raw: JSON.stringify({ action: "status", x: JSON.parse("[".repeat(30) + "]".repeat(30)) }) }, 400, "bad-request"],
+    ["over 64 KB", { action: "check", version: 1, edits: [{ do: "set_fine_print", text: "x".repeat(66_000) }] }, {}, 413, "too-big"],
+  ];
+  const wrong = [];
+  for (const [name, body, opts, status, code] of shapes) {
+    const x = await D.door(body ?? { action: "status" }, opts);
+    if (!(x.status === status && x.data.code === code)) wrong.push(`${name}: ${x.status} ${x.data.code}`);
+  }
+  ok(`a request that isn't the Control Room's server's is refused before the pass (${shapes.length} kinds)`, wrong.length === 0, wrong.join("; "));
+  const p = D.room.setupPass({ action: "status", body: JSON.stringify({ action: "status" }) });
+  const first = await D.door({ action: "status" }, { pass: p, headers: { origin: SITE } });
+  const then = await D.door({ action: "status" }, { pass: p });
+  ok("... and such a refusal doesn't spend the pass", first.status === 400 && then.status === 200, `${first.status} ${then.status}`);
+}
+{
+  const T = withDoor(business());
+  await T.setUp();
+  const read = await T.door({ action: "read", part: "summary" });
+  ok("before terms 2.2: status still answers, read is refused (403 closed, terms), with the status fields",
+    (await T.door({ action: "status" })).data.why === "terms" && read.status === 403 && read.data.code === "closed" && read.data.why === "terms" && read.data.error === WHY.terms && read.data.termsOk === false, JSON.stringify(read.data));
+  const again = await T.door({ action: "read", part: "summary" }, { pass: read.pass });
+  ok("... a pass refused for another reason is still spent (410)", again.status === 410 && again.data.code === "pass-used");
+  const U = withDoor(business({ connected: false }));
+  await U.setUp();
+  r = await U.door({ action: "status" });
+  ok("a Dealer Center not connected to Barnwright: 404 not-connected", r.status === 404 && r.data.code === "not-connected" && r.data.error === WHY["not-connected"], JSON.stringify(r.data));
+  const Mis = withDoor(business());
+  Mis.office = createOffice({ blobs: new MemoryBlobs(), identityUser: async () => null, ownerEmail: USERS.pat.email, manufacturer, library, templates, now: () => new Date(Mis.clock.t), log: () => {}, license: misconfiguredLicense() });
+  r = await Mis.door({ action: "status" });
+  ok("... and one with only some of its Control Room settings: 404 too, no pass is ever taken", r.status === 404 && r.data.code === "not-connected", JSON.stringify(r.data));
+  let refused = "no";
+  try { misconfiguredLicense().verifySetupPass(D.room.setupPass(), { action: "session", bodyBytes: SESSION_BODY }); } catch { refused = "yes"; }
+  ok("... whose refusing twin refuses every setup pass", refused === "yes");
+}
+{
+  /* the support check never takes a setup pass, and never asks the control room about one */
+  await D.call("POST", "/api/office/barnwright-help", { on: true, reason: "Check the quotes", hours: 1 }, { as: "pat" });
+  const calls = D.room.calls.length;
+  const setupPass = D.room.setupPass({ action: "status", body: JSON.stringify({ action: "status" }) });
+  const res = await D.office.diagnostics(new Request(SITE + "/.netlify/functions/tenant-diagnostics", { method: "POST", headers: { authorization: `Bearer ${setupPass}` } }));
+  ok("tenant-diagnostics refuses a setup pass (403), without asking the control room", res.status === 403 && !D.room.calls.slice(calls).includes("/api/support-verify"), D.room.calls.slice(calls).join(","));
+  const good = await D.office.diagnostics(new Request(SITE + "/.netlify/functions/tenant-diagnostics", { method: "POST", headers: { authorization: `Bearer ${D.room.issueSupport()}` } }));
+  ok("... while a real support pass still works", good.status === 200);
+  await D.call("POST", "/api/office/barnwright-help", { on: false }, { as: "pat" });
+}
+
+section("A1 / F8. read: one part at a time, readable, never contact details or emails");
+{
+  await D.fresh();
+  const all = [];
+  const wrong = [];
+  for (const part of FX.door.parts) {
+    const x = await D.door({ action: "read", part });
+    all.push(x);
+    const want = fxExample(`read ${part}`).answer.body;
+    if (!(x.status === 200 && x.data.part === part && JSON.stringify(x.data.view) === JSON.stringify(want.view))) wrong.push(`${part}: ${x.status} ${JSON.stringify(x.data).slice(0, 120)}`);
+  }
+  ok(`each of the ${FX.door.parts.length} parts is the contract's (the fixtures' view, word for word)`, wrong.length === 0, wrong.join("; "));
+  const h = all[0].data.history;
+  ok("history: the newest saves, who by role, the first 5 changes and how many more", Array.isArray(h) && h.length === 1 && h[0].version === 1 && h[0].by === "the owner"
+    && JSON.stringify(h[0].changes) === JSON.stringify(["Set up the business with a starting price list"]) && h[0].more === 0, JSON.stringify(h));
+  const text = JSON.stringify(all.map((x) => x.data));
+  ok("no read has the business phone, email or website, the owner's email, or the logo itself",
+    !["941-555-0100", "office@testingsheds.example", "https://testingsheds.example", USERS.pat.email].some((s) => text.includes(s)), text.slice(0, 200));
+  const sum = (await D.door({ action: "read" })).data;
+  ok("part left out: summary", sum.part === "summary" && sum.view.business.hasPhone === true && JSON.stringify(sum.view.business.logo) === JSON.stringify({ present: false, kb: 0 }));
+  ok("an unknown part: 400 bad-request", (await D.door({ action: "read", part: "customers" })).data.code === "bad-request");
+  const looked = (await D.log()).filter((e) => e.words === "Barnwright looked at your price list.");
+  ok("the owner's log: \"Barnwright looked at your price list.\" once, however many reads", looked.length === 1, JSON.stringify(looked));
+  D.clock.t += 31 * MIN;
+  await D.door({ action: "read", part: "colors" });
+  ok("... and again after 30 minutes", (await D.log()).filter((e) => e.words === "Barnwright looked at your price list.").length === 2);
+}
+
+section("A6 / F5 / F13. check: every edit in the contract, through the door, against the fixtures");
+const S = withDoor(await fixtureBusiness());
+{
+  /* the owner's switch is on: open to customers, then Run checks and change */
+  await S.ownerSave((s) => { s.status = "active"; });
+  await S.call("POST", "/api/office/barnwright-help", { on: true, level: "change", reason: "New prices", hours: 4 }, { as: "pat" });
+  ok("(a second business, open to customers, with the owner's switch on)", (await S.access()).mode === "switch");
+}
+{
+  const wrong = [];
+  let n = 0;
+  for (const sm of FX.edits.samples) {
+    const B = sm.mode === "switch" ? S : D;
+    if (++n % 50 === 0) { await D.fresh(); await S.fresh(); }
+    const edits = sm.name === "too many edits" ? Array.from({ length: 301 }, () => sm.edits[0]) : sm.edits;
+    const version = (await B.store.get("price-list")).version;
+    const x = await B.door({ action: "check", version, edits });
+    const want = sm.expect;
+    const good = want.ok
+      ? x.status === 200 && JSON.stringify(x.data.changes) === JSON.stringify(want.changes) && JSON.stringify(x.data.warnings) === JSON.stringify(want.warnings)
+        && x.data.settingsSha256 === want.settingsSha256 && x.data.contactDetailsChange === want.contactDetailsChange && JSON.stringify(x.data.newCodes) === JSON.stringify(want.newCodes)
+        && x.data.counts.edits === edits.length && x.data.counts.changes === want.changes.length && x.data.counts.warnings === want.warnings.length && x.data.moreChanges === 0
+      : x.status === 422 && x.data.code === "problems" && JSON.stringify(x.data.problems) === JSON.stringify(want.problems) && x.data.error === want.problems.join(" ");
+    if (!good) wrong.push(`${sm.name}: ${x.status} ${JSON.stringify(x.data).slice(0, 300)}`);
+  }
+  ok(`all ${FX.edits.samples.length} sample edits give the fixtures' change words, warnings, problems and the exact settings (SHA-256)`, wrong.length === 0, wrong.join("\n       "));
+  ok("... and a check saves nothing", (await D.store.get("price-list")).version === 1 && (await D.store.keys("price-list-history/")).length === 1);
+}
+{
+  /* F5: contact details first, then words customers read with contact details in them */
+  r = await D.door({ action: "check", version: 1, edits: [{ do: "set_option", group: "misc", key: "shutter", price: 80, name: "Shutters, call 941-555-0100" }, { do: "set_size_note", width: 14, text: "See www.permits.gov" }, { do: "set_business", website: "https://testingsheds.example/new", email: "sales@testingsheds.example" }] });
+  ok("F5: the contact change is listed first, then each text customers read with contact details in it",
+    r.status === 200 && JSON.stringify(r.data.warnings.slice(0, 3)) === JSON.stringify([
+      "This changes the business email and website that customers see. Check it with the owner.",
+      "The note for 14 ft wide buildings has a web address in it. Customers read it, so check it is right.",
+      "The option name \"Shutters, call 941-555-0100\" has a phone number in it. Customers read it, so check it is right."]) && r.data.contactDetailsChange === true, JSON.stringify(r.data.warnings));
+  const v = (await S.store.get("price-list")).version;
+  r = await S.door({ action: "check", version: v, edits: [{ do: "set_business", tagline: "Sheds that last" }] });
+  ok("F5: while the switch is on, the door may still change the tagline and the name (not the contact details)", r.status === 200 && r.data.changes[0] === "Tagline: Portable storage buildings → Sheds that last", JSON.stringify(r.data));
+}
+{
+  /* F13 through the door */
+  await D.fresh();
+  const chk = await D.door({ action: "check", version: 1, edits: [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }] });
+  const sv = await D.door({ action: "save", version: 1, edits: [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }], settingsSha256: chk.data.settingsSha256 });
+  const bld = await D.door({ action: "read", part: "buildings" });
+  ok("F13: through the door it passes the lock and saves, and read says UT 5/12, the Garage standard, the Loft Barn none",
+    sv.status === 200 && sv.data.version === 2 && sv.data.changes[0] === "Utility Shed and every building built like it: roof pitch 6.5/12 (standard) → 5/12"
+    && JSON.stringify(bld.data.view.styles.map((x) => [x.code, x.pitch])) === JSON.stringify([["UT", "5/12"], ["LB", null], ["G", "standard"]]), JSON.stringify([sv.data, bld.data.view?.styles?.map((x) => x.pitch)]));
+  const und = await D.door({ action: "check", version: 2, undo: true });
+  r = await D.door({ action: "undo", version: 2, settingsSha256: und.data.settingsSha256 });
+  ok("(and undone again)", r.status === 200 && r.data.version === 3 && JSON.stringify((await D.store.get("price-list")).settings.construction) === "{}", JSON.stringify(r.data));
+}
+
+section("A5. Parity: the door's check refuses exactly what the owner's own save refuses");
+{
+  const cases = [
+    ["the opening size isn't sold", [{ do: "set_defaults", size: "14x40" }]],
+    ["a Dormer Shed with no dormer priced", [{ do: "sell_style", style: "DS", sizes: { "10x16": 6290 } }]],
+    ["the opening siding color isn't on the list", [{ do: "set_defaults", colors: { body: "Purple" } }]],
+    ["two styles with one name", [{ do: "rename_style", style: "UT", name: "Loft Barn" }]],
+  ];
+  const wrong = [];
+  for (const [name, edits] of cases) {
+    const v = (await D.store.get("price-list")).version;
+    const door = await D.door({ action: "check", version: v, edits });
+    const res = applyEdits((await D.store.get("price-list")).settings, edits, { manufacturer, standardRise: STD_RISE });
+    const owner = res.settings ? await D.call("PUT", "/api/office/price-list", { settings: res.settings, version: v }, { as: "pat" }) : { status: 0, data: { problems: res.problems } };
+    if (!(door.status === 422 && owner.status === 422 && door.data.problems.length && JSON.stringify(door.data.problems) === JSON.stringify(owner.data.problems))) {
+      wrong.push(`${name}: door ${door.status} ${JSON.stringify(door.data.problems)} owner ${owner.status} ${JSON.stringify(owner.data.problems)}`);
+    }
+  }
+  ok(`the door's problems are the owner's 422 problems, word for word (${cases.length} cases)`, wrong.length === 0, wrong.join("; "));
+}
+
+section("A7. save: exactly what was checked, by Barnwright, a copy kept first");
+const F = await fixtureBusiness();
+{
+  /* the fixtures' conversation, on the fixtures' base */
+  const conv = (n) => fxExample(n).answer.body;
+  const edits = JSON.parse(fxExample("check").request.body).edits;
+  const chk = await F.door({ action: "check", version: 1, edits });
+  ok("check: the fixtures' change words and settingsSha256, nothing written", chk.status === 200 && JSON.stringify(chk.data.changes) === JSON.stringify(conv("check").changes)
+    && chk.data.settingsSha256 === conv("check").settingsSha256 && (await F.store.get("price-list")).version === 1, JSON.stringify(chk.data));
+  const before = await snapshot(F.store, ["customers/", "people/", "lots/", "invites/", "barnwright-terms", "barnwright-help", "barnwright-setup", leaseKey(F.blobs)]);
+  const sv = await F.door({ action: "save", version: 1, edits, settingsSha256: chk.data.settingsSha256 }, { via: "claude" });
+  const pl = await F.store.get("price-list");
+  ok("save (before live, a pass from Claude is fine): version 1 to 2, the same change words", sv.status === 200 && sv.data.versionBefore === 1 && sv.data.version === 2
+    && JSON.stringify(sv.data.changes) === JSON.stringify(conv("save").changes) && JSON.stringify(sv.data.newCodes) === "{}", JSON.stringify(sv.data));
+  ok("... what was saved is exactly what was checked (its SHA-256)", sha256(JSON.stringify(pl.settings)) === chk.data.settingsSha256);
+  ok("... saved by Barnwright (alan@...) with the pass's id; the status fields say so and that it can be undone",
+    JSON.stringify(pl.savedBy) === JSON.stringify({ id: "barnwright", name: `Barnwright (${ACTOR})`, passId: passIdOf(sv.pass) })
+    && sv.data.priceList.by === `Barnwright (${ACTOR})` && sv.data.lastBarnwrightSave?.passId === passIdOf(sv.pass) && sv.data.lastBarnwrightSave.version === 2 && sv.data.canUndo === true, JSON.stringify(sv.data));
+  const hist = await F.store.get("price-list-history/000002");
+  ok("... History has it, by Barnwright (alan@...)", hist?.savedBy?.name === `Barnwright (${ACTOR})` && hist.savedBy.passId === passIdOf(sv.pass) && (await F.door({ action: "read" })).data.history[0].by === `Barnwright (${ACTOR})`);
+  ok("... and the owner's log: \"Barnwright (alan@...) changed your price list: ...\"", (await F.log()).some((e) => e.words === `Barnwright (${ACTOR}) changed your price list: Loft Barn 10×16: $5,690 → $5,700; 48″ Wooden Door: $160 → $175.`));
+  r = await F.door({ action: "check", version: 1, edits });
+  ok("a check on a version that moved: 409 version, with the status fields", r.status === 409 && r.data.code === "version" && r.data.error === DOOR_WORDS.version && r.data.priceList.version === 2, JSON.stringify(r.data));
+  r = await F.door({ action: "save", version: 2, edits: [{ do: "set_item", item: "w48", price: 180 }], settingsSha256: "0".repeat(64) });
+  ok("a save whose result isn't the one checked: 409 changed, nothing saved", r.status === 409 && r.data.code === "changed" && r.data.error === DOOR_WORDS.changed && (await F.store.get("price-list")).version === 2, JSON.stringify(r.data));
+  ok("... and the owner's log says a change was refused", (await F.log())[0].words === `A Barnwright change was refused: ${DOOR_WORDS.changed}`, (await F.log())[0].words);
+  /* D8: the copy of the price list in use is kept first */
+  await F.store.remove("price-list-history/000002");
+  const e2 = [{ do: "set_item", item: "w48", price: 180 }];
+  const c2 = await F.door({ action: "check", version: 2, edits: e2 });
+  r = await F.door({ action: "save", version: 2, edits: e2, settingsSha256: c2.data.settingsSha256 });
+  const kept = await F.store.get("price-list-history/000002");
+  ok("D8: a missing history entry for the price list in use is written before the save", r.status === 200 && r.data.version === 3 && kept?.settings?.items?.w48 === 175, JSON.stringify(kept)?.slice(0, 120));
+  await F.store.remove("price-list-history/000003");
+  const e3 = [{ do: "set_item", item: "w48", price: 185 }];
+  const c3 = await F.door({ action: "check", version: 3, edits: e3 });
+  const origSet = F.blobs.setJSON.bind(F.blobs);
+  F.blobs.setJSON = async (key, data, o) => { if (key.startsWith("price-list-history/")) throw new Error("history store down"); return origSet(key, data, o); };
+  r = await F.door({ action: "save", version: 3, edits: e3, settingsSha256: c3.data.settingsSha256 });
+  F.blobs.setJSON = origSet;
+  ok("D8: when that copy can't be kept, nothing is saved: 503 no-copy", r.status === 503 && r.data.code === "no-copy" && r.data.error === NO_COPY && (await F.store.get("price-list")).version === 3, JSON.stringify(r.data));
+  const after = await snapshot(F.store, ["customers/", "people/", "lots/", "invites/", "barnwright-terms", "barnwright-help", "barnwright-setup", leaseKey(F.blobs)]);
+  ok("A9: the door's reads, checks and saves left customers, people, lots, invites, the terms, Help, the switch and the lease exactly as they were",
+    JSON.stringify(before) === JSON.stringify(after), Object.keys(after).filter((k) => before[k] !== after[k]).join(", "));
+  ok("A9: ... and sent nothing", F.emails.length === 0);
+}
+{
+  /* the limits: 120 Barnwright requests an hour, 60 saves a day (door and visit together) */
+  const lim = await F.store.get("barnwright-setup-limits");
+  await F.store.put("barnwright-setup-limits", { ...lim, requests: 120 });
+  r = await F.door({ action: "status" });
+  ok("the 121st Barnwright request this hour: 429 too-many, with the status fields", r.status === 429 && r.data.code === "too-many" && r.data.error === "Too many Barnwright requests for this Dealer Center this hour. Try again later." && r.data.v === 1, JSON.stringify(r.data));
+  await F.store.put("barnwright-setup-limits", { ...lim, requests: 0, saves: 60 });
+  const e4 = [{ do: "set_item", item: "w48", price: 190 }];
+  const c4 = await F.door({ action: "check", version: 3, edits: e4 });
+  r = await F.door({ action: "save", version: 3, edits: e4, settingsSha256: c4.data.settingsSha256 });
+  ok("the 61st save today: 429, \"Barnwright has saved 60 changes here today.\"", r.status === 429 && r.data.error === "Barnwright has saved 60 changes here today. Try again tomorrow." && (await F.store.get("price-list")).version === 3, JSON.stringify(r.data));
+  await F.fresh();
+}
+{
+  /* A11: the lease off */
+  F.room.business.status = "deactivated";
+  await F.office.checkIn({ force: true });
+  const e5 = [{ do: "set_item", item: "w48", price: 195 }];
+  const c5 = await F.door({ action: "check", version: 3, edits: e5 });
+  r = await F.door({ action: "save", version: 3, edits: e5, settingsSha256: c5.data.settingsSha256 });
+  ok("A11: the account off: save answers 423 account-off; status, read and check still work",
+    r.status === 423 && r.data.code === "account-off" && r.data.error === DOOR_WORDS.accountOff && c5.status === 200
+    && (await F.door({ action: "status" })).status === 200 && (await F.door({ action: "read", part: "options" })).status === 200, JSON.stringify(r.data));
+  F.room.business.status = "active";
+  await F.office.checkIn({ force: true });
+}
+{
+  /* F3: while the owner's switch is on, only Alan's own tap in the Control Room saves */
+  const v = (await S.store.get("price-list")).version;
+  const e6 = [{ do: "set_price", style: "G", size: "12x20", price: 8290 }];
+  const c6 = await S.door({ action: "check", version: v, edits: e6 }, { via: "claude" });
+  const viaClaude = await S.door({ action: "save", version: v, edits: e6, settingsSha256: c6.data.settingsSha256 }, { via: "claude" });
+  ok("switch on: Claude may check (200), but a save from Claude is refused: 403 needs-alan", c6.status === 200 && viaClaude.status === 403 && viaClaude.data.code === "needs-alan"
+    && viaClaude.data.error === DOOR_WORDS.needsAlan && viaClaude.data.access === "switch" && (await S.store.get("price-list")).version === v, JSON.stringify(viaClaude.data));
+  const viaRoom = await S.door({ action: "save", version: v, edits: e6, settingsSha256: c6.data.settingsSha256 });
+  ok("... the same save from the Control Room's Make the change page goes through", viaRoom.status === 200 && viaRoom.data.version === v + 1, JSON.stringify(viaRoom.data));
+  await S.call("POST", "/api/office/barnwright-help", { on: false }, { as: "pat" });
+  r = await S.door({ action: "read" });
+  ok("the owner turns the switch off: the very next door request is refused (403 closed, live-off)", r.status === 403 && r.data.code === "closed" && r.data.why === "live-off" && r.data.error === WHY["live-off"], JSON.stringify(r.data));
+  ok("... and status still answers, saying so", (await S.door({ action: "status" })).data.access === "closed");
+}
+
+section("A8. undo: the price list from before Barnwright's last change");
+{
+  const U = await fixtureBusiness();
+  const conv = (n) => fxExample(n).answer.body;
+  const edits = JSON.parse(fxExample("check").request.body).edits;
+  r = await U.door({ action: "check", version: 1, undo: true });
+  ok("nothing to undo yet: 409 cant-undo, in words", r.status === 409 && r.data.code === "cant-undo" && r.data.error === DOOR_WORDS.nothingToUndo, JSON.stringify(r.data));
+  const chk = await U.door({ action: "check", version: 1, edits });
+  await U.door({ action: "save", version: 1, edits, settingsSha256: chk.data.settingsSha256 });
+  const cu = await U.door({ action: "check", version: 2, undo: true });
+  ok("check an undo: the fixtures' words (\"Put back the price list from before Barnwright's last change\" first) and settingsSha256",
+    cu.status === 200 && cu.data.changes[0] === UNDO_LINE && JSON.stringify(cu.data.changes) === JSON.stringify(conv("check an undo").changes)
+    && cu.data.settingsSha256 === conv("check an undo").settingsSha256 && cu.data.counts.edits === 0, JSON.stringify(cu.data));
+  r = await U.door({ action: "undo", version: 2, settingsSha256: cu.data.settingsSha256 });
+  const pl = await U.store.get("price-list");
+  ok("undo: version 3 is the price list of version 1 again, saved by Barnwright", r.status === 200 && r.data.versionBefore === 2 && r.data.version === 3
+    && JSON.stringify(r.data.changes) === JSON.stringify(conv("undo").changes) && pl.settings.offer.LB.sizes["10x16"] === 5690 && pl.settings.items.w48 === 160 && pl.savedBy.id === "barnwright", JSON.stringify(r.data));
+  ok("... and the owner's log: \"Barnwright (alan@...) put back the price list from before its last change.\"", (await U.log())[0].words === `Barnwright (${ACTOR}) put back the price list from before its last change.`);
+  const again = await U.door({ action: "check", version: 3, undo: true });
+  r = await U.door({ action: "undo", version: 3, settingsSha256: again.data.settingsSha256 });
+  ok("an undo is a Barnwright save, so undo again puts the change back", r.status === 200 && (await U.store.get("price-list")).settings.offer.LB.sizes["10x16"] === 5700, JSON.stringify(r.data));
+  r = await U.door({ action: "undo", version: 4, settingsSha256: "f".repeat(64) });
+  ok("an undo whose result isn't the one checked: 409 changed", r.status === 409 && r.data.code === "changed");
+  await U.ownerSave((s) => { s.items.w48 = 199; });
+  r = await U.door({ action: "check", version: 5, undo: true });
+  ok("once the owner saved after it: 409 cant-undo, \"The owner saved the price list after your change...\"", r.status === 409 && r.data.code === "cant-undo" && r.data.error === DOOR_WORDS.cantUndo && r.data.canUndo === false, JSON.stringify(r.data));
+  r = await U.door({ action: "undo", version: 5, settingsSha256: "f".repeat(64) });
+  ok("... and the undo itself too, with nothing saved", r.status === 409 && r.data.code === "cant-undo" && (await U.store.get("price-list")).version === 5);
+}
+
 console.log("");
 if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} setup access checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, construction and a web address logo, and putting back carries them forward; a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set.`);
+console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, construction and a web address logo, and putting back carries them forward; a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set; the door takes only a one-use pass made for its exact body from the Control Room's server, reads in parts with no contact details, refuses what the owner's own save refuses, saves exactly what was checked with a copy kept first, saves for Claude only before live, and undoes only Barnwright's last change.`);

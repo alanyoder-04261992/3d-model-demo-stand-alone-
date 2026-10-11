@@ -74,6 +74,14 @@ export async function readBody(request) {
   return (await readJsonRaw(request)).data;
 }
 
+/* A body over the size allowed: the error says so (tooBig), apart from a
+   body too deep or too large in values (the door answers them differently). */
+function tooBig() {
+  const error = new OfficeError(413, "That is too much to save at once.");
+  error.tooBig = true;
+  throw error;
+}
+
 /* The same, keeping the exact bytes that came (a Barnwright pass is made
    for the SHA-256 of them): -> {data, raw (a Uint8Array)}. maxBytes is at
    most the usual 256 KB. */
@@ -81,7 +89,7 @@ export async function readJsonRaw(request, { maxBytes = MAX_BODY } = {}) {
   const most = Math.min(maxBytes, MAX_BODY);
   const type = (request.headers.get("content-type") || "").toLowerCase();
   if (!type.startsWith("application/json")) fail(415, "Something went wrong. Reload the page and try again.");
-  if (Number(request.headers.get("content-length")) > most) fail(413, "That is too much to save at once.");
+  if (Number(request.headers.get("content-length")) > most) tooBig();
   const reader = request.body?.getReader();
   if (!reader) fail(400, "Something went wrong. Reload the page and try again.");
   const chunks = [];
@@ -92,7 +100,7 @@ export async function readJsonRaw(request, { maxBytes = MAX_BODY } = {}) {
     size += value.byteLength;
     if (size > most) {
       await reader.cancel();
-      fail(413, "That is too much to save at once.");
+      tooBig();
     }
     chunks.push(value);
   }

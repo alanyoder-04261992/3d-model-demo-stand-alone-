@@ -234,9 +234,22 @@ export function createAccount({ store, license, lots, now, appVersion = "dealer-
     return help();
   }
 
+  /* A Barnwright setup pass (setup-access.js, the door) is never a support
+     pass: it is refused here, before the control room is asked about it. */
+  function setupPassIn(token) {
+    try {
+      const head = String(token).split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
+      const claims = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(head + "=".repeat((4 - (head.length % 4)) % 4)), (c) => c.charCodeAt(0))));
+      return claims?.purpose === "setup-pass";
+    } catch {
+      return false;
+    }
+  }
+
   /* POST /.netlify/functions/tenant-diagnostics from the control room, with
      a support pass good for at most 15 minutes. Answers only how the
-     Dealer Center is running: no customers, no settings, no keys. */
+     Dealer Center is running: no customers, no settings, no keys. A setup
+     pass is refused the same way as a support pass that doesn't match. */
   let lastRefusalNote = 0;
   async function diagnostics(request) {
     if (!connected) return json({ error: "This Dealer Center isn't connected to Barnwright." }, 404);
@@ -245,6 +258,7 @@ export function createAccount({ store, license, lots, now, appVersion = "dealer-
     const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
     let claims;
     try {
+      if (setupPassIn(token)) throw new Error("A setup pass is not a support pass");
       claims = await license.verifySupportAccess(token, async () => await store.get(HELP));
     } catch {
       /* written down only while help is on, and at most once a minute */

@@ -18,6 +18,14 @@
 #                     only for a business connected to Barnwright's control
 #                     room: its support check, and a check-in every six
 #                     hours (server/office/account.js)
+#   barnwright-setup.mts
+#                     also only for a connected business: Barnwright's
+#                     setup door, which the control room's server calls
+#                     with a one-use setup pass to read, check, save or
+#                     undo price list changes before the business is live
+#                     or while the owner's switch is on
+#                     (server/office/setup-access.js; docs/OFFICE.md,
+#                     "Barnwright setup access")
 # /c/<id>/ still opens a company's designer from its settings file.
 # Re-run node tools/build-headers.mjs after editing index.html's inline scripts.
 

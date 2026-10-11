@@ -74,7 +74,8 @@ export function createOffice(deps) {
   });
   setup = createSetupAccess({
     store, license: deps.license || null, priceList, account, lots, website, now, log,
-    appVersion: deps.appVersion || "dealer-center", standardRise: deps.library?.roof?.shapes?.gable?.rise?.w ?? null,
+    appVersion: deps.appVersion || "dealer-center", manufacturer: deps.manufacturer || {},
+    standardRise: deps.library?.roof?.shapes?.gable?.rise?.w ?? null,
   });
   const signIn = deps.signIn || "netlify";
 
@@ -421,6 +422,8 @@ export function createOffice(deps) {
     checkIn: account.checkIn,
     /* the scheduled check-in looks back for Barnwright setup access first, in its own try */
     setupLookBack: async () => { if (setup.connected) await setup.liveRecord(); },
+    /* Barnwright's setup door (netlify/functions/barnwright-setup.mts): the control room's server only */
+    setupDoor: (request) => setup.door(request),
     parts: { store, people, lots, priceList, customers, team, website, account, help, setup },
   };
 }
