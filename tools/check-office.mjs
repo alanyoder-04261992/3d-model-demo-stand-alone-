@@ -929,6 +929,17 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
     const whole = BC.summarize([BC.checkAgainstStandard(catL, stdL, "LB", {})]);
     const stepped = BC.summarize([await BC.checkInSteps(catL, stdL, "LB", { pause: () => Promise.resolve() })]);
     ok("... Check every size a size at a time (the page never freezes) says what the whole style at once says", whole.problems.length > 0 && JSON.stringify(whole) === JSON.stringify(stepped), JSON.stringify([whole.problems.slice(0, 2), stepped.problems.slice(0, 2)]));
+    /* an owner's extra that changes only the floor framing (Heavy-duty
+       floor: joists every 12 in) changes nothing the low wall's problems are
+       about: each is said once, not again "... and Heavy-duty floor: ..."
+       (found by the end-to-end walk on the combined code, Oct 11 2026) */
+    const floorX = clone(cur.settings);
+    floorX.options.extras = [...(floorX.options.extras || []), { key: "heavy-floor", name: "Heavy-duty floor", input: "check", price: 350, construction: { "floor.spacingIn": 12 } }];
+    const lowX = clone(floorX); lowX.offer.LB.built = { wallHeight: 60 };
+    const rX = checkChangedStyles(floorX, lowX, manufacturer, library, { budgetMs: 60000 });
+    const plainX = checkChangedStyles(cur.settings, lbOwn, manufacturer, library, { budgetMs: 60000 });
+    ok("... an owner's extra that changes only the floor framing never says the low wall's problems a second time (\"... and Heavy-duty floor: ...\")",
+      rX.problems.length > 0 && !rX.problems.some((p) => /Heavy-duty floor/.test(p)) && JSON.stringify(rX.problems) === JSON.stringify(plainX.problems), JSON.stringify([rX.problems.length, plainX.problems.length, rX.problems.filter((p) => /Heavy-duty floor/.test(p)).slice(0, 2)]));
   }
 
   /* a size added to a style with numbers of its own: just that size */

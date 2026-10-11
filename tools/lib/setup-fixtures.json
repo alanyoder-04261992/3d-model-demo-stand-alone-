@@ -7824,9 +7824,7 @@
             ],
             "warnings": [
               "Steeper roof does not change the Utility Shed (its roof is already 8/12). A customer would pay for nothing there.",
-              "Utility Shed 10x12: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 10x16.",
-              "Utility Shed 10x12 with Heavy-duty floor: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 10x16.",
-              "Utility Shed 10x12 with Steeper roof: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 10x16."
+              "Utility Shed 10x12: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 10x16."
             ],
             "contactDetailsChange": false,
             "newCodes": {},

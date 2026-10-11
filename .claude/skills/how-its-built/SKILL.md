@@ -182,7 +182,9 @@ is one number, measured level, at every width.
   they are built like, or the business's raw construction settings for that
   roof -- (or gained sizes, or are newly sold) at every size, and each of
   them again with every extra that changes how it is built switched on (the
-  owner's Steep roof with a new wall); an extra whose numbers or
+  owner's Steep roof with a new wall), and `summarize` says a finding the
+  extra does not change (same building, same amount) once, without the
+  extra's name; an extra whose numbers or
   construction changed, or that reaches a style it did not reach before
   (its styles list widened, a style it lists is sold again), is drawn on
   each style it reaches (`changedStyles`). Within about 3 s, the size each
