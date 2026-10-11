@@ -14,21 +14,26 @@
    then the deck at 0.92: three rises). The customer can add extra posts ("Porch Post" items);
    the railing then runs post to post.
 
-   THREE KINDS OF PORCH (the style's `porch` trait, docs/ARCHITECTURE.md):
-   * "F" FRONT PORCH (Cabin, Lofted Barn Cabin): a 4 ft deep porch across the
-     whole front end, inside the building's length -- the front wall stands
-     4 ft back (plan.ws.F.at = L/2 - 4). Header band across the end, a 4 ft
-     wrap band down each side, the ceiling, two corner posts, railing across
-     the front and down both sides.
-   * "S" SIDE PORCH (Side Cabin, Loft Side Cabin): a 4 ft deep notch in the
-     door side (+x), 8 or 12 ft long (plan.span: 8 on a building under 20 ft),
+   THREE KINDS OF PORCH (the style's `porch` trait, docs/ARCHITECTURE.md).
+   Every porch is the PORCH DEPTH deep: the style's porchDepthFt trait
+   (model/frame.js porchDepthOf), 4 ft standard -- Barnwright's number, which
+   every drawing below is at unless "How it's built" sets another.
+   * "F" FRONT PORCH (Cabin, Lofted Barn Cabin): a porch the depth deep across
+     the whole front end, inside the building's length -- the front wall
+     stands the depth back (plan.ws.F.at = L/2 - depth). Header band across
+     the end, a wrap band the depth long down each side, the ceiling, two
+     corner posts, railing across the front and down both sides.
+   * "S" SIDE PORCH (Side Cabin, Loft Side Cabin): a notch the depth deep in
+     the door side (+x), one of the style's side porch lengths long (8 or 12
+     ft standard; plan.span: the shortest on a building under 20 ft),
      at the back end, flipped to the front end, or centred. Bands, ceiling, a
      fixed post at the wrap corner, railing along the edge with the bay in
      front of the porch door left open, a railing across the porch end, and a
      wood step at the entry.
    * "C" CORNER (WRAP) PORCH (Deluxe Side Cabin, Deluxe Loft Side Cabin): a
-     4 ft deck across the front end (the style adds 4 ft to L for it, a kept
-     Barnwright quirk) plus a 12 ft run down the door side, walled in behind by
+     deck the depth deep across the front end (the style adds the depth to L
+     for it, a kept Barnwright quirk) plus a 12 ft run down the door side, the
+     depth wide, walled in behind by
      the P1/P2/P3 porch walls (plan.ws). Bands, the ceiling, two corner posts,
      railing across the end and down the side, a rail stub on the -x side.
    (Barnwright also had a full-length side porch, porchSide, for porch "R".
@@ -75,6 +80,7 @@
 
 import { y0 } from "../engine/constants.js";
 import { texFlat } from "../engine/tex-names.js";
+import { porchDepthOf } from "../model/frame.js";
 
 /* THE WAY IN. The two corner anchors (-C and +C) and the post positions,
    sorted; gi is the index of the WIDEST gap between neighbours. The railing
@@ -125,26 +131,27 @@ export function porchDrawing(plan, kit){
      band, wrap bands and ceiling are buildShed's (build() below). */
   function porchFront(W,L,topY,mT){
     var mW=mat("pwood",texFlat,"#96682F",0.05,12);
-    var zE=L/2-0.2, C=W/2-0.28;
+    var zE=L/2-0.2, C=W/2-0.28, d=porchDepthOf(plan.t);
     kit.setStage("porch-frame");
     [-C,C].forEach(function(px){ box(mW,px,y0,zE,0.34,topY-y0,0.34); });
     var posts=[];
     plan.state.items.forEach(function(o){ if(plan.CAT[o.cat].k==="post" && o.wall==="F") posts.push(o.pos); });
     var r=railAnchors(C,posts);
     for(var j=0;j<r.a.length-1;j++){ if(j!==r.gi) railX(mW,r.a[j]+0.16,r.a[j+1]-0.16,zE); }
-    railZ(mW,L/2-3.75,zE-0.16,-(W/2-0.2));
-    railZ(mW,L/2-3.75,zE-0.16,(W/2-0.2));
+    railZ(mW,L/2-(d-0.25),zE-0.16,-(W/2-0.2));
+    railZ(mW,L/2-(d-0.25),zE-0.16,(W/2-0.2));
   }
 
   /* SIDE PORCH (porch "S"), notched 4 ft into the door side (+x). yH is the
      bottom of the 1x4 header band (0.29 under the wall top). */
   function porchSideCorner(W,L,topY,mT){
     var sp=plan.span, f=sp.f, mid=sp.mid, ze=f?-L/2:L/2, sg=f?-1:1;
+    var d=porchDepthOf(plan.t);   /* the notch's depth, 4 ft standard */
     var mW=mat("pwood",texFlat,"#96682F",0.05,12);
     var yH=topY-0.29;
     kit.setStage("porch-frame");
     /* header band across the open porch end */
-    if(!mid) gq2(mT,[[W/2-4,yH],[W/2,yH],[W/2,topY],[W/2-4,topY]],ze,sg,0.02);
+    if(!mid) gq2(mT,[[W/2-d,yH],[W/2,yH],[W/2,topY],[W/2-d,topY]],ze,sg,0.02);
     /* band along the front opening */
     var zLo=mid? sp.z0-0.12 : (f? -L/2 : sp.z0-0.12), zHi=mid? sp.z1+0.12 : (f? sp.z1+0.12 : L/2);
     pushQuad(mT,[W/2+0.02,yH,zHi],[W/2+0.02,yH,zLo],[W/2+0.02,topY,zLo],[W/2+0.02,topY,zHi],
@@ -152,8 +159,8 @@ export function porchDrawing(plan, kit){
     /* white porch ceiling */
     kit.setStage("porch");
     var mCeil=mat("ceil",texFlat,"#F2F1EA",0.05,12);
-    pushQuad(mCeil,[W/2-4,yH+0.01,sp.z0],[W/2,yH+0.01,sp.z0],[W/2,yH+0.01,sp.z1],[W/2-4,yH+0.01,sp.z1],
-      [0,0],[5,0],[5,sp.P*1.25],[0,sp.P*1.25]);
+    pushQuad(mCeil,[W/2-d,yH+0.01,sp.z0],[W/2,yH+0.01,sp.z0],[W/2,yH+0.01,sp.z1],[W/2-d,yH+0.01,sp.z1],
+      [0,0],[d*1.25,0],[d*1.25,sp.P*1.25],[0,sp.P*1.25]);
     /* fixed post at the wrap corner */
     kit.setStage("porch-frame");
     if(!mid) box(mW,W/2-0.28,y0,ze-sg*0.28,0.34,topY-y0,0.34);
@@ -173,7 +180,7 @@ export function porchDrawing(plan, kit){
       if(!open) railZ(mW,a[j]+0.16,a[j+1]-0.16,W/2-0.2);
     }
     /* railing across the porch end, wall to corner post */
-    if(!mid) railX(mW, W/2-3.84, W/2-0.44, ze-sg*0.2);
+    if(!mid) railX(mW, W/2-(d-0.16), W/2-0.44, ze-sg*0.2);
     /* wood step at the front entry */
     kit.setStage("porch");
     box(mW,W/2+0.78,0,entryZ,1.42,0.30,2.6);
@@ -184,7 +191,7 @@ export function porchDrawing(plan, kit){
      12 ft run down the door side. */
   function porchCorner(W,L,topY,mT){
     var mW=mat("pwood",texFlat,"#96682F",0.05,12);
-    var yH=topY-0.29;
+    var yH=topY-0.29, d=porchDepthOf(plan.t);   /* the deck's depth, 4 ft standard */
     kit.setStage("porch-frame");
     /* header band across the porch end */
     gq2(mT,[[-W/2,yH],[W/2,yH],[W/2,topY],[-W/2,topY]],L/2,1,0.02);
@@ -192,8 +199,8 @@ export function porchDrawing(plan, kit){
     pushQuad(mT,[W/2+0.02,yH,L/2],[W/2+0.02,yH,L/2-12.12],[W/2+0.02,topY,L/2-12.12],[W/2+0.02,topY,L/2],
       [0,0],[15,0],[15,0.38],[0,0.38]);
     /* band along the back-side porch stub */
-    pushQuad(mT,[-W/2-0.02,yH,L/2-4.12],[-W/2-0.02,yH,L/2],[-W/2-0.02,topY,L/2],[-W/2-0.02,topY,L/2-4.12],
-      [0,0],[5.2,0],[5.2,0.38],[0,0.38]);
+    pushQuad(mT,[-W/2-0.02,yH,L/2-(d+0.12)],[-W/2-0.02,yH,L/2],[-W/2-0.02,topY,L/2],[-W/2-0.02,topY,L/2-(d+0.12)],
+      [0,0],[d*1.3,0],[d*1.3,0.38],[0,0.38]);
     /* white porch ceiling */
     kit.setStage("porch");
     var mCeil=mat("ceil",texFlat,"#F2F1EA",0.05,12);
@@ -219,7 +226,7 @@ export function porchDrawing(plan, kit){
     for(var i2=0;i2<aR.length-1;i2++){var g2=aR[i2+1]-aR[i2];if(g2>gw3){gw3=g2;gi2=i2;}}
     for(var j2=0;j2<aR.length-1;j2++){ if(j2!==gi2) railZ(mW,aR[j2]+0.16,aR[j2+1]-0.16,xE); }
     /* rail stub along the back-side porch edge */
-    railZ(mW,L/2-3.84,L/2-0.44,-(W/2-0.2));
+    railZ(mW,L/2-(d-0.16),L/2-0.44,-(W/2-0.2));
   }
 
   return { railX: railX, railZ: railZ, railAnchors: railAnchors,
@@ -239,17 +246,17 @@ export default {
     var P=porchDrawing(plan, kit);
     /* porches: white header band, white ceiling, wrap bands (like the real cabins) */
     if(t.porch==="F"){
-      var yH=topY-0.29;
+      var yH=topY-0.29, d=porchDepthOf(t);   /* the porch depth, 4 ft standard */
       kit.setStage("porch-frame");
       gq2(mT,[[-W/2,yH],[W/2,yH],[W/2,topY],[-W/2,topY]],L/2,1,0.02);
-      pushQuad(mT,[W/2+0.02,yH,L/2],[W/2+0.02,yH,L/2-4],[W/2+0.02,topY,L/2-4],[W/2+0.02,topY,L/2],
-        [0,0],[5,0],[5,0.38],[0,0.38]);
-      pushQuad(mT,[-W/2-0.02,yH,L/2-4],[-W/2-0.02,yH,L/2],[-W/2-0.02,topY,L/2],[-W/2-0.02,topY,L/2-4],
-        [0,0],[5,0],[5,0.38],[0,0.38]);
+      pushQuad(mT,[W/2+0.02,yH,L/2],[W/2+0.02,yH,L/2-d],[W/2+0.02,topY,L/2-d],[W/2+0.02,topY,L/2],
+        [0,0],[d*1.25,0],[d*1.25,0.38],[0,0.38]);
+      pushQuad(mT,[-W/2-0.02,yH,L/2-d],[-W/2-0.02,yH,L/2],[-W/2-0.02,topY,L/2],[-W/2-0.02,topY,L/2-d],
+        [0,0],[d*1.25,0],[d*1.25,0.38],[0,0.38]);
       kit.setStage("porch");
       var mCeil=mat("ceil",texFlat,"#F2F1EA",0.05,12);
-      pushQuad(mCeil,[-W/2,yH+0.01,L/2-4],[W/2,yH+0.01,L/2-4],[W/2,yH+0.01,L/2],[-W/2,yH+0.01,L/2],
-        [0,0],[W/0.8,0],[W/0.8,5],[0,5]);
+      pushQuad(mCeil,[-W/2,yH+0.01,L/2-d],[W/2,yH+0.01,L/2-d],[W/2,yH+0.01,L/2],[-W/2,yH+0.01,L/2],
+        [0,0],[W/0.8,0],[W/0.8,d*1.25],[0,d*1.25]);
       P.porchFront(W,L,topY,mT);
     }
     if(t.porch==="C"){ P.porchCorner(W,L,topY,mT); }

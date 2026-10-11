@@ -16,6 +16,7 @@ critiques of version 1 — see git history.)
 | "fast to set up new companies" | a company is one settings file on top of a shared manufacturer file; `tools/new-company.mjs`, `tools/import-prices.mjs`, `setup.html` contact sheet | `tools/check-companies.mjs`, `tools/check-loadouts.mjs`, `tools/check-starter.mjs` |
 | "a company that just buys my 3D design, not the software" | the Dealer Center (owner's price list for every lot, lot links, customers and orders); `embed.js`; optional legacy lead integrations | `tools/check-embed.mjs`, `tools/check-leads.mjs` |
 | "not touch Barnwright" | Barnwright is only ever read, by the golden capture | nothing in this repo writes outside it |
+| "lets all 5" (Oct 2026: a business types how its own buildings are built) | How it's built (`model/build-settings.js`): roof pitch, barn roof height, overhangs, wall and door height, porch depth and lengths, dormer side | `tools/check-build-settings.mjs`, `tools/check-office.mjs`, `tools/check-golden.mjs` (no setting: no change) |
 
 ## Ground rules
 
@@ -74,6 +75,9 @@ model/                pure rules, Node-safe
   layout.js           itemW clampPos snapCenter neighborGaps openingRect resetItems freeSpot
   loadouts.js         standard doors/windows: named Barnwright recipes + data recipes
   pricing.js          basePrice itemCharge priceParts money sqftCharge
+  style-check.js      the every-size check: checkBuilding checkStyle variantsOf (tools/check-style-sizes.mjs)
+  built-check.js      which styles a How it's built change reaches, and what its numbers cause next to the standard building
+  framing-geometry.js solids, overlaps, where framing may stand, bearing (the framing checks share it)
   design.js           defaults, toState / fromState, normalize, encode / decode (share link)
   construction.js     resolve construction rules for one building (rule form, options)
   plan.js             makePlan(state, cat) -> frozen copy the parts read
@@ -81,6 +85,8 @@ library/
   construction.json   default real-life construction numbers (schema below)
   manufacturers/standard.json   the standard portable-building line as Barnwright draws it:
                       styles, items (sizes + draw traits), palettes, loadouts, construction overrides. NO PRICES.
+  style-refs/         each library style's reference pictures and facts, for Barnwright's Control Room
+                      (made by tools/make-style-refs.mjs; never shipped in a build)
 parts/
   stages.js           the stage table
   index.js            PIPELINE
@@ -426,6 +432,14 @@ Frame parts fit INTO it; the caption names the real lumber.
    never outside the fascia or soffit. Also: no two members overlap by more than
    0.01 ft, no bearing gap over 0.01 ft, every opening has kings, jacks and a
    header, member spacing matches `plan.construction`.
+6. **`tools/check-style-sizes.mjs`** (`model/style-check.js`) holds every
+   style at every size it is sold in to rules 3 to 5 and to how the finished
+   building fits together: openings on their walls and clear of each other,
+   heads under the wall top, gable band and roof, gable windows under the
+   roof, the eave clear of door heads and 6 ft up, the shop door its full
+   height, the roof, dormer, porch and loft in shape, and a wider building
+   never lower. Kept problems are listed in `test/style-sizes-known.json`
+   with their reasons.
 
 ## Construction settings (`library/construction.json`, `model/construction.js`)
 
@@ -456,8 +470,102 @@ the manufacturer file, then the company):
 Options change the frame: an option may carry
 `"construction": { "floor.spacingIn": 12 }` (12 in joists) or
 `{ "floor.deck.layers": 2 }` (double floor). `plan.construction` =
-library defaults + manufacturer + company + the options chosen, resolved for this
-building's width, length, style and roof.
+library defaults + manufacturer + company + the style's own numbers
+(`t.construction`, from How it's built below) + the options chosen, resolved
+for this building's width, length, style and roof (`constructionFor`). An
+extra's How it's built numbers (`t.optionEffects`) come last: they replace
+the style's, except a roof pitch, which only ever makes the roof steeper.
+
+**Known settings.** `CONSTRUCTION_SCHEMA` (`model/construction.js`) lists
+every path the code reads. A path it does not know is named with the closest
+known one ("construction.walls.spacingInch is not a construction setting.
+Did you mean spacingIn?"), and a roof value that cannot be drawn (a rise of
+"lots", an overhang of 9 ft) is named too. These are **strict problems**
+(`strictProblems()` in `model/company.js`), kept apart from `validate()`:
+
+* reading never fails -- `validate()` keeps its old rules, so every lot's
+  designer and every quote opens on any price list that opened before; a bad
+  value simply changes nothing (the next layer wins) and is said in
+  `cat.settingsWarnings`;
+* a Dealer Center save is refused only for a strict problem the stored
+  price list did not already have (`check(next, previous)` in
+  `server/office/price-list.js`); putting an older copy back is always
+  allowed; a company file in `companies/` must have none
+  (`tools/check-companies.mjs`);
+* an option's or an extra's `construction` effect is checked the same way
+  (`effectProblems()`), and may not hold a How it's built number: an extra
+  that raised a roof through `roof.shapes.gable.rise` is refused on save
+  ("Steep roof: set this extra's roof pitch in How it's built.") and on
+  read changes nothing.
+
+## How it's built (`model/build-settings.js`)
+
+The numbers a shop builds differently, typed the way a shed builder says
+them, checked, layered and written in History (the `how-its-built` skill has
+the details):
+
+| knob | stored as | reaches the drawing through |
+|---|---|---|
+| `roofPitch` (gable, lean-to, single slope) | rise per 12 (5 = 5/12) | `roof.shapes.<shape>.rise = {"w": p/24}`; the Dormer Shed's `roof.dormerRise` |
+| `barnPeak` (barn roofs) | inches above the wall top, by width `{"10": 48}` | `roof.shapes.gambrel.peakIn`; an unlisted width is held between its neighbours |
+| `eaveOverhang` | inches, measured level from the wall | `roof.shapes.<shape>.eaveOverhang = {"flatIn": n}`; with none set, the screens say the eave measured level on the slope drawn at each width (a barn's differs by width) |
+| `gableEndOverhang` | inches | `rakeOverhang` (feet) on gable roofs, `roof.shapes.gambrel.endOverhang` on barns |
+| `wallHeight` | inches | the style's `wallH` trait (never business-wide) |
+| `doorHeight` | inches | `openings.doorHeightIn` |
+| `porchDepth` | feet | the style's `porchDepthFt` trait |
+| `sidePorchLengths` | whole feet, a list | the style's `sidePorch.lengthsFt` trait |
+| `dormerSide` | `"door"` or `"back"` | the style's `dormerSide` trait |
+
+**Which number wins** (first found): the style's own `offer.<KEY>.built`;
+for a style of the business's own, its base's `offer.<BASE>.built`; the
+business-wide `built` (by roof kind), unless the style has a style feature
+for that knob (the flush gable ends of the Garden Utility and the cottages,
+the Standard Barn's shoulders, the Dormer Shed's main roof) -- a number on
+that style itself replaces the feature; where a feature keeps a
+business-wide number off, the shop standard still holds (the Dormer Shed
+keeps the standard 7/12 under a business-wide pitch); the shop standard `styles.<KEY>.built` in the manufacturer file
+(Alan's shop numbers on the Utility Shed, Side Utility, Garage, Dog Kennel,
+Garden Utility, Dormer Shed, Lofted Barn, Side Lofted Barn, Metal Lofted
+Barn and Lofted Barn Garage: docs/DIFFERENCES.md
+#26), unless the business's raw `construction` already sets that path; the
+library. Barn roof heights are
+found width by width (each width from the first layer that names it), so
+one width typed keeps the others. `resolve()` calls
+`apply()`, which sets the traits and writes the roof and door numbers into
+the style's own construction layer `t.construction`; `t.built` keeps where
+each came from and `effective(cat, key)` gives the screens every knob's
+number, words and source.
+
+**Every seam defaults to today's number**, so with no How it's built
+setting every building is Barnwright's, triangle for triangle
+(`tools/check-golden.mjs`). A How it's built path in a company's raw
+`construction` (`KNOB_PATHS`) is a strict problem ("The construction
+settings hold the roof pitch. Set it in How it's built instead."), except
+the Barnwright setup connector's roof pitch rule list, which
+`liftRawRules()` moves into `offer.<KEY>.built.roofPitch` (in memory on
+read, for real on save: "Roof pitch rules moved into How it's built (no
+building changes)"). `save()` stores each number as its number
+(`tidyBuilt`: "5/12" as 5, a barn width "08" as "8"). A change that moves
+what is drawn (`model/built-check.js drawnOf`) raises `cfg`, open designers
+redraw and History says it ("Lofted Barn wall height: 6 ft 7 1/2 in →
+7 ft"); the same number in other words is no change, and the standard's
+number typed on a style is History only ("standard (5/12) → 5/12 of its
+own").
+
+**Checked at every size, on save and on the screen.** `model/built-check.js`
+says which styles a change reaches (`changedStyles`: numbers changed, sizes
+added, a changed extra with numbers, with that extra on) and runs
+`model/style-check.js` on them, comparing each finding with the same
+building drawn with no number of the business's own (`withoutOwnNumbers`):
+what the standard building has too is never the business's.
+`server/office/built-check.js` runs it on every Dealer Center save within
+about 3 s (`SAVE_BUDGET_MS`; what is left is listed, never refused): a
+problem the business's numbers cause refuses the save in words, like any
+price list problem; a price-only save draws nothing. The owner's screen
+(`ui/office/views/price-list/built.js`) runs the same check for one style
+("Check every size") and quietly for the styles with numbers of their own
+when the price list opens, so a change to the standard under those numbers
+shows as a yellow note.
 
 ## Catalogue: manufacturer + company
 
@@ -486,6 +594,13 @@ makes, shared by every dealer of that builder, **no prices**:
 | `gableBand: false` | `"GU" "SB"` in `gableBandY` | no gable band |
 | `rakeOverhang` | `"GU" "CS" "MCS"` in the `profileRoof` call | gable-end overhang |
 | `loft: {ends, depthFt}` | (new) | lofted styles, for the loft part |
+| `porchDepthFt` | the 4 ft porch fixed in `frame.js` and the parts | a porch's depth in feet (4) |
+| `sidePorch: {lengthsFt}` | the 8 or 12 ft side porch | the side porch lengths sold, whole feet (`[8, 12]`; the shortest under 20 ft long; never one that leaves under 4 ft of side wall) |
+| `dormerSide` | the dormer always on the door side | `"door"` (default) or `"back"` (every triangle mirrored) |
+| `built` | (new) | the shop standard's How it's built numbers for this style |
+
+A key a style entry does not know is named with a did-you-mean
+(`validateManufacturer`; for a business's `offer` entry, a strict problem).
 
 `roofRise` keeps Barnwright's per-roof factors (0.45W for the mini barn,
 although its profile differs — a kept quirk).
@@ -511,12 +626,15 @@ without overlapping; the demo reproduces the golden `includedItems` exactly.
              "credit": { "text": "3D designer by Barnwright", "url": "", "show": true } },
   "offer": {                           // ONLY these styles load; sizes REPLACE, in chip order
     "UT": { "sizes": { "8x12": 3400, … }, "name": "…optional rename…" },
-    "UTX1": { "base": "UT", "name": "Premium Utility Shed", "sizes": { "8x12": 3900, … } }  // the company's own, built like UT
+    "UTX1": { "base": "UT", "name": "Premium Utility Shed", "sizes": { "8x12": 3900, … } },  // the company's own, built like UT
+    "LB": { "sizes": { … }, "built": { "wallHeight": 84 } }   // How it's built, this style only
   },
+  "built": { "roofPitch": { "gable": 6 } },          // How it's built, business-wide by roof kind
   "categories": [ ["Utility & Storage", ["UT", "UTX1", "SU"]] ],
   "items": { "w48": 150, "w72": 300, … },            // offered items and their prices
   "options": { "dormers": {"6": 1300}, "ramps": {…}, "elec": {"1": {"price": 675, "name": "Basic electric"}, …},
                "misc": {…}, "rates": {…}, "extras": [] },   // each option: a price, or {"price", "name"}
+             // an extra: {key, name, input, price, built?: {roofPitch: 7}, styles?: ["UT", "SU"]} -- styles: offered only there
   "palettes": { "paint": ["White", "Navy", …] },     // names picked from the manufacturer, or [name, hex] pairs
   "defaults": { "style": "LB", "size": "10x20", "colors": { "body": "White", "trim": "Black", "roof": "Black" } },
   "construction": { … },
@@ -724,6 +842,50 @@ names the case, bucket, part and first differing triangle.
 viewport, `deviceScaleFactor`, camera, `hasShadow = true`, `DPRCAP = 2`,
 watchdogs frozen, and per-texture seeded painters; it draws and reads pixels in
 one task and compares the canvases (Finished view, `look.trueColour` off).
+
+## Style reference pictures (`library/style-refs/`)
+
+When Claude helps Alan set up a dealer's price list from their photos, Alan's
+Control Room shows it what each library style looks like
+(`get_style_reference`). It reads these files from this repository's main
+branch on GitHub, the way it reads the papers and the terms
+(`netlify/functions/_shared/papers.ts` in the Control Room):
+
+* `<code>.jpg`: the style from its front corner (the designer's opening
+  view), and `<code>-end.jpg`: straight at its front end, where the roof's
+  pitch can be measured. 1024 px JPEGs, each under 100 KB.
+* `sheet.jpg`: every corner picture on one page, labelled with its code.
+* `styles.json`: per style the roof type and the pitch of each slope as N/12,
+  the wall height in feet and inches, the standard doors and windows (and how
+  they change with size), what tells it apart in a photo and the styles that
+  look like it, the standard sizes, each picture's sha256, and the library's
+  version (the sha256 of `standard.json` and `construction.json`). The
+  numbers are the standard building line as the 3D designer draws it: Alan's
+  shop numbers on the styles that have them (`styles.<KEY>.built` in
+  `standard.json`), Barnwright's drawing on the rest, and the file says
+  which. A barn roof's height is to the peak of its trusses, the way a
+  builder measures it. Every length and pitch in the words is said the way
+  the Dealer Center's How it's built says it (its own `inchesWords` and
+  `pitchWords` in `model/build-settings.js`): feet and inches to the nearest
+  1/16 in ("1 ft 4 1/2 in of wall above it"), a pitch as "5/12" or "about
+  6 1/2/12", and a barn roof by its height at each width it is sold in, not
+  by the pitch of its steep part, since that height is what a builder sets
+  and measures. A style's wall height, roof pitch and barn roof heights are
+  the very numbers How it's built shows for it, to the 1/16 in (the Cabin's
+  walls are 7 ft 4 13/16 in in both), and every height's number in inches
+  is the number its words say. The exact pitch of each slope stays beside the words as
+  `"N/12"` (the Control Room's strict shape), for measuring a photo.
+
+`node tools/make-style-refs.mjs` draws them with the look harness
+(`tools/look.html`) at the size the designer lands on for each style, in the
+sample price list's opening colours, and works the facts out with the model
+code (`tools/lib/style-facts.mjs`; only "what tells it apart" is written by
+hand there). `node tools/check-style-refs.mjs` works every fact out again
+without a browser and fails when `styles.json`, a picture or the library
+disagree, and when a website build, the client package or a Netlify function
+would carry the pictures. Remake them when a library style, a shop number
+or the construction numbers change (the `add-a-style` skill) or the look
+changes (the `check-the-look` skill).
 
 ## Porting rules (the only edits allowed to Barnwright code)
 

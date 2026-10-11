@@ -15,15 +15,18 @@ const MAX_DEPTH = 24;
 const MAX_NODES = 20000;
 const RESERVED = new Set(["__proto__", "constructor", "prototype"]);
 
+/* extra: more fields for the answer, next to `error` (a refusal's `code`,
+   or the time a save happened, for the browser to show in its own time). */
 export class OfficeError extends Error {
-  constructor(status, message) {
+  constructor(status, message, extra = null) {
     super(message);
     this.status = status;
+    if (extra) this.extra = extra;
   }
 }
 
-export function fail(status, message) {
-  throw new OfficeError(status, message);
+export function fail(status, message, extra = null) {
+  throw new OfficeError(status, message, extra);
 }
 
 export function json(data, status = 200, extraHeaders = {}) {
@@ -41,7 +44,7 @@ export function json(data, status = 200, extraHeaders = {}) {
 /* Turn any thrown thing into an answer. */
 export function errorAnswer(error, log = console.error) {
   if (error instanceof OfficeError) {
-    return json({ error: error.message, ...(error.problems ? { problems: error.problems } : {}) }, error.status);
+    return json({ ...(error.extra || {}), error: error.message, ...(error.problems ? { problems: error.problems } : {}) }, error.status);
   }
   log("Dealer Center error:", error);
   return json({ error: "Something went wrong on our end. Try again in a minute." }, 503);
@@ -68,9 +71,25 @@ function checkShape(value, depth = 0, count = { n: 0 }) {
 }
 
 export async function readBody(request) {
+  return (await readJsonRaw(request)).data;
+}
+
+/* A body over the size allowed: the error says so (tooBig), apart from a
+   body too deep or too large in values (the door answers them differently). */
+function tooBig() {
+  const error = new OfficeError(413, "That is too much to save at once.");
+  error.tooBig = true;
+  throw error;
+}
+
+/* The same, keeping the exact bytes that came (a Barnwright pass is made
+   for the SHA-256 of them): -> {data, raw (a Uint8Array)}. maxBytes is at
+   most the usual 256 KB. */
+export async function readJsonRaw(request, { maxBytes = MAX_BODY } = {}) {
+  const most = Math.min(maxBytes, MAX_BODY);
   const type = (request.headers.get("content-type") || "").toLowerCase();
   if (!type.startsWith("application/json")) fail(415, "Something went wrong. Reload the page and try again.");
-  if (Number(request.headers.get("content-length")) > MAX_BODY) fail(413, "That is too much to save at once.");
+  if (Number(request.headers.get("content-length")) > most) tooBig();
   const reader = request.body?.getReader();
   if (!reader) fail(400, "Something went wrong. Reload the page and try again.");
   const chunks = [];
@@ -79,24 +98,34 @@ export async function readBody(request) {
     const { done, value } = await reader.read();
     if (done) break;
     size += value.byteLength;
-    if (size > MAX_BODY) {
+    if (size > most) {
       await reader.cancel();
-      fail(413, "That is too much to save at once.");
+      tooBig();
     }
     chunks.push(value);
   }
+  const raw = new Uint8Array(size);
+  let at = 0;
+  for (const c of chunks) { raw.set(c, at); at += c.byteLength; }
   let data;
   try {
-    const all = new Uint8Array(size);
-    let at = 0;
-    for (const c of chunks) { all.set(c, at); at += c.byteLength; }
-    data = JSON.parse(new TextDecoder().decode(all));
+    data = JSON.parse(new TextDecoder().decode(raw));
   } catch {
     fail(400, "Something went wrong. Reload the page and try again.");
   }
   if (!data || typeof data !== "object" || Array.isArray(data)) fail(422, "Something went wrong. Reload the page and try again.");
   checkShape(data);
-  return data;
+  return { data, raw };
+}
+
+/* One cookie's value from the request, or null. */
+export function cookieOf(request, name) {
+  for (const part of (request.headers.get("cookie") || "").split(";")) {
+    const at = part.indexOf("=");
+    if (at < 0) continue;
+    if (part.slice(0, at).trim() === name) return part.slice(at + 1).trim();
+  }
+  return null;
 }
 
 /* ---------------------------------------------------------------------- */

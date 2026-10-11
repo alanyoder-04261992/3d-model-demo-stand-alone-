@@ -10,10 +10,22 @@
 import { h, icon, button, linkButton } from "../../dom.js";
 import { money } from "../../words.js";
 import { S, edited, repaint, focusLater } from "./state.js";
-import { keysOf, priceOf, ownName, styleName, baseOf, optionName, EXTRA_KINDS, NAME_MAX } from "./model.js";
+import { keysOf, isObj, priceOf, ownName, styleName, baseOf, optionName, EXTRA_KINDS, NAME_MAX, prepare } from "./model.js";
+import * as BUILT from "../../../../model/build-settings.js";
 import { priceInput, sellBox, renameable, msgs } from "./bits.js";
 
 const BASIS = { floor: "floor", wall: "walls", roof: "roof" };
+
+/* A Barnwright visit (server/office/setup-lock.js): an option of the
+   business's own that changes how the building is built (a roof pitch of
+   its own, or the construction the owner set), and where such an option is
+   offered, are the owner's. The visit shows them as words, never as boxes
+   the lock would refuse at Save (review M4). */
+export const VISIT_EXTRA_WORDS = Object.freeze({
+  built: "This option changes how the building is built, so only the owner can change that, where it is offered, or remove it.",
+  plain: "Only the owner can make an option change how the building is built.",
+});
+const changesBuilding = (x) => isObj(x) && (!!x.construction || (isObj(x.built) && Object.keys(x.built).length > 0));
 const sentence = (s) => (s ? s[0].toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? "" : ".") : "");
 
 /* Each builder option group: [group, title, sub(settings) -> words, row extras(id) -> {desc, suffix, step}] */
@@ -150,18 +162,129 @@ function extraRow(x, i) {
   };
   kind.addEventListener("change", () => { x.input = kind.value; drawPrice(); edited(); });
   drawPrice();
-  const rm = h("button", { type: "button", class: "pl-icon-btn", "aria-label": `Remove ${x.name || "this option"}`, title: "Remove" }, icon("trash"));
-  rm.addEventListener("click", () => {
+  const visit = !!S.ctx?.app?.barnwright, owners = visit && changesBuilding(x);
+  const rm = owners ? null : h("button", { type: "button", class: "pl-icon-btn", "aria-label": `Remove ${x.name || "this option"}`, title: "Remove" }, icon("trash"));
+  rm?.addEventListener("click", () => {
     S.draft.options.extras.splice(i, 1);
     edited({ tab: true });
   });
+  /* an option's roof pitch that changes nothing on a building it is offered
+     on is said under it (review W2) */
+  const miss = h("p", { class: "pl-extra-warn", role: "status", "aria-live": "polite", dataset: { extraWarn: String(i) } });
+  const paintMiss = () => {
+    let m = null;
+    try { m = BUILT.extrasThatChangeNothing(prepare(S.draft), S.M).find((w) => w.index === S.draft.options.extras.indexOf(x)); } catch { m = null; }
+    miss.textContent = m ? m.words : "";
+    miss.hidden = !m;
+  };
+  paintMiss();
+  /* the roof pitch and the buildings it is offered on, folded away: most
+     options (a ridge vent) need neither (review W15) */
+  const more = h("details", { class: "pl-extra-more", dataset: { extraMore: String(i) } },
+    h("summary", {}, "Only on some buildings, or changes the roof"),
+    ...(owners ? extraBuiltWords(x)
+      : visit ? [extraStyles(x, i, paintMiss), h("p", { class: "hint", dataset: { visitExtra: "plain" } }, VISIT_EXTRA_WORDS.plain)]
+        : [extraPitch(x, i, paintMiss), extraStyles(x, i, paintMiss)]));
+  if (isObj(x.built) || Array.isArray(x.styles) || owners) more.open = true;
   return h("div", { class: "pl-extra" },
     h("div", { class: "pl-extra-fields" },
       h("div", { class: "field" }, h("label", { htmlFor: ids.name }, "Name"), nameBox),
       h("div", { class: "field" }, h("label", { htmlFor: ids.kind }, "How it's priced"), kind),
       priceSlot,
       h("div", { class: "pl-extra-rm" }, rm)),
+    more,
+    miss,
     msgs(`extra:${i}`));
+}
+
+/* Which buildings an option is offered on (options.extras[i].styles): every
+   building, or only the ones pressed -- a Steep roof only on the Utility
+   Shed and Side Utility. A style of the business's own follows the style it
+   is built like. A code the business does not sell today is kept as it is. */
+function extraStyles(x, i, changed = () => {}) {
+  const offer = S.draft.offer || {};
+  const sold = keysOf(offer).filter((k) => !isObj(offer[k]) || offer[k].base == null);
+  const label = `Offered on, for ${x.name || "this option"}`;
+  const row = h("div", { class: "pl-built-chips", role: "group", "aria-label": label });
+  const chips = [["", "Every building"], ...sold.map((k) => [k, styleName(S.M, k, offer[k])])].map(([k, words]) => {
+    const b = h("button", { type: "button", class: "pl-built-chip", dataset: { field: k ? `extra:${i}:style:${k}` : `extra:${i}:styles` } }, words);
+    b.addEventListener("click", () => {
+      if (!k) delete x.styles;
+      else {
+        const list = Array.isArray(x.styles) ? x.styles.slice() : [];
+        const next = list.includes(k) ? list.filter((c) => c !== k) : [...list, k];
+        if (next.length) x.styles = next; else delete x.styles;
+      }
+      paint();
+      edited();
+      changed();
+    });
+    row.appendChild(b);
+    return [k, b];
+  });
+  function paint() {
+    const list = Array.isArray(x.styles) ? x.styles : null;
+    for (const [k, b] of chips) b.setAttribute("aria-pressed", String(k ? !!list && list.includes(k) : !list));
+  }
+  paint();
+  return h("div", { class: "field pl-extra-built" },
+    h("span", { class: "pl-label" }, "Offered on"), row,
+    h("p", { class: "hint" }, "Every building, or only the ones you press."));
+}
+
+/* In a Barnwright visit, an option that changes how the building is built:
+   what it builds and where it is offered, in words, and who changes them. */
+function extraBuiltWords(x) {
+  const offer = S.draft.offer || {};
+  const lines = [];
+  if (isObj(x.built)) {
+    for (const K of BUILT.KNOBS) {
+      if (x.built[K.id] === undefined) continue;
+      const r = BUILT.parse(K.id, x.built[K.id], {});
+      lines.push(`${K.Words}${K.id === "roofPitch" ? " at least" : ""} ${r.value !== undefined ? BUILT.format(K.id, r.value) : String(x.built[K.id])}`);
+    }
+  }
+  if (x.construction) lines.push("It changes how the building is framed, as the owner set it.");
+  const only = Array.isArray(x.styles) ? x.styles.filter((k) => offer[k]).map((k) => styleName(S.M, k, offer[k])) : null;
+  lines.push(!only ? "Offered on every building." : only.length ? `Offered only on the ${andList(only)}.` : "Not offered on any building you sell.");
+  return [h("ul", { class: "pl-extra-built-words", dataset: { visitExtra: "built" } }, lines.map((l) => h("li", {}, l))),
+    h("p", { class: "hint" }, VISIT_EXTRA_WORDS.built)];
+}
+
+/* "the Utility Shed, Side Utility and Garage" */
+function andList(names) {
+  return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
+/* How it's built for an option like a steep roof: the roof is at least this
+   steep when a customer picks it (model/build-settings.js: an extra's roof
+   pitch only ever makes a roof steeper). Empty: it does not change the
+   building. */
+function extraPitch(x, i, changed = () => {}) {
+  const id = `pl-x-${i}-pitch`;
+  const box = h("input", { id, type: "text", autocomplete: "off", spellcheck: false, placeholder: "Not changed", class: "pl-built-input",
+    dataset: { field: `extra:${i}:roofPitch` } });
+  const v = isObj(x.built) ? x.built.roofPitch : undefined;
+  box.value = v === undefined ? "" : typeof v === "number" ? BUILT.format("roofPitch", v) : String(v);
+  const set = (value) => {
+    if (value === undefined) { if (isObj(x.built)) { delete x.built.roofPitch; if (!Object.keys(x.built).length) delete x.built; } }
+    else { if (!isObj(x.built)) x.built = {}; x.built.roofPitch = value; }
+    edited();
+    changed();
+  };
+  box.addEventListener("input", () => {
+    const t = box.value.trim();
+    if (!t) return set(undefined);
+    const r = BUILT.parse("roofPitch", t, { kind: "gable" });
+    set(r.problem ? t : r.value);
+  });
+  box.addEventListener("change", () => {
+    const r = box.value.trim() ? BUILT.parse("roofPitch", box.value.trim(), { kind: "gable" }) : null;
+    if (r && !r.problem) box.value = BUILT.format("roofPitch", r.value);
+  });
+  return h("div", { class: "field pl-extra-built" },
+    h("label", { htmlFor: id }, "Roof pitch at least"), box,
+    h("p", { class: "hint" }, "For a steep roof, like 7/12: when a customer picks it, the roof is at least this steep. It does not change a barn or saltbox roof, or a roof already this steep. Leave it empty when the option does not change the building."));
 }
 
 /* ---- read only ---------------------------------------------------------------- */
@@ -189,7 +312,9 @@ function sheet(groups) {
       h("ul", { class: "pl-sheet-rows wide" }, extras.map((x) => {
         const kind = EXTRA_KINDS.find((e) => e[0] === x.input);
         const price = x.input === "pct" ? `${x.price}% of the building` : `${money(x.price)}${x.input === "check" ? "" : ` ${kind?.[2] || ""}`}`;
-        return h("li", {}, h("span", { class: "pl-sheet-size" }, x.name), h("span", { class: "pl-sheet-dots", "aria-hidden": "true" }), h("span", { class: "pl-sheet-price" }, price));
+        const only = Array.isArray(x.styles) ? x.styles.filter((k) => S.saved.settings.offer?.[k]).map((k) => styleName(S.M, k, S.saved.settings.offer[k])) : null;
+        const where = !only ? null : only.length ? `Only on the ${andList(only)}` : "Not on any building you sell";
+        return h("li", {}, h("span", { class: "pl-sheet-size" }, x.name, where ? h("small", {}, where) : null), h("span", { class: "pl-sheet-dots", "aria-hidden": "true" }), h("span", { class: "pl-sheet-price" }, price));
       }))));
   }
   return h("div", { class: "pl-tab stack" },

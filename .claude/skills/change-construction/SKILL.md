@@ -27,10 +27,16 @@ uses 2x6 studs at 24 in" is a settings change: no part file changes. Read
    (`library/manufacturers/standard.json`) -- everybody selling that line.
 3. the company's `construction` block (`companies/<id>/company.json`) --
    **that company only**. This is almost always the right place.
-4. the options the customer picks: an option with a `construction` effect,
+4. the style's own numbers from **How it's built** (`t.construction`, made
+   by `model/build-settings.js` from `offer.<KEY>.built`, the business-wide
+   `built` and the shop standard `styles.<KEY>.built`) -- see the
+   `how-its-built` skill.
+5. the options the customer picks: an option with a `construction` effect,
    like the standard line's `rates.jo12` (`{"floor.spacingIn": 12}`) and
    `rates.dbl` (`{"floor.deck.layers": 2}`); a company's own extra can carry
-   an effect the same way.
+   an effect the same way. An effect is checked like the settings (a path
+   the code never reads, a value that cannot be built) and may not hold a
+   How it's built number: an extra gives those in its own `built`.
 
 Layers merge **key by key** (a company's `{"walls": {"spacingIn": 24}}` keeps
 the default stud size); a list or a plain value **replaces**. (One exception:
@@ -51,11 +57,18 @@ with no `when`:
 the opening instead: `minSpanFt maxSpanFt`. A test the reader does not know is
 refused in plain words, never ignored.
 
-**A misspelt SETTING is not refused**: `"wals": {...}`, `"spacingInch": 24` or
-a lumber size like `"2by6"` loads without a word and simply changes nothing
-(the size one then stops the framing drawing, and the Framing view falls back
-to the finished building with a note). So after every change, open the Framing
-view and read the note -- that is the proof it took.
+**A misspelt SETTING is named, on save**: `"wals": {...}` or `"spacingInch":
+24` gives "construction.walls.spacingInch is not a construction setting. Did
+you mean spacingIn?" (`CONSTRUCTION_SCHEMA` in `model/construction.js`).
+These are strict problems (`strictProblems()` in `model/company.js`): the
+Dealer Center refuses a save that ADDS one, `node tools/check-companies.mjs`
+fails on one in a company file, but a price list that already held one still
+opens everywhere -- on read it simply changes nothing. A new setting a part
+reads must go into `CONSTRUCTION_SCHEMA` too (`check-construction.mjs`
+proves every path a part reads is known). A lumber size like `"2by6"` still
+stops the framing drawing, and the Framing view falls back to the finished
+building with a note. So after every change, open the Framing view and read
+the note -- that is the proof it took.
 
 ## Common changes (in the company's file)
 
@@ -101,6 +114,18 @@ standard manufacturer file** changes every Barnwright building and turns
 `check-golden.mjs` red -- do not, unless Alan decides it (then see the
 `check-the-look` skill).
 
+**The roof pitch, the barn roof height, the eave and gable-end overhangs and
+the wooden shop door height are How it's built numbers** (`KNOB_PATHS` in
+`model/build-settings.js`: `roof.shapes.*.rise`, `roof.dormerRise`,
+`roof.shapes.gambrel.peakIn`, `*.eaveOverhang`, `*.rakeOverhang`,
+`roof.shapes.gambrel.endOverhang`, `openings.doorHeightIn`). For a company,
+set them in How it's built (`offer.<KEY>.built` or the business-wide
+`built`), never in its raw `construction`: a save that adds one there is
+refused ("The construction settings hold the roof pitch. Set it in How it's
+built instead."). The same goes for the wall height, the porch depth, the
+side porch lengths and the dormer side, which are style traits. Use the
+`how-its-built` skill.
+
 ## When Alan confirms or corrects an assumption
 
 `docs/FOR-ALAN.md` ("What you still need to decide") lists every number we
@@ -108,7 +133,19 @@ chose. When he answers:
 
 * record and apply the fact within its confirmed scope, usually the
   learning example or that company's settings; use the library for
-  everybody only when Alan has established that wider scope;
+  everybody only when Alan has established that wider scope. A How it's
+  built number he confirms for every dealer (the roof pitch, the barn roof
+  height, an overhang, a wall height, the shop door) goes in the style's
+  `built` block in `library/manufacturers/standard.json` with a `_source`
+  note, never in `library/construction.json` or the raw traits, which keep
+  Barnwright's numbers for the golden test (Oct 2026, "yes match": the
+  Utility Shed, Side Utility, Lofted Barn and Side Lofted Barn; Oct 11
+  2026: the Garage, Dog Kennel, Garden Utility, Dormer Shed, Metal Lofted
+  Barn and Lofted Barn Garage; the `how-its-built` skill). Then add the
+  style and its numbers to `SHOP_NUMBERS` in `tools/check-shop-numbers.mjs`
+  (and `NOT_OFFERED` for a gable window that no longer fits), run it with
+  `--record`, say why in the commit, and run
+  `node tools/check-style-sizes.mjs`;
 * take the ASSUMPTION note off: `site.anchorsAssumed` in
   `library/construction.json`, `"assumed": true` on a style's `loft`, and the
   word ASSUMPTION in the `_help` note;

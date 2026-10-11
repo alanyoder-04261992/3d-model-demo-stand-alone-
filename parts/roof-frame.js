@@ -90,7 +90,8 @@ import { texFlat } from "../engine/tex-names.js";
 import { ROOF_TH, RAKE_STEP, roofShape, cottageEave, profileYat } from "../model/roof-shapes.js";
 import { openingRect } from "../model/layout.js";
 import { pickRule } from "../model/construction.js";
-import { eaveOverhangs, rakeOverhangOf } from "./roofing.js";
+import { eaveOverhangs, gableEndOverhangOf } from "./roofing.js";
+import { dormerSideOf } from "../model/frame.js";
 import { ventSpot } from "./gable-vent.js";
 import { trussStudyMembers } from "../model/truss-study.js";
 import { utilityRoofStudyMembers } from "../model/utility-roof-study.js";
@@ -212,7 +213,7 @@ export function roofSection(plan) {
   var sh = roofShape(t, con);
   var EO = eaveOverhangs(plan);
   var gam = t.roof === "gambrel", lean = t.roof === "lean", slp = t.roof === "slope", cot = !!t.cottage;
-  var ov = gam ? 0.10 : rakeOverhangOf(plan);            /* profileRoof forces a gambrel to 0.10 */
+  var ov = gableEndOverhangOf(plan);                       /* a gambrel's end overhang (0.10 standard), as profileRoof draws it */
   var P = plan.prof.map(function (q) { return q.slice(); });
   function ext(i, j, d) { var a = P[i], b = P[j]; var dx = a[0] - b[0], dy = a[1] - b[1], l = Math.hypot(dx, dy) || 1; a[0] += dx / l * d; a[1] += dy / l * d; }
   /* the same eave rules, in the same order, as parts/roofing.js profileRoof */
@@ -407,7 +408,9 @@ export function loftZones(plan) {
    hx0..hx1 the upper header (just clear of the king post / ridge board, where
    the main trusses are cut), xFi..xFw the front wall's framing (inside the
    face siding at xF), and the dormer roof's underside line (its steel is
-   drawn 0.02 above the line through (xI, yI) and (xF, yT)). */
+   drawn 0.02 above the line through (xI, yI) and (xF, yT)). On a back-side
+   dormer (side -1) these are the dormer's own x, mirrored into the world by
+   its users (mirrorMembers). */
 export function dormerGeom(plan) {
   var t = plan.t, st = plan.state;
   if (!t.dormer || !st || st.dormer === "none") return null;
@@ -443,6 +446,10 @@ export function dormerGeom(plan) {
     W: W, L: L, topY: topY, D: D, hw: hw, xF: xF, yB: yB, xI: xI, yI: yI, faceH: faceH, yT: yT, m: m,
     ovF: ovF, ovS: ovS, yF: yF, wins: wins,
     xFw: xF - 0.02, xFi: xF - 0.02 - stud.d, hx0: hx0, hx1: hx0 + 2 * chord.t,
+    /* the side it stands on: +1 the door side (+x), -1 the back (-x). Every x
+       above is the dormer's own, measured toward its front; world x is
+       side * x. */
+    side: dormerSideOf(t),
     /* the dormer roof's underside: y at x */
     roofY: function (x) { return yI + 0.02 - m * (x - xI); },
     /* its soffit, from the top of the face out to the fascia */
@@ -463,10 +470,23 @@ export function dormerHoles(plan) {
   if (!dg) return [];
   var stud = lumberFt(((plan.construction || {}).walls || {}).stud || "2x4");
   var zi = dg.hw - 0.02 - stud.d, zw = dg.hw - 0.02;
-  return [
+  var boxes = [
     { x0: dg.hx0, x1: dg.xFw, z0: -zi, z1: zi },
     { x0: dg.xFi, x1: dg.xFw, z0: -zw, z1: zw },
   ];
+  /* in world x: a back-side dormer's holes are on -x */
+  return dg.side < 0 ? boxes.map(function (b) { return { x0: -b.x1, x1: -b.x0, z0: b.z0, z1: b.z1 }; }) : boxes;
+}
+
+/* Members (polygons in x, y run along z) mirrored to the other side of the
+   building: x negated, the polygon's points in reverse order so it keeps its
+   winding. A back-side dormer's framing is built on +x and mirrored. */
+export function mirrorMembers(list) {
+  return list.map(function (m) {
+    var o = Object.assign({}, m);
+    o.poly = m.poly.map(function (q) { return [-q[0], q[1]]; }).reverse();
+    return o;
+  });
 }
 
 /* WHERE EVERY TRUSS (or rafter pair) STANDS: one at each gable end, flush
@@ -629,8 +649,18 @@ function mk(poly, z0, z1, kind, mat, extra) {
   return m;
 }
 
-/* The lumber of one truss (or rafter pair) at tr.z. */
+/* The lumber of one truss (or rafter pair) at tr.z. A truss a back-side
+   dormer cuts or trims is worked out as if the dormer stood on +x and then
+   mirrored: the truss itself is symmetric (a dormer style's roof is a
+   gable), so this is the same as cutting it on -x. End trusses are never
+   mirrored (their gable openings are where they are). */
 function trussMembers(plan, lay, tr) {
+  if (lay.dormer && lay.dormer.side < 0 && !tr.end && (tr.cut || tr.trim)) {
+    return mirrorMembers(trussMembersAt(plan, Object.assign({}, lay, { dormer: Object.assign({}, lay.dormer, { side: 1 }) }), tr));
+  }
+  return trussMembersAt(plan, lay, tr);
+}
+function trussMembersAt(plan, lay, tr) {
   var sec = lay.sec, W = plan.W, topY = plan.topY, P = sec.P;
   var ct = sec.chord.t, cd = sec.chord.d, dT = sec.deckT, ww = cd;
   var z0 = tr.z - ct / 2, z1 = tr.z + ct / 2, gT = GUSSET_T;

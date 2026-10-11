@@ -552,8 +552,8 @@ ok(`each Dealer Center shows 10 to 15 answers (connected ${answersFor(true).leng
   && ANSWERS.every((a) => a.when === undefined || a.when === "connected" || a.when === "not-connected"));
 {
   const ids = (connected) => answersFor(connected).map((a) => a.id);
-  ok("what exists only when connected (a plan, its notes at the top, Help from Barnwright) shows only there; the demo and Alan's own business get their own way to open a lot",
-    ["another-lot", "stopped", "barnwright-look"].every((id) => ids(true).includes(id) && !ids(false).includes(id))
+  ok("what exists only when connected (a plan, its notes at the top, the Barnwright card) shows only there; the demo and Alan's own business get their own way to open a lot",
+    ["another-lot", "stopped", "barnwright"].every((id) => ids(true).includes(id) && !ids(false).includes(id))
     && ids(false).includes("another-lot-own") && !ids(true).includes("another-lot-own"), JSON.stringify([ids(true), ids(false)]));
   const all = ANSWERS.map((a) => `${a.title} ${a.lines.join(" ")}`).join(" ");
   ok("no answer names a price (a business's lot fee is its own) or says \"below\" (on a computer the box is beside them)", !/\$\s?\d/.test(all) && !/\bbelow\b/i.test(all), (all.match(/.{30}(?:\$\s?\d|below).{20}/i) || [""])[0]);

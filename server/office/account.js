@@ -19,6 +19,13 @@
      * "Help from Barnwright": the owner lets Barnwright run checks for 1 to
        24 hours. Every support visit is checked online with the control room
        and against the owner's switch here, and written in a short log.
+       It is one half of the owner's card, Settings, Barnwright; the other
+       half, letting Barnwright change the price list, stays here in the
+       Dealer Center (setup-access.js) and shares the same log;
+     * the check-in also tells the control room where Barnwright setup
+       access stands (setup.report(), docs/OFFICE.md "The check-in"). That
+       report has its own 500 ms and its own try: whatever happens to it,
+       the check-in goes and the lease renews.
 
    license is null when the Dealer Center is not connected to a control room
    (Alan's own business, the sample on this computer, the demo): then
@@ -33,7 +40,8 @@ import { canAddDealership } from "./license-core.js";
 
 const CHECK_IN_EVERY = 6 * 3600_000;      /* check in again after six hours */
 const HOLD_FOR = 2 * 60_000;              /* a half-finished lot opening holds its place this long */
-const LOG_SIZE = 50;
+const LOG_SIZE = 100;
+const REPORT_MS = 500;                    /* setup.report() gets this long, then the check-in goes without it */
 
 const HELP = "barnwright-help";
 const HELP_LOG = "barnwright-help-log";
@@ -50,7 +58,20 @@ const lotLimitWords = (limit) => limit === 0
   ? "Your Barnwright plan doesn't include open lots. Contact Barnwright to add one."
   : `Your Barnwright plan includes ${limit} open lot${limit === 1 ? "" : "s"}. Close a lot, or contact Barnwright to add more.`;
 
-export function createAccount({ store, license, lots, now, appVersion = "dealer-center", log = console.error }) {
+/* -> what the promise gives, or throws when it takes over ms. */
+export async function withinMs(promise, ms) {
+  let timer;
+  try {
+    return await Promise.race([promise, new Promise((_, failed) => { timer = setTimeout(() => failed(Object.assign(new Error("Took too long"), { name: "TimeoutError" })), ms); })]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+const hoursWords = (n) => `${n} hour${n === 1 ? "" : "s"}`;
+
+/* setupReport: optional async () -> the check-in's `setup` (setup-access.js report) */
+export function createAccount({ store, license, lots, now, appVersion = "dealer-center", log = console.error, setupReport = null }) {
   const connected = !!license;
   const iso = () => now().toISOString();
 
@@ -84,7 +105,15 @@ export function createAccount({ store, license, lots, now, appVersion = "dealer-
     try {
       const a = await license.peekAccess();
       if (!force && a.checkedAt && now().getTime() - a.checkedAt < CHECK_IN_EVERY) return;
-      await license.refresh({ appVersion, dealerCount: (await openLots()).open.length });
+      const dealerCount = (await openLots()).open.length;
+      let setup = null;
+      if (setupReport) {
+        try { setup = await withinMs(Promise.resolve().then(setupReport), REPORT_MS); } catch (error) {
+          setup = null;
+          log("Barnwright check-in goes without the setup report:", error?.name || "Error");
+        }
+      }
+      await license.refresh({ appVersion, dealerCount, ...(setup ? { setup } : {}) });
     } catch (error) {
       log("Barnwright check-in failed:", error?.name || "Error");
     }
@@ -152,8 +181,12 @@ export function createAccount({ store, license, lots, now, appVersion = "dealer-
 
   /* ---- help from Barnwright --------------------------------------------------------------- */
 
-  async function note(words) {
-    await store.change(HELP_LOG, (doc) => ({ entries: [{ at: iso(), words }, ...(doc?.entries || [])].slice(0, LOG_SIZE) }));
+  /* One line in the owner's log ({at, words, until?}): the newest first,
+     100 kept, 10 shown. Times are never inside the words; the browser shows
+     `at` and `until` in the owner's own time. */
+  async function note(words, { until = null } = {}) {
+    const entry = { at: iso(), words, ...(until ? { until } : {}) };
+    await store.change(HELP_LOG, (doc) => ({ entries: [entry, ...(doc?.entries || [])].slice(0, LOG_SIZE) }));
   }
 
   async function help() {
@@ -164,8 +197,10 @@ export function createAccount({ store, license, lots, now, appVersion = "dealer-
     return { on, until: on ? consent.expiresAt : null, reason: on ? consent.reason : "", log: logged.slice(0, 10) };
   }
 
-  /* person: the owner (index.js checks). data: {on, reason, hours} */
-  async function setHelp(person, data) {
+  /* person: the owner (index.js checks). data: {on, reason, hours}.
+     quiet: write no log line (setup-access.js writes the one line for the
+     owner's card when it turns this on or off with the change switch). */
+  async function setHelp(person, data, { quiet = false } = {}) {
     if (!connected) fail(404, "This Dealer Center isn't connected to Barnwright.");
     const who = person.name || person.email;
     const approver = async () => ({ ownerId: person.email });
@@ -181,7 +216,7 @@ export function createAccount({ store, license, lots, now, appVersion = "dealer-
         fail(503, "Barnwright couldn't be reached just now, so help is still off. Try again in a minute.");
       }
       await store.put(HELP, grant);
-      await note(`${who} let Barnwright help for ${hours} hour${hours === 1 ? "" : "s"}: ${reason}`);
+      if (!quiet) await note(`${who} let Barnwright run checks for ${hoursWords(hours)}: ${reason}`, { until: grant.expiresAt });
     } else if (data.on === false) {
       /* off here first: a support visit needs this switch on, so access ends now even if Barnwright can't be reached */
       const current = await store.get(HELP);
@@ -192,16 +227,29 @@ export function createAccount({ store, license, lots, now, appVersion = "dealer-
       } catch (error) {
         log("Barnwright help could not be turned off at the control room:", error?.name || "Error");
       }
-      await note(`${who} turned off help from Barnwright.`);
+      if (!quiet) await note(`${who} turned off Barnwright's access.`);
     } else {
       fail(422, "Say whether Barnwright can help.");
     }
     return help();
   }
 
+  /* A Barnwright setup pass (setup-access.js, the door) is never a support
+     pass: it is refused here, before the control room is asked about it. */
+  function setupPassIn(token) {
+    try {
+      const head = String(token).split(".")[0].replace(/-/g, "+").replace(/_/g, "/");
+      const claims = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(head + "=".repeat((4 - (head.length % 4)) % 4)), (c) => c.charCodeAt(0))));
+      return claims?.purpose === "setup-pass";
+    } catch {
+      return false;
+    }
+  }
+
   /* POST /.netlify/functions/tenant-diagnostics from the control room, with
      a support pass good for at most 15 minutes. Answers only how the
-     Dealer Center is running: no customers, no settings, no keys. */
+     Dealer Center is running: no customers, no settings, no keys. A setup
+     pass is refused the same way as a support pass that doesn't match. */
   let lastRefusalNote = 0;
   async function diagnostics(request) {
     if (!connected) return json({ error: "This Dealer Center isn't connected to Barnwright." }, 404);
@@ -210,6 +258,7 @@ export function createAccount({ store, license, lots, now, appVersion = "dealer-
     const token = auth.startsWith("Bearer ") ? auth.slice(7).trim() : "";
     let claims;
     try {
+      if (setupPassIn(token)) throw new Error("A setup pass is not a support pass");
       claims = await license.verifySupportAccess(token, async () => await store.get(HELP));
     } catch {
       /* written down only while help is on, and at most once a minute */
@@ -232,5 +281,5 @@ export function createAccount({ store, license, lots, now, appVersion = "dealer-
     });
   }
 
-  return { connected, status, checkIn, mustWrite, designerOpen, holdLot, keepLot, freeLot, help, setHelp, diagnostics };
+  return { connected, status, checkIn, mustWrite, designerOpen, holdLot, keepLot, freeLot, help, setHelp, diagnostics, note };
 }

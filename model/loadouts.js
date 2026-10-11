@@ -39,6 +39,7 @@
    includedItems(key, W, L, ctx)  the named Barnwright recipe for style key. */
 
 import { CASING } from "../engine/constants.js";
+import { porchDepthOf } from "./frame.js";
 
 function toItems(s) {
   /* A fourth entry, when a building comes with a DOUBLE of something - two
@@ -124,6 +125,9 @@ export function includedItems(t, W, L, ctx) {
       if (t === "SLC") s.push(["fake", "F", 0]);
       break;
     case "SC": case "LSC": {
+      /* the end-wall window sits in the middle of the closed part of the end
+         wall: half the porch depth (4 ft standard) off the centre */
+      var hd = (ctx.porchDepth != null ? ctx.porchDepth : 4) / 2;
       var sp = ctx.span, zc = (sp.z0 + sp.z1) / 2, eW = sp.mid ? "F" : (sp.f ? "B" : "F");
       s = [["d36lite", "S1", sp.P >= 12 ? 0.0 : 1.4],
            ["w23", "S1", sp.P >= 12 ? -(sp.P / 2 - 1.9) : -1.7]];
@@ -131,11 +135,11 @@ export function includedItems(t, W, L, ctx) {
       if (sp.mid) {
         s.push(["w23", "R", (sp.P / 2 + 2.7)]);
         s.push(["w23", "R", -(sp.P / 2 + 2.7)]);
-        s.push(["w23", "F", -2]);
-        s.push(["w23", "B", 2]);
+        s.push(["w23", "F", -hd]);
+        s.push(["w23", "B", hd]);
       } else {
         s.push(["w23", "R", sp.f ? -sp.P / 2 : sp.P / 2]);
-        s.push(["w23", eW, eW === "F" ? -2 : 2]);
+        s.push(["w23", eW, eW === "F" ? -hd : hd]);
       }
       var dz = zc - (sp.P >= 12 ? 0.0 : 1.4);   /* door position */
       s.push(["ppost", "R", -(dz - 2.2)]);
@@ -342,7 +346,7 @@ export function standardItems(t, W, L, ctx, key) {
     if (lo.indexOf("barnwright:") !== 0 || NAMED_RECIPES.indexOf(lo) < 0) {
       throw new Error(`Style ${key || t.name}: its loadout "${lo}" is not a known recipe (use one of ${NAMED_RECIPES.join(", ")} or a data list).`);
     }
-    return includedItems(lo.slice("barnwright:".length), W, L, ctx);
+    return includedItems(lo.slice("barnwright:".length), W, L, Object.assign({}, ctx, { porchDepth: porchDepthOf(t) }));
   }
   if (Array.isArray(lo)) return evalDataRecipe(lo, W, L, ctx);
   if (lo == null) return [];

@@ -202,6 +202,9 @@ The fixed height datum below belongs to the normal model's legacy path.
   places sheets above it instead.
 * `porch.joist` -- read here for the porch-deck part's joists.
 * `walls.stud` -- its depth, to find the bottom plate of a cross wall.
+* How it's built (Oct 2026): `roomOutline` and `porchOutlines` follow the
+  porch depth (`plan.t.porchDepthFt`, 4 ft standard) for the side porch's
+  notch; the front and wrap porches read it through `plan.ws`.
 
 ## Where it came from in Barnwright
 

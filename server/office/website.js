@@ -10,7 +10,13 @@
    anybody else becomes a new customer. Each send carries a one-time key, so
    pressing Send twice, or a retry after a dropped connection, makes one
    quote. Sends are limited per visitor and per lot. The answer never
-   repeats the customer's contact details. */
+   repeats the customer's contact details.
+
+   previewLot(slug) is the same lot's 3D designer while it is closed, for
+   the team (signed in) and a Barnwright visit to check the buildings and
+   prices before the owner opens it (the routes check who asks). It is
+   marked preview: true, and a preview never takes a quote: customers still
+   get the closed page and quoteRequest still refuses. */
 
 import { sha256Hex } from "./hash.js";
 import { fail, OfficeError, text, email, phone, bool, onlyKeys } from "./http.js";
@@ -47,6 +53,16 @@ export function createWebsite({ store, now, lots, priceList, customers, account 
     /* the business's Barnwright account stopped changes: a quote is a change, so the link closes the same way */
     if (account && !(await account.designerOpen())) closed(brand.name || lot.name, lot.phone || brand.phone);
     return { company: record.data.settings, lot: publicLotFields(lot), version: record.data.version };
+  }
+
+  async function previewLot(slug) {
+    const lot = await lots.get(slug);
+    const record = lot ? await priceList.current() : null;
+    if (!lot || !record) fail(404, "We couldn't find that lot.");
+    /* why customers can't see it: the whole 3D designer is closed (opened in
+       Settings), or only this lot is (opened in Lots); null when it is open */
+    const closed = record.data.settings.status === "suspended" ? "business" : lot.active === false ? "lot" : null;
+    return { company: record.data.settings, lot: publicLotFields(lot), version: record.data.version, preview: true, closed };
   }
 
   /* A counter per time window, safe when many arrive at once. */
@@ -172,5 +188,5 @@ export function createWebsite({ store, now, lots, priceList, customers, account 
     return { receipt, created: true };
   }
 
-  return { publicLot, quoteRequest };
+  return { publicLot, previewLot, quoteRequest };
 }

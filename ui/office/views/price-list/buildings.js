@@ -16,6 +16,7 @@ import {
   WIDTH_MIN, WIDTH_MAX, LENGTH_MIN, LENGTH_MAX, COMMON_WIDTHS, PRICE_CAP, NAME_MAX,
 } from "./model.js";
 import { priceInput, switchInput, msgs } from "./bits.js";
+import { builtSection, builtCard, builtNotes, builtLines } from "./built.js";
 
 export function buildingsTab() {
   return S.draft ? ownerView() : priceSheet();
@@ -37,8 +38,10 @@ function ownerView() {
         button("Change prices", openChangePrices, { icon: "dollar" }),
         button("Add a building style", openAddStyle, { kind: "primary", icon: "plus" }))),
     msgs("buildings"),
+    builtNotes(),
     groups.map(([label, keys]) => groupCard(label, keys)),
-    opensOnCard());
+    opensOnCard(),
+    builtCard());
 }
 
 function groupCard(label, keys) {
@@ -144,7 +147,8 @@ function styleEditor(key, entry, lib, { nameEl, meta, own }) {
     h("h3", { class: "pl-sub" }, "Sizes and prices"),
     list,
     addSizeForm(key, entry),
-    msgs(`style:${key}`));
+    msgs(`style:${key}`),
+    builtSection(key, entry));
 }
 
 function addSizeForm(key, entry) {
@@ -527,7 +531,8 @@ function priceSheet() {
       const card = h("article", { class: "card pl-sheet-card" },
         h("h3", {}, name),
         h("p", { class: "pl-sheet-meta" }, `${plural(sizes.length, "size")} · from ${money(fromPrice(entry.sizes))}`),
-        h("ul", { class: "pl-sheet-rows" }, rows));
+        h("ul", { class: "pl-sheet-rows" }, rows),
+        builtLines(k));
       cards.push({ card, name: nameKey(name), rows, sizes });
       return card;
     }));

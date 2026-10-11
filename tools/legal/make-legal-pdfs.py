@@ -33,6 +33,12 @@ ticks "I agree" and types their name.
                                              with the first lot, $250 each lot after
   docs/legal/papers.json                     the list the Control Room's Papers
                                              page reads (from main on GitHub)
+  docs/legal/terms-sha256.json               the SHA-256 of every terms.json
+                                             written for terms 2.2 or later, by
+                                             version (added, never removed): the
+                                             sign-up agreements a Dealer Center
+                                             can take before the owner first
+                                             signs in (terms_sha256.py)
 
 Run:  python3 tools/legal/make-legal-pdfs.py            (into the repository)
       python3 tools/legal/make-legal-pdfs.py <folder>   (all of them there, to look at)
@@ -441,6 +447,26 @@ GUIDE_INTRO = [
     "Everything works the same, but nothing is real: no texts, no emails, no payments.",
 ]
 
+# SET UP THEIR PRICE LIST WITH CLAUDE (Alan, Oct 2026: "add a note in setup
+# page ... /dealersetup. when to do what"): the same order as the note on
+# each customer's page in the Control Room (control-room
+# shared/claude-note.ts), which also says what to do now for that customer.
+# Until terms 2.2 are out (TERMS_VERSION), Claude can make the plan but can't
+# change prices: the paper says so, and stops saying it when 2.2 is made here.
+TERMS_OUT_22 = tuple(int(n) for n in TERMS_VERSION.split(".")) >= (2, 2)
+CLAUDE_STEP = [
+    "After their Dealer Center shows <b>Connected</b>: in the Claude app, type <b>/dealersetup</b> and their business name. "
+    "Claude reads your visit photos and shows you one plan. It changes nothing until you say go, and you tap <b>Allow</b> for each change. "
+    "First time? Add Claude to your Control Room once: <b>Papers</b>, <b>Connect Claude</b>.",
+    "When: right away if they signed up under the Barnwright Terms and Conditions 2.2 or later, even before the owner signs in. "
+    "If they signed up before 2.2, once the owner signs in and agrees to the new terms in First setup. "
+    + ("" if TERMS_OUT_22 else "Until terms 2.2 are out, Claude can make the plan but can't change their prices. ")
+    + "Their customer page in your Control Room always says which, under <b>Set up their price list with Claude</b>.",
+    "Check it: tap <b>Open their price list</b> on the customer. The owner checks it in their Dealer Center with <b>Look at the preview</b>.",
+    "After the owner opens it to customers, Claude can only change their prices while the owner has <b>Run checks and change my price list "
+    "and settings</b> turned on, and each change waits for you to tap <b>Make the change</b>.",
+]
+
 PARTS = [
     ("Before your first customer", "Once, about 10 minutes, on a computer.", [
         ("Give your Control Room a Netlify key", [
@@ -465,7 +491,7 @@ PARTS = [
             "Your Control Room fills in everything they typed and shows <b>Signed</b> and <b>Card saved</b>, with their name and the time.",
         ]),
         ("Take the photos", [
-            "On the customer, tap <b>Take photos</b> and pick what you are shooting: <b>Buildings</b>, <b>Price list</b>, <b>Options and colors</b> or <b>Other</b>. Your camera opens. Take as many as you like.",
+            "On the customer, tap <b>Add photos or files</b> and pick what you are adding: <b>Buildings</b>, <b>Price list</b>, <b>Options and colors</b> or <b>Other</b>. Then <b>Take Photo</b> and take as many as you like, or <b>Choose File</b> for a PDF price list.",
             "<b>Buildings</b>: each style they sell, the front and the side, and the inside if they show it.",
             "<b>Price list</b>: every page, flat, in good light, close enough that every number is easy to read.",
             "<b>Options and colors</b>: their doors, windows and options with prices, their color cards (siding, trim, roof), and their logo or sign.",
@@ -480,7 +506,10 @@ PARTS = [
             "When their Dealer Center first opens, your Control Room shows <b>Connected</b>.",
         ]),
     ]),
-    ("Part 3. At the owner's computer", "About 30 minutes, with the owner.", [
+    ("Part 3. Their price list, with Claude", "After their Dealer Center shows Connected.", [
+        ("Set up their price list with Claude", CLAUDE_STEP),
+    ]),
+    ("Part 4. At the owner's computer", "About 30 minutes, with the owner.", [
         ("The owner's login", [
             "On the owner's computer, open <b>https://(their 3D designer web address)/dealer</b>, for example https://cedar-ridge-sheds." + DOMAIN + "/dealer.",
             "They tap <b>Make your login</b>, type the email from their sign-up and a password, then open the email that comes and tap the link in it.",
@@ -492,7 +521,7 @@ PARTS = [
             "<b>Phone</b>: open the same address, tap <b>Share</b>, then <b>Add to Home Screen</b>.",
         ]),
         ("Their prices and options, from your photos", [
-            "<b>Price list</b>: turn off the styles they don't sell and type their price for each size, door, window and option, using your <b>Price list</b> and <b>Options and colors</b> photos.",
+            "<b>Price list</b>: check what Claude set up with the owner. Anything not set up yet: turn off the styles they don't sell and type their price for each size, door, window and option, using your <b>Price list</b> and <b>Options and colors</b> photos.",
             "<b>Settings</b>: their logo, their colors and the line under the price.",
         ]),
         ("Their other lots and their team", [
@@ -500,14 +529,14 @@ PARTS = [
             "<b>Team</b>, <b>Add a person</b>: their managers and dealers. Each one gets a message saying how to make their login.",
         ]),
         ("Open it to customers", [
-            "Open each lot's <b>3D designer link</b> and check the buildings and prices with the owner.",
-            "<b>Settings</b>, <b>3D designer</b>, <b>Open to customers</b>, <b>Save settings</b>.",
+            "<b>Lots</b>, each lot, <b>Look at the preview</b>: check the buildings and prices with the owner.",
+            "Then <b>Settings</b>, <b>3D designer</b>, <b>Open to customers</b>, <b>Save settings</b>.",
             "<b>Lots</b>, each lot, <b>Put the designer on your website</b>, <b>Copy website code</b>: send it to whoever runs their website.",
             "Send a test quote from a lot's 3D designer link. It shows up in <b>Customers</b> as New.",
             "Give the owner the <b>Welcome Sheet</b> (on your Papers page). It has all of this for them.",
         ]),
     ]),
-    ("Part 4. Start", "When everything works.", [
+    ("Part 5. Start", "When everything works.", [
         ("Start the monthly fee", [
             "In your Control Room, on the customer, tap <b>Start monthly fee</b>. Check the amount and the card, then tap <b>Start and charge the card</b>. Their card is charged that day and on the same day every month after.",
             "No card saved? Then <b>Start monthly fee</b> gives you a payment link instead: <b>Text it</b> or <b>Email it</b>.",
@@ -1083,6 +1112,12 @@ else:
     price_out = os.path.join(ROOT, "docs", "legal", "Barnwright-Price-Sheet.pdf")
 terms_pdf(terms_out)
 write_json(terms_json_out, terms_json())
+if len(sys.argv) == 1:
+    # the copies of the terms this Dealer Center has (docs/legal/terms-sha256.json)
+    sys.path.insert(0, HERE)
+    import terms_sha256
+    with open(terms_json_out, "rb") as f:
+        terms_sha256.add(os.path.join(ROOT, "docs", "legal", "terms-sha256.json"), TERMS_VERSION, f.read())
 steps_pdf(steps_out)
 welcome_pdf(welcome_out)
 questions_pdf(questions_out)

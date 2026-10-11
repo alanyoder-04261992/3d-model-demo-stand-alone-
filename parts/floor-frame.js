@@ -7,7 +7,8 @@
    shop's spacing on centre, measured from the back end. The decking goes on
    top (parts/floor-deck.js). On a building with a front porch (a cabin's
    porch "F", or the corner porch "C") this frame stops at the front wall --
-   its front end joist is right under that wall -- and the 4 ft porch deck in
+   its front end joist is right under that wall -- and the porch deck (the
+   porch depth deep, 4 ft standard) in
    front is framed on the same skids by parts/porch-deck-frame.js. A side
    porch and the corner porch's side run are part of this frame: the joists
    run straight under the porch walls, as they do on the real building.
@@ -48,6 +49,7 @@ import { y0, LUMBER } from "../engine/constants.js";
 import { texFlat } from "../engine/tex-names.js";
 import { floorInset, FLOOR_TOP_OF_SKIDS } from "./floor.js";
 import { norm3, sub3, cross3, dot3 } from "../engine/math.js";
+import { porchDepthOf } from "../model/frame.js";
 
 /* The wall frame's outer face stands this far inside the siding plane
    (docs/ARCHITECTURE.md Framing datums 2: studs from o = -0.02 inward). */
@@ -299,7 +301,7 @@ export function roomOutline(plan) {
   if (t.kennel) return rect(-W / 2, W / 2, -L / 2, 0);
   if (t.porch === "F") return rect(-W / 2, W / 2, -L / 2, ws.F.at);
   if (t.porch === "S") {
-    var xn = W / 2 - 4;
+    var xn = W / 2 - porchDepthOf(t);
     if (sp.mid) return [[-W / 2, -L / 2], [W / 2, -L / 2], [W / 2, sp.z0], [xn, sp.z0], [xn, sp.z1], [W / 2, sp.z1], [W / 2, L / 2], [-W / 2, L / 2]];
     if (sp.f) return [[-W / 2, -L / 2], [xn, -L / 2], [xn, sp.z1], [W / 2, sp.z1], [W / 2, L / 2], [-W / 2, L / 2]];
     return [[-W / 2, -L / 2], [W / 2, -L / 2], [W / 2, sp.z0], [xn, sp.z0], [xn, L / 2], [-W / 2, L / 2]];
@@ -325,7 +327,7 @@ function cornerPorchPoints(plan) {
 export function porchOutlines(plan) {
   var W = plan.W, L = plan.L, t = plan.t, ws = plan.ws, sp = plan.span;
   if (t.porch === "F") return [rect(-W / 2, W / 2, ws.F.at, L / 2)];
-  if (t.porch === "S") return [rect(W / 2 - 4, W / 2, sp.z0, sp.z1)];
+  if (t.porch === "S") return [rect(W / 2 - porchDepthOf(t), W / 2, sp.z0, sp.z1)];
   if (t.porch === "C") {
     var a = cornerPorchPoints(plan);
     return [[a.rEnd, [W / 2, L / 2], [-W / 2, L / 2], [-W / 2, ws.F.at], a.p1end, a.p2top, a.p3in]];

@@ -230,7 +230,9 @@ parts/              one file per real-life part of a shed; index.js is the
                     building steps; parts/openings/ holds the doors and windows
 library/            construction.json: how the sheds are really built (joists,
                     studs, trusses...); manufacturers/standard.json: the styles,
-                    doors, windows and colours of the standard line (no prices)
+                    doors, windows and colours of the standard line (no prices);
+                    style-refs/: a picture of each style and its facts, for
+                    Barnwright's Control Room (never in a build)
 companies/          one folder per company: demo (every style, example prices),
                     starter (a small made-up company), _template (what
                     new-company copies)
@@ -262,6 +264,7 @@ docs/               ARCHITECTURE.md (the contract), DIFFERENCES.md,
 | `node tools/build-headers.mjs` | writes `_headers` from the companies' settings (`--check` says whether it is up to date) |
 | `node tools/capture-golden.mjs` | records Barnwright's drawing into `test/golden/` again (only on purpose; `--check` proves it is repeatable) |
 | `node tools/extract-barnwright-catalogue.mjs` | records Barnwright's exact price and parts tables (for the checks only) |
+| `node tools/make-style-refs.mjs` | draws every library style from its front corner and straight at its front end, and writes `library/style-refs/` with `styles.json` (the facts Barnwright's Control Room shows Claude); `--port` picks another port, `--only UT,LB` redraws just those |
 
 The `acme` company and `prices.csv` above are examples: a real company gets
 its own id and spreadsheet. The `new-company` skill walks through all of it.
@@ -293,8 +296,11 @@ Chromium's software graphics, each on its own port.
 | `check-imports.mjs` | no | every file meant to run without a browser really does; no JSON imports; no stray `Math.random` |
 | `check-parts.mjs` | no | every part is a valid part, its caption fills in, it has its skill, and every skill has its part |
 | `check-construction.mjs` | no | the construction settings are read, merged and settled per building the way the contract says |
+| `check-build-settings.mjs` | no | How it's built: the porch depth, side porch lengths, dormer side, barn roof height and overhangs and eaves measured level are settings the drawing follows; typed numbers like 5/12 or 7 ft 9 1/2 in are read and said back; which number wins; an extra's construction settings are checked; and with no setting every building is drawn as before |
 | `check-framing.mjs` | no | the floor, wall, foundation, porch-deck and inside framing is built like a real shed on 1,000+ buildings (and changes nothing in the finished view) |
 | `check-framing-roof.mjs` | no | the trusses, gable studs, roof deck, loft and dormer framing fit inside the roof as drawn and follow the construction numbers |
+| `check-style-sizes.mjs` | no | every style at every size it is sold in is a building a shop could build: doors and windows on their walls and clear of each other, everything under the roof, the roof, dormer, porch and loft in shape, the framing builds; every check caught on a broken test style; kept problems listed with their reasons |
+| `check-shop-numbers.mjs` | no | the standard buildings use Alan's shop numbers where he gave them (5/12 roofs and 4 in eaves on the Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility, 7 ft 9 1/2 in walls on the first three; the Dormer Shed's main roof at 7/12; 3 ft 7 3/4 in, 4 ft and 4 ft 3 in barn roofs at 8, 10 and 12 ft wide on the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage, 6 ft 7 1/2 in walls on the first three) and Barnwright's numbers everywhere else (the Metal Garage and Metal Utility too); 14 ft barns keep their height; a gable window too tall for the gable is not offered; no sample price list has a Steep roof; every library style at every size is exactly as recorded in `test/golden-shop/shop-standard.json` (`--record` writes it again, on purpose) |
 | `check-companies.mjs` | yes | a company is one checked settings file, never given a price it did not set; about 35 mistakes give the right plain-English error |
 | `check-design.mjs` | no | a design saved, shared and opened again is the same building at the same price; nothing missing is dropped silently |
 | `check-floor-lesson.mjs` | no | the lesson starts with supports; all eight selections preserve original floor geometry, and measurements match drawn pieces |
@@ -313,7 +319,10 @@ Chromium's software graphics, each on its own port.
 | `check-style-variants.mjs` | no | a business's own style built like a library style draws, comes with and prices exactly like it; named options; every mistake in plain words |
 | `check-dealer-center.mjs` | yes | the Dealer Center in Chromium: every screen for the owner, a manager and a dealer on a desktop and a phone, its app manifest (Chromium can install it), a price change reaching every lot's designer, a website quote landing on its lot, designing for a customer, the "try it" demo, and Help (asking Barnwright and seeing the answer, problem reports from a screen and a designer) |
 | `check-control-room.mjs` | no | a business's Dealer Center and Barnwright's control room: leases signed by the control room read the same way; changes stop and 3D designer links close when the account is off or out of touch for 7 days; open lots never pass the plan's number; help from Barnwright only while the owner allows it; the help pass is asked for in the control room's shape and only a well-formed one is taken; the owner agrees to the Barnwright Terms and Conditions version the papers carry; when it checks in, the site's address goes only as a plain https address |
+| `check-how-its-built.mjs` | yes | How it's built in the Dealer Center, in Chromium: the owner's boxes for a style and for the whole business at 1280 and 390 wide (no sideways scrolling, 44 px taps); a typo or a number out of range said under the box as it is typed, with a red count on the tab; Check every size and the save both say in words what does not fit; a good change saves with its History line and a link to the 3D designer; an option's "Roof pitch at least"; the quiet check on open; a manager's read-only numbers; the "try it" demo |
 | `check-help.mjs` | no | Help, against a pretend control room and Sales Inbox: a question goes from the person signed in with only the promised facts (no customers, prices, orders or keys), also while changes are stopped; each person sees the right questions, a dealer's own however many the team asked; plain words for every failure (a refused key or question gives the email), within one time limit; the same words sent again make one question; problem reports: a new kind once a day and how many more times at most once an hour, a day's 30 shared out so a stranger can't use them up (3 for one visitor, 10 for strangers, 10 for the team, 10 count updates), cleaned on the server too; the browser's reporter, failures it caught itself and the times a kind came back included; each Dealer Center's short answers fit it and name only real buttons |
+| `check-setup-access.mjs` | no | Barnwright setup access, against a pretend control room: Barnwright may set up a price list only before the business opens (or while the owner's switch is on), once the owner agreed to terms 2.2; a business set up before this shipped counts as open; the lock keeps the 3D designer's opening, where quotes go and how the buildings are built, except a building style's own How it's built numbers, which the owner's own checks and the every-size check judge (set_built writes them from a builder's words, set_roof_pitch is its short form, and the every-size check's warnings come back with the door's check; its library read gives each style's numbers now and the standard's); the visit's cookie, its 8 hours and its limits; the owner's one Barnwright card; a save from Barnwright first gets plain words; what it reports when it checks in never waits more than half a second; the door the Control Room calls: a one-use pass for each request, every edit with the contract's own words and warnings, saving exactly what was checked, and undo |
+| `check-setup-screens.mjs` | yes | the Barnwright card, the closed banner, the preview and a Barnwright visit in Chromium: the reduced screens and the Done bar, a visit that ends keeps the unsaved work, a link that ran out, the confirm line on Open to customers, and a phone |
 | `check-problem-start.mjs` | yes | the 3D designer passes on a problem while it is still loading, in a real browser: a script that didn't arrive, or one that broke as it started, is one report to the site's own problem address; nothing when it opens normally; and why index.html starts the watcher on its own |
 | `check-dealer-demo.mjs` | no | the "try it" demo runs the real Dealer Center on made-up data with nothing sent anywhere, and only Alan's learning preview and his demo site (no lesson pages there) offer it (a client build has no demo file and no empty-boxes sign-in); every build ships the Dealer Center's app manifest and icons |
 | `check-wording.mjs` | no | every sentence on the Dealer Center's screens, its server answers and emails uses the plain words in docs/OFFICE.md, none of the old ones |
@@ -323,6 +332,7 @@ Chromium's software graphics, each on its own port.
 | `check-leads.mjs` | yes | a quote request reaches the company every way a company can ask for it, and nobody it should not |
 | `check-share.mjs` | yes | "Share my design" opens the same building; look-only links, changed prices and damaged links are handled honestly |
 | `check-embed.mjs` | yes | the designer sits safely inside a company's website: lazy loading, events, full screen, phones, who may show it |
+| `check-style-refs.mjs` | no | the style reference pictures Barnwright's Control Room reads (`library/style-refs/`): every library style has its corner and end pictures, `styles.json` matches the library today (each pitch as N/12, wall heights, doors and windows, sizes, each picture's sha256), the pictures fit what the Control Room sends, and no website build, client package or function carries them |
 | `check-starter.mjs` | yes | a new company can be set up in one command from a spreadsheet, and shows up in the designer, the list and the headers |
 | `check-docs.mjs` | no | every file, tool, command and skill named in this README, docs/FOR-ALAN.md, docs/SELLING.md and the workflow skills exists; every part has its skill; no broken links |
 
@@ -332,10 +342,15 @@ Chromium's software graphics, each on its own port.
    wears the Yoder site's look; the checks open it at `?light=warm`, its
    untouched warm light). Its files are only ever read, by the golden
    capture and the live comparisons.
-2. **The finished building is Barnwright's shape for shape, lit the way the
-   Yoder site lights it.** A red `check-golden.mjs` is a look change: fix the
-   code (see the `check-the-look` skill). True colour is the standard light;
-   Barnwright's warm light is kept for the golden and look checks.
+2. **The engine draws Barnwright's buildings shape for shape, lit the way
+   the Yoder site lights them, and the standard buildings use Alan's shop
+   numbers where he confirmed them** (Utility Shed, Side Utility, Garage, Dog
+   Kennel, Garden Utility, Dormer Shed, Lofted Barn, Side Lofted Barn, Metal
+   Lofted Barn, Lofted Barn Garage). A red `check-golden.mjs` is an engine change: fix the
+   code (see the `check-the-look` skill). The golden and look checks draw
+   Barnwright's own company with Barnwright's numbers and warm light;
+   `check-shop-numbers.mjs` holds the shop numbers. True colour is the
+   standard light.
 3. **One real-life part = one file in `parts/` + one skill.** Read the part's
    skill before changing it; update the skill after (the `add-a-part` skill
    for a new one).

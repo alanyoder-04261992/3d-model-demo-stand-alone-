@@ -28,6 +28,7 @@
    box is the kit's; mT is core.mT; kit.setStage("trim") added (rule 7). */
 
 import { y0 } from "../engine/constants.js";
+import { porchDepthOf } from "../model/frame.js";
 
 export default {
   id: "porch-junction",
@@ -38,18 +39,20 @@ export default {
   build(plan, kit, core) {
     var W=plan.W, L=plan.L, t=plan.t;
     var mT=core.mT, box=kit.box;
+    var d=porchDepthOf(t);   /* the porch depth, 4 ft standard (Barnwright's 4) */
     kit.setStage("trim");
     if(t.porch==="C"){
-      /* white trim at the end-wall corner and each porch wall junction */
-      [[-W/2+0.11,L/2-4],[-W/2+4,L/2-4],[W/2-4,L/2-8],[W/2-4,L/2-12+0.11],[W/2-0.11,L/2-12]].forEach(function(j2){
+      /* white trim at the end-wall corner and each porch wall junction (the
+         4 ft stub on -x and the 12 ft run down the door side are fixed) */
+      [[-W/2+0.11,L/2-d],[-W/2+4,L/2-d],[W/2-d,L/2-(d+4)],[W/2-d,L/2-12+0.11],[W/2-0.11,L/2-12]].forEach(function(j2){
         box(mT,j2[0],y0,j2[1],0.29,t.wallH,0.29);
       });
     }
     if(t.porch==="S"){
       /* white trim at the notch corner and each porch wall junction */
       var spj=plan.span;
-      var jl = spj.mid? [[W/2-4,spj.z0],[W/2-0.11,spj.z0],[W/2-4,spj.z1],[W/2-0.11,spj.z1]]
-                      : [[W/2-4, spj.f? -L/2+0.11 : L/2-0.11],[W/2-4, spj.f? spj.z1 : spj.z0],[W/2-0.11, spj.f? spj.z1 : spj.z0]];
+      var jl = spj.mid? [[W/2-d,spj.z0],[W/2-0.11,spj.z0],[W/2-d,spj.z1],[W/2-0.11,spj.z1]]
+                      : [[W/2-d, spj.f? -L/2+0.11 : L/2-0.11],[W/2-d, spj.f? spj.z1 : spj.z0],[W/2-0.11, spj.f? spj.z1 : spj.z0]];
       jl.forEach(function(j2){
         box(mT,j2[0],y0,j2[1],0.29,t.wallH,0.29);
       });

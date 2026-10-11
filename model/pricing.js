@@ -34,6 +34,7 @@
 
 import { frameOf } from "./frame.js";
 import { standardItems } from "./loadouts.js";
+import { extraOfferedOn } from "./company.js";
 
 export const DEFAULT_POLICY = Object.freeze({ roundTo: 5, minCharge: 5, roofAreaFactor: 1.15 });
 
@@ -123,9 +124,15 @@ export function itemCharge(it, state, cat, frame) {
 
 function hidden(cat, key) { return !!(cat.OPTX && (cat.OPTX.hide || []).indexOf(key) > -1); }
 
-/* The company's own extras (no 3D shape): how many, and what they add. */
-export function optxList(cat) {
-  return ((cat.OPTX && cat.OPTX.extras) || []).filter((x) => x && x.key && x.name);
+/* The company's own extras (no 3D shape): how many, and what they add.
+   With a design, only the ones offered on its building (an extra with a
+   styles list, like a Steep roof for the Utility Shed and Side Utility, is
+   offered only there: model/company.js extraOfferedOn). */
+export function optxList(cat, state) {
+  const all = ((cat.OPTX && cat.OPTX.extras) || []).filter((x) => x && x.key && x.name);
+  if (!state || !state.type) return all;
+  const t = cat.TYPES && cat.TYPES[state.type];
+  return all.filter((x) => extraOfferedOn(x, t, state.type));
 }
 export function optxQty(x, state) {
   const v = state.xopt ? state.xopt[x.key] : null;
@@ -201,7 +208,7 @@ export function priceParts(state, cat, frame) {
     lines.push([def.quoteName || def.name, v, "rate." + k]); total += v;
   }
   /* whatever the company added to the list itself */
-  optxList(cat).forEach((x) => {
+  optxList(cat, state).forEach((x) => {
     if (!optxOn(x, state)) return;
     const xc = optxCharge(x, state, cat, fr); if (!(xc > 0)) return;
     const q = optxQty(x, state);

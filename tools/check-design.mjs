@@ -26,18 +26,27 @@
       price the company does not have (no NaN total).
    6. normalize switches off what a company does not offer (and makes a short
       side porch 4x8), and changes nothing on a Barnwright design.
+   8. Side porch lengths (How it's built): a 10 ft porch on a style selling
+      10 and 14 ft survives a link round trip; an old link with a 12 ft porch
+      opens on that style as 14 ft with one plain line; a 12 ft porch saved
+      before the owner cut the lengths to 8 ft reopens as 8 ft, its porch
+      walls laid out again, and is priced on the server, while the stale
+      design itself is "no longer offered" (409), never "could not be read".
    7. toState lays a saved building out at ITS size (size, then style, then
       size), a new visitor starts exactly where Barnwright's page starts, and a
       style change keeps the electrical package's fixtures. */
 
-import { barnwrightCatalogue, barnwrightCompany, golden } from "./lib/barnwright-company.mjs";
+import { barnwrightCatalogue, golden } from "./lib/barnwright-company.mjs";
 import { readJSON, readManufacturer, loadCatalogue } from "./lib/load.mjs";
-import { resolve } from "../model/company.js";
+import { resolve, validate } from "../model/company.js";
 import { frameOf } from "../model/frame.js";
 import { resetItems, pkFixtures, clampPos, freeSpot } from "../model/layout.js";
-import { priceParts } from "../model/pricing.js";
+import * as LAYOUT from "../model/layout.js";
+import * as S from "../ui/state.js";
+import { priceParts, optxList } from "../model/pricing.js";
 import { defaults, fromState, toState, normalize, encode, encodeSync, decode, decodeSync, setType, flipPorch } from "../model/design.js";
 import { mulberry32 } from "../engine/seeded.js";
+import { priceDesign } from "../server/office/pricing.js";
 
 const counts = {};
 const failures = [];
@@ -58,8 +67,7 @@ const EXTRAS = [
   { key: "ex3", name: "Trim run", input: "lf", price: 4.5 },
   { key: "ex4", name: "Spray foam", input: "sqftF", price: 1.1 },
 ];
-const bx = barnwrightCompany(); bx.options.extras = EXTRAS;
-const BWX = resolve(bx, M, LIB);
+const BWX = barnwrightCatalogue((c) => { c.options.extras = EXTRAS; });
 
 /* ---------------------------------------------------------------- sample states */
 function sampleStates(cat, rnd) {
@@ -89,7 +97,9 @@ function sampleStates(cat, rnd) {
       const add = (it) => { it.id = "i" + (s.seq++); clampPos(it, s, fr); s.items.push(it); };
       add({ cat: "w23", wall: "L", pos: freeSpot("L", 2.1, s, fr), inc: false, shut: true });
       add({ cat: "tr", wall: "B", pos: freeSpot("B", 1, s, fr), inc: false, shut: false, rot: true });
-      add({ cat: "g1824", wall: "B", pos: 0, inc: false, shut: false, vy: 0.4 });
+      /* on the back gable where the designer offers it there, else high on
+         the left side (a gable too low for it: model/layout.js gableItemFits) */
+      add(LAYOUT.fitsOnWall(cat.CAT.g1824, "B", fr) ? { cat: "g1824", wall: "B", pos: 0, inc: false, shut: false, vy: 0.4 } : { cat: "g1824", wall: "L", pos: freeSpot("L", 1.6, s, fr), inc: false, shut: false, vy: 0.4 });
       add({ cat: "bench", wall: "IN", px: 0.7, pz: -1.3, ln: 6, rot: rnd() < 0.5, inc: false, shut: false });
       add({ cat: "shelf", wall: "IN", px: -1, pz: 2.25, ln: 9, rot: false, inc: false, shut: false });
       add({ cat: "light", wall: "R", pos: 1.37, vy: 1.3, inc: false, shut: false });
@@ -196,7 +206,7 @@ for (const [name, cat] of [["Barnwright", BW], ["demo", DEMO], ["Barnwright + ex
   const base = fromState(defaults(DEMO), DEMO);
   const cases = [
     ["a style no longer offered", (d) => { d.type = "ZZ"; }, "ZZ"],
-    ["a size no longer sold", (d) => { d.size = "99x99"; }, "99x99"],
+    ["a size no longer sold", (d) => { d.size = "99x99"; }, "99×99"],
     ["an item no longer offered", (d) => { d.items.push({ cat: "zz9", wall: "F", pos: 1 }); }, "zz9"],
     ["an item on a wall the building lacks", (d) => { d.items.push({ cat: "w23", wall: "S1", pos: 1 }); }, "\"S1\""],
     ["a colour no longer offered", (d) => { d.colors.body = "Nope Blue"; }, "Nope Blue"],
@@ -207,6 +217,13 @@ for (const [name, cat] of [["Barnwright", BW], ["demo", DEMO], ["Barnwright + ex
     ["another company's design", (d) => { d.company = "acme"; }, "acme"],
     ["an older price list", (d) => { d.cfg = 99; }, "changed since"],
   ];
+  /* a size a person reads is written 10×16, the way the Dealer Center's
+     change lines and History write it; the design keeps "10x16" */
+  {
+    const d = copy(base); d.size = "99x99";
+    const { state, warnings } = toState(d, DEMO);
+    check("a size in the words is written 99×99 and 10×20, never 99x99", warnings.includes(`The 99×99 size of the ${DEMO.TYPES[state.type].name} is no longer sold; showing the ${state.size.replace("x", "×")} instead.`) && /^\d+x\d+$/.test(state.size), J(warnings));
+  }
   for (const [what, mutate, word] of cases) {
     const d = copy(base); mutate(d);
     const { state, warnings } = toState(d, DEMO);
@@ -322,7 +339,7 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   const catS = resolve(sp, M, LIB);
   const s4 = defaults(catS); setType(s4, "SC", catS); s4.size = "10x16"; s4.pLen = 12; resetItems(s4, frameOf(s4, catS), catS);
   const ch4 = normalize(s4, frameOf(s4, catS), catS);
-  if (check("normalize switches off what is not offered", s4.pLen === 8 && ch4.some((c) => /4 x 8/.test(c)), `a 10x16 side cabin kept a ${s4.pLen} ft porch`)) porch++;
+  if (check("normalize switches off what is not offered", s4.pLen === 8 && ch4.some((c) => c === "The side porch is 4 ft × 8 ft on a building under 20 ft long."), `a 10x16 side cabin kept a ${s4.pLen} ft porch: ${J(ch4)}`)) porch++;
   const s5 = defaults(catS); setType(s5, "SC", catS); s5.size = "10x20"; s5.pLen = 12;
   check("normalize switches off what is not offered", normalize(s5, frameOf(s5, catS), catS).length === 0 && s5.pLen === 12, "a 20 ft side cabin lost its 12 ft porch");
   counts["normalize switches off what is not offered"].note = `${untouched} Barnwright designs untouched, ${porch} short side porch made 4x8`;
@@ -340,6 +357,150 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   const s = defaults(DEMO); s.elec = { pkg: 2, ext: false }; pkFixtures(s, frameOf(s, DEMO), DEMO);
   setType(s, "UT", DEMO);
   check("toState order, the starting design, fixtures kept", s.items.filter((i) => i.pk).length === 5, `after a style change the package has ${s.items.filter((i) => i.pk).length} fixtures, not 5`);
+}
+
+/* ---------------------------------------------------------------- 8 side porch lengths */
+{
+  const G8 = "side porch lengths (How it's built)";
+  const mk = (lengths) => { const c = copy(readJSON("companies/demo/company.json")); c.offer.SC.built = { sidePorchLengths: lengths }; return resolve(c, M, LIB); };
+  const c1014 = mk([10, 14]);
+  const s = defaults(c1014); setType(s, "SC", c1014); s.size = "12x24"; s.pLen = 10; resetItems(s, frameOf(s, c1014), c1014);
+  const link = encodeSync(fromState(s, c1014));
+  const back = toState(decodeSync(link), c1014);
+  check(G8, back.state.pLen === 10 && frameOf(back.state, c1014).span.P === 10 && back.warnings.length === 0, `a 10 ft porch came back as ${back.state.pLen}: ${J(back.warnings)}`);
+  /* an old link: 12 ft, the porch lengths now 10 and 14 */
+  const s12 = defaults(DEMO); setType(s12, "SC", DEMO); s12.size = "12x24"; s12.pLen = 12; resetItems(s12, frameOf(s12, DEMO), DEMO);
+  const old = fromState(s12, DEMO); old.cfg = c1014.cfg;
+  const r = toState(old, c1014);
+  check(G8, r.state.pLen === 14 && frameOf(r.state, c1014).span.P === 14 && r.warnings.length === 1 && /^The side porch is now 4 ft × 14 ft; its windows were set back to the standard ones\.$/.test(r.warnings[0]),
+    `an old 12 ft link on a 10/14 style: ${r.state.pLen}, ${J(r.warnings)}`);
+  /* the porch-snap case: a 12x24 Side Cabin saved at 12 ft, the porch now 8 ft only */
+  const c8 = mk([8]);
+  const fixed = fromState(s12, DEMO); fixed.cfg = c8.cfg; fixed.company = c8.id;
+  const re = toState(fixed, c8);
+  check(G8, re.state.pLen === 8 && re.warnings.length === 1 && /4 ft × 8 ft/.test(re.warnings[0]), `reopened: ${re.state.pLen} ${J(re.warnings)}`);
+  const resaved = fromState(re.state, c8);
+  let priced = null, err = null;
+  try { priced = priceDesign(resaved, c8); } catch (e) { err = e; }
+  check(G8, priced && priced.design.porch.pLen === 8 && priced.price.total === priceParts(re.state, c8).total, `the re-saved design could not be priced: ${err && err.message}`);
+  let staleErr = null;
+  try { priceDesign(fixed, c8); } catch (e) { staleErr = e; }
+  check(G8, staleErr && staleErr.status === 409 && /no longer offered/.test(staleErr.message), `the stale design got ${staleErr ? staleErr.status + " " + staleErr.message : "a price"}`);
+  /* the server takes any whole length from 4 to 20 ft and nothing else */
+  const odd = copy(resaved); odd.porch.pLen = 21;
+  let oddErr = null; try { priceDesign(odd, c8); } catch (e) { oddErr = e; }
+  check(G8, oddErr && oddErr.status === 422, "a 21 ft porch was read");
+}
+
+/* ---------------------------------------------------------------- 9 gable windows that do not fit */
+{
+  /* BUILDFAST-SPEC E.4: a gable window whose glass would poke through the
+     roof even at its lowest, under the peak, is not offered on a gable end;
+     the server refuses a new one; a saved design holding one opens with it
+     taken off and one plain line. A 12 ft Utility Shed at 5/12 (the shop's
+     pitch). */
+  const G9 = "gable windows that do not fit are not offered";
+  const fiveTwelve = barnwrightCatalogue((c) => { c.offer.UT.built = { roofPitch: 5 }; });
+  const st = (cat, size) => { const s = defaults(cat); setType(s, "UT", cat); s.size = size; resetItems(s, frameOf(s, cat), cat); return s; };
+  const s12 = st(fiveTwelve, "12x16"), fr12 = frameOf(s12, fiveTwelve);
+  const fits = (cat, size, id) => typeof LAYOUT.gableItemFits === "function" && LAYOUT.gableItemFits(cat.CAT[id], frameOf(st(cat, size), cat));
+  check(G9, !fits(fiveTwelve, "12x16", "g1824") && fits(fiveTwelve, "12x16", "oct"), "on a 12 ft Utility Shed at 5/12 the 18x24 should not fit and the octagon should");
+  check(G9, fits(BW, "12x16", "g1824") && !fits(BW, "8x12", "g1824") && !fits(BW, "10x16", "g1824"), "at Barnwright's pitch the 18x24 fits a 12 ft Utility Shed and not an 8 or 10 ft one");
+  check(G9, fits(fiveTwelve, "12x16", "faux") || !fiveTwelve.CAT.faux, "a faux loft window (no glass) always fits");
+  /* the designer: not offered on a gable end, fine high on a side wall */
+  const sA = st(fiveTwelve, "12x16");
+  check(G9, S.addItem(sA, "g1824", fiveTwelve, 0) == null && !sA.items.some((i) => i.cat === "g1824"), "the 18x24 was added to the front gable of a 12 ft Utility Shed at 5/12");
+  const sB = st(fiveTwelve, "12x16"); const oct = S.addItem(sB, "oct", fiveTwelve, 0);
+  S.setItemType(sB, oct.id, "g1824", fiveTwelve);
+  check(G9, oct.cat === "oct", "an octagon on the gable was changed into the 18x24 that does not fit");
+  const sC = st(fiveTwelve, "12x16"); const w = S.addItem(sC, "w23", fiveTwelve, -Math.PI / 2);   /* a window on the left side */
+  S.setItemType(sC, w.id, "g1824", fiveTwelve);
+  check(G9, w.cat === "g1824" && (w.wall === "L" || w.wall === "R"), "high on a side wall the 18x24 should still be offered");
+  check(G9, S.setItemWall(sC, w.id, "F", fiveTwelve) === null && w.wall !== "F", "the 18x24 was moved from a side wall onto the gable it is too tall for");
+  /* the server: a new one is refused with today's words; the same on a side wall is priced */
+  const onGable = st(fiveTwelve, "12x16"); onGable.items.push({ id: "g9", cat: "g1824", wall: "F", pos: 0, vy: 0, inc: false, shut: false });
+  let err9 = null; try { priceDesign(fromState(onGable, fiveTwelve), fiveTwelve); } catch (e) { err9 = e; }
+  check(G9, err9 && err9.status === 409 && /no longer offered/.test(err9.message), `the server took an 18x24 on a 5/12 gable: ${err9 ? err9.status + " " + err9.message : "priced"}`);
+  let ok9 = null; try { ok9 = priceDesign(fromState(sC, fiveTwelve), fiveTwelve); } catch (e) { ok9 = e; }
+  check(G9, ok9 && ok9.price && ok9.price.total > 0, `the 18x24 high on a side wall was refused: ${ok9 && ok9.message}`);
+  /* A DESIGN SAVED WHEN IT FITTED (Barnwright's 6 1/2/12, before the shop's
+     5/12; review GL-2, F2): the designer and the server must agree. It
+     opens with the window taken off and one plain line; the design the
+     designer sends next is priced; only the stale design is refused, with
+     the refresh words (a refresh opens it again, without the window). */
+  const sOld = st(BW, "12x16"); const gOld = S.addItem(sOld, "g1824", BW, 0);
+  check(G9, gOld && gOld.wall === "F", "at Barnwright's pitch the 18x24 should go on the front gable of a 12 ft Utility Shed");
+  const saved = fromState(sOld, BW);
+  const back = toState(saved, fiveTwelve);
+  check(G9, !back.state.items.some((i) => i.cat === "g1824" && (i.wall === "F" || i.wall === "B")) && back.warnings.includes(`The ${fiveTwelve.CAT.g1824.n} is too tall for this gable, so it was taken off.`),
+    `the saved design kept the window, or said nothing: ${J(back.warnings)}`);
+  let sent = null; try { sent = priceDesign(fromState(back.state, fiveTwelve), fiveTwelve); } catch (e) { sent = e; }
+  check(G9, sent && sent.price && sent.price.total > 0, `the design the designer sends after opening it was refused: ${sent && (sent.status + " " + sent.message)}`);
+  let stale = null; try { priceDesign(saved, fiveTwelve); } catch (e) { stale = e; }
+  check(G9, stale && stale.status === 409 && /Refresh the page/.test(stale.message), `the stale design (still holding the window) was not asked to refresh: ${stale ? stale.status + " " + stale.message : "priced"}`);
+  /* the same when the Steep roof that made it fit is taken off again */
+  const steepCat = barnwrightCatalogue((c) => { c.offer.UT.built = { roofPitch: 5 }; c.options.extras = [{ key: "steep", name: "Steep roof", input: "check", price: 350, styles: ["UT"], built: { roofPitch: 7 } }]; });
+  const sS = st(steepCat, "12x16"); sS.xopt = { steep: 1 };
+  const gS = S.addItem(sS, "g1824", steepCat, 0);
+  check(G9, gS && gS.wall === "F", "with the Steep roof on, the 18x24 should go on the gable of a 12 ft Utility Shed");
+  let withSteep = null; try { withSteep = priceDesign(fromState(sS, steepCat), steepCat); } catch (e) { withSteep = e; }
+  check(G9, withSteep && withSteep.price, `the 18x24 under the Steep roof was refused: ${withSteep && withSteep.message}`);
+  S.setExtra(sS, steepCat.OPTX.extras[0]);
+  const said = normalize(sS, null, steepCat);
+  check(G9, !sS.xopt.steep && !sS.items.some((i) => i.cat === "g1824") && said.includes(`The ${steepCat.CAT.g1824.n} is too tall for this gable, so it was taken off.`), `with the Steep roof off the window stayed, or nothing was said: ${J(said)}`);
+  let noSteep = null; try { noSteep = priceDesign(fromState(sS, steepCat), steepCat); } catch (e) { noSteep = e; }
+  check(G9, noSteep && noSteep.price, `the design without the Steep roof was refused: ${noSteep && (noSteep.status + " " + noSteep.message)}`);
+  /* a gable window that still fits is kept, with nothing said */
+  const sK = st(fiveTwelve, "12x16"); S.addItem(sK, "oct", fiveTwelve, 0);
+  const kept = toState(fromState(sK, fiveTwelve), fiveTwelve);
+  check(G9, kept.warnings.length === 0 && kept.state.items.some((i) => i.cat === "oct" && i.wall === "F"), `an octagon that fits came off: ${J(kept.warnings)}`);
+}
+
+/* ---------------------------------------------------------------- 10 an option on some buildings only */
+{
+  /* Alan's steep roof (7/12, utility-framing skill). No sample price list
+     has it (Alan, Oct 11 2026: take it out); an owner makes one of their
+     own, "Steep roof" at 7/12 on the Utility Shed and Side Utility only
+     (options.extras[].styles). It is offered there and nowhere else, comes
+     off when the building changes to one it is not on, and the server
+     refuses it on another building. */
+  const G10 = "an option offered on some buildings only (an owner's own Steep roof)";
+  check(G10, !(DEMO.OPTX.extras || []).some((x) => x.key === "steep-roof" || x.built), `the sample price list still has an option that changes the roof: ${J(DEMO.OPTX.extras)}`);
+  const ownSteep = { key: "steep-roof", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 7 }, styles: ["UT", "SU"] };
+  const withSteep = copy(readJSON("companies/demo/company.json")); withSteep.options.extras.push(copy(ownSteep));
+  const OWN = resolve(withSteep, M, LIB);
+  const steep = (OWN.OPTX.extras || []).find((x) => x.key === "steep-roof");
+  check(G10, !!steep && J(steep.styles) === J(["UT", "SU"]), `the owner's Steep roof is not on the Utility Shed and Side Utility: ${J(steep)}`);
+  const st = (t, z) => { const s = defaults(OWN); setType(s, t, OWN); s.size = z; resetItems(s, frameOf(s, OWN), OWN); return s; };
+  const ut = st("UT", "10x16"), lb = st("LB", "10x16");
+  check(G10, optxList(OWN, ut).some((x) => x.key === "steep-roof") && optxList(OWN, st("SU", "10x16")).some((x) => x.key === "steep-roof"), "the Steep roof is not offered on the Utility Shed and Side Utility");
+  check(G10, !optxList(OWN, lb).some((x) => x.key === "steep-roof") && !optxList(OWN, st("G", "12x24")).some((x) => x.key === "steep-roof"), "the Steep roof is offered on the Lofted Barn or the Garage");
+  ut.xopt = { "steep-roof": 1 };
+  const fr = frameOf(ut, OWN), peak = (Math.max(...fr.prof.map((p) => p[1])) - fr.topY) * 12;
+  const parts = priceParts(ut, OWN);
+  check(G10, Math.abs(peak - 35) < 1e-9 && parts.lines.some((l) => /Steep roof/.test(l[0] || l.label || l.name || "") || J(l).includes("Steep roof")) && parts.total === priceParts(st("UT", "10x16"), OWN).total + 350,
+    `picked on a 10x16 Utility Shed: roof ${peak} in above the wall (7/12 is 35 in), total ${parts.total}`);
+  /* the building changes to a Lofted Barn: it comes off, said once */
+  const moved = JSON.parse(JSON.stringify(ut)); setType(moved, "LB", OWN);
+  const said = normalize(moved, frameOf(moved, OWN), OWN);
+  check(G10, !moved.xopt["steep-roof"] && said.includes("Steep roof is not offered on the Lofted Barn, so it was taken off."), `after changing to a Lofted Barn: ${J(moved.xopt)} ${J(said)}`);
+  /* the server: priced on the Utility Shed, refused on the Lofted Barn */
+  let ok10 = null; try { ok10 = priceDesign(fromState(ut, OWN), OWN); } catch (e) { ok10 = e; }
+  check(G10, ok10 && ok10.price && ok10.price.total === parts.total, `the server would not price the Steep roof on a Utility Shed: ${ok10 && ok10.message}`);
+  const onBarn = fromState(lb, OWN); onBarn.xopt = { "steep-roof": 1 };
+  let err10 = null; try { priceDesign(onBarn, OWN); } catch (e) { err10 = e; }
+  check(G10, err10 && err10.status === 409 && /no longer offered/.test(err10.message), `the server took a Steep roof on a Lofted Barn: ${err10 ? err10.status + " " + err10.message : "priced"}`);
+  /* a style of the business's own built like the Utility Shed gets it too */
+  const own = copy(withSteep);
+  own.offer.UTX1 = { base: "UT", name: "Premium Utility", sizes: { "10x16": 6000 } }; own.categories[0][1].push("UTX1");
+  const catOwn = resolve(own, M, LIB);
+  const sOwn = defaults(catOwn); setType(sOwn, "UTX1", catOwn);
+  check(G10, optxList(catOwn, sOwn).some((x) => x.key === "steep-roof"), "a Premium Utility built like the Utility Shed did not get the Steep roof");
+  /* a code that is no building style is named */
+  const typo = copy(readJSON("companies/demo/company.json"));
+  typo.options.extras = [{ key: "steep-roof", name: "Steep roof (7/12)", input: "check", price: 350, built: { roofPitch: 7 }, styles: ["UT", "SUU"] }];
+  const errs = validate(typo, M);
+  check(G10, errs.some((e) => /^options\.extras\[0\]\.styles lists "SUU", which is not a building style\. Did you mean SU\?/.test(e)), J(errs));
 }
 
 /* ---------------------------------------------------------------- report */

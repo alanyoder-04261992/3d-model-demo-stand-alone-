@@ -58,7 +58,7 @@ import { MemoryBlobs } from "../server/office/store.js";
 import { priceOrExplain } from "../server/office/pricing.js";
 import { rowOf } from "../server/office/customers.js";
 import { closedPage } from "../server/office/pages.js";
-import { resolve } from "../model/company.js";
+import { resolve, validate } from "../model/company.js";
 import { defaults, fromState, toState } from "../model/design.js";
 import { priceParts } from "../model/pricing.js";
 import { pkFixtures } from "../model/layout.js";
@@ -554,7 +554,7 @@ const versionWithNewLb = saved.version;
 for (const [label, change, words] of [
   ["the business phone", (s) => { s.brand.phone = "(941) 555-0199"; }, "Phone: (941) 555-0100 → (941) 555-0199"],
   ["the business name", (s) => { s.brand.name = "Yoder Barns"; }, "Business name: Yoder Storage Barns → Yoder Barns"],
-  ["the line under the price", (s) => { s.notes.finePrint = "Prices plus tax."; }, "Changed the line under the price"],
+  ["the line under the price", (s) => { s.notes.finePrint = "Prices plus tax."; }, "The line under the price: \"Prices plus tax.\""],
 ]) {
   cur = await want(200, "GET", "/api/office/price-list");
   next = clone(cur.settings);
@@ -618,7 +618,7 @@ step = await saveChange("two extras", (s) => {
     { key: "anchors", name: "Extra ground anchors", input: "qty", price: 45 },
   ];
 });
-ok("adding extras says \"Added the extra \\\"Ridge vent\\\" at $120\"", step.out.changes.includes("Added the extra \"Ridge vent\" at $120") && step.out.changes.includes("Added the extra \"Extra ground anchors\" at $45"), JSON.stringify(step.out.changes));
+ok("adding extras says how each is charged: \"Added the extra \\\"Ridge vent\\\" at $120\", \"... at $45 each\"", step.out.changes.includes("Added the extra \"Ridge vent\" at $120") && step.out.changes.includes("Added the extra \"Extra ground anchors\" at $45 each"), JSON.stringify(step.out.changes));
 step = await saveChange("take Navy off the siding colors", (s) => {
   s.palettes = { paint: manufacturer.palettes.paint.map((c) => (Array.isArray(c) ? c[0] : c)).filter((n) => n !== "Navy") };
 });
@@ -652,7 +652,10 @@ await want(200, "POST", "/api/office/price-list/restore", { version: latestBefor
 
 /* problems in the owner's words */
 cur = await want(200, "GET", "/api/office/price-list");
-const PATHS = /(?:^|[\s("])(?:offer|items|options|brand|palettes|defaults|leads|embed|pricing|notes|categories|construction|look|features|renames|license|status|cfg|settings)(?:\.|\[)/;
+/* a settings path ("offer.LB.built.roofPitch: ...") never reaches the owner;
+   "built." followed by a letter is a How it's built path, not the end of a
+   sentence ("... how the building is built.") */
+const PATHS = /(?:^|[\s("])(?:offer|items|options|brand|palettes|defaults|leads|embed|pricing|notes|categories|construction|look|features|renames|license|status|cfg|settings)(?:\.|\[)|(?:^|[\s("])built\.[A-Za-z]/;
 const BROKEN = [
   ["a size priced at $0", (s) => { s.offer.LB.sizes["10x16"] = 0; }, /10×16 needs a price above \$0/],
   ["a size written wrong", (s) => { s.offer.LB.sizes["10x"] = 5000; }, /is not a size/],
@@ -687,7 +690,7 @@ const BROKEN = [
   ["a quote form box that is neither", (s) => { s.leads.fields.phone = "maybe"; }, /Required, Optional or Off/],
   ["a * website for the designer", (s) => { s.embed.origins = ["*"]; }, /websites allowed to show the designer/],
   ["open or closed written wrong", (s) => { s.status = "open"; }, /open or closed/],
-  ["construction written wrong", (s) => { s.construction = { floor: { spacingIn: "lots" } }; }, /construction settings/],
+  ["construction written wrong", (s) => { s.construction = { floor: { spacingIn: "lots" } }; }, /The construction setting floor spacing in inches: "lots" is not a spacing in inches/],
   ["fine print that is not text", (s) => { s.notes.finePrint = 5; }, /line under the price/],
   ["a style renamed to nothing", (s) => { s.offer.LB.name = ""; }, /needs a name/],
   ["a dormer the builder does not make", (s) => { s.options.dormers["99"] = 100; }, /not in the builder's library/],
@@ -695,6 +698,24 @@ const BROKEN = [
   ["a quote form sent nowhere", (s) => { s.leads.mode = "webhook"; }, /quote form settings/],
   ["a look nobody knows", (s) => { s.look = { scene: "moon" }; }, /look could not be saved/],
   ["two styles with one name", (s) => { s.offer.UT.name = "Lofted Barn"; }, /Two building styles are called Lofted Barn/],
+  ["a roof pitch on a barn roof", (s) => { s.offer.LB.built = { roofPitch: 6 }; }, /has a barn roof, so it has no roof pitch\. Set its barn roof height instead\./],
+  ["a How it's built setting misspelled", (s) => { s.built = { roofPich: { gable: 5 } }; }, /"roofPich" is not a building setting\. Did you mean roof pitch\?/],
+  ["a roof pitch past the limit", (s) => { s.offer.UT.built = { roofPitch: 15 }; }, /Roof pitch 15\/12 is steeper than 12\/12/],
+  ["an extra that changes the wall height", (s) => { s.options.extras = [{ key: "tall", name: "Tall walls", input: "check", price: 1, built: { wallHeight: 96 } }]; }, /An extra cannot change the wall height\. Set it on the style in How it's built\./],
+  ["an extra that raises the roof through construction", (s) => { s.options.extras = [{ key: "steep", name: "Steep roof", input: "check", price: 1, construction: { "roof.shapes.gable.rise": { w: 0.35 } } }]; }, /Steep roof: set this extra's roof pitch in How it's built\./],
+  /* a porch as long as the building (review GL-1, F1): words, never a save
+     that runs until it is out of memory */
+  ["a side porch as long as the building", (s) => { s.offer.SC.built = { sidePorchLengths: [12, 20] }; }, /Side porch lengths: 20 ft is as long as the 10x20 .+\. Leave at least 4 ft of side wall beside the porch\./],
+  /* a fault the standard building has a little of, made worse (review
+     GL-4, F6): the business's, said with the standard's amount */
+  ["a 3 in eave that makes the Lofted Barn Garage's door head worse", (s) => { s.offer.LBG.built = { eaveOverhang: 3 }; }, /\d+×\d+: the roof edge hangs 2 3\/8 in in front of the head of the 36″ In-Swing Door on the right side\. With the standard numbers it is 5\/8 in\./],
+  ["a size too short for the side porch", (s) => { s.offer.SC.sizes["10x8"] = 4000; }, /The 10x8 .+ is too short for its 8 ft side porch: sell it 12 ft long and up, or set a shorter side porch length\./],
+  ["an extra with a construction setting misspelled", (s) => { s.options.extras = [{ key: "joists", name: "Close joists", input: "check", price: 1, construction: { "floor.spacingInn": 12 } }]; }, /Close joists: "spacingInn" is not a construction setting\. Did you mean spacingIn\?/],
+  /* which setting is wrong is named in words (review F8): never "one of its
+     construction settings" or "reload the page" for a number written wrong */
+  ["an extra with 500 top plates", (s) => { s.options.extras = [{ key: "heavy", name: "Heavy floor", input: "check", price: 1, construction: { "walls.topPlates": 500 } }]; }, /Heavy floor \(top plates\): 500 should be a whole number from 1 to 3\./],
+  ["an extra whose construction is a word", (s) => { s.options.extras = [{ key: "heavy", name: "Heavy floor", input: "check", price: 1, construction: "heavy" }]; }, /Heavy floor: how it changes the building could not be read\. Take the extra out and add it again\./],
+  ["500 top plates in the construction settings", (s) => { s.construction = { walls: { topPlates: 500 } }; }, /The construction setting top plates: 500 should be a whole number from 1 to 3\./],
 ];
 for (const [label, change, words] of BROKEN) {
   const s = clone(cur.settings);
@@ -718,6 +739,330 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   const a = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
   return a.status === 200;
 })());
+
+/* THE STRICTER RULES NEVER BREAK A PRICE LIST ALREADY SAVED (model/company.js
+   strictProblems). A price list saved before them can hold a typo the old
+   rules let through: a wall height typed on a style (ignored), a construction
+   setting nobody reads, and a roof pitch rule list written by hand. It must
+   still open on every lot's designer, price quotes, take price changes and be
+   put back from History; only a save that ADDS a new typo is refused. */
+{
+  const clean = clone((await want(200, "GET", "/api/office/price-list")).settings);
+  const raw = await S.read("price-list");
+  const older = clone(raw.data.settings);
+  older.offer.UT.wallH = 8.5;
+  older.construction = { roof: { shapes: { gable: {
+    rize: { w: 0.31 },
+    rise: [{ when: { styles: ["UT"] }, value: { w: 0.25 } }, { value: { w: 0.27 } }],
+  } } } };
+  const olderVersion = raw.data.version + 1;
+  await S.put("price-list", { ...raw.data, settings: older, version: olderVersion });
+  await S.put(`price-list-history/${String(olderVersion).padStart(6, "0")}`, { version: olderVersion, savedAt: new Date(clock.t).toISOString(), savedBy: raw.data.savedBy, changes: ["(an older save)"], settings: older });
+  const pubOld = await want(200, "GET", "/api/lots/port-charlotte", undefined, { label: "a lot's designer on a price list saved before the stricter rules" });
+  ok("(a) a price list with an old typo still opens on the lot's designer (validate finds nothing)", validate(pubOld.company, manufacturer).length === 0, JSON.stringify(validate(pubOld.company, manufacturer)));
+  let catOld = null; try { catOld = (await office.parts.priceList.catalogue()).cat; } catch (e) { catOld = null; }
+  /* (the old typo offer.UT.wallH 8.5 is ignored: the wall is the shop standard's, 7 ft 9 1/2 in since "yes match") */
+  const standardUtWall = manufacturer.styles.UT.built && manufacturer.styles.UT.built.wallHeight != null ? manufacturer.styles.UT.built.wallHeight / 12 : manufacturer.styles.UT.wallH;
+  ok("(a) ... and prices quotes from it (the catalogue resolves)", !!catOld && catOld.TYPES.UT.wallH === standardUtWall, String(catOld && catOld.TYPES.UT.wallH));
+  let olderNow = await want(200, "GET", "/api/office/price-list");
+  const priceOnly = clone(olderNow.settings); priceOnly.offer.LB.sizes["10x16"] += 1;
+  const savedOld = await want(200, "PUT", "/api/office/price-list", { settings: priceOnly, version: olderNow.version }, { label: "(b) a price change on a price list holding an old typo" });
+  ok("(b) ... is saved, and the old typo stays as it was", savedOld.version === olderNow.version + 1 && savedOld.settings.offer.UT.wallH === 8.5);
+  olderNow = await want(200, "GET", "/api/office/price-list");
+  const addTypo = clone(olderNow.settings); addTypo.offer.SU.sizez = { "10x12": 4000 };
+  const refusedTypo = await want(422, "PUT", "/api/office/price-list", { settings: addTypo, version: olderNow.version }, { label: "(c) a save that adds a new typo" });
+  ok("(c) ... is refused with the did-you-mean words", /Side Utility: "sizez" is not part of a building style\. Did you mean sizes\?/.test(refusedTypo.error || "") && !PATHS.test(refusedTypo.error || ""), refusedTypo.error);
+  const addPath = clone(olderNow.settings); addPath.construction.floor = { spacingInn: 12 };
+  const refusedPath = await want(422, "PUT", "/api/office/price-list", { settings: addPath, version: olderNow.version }, { label: "(c) a save that adds a construction typo" });
+  ok("(c) ... a construction typo is named too", /"spacingInn" is not a construction setting\. Did you mean spacingIn\?/.test(refusedPath.error || ""), refusedPath.error);
+  /* an old typo in an extra's construction stays the same old problem when
+     another extra above it is taken out or added (review F5): problems are
+     compared by the extra's key, not its place in the list */
+  {
+    const withJoists = clone(olderNow.settings);
+    const xs = withJoists.options.extras || [];
+    withJoists.options.extras = [{ key: "gutters-f5", name: "Gutters", input: "check", price: 80 }, ...xs, { key: "joists-f5", name: "Close joists", input: "check", price: 1, construction: { "floor.spacingInn": 12 } }];
+    const raw2 = await S.read("price-list");
+    await S.put("price-list", { ...raw2.data, settings: withJoists, version: raw2.data.version + 1 });
+    olderNow = await want(200, "GET", "/api/office/price-list");
+    const noGutters = clone(olderNow.settings); noGutters.options.extras = noGutters.options.extras.filter((x) => x.key !== "gutters-f5");
+    await want(200, "PUT", "/api/office/price-list", { settings: noGutters, version: olderNow.version }, { label: "(e) taking out an extra above an older extra that holds a construction typo" });
+    olderNow = await want(200, "GET", "/api/office/price-list");
+    const atTop = clone(olderNow.settings); atTop.options.extras = [{ key: "ridge-f5", name: "Ridge vent", input: "check", price: 90 }, ...atTop.options.extras];
+    await want(200, "PUT", "/api/office/price-list", { settings: atTop, version: olderNow.version }, { label: "(e) adding an extra at the top of the list" });
+    olderNow = await want(200, "GET", "/api/office/price-list");
+    const tidy = clone(olderNow.settings); tidy.options.extras = tidy.options.extras.filter((x) => !/-f5$/.test(x.key));
+    await want(200, "PUT", "/api/office/price-list", { settings: tidy, version: olderNow.version }, { label: "taking the older extras out again" });
+    olderNow = await want(200, "GET", "/api/office/price-list");
+  }
+  const known = clone(olderNow.settings); known.construction.interior = { benchHeightIn: 30 }; known.construction.ramp = { lengthFt: 5 };
+  await want(200, "PUT", "/api/office/price-list", { settings: known, version: olderNow.version }, { label: "(c) the bench height and ramp length settings the parts read are known settings" });
+  olderNow = await want(200, "GET", "/api/office/price-list");
+  const back = await want(200, "POST", "/api/office/price-list/restore", { version: olderVersion, current: olderNow.version }, { label: "(d) putting back an old copy that holds a typo" });
+  ok("(d) ... is allowed", back.settings.offer.UT.wallH === 8.5 && !!back.settings.construction.roof.shapes.gable.rize);
+  olderNow = await want(200, "GET", "/api/office/price-list");
+  const fixed = await want(200, "PUT", "/api/office/price-list", { settings: clean, version: olderNow.version }, { label: "taking the old typos out again" });
+  ok("taking the old typos out is always allowed", same(fixed.settings.offer, clean.offer) && same(fixed.settings.construction ?? null, clean.construction ?? null));
+}
+
+/* HOW IT'S BUILT ON SAVE: a style's own wall height is saved, raises cfg
+   (open designers redraw) and says so in History; the setup connector's raw
+   roof pitch rule moves into How it's built with no building change. */
+{
+  let cur = await want(200, "GET", "/api/office/price-list");
+  const lbName = cur.settings.offer.LB.name || manufacturer.styles.LB.name;
+  let s = clone(cur.settings); s.offer.LB.built = { wallHeight: 84 };
+  let out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "saving a Lofted Barn wall height of 7 ft" });
+  /* from the shop standard's 79 1/2 in lofted wall ("yes match") */
+  /* ... naming the Premium Lofted Barn (built like it, no wall of its own), which the 7 ft wall reaches too */
+  ok(`... History says "${lbName} wall height: 6 ft 7 1/2 in → 7 ft (and Premium Lofted Barn, built like it)"`, out.changes.includes(`${lbName} wall height: 6 ft 7 1/2 in → 7 ft (and Premium Lofted Barn, built like it)`), JSON.stringify(out.changes));
+  ok("... and cfg goes up, so open designers redraw", out.cfg === cur.cfg + 1);
+  ok("... the lot's designer draws the 7 ft walls", (await liveCat()).TYPES.LB.wallH === 7);
+  /* a number is stored as its number, the same number in other words is no
+     change, and the standard's own number typed on a style changes nothing
+     a customer sees, so open designs stay current (review F9, W12) */
+  {
+    const utName = cur.settings.offer.UT.name || manufacturer.styles.UT.name;
+    cur = await want(200, "GET", "/api/office/price-list");
+    s = clone(cur.settings); s.offer.UT.built = { roofPitch: 5 };
+    out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "typing the standard's 5/12 on the Utility Shed" });
+    ok(`typing the standard's 5/12 on the ${utName}: History says "${utName} roof pitch: standard (5/12) → 5/12 of its own"`, out.changes.includes(`${utName} roof pitch: standard (5/12) → 5/12 of its own`), JSON.stringify(out.changes));
+    ok("... and cfg stays (nothing is drawn differently)", out.cfg === cur.cfg && out.version === cur.version + 1, JSON.stringify([cur.cfg, out.cfg]));
+    cur = await want(200, "GET", "/api/office/price-list");
+    s = clone(cur.settings); s.offer.UT.built = { roofPitch: "5/12" };
+    out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "sending the same pitch as \"5/12\"" });
+    const kept = await want(200, "GET", "/api/office/price-list");
+    ok("sending the same pitch as \"5/12\" is no change: nothing in History, no new version", out.changes.length === 0 && kept.version === cur.version && kept.settings.offer.UT.built.roofPitch === 5, JSON.stringify([out.changes, kept.settings.offer.UT.built]));
+    s = clone(kept.settings); s.offer.UT.built = { roofPitch: "6/12" };
+    out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: kept.version }, { label: "a pitch sent as \"6/12\"" });
+    ok("a pitch sent as \"6/12\" is stored as the number 6", out.settings.offer.UT.built.roofPitch === 6 && out.cfg === kept.cfg + 1, JSON.stringify(out.settings.offer.UT.built));
+    cur = await want(200, "GET", "/api/office/price-list");
+    s = clone(cur.settings); s.offer.LB.built = { ...s.offer.LB.built, barnPeak: { "08": 40, "8": 50 } };
+    const twice = await want(422, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the 8 ft wide barn given twice, as \"08\" and \"8\"" });
+    ok("the 8 ft wide barn given twice (\"08\" and \"8\") is refused, never one height dropped", /Barn roof height: the 8 ft wide barn is listed twice\./.test(twice.error || ""), twice.error);
+    s = clone(cur.settings); delete s.offer.UT.built;
+    await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Utility Shed back to the standard" });
+  }
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.built = { roofPitch: { gable: 6 } };
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "saving a business-wide roof pitch" });
+  ok("a business-wide roof pitch says so in History and raises cfg", out.changes.some((c) => c.startsWith("Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed, Side Utility and 3 more 5/12 → 6/12; ")) && out.cfg === cur.cfg + 1, JSON.stringify(out.changes));
+  /* the connector's rule list, as it writes it */
+  cur = await want(200, "GET", "/api/office/price-list");
+  const raw = await S.read("price-list");
+  const withRule = clone(raw.data.settings);
+  delete withRule.built; delete withRule.offer.LB.built;
+  withRule.construction = { roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 5 / 24 } }, { value: { w: library.roof.shapes.gable.rise.w } }] } } } };
+  await S.put("price-list", { ...raw.data, settings: withRule, version: raw.data.version + 1 });
+  const catRule = await liveCat();
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.UT.sizes["8x12"] += 1;
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "a price change on a price list holding the connector's roof pitch rule" });
+  ok("the connector's roof pitch rule moves into How it's built on the next save", out.settings.offer.UT.built?.roofPitch === 5 && out.settings.construction === undefined
+    && out.changes.includes("Roof pitch rules moved into How it's built (no building changes)"), JSON.stringify([out.settings.construction, out.settings.offer.UT.built, out.changes]));
+  const catLifted = await liveCat();
+  ok("... and the Utility Shed's roof is the same", same(frameOf(designOf(catRule, "UT", "10x16").state, catRule).prof, frameOf(designOf(catLifted, "UT", "10x16").state, catLifted).prof));
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); delete s.offer.UT.built;
+  await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "putting the standard pitch back" });
+}
+
+/* THE EVERY-SIZE CHECK ON SAVE (server/office/built-check.js): numbers of
+   the business's own are drawn at every size before the save is written.
+   What they cause refuses the save in words; what the standard building
+   has too never does; a price change draws nothing; a short time budget
+   lists what is left and still saves. */
+{
+  let cur = await want(200, "GET", "/api/office/price-list");
+  const utName = cur.settings.offer.UT.name || manufacturer.styles.UT.name;
+  let s = clone(cur.settings); s.offer.UT.built = { wallHeight: 60 };
+  const low = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("a 5 ft Utility Shed wall under its 76 1/2 in shop door is refused (422)", low.status === 422, `${low.status} ${low.text.slice(0, 200)}`);
+  ok("... with the door words, at the size the designer opens on and the others",
+    new RegExp(`${utName} \\d+×\\d+: the 72″ Wooden Double Doors on the front should be 76 1/2 in tall, but the wall leaves room for 55 5/8 in\\. The same at .+ more\\.`).test(low.data.error || ""), low.data.error);
+  /* (the shop standard's 5/12 roof with its 4 in eave measured level) */
+  ok("... and the roof edge too low to walk under", /the roof edge over the left side is only 4 ft 10 3\/8 in above the floor \(6 ft at least\)/.test(low.data.error || ""), low.data.error);
+  ok("... every line in the owner's words, never a settings path", Array.isArray(low.data.problems) && low.data.problems.length >= 2 && low.data.problems.every((p) => !PATHS.test(p) && !/[{}]/.test(p)), JSON.stringify(low.data.problems));
+  ok("... a gable window the standard Utility Shed has the same trouble with is not the owner's", !(low.data.problems || []).some((p) => /Gable Window/.test(p)), JSON.stringify(low.data.problems));
+  ok("... and nothing was saved", (await want(200, "GET", "/api/office/price-list")).version === cur.version);
+
+  /* a 7 ft Lofted Barn wall builds at every size: saved, checked */
+  s = clone(cur.settings); s.offer.LB.built = { wallHeight: 84 };
+  let out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "a 7 ft Lofted Barn wall" });
+  const lbSizes = Object.keys(cur.settings.offer.LB.sizes).length;
+  ok(`... is drawn at all ${lbSizes} of its sizes before it saves`, out.sizeCheck?.checked?.includes(cur.settings.offer.LB.name || manufacturer.styles.LB.name) && out.sizeCheck.buildings >= lbSizes && !out.sizeCheck.unchecked.length, JSON.stringify(out.sizeCheck));
+  ok("... History says the wall height and that the wall upgrades follow it",
+    out.changes.some((c) => /wall height: .+ → 7 ft \(and Premium Lofted Barn, built like it\)$/.test(c)) && out.changes.some((c) => /^Wall upgrades priced by the square foot follow the new wall height: .*Moisture barrier — walls/.test(c)), JSON.stringify(out.changes));
+
+  /* a price change draws nothing */
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.LB.sizes["10x16"] += 5;
+  const t0 = performance.now();
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "a price change on a price list with its own Lofted Barn wall" });
+  const priceMs = performance.now() - t0;
+  ok(`... draws no building (the save took ${Math.round(priceMs)} ms)`, out.sizeCheck && out.sizeCheck.buildings === 0 && !out.sizeCheck.checked.length && priceMs < 250, JSON.stringify(out.sizeCheck));
+  {
+    const { checkChangedStyles } = await import("../server/office/built-check.js");
+    const a = clone(cur.settings), b = clone(cur.settings); b.offer.UT.sizes["8x12"] += 10;
+    const catB = resolve(b, manufacturer, library);
+    const t1 = performance.now();
+    const r0 = checkChangedStyles(a, b, manufacturer, library, { cat: catB });
+    const ms = performance.now() - t1;
+    ok(`... the check itself takes under 50 ms when only prices change (${ms.toFixed(1)} ms)`, ms < 50 && r0.buildings === 0, String(ms));
+    /* a business-wide change reaching many styles: the size each style opens
+       on is drawn first for EVERY style, then the smallest and largest of
+       each, then the rest (review GL-8), so the time never runs out on the
+       last styles of the price list before the first are done */
+    const BC = await import("../model/built-check.js");
+    const wide = clone(cur.settings); wide.built = { roofPitch: { gable: 6 }, eaveOverhang: { gable: 6, barn: 2 }, porchDepth: 5 };
+    const catW = resolve(wide, manufacturer, library), catC = resolve(cur.settings, manufacturer, library);
+    const jobs = BC.changedStyles(cur.settings, wide, manufacturer, catW, catC);
+    const steps = BC.jobSteps(catW, jobs);
+    const firstRound = steps.slice(0, jobs.length);
+    ok(`... a business-wide change reaching ${new Set(jobs.map((j) => j.key)).size} styles draws the size each opens on first, every style before any second size`,
+      jobs.length >= 15 && firstRound.every((st, i) => st.job === i && st.sizes.length === 1 && st.first) && steps.slice(jobs.length).every((st) => !st.first),
+      JSON.stringify(steps.slice(0, jobs.length + 2)));
+    /* Check every size in the browser, a size at a time, finds what the
+       whole style at once finds */
+    const lbOwn = clone(cur.settings); lbOwn.offer.LB.built = { wallHeight: 60 };
+    const catL = resolve(lbOwn, manufacturer, library), stdL = resolve(BC.withoutOwnNumbers(lbOwn), manufacturer, library);
+    const whole = BC.summarize([BC.checkAgainstStandard(catL, stdL, "LB", {})]);
+    const stepped = BC.summarize([await BC.checkInSteps(catL, stdL, "LB", { pause: () => Promise.resolve() })]);
+    ok("... Check every size a size at a time (the page never freezes) says what the whole style at once says", whole.problems.length > 0 && JSON.stringify(whole) === JSON.stringify(stepped), JSON.stringify([whole.problems.slice(0, 2), stepped.problems.slice(0, 2)]));
+    /* a size a person reads is written 10×16 everywhere: the end-to-end walk
+       saw "12x16" in the every-size check beside "10×16" in the change lines
+       and History. The size itself stays the key ("10x16"). */
+    const said = [...whole.problems, ...whole.warnings, ...whole.alreadyWords];
+    const late = BC.checkJobs(catL, stdL, [{ key: "LB" }], { budgetMs: 0 })[0].unchecked;
+    ok("... every size in the every-size check's words is written 10×16, the way the change lines and History write it, never 10x16",
+      said.length > 0 && said.every((l) => !/\d+x\d+/.test(l)) && said.some((l) => /^.+ \d+×\d+: /.test(l)) && /The same at \d+×\d+/.test(said.join(" "))
+        && late.length > 0 && late.every((u) => /^.+ \d+×\d+$/.test(u.words) && /^\d+x\d+$/.test(u.size)),
+      JSON.stringify([said.slice(0, 2), late.slice(0, 2)]));
+    /* an owner's extra that changes only the floor framing (Heavy-duty
+       floor: joists every 12 in) changes nothing the low wall's problems are
+       about: each is said once, not again "... and Heavy-duty floor: ..."
+       (found by the end-to-end walk on the combined code, Oct 11 2026) */
+    const floorX = clone(cur.settings);
+    floorX.options.extras = [...(floorX.options.extras || []), { key: "heavy-floor", name: "Heavy-duty floor", input: "check", price: 350, construction: { "floor.spacingIn": 12 } }];
+    const lowX = clone(floorX); lowX.offer.LB.built = { wallHeight: 60 };
+    const rX = checkChangedStyles(floorX, lowX, manufacturer, library, { budgetMs: 60000 });
+    const plainX = checkChangedStyles(cur.settings, lbOwn, manufacturer, library, { budgetMs: 60000 });
+    ok("... an owner's extra that changes only the floor framing never says the low wall's problems a second time (\"... and Heavy-duty floor: ...\")",
+      rX.problems.length > 0 && !rX.problems.some((p) => /Heavy-duty floor/.test(p)) && JSON.stringify(rX.problems) === JSON.stringify(plainX.problems), JSON.stringify([rX.problems.length, plainX.problems.length, rX.problems.filter((p) => /Heavy-duty floor/.test(p)).slice(0, 2)]));
+  }
+
+  /* a size added to a style with numbers of its own: just that size */
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.LB.sizes["12x36"] = 9999;
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "a new size of a Lofted Barn with its own wall" });
+  ok("... only the new size is drawn", out.sizeCheck.buildings === 1, JSON.stringify(out.sizeCheck));
+
+  /* a 1 ms budget: the rest is listed, the save still goes through */
+  const hurried = makeOffice({ sizeCheckMs: 1 });
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.UT.built = { wallHeight: 60 };
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { app: hurried, label: "the same 5 ft wall when there is no time to check" });
+  const utSizes = Object.keys(cur.settings.offer.UT.sizes).length;
+  ok(`... is saved and says what was not checked ("Not checked yet: ${utSizes} sizes of the ${utName}. Press Check every size.")`,
+    out.sizeCheck?.unchecked?.includes(`Not checked yet: ${utSizes} sizes of the ${utName}. Press Check every size.`), JSON.stringify(out.sizeCheck));
+
+  /* putting back a copy whose numbers no longer fit is never refused */
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); delete s.offer.UT.built; delete s.offer.LB.built; delete s.offer.LB.sizes["12x36"];
+  await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the standard walls again" });
+  cur = await want(200, "GET", "/api/office/price-list");
+  const back = await want(200, "POST", "/api/office/price-list/restore", { version: out.version, current: cur.version }, { label: "putting back the copy with the 5 ft wall" });
+  ok("... is allowed, and what does not fit is said instead", back.settings.offer.UT.built?.wallHeight === 60 && back.sizeCheck.problems.some((p) => /should be 76 1\/2 in tall/.test(p)), JSON.stringify(back.sizeCheck));
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); delete s.offer.UT.built;
+  await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the standard Utility Shed wall again" });
+
+  /* an extra that makes roofs steeper is drawn on every style it reaches */
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings);
+  s.options.extras = [...(s.options.extras || []), { key: "very-steep", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 12 } }];
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "an extra Steep roof at 12/12" });
+  const gableNames = Object.keys(cur.settings.offer).filter((k) => manufacturer.styles[cur.settings.offer[k].base || k]?.roof === "gable").map((k) => cur.settings.offer[k].name || manufacturer.styles[cur.settings.offer[k].base || k].name);
+  ok(`... is checked on the gable styles (${gableNames.length}) and on no barn`, gableNames.every((n) => out.sizeCheck.checked.includes(n)) && !out.sizeCheck.checked.includes(cur.settings.offer.LB.name || manufacturer.styles.LB.name), JSON.stringify(out.sizeCheck.checked));
+  ok("... and History says what it does (\"Steep roof: roof pitch at least 12/12\")", out.changes.includes("Steep roof: roof pitch at least 12/12"), JSON.stringify(out.changes));
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.options.extras = s.options.extras.filter((x) => x.key !== "very-steep");
+  await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "taking the Steep roof extra off" });
+
+  /* no example price list starts with a Steep roof (Alan, Oct 11 2026:
+     take it out); an owner makes one of their own, "Roof pitch at least
+     7/12" on the Utility Shed and Side Utility only, and History says where
+     an option is offered */
+  const roofy = (t) => (t.options.extras || []).filter((x) => x.built || x.construction || /steep/i.test(`${x.key} ${x.name}`));
+  ok("neither example price list a new business starts with has a Steep roof (nor any option that changes the roof)", roofy(templates.full).length === 0 && roofy(templates.small).length === 0, JSON.stringify([roofy(templates.full), roofy(templates.small)]));
+  const steep = { key: "steep-roof", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 7 }, styles: ["UT", "SU"] };
+  cur = await want(200, "GET", "/api/office/price-list");
+  if (!(cur.settings.options.extras || []).some((x) => x.key === "steep-roof")) {
+    s = clone(cur.settings); s.options.extras = [...(s.options.extras || []), clone(steep)];
+    out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the owner's own Steep roof (roof pitch at least 7/12) on the Utility Shed and Side Utility" });
+    ok("... an owner's own Steep roof saves, and History says what it does (\"Steep roof: roof pitch at least 7/12\")", out.changes.includes("Steep roof: roof pitch at least 7/12"), JSON.stringify(out.changes));
+    cur = await want(200, "GET", "/api/office/price-list");
+  }
+  s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT"];
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Steep roof on the Utility Shed only" });
+  const utWords = cur.settings.offer.UT.name || manufacturer.styles.UT.name;
+  ok(`... History says "Steep roof is offered on the ${utWords}"`, out.changes.includes(`Steep roof is offered on the ${utWords}`) && out.cfg === cur.cfg + 1, JSON.stringify(out.changes));
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT", "SUU"];
+  const typoStyle = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("... a building code that is no style is refused in words", typoStyle.status === 422 && /Steep roof: pick again which buildings it is offered on\./.test(typoStyle.data.error || ""), `${typoStyle.status} ${typoStyle.data && typoStyle.data.error}`);
+  s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT", "SU"];
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Steep roof on both again" });
+  ok("... and back on both", out.changes.includes(`Steep roof is offered on the ${utWords} and ${cur.settings.offer.SU.name || manufacturer.styles.SU.name}`), JSON.stringify(out.changes));
+
+  /* WHAT A SAVE REACHES (review GL-3, F4, F3). A new Side Utility wall and
+     eave that fit alone but not with the owner's Steep roof on:
+     the save draws the style with each extra that changes it switched on. */
+  const suName = cur.settings.offer.SU.name || manufacturer.styles.SU.name;
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.SU.built = { wallHeight: 85, eaveOverhang: 12 };
+  const withSteep = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("a Side Utility wall that fits alone but not under the Steep roof is refused (422)", withSteep.status === 422, `${withSteep.status} ${JSON.stringify(withSteep.data?.sizeCheck || withSteep.data?.error).slice(0, 300)}`);
+  ok("... with the size and the extra named: \"... with Steep roof: the roof edge hangs ...\"", new RegExp(`${suName} \\d+×\\d+ with Steep roof: the roof edge hangs .+ in front of the head of the 72″ Wooden Double Doors on the right side\\.`).test(withSteep.data?.error || ""), withSteep.data?.error);
+  /* an extra with numbers that newly reaches a style, though its numbers did
+     not change: a Tall door extra on the Utility Shed, then on the Lofted
+     Barn too, then the Lofted Barn stopped and sold again */
+  const lbName = cur.settings.offer.LB.name || manufacturer.styles.LB.name;
+  const tall = { key: "tall-door", name: "Tall door", input: "check", price: 90, styles: ["UT"], built: { doorHeight: 84 } };
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.options.extras = [...s.options.extras, clone(tall)];
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "a Tall door (84 in) extra on the Utility Shed" });
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.options.extras.find((x) => x.key === "tall-door").styles = ["UT", "LB"];
+  const widened = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("... offered on the Lofted Barn too, with its numbers unchanged: refused, the door does not fit its walls", widened.status === 422 && new RegExp(`${lbName} \\d+×\\d+ with Tall door: the .+ should be 84 in tall, but the wall leaves room for`).test(widened.data?.error || ""), `${widened.status} ${widened.data?.error}`);
+  /* the Side Lofted Barn listed while it is not sold, then sold again */
+  const slbName = cur.settings.offer.SLB.name || manufacturer.styles.SLB.name;
+  const slbOffer = clone(cur.settings.offer.SLB), cats = clone(cur.settings.categories);
+  s = clone(cur.settings); s.options.extras.find((x) => x.key === "tall-door").styles = ["UT", "SLB"]; delete s.offer.SLB;
+  if (Array.isArray(s.categories)) s.categories = s.categories.map((g) => [g[0], g[1].filter((k) => k !== "SLB")]).filter((g) => g[1].length);
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Tall door listing the Side Lofted Barn while it is not sold" });
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.SLB = slbOffer; s.categories = cats;
+  const resold = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("... selling the Side Lofted Barn again draws it with the Tall door on: refused", resold.status === 422 && new RegExp(`${slbName} \\d+×\\d+ with Tall door: the .+ should be 84 in tall`).test(resold.data?.error || ""), `${resold.status} ${resold.data?.error}`);
+  s.options.extras = s.options.extras.filter((x) => x.key !== "tall-door");
+  await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Side Lofted Barn sold again, without the Tall door" });
+  /* a roof number no How it's built setting owns: limited, and drawn */
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.construction = { roof: { shapes: { salt: { rise: 40 } } } };
+  const tallSalt = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("a saltbox 40 ft above the wall in the construction settings is refused in words", tallSalt.status === 422 && /The saltbox roof's height above the wall would be 40 ft on a 6 ft wide building: 8 ft at most\./.test(tallSalt.data?.error || ""), `${tallSalt.status} ${tallSalt.data?.error}`);
+  s = clone(cur.settings); s.options.extras = [...s.options.extras, { key: "tall-barn", name: "Tall barn", input: "check", price: 1, construction: { "roof.shapes.gambrel.upperRise": 40 } }];
+  const tallBarn = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("... an extra setting the barn roof's upper slope: \"Tall barn: set this extra's barn roof height in How it's built.\"", tallBarn.status === 422 && /Tall barn: set this extra's barn roof height in How it's built\./.test(tallBarn.data?.error || ""), `${tallBarn.status} ${tallBarn.data?.error}`);
+  const csName = cur.settings.offer.CS ? (cur.settings.offer.CS.name || manufacturer.styles.CS.name) : null;
+  if (csName) {
+    s = clone(cur.settings); s.construction = { roof: { shapes: { salt: { rise: { w: 0.05 } } } } };
+    const flatSalt = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+    ok("... and a saltbox too low to draw (inside the limits) is drawn on the cottages and refused", flatSalt.status === 422 && new RegExp(`${csName} \\d+×\\d+: the roof peak is only .+ above the wall \\(1 ft at least\\)`).test(flatSalt.data?.error || ""), `${flatSalt.status} ${flatSalt.data?.error}`);
+  }
+}
 sectionDone();
 
 /* ======================================================================= */
@@ -1471,7 +1816,7 @@ sectionDone();
 /* ======================================================================= */
 section("16. Words: every message a person could read is plain words");
 
-const DEV_WORDS = /\b(JSON|json|Office|office|portal|Portal|admin|Admin|catalogue|catalog|config|undefined|null|NaN|tenant|ID|true|false)\b|[{}]|(?:^|[\s("])(?:offer|items|options|brand|palettes|defaults|leads|embed|pricing|notes|categories|construction|settings|cfg)(?:\.|\[)/;
+const DEV_WORDS = /\b(JSON|json|Office|office|portal|Portal|admin|Admin|catalogue|catalog|config|undefined|null|NaN|tenant|ID|true|false)\b|[{}]|(?:^|[\s("])(?:offer|items|options|brand|palettes|defaults|leads|embed|pricing|notes|categories|construction|settings|cfg)(?:\.|\[)|(?:^|[\s("])built\.[A-Za-z]/;
 const CODES = new Set([
   ...Object.keys(manufacturer.styles).filter((k) => k.length >= 2),
   ...Object.keys(manufacturer.items).filter((k) => /\d/.test(k) || ["dfr", "gfci", "ilight", "ppost", "tr", "oct"].includes(k)),

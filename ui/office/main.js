@@ -9,13 +9,22 @@
    render(ctx) -> an element (or a promise of one). ctx carries the shared
    app (who, lots, customers), the parts of the address, go(path) and
    setTitle(words). A screen with unsaved changes sets app.leaveGuard to a
-   function that returns a question ("Leave without saving?") or null. */
+   function that returns a question ("Leave without saving?") or null.
 
-import { h, clear, icon, button, toast, loading, emptyState } from "./dom.js";
+   A BARNWRIGHT VISIT (docs/OFFICE.md "The visit"): Alan's Control Room
+   opens /dealer#barnwright=<pass>. The page reads the pass, clears the
+   address at once, and starts the visit (the server sets its own cookie).
+   Then a smaller frame: only Price list and Settings, and a bar on top,
+   "Working on <business> as Barnwright until 3:15 PM. [Done]". A visit
+   that ends never shows a sign-in screen and never reloads: the work on
+   screen stays (and is kept in this tab, visit-draft.js). */
+
+import { h, clear, icon, button, linkButton, toast, loading, emptyState } from "./dom.js";
 import { app } from "./app.js";
-import { configureApi, signOut, post } from "./api.js";
+import { configureApi, signOut, post, get, startVisit, endVisit, VISIT_ENDED } from "./api.js";
 import { signInScreen, notOnTeam, handleEmailLink } from "./auth.js";
-import { ROLE_WORDS, initials, dayWords, todayKey } from "./words.js";
+import { ROLE_WORDS, initials, dayWords, todayKey, untilWords } from "./words.js";
+import { visitMark, visitMarked } from "./visit-draft.js";
 import { watchProblems, reportProblem, screenOf } from "../problems.js";
 
 const root = document.getElementById("dealer-center");
@@ -38,12 +47,14 @@ const NAV = [
   { path: "/", label: "Today", icon: "today", roles: ["owner", "manager", "dealer"] },
   { path: "/customers", label: "Customers", icon: "customers", roles: ["owner", "manager", "dealer"] },
   { path: "/orders", label: "Orders", icon: "orders", roles: ["owner", "manager", "dealer"] },
-  { path: "/price-list", label: "Price list", icon: "prices", roles: ["owner", "manager", "dealer"] },
+  { path: "/price-list", label: "Price list", icon: "prices", roles: ["owner", "manager", "dealer"], visit: true },
   { path: "/lots", label: "Lots", icon: "lots", roles: ["owner", "manager", "dealer"] },
   { path: "/team", label: "Team", icon: "team", roles: ["owner", "manager"] },
-  { path: "/settings", label: "Settings", icon: "settings", roles: ["owner"] },
+  { path: "/settings", label: "Settings", icon: "settings", roles: ["owner"], visit: true },
   { path: "/help", label: "Help", icon: "help", roles: ["owner", "manager", "dealer"] },
 ];
+/* the only screens a Barnwright visit has */
+const VISIT_VIEWS = ["price-list", "settings"];
 
 const ROUTES = [
   [/^\/$/, "today"],
@@ -139,24 +150,25 @@ function buildLotPicker() {
 
 function frameUp() {
   const business = app.business;
+  const visit = !!app.barnwright;
   applyBrand(business);
-  const items = NAV.filter((n) => n.roles.includes(app.role));
+  const items = NAV.filter((n) => (visit ? n.visit : n.roles.includes(app.role)));
   navEls = items.map((n) => h("a", { href: "#" + n.path, class: "nav-item", dataset: { path: n.path } }, icon(n.icon), h("span", {}, n.label)));
   /* phones: the first four, then "More" with the rest */
   const phoneMain = items.slice(0, 4).map((n) => h("a", { href: "#" + n.path, class: "tab-item", dataset: { path: n.path } }, icon(n.icon), h("span", {}, n.label)));
   const more = items.slice(4);
   const moreSheet = h("div", { class: "more-sheet", hidden: true },
     more.map((n) => h("a", { href: "#" + n.path, class: "more-item", dataset: { path: n.path }, onclick: () => { moreSheet.hidden = true; } }, icon(n.icon), h("span", {}, n.label))),
-    h("button", { type: "button", class: "more-item", onclick: signOut }, icon("signOut"), h("span", {}, "Sign out")));
+    visit ? null : h("button", { type: "button", class: "more-item", onclick: signOut }, icon("signOut"), h("span", {}, "Sign out")));
   const moreBtn = h("button", { type: "button", class: "tab-item", onclick: () => { moreSheet.hidden = !moreSheet.hidden; } }, icon("menu"), h("span", {}, "More"));
-  lotPicker = buildLotPicker();
+  lotPicker = visit ? null : buildLotPicker();
   main = h("main", { id: "main", class: "main", tabindex: "-1" });
   clear(root,
     h("a", { href: "#main", class: "skip" }, "Skip to the page"),
     h("header", { class: "topbar" },
-      h("a", { href: "#/", class: "brand" }, badge(business),
+      h("a", { href: visit ? "#/price-list" : "#/", class: "brand" }, badge(business),
         brandWords(business)),
-      h("div", { class: "topbar-tools" },
+      visit ? h("div", { class: "topbar-tools" }) : h("div", { class: "topbar-tools" },
         lotPicker,
         h("a", { href: "#/customers?new=1", class: "btn btn-accent btn-small new-customer" }, icon("plus"), h("span", {}, "Customer")),
         h("a", { href: "#/help", class: "topbar-help", title: "Help", "aria-label": "Help", dataset: { path: "/help" } }, icon("help"), h("span", {}, "Help")),
@@ -221,16 +233,133 @@ function termsBanner() {
     btn);
 }
 
+/* Barnwright setup access, for the owner (server/office/setup-access.js;
+   me.setup is {mode, until, live}): while their switch is on, a line that
+   says until when, with Turn off. */
+const PRELIVE_WORDS = "Barnwright is setting up your prices. Look at the preview, check it with Alan, then open it to customers in Settings.";
+function switchBanner() {
+  const s = app.me?.setup;
+  if (!app.isOwner || s?.mode !== "switch") return null;
+  const btn = button("Turn off", async () => {
+    btn.disabled = true;
+    try {
+      await post("barnwright-help", { on: false });
+      await app.loadMe();
+      /* before live, setup access goes on: say only what stopped */
+      toast(app.me?.setup?.mode === "prelive"
+        ? "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access."
+        : "Barnwright can't change anything now.", { ms: 8000 });
+      render();
+    } catch (e) {
+      btn.disabled = false;
+      toast(e.message, { error: true });
+    }
+  }, { kind: "primary", small: true });
+  return h("div", { class: "banner info setup-switch" }, icon("user"),
+    h("span", {}, `Barnwright can change your price list and settings until ${untilWords(s.until)}.`), btn);
+}
+
+/* The bar on top of every screen during a Barnwright visit. Once it ended,
+   the server's own words: why, when access closed (the owner stopped it,
+   the switch went off, the designer opened), or what to tap. */
+function visitBar() {
+  if (app.visitEnded) return h("div", { class: "banner warn bw-bar", role: "alert" }, icon("alert"), h("span", {}, app.visitEndedWords || VISIT_ENDED));
+  const b = app.barnwright;
+  const lot = app.lots[0];
+  return h("div", { class: "banner info bw-bar", role: "status" }, icon("user"),
+    h("span", {}, `Working on ${app.business?.name || "this business"} as Barnwright until ${untilWords(b.visitEndsAt)}.`),
+    lot ? linkButton("Look at the preview", app.previewUrl(lot.slug), { small: true, newTab: true, icon: "cube" }) : null,
+    button("Done", doneVisit, { kind: "primary", small: true }));
+}
+
 function closedBanner() {
   if (app.demo) return demoBanner();
+  if (app.barnwright) return visitBar();
   const account = accountBanner();
   if (account) return account;
+  /* First setup asks for the tick itself, and says the rest */
+  if (app.me?.setupNeeded) return null;
   const terms = termsBanner();
   if (terms) return terms;
+  const setup = switchBanner();
+  if (setup) return setup;
   if (!app.business || app.business.open || !app.isOwner) return null;
+  const lot = app.openLots()[0] || app.lots[0];
   return h("div", { class: "banner warn" }, icon("alert"),
-    h("span", {}, "Your 3D designer links are closed to customers. Check your prices, then open them in Settings."),
+    h("span", {}, app.me?.setup?.mode === "prelive" ? PRELIVE_WORDS : "Your 3D designer links are closed to customers. Check your prices, then open them in Settings."),
+    lot ? linkButton("Look at the preview", app.previewUrl(lot.slug), { small: true, newTab: true, icon: "cube" }) : null,
     h("a", { href: "#/settings", class: "btn btn-small btn-primary" }, "Open for customers"));
+}
+
+/* ---- a Barnwright visit --------------------------------------------------------------- */
+
+/* A screen with words and nothing to sign in to. */
+function visitScreen(title, words) {
+  clear(root, h("main", { class: "auth" }, h("div", { class: "auth-card bw-card" }, h("h1", {}, title), h("p", {}, words))));
+}
+
+/* The visit ended while Alan was working: say so on top, keep everything on screen. */
+function visitEnded(data) {
+  const words = data?.code === "visit-ended" && typeof data.error === "string" ? data.error : null;
+  const first = !app.visitEnded;
+  if (!first && words === app.visitEndedWords) return;
+  app.visitEnded = true;
+  app.visitEndedWords = words;
+  if (first) window.dispatchEvent(new Event("dealer:visit-ended"));
+  drawVisitBar();
+}
+function drawVisitBar() {
+  const old = main && [...main.children].find((el) => el.matches(".bw-bar"));
+  if (old) old.replaceWith(visitBar());
+  else if (main) main.prepend(visitBar());
+}
+
+/* A request worked again after the visit ended: Alan opened a new visit
+   from his Control Room (its cookie is this whole browser's) and came back
+   to this tab. The bar says who and until when again, with Done. */
+let visitComingBack = false;
+async function visitBack() {
+  if (!app.visitEnded || visitComingBack) return;
+  visitComingBack = true;
+  app.visitEnded = false;
+  app.visitEndedWords = null;
+  try { await app.loadMe(); } catch { /* a 401 says so again */ }
+  visitComingBack = false;
+  if (!app.visitEnded) drawVisitBar();
+}
+
+async function doneVisit() {
+  if (app.leaveGuard) {
+    const question = app.leaveGuard();
+    if (question && !confirm(question)) return;
+  }
+  app.leaveGuard = null;
+  await endVisit();
+  visitMark(false);
+  const name = app.business?.name || "this business";
+  visitScreen("Done", `Your Barnwright visit to ${name} has ended. You can close this tab.`);
+}
+
+async function startBarnwright(pass) {
+  configureApi({ barnwright: true, visitEnded, visitBack });
+  if (pass) {
+    const out = await startVisit(pass);
+    if (out.status !== 200) {
+      return visitScreen(out.status === 401 || out.status === 410 ? "This link ran out" : "Barnwright can't open this price list",
+        out.error || "This link ran out. Tap Open their price list again.");
+    }
+    visitMark(true);
+  }
+  try {
+    await app.loadMe();
+  } catch (e) {
+    return visitScreen("Your Barnwright visit ended", e.message || VISIT_ENDED);
+  }
+  try { app.lots = (await get("lots")).lots || []; } catch { app.lots = []; }
+  frameUp();
+  const { path } = currentPath();
+  if (!/^\/(price-list|settings)(\/|$)/.test(path)) { history.replaceState(null, "", "#/price-list"); lastHash = "#/price-list"; }
+  render();
 }
 
 /* ---- showing a screen ----------------------------------------------------------- */
@@ -255,8 +384,16 @@ async function render() {
   const seq = ++renderSeq;
   app.leaveGuard = null;
   clear(main, closedBanner(), loading());
+  if (app.barnwright && !VISIT_VIEWS.includes(viewName)) {
+    if (path === "/") { go("/price-list"); return; }
+    viewName = null;
+  }
   if (!viewName) {
-    clear(main, emptyState("Nothing here", "That page doesn't exist.", h("a", { href: "#/", class: "btn btn-primary" }, "Go to Today")));
+    clear(main, closedBanner(), app.barnwright
+      /* the page is there for the team; a visit just doesn't include it */
+      ? emptyState("Only the price list and settings", "A Barnwright visit has only the price list and settings.",
+        h("a", { href: "#/price-list", class: "btn btn-primary" }, "Go to the price list"))
+      : emptyState("Nothing here", "That page doesn't exist.", h("a", { href: "#/", class: "btn btn-primary" }, "Go to Today")));
     return;
   }
   try {
@@ -281,6 +418,14 @@ async function render() {
 
 const HELP = /^#\/help(?:[?]|$)/;
 window.addEventListener("hashchange", () => {
+  /* a Barnwright visit's link opened in this tab: start the page again with it
+     (a draft on screen is kept in this tab first, visit-draft.js) */
+  if (location.hash.startsWith("#barnwright=")) {
+    window.dispatchEvent(new Event("pagehide"));
+    app.leaveGuard = null;   /* kept: no need to ask before leaving */
+    location.reload();
+    return;
+  }
   if (app.leaveGuard) {
     const question = app.leaveGuard();
     if (question && !confirm(question)) {
@@ -310,7 +455,7 @@ window.addEventListener("dealer:brand", () => {
       brandWords(business));
   }
   if (!main) return;
-  const old = [...main.children].find((el) => el.matches(".banner.warn, .banner.demo"));
+  const old = [...main.children].find((el) => el.matches(".banner.warn, .banner.demo, .banner.setup-switch, .bw-bar"));
   const fresh = closedBanner();
   if (old && fresh) old.replaceWith(fresh);
   else if (old) old.remove();
@@ -341,6 +486,16 @@ const DEMO_MODULE = __DEALER_DEMO__ ? "/ui/office/demo.js" : "";
    of the demo out; the local Dealer Center (tools/office-local.mjs) says true. */
 
 async function start() {
+  /* a Barnwright visit: the pass leaves the address at once */
+  const visitPass = /^#barnwright=([A-Za-z0-9_.-]{1,8000})$/.exec(location.hash)?.[1] || null;
+  if (location.hash.startsWith("#barnwright=")) {
+    history.replaceState(null, "", location.pathname + location.search);
+    lastHash = "";
+  }
+  if (visitPass || visitMarked()) {
+    clear(root, h("div", { class: "boot" }, loading("Opening their price list…")));
+    return startBarnwright(visitPass);
+  }
   clear(root, h("div", { class: "boot" }, loading("Opening the Dealer Center…")));
   let note = null;
   if (__DEALER_DEMO__ && new URLSearchParams(location.search).has("demo")) {

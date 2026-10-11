@@ -12,7 +12,7 @@
    search box, link: [address, words], when}. A link shows only to the
    people who can open that screen. `when: "connected"` is for a Dealer
    Center connected to Barnwright's control room only (a plan, its notes at
-   the top, Help from Barnwright), `when: "not-connected"` for one that
+   the top, the Barnwright card), `when: "not-connected"` for one that
    isn't (Alan's own business, the demo); no `when` fits both. Each Dealer
    Center shows at most 15 (the 15th, Oct 7 2026: putting the Dealer Center
    on a computer or phone). */
@@ -159,15 +159,17 @@ export const ANSWERS = Object.freeze([
     link: ["#/orders", "Open the orders"],
   },
   {
-    id: "barnwright-look",
+    /* the owner's one Barnwright card (server/office/setup-access.js) */
+    id: "barnwright",
     when: "connected",
-    title: "Let Barnwright look at your Dealer Center",
+    title: "Let Barnwright change your prices",
     lines: [
-      "Only the owner can turn this on. Tap **Settings**, then **Help from Barnwright** at the bottom.",
-      "Type what Barnwright should look at, pick how long (1 to 24 hours) and tap **Let Barnwright help**.",
-      "Barnwright sees how your Dealer Center runs, never your customers or prices, and can't change anything. **Turn off now** stops it at once, and it turns itself off when the time is up.",
+      "Only the owner can. Tap **Settings**, then the **Barnwright** card at the bottom.",
+      "Until your 3D designer is open to customers, Barnwright can set up your price list and settings for you. **Stop Barnwright's setup access** stops that.",
+      "After it's open, pick **Run checks** or **Run checks and change my price list and settings**, type what Barnwright should do, pick how long (1 to 24 hours) and tap **Turn on**.",
+      "Every change is listed on the card and in **Price list**, **History**, where **Put this back** undoes it. **Turn off now** stops it at once, and it turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team.",
     ],
-    find: "support check diagnostics look problem broken",
+    find: "barnwright change prices setup access switch support check diagnostics look problem broken help",
     link: ["#/settings", "Open Settings"],
   },
   {

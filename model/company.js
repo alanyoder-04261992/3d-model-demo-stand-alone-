@@ -53,9 +53,10 @@
    price, or {"price": n, "name": "Basic electric"} -- the name is then shown
    to customers and printed on the quote instead of the usual words. */
 
-import { constructionProblems, mergeConstruction } from "./construction.js";
+import { constructionProblems, mergeConstruction, strictConstructionProblems, effectsToTree, didYouMean } from "./construction.js";
 import { standardItems, NAMED_RECIPES } from "./loadouts.js";
-import { dims, pSpan, wallDefs } from "./frame.js";
+import { dims, pSpan, wallDefs, sidePorchLengthsOf } from "./frame.js";
+import * as BUILT from "./build-settings.js";
 
 export const ID_RE = /^[a-z0-9-]{2,40}$/;
 export const SIZE_RE = /^(\d{1,3}(?:\.\d+)?)x(\d{1,3}(?:\.\d+)?)$/;
@@ -70,8 +71,15 @@ export const DRAWS = ["shop-door", "steel-6panel", "lite-door", "roll-up", "wind
   "faux-loft", "light", "porch-post", "bench", "shelf", "outlet", "overhead-light"];
 export const SCENES = ["studio", "yard", "paper"];
 const TOP_KEYS = ["id", "status", "manufacturer", "brand", "offer", "categories", "items", "options", "palettes", "defaults",
-  "construction", "pricing", "notes", "leads", "embed", "look", "features", "license", "renames", "cfg"];
+  "construction", "built", "pricing", "notes", "leads", "embed", "look", "features", "license", "renames", "cfg"];
 const OPTION_GROUPS = ["dormers", "ramps", "elec", "misc", "rates", "extras"];
+/* What an offer entry and a manufacturer style may hold. Anything else is a
+   typo that used to be ignored without a word (offer.UT.wallH, sizez). */
+export const OFFER_KEYS = ["sizes", "name", "base", "built"];
+export const STYLE_KEYS = ["name", "category", "roof", "wallH", "side", "dormer", "porch", "metal", "kennel", "cottage",
+  "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft", "loadout", "porchDepthFt", "sidePorch", "dormerSide", "built"];
+/* A style trait typed on an offer entry is set in How it's built instead. */
+const TRAIT_KNOB_WORDS = { wallH: "wall height", porchDepthFt: "porch depth", sidePorch: "side porch lengths", dormerSide: "dormer side", rakeOverhang: "gable-end overhang", gambrel: "barn roof height" };
 
 const DEFAULT_CREDIT = { text: "3D designer by Barnwright", url: "", show: true };
 
@@ -185,6 +193,13 @@ export function validateManufacturer(m) {
     if (s.gambrel != null && (!isObj(s.gambrel) || s.roof !== "gambrel")) err.push(`${at}.gambrel only makes sense on a gambrel roof, as {lowerRise, upperRise, knee}.`);
     if (s.loft != null && !(isObj(s.loft) && Array.isArray(s.loft.ends) && typeof s.loft.depthFt === "number")) err.push(`${at}.loft must look like {"ends": ["F", "B"], "depthFt": 4}.`);
     if (s.rakeOverhang != null && typeof s.rakeOverhang !== "number") err.push(`${at}.rakeOverhang must be a number of feet.`);
+    if (s.porchDepthFt != null && !(s.porch && typeof s.porchDepthFt === "number" && s.porchDepthFt >= 3 && s.porchDepthFt <= 8)) err.push(`${at}.porchDepthFt is the porch depth in feet, 3 to 8, on a style with a porch.`);
+    if (s.sidePorch != null && !(s.porch === "S" && isObj(s.sidePorch) && Array.isArray(s.sidePorch.lengthsFt) && s.sidePorch.lengthsFt.length >= 1 && s.sidePorch.lengthsFt.length <= 4 &&
+      s.sidePorch.lengthsFt.every((n) => Number.isInteger(n) && n >= 4 && n <= 20))) err.push(`${at}.sidePorch must look like {"lengthsFt": [8, 12]}: 1 to 4 whole feet from 4 to 20, on a side porch style.`);
+    if (s.dormerSide != null && !(s.dormer && (s.dormerSide === "door" || s.dormerSide === "back"))) err.push(`${at}.dormerSide is "door" or "back", on a style with a dormer.`);
+    /* the manufacturer file lives in the repo and is checked before every
+       deploy, so a typo in it is an error, not a warning */
+    for (const f of Object.keys(s)) if (!f.startsWith("_") && STYLE_KEYS.indexOf(f) < 0) err.push(`${at}.${f} is not part of a style${didYouMean(f, STYLE_KEYS)}`);
   }
   const I = m.items;
   if (!isObj(I) || !keysOf(I).length) err.push("The manufacturer file has no items.");
@@ -209,6 +224,18 @@ export function validateManufacturer(m) {
     if (["floor", "wall", "roof"].indexOf(r && r.basis) < 0) err.push(`options.rates.${id}.basis must be floor, wall or roof.`);
   }
   err.push(...constructionProblems(m.construction || {}, "manufacturer construction"));
+  err.push(...strictConstructionProblems(m.construction || {}, "construction"));
+  /* the shop standard's "How it's built" numbers (styles.<KEY>.built) */
+  err.push(...BUILT.libraryProblems(m));
+  /* an option's effect on how the building is built (rates.jo12: floor.spacingIn 12) */
+  for (const g of ["dormers", "ramps", "elec", "misc", "rates"]) {
+    for (const id of keysOf(O[g])) {
+      const fx = isObj(O[g][id]) ? O[g][id].construction : undefined;
+      if (fx === undefined) continue;
+      if (!isObj(fx)) { err.push(`options.${g}.${id}.construction must be {"setting.path": value}.`); continue; }
+      err.push(...effectProblems(fx, `options.${g}.${id}.construction`));
+    }
+  }
   return err;
 }
 
@@ -238,11 +265,15 @@ function traitsOf(it) {
 /* Every item a style's standard layout uses at any of these sizes. */
 function loadoutCats(t, key, sizes, CAT) {
   const cats = new Set();
-  const variants = t.porch === "S" ? [{ pLen: 12 }, { pLen: 12, pMid: true }, { pLen: 8, pFlip: true }] : [{ pLen: 12 }];
+  /* a side porch at each length the style allows: at the end, flipped and
+     in the middle (the layout differs at 12 ft and longer) */
+  const variants = t.porch === "S"
+    ? [].concat(...sidePorchLengthsOf(t).map((n) => [{ pLen: n }, { pLen: n, pMid: true }, { pLen: n, pFlip: true }]))
+    : [{ pLen: 12 }];
   for (const z of sizes) {
     const d = dims(z, t);
     for (const v of variants) {
-      const span = pSpan(v, d);
+      const span = pSpan(v, d, t);
       const ws = wallDefs(t, d, span, null);
       for (const it of standardItems(t, d.W, d.L, { CAT, span, ws }, key)) cats.add(it.cat);
     }
@@ -466,12 +497,20 @@ export function validate(company, manufacturer) {
         O.extras.forEach((x, i) => {
           const at = `options.extras[${i}]`;
           if (!isObj(x)) { err.push(`${at} must be {key, name, input, price}.`); return; }
-          if (!/^[A-Za-z0-9_-]{1,40}$/.test(String(x.key || ""))) err.push(`${at}.key must be 1 to 40 letters, digits, dashes or underscores.`);
+          /* text only: the 3D designer reads keys as text, so 5 and "5" would be one extra */
+          if (typeof x.key !== "string" || !/^[A-Za-z0-9_-]{1,40}$/.test(x.key)) err.push(`${at}.key must be 1 to 40 letters, digits, dashes or underscores.`);
           else if (seen.has(x.key)) err.push(`${at}.key ${q(x.key)} is used twice.`);
           seen.add(x.key);
           if (typeof x.name !== "string" || !x.name.trim()) err.push(`${at}.name is missing.`);
           if (EXTRA_INPUTS.indexOf(x.input) < 0) err.push(`${at}.input ${q(x.input)} is not a kind of extra (use ${EXTRA_INPUTS.join(", ")}).`);
           if (!isPrice(x.price)) err.push(`${at}.price must be a number, 0 or more.`);
+          /* the buildings it is offered on (left out: every building). A
+             style the business stopped selling is simply not reached; a
+             code that is no building style at all is a mistake. */
+          if (x.styles != null) {
+            if (!Array.isArray(x.styles) || !x.styles.length || x.styles.some((k) => typeof k !== "string")) err.push(`${at}.styles must be a list of building style codes, like ["UT", "SU"] (leave it out for every building).`);
+            else for (const k of x.styles) if (!own(styles, k) && !own(offer, k)) err.push(`${at}.styles lists ${q(k)}, which is not a building style${didYouMean(k, keysOf(styles).concat(keysOf(offer)))}`);
+          }
         });
       }
     }
@@ -535,7 +574,9 @@ export function validate(company, manufacturer) {
         }
       }
       if (D.dormer != null && D.dormer !== "none" && !(isObj(O) && own(O.dormers, D.dormer))) err.push(`defaults.dormer ${q(D.dormer)} is not an offered dormer size.`);
-      if (D.porchLength != null && D.porchLength !== 8 && D.porchLength !== 12) err.push("defaults.porchLength must be 8 or 12.");
+      /* the side porch the designer opens on: whole feet, 4 to 20 (a style
+         that does not sell it opens on its longest) */
+      if (D.porchLength != null && !(Number.isInteger(D.porchLength) && D.porchLength >= 4 && D.porchLength <= 20)) err.push("defaults.porchLength must be a whole number of feet from 4 to 20.");
     }
   }
 
@@ -647,6 +688,84 @@ export function validate(company, manufacturer) {
 }
 
 /* ------------------------------------------------------------------------ */
+/* An option's effect on how the building is built                           */
+
+/* What is wrong with an extra's or an option's construction effect
+   ({"floor.spacingIn": 12}): a path the code never reads (did you mean...),
+   a value that cannot be built, or a number a How it's built knob owns (an
+   extra holds those in its own built: {"roofPitch": 7}) -- an extra that
+   raised a roof through "roof.shapes.gable.rise" used to be copied in
+   unchecked. -> problems in settings-path words, [] when good. */
+export function effectProblems(fx, at) {
+  if (fx === undefined) return [];
+  if (!isObj(fx)) return [`${at} must be {"setting.path": value}.`];
+  const tree = effectsToTree(fx);
+  const out = [];
+  for (const id of Object.keys(BUILT.KNOB_PATHS)) {
+    for (const p of BUILT.KNOB_PATHS[id]) {
+      if (p.split(".").reduce((o, k) => (isObj(o) ? o[k] : undefined), tree) === undefined) continue;
+      const K = BUILT.KNOBS.find((k) => k.id === id);
+      out.push(`${at}.${p}: An option's construction settings hold the ${K.words}. Set it in How it's built instead.`);
+    }
+  }
+  out.push(...notOnOwnedPaths(strictConstructionProblems(tree, at).concat(constructionProblems(tree, at)), tree, at));
+  return out;
+}
+
+/* A construction setting on a path a How it's built knob owns is said once
+   ("set it in How it's built"): its other problems are left out. */
+function notOnOwnedPaths(problems, tree, at) {
+  const owned = [];
+  for (const id of Object.keys(BUILT.KNOB_PATHS)) for (const p of BUILT.KNOB_PATHS[id]) {
+    if (p.split(".").reduce((o, k) => (isObj(o) ? o[k] : undefined), tree) !== undefined) owned.push(`${at}.${p}`);
+  }
+  if (!owned.length) return problems;
+  return problems.filter((x) => {
+    const path = (/^[^:\s]+/.exec(x) || [""])[0];
+    return !owned.some((o) => path === o || path.startsWith(o + ".") || path.startsWith(o + "["));
+  });
+}
+
+/* ------------------------------------------------------------------------ */
+/* Strict problems: new rules a price list may already break               */
+
+/* THE NEW, STRICTER RULES, kept apart from validate() so a price list that
+   is already saved never stops working. validate() keeps exactly its old
+   rules: it guards the lot's 3D designer (ui/load.js), quote pricing
+   (resolve) and every save. strictProblems() is never run when a price list
+   is READ; the Dealer Center's save (server/office/price-list.js check)
+   refuses only the strict problems the stored price list did not already
+   have, and putting back an old copy is always allowed.
+     - an offer entry key that is not one (offer.UT.wallH, offer.SU.sizez)
+     - a construction path the code never reads (roof.shapes.gable.rize),
+       and a roof length written so it cannot be drawn */
+export function strictProblems(company, manufacturer) {
+  const out = [];
+  if (!isObj(company) || !isObj(manufacturer)) return out;
+  for (const k of keysOf(company.offer)) {
+    const o = company.offer[k];
+    if (!isObj(o)) continue;
+    for (const f of Object.keys(o)) {
+      if (f.startsWith("_") || OFFER_KEYS.indexOf(f) >= 0) continue;
+      out.push(TRAIT_KNOB_WORDS[f] ? `offer.${k}.${f} is not part of a building style. Set its ${TRAIT_KNOB_WORDS[f]} in How it's built instead.`
+        : `offer.${k}.${f} is not part of a building style${didYouMean(f, OFFER_KEYS)}`);
+    }
+  }
+  if (isObj(company.construction)) out.push(...notOnOwnedPaths(strictConstructionProblems(company.construction, "construction"), company.construction, "construction"));
+  /* How it's built: the business's own numbers, checked; a raw construction
+     setting on a path a knob owns ("set it in How it's built instead") */
+  for (const p of BUILT.problems(company, manufacturer)) out.push(`${p.path}: ${p.words}`);
+  /* an extra's built: only the knobs an extra may hold */
+  const extras = isObj(company.options) && Array.isArray(company.options.extras) ? company.options.extras : [];
+  extras.forEach((x, i) => {
+    if (!isObj(x)) return;
+    for (const p of BUILT.extraProblems(x.built, `options.extras[${i}].built`, x.name)) out.push(`${p.path}: ${p.words}`);
+    out.push(...effectProblems(x.construction, `options.extras[${i}].construction`));
+  });
+  return out;
+}
+
+/* ------------------------------------------------------------------------ */
 /* resolve                                                                   */
 
 export function deepFreeze(o) {
@@ -664,6 +783,14 @@ function stripHelp(v) {
   return v;
 }
 
+/* Is a business's own extra offered on this building style? An extra with
+   a styles list is offered only on those styles and on the styles of the
+   business's own built like them; one without, on every building. */
+export function extraOfferedOn(x, t, key) {
+  if (!x || !Array.isArray(x.styles)) return true;
+  return x.styles.indexOf(key) >= 0 || !!(t && t.base && x.styles.indexOf(t.base) >= 0);
+}
+
 export function resolve(company, manufacturer, library) {
   const mErr = validateManufacturer(manufacturer);
   const cErr = validate(company, manufacturer);
@@ -673,7 +800,11 @@ export function resolve(company, manufacturer, library) {
     e.problems = all;
     throw e;
   }
-  const c = company, m = manufacturer, mO = m.options || {}, O = c.options || {};
+  /* a roof pitch rule list the Barnwright setup connector wrote is read as
+     How it's built (the drawn roof is the same either way) */
+  const c = BUILT.liftRawRules(company, manufacturer).settings, m = manufacturer, mO = m.options || {}, O = c.options || {};
+  /* How it's built: each offered style's own numbers (model/build-settings.js) */
+  const built = BUILT.apply(c, m, library);
   const COLORS = {
     paint: resolvePalette(c.palettes && c.palettes.paint, m, "paint"),
     trim: resolvePalette(c.palettes && c.palettes.trim, m, "trim"),
@@ -686,10 +817,17 @@ export function resolve(company, manufacturer, library) {
     const o = c.offer[k], base = o.base != null ? o.base : k, s = m.styles[base];
     const t = { name: o.base != null ? o.name.trim() : (o.name || s.name), roof: s.roof, wallH: s.wallH };
     for (const f of ["side", "dormer", "porch", "metal"]) if (s[f] !== undefined) t[f] = s[f];
-    for (const f of ["kennel", "cottage", "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft"]) if (s[f] !== undefined) t[f] = copy(s[f]);
+    for (const f of ["kennel", "cottage", "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft", "porchDepthFt", "sidePorch", "dormerSide"]) if (s[f] !== undefined) t[f] = copy(s[f]);
     t.loadout = copy(s.loadout);
     t.category = s.category || "";
     if (o.base != null) t.base = base;
+    const B = built.styles[k];
+    if (B) {
+      Object.assign(t, copy(B.traits));
+      for (const f of B.drop) delete t[f];
+      if (Object.keys(B.construction).length) t.construction = copy(B.construction);
+      if (Object.keys(B.built).length) t.built = copy(B.built);
+    }
     TYPES[k] = t;
     P[k] = {};
     for (const z of keysOf(o.sizes)) P[k][z] = o.sizes[z];
@@ -760,9 +898,31 @@ export function resolve(company, manufacturer, library) {
   for (const g of [["dormers", "dormer"], ["ramps", "ramp"], ["elec", "elec"], ["misc", "misc"]]) {
     for (const id of keysOf(mO[g[0]])) if (own(O[g[0]], id) && mO[g[0]][id].construction) optionEffects[g[1] + "." + id] = stripHelp(copy(mO[g[0]][id].construction));
   }
+  const settingsWarnings = built.warnings.slice();
   const extras = (O.extras || []).map((x) => {
     const e = { key: x.key, name: x.name, input: x.input, price: x.price };
-    if (x.construction) optionEffects[x.key] = stripHelp(copy(x.construction));
+    /* offered only on these buildings (and the styles of the business's own
+       built like them); left out, on every building */
+    if (Array.isArray(x.styles)) e.styles = x.styles.slice();
+    /* an extra's construction effect is used only when every bit of it is a
+       real setting with a buildable value, and never on a number a How it's
+       built knob owns; otherwise it changes nothing and the owner is told */
+    if (x.construction) {
+      if (effectProblems(x.construction, "construction").length) settingsWarnings.push(`${x.name}: its construction settings could not be used, so it does not change how the building is built.`);
+      else optionEffects[x.key] = stripHelp(copy(x.construction));
+    }
+    /* an extra's How it's built numbers, worked out for each style it
+       reaches (its roof pitch only ever makes a roof steeper) */
+    if (isObj(x.built)) {
+      /* the roof it gives, for the designer's words ("7/12 roof") */
+      const rp = x.built.roofPitch !== undefined ? BUILT.parse("roofPitch", x.built.roofPitch, {}) : null;
+      if (rp && !rp.problem) e.roofPitch = rp.value;
+      for (const k of Object.keys(TYPES)) {
+        if (!extraOfferedOn(e, TYPES[k], k)) continue;
+        const fx = BUILT.optionEffectFor(x.built, TYPES[k]);
+        if (fx) (TYPES[k].optionEffects = TYPES[k].optionEffects || {})[x.key] = fx;
+      }
+    }
     return e;
   });
   const LISTS = {};
@@ -798,6 +958,9 @@ export function resolve(company, manufacturer, library) {
     defaults,
     construction: mergeConstruction(library || {}, m.construction || {}, c.construction || {}),
     optionEffects,
+    /* How it's built numbers that could not be used (a bad value falls back
+       to the next layer); the Dealer Center shows them to the owner */
+    settingsWarnings,
     pricing: {
       show: pr.show || "price",
       roundTo: pr.roundTo != null ? pr.roundTo : 5,

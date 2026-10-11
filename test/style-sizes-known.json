@@ -1,0 +1,25 @@
+{
+  "_help": "Problems the every-size check (node tools/check-style-sizes.mjs, model/style-check.js) finds in today's standard buildings that are kept on purpose. Each line turns exactly that problem into a warning, with its reason; any problem NOT listed here fails the check. A line that no longer matches anything also fails, so take it out when the building is fixed. Add a line only with a reason a person can read. Fields: styles (the library style codes; a style of a business's own is matched by the style it is built like), sizes (leave out for every size), variants (leave out for every variant), code and id (exactly as the check prints them), maxIn (the most this line covers, in inches: the same fault made worse -- a business's numbers, a deploy -- is a new problem and fails), reason.",
+  "known": [
+    {
+      "styles": ["SU", "DS", "SLB"], "sizes": ["8x12", "10x12"], "code": "overlap", "id": "overlap:R:w23/w72", "maxIn": 2.4375,
+      "reason": "Barnwright's standard layout: on a 12 ft long side wall the window is pushed 2 3/8 in into the double doors' opening. Kept for the golden test (BUILDFAST-SPEC C.5, question I.11)."
+    },
+    {
+      "styles": ["BU"], "sizes": ["6x10"], "code": "overlap", "id": "overlap:R:w23/w48", "maxIn": 1.125,
+      "reason": "Barnwright's standard layout: on the 6x10 Backyard Utility the window is pushed 1 1/8 in into the door's opening. Kept for the golden test (BUILDFAST-SPEC C.5, question I.11)."
+    },
+    {
+      "styles": ["SB"], "sizes": ["8x12", "10x12"], "code": "eave", "id": "eave:L:floor", "maxIn": 25.8125,
+      "reason": "The Standard Barn is a mini barn with 4 ft 2 in walls: its roof edge is 3 ft 10 in above the floor by design, nobody walks under it, and its doors are in the end walls."
+    },
+    {
+      "styles": ["SB"], "sizes": ["8x12", "10x12"], "code": "eave", "id": "eave:R:floor", "maxIn": 25.8125,
+      "reason": "The Standard Barn is a mini barn with 4 ft 2 in walls: its roof edge is 3 ft 10 in above the floor by design, nobody walks under it, and its doors are in the end walls."
+    },
+    {
+      "styles": ["LBG"], "sizes": ["12x20", "12x24", "12x30", "12x32"], "code": "eave", "id": "eave:R:d36in", "maxIn": 0.8125,
+      "reason": "Barnwright's standard layout: the barn roof's edge comes down 3/4 in in front of the head of the side door on the 12 ft wide Lofted Barn Garage (5/8 in with Alan's barn roof heights, the shop standard since Oct 11 2026). Kept for the golden test; reported to Alan (Oct 2026)."
+    }
+  ]
+}

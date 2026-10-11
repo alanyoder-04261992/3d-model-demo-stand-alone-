@@ -45,7 +45,11 @@ export const WORDS = Object.freeze({
   busy: "We couldn't send that just now. Please try again in a minute.",
 });
 
+/* a preview of a closed 3D designer (ui/load.js) never sends anything */
+export const PREVIEW_WORDS = "This is a preview. Customers can send quotes once it is open.";
+
 export async function submitManagedOrder(managed, design, contact, timeoutMs = 20000) {
+  if (managed.preview) return failed("answer", PREVIEW_WORDS, 0);
   const url = managed.quoteUrl || managed.orderUrl;          /* orderUrl: a page opened before the change */
   const content = JSON.stringify({ design, contact, version: managed.version });
   const digest = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256",

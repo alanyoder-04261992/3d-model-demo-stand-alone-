@@ -45,10 +45,28 @@ construction lists come from `library/`). Where each answer goes:
 | 3. Lots | Lots: name, address, phone, email, hours, website (`embedOrigins`) |
 | 4. Team | Team: owner, manager or dealer, and their lots |
 | 5. Styles, sizes and prices | Price list: `offer` (own names as `name`; a style of their own is a new key with `base`), standard doors and windows |
-| 6. How they build | the `construction` block (the `change-construction` skill); there is no Dealer Center screen for it |
+| 6. How they build | roof pitch, barn roof height, eave and gable-end overhangs, wall height, shop door height, porch depth, side porch lengths, dormer side: How it's built, `offer.<KEY>.built` per style or `built` business-wide (the `how-its-built` skill); studs, joists, trusses, anchors: the `construction` block (the `change-construction` skill); there is no Dealer Center screen for either yet |
 | 7. Doors, windows, options | Price list: `items`, `options` (own names as `{price, name}`), `options.extras` |
 | 8. Colors | Price list: `palettes`, `defaults` |
 | 9. Prices and quotes | Settings: `pricing.show`, `notes.finePrint`, `notes.sizeNotes`, `pricing.rto` (factor = 5000 / (monthly × months)), `leads.fields`, `leads.askPlan`, `leads.smsConsent` |
+
+**Barnwright can do sections 2, 5, 7, 8 and 9 for them** before their 3D
+designer opens to customers (Barnwright setup access, "Barnwright setup
+access" in `docs/OFFICE.md`): in the Control Room, **Open their price list**
+opens their Dealer Center as Barnwright with only the price list and
+settings, and the Claude connector will do the same through the Control
+Room once it is there. It works only after their owner agrees to the
+Barnwright terms 2.2, and their owner can stop it on the Barnwright card in
+Settings. It can't open the 3D designer, change where quotes go or which
+websites may show it, or change how the buildings are built (except a
+building style's own numbers in How it's built, like a gable roof's pitch;
+the numbers for the whole business stay the owner's). Lots (3), team (4)
+and how they build (6) stay as above: the
+owner adds lots and the team, and construction is changed here with the
+`change-construction` skill. Before opening, go through each lot's preview
+with the owner (**Look at the preview**); then the owner opens it in
+Settings, 3D designer, **Open to customers**. After that, Barnwright changes
+nothing unless the owner turns on the switch on the Barnwright card.
 
 Run `npm run build:client` for a client delivery. Do not include learning pages,
 reference photos, setup tools, `.agents`, `.claude` or these skills. The existing
@@ -101,8 +119,21 @@ current setup; do not ask the company to repeat information already supplied.
    and optionally the page it sits on (`embed.shareUrl`).
 8. **Fine print**, width notes, price display (`price`, `from` or `none`),
    rent-to-own term or none.
-9. **How they build, if not standard** (studs, joists, trusses, anchors, loft
-   depth) -- that part is the `change-construction` skill.
+9. **How they build, if not standard** -- the roof pitch (like 5/12), the
+   wall height (like 7 ft 9 1/2 in), the porch depth and side porch lengths,
+   the overhangs, the barn roof height, the shop door height and the dormer
+   side are How it's built (the `how-its-built` skill); studs, joists,
+   trusses, anchors and loft depth are the `change-construction` skill.
+   The standard already has Alan's shop numbers (Oct 2026): 5/12 roofs and
+   4 in roof edges on the Utility Shed, Side Utility, Garage, Dog Kennel and
+   Garden Utility, with 7 ft 9 1/2 in walls on the first three; the Dormer
+   Shed's main roof at 7/12; barn roofs 3 ft 7 3/4 in, 4 ft and 4 ft 3 in
+   tall at 8, 10 and 12 ft wide on the Lofted Barn, Side Lofted Barn, Metal
+   Lofted Barn and Lofted Barn Garage, with 6 ft 7 1/2 in walls on the
+   first three. Ask only what differs from those. A steep roof they sell as
+   an option is an extra they make with `built.roofPitch` and `styles`
+   (for example "Steep roof" at 7/12 on the Utility Shed and Side
+   Utility); no sample price list has one (Alan, Oct 11 2026).
 
 Also ask Alan: the licence renewal date, and whether this company is
 white-label (no "3D designer by Barnwright" line).
@@ -200,7 +231,12 @@ The ones that usually need a hand edit:
 * `features` -- `framingView`, `buildPlayback`, `floorPlan`.
 * `brand.credit.show` -- `false` only for a white-label licence.
 * `license` -- `plan` (`hosted`), `renews`.
-* `construction` -- only through the `change-construction` skill.
+* `built` and each style's `offer.<KEY>.built` -- only through the
+  `how-its-built` skill. Today's numbers (and the shop standard where Alan
+  confirmed one) need nothing written.
+* `construction` -- only through the `change-construction` skill. A roof
+  pitch, overhang, barn roof height or door height written here is refused:
+  those are How it's built.
 
 ## 5. Validate
 

@@ -110,11 +110,20 @@ export async function loadCatalogue(id, opts) {
    When the lot cannot be loaded, the Error says why for the console and
    carries .status (the server's answer, e.g. 404 for a closed lot; 0 when
    there was no answer at all). With settings problems, `lot` is returned
-   too, so the page can still show the lot's phone number. */
+   too, so the page can still show the lot's phone number.
+
+   opts.preview: "team" or "barnwright" -- the lot's 3D designer while it
+   is closed, for the team signed in to the Dealer Center or a Barnwright
+   visit (/d/<lot>/?preview=1 or ?preview=barnwright). The server checks who
+   asks (GET api/office/lots/<lot>/preview, or .../barnwright/lots/...);
+   the catalogue is marked managed.preview, and has no address to send a
+   quote to: a preview never takes a quote. */
 export async function loadLot(slug, opts = {}) {
   checkId(slug, "The lot");
   const base = opts.base || ROOT;
-  const data = await fetchLot(`api/lots/${slug}`, base);
+  const preview = opts.preview === "team" || opts.preview === "barnwright" ? opts.preview : null;
+  const data = await fetchLot(preview === "barnwright" ? `api/office/barnwright/lots/${slug}/preview`
+    : preview ? `api/office/lots/${slug}/preview` : `api/lots/${slug}`, base);
   const company = data.company;
   const lot = data.lot || {};
   const [manufacturer, library] = await Promise.all([
@@ -136,7 +145,9 @@ export async function loadLot(slug, opts = {}) {
     managed: Object.freeze({
       slug, lotId: lot.id || slug, lotName, lotPhone: lot.phone || "",
       businessName: cat.brand.name || "", companyId: company.id, version: data.version,
-      quoteUrl: new URL(`api/lots/${slug}/quote-requests`, base).href,
+      quoteUrl: preview ? null : new URL(`api/lots/${slug}/quote-requests`, base).href,
+      /* previewer: who is looking, "team" or "barnwright" (the bar's words) */
+      ...(preview ? { preview: true, previewer: preview, closed: data.closed === "lot" ? "lot" : "business" } : {}),
     }),
   });
   return { company, manufacturer, library, lot, catalogue, problems: [] };

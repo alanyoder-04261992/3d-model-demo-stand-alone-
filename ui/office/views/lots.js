@@ -205,11 +205,14 @@ function designerLink(ctx, lot) {
     note = h("p", { class: "lots-link-note" }, "Your 3D designer is closed to customers, so this link shows a short message for now.",
       app.isOwner ? [" ", h("a", { href: "#/settings" }, "Open it in Settings")] : null);
   }
+  /* closed to customers: the team can still look at it, as a preview */
+  const preview = (!isOpen || !businessOpen) && !app.demo
+    ? linkButton("Look at the preview", app.previewUrl(lot.slug), { icon: "cube", newTab: true, small: true }) : null;
   return h("div", { class: ["lots-link", !isOpen && "off"] },
     h("h3", { class: "lots-sub" }, icon("link"), "Its 3D designer link"),
     h("p", { class: "lots-url" }, url),
     h("div", { class: "actions" },
-      linkButton("Open the designer", url, { icon: "cube", newTab: true, small: true }),
+      preview || linkButton("Open the designer", url, { icon: "cube", newTab: true, small: true }),
       button("Copy link", async () => say(await copyText(url), "Link copied."), { icon: "copy", small: true })),
     note);
 }
