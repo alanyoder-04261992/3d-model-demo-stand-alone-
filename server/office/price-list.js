@@ -228,6 +228,37 @@ const priceOf = (v) => (v && typeof v === "object" ? v.price : v);
 const keys = (o) => Object.keys(o || {}).filter((k) => !k.startsWith("_"));
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
+/* A gable roof's pitch, set for one library style by a construction rule
+   (Barnwright's set_roof_pitch, setup-edits.js): the rule list
+   construction.roof.shapes.gable.rise is one {when: {styles: [code]},
+   value: {w: N/24}} per style, then the library's own rise last. A rule
+   for a library style also reaches every style built like it, so the words
+   say so: "Utility Shed and every building built like it: roof pitch
+   6.5/12 (standard) → 5/12". */
+function pitchRules(s) {
+  const rise = s?.construction?.roof?.shapes?.gable?.rise;
+  const rules = new Map();
+  if (!Array.isArray(rise)) return { rules, last: rise };
+  for (const r of rise) {
+    const code = r?.when?.styles?.length === 1 ? r.when.styles[0] : null;
+    if (code && typeof r.value?.w === "number" && !rules.has(code)) rules.set(code, r.value.w);
+  }
+  return { rules, last: rise[rise.length - 1] };
+}
+function pitchChanges(before, after, M) {
+  const a = pitchRules(before), b = pitchRules(after);
+  const standardW = [b.last, a.last].map((x) => x?.value?.w ?? x?.w).find((w) => typeof w === "number");
+  const standard = typeof standardW === "number" ? `${Math.round(standardW * 48) / 2}/12 (standard)` : "standard";
+  const words = (w) => (w === undefined ? standard : `${Math.round(w * 24)}/12`);
+  const name = (code) => (typeof after.offer?.[code]?.name === "string" && after.offer[code].name.trim()) || M.styles?.[code]?.name || code;
+  const out = [];
+  for (const code of [...new Set([...b.rules.keys(), ...a.rules.keys()])]) {
+    const from = words(a.rules.get(code)), to = words(b.rules.get(code));
+    if (from !== to) out.push(`${name(code)} and every building built like it: roof pitch ${from} → ${to}`);
+  }
+  return out;
+}
+
 export function describeChanges(before, after, manufacturer) {
   const out = [];
   const M = manufacturer;
@@ -272,6 +303,7 @@ export function describeChanges(before, after, manufacturer) {
   if (Array.isArray(before.categories) !== Array.isArray(after.categories) || !same(kept(before.categories), kept(after.categories))) {
     out.push("Changed how buildings are grouped");
   }
+  out.push(...pitchChanges(before, after, M));
 
   /* doors, windows, fixtures */
   const oi = before.items || {}, ni = after.items || {};
@@ -471,8 +503,9 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
   /* The save worked out without writing anything: the settings it would
      store (cfg worked out) and the changes in words. Throws what save()
      would (409 someone saved first, 422 problems in the owner's words).
-     lock(old, next) -> [words] runs first, for Barnwright. */
-  function prepared(previous, settings, version, { restoring = null, lock = null } = {}) {
+     lock(old, next) -> [words] runs first, for Barnwright. lead: a first
+     change line of its own (Barnwright's undo). */
+  function prepared(previous, settings, version, { restoring = null, lock = null, lead = null } = {}) {
     if (!settings || typeof settings !== "object" || Array.isArray(settings)) fail(422, "The price list is missing. Reload the page and try again.");
     if (!previous) fail(404, "The price list has not been set up yet.");
     if (version !== previous.data.version) savedFirst(previous);
@@ -493,6 +526,7 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     check(next);
     const changes = describeChanges(old, next, manufacturer);
     if (restoring) changes.unshift(`Put back the price list saved ${restoring}`);
+    if (lead && changes.length) changes.unshift(lead);
     return { next, changes };
   }
 
@@ -505,12 +539,12 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
 
   /* Save the whole price list. The browser sends the version it started
      from; if someone else saved since, nothing is written (409).
-     options: restoring (the day of the price list put back), lock,
+     options: restoring (the day of the price list put back), lock, lead,
      savedBy (who, when it isn't `by`: Barnwright), ensureHistory (keep a
      copy of the one in use first, or refuse). */
-  async function save(by, { settings, version }, { restoring = null, lock = null, savedBy = null, ensureHistory = false } = {}) {
+  async function save(by, { settings, version }, { restoring = null, lock = null, lead = null, savedBy = null, ensureHistory = false } = {}) {
     const previous = await current();
-    const { next, changes } = prepared(previous, settings, version, { restoring, lock });
+    const { next, changes } = prepared(previous, settings, version, { restoring, lock, lead });
     const old = previous.data.settings;
     if (!changes.length) return { ...previous.data, cfg: old.cfg, changes: [] };
     if (ensureHistory) await keepCopy(previous.data);

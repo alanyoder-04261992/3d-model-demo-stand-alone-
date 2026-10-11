@@ -77,7 +77,7 @@ const riseOf = (construction) => (isObj(construction?.roof?.shapes?.gable) ? con
 
 /* A rise Barnwright may write: one rule per library gable style, N/12 for N
    from 3 to 12, then the library's own rise last. */
-function pitchRuleOk(rise, standardRise) {
+export function pitchRuleOk(rise, standardRise) {
   if (rise === undefined) return true;
   if (!Array.isArray(rise) || rise.length < 2) return false;
   const last = rise[rise.length - 1];
@@ -160,7 +160,8 @@ export function carryLocked(from, into) {
     construction.roof.shapes.gable = isObj(construction.roof.shapes.gable) ? construction.roof.shapes.gable : {};
     construction.roof.shapes.gable.rise = structuredClone(rise);
   }
-  if (Object.keys(construction).length) out.construction = construction;
+  /* an empty construction stays written the way it is now ({} or left out) */
+  if (Object.keys(construction).length || isObj(f.construction)) out.construction = construction;
   else delete out.construction;
   return out;
 }

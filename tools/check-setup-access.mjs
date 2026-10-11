@@ -31,6 +31,9 @@
      F9   no clock times inside stored sentences
      F10  a visit that ended says so in words, with a code, never a sign-in
      F11  the owner's one Barnwright card
+     A6   every edit in the contract gives the fixtures' change words,
+          warnings and exact settings; F5 contact details in words
+          customers read; F13 a gable roof's pitch, drawn as set
    (A13, nothing but netlify.js imports control-room.js, is in
    tools/check-imports.mjs; A14, the screens, in tools/check-setup-screens.mjs.) */
 
@@ -39,11 +42,16 @@ import { resolve as resolvePath, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash, generateKeyPairSync } from "node:crypto";
 import { createOffice } from "../server/office/index.js";
-import { MemoryBlobs } from "../server/office/store.js";
+import { MemoryBlobs, wrapStore } from "../server/office/store.js";
 import { TenantLicenseClient, createLeaseStore, SETUP_PASS_PREFIX } from "../server/office/control-room.js";
 import { lockProblems, carryLocked, LOCK_WORDS } from "../server/office/setup-lock.js";
 import { WHY, VISIT_WORDS, OWNER_WORDS, termsAtLeast } from "../server/office/setup-access.js";
-import { BARNWRIGHT_SAVED_FIRST, NO_COPY } from "../server/office/price-list.js";
+import { BARNWRIGHT_SAVED_FIRST, NO_COPY, describeChanges, createPriceList, priceFingerprint } from "../server/office/price-list.js";
+import { applyEdits, warnings, contactKinds } from "../server/office/setup-edits.js";
+import { readView } from "../server/office/setup-view.js";
+import { validate, resolve as resolveCatalogue } from "../model/company.js";
+import { defaults as designDefaults, setType } from "../model/design.js";
+import { frameOf } from "../model/frame.js";
 import { fakeControlRoom } from "./lib/fake-control-room.mjs";
 import { checkSetupPass } from "./lib/make-setup-fixtures.mjs";
 
@@ -757,9 +765,113 @@ section("F2. The preview of a closed 3D designer, for the team");
     && (await P.call("GET", "/api/office/lots/riverside/preview", undefined, { as: "mike" })).status === 404);
 }
 
+const fxExample = (name) => FX.door.examples.find((e) => e.name === name);
+/* ======================================================================================== */
+/* THE EDITS, THE WARNINGS AND THE READ PARTS on their own (setup-edits.js, setup-view.js)  */
+
+const STD_RISE = library.roof.shapes.gable.rise.w;
+
+section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own");
+{
+  /* every sample in the fixtures: the edits, the lock, the owner's own check (the door's steps, without the door) */
+  const pl = createPriceList({ store: wrapStore(new MemoryBlobs()), manufacturer, library, templates, now: () => new Date(), log: () => {} });
+  const base = FX.edits.baseSettings;
+  const wrong = [];
+  for (const sm of FX.edits.samples) {
+    const edits = sm.name === "too many edits" ? Array.from({ length: 301 }, () => sm.edits[0]) : sm.edits;
+    const res = applyEdits(base, edits, { manufacturer, mode: sm.mode, standardRise: STD_RISE });
+    let got;
+    if (res.problems.length) got = { ok: false, problems: res.problems };
+    else {
+      const next = structuredClone(res.settings);
+      next.cfg = priceFingerprint(next) === priceFingerprint(base) ? base.cfg : (base.cfg || 1) + 1;
+      const locked = lockProblems(base, next, { door: true, mode: sm.mode, standardRise: STD_RISE });
+      if (locked.length) got = { ok: false, problems: locked };
+      else {
+        try { pl.check(next); got = { ok: true, changes: describeChanges(base, next, manufacturer), warnings: warnings(base, next, manufacturer), sha: sha256(JSON.stringify(next)), newCodes: res.newCodes }; }
+        catch (e) { got = { ok: false, problems: e.problems || [e.message] }; }
+      }
+    }
+    const want = sm.expect;
+    const good = want.ok
+      ? got.ok && JSON.stringify(got.changes) === JSON.stringify(want.changes) && JSON.stringify(got.warnings) === JSON.stringify(want.warnings)
+        && got.sha === want.settingsSha256 && JSON.stringify(got.newCodes) === JSON.stringify(want.newCodes)
+      : !got.ok && JSON.stringify(got.problems) === JSON.stringify(want.problems);
+    if (!good) wrong.push(`${sm.name}: ${JSON.stringify(got).slice(0, 300)}`);
+  }
+  ok(`A6: all ${FX.edits.samples.length} sample edits give the fixtures' change words, warnings, problems and the exact settings (SHA-256)`, wrong.length === 0, wrong.join("\n       "));
+  const pathsWrong = [];
+  for (const sm of FX.edits.samples.filter((x) => x.expect.ok)) {
+    const res = applyEdits(FX.edits.baseSettings, sm.edits, { manufacturer, mode: sm.mode, standardRise: STD_RISE });
+    for (const [p, v] of Object.entries(sm.expect.paths)) {
+      const got = p.split(".").reduce((o, k) => (o == null ? undefined : o[k]), res.settings);
+      if (JSON.stringify(got) !== JSON.stringify(v)) pathsWrong.push(`${sm.name}: ${p}`);
+    }
+  }
+  ok("applyEdits on its own leaves every part the samples name as the fixtures say", pathsWrong.length === 0, pathsWrong.join("; "));
+  const given = structuredClone(FX.edits.baseSettings);
+  const before = JSON.stringify(given);
+  applyEdits(given, [{ do: "set_price", style: "LB", size: "10x16", price: 1 }, { do: "set_price", style: "XX", size: "10x16", price: 1 }], { manufacturer });
+  const half = applyEdits(given, [{ do: "set_price", style: "LB", size: "10x16", price: 1 }, { do: "set_price", style: "XX", size: "10x16", price: 1 }], { manufacturer });
+  ok("an edit list with a problem gives no settings at all, and never changes what it was given", half.settings === null && half.problems.length === 1 && JSON.stringify(given) === before);
+  const odd = applyEdits(given, [{ do: "constructor" }, { do: "set_price", style: "toString", size: "10x16", price: 1 }, { do: "set_price", style: "LB", size: "10x16", price: 1, prise: 2 }, "set_price", { do: "set_item", item: "__proto__", price: 1 }], { manufacturer });
+  ok("odd edits are words, never a crash: an edit name, a style or a door that only looks like one, an unknown part, not an object",
+    JSON.stringify(odd.problems) === JSON.stringify(["Edit 1: there is no edit called constructor.", "Edit 2: there is no building style toString in their price list.", "Edit 3: prise isn't part of set_price.",
+      "Edit 4: every edit needs do: the name of the edit.", "Edit 5: there is no door or window called __proto__ in the builder's library."]), JSON.stringify(odd.problems));
+  const viewsWrong = FX.door.parts.filter((part) => JSON.stringify(readView(base, part, manufacturer)) !== JSON.stringify(fxExample(`read ${part}`).answer.body.view));
+  ok(`read: each of the ${FX.door.parts.length} parts is the contract's (the fixtures' view, word for word)`, viewsWrong.length === 0, viewsWrong.join(", "));
+  const all = JSON.stringify(FX.door.parts.map((part) => readView(base, part, manufacturer)));
+  ok("read: never the business phone, email or website, nor the logo itself", !["941-555-0100", "office@testingsheds.example", "https://testingsheds.example"].some((t) => all.includes(t)));
+}
+{
+  /* F5: contact details in words customers read */
+  const yes = ["Call 941-555-0100", "(941) 555-0100 any time", "941.555.0100", "+1 941 555 0100", "9415550100", "www.testingsheds.com", "testingsheds.com/prices", "https://x.example", "shop.co", "office@testingsheds.example"];
+  const no = ["Prices plus tax. Free delivery within 50 miles.", "10x16 for $5,540", "Built in Florida.", "36 months", "Call us", "Delivery and setup included within our area."];
+  ok("F5: a phone number in any usual form, a web address and an email address are found; prices, sizes and plain words aren't",
+    yes.every((t) => contactKinds(t).length) && no.every((t) => !contactKinds(t).length), JSON.stringify([...yes.filter((t) => !contactKinds(t).length), ...no.filter((t) => contactKinds(t).length)]));
+  ok("... and an email isn't also a web address", JSON.stringify(contactKinds("office@testingsheds.com")) === JSON.stringify(["an email address"]));
+}
+{
+  /* F13: the roof pitch, drawn the way dealersetup/library/pitch-override.mjs checks it */
+  const opts = { manufacturer, standardRise: STD_RISE };
+  const own = applyEdits(FX.edits.baseSettings, [{ do: "add_own_style", built_like: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }, { do: "set_roof_pitch", style: "UT", pitch: "5/12" }], opts);
+  const pitched = (settings, st) => {
+    const cat = resolveCatalogue(settings, manufacturer, library);
+    const s = designDefaults(cat); setType(s, st, cat); s.size = "10x16";
+    const f = frameOf(s, cat);
+    return (Math.max(...f.prof.map((p) => p[1])) - f.topY) / (f.W / 2) * 12;
+  };
+  ok("F13: set_roof_pitch UT 5/12 draws the Utility Shed at 5/12, and the style of their own built like it too; the Garage stays standard",
+    own.problems.length === 0 && validate(own.settings, manufacturer).length === 0 && Math.abs(pitched(own.settings, "UT") - 5) < 0.01
+    && Math.abs(pitched(own.settings, "UT1") - 5) < 0.01 && Math.abs(pitched(own.settings, "G") - STD_RISE * 24) < 0.01 && Math.abs(pitched(FX.edits.baseSettings, "UT") - STD_RISE * 24) < 0.01,
+    `${pitched(own.settings, "UT").toFixed(2)} ${pitched(own.settings, "UT1").toFixed(2)} ${pitched(own.settings, "G").toFixed(2)}`);
+  const two = applyEdits(FX.edits.baseSettings, [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }, { do: "set_roof_pitch", style: "G", pitch: "8/12" }, { do: "set_roof_pitch", style: "UT", pitch: "7/12" }], opts);
+  ok("F13: one rule per style, in the order first changed, then the library's own rise last",
+    JSON.stringify(two.settings.construction) === JSON.stringify({ roof: { shapes: { gable: { rise: [{ when: { styles: ["UT"] }, value: { w: 7 / 24 } }, { when: { styles: ["G"] }, value: { w: 8 / 24 } }, { value: { w: STD_RISE } }] } } } })
+    && lockProblems(FX.edits.baseSettings, two.settings, { door: true, standardRise: STD_RISE }).length === 0, JSON.stringify(two.settings.construction));
+  const back = applyEdits(two.settings, [{ do: "set_roof_pitch", style: "G", pitch: "standard" }, { do: "set_roof_pitch", style: "UT", pitch: "standard" }], opts);
+  ok("F13: standard takes the style's rule out; with none left the rise goes, and construction is as it was",
+    JSON.stringify(back.settings.construction) === JSON.stringify(FX.edits.baseSettings.construction), JSON.stringify(back.settings.construction));
+  ok("F13: the change words say every building built like it",
+    JSON.stringify(describeChanges(FX.edits.baseSettings, two.settings, manufacturer)) === JSON.stringify(["Utility Shed and every building built like it: roof pitch 6.5/12 (standard) → 7/12", "Garage and every building built like it: roof pitch 6.5/12 (standard) → 8/12"])
+    && JSON.stringify(describeChanges(two.settings, back.settings, manufacturer)) === JSON.stringify(["Utility Shed and every building built like it: roof pitch 7/12 → 6.5/12 (standard)", "Garage and every building built like it: roof pitch 8/12 → 6.5/12 (standard)"]),
+    JSON.stringify(describeChanges(two.settings, back.settings, manufacturer)));
+  const pitches = ["3/12", "12/12"].map((p) => applyEdits(FX.edits.baseSettings, [{ do: "set_roof_pitch", style: "MU", pitch: p }], opts).problems.length);
+  const refusedPitch = ["2/12", "13/12", "5.5/12", "steep", 5].map((p) => applyEdits(FX.edits.baseSettings, [{ do: "set_roof_pitch", style: "UT", pitch: p }], opts).problems[0]);
+  ok("F13: 3/12 to 12/12 in whole twelfths, or standard; anything else in plain words",
+    pitches.every((n) => n === 0) && refusedPitch.every((w) => w === "Edit 1: Pick a pitch from 3/12 to 12/12, in whole twelfths, or standard."), JSON.stringify(refusedPitch));
+  const roofs = ["CS", "SS", "BU", "SB"].map((st) => applyEdits(FX.edits.baseSettings, [{ do: "set_roof_pitch", style: st, pitch: "6/12" }], opts).problems[0]);
+  ok("F13: saltbox, single slope, lean-to and gambrel roofs are refused, each in words",
+    JSON.stringify(roofs) === JSON.stringify(["saltbox", "single slope", "lean-to", "gambrel"].map((w, i) => `Edit 1: Only a gable roof's pitch can be changed here. The ${manufacturer.styles[["CS", "SS", "BU", "SB"][i]].name} has a ${w} roof, so a different pitch needs a new library style.`)), JSON.stringify(roofs));
+  const hand = structuredClone(FX.edits.baseSettings);
+  hand.construction = { roof: { shapes: { gable: { rise: { w: 0.3 } } } } };
+  ok("F13: gable roofs set up some other way (by hand in the repository) are left alone, in words",
+    applyEdits(hand, [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }], opts).problems[0] === "Edit 1: Their gable roofs were set up another way, so the pitch can't be changed here.");
+}
+
 console.log("");
 if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} setup access checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, construction and a web address logo, and putting back carries them forward; a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only.`);
+console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, construction and a web address logo, and putting back carries them forward; a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set.`);
