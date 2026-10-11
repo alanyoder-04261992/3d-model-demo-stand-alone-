@@ -1217,8 +1217,12 @@ library, which no setting changes, so selling or not selling one is fine;
 an extra of the business's own carries its effect in the price list
 (`options.extras[].construction`). The lock compares every extra that has
 one, by its key: each must still be there with exactly the same effect, and
-no other extra may have one. An extra's name, how it is charged and its
-price can still change. The words name the extra: its name before the
+no other extra may have one. Keys are read as text, the way the 3D
+designer reads them, so a key with an effect is never used by two extras
+(5 and "5" are one key); and an extra's key must be text in every save
+(`validate()`, the owner's words "One of your extras could not be saved.
+Reload the page and try again."). An extra's name, how it is charged and
+its price can still change. The words name the extra: its name before the
 change, or a new extra's own name.
 
 Undo and put back carry the current values of every "never" part forward

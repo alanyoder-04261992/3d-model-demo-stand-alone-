@@ -1811,6 +1811,18 @@ section("F15 item 4. The lock: an extra that changes how the building is built")
     if (!good) vwrong.push(`${sm.name}: ${x.status} ${JSON.stringify(x.data).slice(0, 300)}`);
   }
   ok(`the visit: each of the ${FXE.visit.length} examples (a new effect, a changed one, one taken off, the extra removed: refused; name, charge and price: saved)`, vwrong.length === 0, vwrong.join("\n       "));
+  {
+    /* a hand-made visit request with an extra keyed by the number 5 */
+    const pl = (await E.visit("GET", "price-list", undefined, cookie)).data;
+    const settings = structuredClone(pl.settings);
+    settings.options.extras = [...settings.options.extras, { key: 5, name: "Cheap shelf", input: "check", price: 10 }];
+    const x = await E.visit("PUT", "price-list", { settings, version: pl.version }, cookie);
+    const own = await E.call("PUT", "/api/office/price-list", { settings, version: pl.version }, { as: "pat" });
+    const words5 = "One of your extras could not be saved. Reload the page and try again.";
+    ok("the visit's save of an extra keyed by a number (not text) is refused in the owner's words, as the owner's own save is; nothing saved",
+      x.status === 422 && asJson(x.data.problems) === asJson([words5]) && own.status === 422 && asJson(own.data.problems) === asJson([words5])
+      && (await E.store.get("price-list")).version === pl.version, asJson([x.data, own.data]));
+  }
   const log = await E.log();
   ok("... and a refusal says so in the owner's log, in the owner's own words", log.some((e) => e.words === REFUSED_LOG.locked), JSON.stringify(log.map((e) => e.words)));
   /* the lock on its own: set_roof_pitch stays the only building-shape change */
@@ -1833,6 +1845,30 @@ section("F15 item 4. The lock: an extra that changes how the building is built")
   reordered.options.extras.find((x) => x.key === "heavy-floor").construction = { ...s0.options.extras.find((x) => x.key === "heavy-floor").construction };
   if (lockProblems(s0, reordered, { standardRise: STD_RISE }).length) lwrong.push("the same extras in another order are refused");
   ok("lockProblems: every way of adding, changing or taking away an extra's effect is refused with its name; the same extras in another order are not", lwrong.length === 0, lwrong.join("; "));
+  /* SEC-F15-2: the 3D designer reads an extra's key as text (optionEffects[x.key]),
+     so the number 5 and the text "5" are one choice there */
+  const owner5 = structuredClone(s0);
+  owner5.options.extras = [{ key: "5", name: "Heavy floor", input: "check", price: 300, construction: { "floor.spacingIn": 12 } }];
+  const twin = structuredClone(owner5);
+  twin.options.extras.push({ key: 5, name: "Cheap shelf", input: "check", price: 10 });
+  const kwrong = [];
+  for (const door of [true, false]) {
+    const got = lockProblems(owner5, twin, { door, standardRise: STD_RISE });
+    if (asJson(got) !== asJson([words("Heavy floor")])) kwrong.push(`a second extra keyed 5 beside "5" (${door ? "door" : "visit"}): ${asJson(got)}`);
+  }
+  const both = structuredClone(s0);
+  both.options.extras = [
+    { key: "5", name: "Shelf", input: "check", price: 10, construction: { "floor.spacingIn": 16 } },
+    { key: 5, name: "Heavy floor", input: "check", price: 300, construction: { "floor.spacingIn": 12 } },
+  ];
+  const swapped = structuredClone(both);
+  swapped.options.extras.reverse();
+  if (!lockProblems(both, swapped, { standardRise: STD_RISE }).length) kwrong.push("5 and \"5\" swapped (which one builds changes): not refused");
+  ok("the lock reads extras' keys as the 3D designer does, as text: an extra keyed 5 beside the owner's \"5\" that has an effect is refused with its name, and so is swapping 5 and \"5\"",
+    kwrong.length === 0, kwrong.join("; "));
+  const vk = validate(twin, manufacturer);
+  ok("... and model/company.js validate() takes only text keys for extras (the number 5 is refused; \"5\" is fine)",
+    vk.includes("options.extras[1].key must be 1 to 40 letters, digits, dashes or underscores.") && validate(owner5, manufacturer).length === 0, asJson(vk));
   const pitch = applyEdits(s0, [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }], { manufacturer, standardRise: STD_RISE });
   ok("... while a gable roof's pitch (set_roof_pitch) still passes the lock with the effect extra there", pitch.problems.length === 0 && lockProblems(s0, pitch.settings, { door: true, standardRise: STD_RISE }).length === 0);
 }

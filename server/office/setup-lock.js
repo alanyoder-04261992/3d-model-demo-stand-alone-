@@ -82,22 +82,32 @@ function pitchless(construction) {
 }
 /* The extras that change how the building is built, by key: an extra's
    construction effect counts when it is there at all (model/company.js
-   reads it with `if (x.construction)`). */
+   reads it with `if (x.construction)`). Keys are compared as the 3D
+   designer reads them, as text (optionEffects[x.key], the design's
+   choices), so 5 and "5" are one key. -> {first: key -> the first extra
+   with it, all: key -> every extra with it}. */
 const hasEffect = (x) => isObj(x) && !!x.construction;
 function extrasByKey(s) {
-  const out = new Map();
-  for (const x of Array.isArray(s?.options?.extras) ? s.options.extras : []) if (isObj(x) && !out.has(x.key)) out.set(x.key, x);
-  return out;
+  const first = new Map(), all = new Map();
+  for (const x of Array.isArray(s?.options?.extras) ? s.options.extras : []) {
+    if (!isObj(x)) continue;
+    const key = String(x.key);
+    if (!first.has(key)) first.set(key, x);
+    all.set(key, [...(all.get(key) || []), x]);
+  }
+  return { first, all };
 }
 const extraName = (x) => (typeof x?.name === "string" && x.name.trim() ? x.name.trim() : "with no name");
 
 /* -> the names of the extras whose construction effect `next` adds,
    changes or takes away (with the extra itself or on its own): each extra
    that had one must still be there with exactly the same effect, and no
-   other extra may have one. The name is the one before the change, or a
-   new extra's own. */
+   other extra may have one. Nor may a key with an effect (before or
+   after) be used by two extras, since the designer can't tell them apart
+   and the second would build the first's way. The name is the one before
+   the change, or a new extra's own. */
 export function extraEffectChanges(old, next) {
-  const before = extrasByKey(old), after = extrasByKey(next);
+  const { first: before } = extrasByKey(old), { first: after, all } = extrasByKey(next);
   const names = [];
   for (const [key, x] of before) {
     if (!hasEffect(x)) continue;
@@ -107,6 +117,12 @@ export function extraEffectChanges(old, next) {
   for (const [key, x] of after) {
     if (!hasEffect(x) || hasEffect(before.get(key))) continue;
     names.push(extraName(x));
+  }
+  for (const [key, list] of all) {
+    if (list.length < 2) continue;
+    const had = before.get(key);
+    if (hasEffect(had)) names.push(extraName(had));
+    else for (const x of list) if (hasEffect(x)) names.push(extraName(x));
   }
   return [...new Set(names)];
 }

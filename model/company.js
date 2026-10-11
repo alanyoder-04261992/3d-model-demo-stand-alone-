@@ -466,7 +466,8 @@ export function validate(company, manufacturer) {
         O.extras.forEach((x, i) => {
           const at = `options.extras[${i}]`;
           if (!isObj(x)) { err.push(`${at} must be {key, name, input, price}.`); return; }
-          if (!/^[A-Za-z0-9_-]{1,40}$/.test(String(x.key || ""))) err.push(`${at}.key must be 1 to 40 letters, digits, dashes or underscores.`);
+          /* text only: the 3D designer reads keys as text, so 5 and "5" would be one extra */
+          if (typeof x.key !== "string" || !/^[A-Za-z0-9_-]{1,40}$/.test(x.key)) err.push(`${at}.key must be 1 to 40 letters, digits, dashes or underscores.`);
           else if (seen.has(x.key)) err.push(`${at}.key ${q(x.key)} is used twice.`);
           seen.add(x.key);
           if (typeof x.name !== "string" || !x.name.trim()) err.push(`${at}.name is missing.`);
