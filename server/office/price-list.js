@@ -114,7 +114,14 @@ export function explainProblem(problem, manufacturer, settings = {}) {
     /* How it's built (model/build-settings.js): its problems are already in
        the owner's words, after the settings path */
     [/^(?:offer\.\w+\.|options\.extras\[\d+\]\.)?built(?:\.\S+)?: (.*)$/, (m) => m[1]],
-    [/^construction\S*?: (.+ is set in the construction settings.*)$/, (m) => m[1]],
+    [/^construction\S*?: (The construction settings hold .+)$/, (m) => m[1]],
+    /* an extra's construction effect (model/company.js effectProblems) */
+    [/^options\.extras\[(\d+)\]\.construction\S*: An option's construction settings hold the (.+?)\. Set it in How it's built/,
+      (m) => `${extraName(m[1])}: set this extra's ${m[2]} in How it's built.`],
+    [/^options\.extras\[(\d+)\]\.construction\S*?\.([^.\s\[\]]+) is not a construction setting(?:\. Did you mean (\w+)\?)?/,
+      (m) => `${extraName(m[1])}: "${m[2]}" is not a construction setting.${m[3] ? ` Did you mean ${m[3]}?` : ""}`],
+    [/^options\.extras\[(\d+)\]\.construction\S*?: (.+)$/,
+      (m) => `${extraName(m[1])}: ${/[{}]/.test(m[2]) ? "one of its construction settings is not written right." : m[2]}`],
     [/^offer\.(\w+)\.\S+ is not part of a building style\. Set its (.+?) in How it's built instead\./,
       (m) => `${styleName(m[1])}: set its ${m[2]} in How it's built.`],
     [/^The company file is not a settings object/, () => "The price list is missing. Reload the page and try again."],

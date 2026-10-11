@@ -699,6 +699,8 @@ const BROKEN = [
   ["a How it's built setting misspelled", (s) => { s.built = { roofPich: { gable: 5 } }; }, /"roofPich" is not a building setting\. Did you mean roof pitch\?/],
   ["a roof pitch past the limit", (s) => { s.offer.UT.built = { roofPitch: 15 }; }, /Roof pitch 15\/12 is steeper than 12\/12/],
   ["an extra that changes the wall height", (s) => { s.options.extras = [{ key: "tall", name: "Tall walls", input: "check", price: 1, built: { wallHeight: 96 } }]; }, /An extra cannot change the wall height\. Set it on the style in How it's built\./],
+  ["an extra that raises the roof through construction", (s) => { s.options.extras = [{ key: "steep", name: "Steep roof", input: "check", price: 1, construction: { "roof.shapes.gable.rise": { w: 0.35 } } }]; }, /Steep roof: set this extra's roof pitch in How it's built\./],
+  ["an extra with a construction setting misspelled", (s) => { s.options.extras = [{ key: "joists", name: "Close joists", input: "check", price: 1, construction: { "floor.spacingInn": 12 } }]; }, /Close joists: "spacingInn" is not a construction setting\. Did you mean spacingIn\?/],
 ];
 for (const [label, change, words] of BROKEN) {
   const s = clone(cur.settings);

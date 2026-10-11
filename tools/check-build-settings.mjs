@@ -32,6 +32,16 @@
     7. A style's own numbers (t.construction) reach that style only.
     8. Written out with today's numbers, every one of these settings draws
        exactly today's building.
+    9. What a person types ("5/12", "7 ft 9 1/2 in") is read, written back
+       and, when wrong, said in plain words.
+   10. Which number wins: style, built-like base, business-wide, shop
+       standard, library; style features; extras only steepen a roof; the
+       setup connector's rule list lifts to the same roof.
+   11. Problems, the screens' numbers and History words.
+   12. An extra's construction settings: a How it's built number set there
+       (it used to be copied in unchecked), a typo or a value that cannot be
+       built is a problem on save, never on read, and is not drawn; a good
+       one still works; a builder's option is held to the same rule.
    Prints PROVED with the counts, or FAIL with what broke. */
 
 import { readJSON, readManufacturer } from "./lib/load.mjs";
@@ -48,6 +58,7 @@ import { roofSection, roofFrameMembers, dormerHoles } from "../parts/roof-frame.
 import { dormerFrameMembers } from "../parts/dormer-frame.js";
 import { roofDeckMembers } from "../parts/roof-deck.js";
 import { porchRect } from "../ui/blueprint.js";
+import { constructionFor } from "../model/construction.js";
 
 const LIB = readJSON("library/construction.json");
 const M = readManufacturer("standard");
@@ -334,7 +345,7 @@ group("11. problems, screens and History words");
   ok("an extra cannot change the wall height", sp.includes("options.extras[0].built.wallHeight: An extra cannot change the wall height. Set it on the style in How it's built."), J(sp.filter((x) => /extras/.test(x))));
   ok("every one of them is a strict problem (refused on save when new, never on read)", p.every((x) => sp.includes(x)) && validate(c, M).length === 0);
   const raw = barnwrightCompany(); raw.construction = { roof: { shapes: { gable: { rise: { w: 0.3 } } } } };
-  ok("a raw roof rise is \"set in the construction settings\"", strictProblems(raw, M).includes("construction.roof.shapes.gable.rise: Roof pitch is set in the construction settings. Set it in How it's built instead."));
+  ok("a raw roof rise: \"The construction settings hold the roof pitch\"", strictProblems(raw, M).includes("construction.roof.shapes.gable.rise: The construction settings hold the roof pitch. Set it in How it's built instead."), J(strictProblems(raw, M)));
   const wide = barnwrightCompany(); wide.built = { porchDepth: 7 };
   ok("a wrap porch too deep for its narrowest size is said", BUILT.problems(wide, M).some((x) => x.path === "built.porchDepth" && x.words === "Porch depth 7 ft leaves the 12 ft wide Deluxe Side Cabin no angled wall: 6 ft at most."), J(BUILT.problems(wide, M)));
   ok("... and a side porch that leaves too little room", BUILT.problems(wide, M).some((x) => x.words === "Porch depth 7 ft leaves the 10 ft wide Side Cabin less than 4 ft of room inside."));
@@ -363,6 +374,45 @@ group("11. problems, screens and History words");
   ok("... a typo comes back as words", BUILT.setBuilt(before, { style: "UT", knob: "roofPitch", value: "5\\12" }).problems[0].words === "Roof pitch: write it like 5/12.");
 }
 
+/* ------------------------------------------------------------------ 12 */
+group("12. an extra's construction settings");
+{
+  const rise = (cat, s) => { const fr = frameOf(s, cat); return Math.max(...fr.prof.map((p) => p[1])) - fr.topY; };
+  const withExtra = (construction) => { const c = barnwrightCompany(); c.options.extras = [{ key: "x1", name: "Steep roof", input: "check", price: 300, construction }]; return c; };
+  const picked = (cat, t = "UT", z = "10x16") => { const s = stateOf(cat, t, z); s.xopt = { x1: 1 }; return s; };
+  /* the hole: an extra raising the roof through a raw construction path
+     used to be copied in unchecked, past the pitch limits and History */
+  const steep = withExtra({ "roof.shapes.gable.rise": { w: 0.35 } });
+  const sp = strictProblems(steep, M);
+  ok("an extra that raises the roof through \"roof.shapes.gable.rise\" is a problem on save", sp.includes("options.extras[0].construction.roof.shapes.gable.rise: An option's construction settings hold the roof pitch. Set it in How it's built instead."), J(sp));
+  ok("... never on read (the designer still opens on it)", validate(steep, M).length === 0, J(validate(steep, M)));
+  const catSteep = resolve(steep, M, LIB);
+  ok("... it is not drawn when picked: the Utility Shed keeps its 6.48/12", near(rise(catSteep, picked(catSteep)) / 5 * 12, 6.48), String(rise(catSteep, picked(catSteep)) / 5 * 12));
+  ok("... and the owner is told", catSteep.settingsWarnings.includes("Steep roof: its construction settings could not be used, so it does not change how the building is built."), J(catSteep.settingsWarnings));
+  ok("... while the same roof pitch given as the extra's built is drawn (7/12)", (() => {
+    const c = barnwrightCompany(); c.options.extras = [{ key: "x1", name: "Steep roof", input: "check", price: 300, built: { roofPitch: 7 } }];
+    const cat = resolve(c, M, LIB); return strictProblems(c, M).length === 0 && near(rise(cat, picked(cat)) / 5 * 12, 7);
+  })());
+  for (const [p, v, words] of [["roof.shapes.gambrel.peakIn", { "10": 60 }, "barn roof height"], ["roof.shapes.gable.eaveOverhang", { flatIn: 8 }, "eave overhang"], ["roof.shapes.gambrel.endOverhang", 0.5, "gable-end overhang"], ["openings.doorHeightIn", 80, "wooden shop door height"]]) {
+    ok(`an extra's "${p}" is a problem too (${words})`, strictProblems(withExtra({ [p]: v }), M).includes(`options.extras[0].construction.${p}: An option's construction settings hold the ${words}. Set it in How it's built instead.`), J(strictProblems(withExtra({ [p]: v }), M)));
+  }
+  /* a typo or a value that cannot be built: said, and not used */
+  const typo = withExtra({ "floor.spacingInn": 12 });
+  ok("a misspelt setting on an extra is named, with did-you-mean", strictProblems(typo, M).some((x) => /^options\.extras\[0\]\.construction\.floor\.spacingInn is not a construction setting\. Did you mean spacingIn\?/.test(x)), J(strictProblems(typo, M)));
+  ok("... and changes nothing", resolve(typo, M, LIB).optionEffects.x1 === undefined);
+  const words = withExtra({ "floor.spacingIn": "lots" });
+  ok("a value that cannot be built is a problem and changes nothing", strictProblems(words, M).some((x) => /^options\.extras\[0\]\.construction/.test(x)) && resolve(words, M, LIB).optionEffects.x1 === undefined, J(strictProblems(words, M)));
+  /* a good one keeps working */
+  const good = withExtra({ "floor.spacingIn": 12 });
+  const catGood = resolve(good, M, LIB);
+  const d = { W: 10, L: 16 };
+  ok("a good extra (joists 12 in apart) has no problems and is used when picked", strictProblems(good, M).length === 0 && constructionFor(catGood, picked(catGood), catGood.TYPES.UT, d).floor.spacingIn === 12 && constructionFor(catGood, stateOf(catGood, "UT", "10x16"), catGood.TYPES.UT, d).floor.spacingIn === LIB.floor.spacingIn && catGood.settingsWarnings.length === 0, J(catGood.settingsWarnings));
+  /* a builder's option is held to the same rule */
+  const MS = copy(M); MS.options.rates.jo12.construction = { "roof.shapes.gable.rise": { w: 0.4 } };
+  ok("a builder's option that sets the roof pitch is a library error", validateManufacturer(MS).includes("options.rates.jo12.construction.roof.shapes.gable.rise: An option's construction settings hold the roof pitch. Set it in How it's built instead."), J(validateManufacturer(MS)));
+  ok("... and the standard library's own options pass", validateManufacturer(M).length === 0, J(validateManufacturer(M)));
+}
+
 /* ---------------------------------------------------------------- report */
 console.log("How it's built:");
 for (const g of groups) console.log(`  ${g.bad ? "FAIL" : "ok  "} ${g.title}: ${g.n - g.bad} of ${g.n}`);
@@ -372,4 +422,4 @@ if (failures.length) {
   console.log(`\nFAIL: ${failures.length} of ${passed + failures.length} checks failed.`);
   process.exit(1);
 }
-console.log(`\nPROVED (${passed} checks): the porch depth, the side porch lengths, the dormer side, the barn roof's gable-end overhang, its height by width and eaves measured level are settings the drawing follows, and with today's numbers every building is drawn as before.`);
+console.log(`\nPROVED (${passed} checks): the porch depth, the side porch lengths, the dormer side, the barn roof's gable-end overhang, its height by width and eaves measured level are settings the drawing follows; How it's built numbers are typed, checked and layered; an extra's construction settings are checked like the rest; and with today's numbers every building is drawn as before.`);

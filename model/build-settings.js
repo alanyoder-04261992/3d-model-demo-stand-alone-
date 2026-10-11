@@ -479,7 +479,7 @@ function rawKnobProblems(S) {
       for (const b of bits) v = isObj(v) ? v[b] : undefined;
       if (v === undefined) continue;
       out.push({ path: `construction.${p}`, knob: id, style: null,
-        words: builtSets(id) ? `${KNOB[id].Words} is set in the construction settings too. Set it in How it's built only.` : `${KNOB[id].Words} is set in the construction settings. Set it in How it's built instead.` });
+        words: builtSets(id) ? `The construction settings hold the ${KNOB[id].words} too. Set it in How it's built only.` : `The construction settings hold the ${KNOB[id].words}. Set it in How it's built instead.` });
     }
   }
   return out;

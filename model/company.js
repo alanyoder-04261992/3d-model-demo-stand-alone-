@@ -233,9 +233,7 @@ export function validateManufacturer(m) {
       const fx = isObj(O[g][id]) ? O[g][id].construction : undefined;
       if (fx === undefined) continue;
       if (!isObj(fx)) { err.push(`options.${g}.${id}.construction must be {"setting.path": value}.`); continue; }
-      const tree = effectsToTree(fx);
-      err.push(...constructionProblems(tree, `options.${g}.${id}.construction`));
-      err.push(...strictConstructionProblems(tree, `options.${g}.${id}.construction`));
+      err.push(...effectProblems(fx, `options.${g}.${id}.construction`));
     }
   }
   return err;
@@ -682,6 +680,32 @@ export function validate(company, manufacturer) {
 }
 
 /* ------------------------------------------------------------------------ */
+/* An option's effect on how the building is built                           */
+
+/* What is wrong with an extra's or an option's construction effect
+   ({"floor.spacingIn": 12}): a path the code never reads (did you mean...),
+   a value that cannot be built, or a number a How it's built knob owns (an
+   extra holds those in its own built: {"roofPitch": 7}) -- an extra that
+   raised a roof through "roof.shapes.gable.rise" used to be copied in
+   unchecked. -> problems in settings-path words, [] when good. */
+export function effectProblems(fx, at) {
+  if (fx === undefined) return [];
+  if (!isObj(fx)) return [`${at} must be {"setting.path": value}.`];
+  const tree = effectsToTree(fx);
+  const out = [];
+  for (const id of Object.keys(BUILT.KNOB_PATHS)) {
+    for (const p of BUILT.KNOB_PATHS[id]) {
+      if (p.split(".").reduce((o, k) => (isObj(o) ? o[k] : undefined), tree) === undefined) continue;
+      const K = BUILT.KNOBS.find((k) => k.id === id);
+      out.push(`${at}.${p}: An option's construction settings hold the ${K.words}. Set it in How it's built instead.`);
+    }
+  }
+  out.push(...strictConstructionProblems(tree, at));
+  out.push(...constructionProblems(tree, at));
+  return out;
+}
+
+/* ------------------------------------------------------------------------ */
 /* Strict problems: new rules a price list may already break               */
 
 /* THE NEW, STRICTER RULES, kept apart from validate() so a price list that
@@ -713,7 +737,9 @@ export function strictProblems(company, manufacturer) {
   /* an extra's built: only the knobs an extra may hold */
   const extras = isObj(company.options) && Array.isArray(company.options.extras) ? company.options.extras : [];
   extras.forEach((x, i) => {
-    if (isObj(x)) for (const p of BUILT.extraProblems(x.built, `options.extras[${i}].built`, x.name)) out.push(`${p.path}: ${p.words}`);
+    if (!isObj(x)) return;
+    for (const p of BUILT.extraProblems(x.built, `options.extras[${i}].built`, x.name)) out.push(`${p.path}: ${p.words}`);
+    out.push(...effectProblems(x.construction, `options.extras[${i}].construction`));
   });
   return out;
 }
@@ -843,9 +869,16 @@ export function resolve(company, manufacturer, library) {
   for (const g of [["dormers", "dormer"], ["ramps", "ramp"], ["elec", "elec"], ["misc", "misc"]]) {
     for (const id of keysOf(mO[g[0]])) if (own(O[g[0]], id) && mO[g[0]][id].construction) optionEffects[g[1] + "." + id] = stripHelp(copy(mO[g[0]][id].construction));
   }
+  const settingsWarnings = built.warnings.slice();
   const extras = (O.extras || []).map((x) => {
     const e = { key: x.key, name: x.name, input: x.input, price: x.price };
-    if (x.construction) optionEffects[x.key] = stripHelp(copy(x.construction));
+    /* an extra's construction effect is used only when every bit of it is a
+       real setting with a buildable value, and never on a number a How it's
+       built knob owns; otherwise it changes nothing and the owner is told */
+    if (x.construction) {
+      if (effectProblems(x.construction, "construction").length) settingsWarnings.push(`${x.name}: its construction settings could not be used, so it does not change how the building is built.`);
+      else optionEffects[x.key] = stripHelp(copy(x.construction));
+    }
     /* an extra's How it's built numbers, worked out for each style it
        reaches (its roof pitch only ever makes a roof steeper) */
     if (isObj(x.built)) {
@@ -891,7 +924,7 @@ export function resolve(company, manufacturer, library) {
     optionEffects,
     /* How it's built numbers that could not be used (a bad value falls back
        to the next layer); the Dealer Center shows them to the owner */
-    settingsWarnings: built.warnings.slice(),
+    settingsWarnings,
     pricing: {
       show: pr.show || "price",
       roundTo: pr.roundTo != null ? pr.roundTo : 5,
