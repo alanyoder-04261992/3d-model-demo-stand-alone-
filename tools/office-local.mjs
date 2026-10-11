@@ -107,7 +107,12 @@ const deps = {
    with {id}), {down: true | false} makes it unreachable or not; the answer
    lists the questions and problem reports it holds.
    Without --control-room the Dealer Center is not connected: Help shows
-   its answers and the email to write to. */
+   its answers and the email to write to.
+   Barnwright setup access, on this computer only: POST /__local/barnwright
+   with {terms: "2.2"} records the owner's agreement to a terms version
+   (terms 2.2 aren't out yet, and nothing works before them), and with
+   {visit: true} answers {url}: the link Alan's Control Room would open,
+   /dealer#barnwright=<a one-use pass from the pretend control room>. */
 const roomClock = { get t() { return (clock.at || new Date()).getTime(); } };
 const room = CONTROL_ROOM ? fakeControlRoom({ clock: roomClock, dealerLimit: 3 }) : null;
 const helpInbox = room ? fakeHelpInbox({ clock: roomClock, publicKeyPem: room.publicKeyPem }) : null;
@@ -192,6 +197,18 @@ async function route(request) {
     try { token = room.issueSupport("alan@barnwright.example"); } catch { return Response.json({ error: "Help from Barnwright is off." }, { status: 403 }); }
     return office.diagnostics(new Request(`http://127.0.0.1:${PORT}/.netlify/functions/tenant-diagnostics`, { method: "POST", headers: { authorization: `Bearer ${token}` } }));
   }
+  if (room && path === "/__local/barnwright" && request.method === "POST") {
+    if (request.headers.get("origin") !== url.origin) return new Response("no", { status: 403 });
+    const body = await request.json().catch(() => ({}));
+    if (typeof body.terms === "string" && /^\d+(\.\d+)*$/.test(body.terms)) {
+      const owner = (await office.parts.store.all("people/")).find((p) => p.role === "owner") || { userId: "local", email: OWNER_EMAIL, name: "" };
+      const entry = { version: body.terms, agreedAt: new Date().toISOString(), by: { userId: owner.userId, email: owner.email, name: owner.name || "" } };
+      const doc = await office.parts.store.get("barnwright-terms");
+      await office.parts.store.put("barnwright-terms", { current: entry, history: [entry, ...(doc?.history || [])].slice(0, 20) });
+    }
+    const pass = body.visit === true ? room.setupPass({ actor: "alan@barnwright.example" }) : null;
+    return Response.json({ ok: true, ...(pass ? { url: `/dealer#barnwright=${pass}` } : {}) });
+  }
   if (helpInbox && path === "/__local/help-inbox" && request.method === "POST") {
     const body = await request.json().catch(() => ({}));
     if (typeof body.down === "boolean") helpInbox.down = body.down;
@@ -237,6 +254,11 @@ async function route(request) {
   let m = /^\/d\/([a-z0-9-]{2,40})$/.exec(path);
   if (m) return new Response(null, { status: 301, headers: { Location: `/d/${m[1]}/${url.search}` } });
   m = /^\/d\/([a-z0-9-]{2,40})\/$/.exec(path);
+  if (m && ["1", "barnwright"].includes(url.searchParams.get("preview"))) {
+    /* a preview of a closed lot (as netlify/functions/lot-designer.mts): the page holds no prices */
+    const html = designerHtml();
+    return lotDesignerPage({ html, hashes: inlineScriptHashes(html), origins: [], head: request.method === "HEAD" });
+  }
   if (m) {
     try {
       const data = await office.publicLot(m[1]);

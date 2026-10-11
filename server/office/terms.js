@@ -39,6 +39,18 @@ export const AGREE_FIRST = `Tick the box to agree to the ${TERMS.title}.`;
 const RECORD = "barnwright-terms";
 const HISTORY = 20;
 
+/* "2.2" or later: version numbers compared as numbers ("2.10" is later
+   than "2.9"). An owner who agreed to a later version than this copy knows
+   has agreed (a copy that went back to older terms never asks again). */
+export function versionAtLeast(version, need) {
+  if (typeof version !== "string" || !/^\d{1,4}(\.\d{1,4}){0,3}$/.test(version)) return false;
+  const a = version.split(".").map(Number), b = String(need).split(".").map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+  }
+  return true;
+}
+
 export function createTerms({ store, account, now }) {
   const asks = () => !!account?.connected;
 
@@ -50,7 +62,7 @@ export function createTerms({ store, account, now }) {
     const current = doc?.current || null;
     return {
       version: TERMS.version, date: TERMS.date, url: TERMS.url, title: TERMS.title,
-      agreed: current && current.version === TERMS.version ? current : null,
+      agreed: current && versionAtLeast(current.version, TERMS.version) ? current : null,
     };
   }
 
@@ -64,7 +76,7 @@ export function createTerms({ store, account, now }) {
       by: { userId: person.userId, email: person.email, name: person.name || "" },
     };
     await store.change(RECORD, (doc) => {
-      if (doc?.current?.version === TERMS.version) return KEEP;
+      if (versionAtLeast(doc?.current?.version, TERMS.version)) return KEEP;
       return { current: entry, history: [entry, ...(doc?.history || [])].slice(0, HISTORY) };
     });
     return status();

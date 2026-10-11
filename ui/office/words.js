@@ -130,6 +130,14 @@ export function when(iso) {
   return `${dayWords(todayKey(d))} at ${d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}`;
 }
 
+/* "3:00 PM" today, else "Oct 3 at 3:00 PM": an end time the server sent
+   (never written into its words, so it shows in this browser's own time) */
+export function untilWords(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.valueOf())) return "";
+  return todayKey(d) === todayKey() ? d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" }) : when(iso);
+}
+
 export function greeting(name) {
   const hour = new Date().getHours();
   const part = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";

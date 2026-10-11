@@ -175,6 +175,8 @@ ok("terms: 2.2 or later counts, as numbers (2.10 is later than 2.9)",
   termsAtLeast("2.2") && termsAtLeast("2.10") && termsAtLeast("3") && !termsAtLeast("2.1") && !termsAtLeast("2.1.9") && !termsAtLeast("") && !termsAtLeast(null) && !termsAtLeast("2.2-beta"));
 await A.agree("2.2");
 {
+  const m = await A.me("pat");
+  ok("an owner who agreed to a later version than this copy knows (2.2 here) is not asked again", m.terms?.agreed?.version === "2.2", JSON.stringify(m.terms));
   const v = await A.access();
   ok("after the owner agrees to 2.2: open before live (prelive), with no end", v.mode === "prelive" && v.until === null && v.live === false && v.termsOk === true, JSON.stringify(v));
 }

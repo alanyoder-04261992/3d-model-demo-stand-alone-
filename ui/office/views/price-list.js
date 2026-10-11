@@ -10,11 +10,17 @@
    saving, in plain words.
 
    Tabs: Buildings, Doors & windows, Options, Colors, History (owner and
-   manager). Each tab is a module in views/price-list/; they share state.js. */
+   manager). Each tab is a module in views/price-list/; they share state.js.
+
+   A Barnwright visit uses this same screen (its saves go to the visit's
+   own routes). When the visit ends while there are changes, they stay on
+   screen and are kept in this tab (visit-draft.js), and they come back
+   when the price list opens again in this tab. */
 
 import { h, clear, button, icon, pageHead, tabs, toast, confirmBox, dialog } from "../dom.js";
 import { put } from "../api.js";
-import { plural, dayWords } from "../words.js";
+import { plural, dayWords, when } from "../words.js";
+import { keepDraft, takeDraft, dropDraft } from "../visit-draft.js";
 import { S, TABS, freshParked } from "./price-list/state.js";
 import { prepare, describe, problemsOf, lockedItems, tidyCategories, tidyDefaults, groupsOf, keysOf } from "./price-list/model.js";
 import { buildingsTab } from "./price-list/buildings.js";
@@ -48,6 +54,11 @@ function startFrom(record) {
   S.saved = record;
   S.latest = record;
   S.draft = S.owner ? structuredClone(record.settings) : null;
+  if (S.draft && S.ctx?.app.barnwright) {
+    const kept = takeDraft("price-list", record.version);
+    if (kept?.draft) { S.draft = kept.draft; S.restored = "Your changes from before are back. Tap the gold Save button to keep them."; }
+    else if (kept?.older) S.restored = "The price list was saved by someone else since your last changes, so they weren't brought back.";
+  }
   if (S.draft && !S.draft.items) S.draft.items = {};
   S.parked = freshParked();
   S.problems = [];
@@ -116,6 +127,7 @@ export async function render(ctx) {
   updateBar();
   app.leaveGuard = leaveGuard;
   if (S.focus) S.hooks.focus();
+  if (S.restored) { toast(S.restored, { ms: 7000 }); S.restored = null; }
   /* on a phone the tabs scroll sideways: bring the one showing into view */
   setTimeout(() => {
     const on = page?.tabs?.querySelector("[aria-selected=true]");
@@ -365,6 +377,7 @@ async function saveAll() {
   label.textContent = "Saving…";
   try {
     const answer = await put("price-list", { settings: prepare(S.draft), version: S.saved.version });
+    dropDraft("price-list");
     const lotCount = Number.isInteger(answer.lotCount) ? answer.lotCount : S.ctx.app.openLots().length;
     const record = await S.ctx.app.loadPriceList(true);
     startFrom(record);
@@ -372,7 +385,7 @@ async function saveAll() {
     toast(savedWords(lotCount));
     S.ctx.refresh();
   } catch (e) {
-    if (e.status === 409) savedFirst();
+    if (e.status === 409) savedFirst(e);
     else if (e.status === 422) notSaved(e.problems?.length ? e.problems : [e.message]);
     else toast(e.message, { error: true, ms: 6000 });
   } finally {
@@ -382,9 +395,14 @@ async function saveAll() {
   }
 }
 
-function savedFirst() {
-  const box = dialog("Someone else saved first", [
-    h("p", {}, "Someone else saved the price list while you were working."),
+/* e.data.savedAt: when the save that got in first happened (the server
+   never writes a time into its words; it shows here in this browser's own
+   time). Barnwright's save says so. */
+function savedFirst(e) {
+  const by = /^Barnwright /.test(e?.message || "") ? "Barnwright" : "Someone else";
+  const at = e?.data?.savedAt ? ` (${when(e.data.savedAt)})` : "";
+  const box = dialog(`${by} saved first`, [
+    h("p", {}, `${by} saved the price list while you were working${at}.`),
     h("p", {}, "Reload to see the price list as it is now, then make your changes again. Reloading drops these changes of yours:"),
     changeList(S.changes, 8),
     h("div", { class: "actions end" },
@@ -412,6 +430,13 @@ function leaveGuard() {
   if (next !== S.renderedHash && IS_PRICE_LIST.test(next)) return null;
   return `Leave the price list without saving? Your ${plural(S.changes.length, "change")} will be lost.`;
 }
+
+/* A Barnwright visit ended, or the page is going away: keep the changes in this tab. */
+function keepForVisit() {
+  if (S.ctx?.app.barnwright && dirty()) keepDraft("price-list", S.saved.version, S.draft);
+}
+window.addEventListener("dealer:visit-ended", keepForVisit);
+window.addEventListener("pagehide", keepForVisit);
 
 /* After the address has changed (and main.js has put it back if the owner
    chose to stay): left the price list, so let the draft go. */

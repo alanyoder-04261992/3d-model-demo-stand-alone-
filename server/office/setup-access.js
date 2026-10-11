@@ -47,6 +47,7 @@ import { sha256Hex } from "./hash.js";
 import { KEEP } from "./store.js";
 import { withinMs } from "./account.js";
 import { lockProblems, carryLocked } from "./setup-lock.js";
+import { versionAtLeast } from "./terms.js";
 
 const SETUP = "barnwright-setup";
 const LIVE = "barnwright-live";
@@ -96,14 +97,7 @@ const hoursWords = (n) => `${n} hour${n === 1 ? "" : "s"}`;
 const historyKey = (version) => `price-list-history/${String(version).padStart(6, "0")}`;
 
 /* "2.2" or later ("2.10" is later than "2.9"). */
-export function termsAtLeast(version, need = TERMS_NEEDED) {
-  if (typeof version !== "string" || !/^\d{1,4}(\.\d{1,4}){0,3}$/.test(version)) return false;
-  const a = version.split(".").map(Number), b = need.split(".").map(Number);
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
-  }
-  return true;
-}
+export const termsAtLeast = (version, need = TERMS_NEEDED) => versionAtLeast(version, need);
 
 /* The owner's log line for a Barnwright save: the first 3 change lines and a count. */
 export function changedWords(actor, lines) {

@@ -240,6 +240,21 @@ function lotClosedMessage(closed, phone) {
 
 /* ------------------------------------------------------------------------ */
 
+/* A lot's 3D designer while it is closed, for the team or a Barnwright
+   visit (?preview=1 or ?preview=barnwright): a plain bar on top, and no
+   quote form (ui/load.js gives it nowhere to send one). */
+const PREVIEW_BAR = "Preview. Your customers can't see this until you open it in Settings.";
+function previewBar() {
+  const bar = document.createElement("div");
+  bar.id = "previewbar";
+  bar.setAttribute("role", "status");
+  bar.textContent = PREVIEW_BAR;
+  bar.style.cssText = "position:sticky;top:0;z-index:50;padding:10px 16px;background:#16130E;color:#F3E7C2;font:600 15px/1.35 system-ui,sans-serif;text-align:center;border-bottom:2px solid #C9A227";
+  document.body.prepend(bar);
+  const card = el("quotecard");
+  if (card) { card.hidden = true; card.style.display = "none"; }
+}
+
 async function boot() {
   const q = new URLSearchParams(location.search);
   const pm = /\/c\/([a-z0-9-]{2,40})\/?$/.exec(location.pathname);
@@ -248,13 +263,20 @@ async function boot() {
   const companyId = lotMatch ? null : (pm && pm[1]) || q.get("company") || "demo";
   const embedded = q.get("embed") === "1";
   if (embedded) document.body.classList.add("embedded");
+  const preview = lotMatch ? ({ "1": "team", barnwright: "barnwright" })[q.get("preview")] || null : null;
 
   /* 2. the company, before anything is drawn */
   let loaded;
-  try { loaded = lotMatch ? await loadLot(lotMatch[1]) : await loadCompany(companyId); }
+  try { loaded = lotMatch ? await loadLot(lotMatch[1], { preview }) : await loadCompany(companyId); }
   catch (e) {
     console.error("The designer could not load its settings:", e.message);
     reportProblem(e);   /* a closed lot's answer (it carries its status) is not passed on */
+    if (preview) {
+      bootMessage("This preview can't open", "<p>" + (e.status === 401
+        ? (preview === "barnwright" ? "Your Barnwright visit ended. In your Control Room tap Open their price list, then open the preview again." : "Sign in to your Dealer Center first, then open the preview again.")
+        : "Open it again from your Dealer Center.") + "</p>");
+      return null;
+    }
     if (lotMatch) lotClosedMessage(e.status === 404, "");
     else bootMessage("This designer could not start", "<p>" + esc(e.message) + "</p>");
     return null;
@@ -280,11 +302,12 @@ async function boot() {
   /* 3. the company's colours and name */
   applyTheme(cat.brand.colors);
   brandHeader(cat);
-  if (cat.status === "suspended" && cat.managed) {
+  if (cat.managed && cat.managed.preview) previewBar();
+  else if (cat.status === "suspended" && cat.managed) {
     lotClosedMessage(true, cat.brand.phone);
     return null;
   }
-  if (cat.status === "suspended") {
+  if (cat.status === "suspended" && !(cat.managed && cat.managed.preview)) {
     const ph = cat.brand.phone, tel = telHref(ph);
     bootMessage("This designer is not available",
       "<p>" + (ph ? "Please call " + (tel ? '<a href="' + esc(tel) + '">' + esc(ph) + "</a>" : esc(ph)) + "." : "Please contact " + esc(cat.brand.name) + ".") + "</p>");
