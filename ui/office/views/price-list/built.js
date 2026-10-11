@@ -250,6 +250,14 @@ function setOwn(key, id, value) {
     entry.built[id] = value;
   }
   edited();
+  staleChecks(key);
+}
+
+/* A check's answer is about the numbers it was run with: a new number
+   clears it (one style, or every style for a business-wide number). */
+function staleChecks(key) {
+  const sel = key ? `[data-built="${CSS.escape(key)}"] .pl-built-result` : ".pl-built-result";
+  for (const el of document.querySelectorAll(sel)) el.replaceChildren();
 }
 
 export function builtSection(key, entry) {
@@ -372,6 +380,7 @@ function setBiz(id, kind, value) {
     else d.built[id] = value;
   }
   edited();
+  staleChecks(null);
 }
 
 function reachWords(reach, offer) {

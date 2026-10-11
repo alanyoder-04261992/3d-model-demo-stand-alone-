@@ -759,6 +759,9 @@ export function describeChanges(before, after, manufacturer) {
     const name = styleName(a, M, k), base = a.offer[k].base != null ? a.offer[k].base : k, s = (M.styles || {})[base];
     const words = (S, E, id) => {
       const e = E[k] && E[k].built[id];
+      /* a number typed on this style that cannot be used: say what was typed */
+      const typed = isObj(S.offer[k]) && isObj(S.offer[k].built) ? S.offer[k].built[id] : undefined;
+      if (typed !== undefined && !(e && e.from === "this style")) return typeof typed === "string" ? `"${typed}"` : shownRaw(id, typed);
       if (e && e.value !== undefined) return format(id, e.value);
       const v = s ? plainValue(id, s, mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {}), keysOf(S.offer[k] && S.offer[k].sizes)) : undefined;
       return v !== undefined ? format(id, v) : "standard";
@@ -784,6 +787,12 @@ export function describeChanges(before, after, manufacturer) {
     if (names.length) out.push(`Wall upgrades priced by the square foot follow the new wall height: ${joinWords(names)}`);
   }
   return out;
+}
+
+/* A value as stored, in words when it can be read */
+function shownRaw(id, v) {
+  const r = parse(id, v, {});
+  return r.value !== undefined ? format(id, r.value) : String(v);
 }
 
 /* What changed in an extra's own numbers, in History words: "Steep roof:

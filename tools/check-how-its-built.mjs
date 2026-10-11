@@ -171,6 +171,9 @@ try {
   ok("Check every size says the door does not fit, in words", /Change these numbers before you save/.test(checked) && /72″ Wooden Double Doors on the front should be 76 1\/2 in tall, but the wall leaves room for 55 5\/8 in/.test(checked), checked.slice(0, 300));
   ok("... and not the gable window the standard Utility Shed has the same trouble with", !/Gable Window/.test(checked));
   await page.locator('[data-built="UT"]').screenshot({ path: `${OUT}/check-every-size-1280.png` });
+  await typeIn(page, "built:UT:wallHeight", "61");
+  ok("a new number clears the old answer of Check every size", (await page.$$('[data-built="UT"] .pl-built-result > *')).length === 0);
+  await typeIn(page, "built:UT:wallHeight", "60");
   await page.click(".pl-bar .btn-accent");
   await page.waitForSelector("dialog.dialog", { timeout: 30000 });
   const refused = await page.textContent("dialog.dialog");
