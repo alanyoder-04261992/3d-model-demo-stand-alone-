@@ -459,9 +459,13 @@ With `--control-room`, `POST /__local/barnwright` tries Barnwright setup
 access on the computer: `{terms: "2.2"}` records the owner's agreement to
 terms 2.2, and `{visit: true}` answers `{url}`, a `/dealer#barnwright=...`
 address with a fresh pass from the pretend control room (what **Open their
-price list** opens). `tools/check-setup-access.mjs` proves the server's
-rules and `tools/check-setup-screens.mjs` clicks through the owner's card,
-the preview and a visit in Chromium.
+price list** opens). `{door: {action: "status"}}` (any door request's
+body) answers `{door: {pass, body}}`: a pass made for exactly that body, to
+send to the door at `POST /.netlify/functions/barnwright-setup` on the same
+computer (add `via: "claude"` for a pass as Claude's).
+`tools/check-setup-access.mjs` proves the server's rules (the door's too)
+and `tools/check-setup-screens.mjs` clicks through the owner's card, the
+preview and a visit in Chromium.
 
 ## Barnwright setup access
 
@@ -689,12 +693,16 @@ sends CORS headers.
    `bad-request`;
 4. over 64 KB: 413 `too-big`;
 5. not a JSON object within the limits, or an action the door doesn't
-   have: 400 `bad-request`;
+   have: 400 `bad-request` (a request refused here or above doesn't spend
+   its pass);
 6. the pass: 401 `pass`, or 410 `pass-used`;
 7. the limits: 429 `too-many`. At most 120 Barnwright requests an hour
    (door and visit together) and 60 saves a day (door saves, undos, visit
    saves and put backs together);
-8. the action, below.
+8. the action, below. A body the action can't read (a `part` that isn't
+   one of the list, a `version` that isn't a whole number, `undo` that
+   isn't `true`, or both `edits` and `undo`) is 400 `bad-request`, with the
+   status fields.
 
 **Every answer** is JSON with `Cache-Control: private, no-store`. A success
 is `{ok: true, ...}`. A refusal is `{ok: false, code, error, ...}`, where
@@ -830,7 +838,11 @@ on.
   saved the price list after your change, so undo would take theirs away
   too. The owner can put back an earlier price list in Price list,
   History." When Barnwright never saved: "Barnwright hasn't changed this
-  price list, so there is nothing to undo."
+  price list, so there is nothing to undo." When the copy from before is
+  missing from the history (it is always kept first, so this is only a
+  history removed by hand): "The copy from before Barnwright's last change
+  is gone, so it can't be put back here. The owner can put back an earlier
+  price list in Price list, History."
 * It puts back the history entry of the version before, with the current
   values of the locked parts carried forward (`carryLocked`), then the lock
   and `check()`, then the same steps 2 to 5 as save.
@@ -872,8 +884,12 @@ once a minute.
 Claude, through the Control Room, sends **edits**, not whole settings. The
 Dealer Center applies them to its own copy with its own library, rules and
 change words. Codes come from `read` part `library` and part `buildings`.
-Every edit is an object with `do`. Text limits: names at most 60
-characters, other text at most 300, no control characters. Prices are 0 to
+Every edit is an object with `do` and only the parts listed for it below:
+an edit with any other part is refused ("Edit 3: prise isn't part of
+set_price."), so a typo never goes unnoticed. The Control Room keeps its
+own notes (`source`, `checked_by_alan`) out of the edits it sends. Text
+limits: names at most 60 characters (a business name 80, as at First
+setup), other text at most 300, no control characters. Prices are 0 to
 1,000,000 with at most 2 decimals; a building size's price is above 0.
 Sizes are `"WxL"` in whole feet, width 4 to 16, length 4 to 60.
 
@@ -926,7 +942,10 @@ Sizes are `"WxL"` in whole feet, width 4 to 16, length 4 to 60.
 **How prices and quotes show**
 
 * `set_defaults {style?, size?, colors?: {body?, trim?, roof?}}`: what the
-  3D designer opens on.
+  3D designer opens on. `style` must be one they sell; a size or color
+  they don't have is refused by the owner's own check, in the owner's
+  words. A new style alone keeps the size if that style has it, else its
+  first size.
 * `set_price_display {show}`: `price`, `from` or `none`.
 * `set_fine_print {text}`: the line under the price.
 * `set_size_note {width, text}`: the note for one width; `text: null`
@@ -967,7 +986,10 @@ to 12) or `"standard"`.
   * a style of their own: "UT1 is a style of their own. Change the pitch of
     the library style it is built like.";
   * any other pitch: "Pick a pitch from 3/12 to 12/12, in whole twelfths,
-    or standard."
+    or standard.";
+  * a business whose gable roofs were set up by hand some other way (a rise
+    that isn't this rule list): "Their gable roofs were set up another way,
+    so the pitch can't be changed here."
 * It writes one construction rule, `construction.roof.shapes.gable.rise`,
   as a rule list: one `{when: {styles: [code]}, value: {w: N / 24}}` for
   each style changed (in the order first changed), then the library's own
@@ -977,6 +999,8 @@ to 12) or `"standard"`.
   built like it, so the change words say so: "Utility Shed and every
   building built like it: roof pitch 6.5/12 (standard) → 5/12". The
   standard gable roof rises 0.27 of the building's width, about 6.5/12.
+  These are the price list's own change words (`describeChanges`), so
+  History says the same.
 * Every other construction change stays locked.
 
 **Examples.** `edits.samples` in the fixtures has every edit with the
