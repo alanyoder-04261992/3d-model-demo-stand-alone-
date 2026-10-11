@@ -233,6 +233,17 @@ console.log("\n2. The known list and the time budget:");
   const w = listed.warnings.find((f) => f.id === "overlap:R:w23/w72");
   ok("with the known list it is a warning carrying the list's reason", !!w && !listed.problems.some((f) => f.id === "overlap:R:w23/w72") && /golden test/.test(w.known || ""));
   if (w) console.log(`   known: ${w.words}\n          reason: ${w.known}`);
+  /* a known fault made WORSE is a new problem (each line says the most it
+     covers, maxIn): the Lofted Barn Garage's roof edge hangs 3/4 in in front
+     of its side door head; on a 6 ft 7 1/2 in wall it hangs 2 7/8 in */
+  const lbgStd = checkStyle(testCatalogue({ offer: { LBG: ["12x24"] } }), "LBG", { framing: false, known: KNOWN });
+  const lbgLow = checkStyle(testCatalogue({ styles: { LBG: { wallH: 79.5 / 12 } }, offer: { LBG: ["12x24"] } }), "LBG", { framing: false, known: KNOWN });
+  const worse = lbgLow.problems.find((f) => f.id === "eave:R:d36in");
+  ok("a known fault made worse is a problem, not the known line (the Lofted Barn Garage's eave on a 6 ft 7 1/2 in wall)",
+    lbgStd.warnings.some((f) => f.id === "eave:R:d36in" && f.known) && !lbgStd.problems.some((f) => f.id === "eave:R:d36in")
+    && !!worse && /hangs 2 7\/8 in in front of the head of the 36″ In-Swing Door on the right side\.$/.test(worse.words), JSON.stringify([lbgStd.problems.map((f) => f.words), worse && worse.words]));
+  if (worse) console.log(`   known, made worse: ${worse.words} (the line covers ${KNOWN.find((k) => k.id === "eave:R:d36in").maxIn} in)`);
+  for (const [i, k] of KNOWN.entries()) ok(`test/style-sizes-known.json line ${i + 1} says the most it covers (maxIn, inches)`, typeof k.maxIn === "number" && k.maxIn > 0, JSON.stringify(k.maxIn));
   const lb = checkStyle(LIBRARY, "LB", { budgetMs: 0 });
   ok("a 0 ms budget checks no building, lists every size as not checked yet, and still compares the widths", lb.buildings === 0 && lb.unchecked.length === Object.keys(LIBRARY.P.LB).length && lb.results.length === 0);
   console.log(`   budget: with no time at all, ${lb.unchecked.length} sizes of the Lofted Barn are listed as not checked yet ("${lb.unchecked[0].words}" first: the size the designer opens on)`);

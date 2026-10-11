@@ -9,9 +9,11 @@
    model/style-check.js draws a style at every size it is sold in and says
    what does not fit. This file decides WHICH styles a change reaches and
    what the business's numbers CAUSED: a finding the same building also has
-   with the standard numbers (Barnwright's own layouts have a few, listed in
-   test/style-sizes-known.json) is the shop's, never the owner's, so it never
-   stops a save.
+   with the standard numbers, no worse (Barnwright's own layouts have a few,
+   listed in test/style-sizes-known.json), is the shop's, never the owner's,
+   so it never stops a save; made WORSE (a roof edge that hung 3/4 in in
+   front of a door head now hangs 6 1/4 in) it is the owner's, said with
+   what the standard building has.
 
      ownNumbersOf(settings, M)    {KEY: {knob: {value, from}}} for every
                                   offered style with numbers of the
@@ -38,7 +40,7 @@
    building has too is counted, never shown as the owner's. */
 
 import * as BUILT from "./build-settings.js";
-import { checkStyle, checkBuilding, variantsOf, orderSizes } from "./style-check.js";
+import { checkStyle, checkBuilding, variantsOf, orderSizes, amountWords, AMOUNT_SLACK_IN } from "./style-check.js";
 import { defaults, setType } from "./design.js";
 import { frameOf } from "./frame.js";
 import { makePlan } from "./plan.js";
@@ -205,18 +207,45 @@ function planOf(cat, key, size, set) {
   return makePlan(st, cat);
 }
 
-/* The finding ids the standard building has (problems and warnings). */
-function standardIds(std, key, size, set, label, framing) {
+/* What the standard building has (problems and warnings): {id: the
+   finding, the worst of that id}. */
+function standardFindings(std, key, size, set, label, framing) {
+  const out = new Map();
   try {
     const r = checkBuilding(planOf(std, key, size, set), { label, framing, gableItems: true });
-    return new Set(r.problems.concat(r.warnings).map((f) => f.id));
+    for (const f of r.problems.concat(r.warnings)) keepWorst(out, f);
   } catch (e) {
-    return new Set(["draws:" + size]);
+    out.set("draws:" + size, { id: "draws:" + size });
   }
+  return out;
+}
+function keepWorst(map, f) {
+  const had = map.get(f.id);
+  if (!had || (typeof f.amount === "number" && !(f.amount <= had.amount))) map.set(f.id, f);
+}
+/* Is finding f worse than the same finding s on the standard building?
+   (more than 1/16 in further out, or more pieces) */
+function worseThan(f, s) {
+  if (typeof f.amount !== "number" || typeof s.amount !== "number") return false;
+  return f.amount > s.amount + (f.unit === "count" ? 0 : AMOUNT_SLACK_IN / 12);
+}
+/* f in words, with what the standard building has: "... hangs 6 1/4 in in
+   front of the head of the 36″ In-Swing Door on the right side. With the
+   standard numbers it is 3/4 in." */
+function worsened(f, s) {
+  return Object.assign({}, f, { words: `${f.words} With the standard numbers it is ${amountWords(s)}.`, detail: `${f.detail} With the standard numbers it is ${amountWords(s)}.`, standardAmount: s.amount });
+}
+/* A finding the standard building has too, no worse, is "already so";
+   worse, or not on the standard building at all, it is the business's. */
+function sortFinding(f, std, out, problem) {
+  const s = std.get(f.id);
+  if (s && !worseThan(f, s)) { if (problem) out.already.push(f); return; }
+  (problem ? out.problems : out.warnings).push(s ? worsened(f, s) : f);
 }
 
 /* One style, every size it is sold in (or opts.sizes), each finding
-   compared with the standard building. opts: {sizes, extra, budgetMs}.
+   compared with the same building drawn with the standard numbers.
+   opts: {sizes, extra, budgetMs, widths}.
    -> {key, name, extra, problems, warnings, already, unchecked, buildings, ms}
    problems/warnings/already are model/style-check.js findings. */
 export function checkAgainstStandard(cat, std, key, opts) {
@@ -237,19 +266,16 @@ export function checkAgainstStandard(cat, std, key, opts) {
   const styleLevel = r.problems.concat(r.warnings).filter((f) => !inRows.has(f));
   if (styleLevel.length) {
     const s = checkStyle(std, key, { sizes: [] });
-    const ids = new Set(s.problems.concat(s.warnings).map((f) => f.id));
-    for (const f of styleLevel) {
-      if (ids.has(f.id)) out.already.push(f);
-      else if (r.problems.indexOf(f) >= 0) out.problems.push(f);
-      else out.warnings.push(f);
-    }
+    const stdStyle = new Map();
+    for (const f of s.problems.concat(s.warnings)) keepWorst(stdStyle, f);
+    for (const f of styleLevel) sortFinding(f, stdStyle, out, r.problems.indexOf(f) >= 0);
   }
   for (const row of r.results) {
     if (!row.problems.length && !row.warnings.length) continue;
     const v = byId.get(row.variant) || { set: {} };
-    const ids = standardIds(std, key, row.size, v.set, row.label, row.problems.some((f) => f.code === "framing"));
-    for (const f of row.problems) (ids.has(f.id) ? out.already : out.problems).push(f);
-    for (const f of row.warnings) if (!ids.has(f.id)) out.warnings.push(f);
+    const stdRow = standardFindings(std, key, row.size, v.set, row.label, row.problems.some((f) => f.code === "framing"));
+    for (const f of row.problems) sortFinding(f, stdRow, out, true);
+    for (const f of row.warnings) sortFinding(f, stdRow, out, false);
   }
   out.ms = now() - t0;
   return out;

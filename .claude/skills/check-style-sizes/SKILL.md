@@ -26,8 +26,10 @@ nobody can look at every size after every change.
 * `model/built-check.js` -- the same checks for a business's own How it's
   built numbers: which styles a change reaches, and each finding compared
   with the same building drawn with the standard numbers (what the standard
-  building has too is never the business's, so the known list is not
-  needed there). `server/office/built-check.js` runs it on every Dealer
+  building has too, no worse, is never the business's, so the known list
+  is not needed there; made worse by more than 1/16 in it is, said with
+  what the standard building has: "... With the standard numbers it is
+  3/4 in."). `server/office/built-check.js` runs it on every Dealer
   Center save (about 3 s, then lists what is left); the price list's "Check
   every size" button and the quiet check when it opens run it in the
   browser (`ui/office/views/price-list/built.js`, the `how-its-built` skill).
@@ -84,13 +86,17 @@ golden test holds, or a style that is so by design). One line in
 `test/style-sizes-known.json`:
 
 ```json
-{ "styles": ["SU"], "sizes": ["8x12"], "code": "overlap", "id": "overlap:R:w23/w72",
+{ "styles": ["SU"], "sizes": ["8x12"], "code": "overlap", "id": "overlap:R:w23/w72", "maxIn": 2.4375,
   "reason": "Barnwright's standard layout ... Kept for the golden test." }
 ```
 
 * `code` and `id` exactly as the failure printed them; `styles` are library
   codes (a business's own style is matched by the style it is built like);
   leave out `sizes` or `variants` only when it really is every one.
+* `maxIn` is the most the line covers, in inches (round today's amount up
+  to the next 1/16 in): the same fault made worse -- a business's numbers,
+  a deploy -- is a new problem and fails (every finding carries `amount`,
+  feet, or a count of framing pieces).
 * The reason is read by people: plain words, why it is kept, who decided.
 * A line that matches nothing any more FAILS the check: take it out when the
   building is fixed (for example, once the gable fit rule stops offering a

@@ -181,6 +181,24 @@ function pairWords(a, b) {
   return wa.replace(at, "") + (a.c.n === b.c.n ? " and another " + b.c.n : " and " + wb.replace(at, "")) + where;
 }
 
+/* A finding. `amount` is how far out it is: feet (the overlap, how far the
+   roof edge hangs in front of a door head, how much too short), or
+   {count: n} for framing found piece by piece; a business's numbers that
+   make a finding the standard building has too WORSE are the business's
+   (model/built-check.js), and a known-list line names the most it covers. */
+function finding(code, id, prefix, detail, where, amount) {
+  const f = { code, id: code + ":" + id, words: prefix + detail, detail, where: where || {} };
+  if (amount && typeof amount === "object" && typeof amount.count === "number") { f.amount = amount.count; f.unit = "count"; }
+  else if (typeof amount === "number" && Number.isFinite(amount)) { f.amount = amount; f.unit = "ft"; }
+  return f;
+}
+/* The amount in words: "2 3/8 in", "4 pieces". */
+export function amountWords(f, amount) {
+  const a = amount === undefined ? f.amount : amount;
+  if (typeof a !== "number") return "";
+  return f.unit === "count" ? `${a} ${a === 1 ? "piece" : "pieces"}` : lengthWords(a);
+}
+
 /* ------------------------------------------------------------ one building */
 
 /* Every door, window, roll-up and gable window on the building with the
@@ -246,35 +264,35 @@ function checkOpenings(plan, ops, add) {
     if (r.plane === "gable") {
       const pts = glassOf(o);
       const over = pts ? glassOver(plan, pts) : -Infinity;
-      if (over > EPS) add("problem", "too-high", "glass:" + r.end + ":" + it.cat, `${itemWords(o)} has its glass ${lengthWords(over)} above the roof.`, { wall: it.wall, items: [it.id] });
+      if (over > EPS) add("problem", "too-high", "glass:" + r.end + ":" + it.cat, `${itemWords(o)} has its glass ${lengthWords(over)} above the roof.`, { wall: it.wall, items: [it.id] }, over);
       else if (r.clipped) add("warning", "too-high", "trim:" + r.end + ":" + it.cat, `the roof cuts the trim of ${itemWords(o)}.`, { wall: it.wall, items: [it.id] });
       continue;
     }
     if (!w) continue;
     const half = w.len / 2, gap = Math.min(r.u0 + half, half - r.u1);
-    if (gap < -EPS) add("problem", "past-wall", it.wall + ":" + it.cat, `${itemWords(o)} runs ${lengthWords(-gap)} past the corner.`, { wall: it.wall, items: [it.id] });
-    else if (gap < LIMITS.cornerWarnFt - EPS) add("warning", "past-wall", it.wall + ":" + it.cat, `the trim of ${itemWords(o)} ends only ${lengthWords(gap)} from the corner.`, { wall: it.wall, items: [it.id] });
+    if (gap < -EPS) add("problem", "past-wall", it.wall + ":" + it.cat, `${itemWords(o)} runs ${lengthWords(-gap)} past the corner.`, { wall: it.wall, items: [it.id] }, -gap);
+    else if (gap < LIMITS.cornerWarnFt - EPS) add("warning", "past-wall", it.wall + ":" + it.cat, `the trim of ${itemWords(o)} ends only ${lengthWords(gap)} from the corner.`, { wall: it.wall, items: [it.id] }, LIMITS.cornerWarnFt - gap);
     const endWall = (it.wall === "F" || it.wall === "B") && !o.c.gable;
     const head = headTop(o), band = r.porchBand;
     if (!endWall) {
       const over = head - w.top;
-      if (over > EPS) add("problem", "too-high", "head:" + it.wall + ":" + it.cat, `the head trim of ${itemWords(o)} is ${lengthWords(over)} above the top of the wall.`, { wall: it.wall, items: [it.id] });
-      else if (band && band.y1 - w.top > EPS) add("warning", "too-high", "porch-band:" + it.wall + ":" + it.cat, `the porch header band over ${itemWords(o)} runs ${lengthWords(band.y1 - w.top)} above the top of the wall, into the roof.`, { wall: it.wall, items: [it.id] });
+      if (over > EPS) add("problem", "too-high", "head:" + it.wall + ":" + it.cat, `the head trim of ${itemWords(o)} is ${lengthWords(over)} above the top of the wall.`, { wall: it.wall, items: [it.id] }, over);
+      else if (band && band.y1 - w.top > EPS) add("warning", "too-high", "porch-band:" + it.wall + ":" + it.cat, `the porch header band over ${itemWords(o)} runs ${lengthWords(band.y1 - w.top)} above the top of the wall, into the roof.`, { wall: it.wall, items: [it.id] }, band.y1 - w.top);
     } else {
       const gb = gableBandY(it.wall, plan);
-      if (gb != null && head > gb + EPS) add("problem", "too-high", "band:" + it.wall + ":" + it.cat, `the head trim of ${itemWords(o)} runs ${lengthWords(head - gb)} into the gable trim band.`, { wall: it.wall, items: [it.id] });
-      else if (gb != null && band && band.y1 > gb + EPS) add("warning", "too-high", "porch-band:" + it.wall + ":" + it.cat, `the porch header band over ${itemWords(o)} runs ${lengthWords(band.y1 - gb)} into the gable trim band.`, { wall: it.wall, items: [it.id] });
+      if (gb != null && head > gb + EPS) add("problem", "too-high", "band:" + it.wall + ":" + it.cat, `the head trim of ${itemWords(o)} runs ${lengthWords(head - gb)} into the gable trim band.`, { wall: it.wall, items: [it.id] }, head - gb);
+      else if (gb != null && band && band.y1 > gb + EPS) add("warning", "too-high", "porch-band:" + it.wall + ":" + it.cat, `the porch header band over ${itemWords(o)} runs ${lengthWords(band.y1 - gb)} into the gable trim band.`, { wall: it.wall, items: [it.id] }, band.y1 - gb);
       let over = -Infinity;
       const hb = r.head || r;
       for (const u of [hb.u0, hb.u1]) {
         const x = (w.cx || 0) + w.ax[0] * u;
         over = Math.max(over, head - profileYat(plan.prof, Math.max(-plan.W / 2, Math.min(plan.W / 2, x))));
       }
-      if (over > EPS) add("problem", "too-high", "roof:" + it.wall + ":" + it.cat, `the head trim of ${itemWords(o)} is ${lengthWords(over)} above the roof line.`, { wall: it.wall, items: [it.id] });
+      if (over > EPS) add("problem", "too-high", "roof:" + it.wall + ":" + it.cat, `the head trim of ${itemWords(o)} is ${lengthWords(over)} above the roof line.`, { wall: it.wall, items: [it.id] }, over);
     }
     if (o.c.draw === "shop-door") {
       const want = doorHeightFt(plan.construction, plan.t.roof);
-      if (want - r.ch > LIMITS.doorShortFt + EPS) add("problem", "door-fit", it.wall + ":" + it.cat, `${itemWords(o)} should be ${inchWords(want)} tall, but the wall leaves room for ${inchWords(r.ch)}.`, { wall: it.wall, items: [it.id] });
+      if (want - r.ch > LIMITS.doorShortFt + EPS) add("problem", "door-fit", it.wall + ":" + it.cat, `${itemWords(o)} should be ${inchWords(want)} tall, but the wall leaves room for ${inchWords(r.ch)}.`, { wall: it.wall, items: [it.id] }, want - r.ch);
     }
   }
   /* overlap: every pair on one surface */
@@ -286,10 +304,10 @@ function checkOpenings(plan, ops, add) {
       const du = Math.min(a.r.clear.u1, b.r.clear.u1) - Math.max(a.r.clear.u0, b.r.clear.u0);
       const dy = Math.min(a.r.clear.y1, b.r.clear.y1) - Math.max(a.r.clear.y0, b.r.clear.y0);
       const id = a.it.wall + ":" + [a.it.cat, b.it.cat].sort().join("/");
-      if (du > EPS && dy > EPS) { add("problem", "overlap", id, `${pairWords(a, b)} overlap by ${lengthWords(du)}.`, { wall: a.it.wall, items: [a.it.id, b.it.id] }); continue; }
+      if (du > EPS && dy > EPS) { add("problem", "overlap", id, `${pairWords(a, b)} overlap by ${lengthWords(du)}.`, { wall: a.it.wall, items: [a.it.id, b.it.id] }, du); continue; }
       const ca = casingSpan(a), cb = casingSpan(b);
       const tu = Math.min(ca[1], cb[1]) - Math.max(ca[0], cb[0]), ty = Math.min(a.r.y1, b.r.y1) - Math.max(a.r.y0, b.r.y0);
-      if (tu > -EPS && ty > EPS) add("warning", "overlap", id, `the casings of ${pairWords(a, b)} ${tu > EPS ? "lap by " + lengthWords(tu) : "touch"}.`, { wall: a.it.wall, items: [a.it.id, b.it.id] });
+      if (tu > -EPS && ty > EPS) add("warning", "overlap", id, `the casings of ${pairWords(a, b)} ${tu > EPS ? "lap by " + lengthWords(tu) : "touch"}.`, { wall: a.it.wall, items: [a.it.id, b.it.id] }, tu);
     }
   }
 }
@@ -315,7 +333,7 @@ function checkGableItems(plan, add, opts) {
     const o = { it, c, r };
     const pts = glassOf(o);
     const over = pts ? glassOver(plan, pts) : -Infinity;
-    if (over > EPS) add("problem", "gable-item", id, `the ${c.n}, put under the peak of a gable as low as it goes, pokes ${lengthWords(over)} through the roof.`, { items: [id] });
+    if (over > EPS) add("problem", "gable-item", id, `the ${c.n}, put under the peak of a gable as low as it goes, pokes ${lengthWords(over)} through the roof.`, { items: [id] }, over);
     else if (r.clipped || r.u0 == null) add("warning", "gable-item", id, `the roof cuts the trim of the ${c.n}, even under the peak of a gable as low as it goes.`, { items: [id] });
   }
 }
@@ -326,14 +344,14 @@ function checkEave(plan, ops, add) {
   const P = G.roofOutline(plan).P;
   for (const [wall, tip, side] of [["L", P[0], "left side"], ["R", P[P.length - 1], "right side"]]) {
     const h = tip[1] - y0;
-    if (h < LIMITS.eaveMinFt - EPS) add("problem", "eave", wall + ":floor", `the roof edge over the ${side} is only ${lengthWords(h)} above the floor (6 ft at least).`, { wall });
+    if (h < LIMITS.eaveMinFt - EPS) add("problem", "eave", wall + ":floor", `the roof edge over the ${side} is only ${lengthWords(h)} above the floor (6 ft at least).`, { wall }, LIMITS.eaveMinFt - h);
     for (const o of ops) {
       if (o.it.wall !== wall || o.r.plane !== "wall") continue;
       const hang = headTop(o) - tip[1];
       if (hang <= EPS) continue;
       const words = `the roof edge hangs ${lengthWords(hang)} in front of the head of ${itemWords(o)}.`;
-      if (o.c.k === "win") add("warning", "eave", wall + ":" + o.it.cat, words, { wall, items: [o.it.id] });
-      else add("problem", "eave", wall + ":" + o.it.cat, words, { wall, items: [o.it.id] });
+      if (o.c.k === "win") add("warning", "eave", wall + ":" + o.it.cat, words, { wall, items: [o.it.id] }, hang);
+      else add("problem", "eave", wall + ":" + o.it.cat, words, { wall, items: [o.it.id] }, hang);
     }
   }
 }
@@ -349,18 +367,18 @@ function checkRoof(plan, add) {
     if (!(kx > EPS && kx < W / 2 - EPS) || !(P[1][0] < -EPS && P[1][0] > -W / 2 + EPS)) add("problem", "roof", "knee", "the barn roof's knee is outside the walls.");
     else {
       const lower = (P[1][1] - P[0][1]) / (P[1][0] - P[0][0]), upper = (P[2][1] - P[1][1]) / (P[2][0] - P[1][0]);
-      if (!(lower > upper + EPS)) add("problem", "roof", "barn-slopes", `the barn roof's upper slope (${pitchWords(upper * 12)}) is steeper than its lower slope (${pitchWords(lower * 12)}).`);
+      if (!(lower > upper + EPS)) add("problem", "roof", "barn-slopes", `the barn roof's upper slope (${pitchWords(upper * 12)}) is steeper than its lower slope (${pitchWords(lower * 12)}).`, undefined, upper - lower);
     }
   }
   const rise = P[apex][1] - topY;
-  if (rise < LIMITS.peakMinFt - EPS) add("problem", "roof", "peak-low", `the roof peak is only ${lengthWords(rise)} above the wall (1 ft at least).`);
-  else if (rise > LIMITS.peakMaxFt + EPS) add("problem", "roof", "peak-high", `the roof peak is ${lengthWords(rise)} above the wall (8 ft at most).`);
-  else if (rise < LIMITS.peakWarnFt - EPS) add("warning", "roof", "peak-low", `the roof peak is only ${lengthWords(rise)} above the wall.`);
+  if (rise < LIMITS.peakMinFt - EPS) add("problem", "roof", "peak-low", `the roof peak is only ${lengthWords(rise)} above the wall (1 ft at least).`, undefined, LIMITS.peakMinFt - rise);
+  else if (rise > LIMITS.peakMaxFt + EPS) add("problem", "roof", "peak-high", `the roof peak is ${lengthWords(rise)} above the wall (8 ft at most).`, undefined, rise - LIMITS.peakMaxFt);
+  else if (rise < LIMITS.peakWarnFt - EPS) add("warning", "roof", "peak-low", `the roof peak is only ${lengthWords(rise)} above the wall.`, undefined, LIMITS.peakWarnFt - rise);
   const lim = ROOF_PITCH_LIMITS[t.roof];
   if (lim && rise > 0) {
     const pitch = rise / (t.roof === "gable" ? W / 2 : W) * 12;
-    if (pitch > lim[1] + 1e-6) add("problem", "roof", "pitch", `the roof pitch is ${pitchWords(pitch)}, steeper than ${lim[1]}/12, the steepest the 3D designer draws.`);
-    else if (pitch < lim[0] - 1e-6) add("problem", "roof", "pitch", `the roof pitch is ${pitchWords(pitch)}, flatter than ${lim[0]}/12, the flattest the 3D designer draws.`);
+    if (pitch > lim[1] + 1e-6) add("problem", "roof", "pitch", `the roof pitch is ${pitchWords(pitch)}, steeper than ${lim[1]}/12, the steepest the 3D designer draws.`, undefined, pitch - lim[1]);
+    else if (pitch < lim[0] - 1e-6) add("problem", "roof", "pitch", `the roof pitch is ${pitchWords(pitch)}, flatter than ${lim[0]}/12, the flattest the 3D designer draws.`, undefined, lim[0] - pitch);
   }
 }
 
@@ -369,35 +387,35 @@ function checkDormer(plan, add) {
   const g = dormerGeom(plan);
   if (!g) return;
   const raw = Math.min(1.95, g.yI - 0.35 - g.yB);
-  if (raw < LIMITS.dormerFaceFt - EPS) add("problem", "dormer", "face", `the dormer front is only ${lengthWords(Math.max(0, raw))} tall; the roof is too flat for it (1 ft 2 3/8 in at least).`);
+  if (raw < LIMITS.dormerFaceFt - EPS) add("problem", "dormer", "face", `the dormer front is only ${lengthWords(Math.max(0, raw))} tall; the roof is too flat for it (1 ft 2 3/8 in at least).`, undefined, LIMITS.dormerFaceFt - raw);
   if (!(g.yI > g.yT + EPS)) add("problem", "dormer", "roof", "the dormer roof would not rise from its front to the main roof.");
   const wh = g.wins.length ? g.wins[0].wh : 0;
-  if (wh < LIMITS.dormerWindowFt - EPS) add("problem", "dormer", "windows", `the dormer windows are only ${lengthWords(Math.max(0, wh))} tall (7 in at least).`);
+  if (wh < LIMITS.dormerWindowFt - EPS) add("problem", "dormer", "windows", `the dormer windows are only ${lengthWords(Math.max(0, wh))} tall (7 in at least).`, undefined, LIMITS.dormerWindowFt - wh);
   const want = +plan.state.dormer;
-  if (g.D < want - EPS) add("warning", "dormer", "short", `the ${want} ft dormer is drawn ${lengthWords(g.D)} long on a ${lengthWords(plan.L)} long building.`);
+  if (g.D < want - EPS) add("warning", "dormer", "short", `the ${want} ft dormer is drawn ${lengthWords(g.D)} long on a ${lengthWords(plan.L)} long building.`, undefined, want - g.D);
 }
 
 function checkPorch(plan, ops, add) {
   const t = plan.t, ws = plan.ws, W = plan.W, L = plan.L;
   if (t.porch === "S" && ws.S1) {
     const room = W / 2 + ws.S1.at;
-    if (room < LIMITS.roomFt - EPS) add("problem", "porch", "room", `the side porch leaves only ${lengthWords(room)} of room inside (4 ft at least).`);
+    if (room < LIMITS.roomFt - EPS) add("problem", "porch", "room", `the side porch leaves only ${lengthWords(room)} of room inside (4 ft at least).`, undefined, LIMITS.roomFt - room);
     /* the long wall left beside the porch (model/frame.js SIDE_WALL_MIN_FT):
        a porch as long as the building puts its end wall in the back wall */
     const wall = L - plan.span.P;
     if (wall < LIMITS.sideWallFt - EPS) add("problem", "porch", "side-wall", wall <= EPS
       ? `the ${lengthWords(plan.span.P)} side porch is as long as the building, so there is no side wall beside it (4 ft at least).`
-      : `the ${lengthWords(plan.span.P)} side porch leaves only ${lengthWords(wall)} of side wall beside it (4 ft at least).`);
+      : `the ${lengthWords(plan.span.P)} side porch leaves only ${lengthWords(wall)} of side wall beside it (4 ft at least).`, undefined, LIMITS.sideWallFt - wall);
   }
   if ((t.porch === "F" || t.porch === "C") && ws.F) {
     const room = L / 2 + ws.F.at;
-    if (room < LIMITS.roomFt - EPS) add("problem", "porch", "room", `the porch leaves only ${lengthWords(room)} of room inside (4 ft at least).`);
+    if (room < LIMITS.roomFt - EPS) add("problem", "porch", "room", `the porch leaves only ${lengthWords(room)} of room inside (4 ft at least).`, undefined, LIMITS.roomFt - room);
   }
   if (t.porch === "C" && ws.P1 && ws.P2) {
     const side = ws.P1.ax[0] * ws.P1.len;
     if (side < -EPS) add("problem", "porch", "angled", "the angled porch wall would run backwards.");
-    else if (side < LIMITS.wrapSidewaysFt - EPS) add("problem", "porch", "angled", `the angled porch wall runs only ${lengthWords(side)} sideways (2 ft at least).`);
-    if (ws.P2.len < LIMITS.wrapFrontFt - EPS) add("problem", "porch", "front-wall", `the porch front wall is only ${lengthWords(ws.P2.len)} long (1 ft at least).`);
+    else if (side < LIMITS.wrapSidewaysFt - EPS) add("problem", "porch", "angled", `the angled porch wall runs only ${lengthWords(side)} sideways (2 ft at least).`, undefined, LIMITS.wrapSidewaysFt - side);
+    if (ws.P2.len < LIMITS.wrapFrontFt - EPS) add("problem", "porch", "front-wall", `the porch front wall is only ${lengthWords(ws.P2.len)} long (1 ft at least).`, undefined, LIMITS.wrapFrontFt - ws.P2.len);
   }
   /* every opening on a wall of the closed-in room */
   const room = roomOutline(plan);
@@ -408,7 +426,7 @@ function checkPorch(plan, ops, add) {
     const us = o.r.casing ? [o.r.casing.u0, o.r.u, o.r.casing.u1] : [o.r.u0, (o.r.u0 + o.r.u1) / 2, o.r.u1];
     let off = 0;
     for (const u of us) { const p = wallPt(w, u, 0, 0); off = Math.max(off, distToPoly([p[0], p[2]], room)); }
-    if (off > ON_WALL_FT) add("problem", "porch", "open:" + o.it.wall + ":" + o.it.cat, `${itemWords(o)} is where there is no wall (${t.kennel ? "the open run" : "the open porch"}).`, { wall: o.it.wall, items: [o.it.id] });
+    if (off > ON_WALL_FT) add("problem", "porch", "open:" + o.it.wall + ":" + o.it.cat, `${itemWords(o)} is where there is no wall (${t.kennel ? "the open run" : "the open porch"}).`, { wall: o.it.wall, items: [o.it.id] }, off);
   }
   /* porch posts on the porch deck, where parts/openings/porch-post.js stands them */
   const decks = porchOutlines(plan);
@@ -451,7 +469,7 @@ function checkFraming(plan, add) {
     const g = region.get(k) || { n: 0, part: r.solid.part, kind: r.solid.kind, why: r.why };
     g.n++; region.set(k, g);
   }
-  for (const g of region.values()) add("problem", "framing", "region:" + g.part + ":" + g.why, `${g.n === 1 ? "a piece" : g.n + " pieces"} of the ${partWords(g.part)} (${g.kind}) ${g.n === 1 ? "stands" : "stand"} ${g.why}.`);
+  for (const g of region.values()) add("problem", "framing", "region:" + g.part + ":" + g.why, `${g.n === 1 ? "a piece" : g.n + " pieces"} of the ${partWords(g.part)} (${g.kind}) ${g.n === 1 ? "stands" : "stand"} ${g.why}.`, undefined, { count: g.n });
   const pairs = new Map();
   for (const o of G.overlaps(solids.concat(skids))) {
     if (o.a.part === "skids" && o.b.part === "skids") continue;
@@ -463,7 +481,7 @@ function checkFraming(plan, add) {
   }
   for (const [k, g] of pairs) {
     const which = g.a.part === g.b.part && g.a.kind === g.b.kind ? `two ${g.a.kind}s of the ${partWords(g.a.part)}` : `the ${partWords(g.a.part)} ${g.a.kind} and the ${partWords(g.b.part)} ${g.b.kind}`;
-    add("problem", "framing", "overlap:" + k, `${g.n === 1 ? "two framing pieces overlap" : g.n + " pairs of framing pieces overlap, the most"} by ${lengthWords(g.depth)} (${which}).`);
+    add("problem", "framing", "overlap:" + k, `${g.n === 1 ? "two framing pieces overlap" : g.n + " pairs of framing pieces overlap, the most"} by ${lengthWords(g.depth)} (${which}).`, undefined, g.depth);
   }
   const bear = new Map();
   for (const b of G.bearingProblems(solids, solids.concat(skids))) {
@@ -471,7 +489,7 @@ function checkFraming(plan, add) {
     const g = bear.get(k) || { n: 0, part: b.solid.part, kind: b.solid.kind };
     g.n++; bear.set(k, g);
   }
-  for (const g of bear.values()) add("problem", "framing", "bearing:" + g.part + ":" + g.kind, `${g.n === 1 ? "a piece" : g.n + " pieces"} of the ${partWords(g.part)} (${g.kind}) ${g.n === 1 ? "rests" : "rest"} on nothing and ${g.n === 1 ? "is" : "are"} nailed to nothing.`);
+  for (const g of bear.values()) add("problem", "framing", "bearing:" + g.part + ":" + g.kind, `${g.n === 1 ? "a piece" : g.n + " pieces"} of the ${partWords(g.part)} (${g.kind}) ${g.n === 1 ? "rests" : "rest"} on nothing and ${g.n === 1 ? "is" : "are"} nailed to nothing.`, undefined, { count: g.n });
 }
 
 /* Room to stand or store under the roof framing over the loft floor, at the
@@ -482,8 +500,8 @@ function checkLoft(plan, add) {
   const sec = roofSection(plan);
   const under = envY(sec, sec.deckT + sec.chord.d, 0);
   const head = under - Math.max.apply(null, zones.map((z) => z.yd1));
-  if (head < LIMITS.loftMinFt - EPS) add("problem", "loft", "headroom", `the loft has only ${lengthWords(Math.max(0, head))} of headroom under the roof framing (2 ft at least).`);
-  else if (head < LIMITS.loftWarnFt - EPS) add("warning", "loft", "headroom", `the loft has ${lengthWords(head)} of headroom under the roof framing.`);
+  if (head < LIMITS.loftMinFt - EPS) add("problem", "loft", "headroom", `the loft has only ${lengthWords(Math.max(0, head))} of headroom under the roof framing (2 ft at least).`, undefined, LIMITS.loftMinFt - head);
+  else if (head < LIMITS.loftWarnFt - EPS) add("warning", "loft", "headroom", `the loft has ${lengthWords(head)} of headroom under the roof framing.`, undefined, LIMITS.loftWarnFt - head);
 }
 
 /* One building, as it is drawn. opts:
@@ -498,9 +516,8 @@ export function checkBuilding(plan, opts) {
   const t0 = now();
   const label = opts.label || (plan.t.name + " " + plan.state.size);
   const out = { problems: [], warnings: [], ms: 0 };
-  function add(level, code, id, detail, where) {
-    const f = { code, id: code + ":" + id, words: label + ": " + detail, detail, where: where || {} };
-    (level === "problem" ? out.problems : out.warnings).push(f);
+  function add(level, code, id, detail, where, amount) {
+    (level === "problem" ? out.problems : out.warnings).push(finding(code, id, label + ": ", detail, where, amount));
   }
   const ops = openingsOf(plan);
   checkOpenings(plan, ops, add);
@@ -552,7 +569,8 @@ export function orderSizes(sizes) {
 }
 
 /* Does a known-list entry cover this finding? An entry:
-   {styles: ["SU"], sizes?: ["8x12"], variants?: ["dormer 9"], code, id?, reason} */
+   {styles: ["SU"], sizes?: ["8x12"], variants?: ["dormer 9"], code, id?,
+    maxIn? (the most it covers, inches: bigger is a new problem), reason} */
 function knownMatch(known, styleKey, size, variant, f) {
   for (let i = 0; i < known.length; i++) {
     const k = known[i];
@@ -561,10 +579,16 @@ function knownMatch(known, styleKey, size, variant, f) {
     if (Array.isArray(k.styles) && k.styles.indexOf(styleKey) < 0) continue;
     if (Array.isArray(k.sizes) && k.sizes.indexOf(size) < 0) continue;
     if (Array.isArray(k.variants) && k.variants.indexOf(variant) < 0) continue;
+    /* a known fault that grew past the most the line covers is a new one */
+    if (typeof k.maxIn === "number" && typeof f.amount === "number" && f.unit === "ft" && f.amount * 12 > k.maxIn + AMOUNT_SLACK_IN) continue;
     return i;
   }
   return -1;
 }
+/* How much worse than the standard (or a known-list line's largest) a
+   finding may be and still be the same one: 1/16 in, under a builder's
+   measuring. */
+export const AMOUNT_SLACK_IN = 1 / 16;
 
 /* The roof's height above the wall at every sold width: a wider building of
    one style is never lower. Cheap (no drawing), so it always covers every
@@ -585,10 +609,10 @@ function checkWidths(cat, key, base, sizes, add) {
   for (let i = 0; i < widths.length; i++) {
     const w = widths[i], g = byW.get(w);
     if (tallest && g.lo < tallest.rise - EPS) {
-      add("problem", "roof-widths", tallest.w + "-" + w, `${tallest.w} ft wide is ${lengthWords(tallest.rise)} tall, taller than ${w} ft wide (${lengthWords(g.lo)}).`);
+      add("problem", "roof-widths", tallest.w + "-" + w, `${tallest.w} ft wide is ${lengthWords(tallest.rise)} tall, taller than ${w} ft wide (${lengthWords(g.lo)}).`, undefined, tallest.rise - g.lo);
     } else if (i > 0) {
       const prev = byW.get(widths[i - 1]);
-      if (g.lo - prev.hi > LIMITS.widthJumpFt + EPS) add("warning", "roof-widths", widths[i - 1] + "-" + w, `the roof is ${lengthWords(g.lo - prev.hi)} taller at ${w} ft wide than at ${widths[i - 1]} ft wide.`);
+      if (g.lo - prev.hi > LIMITS.widthJumpFt + EPS) add("warning", "roof-widths", widths[i - 1] + "-" + w, `the roof is ${lengthWords(g.lo - prev.hi)} taller at ${w} ft wide than at ${widths[i - 1]} ft wide.`, undefined, g.lo - prev.hi);
     }
     if (!tallest || g.hi > tallest.rise) tallest = { w, rise: g.hi };
   }
@@ -623,8 +647,8 @@ export function checkStyle(cat, key, opts) {
   }
   const base = defaults(cat);
   setType(base, key, cat);
-  if (opts.widths !== false) checkWidths(cat, key, base, all, function (level, code, id, detail) {
-    const f = { code, id: code + ":" + id, words: t.name + ": " + detail, detail, where: {} };
+  if (opts.widths !== false) checkWidths(cat, key, base, all, function (level, code, id, detail, where, amount) {
+    const f = finding(code, id, t.name + ": ", detail, where, amount);
     if (level === "problem") file(f, "", ""); else res.warnings.push(f);
   });
   /* a size that cannot even be laid out is a problem in plain words, never
