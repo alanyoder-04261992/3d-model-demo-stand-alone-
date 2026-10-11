@@ -560,17 +560,24 @@ export function builtSaved(sizeCheck) {
   if (sizeCheck.warnings?.length) out.push(resultBox("warn", "Worth a look:", sizeCheck.warnings));
   if (sizeCheck.unchecked?.length) out.push(resultBox("warn", "Not checked yet:", sizeCheck.unchecked));
   const first = sizeCheck.styles?.[0];
-  const lot = app && !app.demo ? app.openLots()[0] : null;
+  /* While the 3D designer is closed to customers (before it opens, a lot
+     that is closed) or in a Barnwright visit, the link is the preview, as
+     the closed banner's, the visit bar's and Lots' are: the closed page
+     customers get would show nothing (review M1). The preview opens the
+     design too. */
+  const closed = !!app && (!!app.barnwright || app.business?.open === false);
+  const lot = app && !app.demo ? app.openLots()[0] || (closed ? app.lots[0] : null) : null;
   if (first && lot) {
-    const href = designLink(first.key, lot.slug);
+    const href = designLink(first.key, lot.slug, closed || lot.active === false);
     if (href) out.push(h("p", { class: "pl-built-saved-line" }, h("a", { class: "btn btn-ghost", href, target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, `See the ${first.name} in the 3D designer`))));
   }
   return out.length ? h("div", { class: "pl-built-saved" }, out) : null;
 }
 
 /* A link to a lot's 3D designer showing the style at the size the designer
-   opens on for it. */
-function designLink(key, slug) {
+   opens on for it; preview: the lot's preview instead (closed to
+   customers). */
+function designLink(key, slug, preview = false) {
   try {
     const cat = resolve(S.saved.settings, S.M, S.L);
     const sizes = keysOf(cat.P[key]);
@@ -580,7 +587,7 @@ function designLink(key, slug) {
     d.size = sizes[Math.min(4, sizes.length - 1)];
     delete d.items;
     const design = fromState(toState(d, cat).state, cat);
-    return `${S.ctx.app.designerUrl(slug)}#d=${encodeSync(design)}`;
+    return `${preview ? S.ctx.app.previewUrl(slug) : S.ctx.app.designerUrl(slug)}#d=${encodeSync(design)}`;
   } catch {
     return null;
   }

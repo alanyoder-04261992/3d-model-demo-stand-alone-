@@ -1600,6 +1600,19 @@ change also needs the site's own Origin, like every `/api/office/` change):
   Any other screen says "A Barnwright visit has only the price list and
   settings." with Go to the price list. On a phone the bar's buttons are
   full touch size (44 px).
+* What the lock keeps the owner's is shown as words, never as boxes it
+  would refuse at Save: How it's built for the whole business, and on the
+  Options tab an option that changes how the building is built (its roof
+  pitch, what it frames and where it is offered, with no Remove): "This
+  option changes how the building is built, so only the owner can change
+  that, where it is offered, or remove it." Any other option keeps its
+  Offered on buttons and has no roof pitch box: "Only the owner can make an
+  option change how the building is built."
+* The links to the 3D designer in a visit are the preview
+  (`?preview=barnwright`), the Saved box's "See the <style> in the 3D
+  designer" too, so they show the design whether the designer is open or
+  not. The owner's Saved box links to the preview too while the designer
+  or the lot is closed to customers.
 * A draft kept in the tab comes back once: Undo changes, Reload or leaving
   the screen let it go for good.
 * When the owner saves over a Barnwright save, their 409 says "Barnwright

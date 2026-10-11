@@ -26,6 +26,9 @@
         ("Lofted Barn wall height: 6 ft 7 1/2 in → 7 ft"), that every size
         was drawn and fits, and links to a lot's 3D designer; History says
         it too;
+     4b. closed to customers (as before it opens), that link is the lot's
+        preview, as the banner's is, and shows the design, never the
+        closed page;
      5. when the price list opens, a style whose own numbers no longer fit
         (the standard changed under them) shows a yellow note with the words;
      6. a manager sees the numbers read only, never a box, with the barn
@@ -247,6 +250,44 @@ try {
   await page.locator(".pl-extras .pl-extra").last().screenshot({ path: `${OUT}/option-roof-pitch-1280.png` });
   ok("no errors on the owner's screens", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
   await page.context().close();
+
+  /* ---- 4b ---------------------------------------------------------------- */
+  section("4b. Closed to customers: the Saved box's link is the preview, which shows the design");
+  {
+    const p = await pageFor(OWNER);
+    await openPriceList(p);
+    /* the owner closes the 3D designer to customers (as before it opens) */
+    const putList = (status, utBuilt) => p.evaluate(async ([status, utBuilt]) => {
+      const cur = await (await fetch("/api/office/price-list", { credentials: "same-origin" })).json();
+      const s = cur.settings;
+      s.status = status;
+      if (utBuilt) s.offer.UT.built = utBuilt; else delete s.offer.UT.built;
+      const r = await fetch("/api/office/price-list", { method: "PUT", credentials: "same-origin", headers: { "content-type": "application/json" }, body: JSON.stringify({ settings: s, version: cur.version }) });
+      return r.status;
+    }, [status, utBuilt]);
+    const closed = await putList("suspended", null);
+    await p.reload({ waitUntil: "load" });
+    await p.waitForSelector(".pl-body .pl-tab", { timeout: 30000 });
+    await openStyle(p, "UT");
+    await typeIn(p, "built:UT:wallHeight", "8 ft");
+    await p.click(".pl-bar .btn-accent");
+    await p.waitForSelector(".pl-saved a.btn", { timeout: 30000 }).catch(() => {});
+    const href = await p.getAttribute(".pl-saved a.btn", "href").catch(() => null);
+    const bannerHref = await p.getAttribute(".banner a:has-text('Look at the preview')", "href").catch(() => null);
+    ok(`closed to customers, "See the Utility Shed in the 3D designer" opens the preview as the banner does (${String(href).slice(0, 44)}…; old code: /d/<lot>/#d=, the closed page)`,
+      closed === 200 && !!href && !!bannerHref && /\?preview=1$/.test(bannerHref) && href.startsWith(bannerHref + "#d=") && /See the Utility Shed in the 3D designer/.test(await p.textContent(".pl-saved")), `${href} | ${bannerHref}`);
+    if (href) {
+      const d = await p.context().newPage();
+      await d.goto(BASE + href, { waitUntil: "load" });
+      await d.waitForFunction(() => /Preview\.|isn't open right now/.test(document.body.textContent), null, { timeout: 30000 }).catch(() => {});
+      const shows = (await d.textContent("body")).replace(/\s+/g, " ");
+      ok("... which shows the design with the Preview words, never the closed page", /Preview\. Your customers can't see this until you open it in Settings\./.test(shows) && !/isn't open right now/.test(shows), shows.slice(0, 200));
+      await d.close();
+    }
+    ok("(open to customers again, the Utility Shed's wall back to the standard, for the rest of this check)", (await putList("active", null)) === 200);
+    ok("no errors", p.errors.length === 0, p.errors.slice(0, 3).join(" | "));
+    await p.context().close();
+  }
 
   /* ---- 5 ----------------------------------------------------------------- */
   section("5. When the price list opens: a quiet check of the styles with numbers of their own");

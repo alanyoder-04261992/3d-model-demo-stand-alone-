@@ -15,6 +15,17 @@ import * as BUILT from "../../../../model/build-settings.js";
 import { priceInput, sellBox, renameable, msgs } from "./bits.js";
 
 const BASIS = { floor: "floor", wall: "walls", roof: "roof" };
+
+/* A Barnwright visit (server/office/setup-lock.js): an option of the
+   business's own that changes how the building is built (a roof pitch of
+   its own, or the construction the owner set), and where such an option is
+   offered, are the owner's. The visit shows them as words, never as boxes
+   the lock would refuse at Save (review M4). */
+export const VISIT_EXTRA_WORDS = Object.freeze({
+  built: "This option changes how the building is built, so only the owner can change that, where it is offered, or remove it.",
+  plain: "Only the owner can make an option change how the building is built.",
+});
+const changesBuilding = (x) => isObj(x) && (!!x.construction || (isObj(x.built) && Object.keys(x.built).length > 0));
 const sentence = (s) => (s ? s[0].toUpperCase() + s.slice(1) + (/[.!?]$/.test(s) ? "" : ".") : "");
 
 /* Each builder option group: [group, title, sub(settings) -> words, row extras(id) -> {desc, suffix, step}] */
@@ -151,8 +162,9 @@ function extraRow(x, i) {
   };
   kind.addEventListener("change", () => { x.input = kind.value; drawPrice(); edited(); });
   drawPrice();
-  const rm = h("button", { type: "button", class: "pl-icon-btn", "aria-label": `Remove ${x.name || "this option"}`, title: "Remove" }, icon("trash"));
-  rm.addEventListener("click", () => {
+  const visit = !!S.ctx?.app?.barnwright, owners = visit && changesBuilding(x);
+  const rm = owners ? null : h("button", { type: "button", class: "pl-icon-btn", "aria-label": `Remove ${x.name || "this option"}`, title: "Remove" }, icon("trash"));
+  rm?.addEventListener("click", () => {
     S.draft.options.extras.splice(i, 1);
     edited({ tab: true });
   });
@@ -170,9 +182,10 @@ function extraRow(x, i) {
      options (a ridge vent) need neither (review W15) */
   const more = h("details", { class: "pl-extra-more", dataset: { extraMore: String(i) } },
     h("summary", {}, "Only on some buildings, or changes the roof"),
-    extraPitch(x, i, paintMiss),
-    extraStyles(x, i, paintMiss));
-  if (isObj(x.built) || Array.isArray(x.styles)) more.open = true;
+    ...(owners ? extraBuiltWords(x)
+      : visit ? [extraStyles(x, i, paintMiss), h("p", { class: "hint", dataset: { visitExtra: "plain" } }, VISIT_EXTRA_WORDS.plain)]
+        : [extraPitch(x, i, paintMiss), extraStyles(x, i, paintMiss)]));
+  if (isObj(x.built) || Array.isArray(x.styles) || owners) more.open = true;
   return h("div", { class: "pl-extra" },
     h("div", { class: "pl-extra-fields" },
       h("div", { class: "field" }, h("label", { htmlFor: ids.name }, "Name"), nameBox),
@@ -217,6 +230,25 @@ function extraStyles(x, i, changed = () => {}) {
   return h("div", { class: "field pl-extra-built" },
     h("span", { class: "pl-label" }, "Offered on"), row,
     h("p", { class: "hint" }, "Every building, or only the ones you press."));
+}
+
+/* In a Barnwright visit, an option that changes how the building is built:
+   what it builds and where it is offered, in words, and who changes them. */
+function extraBuiltWords(x) {
+  const offer = S.draft.offer || {};
+  const lines = [];
+  if (isObj(x.built)) {
+    for (const K of BUILT.KNOBS) {
+      if (x.built[K.id] === undefined) continue;
+      const r = BUILT.parse(K.id, x.built[K.id], {});
+      lines.push(`${K.Words}${K.id === "roofPitch" ? " at least" : ""} ${r.value !== undefined ? BUILT.format(K.id, r.value) : String(x.built[K.id])}`);
+    }
+  }
+  if (x.construction) lines.push("It changes how the building is framed, as the owner set it.");
+  const only = Array.isArray(x.styles) ? x.styles.filter((k) => offer[k]).map((k) => styleName(S.M, k, offer[k])) : null;
+  lines.push(!only ? "Offered on every building." : only.length ? `Offered only on the ${andList(only)}.` : "Not offered on any building you sell.");
+  return [h("ul", { class: "pl-extra-built-words", dataset: { visitExtra: "built" } }, lines.map((l) => h("li", {}, l))),
+    h("p", { class: "hint" }, VISIT_EXTRA_WORDS.built)];
 }
 
 /* "the Utility Shed, Side Utility and Garage" */

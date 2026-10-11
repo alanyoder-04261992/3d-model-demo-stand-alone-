@@ -16,6 +16,9 @@
         __Host- cookie is set, the bar says who and until when, and only
         Price list and Settings show (Settings without Open or Closed and
         without the Barnwright card); anything else is "Nothing here";
+        and in it the Saved box's 3D designer link is the preview (M1), an
+        option that changes the building shows how as words, with no box,
+        chips or Remove, and no option gets a roof pitch box (M4);
      4. a visit that ends while Alan works never reloads and never asks to
         sign in: the words say what to do, the draft stays and is kept in
         the tab, and comes back with the next visit, which saves it;
@@ -79,6 +82,9 @@ const WORDS = {
   helloStarted: "Two short steps. You can change all of it later.",
   startLine: "started your price list from Every standard building, using the terms you agreed to when you signed up.",
   visitBiz: "Only the owner can change the numbers for every building. Each style's own numbers can be changed in that style, under How it's built.",
+  /* ui/office/views/price-list/options.js VISIT_EXTRA_WORDS */
+  visitExtraBuilt: "This option changes how the building is built, so only the owner can change that, where it is offered, or remove it.",
+  visitExtraPlain: "Only the owner can make an option change how the building is built.",
 };
 
 let pass = 0, fail = 0;
@@ -213,6 +219,15 @@ try {
   ok("a customer who tries ?preview=1 gets no prices, only \"sign in first\"", /Sign in to your Dealer Center first/.test(await text(customer, "#bootmsg") || "") && !(await customer.$("#previewbar")), await text(customer, "body"));
 
   section("3. Alan's visit: the reduced Dealer Center");
+  /* the owner's own Steep roof (7/12, on the Utility Shed only): an option
+     that changes how the building is built, which only the owner changes */
+  {
+    const pl = (await call("/api/office/price-list")).data;
+    const settings = structuredClone(pl.settings);
+    settings.options.extras.push({ key: "steep-roof", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 7 }, styles: ["UT"] });
+    const r = await call("/api/office/price-list", { method: "PUT", body: { settings, version: pl.version } });
+    if (r.status !== 200) throw new Error("the owner's Steep roof didn't save: " + JSON.stringify(r.data).slice(0, 300));
+  }
   const alanCtx = await contextFor(null);
   const alan = await pageIn(alanCtx);
   await alan.addInitScript(() => { window.__sameLoad = window.__sameLoad || Math.random(); });
@@ -224,7 +239,10 @@ try {
   const c = cookies.find((x) => x.name === "__Host-bw_setup");
   ok("the visit's cookie is __Host-bw_setup: HttpOnly, Secure, SameSite Strict, the whole site", !!c && c.httpOnly && c.secure && c.sameSite === "Strict" && c.path === "/", JSON.stringify(c));
   const bar = await text(alan, ".bw-bar");
-  ok("the bar: \"Working on Testing Sheds as Barnwright until <time>.\" with Done", /^Working on Testing Sheds as Barnwright until \d{1,2}:\d{2} [AP]M\./.test(bar || "") && bar.includes("Done"), bar);
+  /* a visit lasts 8 hours: one started after 4 pm ends tomorrow, and the bar
+     says the day too ("until Oct 12 at 12:08 AM", ui/office/words.js
+     untilWords) */
+  ok("the bar: \"Working on Testing Sheds as Barnwright until <time>.\" with Done", /^Working on Testing Sheds as Barnwright until (?:[A-Z][a-z]{2} \d{1,2} at )?\d{1,2}:\d{2} [AP]M\./.test(bar || "") && bar.includes("Done"), bar);
   const nav = await alan.$$eval(".sidenav .nav-item", (els) => els.map((e) => e.textContent.trim()));
   ok("only Price list and Settings", JSON.stringify(nav) === JSON.stringify(["Price list", "Settings"]), nav.join(", "));
   ok("no Customer button, no Help, no person menu, no Today", !(await alan.$(".new-customer")) && !(await alan.$(".topbar-help")) && !(await alan.$(".person")) && !(await alan.$(".termsBanner")));
@@ -238,9 +256,52 @@ try {
     await alan.click(".pl-style[data-style='UT'] .pl-style-open");
     const box = await alan.waitForSelector("input[data-field='built:UT:roofPitch']", { timeout: 10000 }).catch(() => null);
     ok("HB: ... while a style's own How it's built boxes are there to change", !!box);
+    /* M1: before live the 3D designer is closed to customers, so the Saved
+       box's link is the visit's preview (with the design), never the closed
+       page customers get */
+    await alan.fill("input[data-field='built:UT:wallHeight']", "8 ft");
+    await alan.dispatchEvent("input[data-field='built:UT:wallHeight']", "change");
+    await alan.waitForTimeout(200);
+    await alan.click(".pl-bar .btn-accent");
+    await alan.waitForSelector(".pl-saved a.btn", { timeout: 30000 }).catch(() => {});
+    const seeIt = await alan.getAttribute(".pl-saved a.btn", "href").catch(() => null);
+    ok(`M1: in the visit the Saved box's "See the Utility Shed in the 3D designer" opens the preview with the design (${String(seeIt).slice(0, 48)}…; old: /d/riverside/#d=, the closed page)`,
+      /^\/d\/riverside\/\?preview=barnwright#d=/.test(seeIt || "") && /See the Utility Shed in the 3D designer/.test(await text(alan, ".pl-saved") || ""), seeIt);
+    if (seeIt) {
+      const sv = await pageIn(alanCtx);
+      await sv.goto(BASE + seeIt);
+      await sv.waitForSelector("#previewbar", { timeout: 30000 }).catch(() => {});
+      ok("M1: ... which shows the Preview bar, not the closed page", (await text(sv, "#previewbar")) === WORDS.preview && !/isn't open right now/.test(await sv.textContent("body")), await text(sv, "body"));
+      await sv.close();
+    }
+    /* back to the standard wall, as the rest of this check expects */
+    await alan.fill("input[data-field='built:UT:wallHeight']", "");
+    await alan.dispatchEvent("input[data-field='built:UT:wallHeight']", "change");
+    await alan.waitForTimeout(200);
+    await alan.click(".pl-bar .btn-accent");
+    await alan.waitForTimeout(1500);
+    ok("(the Utility Shed's wall back to the standard)", !(await call("/api/office/price-list")).data?.settings?.offer?.UT?.built);
     /* close it again, as section 4 opens it */
     await alan.click(".pl-style[data-style='UT'] .pl-style-open");
     await alan.waitForSelector("input[data-field='built:UT:roofPitch']", { state: "detached", timeout: 10000 }).catch(() => {});
+    /* M4: on the Options tab, an option's roof pitch and where an option
+       that changes the building is offered are the owner's (the lock refuses
+       them at Save): words, never boxes */
+    await alan.click(".tab[data-key='options']");
+    await alan.waitForSelector(".pl-extras .pl-extra", { timeout: 10000 }).catch(() => {});
+    const extras = (await call("/api/office/price-list")).data.settings.options.extras;
+    const steep = extras.findIndex((x) => x.key === "steep-roof"), vent = extras.findIndex((x) => x.key === "ridge-vent");
+    const steepRow = alan.locator(".pl-extras .pl-extra").nth(steep), ventRow = alan.locator(".pl-extras .pl-extra").nth(vent);
+    const steepText = ((await steepRow.textContent().catch(() => "")) || "").replace(/\s+/g, " ");
+    ok("M4: in the visit the owner's Steep roof shows its roof pitch and where it is offered as words, with no box, no chips and no Remove (old: a box and chips the lock refuses at Save)",
+      steep >= 0 && !(await alan.$(`[data-field='extra:${steep}:roofPitch']`)) && !(await alan.$(`[data-field^='extra:${steep}:style']`))
+      && (await steepRow.locator("button[title='Remove']").count()) === 0
+      && steepText.includes("Roof pitch at least 7/12") && steepText.includes("Offered only on the Utility Shed.") && steepText.includes(WORDS.visitExtraBuilt), steepText.slice(0, 400));
+    const ventText = ((await ventRow.textContent().catch(() => "")) || "").replace(/\s+/g, " ");
+    ok("M4: ... an option that doesn't change the building has no roof pitch box to add one, says only the owner can, and keeps its Offered on chips",
+      vent >= 0 && !(await alan.$(`[data-field='extra:${vent}:roofPitch']`)) && !!(await alan.$(`[data-field='extra:${vent}:styles']`)) && ventText.includes(WORDS.visitExtraPlain), ventText.slice(0, 400));
+    await alan.locator(".pl-extras").screenshot({ path: resolve(OUT, "3-visit-options.png") }).catch(() => {});
+    await alan.click(".tab[data-key='buildings']").catch(() => {});
   }
   await alan.goto(`${BASE}/dealer#/settings`);
   await settle(alan);
@@ -334,7 +395,7 @@ try {
     const saved2 = (await call("/api/office/price-list")).data;
     const bar2 = await text(alan, ".bw-bar");
     ok("Save works: saved by Barnwright", saved2.settings.offer.UT.sizes["10x16"] === 6200 && saved2.savedBy?.id === "barnwright", JSON.stringify(saved2.savedBy));
-    ok("... and the bar says who and until when again, with Done", /^Working on Testing Sheds as Barnwright until \d{1,2}:\d{2} [AP]M\./.test(bar2 || "") && bar2.includes("Done") && !(await alan.$(".bw-bar.warn")), bar2);
+    ok("... and the bar says who and until when again, with Done", /^Working on Testing Sheds as Barnwright until (?:[A-Z][a-z]{2} \d{1,2} at )?\d{1,2}:\d{2} [AP]M\./.test(bar2 || "") && bar2.includes("Done") && !(await alan.$(".bw-bar.warn")), bar2);
   }
 
   section("5. Done");
@@ -448,7 +509,7 @@ try {
     const bar9 = await text(alan2, ".bw-bar");
     const styles = await alan2.$$eval(".pl-style", (els) => els.length).catch(() => 0);
     ok("Alan's visit with the owner's sign-up agreement starts the price list and opens on it: the bar, and Every standard building (23 styles)",
-      /^Working on Testing Sheds as Barnwright until \d{1,2}:\d{2} [AP]M\./.test(bar9 || "") && styles === 23 && /#\/price-list$/.test(alan2.url()), `${bar9} | ${styles} styles | ${alan2.url()}`);
+      /^Working on Testing Sheds as Barnwright until (?:[A-Z][a-z]{2} \d{1,2} at )?\d{1,2}:\d{2} [AP]M\./.test(bar9 || "") && styles === 23 && /#\/price-list$/.test(alan2.url()), `${bar9} | ${styles} styles | ${alan2.url()}`);
     await shot(alan2, "9-visit-before-sign-in");
     await alan2.click(".pl-style[data-style='UT'] .pl-style-open");
     await alan2.waitForSelector("input[data-field='size:UT:10x16']");
