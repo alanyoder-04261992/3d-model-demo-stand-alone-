@@ -29,12 +29,12 @@ There is no paper form:
 
 1. **The sign-up link.** Alan adds them in his Control Room
    (control.barnwrightsoftware.com) and texts the owner a sign-up link. On
-   their phone the owner checks their details and web address, reads the
-   short version of the terms, ticks "I agree", types their name and saves
-   a card with Stripe. Nothing is charged that day except the one-time fees
-   for any extra lots, and what they typed fills into the Control Room by
-   itself. The terms are `legal/barnwright-terms.pdf`; the sign-up page reads
-   them from `docs/legal/terms.json`.
+   their phone the owner checks their details and 3D designer web address,
+   reads the short version of the terms, ticks "I agree", types their name
+   and saves a card with Stripe. Nothing is charged that day except the
+   one-time fees for any extra lots, and what they typed fills into the
+   Control Room by itself. The terms are `legal/barnwright-terms.pdf`; the
+   sign-up page reads them from `docs/legal/terms.json`.
 2. **The photos.** Alan photographs their buildings, their price list, and
    their options and colors with the Control Room's Take photos. A company
    he can't visit answers `docs/legal/Barnwright-Setup-Questions.pdf` and

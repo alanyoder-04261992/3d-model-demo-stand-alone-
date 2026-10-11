@@ -1,6 +1,6 @@
 {
   "_about": "The papers the Control Room's Papers page shows. Made by tools/legal/make-legal-pdfs.py; the Control Room reads this file and each PDF from this repository's main branch.",
-  "version": "Version 2.0, October 2026",
+  "version": "Version 2.1, October 11, 2026",
   "papers": [
     {
       "id": "adding-a-new-customer",

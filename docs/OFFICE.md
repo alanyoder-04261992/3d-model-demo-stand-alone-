@@ -524,13 +524,13 @@ Stripe save cards.
 1. **The sign-up link.** At their lot, Alan adds them in the Control Room
    (**New customer**: at least the owner's phone or email) and texts or
    emails the owner a sign-up link (**Send sign-up link**). On their phone
-   the owner fills in or checks their details and their web address, reads
-   the short version of the terms (`docs/legal/terms.json`, the same words
-   as `legal/barnwright-terms.pdf`), ticks "I agree", types their name and
-   taps **Sign up and save my card**: Stripe saves their card. Nothing is
-   charged that day except the one-time fees for the lots after the first.
-   What they typed fills into the Control Room by itself, which shows
-   **Signed** and **Card saved**. There is no paper form.
+   the owner fills in or checks their details and their 3D designer web
+   address, reads the short version of the terms (`docs/legal/terms.json`,
+   the same words as `legal/barnwright-terms.pdf`), ticks "I agree", types
+   their name and taps **Sign up and save my card**: Stripe saves their
+   card. Nothing is charged that day except the one-time fees for the lots
+   after the first. What they typed fills into the Control Room by itself,
+   which shows **Signed** and **Card saved**. There is no paper form.
 2. **The photos.** **Take photos** on the customer: each style they sell,
    every page of their price list, and their doors, windows, options, color
    cards and logo. A company Alan can't visit answers the Setup Questions
@@ -576,14 +576,14 @@ Stripe save cards.
 
 `docs/legal/Barnwright-Setup-Questions.pdf` is for a company Alan can't
 visit: what it answers, with photos of its buildings, price list and
-options, so it can be set up: the business and its web address, the look,
-each lot, the team, the styles it sells (with its own names), sizes and
-prices, how it builds (each construction number with the standard beside
-it), doors, windows and options with prices and its own extras, colors, how
-prices show, rent to own, and what the quote form asks. Its lists come from
-`library/manufacturers/standard.json` and `library/construction.json` when
-the script runs, so they always match the designer. The `new-company` skill
-says which answer goes where.
+options, so it can be set up: the business and its 3D designer web address,
+the look, each lot, the team, the styles it sells (with its own names),
+sizes and prices, how it builds (each construction number with the standard
+beside it), doors, windows and options with prices and its own extras,
+colors, how prices show, rent to own, and what the quote form asks. Its
+lists come from `library/manufacturers/standard.json` and
+`library/construction.json` when the script runs, so they always match the
+designer. The `new-company` skill says which answer goes where.
 
 ### The papers in the control room
 
@@ -609,15 +609,16 @@ and in the Dealer Center (`server/office/terms.js`). First setup can't make
 the business without the owner ticking "I have read and agree to the
 Barnwright Terms and Conditions"; an owner who set up before the box
 existed, or before the terms changed, sees "Please read the Barnwright Terms
-and Conditions (version 2.0)." and the button "I have read and agree to the
+and Conditions (version 2.1)." and the button "I have read and agree to the
 Barnwright Terms and Conditions" at the top of every screen until they tap
 it. Each agreement is kept with its version, time and the owner's login, and
 Settings, Help from Barnwright, says who agreed and when. Alan's own
 business, the local copy and the demo are not asked. To change the terms:
-edit `tools/legal/make-legal-pdfs.py`, raise `TERMS_VERSION` there and
-`TERMS.version` in `server/office/terms.js` together, run the script (it
-writes the PDF, `docs/legal/terms.json` and the papers list), and tell every
-customer about the new terms 30 days ahead (terms section 19).
+edit `tools/legal/make-legal-pdfs.py`, raise `TERMS_VERSION` and `TERMS_DATE`
+there and `TERMS.version` and `TERMS.date` in `server/office/terms.js`
+together, run the script (it writes the PDF, `docs/legal/terms.json` and the
+papers list), and tell every customer about the new terms 30 days ahead (terms
+section 19).
 
 ## Files
 
