@@ -435,7 +435,7 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   const steepCat = barnwrightCatalogue((c) => { c.offer.UT.built = { roofPitch: 5 }; c.options.extras = [{ key: "steep", name: "Steep roof", input: "check", price: 350, styles: ["UT"], built: { roofPitch: 7 } }]; });
   const sS = st(steepCat, "12x16"); sS.xopt = { steep: 1 };
   const gS = S.addItem(sS, "g1824", steepCat, 0);
-  check(G9, gS && gS.wall === "F", "with the Steep roof (7/12) on, the 18x24 should go on the gable of a 12 ft Utility Shed");
+  check(G9, gS && gS.wall === "F", "with the Steep roof on, the 18x24 should go on the gable of a 12 ft Utility Shed");
   let withSteep = null; try { withSteep = priceDesign(fromState(sS, steepCat), steepCat); } catch (e) { withSteep = e; }
   check(G9, withSteep && withSteep.price, `the 18x24 under the Steep roof was refused: ${withSteep && withSteep.message}`);
   S.setExtra(sS, steepCat.OPTX.extras[0]);
@@ -452,7 +452,7 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
 /* ---------------------------------------------------------------- 10 an option on some buildings only */
 {
   /* Alan's steep roof (7/12, utility-framing skill): the sample price list
-     sells "Steep roof (7/12)" on the Utility Shed and Side Utility only
+     sells "Steep roof" (7/12) on the Utility Shed and Side Utility only
      (options.extras[].styles). It is offered there and nowhere else, comes
      off when the building changes to one it is not on, and the server
      refuses it on another building. */
@@ -471,7 +471,7 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   /* the building changes to a Lofted Barn: it comes off, said once */
   const moved = JSON.parse(JSON.stringify(ut)); setType(moved, "LB", DEMO);
   const said = normalize(moved, frameOf(moved, DEMO), DEMO);
-  check(G10, !moved.xopt["steep-roof"] && said.includes("Steep roof (7/12) is not offered on the Lofted Barn, so it was taken off."), `after changing to a Lofted Barn: ${J(moved.xopt)} ${J(said)}`);
+  check(G10, !moved.xopt["steep-roof"] && said.includes("Steep roof is not offered on the Lofted Barn, so it was taken off."), `after changing to a Lofted Barn: ${J(moved.xopt)} ${J(said)}`);
   /* the server: priced on the Utility Shed, refused on the Lofted Barn */
   let ok10 = null; try { ok10 = priceDesign(fromState(ut, DEMO), DEMO); } catch (e) { ok10 = e; }
   check(G10, ok10 && ok10.price && ok10.price.total === parts.total, `the server would not price the Steep roof on a Utility Shed: ${ok10 && ok10.message}`);

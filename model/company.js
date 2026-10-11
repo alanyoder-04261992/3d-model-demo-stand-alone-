@@ -913,6 +913,9 @@ export function resolve(company, manufacturer, library) {
     /* an extra's How it's built numbers, worked out for each style it
        reaches (its roof pitch only ever makes a roof steeper) */
     if (isObj(x.built)) {
+      /* the roof it gives, for the designer's words ("7/12 roof") */
+      const rp = x.built.roofPitch !== undefined ? BUILT.parse("roofPitch", x.built.roofPitch, {}) : null;
+      if (rp && !rp.problem) e.roofPitch = rp.value;
       for (const k of Object.keys(TYPES)) {
         if (!extraOfferedOn(e, TYPES[k], k)) continue;
         const fx = BUILT.optionEffectFor(x.built, TYPES[k]);

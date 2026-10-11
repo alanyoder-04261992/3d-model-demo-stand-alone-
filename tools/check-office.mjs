@@ -968,37 +968,37 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   s = clone(cur.settings); s.options.extras = s.options.extras.filter((x) => x.key !== "very-steep");
   await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "taking the Steep roof extra off" });
 
-  /* the sample price list's own Steep roof (7/12) is offered on the Utility
+  /* the sample price list's own Steep roof is offered on the Utility
      Shed and Side Utility only; History says where an option is offered */
   const steep = (templates.full.options.extras || []).find((x) => x.key === "steep-roof");
-  ok("the full example price list starts with Steep roof (7/12) on the Utility Shed and Side Utility", !!steep && same(steep.styles, ["UT", "SU"]) && steep.built?.roofPitch === 7, JSON.stringify(steep));
+  ok("the full example price list starts with Steep roof on the Utility Shed and Side Utility", !!steep && same(steep.styles, ["UT", "SU"]) && steep.built?.roofPitch === 7, JSON.stringify(steep));
   cur = await want(200, "GET", "/api/office/price-list");
   if (!(cur.settings.options.extras || []).some((x) => x.key === "steep-roof")) {
     s = clone(cur.settings); s.options.extras = [...(s.options.extras || []), clone(steep)];
-    await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the example Steep roof (7/12) back on the price list" });
+    await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the example Steep roof back on the price list" });
     cur = await want(200, "GET", "/api/office/price-list");
   }
   s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT"];
   out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Steep roof on the Utility Shed only" });
   const utWords = cur.settings.offer.UT.name || manufacturer.styles.UT.name;
-  ok(`... History says "Steep roof (7/12) is offered on the ${utWords}"`, out.changes.includes(`Steep roof (7/12) is offered on the ${utWords}`) && out.cfg === cur.cfg + 1, JSON.stringify(out.changes));
+  ok(`... History says "Steep roof is offered on the ${utWords}"`, out.changes.includes(`Steep roof is offered on the ${utWords}`) && out.cfg === cur.cfg + 1, JSON.stringify(out.changes));
   cur = await want(200, "GET", "/api/office/price-list");
   s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT", "SUU"];
   const typoStyle = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
-  ok("... a building code that is no style is refused in words", typoStyle.status === 422 && /Steep roof \(7\/12\): pick again which buildings it is offered on\./.test(typoStyle.data.error || ""), `${typoStyle.status} ${typoStyle.data && typoStyle.data.error}`);
+  ok("... a building code that is no style is refused in words", typoStyle.status === 422 && /Steep roof: pick again which buildings it is offered on\./.test(typoStyle.data.error || ""), `${typoStyle.status} ${typoStyle.data && typoStyle.data.error}`);
   s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT", "SU"];
   out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Steep roof on both again" });
-  ok("... and back on both", out.changes.includes(`Steep roof (7/12) is offered on the ${utWords} and ${cur.settings.offer.SU.name || manufacturer.styles.SU.name}`), JSON.stringify(out.changes));
+  ok("... and back on both", out.changes.includes(`Steep roof is offered on the ${utWords} and ${cur.settings.offer.SU.name || manufacturer.styles.SU.name}`), JSON.stringify(out.changes));
 
   /* WHAT A SAVE REACHES (review GL-3, F4, F3). A new Side Utility wall and
-     eave that fit alone but not with the sample's own Steep roof (7/12) on:
+     eave that fit alone but not with the sample's own Steep roof on:
      the save draws the style with each extra that changes it switched on. */
   const suName = cur.settings.offer.SU.name || manufacturer.styles.SU.name;
   cur = await want(200, "GET", "/api/office/price-list");
   s = clone(cur.settings); s.offer.SU.built = { wallHeight: 85, eaveOverhang: 12 };
   const withSteep = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
   ok("a Side Utility wall that fits alone but not under the Steep roof is refused (422)", withSteep.status === 422, `${withSteep.status} ${JSON.stringify(withSteep.data?.sizeCheck || withSteep.data?.error).slice(0, 300)}`);
-  ok("... with the size and the extra named: \"... with Steep roof (7/12): the roof edge hangs ...\"", new RegExp(`${suName} \\d+x\\d+ with Steep roof \\(7/12\\): the roof edge hangs .+ in front of the head of the 72″ Wooden Double Doors on the right side\\.`).test(withSteep.data?.error || ""), withSteep.data?.error);
+  ok("... with the size and the extra named: \"... with Steep roof: the roof edge hangs ...\"", new RegExp(`${suName} \\d+x\\d+ with Steep roof: the roof edge hangs .+ in front of the head of the 72″ Wooden Double Doors on the right side\\.`).test(withSteep.data?.error || ""), withSteep.data?.error);
   /* an extra with numbers that newly reaches a style, though its numbers did
      not change: a Tall door extra on the Utility Shed, then on the Lofted
      Barn too, then the Lofted Barn stopped and sold again */

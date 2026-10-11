@@ -594,6 +594,19 @@ group("13. the shop standard (Alan's numbers)");
   /* every width sold, as drawn (review W6) */
   const effOne = BUILT.effective(catOne, "LB").find((e) => e.id === "barnPeak");
   ok("the screens list the barn height at every width sold, 14 ft too (\"... 14 ft wide: 6 ft 3 1/8 in\")", effOne.words === "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft 2 in, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 3 1/8 in", effOne.words);
+  /* an option's roof pitch that changes nothing where it is offered is said
+     (review W2): a barn roof, past a lean-to's limit, a roof already steeper */
+  {
+    const steepEverywhere = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json")));
+    const sx = steepEverywhere.options.extras.find((x) => x.key === "steep-roof");
+    ok("the sample's Steep roof (Utility Shed and Side Utility only) changes the roof everywhere it is offered", !!sx && BUILT.extrasThatChangeNothing(readJSON("companies/demo/company.json"), SM).length === 0);
+    sx.styles = ["UT", "SU", "LB", "BU", "DS"];
+    const said = BUILT.extrasThatChangeNothing(steepEverywhere, SM);
+    ok("offered on the Lofted Barn, Backyard Utility and Dormer Shed too, it says where it changes nothing and why",
+      said.length === 1 && said[0].words === "Steep roof does not change the Dormer Shed (its roof is already about 7 1/4/12), the Backyard Utility (its lean-to roof can be 6/12 at most) or the Lofted Barn (it has a barn roof). A customer would pay for nothing there." && J(said[0].styles.sort()) === J(["BU", "DS", "LB"]), J(said));
+    steepEverywhere.offer.UT.built = { roofPitch: 8 };
+    ok("... and on a Utility Shed set to 8/12 of its own (\"its roof is already 8/12\")", /the Utility Shed \(its roof is already 8\/12\)/.test((BUILT.extrasThatChangeNothing(steepEverywhere, SM)[0] || {}).words || ""), J(BUILT.extrasThatChangeNothing(steepEverywhere, SM)));
+  }
   /* History, width by width */
   const plain = readJSON("companies/demo/company.json");
   ok("History: \"Lofted Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in\" and nothing about the other widths", J(BUILT.describeChanges(plain, one, SM)) === J(["Lofted Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in"]), J(BUILT.describeChanges(plain, one, SM)));

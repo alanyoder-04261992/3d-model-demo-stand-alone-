@@ -344,7 +344,7 @@ export function describeChanges(before, after, manufacturer) {
   }
   const ox = new Map((before.options?.extras || []).map((x) => [x.key, x]));
   const nx = new Map((after.options?.extras || []).map((x) => [x.key, x]));
-  /* "Steep roof (7/12) is offered on the Utility Shed and Side Utility" */
+  /* "Steep roof is offered on the Utility Shed and Side Utility" */
   const offeredOn = (x) => {
     if (!Array.isArray(x.styles)) return `${x.name} is offered on every building`;
     const names = x.styles.map((k) => styleName(after, k));

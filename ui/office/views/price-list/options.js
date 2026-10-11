@@ -10,7 +10,7 @@
 import { h, icon, button, linkButton } from "../../dom.js";
 import { money } from "../../words.js";
 import { S, edited, repaint, focusLater } from "./state.js";
-import { keysOf, isObj, priceOf, ownName, styleName, baseOf, optionName, EXTRA_KINDS, NAME_MAX } from "./model.js";
+import { keysOf, isObj, priceOf, ownName, styleName, baseOf, optionName, EXTRA_KINDS, NAME_MAX, prepare } from "./model.js";
 import * as BUILT from "../../../../model/build-settings.js";
 import { priceInput, sellBox, renameable, msgs } from "./bits.js";
 
@@ -156,14 +156,31 @@ function extraRow(x, i) {
     S.draft.options.extras.splice(i, 1);
     edited({ tab: true });
   });
+  /* an option's roof pitch that changes nothing on a building it is offered
+     on is said under it (review W2) */
+  const miss = h("p", { class: "pl-extra-warn", role: "status", "aria-live": "polite", dataset: { extraWarn: String(i) } });
+  const paintMiss = () => {
+    let m = null;
+    try { m = BUILT.extrasThatChangeNothing(prepare(S.draft), S.M).find((w) => w.index === S.draft.options.extras.indexOf(x)); } catch { m = null; }
+    miss.textContent = m ? m.words : "";
+    miss.hidden = !m;
+  };
+  paintMiss();
+  /* the roof pitch and the buildings it is offered on, folded away: most
+     options (a ridge vent) need neither (review W15) */
+  const more = h("details", { class: "pl-extra-more", dataset: { extraMore: String(i) } },
+    h("summary", {}, "Only on some buildings, or changes the roof"),
+    extraPitch(x, i, paintMiss),
+    extraStyles(x, i, paintMiss));
+  if (isObj(x.built) || Array.isArray(x.styles)) more.open = true;
   return h("div", { class: "pl-extra" },
     h("div", { class: "pl-extra-fields" },
       h("div", { class: "field" }, h("label", { htmlFor: ids.name }, "Name"), nameBox),
       h("div", { class: "field" }, h("label", { htmlFor: ids.kind }, "How it's priced"), kind),
       priceSlot,
       h("div", { class: "pl-extra-rm" }, rm)),
-    extraPitch(x, i),
-    extraStyles(x, i),
+    more,
+    miss,
     msgs(`extra:${i}`));
 }
 
@@ -171,7 +188,7 @@ function extraRow(x, i) {
    building, or only the ones pressed -- a Steep roof only on the Utility
    Shed and Side Utility. A style of the business's own follows the style it
    is built like. A code the business does not sell today is kept as it is. */
-function extraStyles(x, i) {
+function extraStyles(x, i, changed = () => {}) {
   const offer = S.draft.offer || {};
   const sold = keysOf(offer).filter((k) => !isObj(offer[k]) || offer[k].base == null);
   const label = `Offered on, for ${x.name || "this option"}`;
@@ -187,6 +204,7 @@ function extraStyles(x, i) {
       }
       paint();
       edited();
+      changed();
     });
     row.appendChild(b);
     return [k, b];
@@ -198,7 +216,7 @@ function extraStyles(x, i) {
   paint();
   return h("div", { class: "field pl-extra-built" },
     h("span", { class: "pl-label" }, "Offered on"), row,
-    h("p", { class: "hint" }, "Every building, or only the ones you press. A Steep roof goes only on the buildings with an A roof."));
+    h("p", { class: "hint" }, "Every building, or only the ones you press."));
 }
 
 /* "the Utility Shed, Side Utility and Garage" */
@@ -210,7 +228,7 @@ function andList(names) {
    steep when a customer picks it (model/build-settings.js: an extra's roof
    pitch only ever makes a roof steeper). Empty: it does not change the
    building. */
-function extraPitch(x, i) {
+function extraPitch(x, i, changed = () => {}) {
   const id = `pl-x-${i}-pitch`;
   const box = h("input", { id, type: "text", autocomplete: "off", spellcheck: false, placeholder: "Not changed", class: "pl-built-input",
     dataset: { field: `extra:${i}:roofPitch` } });
@@ -220,6 +238,7 @@ function extraPitch(x, i) {
     if (value === undefined) { if (isObj(x.built)) { delete x.built.roofPitch; if (!Object.keys(x.built).length) delete x.built; } }
     else { if (!isObj(x.built)) x.built = {}; x.built.roofPitch = value; }
     edited();
+    changed();
   };
   box.addEventListener("input", () => {
     const t = box.value.trim();
@@ -233,7 +252,7 @@ function extraPitch(x, i) {
   });
   return h("div", { class: "field pl-extra-built" },
     h("label", { htmlFor: id }, "Roof pitch at least"), box,
-    h("p", { class: "hint" }, "For an option like a steep roof, like 7/12: when a customer picks it, the roof is at least this steep. Leave it empty when the option does not change the building."));
+    h("p", { class: "hint" }, "For a steep roof, like 7/12: when a customer picks it, the roof is at least this steep. It does not change a barn or saltbox roof, or a roof already this steep. Leave it empty when the option does not change the building."));
 }
 
 /* ---- read only ---------------------------------------------------------------- */

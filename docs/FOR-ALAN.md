@@ -122,28 +122,35 @@ gets are built the way your shop builds them, where you gave us the numbers.
 
 * **Utility Shed and Side Utility:** a 5/12 roof at every width (a 10 ft
   wide roof rises 2 ft 1 in instead of 2 ft 8 3/8 in), the roof edge 4 in
-  past each side wall, and walls 7 ft 9 1/2 in (your 89 in studs and three
-  1 1/2 in plates).
-* **Lofted Barn and Side Lofted Barn:** walls 6 ft 7 1/2 in (75 in studs and
-  three plates) and the barn roof 3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall
-  (above the top of the wall) at 8, 10 and 12 ft wide. A 14 ft wide barn
-  keeps today's 6 ft 3 5/8 in.
+  past each side wall, and walls 7 ft 9 1/2 in. That wall height is worked
+  out from your 89 in studs and three 1 1/2 in plates, not measured; see
+  question 11 below.
+* **Lofted Barn and Side Lofted Barn:** walls 6 ft 7 1/2 in (worked out
+  from 75 in studs and three plates) and the barn roof 3 ft 7 3/4 in, 4 ft
+  and 4 ft 3 in tall at 8, 10 and 12 ft wide, measured where you measured
+  it: from the top of the wall to the top of the trusses. The roof line
+  over the roof deck is about 1/2 in higher. A 14 ft wide barn keeps
+  today's height, about 6 ft 3 in to the top of the trusses.
 * **Everything else is as it was** until you say yes to it: garages, metal
   buildings, the Dog Kennel, Garden Utility, Dormer Shed, Metal Lofted Barn,
-  Lofted Barn Garage, the cabins, the Standard Barn and the cottages.
+  Lofted Barn Garage, the cabins, the Standard Barn, the cottages, the
+  Backyard Utility and the Single Slope.
 * **The 18x24 gable window is no longer offered** on 8, 10 and 12 ft Utility
   Sheds and Side Utilities: with the lower roof it would poke through (on 8
-  and 10 ft it already did). The octagon window still fits.
+  and 10 ft it already did). On 8 ft wide ones the octagon window is not
+  offered on the ends either; on 10 and 12 ft wide ones it still fits. See
+  question 13 below.
 * **Barnwright's own buildings did not change.** The check that compares
   every triangle with Barnwright still draws Barnwright's numbers.
 * **Each dealer can still change any of these** for its own buildings in the
-  Dealer Center (How it's built), and Steep roof (7/12) is a ready option in
-  the sample price list.
+  Dealer Center (How it's built), and a Steep roof option (7/12) is in the
+  sample price list. See question 12 below.
 
 What matches and what does not yet: the heights match your shop. The barn
 roof's bend is drawn where Barnwright drew it, so the two slopes are not your
 exact truss pieces, and the utility roof edge is drawn sloping rather than
-your level 2 in end. The before and after pictures go with this change; the
+your level 2 in end. The utility roof's 4 in is out to the edge of the roof
+deck; the rafter tail under it stops about 3 3/4 in out. The before and after pictures go with this change; the
 questions are under "What you still need to decide".
 
 ## Lessons and skills
@@ -534,7 +541,8 @@ Each one has an answer we used until you say otherwise.
    Utility** at 5/12 with a 4 in roof edge, like your utility roof? *For now:
    unchanged.*
 2. **The 14 ft wide lofted barn's roof height** above the wall? *For now:
-   6 ft 3 5/8 in, as before.*
+   as before, 6 ft 3 1/8 in to the top of the trusses (6 ft 3 5/8 in to the
+   roof line).*
 3. **The Standard Barn, Metal Lofted Barn and Lofted Barn Garage**: the same
    trusses and walls as the Lofted Barn? *For now: unchanged.*
 4. **The Dormer Shed's main roof at 7/12** (at 5/12 the dormer has no room)?
@@ -543,8 +551,8 @@ Each one has an answer we used until you say otherwise.
    slopes can match your truss pieces too. *For now: Barnwright's bend.*
 6. **The utility roof's level 2 in end.** *For now: drawn sloping.*
 7. **A 12 ft wide building is 11 ft 2 in actual.** *For now: drawn 12 ft.*
-8. **The Steep roof price** in the sample price list. *For now: $350, an
-   example like the other sample prices.*
+8. **The Steep roof price** in the sample price list (if it ships, see
+   question 12). *For now: $350, an example like the other sample prices.*
 9. **Prices by wall area follow the real wall.** In the sample price list
    the wall moisture barrier on a 10x16 Utility Shed goes from $220 to $225
    and on a 12x24 Lofted Barn from $265 to $260. *For now: the price follows
@@ -553,6 +561,25 @@ Each one has an answer we used until you say otherwise.
     business the next time the site goes live. Quotes already sent keep
     their price and are drawn with the new numbers. *For now: no note to
     dealers; you see the pictures first.*
+11. **The wall heights are worked out, not measured.** 7 ft 9 1/2 in on the
+    Utility Shed and Side Utility is your 89 in studs plus three 1 1/2 in
+    plates; 6 ft 7 1/2 in on the Lofted Barn and Side Lofted Barn is 75 in
+    studs plus three plates. Are those right, floor to the top of the
+    wall? *For now: yes.*
+12. **Should the Steep roof option ship at all?** It is in the sample price
+    list every new business starts with, on the Utility Shed and Side
+    Utility. On a barn roof, a lean-to or the Dormer Shed it changes
+    nothing, and the Dealer Center now says so when a business offers it
+    there. *For now: it ships, at $350.*
+13. **A smaller gable window?** The 18x24 gable window is no longer offered
+    on 8, 10 and 12 ft Utility Sheds and Side Utilities, nor the octagon on
+    8 ft ones, because they would poke through the 5/12 roof. Does your
+    shop put a smaller window in those gables? *For now: not offered
+    there.*
+14. **The 14 ft Utility Shed and Side Utility at 5/12** too? *For now: yes,
+    5/12 is your standard pitch at every width.*
+15. **Who can change How it's built.** *For now: the owner only, like
+    prices; managers and dealers see the numbers.*
 
 ### Choices about the product
 

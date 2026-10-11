@@ -168,8 +168,16 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   business's own follows the style it is built like); on any other
   building the 3D designer does not show it, takes it off with one plain
   line when the customer changes building, and the server refuses it. The
-  example price list starts with **Steep roof (7/12)** on the Utility Shed
-  and Side Utility (Alan's steep A-frame roof, $350 as an example price).
+  pitch box and the chips are folded under "Only on some buildings, or
+  changes the roof", so an option like a ridge vent stays short. Where the
+  pitch changes nothing (a barn or saltbox roof, past a lean-to's 6/12, a
+  roof already that steep) it says so under the option and in a yellow
+  note when the price list opens ("Steep roof does not change the Lofted
+  Barn (it has a barn roof). A customer would pay for nothing there.",
+  `extrasThatChangeNothing`). The 3D designer names the roof it gives
+  ("Steep roof (7/12 roof)"). The example price list starts with **Steep
+  roof** at 7/12 on the Utility Shed and Side Utility (Alan's steep A-frame
+  roof, $350 as an example price; whether it ships is a question for Alan).
   History says "Steep roof (7/12) is offered on the Utility Shed and Side
   Utility".
 * **As it is typed**, a number that cannot be read or is past its limits
@@ -201,7 +209,7 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
 * **History** says each change: "Lofted Barn wall height: 6 ft 7 1/2 in →
   7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12
   (Utility Shed and Side Utility 5/12 → 6/12; Garden Utility, Cabin and 6
-  more about 6 1/2/12 → 6/12)" -- each style a business-wide number moved --,
+  more about 6 1/2/12 → 6/12)", naming each style a business-wide number moved,
   "Steep roof: roof pitch at least 7/12", and "Wall upgrades priced by the
   square foot follow the new wall height: ..." when a wall height moves
   what a per-square-foot wall upgrade costs. A change that moves what is

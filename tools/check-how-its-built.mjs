@@ -218,17 +218,29 @@ try {
   const n = (await page.$$(".pl-extras .pl-extra")).length - 1;
   await typeIn(page, `extra:${n}:name`, "Steep roof");
   await page.fill(`[data-field="extra:${n}:price"]`, "350");
+  /* the roof pitch and "Offered on" are folded away: an option like a ridge
+     vent stays short (review W15) */
+  const shortRow = await page.$eval(`.pl-extras .pl-extra:nth-child(${n + 1})`, (el) => Math.round(el.getBoundingClientRect().height)).catch(() => -1);
+  ok(`a new option shows only its name and price, the rest folded away (${shortRow} px tall)`, shortRow > 0 && shortRow < 260 && !(await page.isVisible(`[data-field="extra:${n}:roofPitch"]`)), String(shortRow));
+  await page.click(`[data-extra-more="${n}"] > summary`);
   await typeIn(page, `extra:${n}:roofPitch`, "15/12");
   said = await msgText(page, `extra:${n}`);
   ok(`an option's roof pitch past the limit says so ("${said}")`, /Roof pitch 15\/12 is steeper than 12\/12/.test(said)
     && (await page.$eval('.tab[data-key="options"] .pl-tab-flag', (el) => el.textContent).catch(() => "")) === "1", said);
   await typeIn(page, `extra:${n}:roofPitch`, "7/12");
+  /* offered on every building: said under it where it changes nothing
+     (review W2) */
+  const miss = await page.$eval(`[data-extra-warn="${n}"]`, (el) => (el.hidden ? "" : el.textContent)).catch(() => "");
+  ok(`... and where a 7/12 roof changes nothing it says so ("${miss.slice(0, 120)}...")`, /^Steep roof does not change the /.test(miss) && /Lofted Barn \(it has a barn roof\)/.test(miss) && /Backyard Utility \(its lean-to roof can be 6\/12 at most\)/.test(miss) && /A customer would pay for nothing there\.$/.test(miss), miss);
+  await page.click(`[data-field="extra:${n}:style:UT"]`);
+  await page.click(`[data-field="extra:${n}:style:SU"]`);
+  const missAfter = await page.$eval(`[data-extra-warn="${n}"]`, (el) => (el.hidden ? "" : el.textContent)).catch(() => "");
+  ok("... and on the Utility Shed and Side Utility only, nothing is said", missAfter === "", missAfter);
   await page.click(".pl-bar .btn-accent");
   await page.waitForSelector(".pl-saved", { timeout: 30000 });
   const xsaved = await page.textContent(".pl-saved");
   ok("an option \"Steep roof\" at 7/12 saves, says \"Steep roof: roof pitch at least 7/12\" and was drawn on the styles it reaches",
-    xsaved.includes("Steep roof: roof pitch at least 7/12") && /Every size of the Utility Shed, .*was drawn with your numbers and fits\./.test(xsaved), xsaved.slice(0, 400));
-  ok("... the styles named with \"and\" before the last (review W15)", /Every size of the Utility Shed, [^.]* and [A-Z][a-z]+(?: [A-Z][a-z]+)* was drawn/.test(xsaved), xsaved.slice(0, 400));
+    xsaved.includes("Steep roof: roof pitch at least 7/12") && /Every size of the Utility Shed and Side Utility was drawn with your numbers and fits\./.test(xsaved), xsaved.slice(0, 400));
   await page.locator(".pl-extras .pl-extra").last().screenshot({ path: `${OUT}/option-roof-pitch-1280.png` });
   ok("no errors on the owner's screens", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
   await page.context().close();

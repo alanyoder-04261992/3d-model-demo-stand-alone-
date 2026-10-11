@@ -616,7 +616,7 @@ try {
     ok("'change', 'select', 'rebuild' and 'mode' events fire", r.ev.change > 0 && r.ev.select >= 2 && r.ev.rebuild > 0 && r.ev.mode === 2, J(r.ev));
     ok("applyDesign opens a saved design (the standard doors when it has none, the package it had) with no warnings", r.after.type === "UT" && r.after.size === "10x12" && r.after.n === 1 && r.after.pk > 0 && r.warnings.length === 0 && /10 × 12/.test(r.after.plate), J(r));
     ok("a read-only page selects nothing and hides the cards", r.ro.sel === null && r.ro.cls, J(r.ro));
-    /* the Steep roof (7/12) lets an 18x24 sit on a 12 ft Utility Shed's
+    /* the Steep roof lets an 18x24 sit on a 12 ft Utility Shed's
        gable; turned off again, the window is too tall for the 5/12 gable:
        it comes off and the extras card says so (review GL-2, F2) */
     const st = await page.evaluate(() => {
@@ -627,8 +627,11 @@ try {
       const on = api.getState().items.some((i) => i.cat === "g1824");
       const tg = Array.from(document.querySelectorAll("#xoptrows .tgl")).find((b) => /Steep roof/.test(b.getAttribute("aria-label") || ""));
       if (tg) tg.click();
-      return { steep: !!tg, on, off: api.getState().items.some((i) => i.cat === "g1824"), xopt: api.getState().xopt, note: document.getElementById("xoptnote").textContent };
+      const row = tg ? tg.closest(".optrow") : null;
+      return { steep: !!tg, on, off: api.getState().items.some((i) => i.cat === "g1824"), xopt: api.getState().xopt, note: document.getElementById("xoptnote").textContent, label: row ? row.firstChild.textContent : "" };
     });
+    /* the roof it gives is said from its own number, not its name (review W2) */
+    ok(`the option says the roof it gives: "${st.label}"`, st.label === "Steep roof (7/12 roof)", J(st.label));
     ok("turning the Steep roof off takes the 18x24 off the gable it no longer fits, and the extras card says so", st.steep && st.on && !st.off && /18×24 Gable Window is too tall for this gable, so it was taken off\./.test(st.note), J(st));
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
     await ctx.close();

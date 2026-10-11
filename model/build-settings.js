@@ -921,6 +921,56 @@ export function tidyBuilt(settings, manufacturer) {
   return out || S;
 }
 
+/* An option's roof pitch that changes nothing on a building it is offered
+   on (review W2), one line per option: "Steep roof does not change the
+   Lofted Barn (it has a barn roof), the Backyard Utility (its lean-to roof
+   can be 6/12 at most) or the Dormer Shed (its roof is already about
+   7 1/4/12)." A customer would pay for nothing there.
+   -> [{key, index (its place in options.extras), name, styles: [KEY], words}] */
+export function extrasThatChangeNothing(settings, manufacturer) {
+  const out = [];
+  const M = manufacturer || {}, styles = M.styles || {};
+  const S = liftRawRules(settings || {}, M).settings;
+  const xs = isObj(S.options) && Array.isArray(S.options.extras) ? S.options.extras : [];
+  if (!xs.some((x) => isObj(x) && isObj(x.built) && x.built.roofPitch !== undefined)) return out;
+  const applied = apply(S, M).styles;
+  const merged = mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {});
+  const ONE = { lean: "lean-to roof", slope: "single slope roof", gable: "roof" };
+  for (const [index, x] of xs.entries()) {
+    if (!isObj(x) || !isObj(x.built) || x.built.roofPitch === undefined) continue;
+    const r = parse("roofPitch", x.built.roofPitch, {});
+    if (r.problem) continue;
+    const p = r.value, misses = [];
+    for (const k of keysOf(S.offer)) {
+      const o = S.offer[k];
+      if (!isObj(o)) continue;
+      const base = o.base != null ? o.base : k, t = styles[base];
+      if (!t) continue;
+      if (Array.isArray(x.styles) && x.styles.indexOf(k) < 0 && x.styles.indexOf(base) < 0) continue;
+      const kind = kindOf(t);
+      let why = null;
+      if (kind === "barn") why = "it has a barn roof";
+      else if (kind === "salt") why = "it has a saltbox roof";
+      else {
+        const hi = pitchLimits(kind, !!t.metal)[1];
+        if (p > hi + 1e-9) why = `its ${ONE[kind] || "roof"} can be ${format("roofPitch", hi)} at most`;
+        else {
+          const b = applied[k] && applied[k].built.roofPitch;
+          const now = b && b.value !== undefined ? b.value : plainValue("roofPitch", t, merged, keysOf(o.sizes));
+          if (now !== undefined && now >= p - 1e-6) why = `its roof is already ${format("roofPitch", now)}`;
+        }
+      }
+      if (why) misses.push({ key: k, words: `the ${styleName(S, M, k)} (${why})` });
+    }
+    if (!misses.length) continue;
+    const list = misses.map((m) => m.words);
+    const name = typeof x.name === "string" && x.name.trim() ? x.name.trim() : "This option";
+    out.push({ key: x.key, index, name, styles: misses.map((m) => m.key),
+      words: `${name} does not change ${list.length < 2 ? list[0] : list.slice(0, -1).join(", ") + " or " + list[list.length - 1]}. A customer would pay for nothing there.` });
+  }
+  return out;
+}
+
 /* The roof kind of a style, in the words the knobs use: "gable", "lean",
    "slope", "barn" or "salt". */
 export function roofKindOf(t) { return kindOf(t); }

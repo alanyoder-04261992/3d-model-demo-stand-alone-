@@ -209,7 +209,7 @@ finished designer retains the golden geometry.
     | Utility Shed, Side Utility | roof pitch | about 6 1/2/12 (6.48/12) | 5/12 at every width | utility-framing skill: standard A-frame pitch |
     | Utility Shed, Side Utility | eave | about 4 7/16 in | 4 in, measured level | utility-framing skill: 4 in beyond each side wall |
     | Utility Shed, Side Utility | wall | 7 ft 9 in | 7 ft 9 1/2 in | 89 in studs + three 1 1/2 in plates (derived) |
-    | Lofted Barn, Side Lofted Barn | wall | 6 ft 8 in | 6 ft 7 1/2 in | 75 in studs + three 1 1/2 in plates (derived) |
+    | Lofted Barn, Side Lofted Barn | wall | 6 ft 8 1/16 in (80.04 in) | 6 ft 7 1/2 in | 75 in studs + three 1 1/2 in plates (derived) |
     | Lofted Barn, Side Lofted Barn | barn roof height at 8, 10, 12 ft wide | 3 ft 7 3/16 in, 4 ft 6 in, 5 ft 4 13/16 in | 3 ft 7 3/4 in, 4 ft, 4 ft 3 in | shed-measurements skill: loft truss peaks |
 
     What "match" means and does not: the peak heights and wall heights match
@@ -224,8 +224,9 @@ finished designer retains the golden geometry.
     and every other width he did not give, keeps the library shape, held so a
     wider barn is never lower. The other 19 styles (garages, metal buildings,
     Dog Kennel, Garden Utility, Dormer Shed, Metal Lofted Barn, Lofted Barn
-    Garage, cabins, Standard Barn, cottages) keep Barnwright's numbers until
-    Alan says yes; a yes is one built block, no code.
+    Garage, cabins, Standard Barn, cottages, the Backyard Utility and the
+    Single Slope) keep Barnwright's numbers until Alan says yes; a yes is one
+    built block, no code.
 
     Because a 5/12 roof is lower, the 18x24 gable window no longer fits the
     gable of an 8, 10 or 12 ft Utility Shed or Side Utility (on 8 and 10 ft it

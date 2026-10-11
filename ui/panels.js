@@ -68,7 +68,15 @@ function optxLabel(x) {
   if (x.input === "sqftR") return "by the square foot of roof";
   if (x.input === "pct") return (+x.price || 0) + "% of the building";
   if (x.input === "lf") return "by the foot";
+  /* the roof it gives, from its own number, never from its name (review W2) */
+  const p = typeof x.roofPitch === "number" ? x.roofPitch : null;
+  if (p != null) return pitchWords(p) + " roof";
   return "";
+}
+/* 7 -> "7/12", 7.5 -> "7 1/2/12" */
+function pitchWords(p) {
+  const q = Math.round(p * 4), whole = Math.floor(q / 4), part = ["", "1/4", "1/2", "3/4"][q % 4];
+  return (whole ? whole + (part ? " " + part : "") : part || "0") + "/12";
 }
 
 export function createPanels(ctx) {

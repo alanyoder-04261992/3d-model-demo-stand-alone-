@@ -141,8 +141,11 @@ number, its words and its source.
   "How your buildings are built" (business-wide, by roof kind, each box
   saying which styles it reaches, `businessReach()`), and opens with a
   yellow note for numbers the 3D designer could not use
-  (`cat.settingsWarnings`) and what the quiet check found. The Options tab
-  gives each extra "Roof pitch at least". Managers and dealers see the
+  (`cat.settingsWarnings`), options whose pitch changes nothing on some
+  buildings they are offered on (`extrasThatChangeNothing`), and what the
+  quiet check found. The Options tab gives each extra "Roof pitch at least"
+  and "Offered on", folded under "Only on some buildings, or changes the
+  roof", with the same no-change line under the option. Managers and dealers see the
   numbers read only. A box that cannot be read keeps the typed words in the
   draft, so `ui/office/views/price-list/model.js builtProblemsOf()` shows
   the problem under it (data-field / data-msgs `built:<KEY>:<knob>`,
