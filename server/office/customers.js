@@ -14,7 +14,13 @@
    applied to the newest copy with store.change, so two people working the
    same customer at the same moment both keep their work. The person's
    right to the customer's lot is checked again on that newest copy: a
-   manager may have moved the customer to another lot in the meantime. */
+   manager may have moved the customer to another lot in the meantime.
+
+   The business's first real quote or order makes it LIVE for Barnwright
+   setup access (setup-access.js): markLive is called BEFORE the quote or
+   order is written, so a write that then fails still counts, which is the
+   safe way round. A Dealer Center has no example or practice customers, so
+   every one counts. */
 
 import { randomId } from "./hash.js";
 import { fail, text, email, phone, day, money, oneOf, bool, onlyKeys } from "./http.js";
@@ -64,7 +70,7 @@ export function rowOf(c) {
 
 const NOT_FOUND = "We couldn't find that customer.";
 
-export function createCustomers({ store, now, lots, priceList, log: logError = console.error }) {
+export function createCustomers({ store, now, lots, priceList, log: logError = console.error, markLive = null }) {
   const iso = () => now().toISOString();
   const byOf = (who) => (who ? { id: who.person.userId, name: who.person.name || who.person.email } : null);
 
@@ -347,6 +353,7 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
     const number = await nextNumber("quote-number");
     const quote = quoteOf(priced, cat, { by: byOf(who), source: "office", number });
     if (note) quote.note = note;
+    if (markLive) await markLive("quote");
     const c = await changeCustomer(who, id, (cur) => {
       if (cur.quotes.length >= MAX_QUOTES) fail(422, "This customer has too many quotes. Add a new customer for new buildings.");
       cur.quotes.push(quote);
@@ -402,6 +409,7 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
       deliveryAddress: fields.deliveryAddress || [c0.address, [c0.city, c0.state].filter(Boolean).join(", "), c0.zip].filter(Boolean).join("\n"),
       history: [{ status: "sold", at, by: byOf(who) }],
     };
+    if (markLive) await markLive("order");
     const c = await changeCustomer(who, id, (cur) => {
       if (cur.orders.some((o) => o.quoteId === quote.id && o.status !== "cancelled")) fail(409, "That quote is already sold. Open its order instead.");
       if (cur.orders.length >= MAX_ORDERS) fail(422, "This customer has too many orders.");
@@ -502,6 +510,7 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
       quote.plan ? `What they want to do: ${planWords(quote.plan)}` : "",
       quote.rto ? `Looked at rent to own: ${dollars(quote.rto.monthly)} a month over ${quote.rto.months} months` : "",
     ].filter(Boolean).join("\n");
+    if (markLive) await markLive("website-quote");
     const match = await findMatch(slug, contact);
     let c = null;
     if (match) {

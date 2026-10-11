@@ -17,13 +17,14 @@
                                 matches, switched off or not; a question is
                                 written in the business's audit list
    plus what Alan does in the real control room: switch a business on or
-   off, change its lot limit, and start a support check (issueSupport).
+   off, change its lot limit, start a support check (issueSupport), and
+   get a Barnwright setup pass (setupPass: docs/OFFICE.md, "The pass").
 
    Signing uses a throwaway P-256 key made at start. That the real control
    room's signatures read the same way is proved separately, with leases it
    signed itself (test/control-room/leases.json). */
 
-import { generateKeyPairSync, sign, verify, createPublicKey, randomBytes } from "node:crypto";
+import { generateKeyPairSync, sign, verify, createPublicKey, randomBytes, createHash } from "node:crypto";
 import { canonicalLease, LEASE_DURATION_MS } from "../../server/office/license-core.js";
 
 export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "site-yoder-1", activationKey = "bwk_" + "x".repeat(40), dealerLimit = 2 } = {}) {
@@ -66,6 +67,22 @@ export function fakeControlRoom({ clock, customerId = "cust_yoder", siteId = "si
     if (!supportAllowed(c, t) || claims.customerId !== c.id || claims.siteId !== c.siteId || claims.grantAt !== c.support.grantedAt || claims.expiresAt <= t) throw new Error("not allowed");
     return claims;
   }
+
+  /* A Barnwright setup pass for one request, as the Control Room makes it:
+     the claims in the contract's order, signed over
+     "barnwright-setup-pass/v1." + base64url(claims). body: the exact bytes
+     the request will carry ("{\"action\":\"session\"}" for a visit's
+     start). over: claims to change (a pass that must be refused);
+     prefix / key: sign it some other way (also to be refused). */
+  room.setupPass = ({ action = "session", body = JSON.stringify({ action }), actor = "alan@barnwright.test", via = "control-room", over = {}, prefix = "barnwright-setup-pass/v1.", key = privateKey } = {}) => {
+    const t = now();
+    const claims = {
+      v: 1, purpose: "setup-pass", id: randomBytes(16).toString("base64url"), customerId: business.id, siteId: business.siteId,
+      actor, via, action, bodySha256: createHash("sha256").update(body).digest("hex"), issuedAt: t, expiresAt: t + 120_000, ...over,
+    };
+    const head = Buffer.from(JSON.stringify(claims)).toString("base64url");
+    return `${head}.${sign("sha256", Buffer.from(prefix + head), { key, dsaEncoding: "ieee-p1363" }).toString("base64url")}`;
+  };
 
   /* A help pass: base64url(claims) + "." + the signature over
      "barnwright-help-pass/v1." + that, so it never reads as a lease or a

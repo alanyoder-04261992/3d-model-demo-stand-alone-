@@ -27,6 +27,9 @@
                       good for 10 minutes that lets help.js ask Barnwright's
                       Sales Inbox a question, read the answers or report a
                       browser problem
+     verifySetupPass() Barnwright setup access (added here): checks a setup
+                      pass offline with the control room's public key
+                      (docs/OFFICE.md, "The pass")
 
    Never import this file into the browser (it uses node:crypto), and never
    into server/office/index.js (the in-browser demo runs that file). */
@@ -38,6 +41,15 @@ import {
 } from "./license-core.js";
 
 export { LEASE_DURATION_MS } from "./license-core.js";
+
+/* Barnwright setup access (docs/OFFICE.md, "Barnwright setup access", The
+   pass): what a setup pass is signed over, so nothing else the same key
+   signs (leases, support passes, help passes) can ever read as one. */
+export const SETUP_PASS_PREFIX = "barnwright-setup-pass/v1.";
+const SETUP_ACTIONS = ["status", "read", "check", "save", "undo", "session"];
+const SETUP_VIA = ["control-room", "claude"];
+const SETUP_MAX_WINDOW_MS = 5 * 60_000;
+const SETUP_MAX_SKEW_MS = 60_000;          /* license-core.js MAX_FUTURE_SKEW_MS */
 
 function checkP256(key) {
   if (key.asymmetricKeyType !== "ec" || key.asymmetricKeyDetails?.namedCurve !== "prime256v1") {
@@ -232,6 +244,43 @@ export class TenantLicenseClient {
     return claims;
   }
 
+  /* Added in the Dealer Center: a Barnwright setup pass, checked offline
+     with the control room's public key. -> {id, actor, via, action,
+     issuedAt, expiresAt}, or throws an Error whose .reason says why (for
+     the log only: every refusal answers the same). action: the request's
+     own (the door's body.action, or "session" for a visit's start);
+     bodyBytes: the exact request body. The rule is the contract's
+     (tools/lib/make-setup-fixtures.mjs checkSetupPass, which the checks
+     hold this to on every pass in the fixtures). */
+  verifySetupPass(token, { action, bodyBytes } = {}) {
+    const no = (reason) => { throw Object.assign(new Error("Setup pass refused: " + reason), { reason }); };
+    if (typeof token !== "string" || !token || token.length > 8_000 || !/^[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+$/.test(token)) no("shape");
+    const [head, sig] = token.split(".");
+    const signature = Buffer.from(sig, "base64url");
+    if (signature.length !== 64) no("signature");
+    let key;
+    try { key = createPublicKey(this.options.publicKeyPem); } catch { no("key"); }
+    if (key.asymmetricKeyType !== "ec" || key.asymmetricKeyDetails?.namedCurve !== "prime256v1") no("key");
+    let good = false;
+    try { good = verify("sha256", Buffer.from(SETUP_PASS_PREFIX + head), { key, dsaEncoding: "ieee-p1363" }, signature); } catch { good = false; }
+    if (!good) no("signature");
+    let c;
+    try { c = JSON.parse(Buffer.from(head, "base64url").toString("utf8")); } catch { no("claims"); }
+    if (!c || typeof c !== "object" || Array.isArray(c) || c.v !== 1 || c.purpose !== "setup-pass") no("claims");
+    if (typeof c.id !== "string" || !/^[A-Za-z0-9_-]{16,64}$/.test(c.id)) no("claims");
+    if (typeof c.actor !== "string" || !c.actor.trim() || c.actor.length > 200 || /[\u0000-\u001f\u007f]/.test(c.actor)) no("claims");
+    if (!SETUP_VIA.includes(c.via) || !SETUP_ACTIONS.includes(c.action)) no("claims");
+    if (c.customerId !== this.options.customerId || c.siteId !== this.options.siteId) no("business");
+    if (!Number.isSafeInteger(c.issuedAt) || !Number.isSafeInteger(c.expiresAt) || c.expiresAt <= c.issuedAt) no("time");
+    const now = this.clock();
+    if (c.expiresAt - c.issuedAt > SETUP_MAX_WINDOW_MS || c.issuedAt > now + SETUP_MAX_SKEW_MS) no("time");
+    if (c.expiresAt <= now) no("expired");
+    if (c.action !== action) no("action");
+    const bytes = typeof bodyBytes === "string" ? Buffer.from(bodyBytes) : bodyBytes instanceof Uint8Array ? bodyBytes : null;
+    if (!bytes || typeof c.bodySha256 !== "string" || c.bodySha256 !== createHash("sha256").update(bytes).digest("hex")) no("body");
+    return { id: c.id, actor: c.actor, via: c.via, action: c.action, issuedAt: c.issuedAt, expiresAt: c.expiresAt };
+  }
+
   /* Added in the Dealer Center (not in the SDK): the control room's POST
      /api/help-pass, signed in like /api/license with the activation key.
      kind: "question" (someone asks; subject is the question's first words,
@@ -286,7 +335,8 @@ export function createLeaseStore(customerId, siteId, blobs) {
 
 /* A Dealer Center with some but not all of the control room settings:
    nothing can be changed, the support checks say it is not configured,
-   and no help pass can be had (the Help screen says to email instead). */
+   no help pass can be had (the Help screen says to email instead), and no
+   Barnwright setup pass is ever taken. */
 export function misconfiguredLicense() {
   const access = () => ({ ...evaluateVerifiedLease(null, Date.now(), "invalid_license"), checkedAt: null });
   const refuse = () => { throw new Error("The control room settings are incomplete"); };
@@ -300,5 +350,6 @@ export function misconfiguredLicense() {
     forwardSupportConsent: async () => refuse(),
     verifySupportAccess: async () => refuse(),
     helpPass: async () => refuse(),
+    verifySetupPass: () => refuse(),
   };
 }

@@ -11,7 +11,18 @@
 
    Every save also writes price-list-history/<version>: who, when, a copy of
    the settings, and the changes in words ("Lofted Barn 10×16: $5,540 →
-   $5,700"), so the owner can see and put back an earlier price list. */
+   $5,700"), so the owner can see and put back an earlier price list.
+
+   Barnwright's saves (docs/OFFICE.md, "Barnwright setup access") use the
+   same save with a few more steps: the lock first (setup-lock.js, handed in
+   as `lock`), a copy of the price list in use kept before anything changes
+   (ensureHistory: the save is refused when that copy can't be kept), and
+   who saved it (savedBy: Barnwright, with the pass it came with).
+
+   Going live: a save that leaves the 3D designer open to customers calls
+   markLive (setup-access.js, handed in so this file stays free of it)
+   BEFORE the price list is replaced. Only the owner can make that save, so
+   one that then fails still counts as live, which is the safe way round. */
 
 import { validate, validateManufacturer, resolve, SIZE_RE, ID_RE } from "../../model/company.js";
 import { fail, OfficeError } from "./http.js";
@@ -333,9 +344,23 @@ export function describeChanges(before, after, manufacturer) {
 /* -------------------------------------------------------------------- */
 
 const SAVED_FIRST = "Someone else saved the price list while you were working. Reload to see their changes, then make yours again.";
+/* No clock time in the words: the answer carries savedAt and the browser
+   shows it in the owner's own time. */
+export const BARNWRIGHT_SAVED_FIRST = "Barnwright saved a change while you were working. Reload to see it, then make yours again.";
+export const NO_COPY = "Couldn't keep a copy of the current price list first, so nothing was changed. Try again.";
+const KEPT_COPY = "A copy kept before Barnwright changed the price list";
 
-export function createPriceList({ store, manufacturer, library, templates, now, log = console.error }) {
+const historyKey = (version) => `price-list-history/${String(version).padStart(6, "0")}`;
+
+export function createPriceList({ store, manufacturer, library, templates, now, log = console.error, markLive = null }) {
   const iso = () => now().toISOString();
+
+  /* someone saved first: who, when the save that got in was Barnwright's */
+  function savedFirst(record) {
+    const by = record?.data?.savedBy;
+    if (by?.id === "barnwright") fail(409, BARNWRIGHT_SAVED_FIRST, { savedAt: record.data.savedAt || null });
+    fail(409, SAVED_FIRST);
+  }
 
   /* -> the resolved catalogue, or a 422 listing the problems in words. */
   function check(settings) {
@@ -385,9 +410,24 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
      would save again and be told someone else saved first). */
   async function keepHistory(entry) {
     try {
-      await store.put(`price-list-history/${String(entry.version).padStart(6, "0")}`, entry);
+      await store.put(historyKey(entry.version), entry);
     } catch (e) {
       log("A price list history entry could not be saved:", e);
+    }
+  }
+
+  /* Before a Barnwright save: the price list in use now must be in the
+     history (it can always be put back). Written now when it is missing;
+     when that can't be done, nothing is saved (503). */
+  async function keepCopy(data) {
+    try {
+      if (await store.get(historyKey(data.version))) return;
+      await store.create(historyKey(data.version), {
+        version: data.version, savedAt: data.savedAt, savedBy: data.savedBy, changes: [KEPT_COPY], settings: data.settings,
+      });
+    } catch (e) {
+      log("A copy of the price list could not be kept before a Barnwright change:", e?.name || "Error");
+      fail(503, NO_COPY, { code: "no-copy" });
     }
   }
 
@@ -428,24 +468,55 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     return record;
   }
 
-  /* Save the whole price list. The browser sends the version it started
-     from; if someone else saved since, nothing is written (409). */
-  async function save(by, { settings, version }, { restoring = null } = {}) {
+  /* The save worked out without writing anything: the settings it would
+     store (cfg worked out) and the changes in words. Throws what save()
+     would (409 someone saved first, 422 problems in the owner's words).
+     lock(old, next) -> [words] runs first, for Barnwright. */
+  function prepared(previous, settings, version, { restoring = null, lock = null } = {}) {
     if (!settings || typeof settings !== "object" || Array.isArray(settings)) fail(422, "The price list is missing. Reload the page and try again.");
-    const previous = await current();
     if (!previous) fail(404, "The price list has not been set up yet.");
-    if (version !== previous.data.version) fail(409, SAVED_FIRST);
+    if (version !== previous.data.version) savedFirst(previous);
     const next = clean(settings);
     const old = previous.data.settings;
+    if (lock) {
+      const words = [...new Set(lock(old, next))];
+      if (words.length) {
+        const err = new OfficeError(422, words.join(" "));
+        err.problems = words;
+        err.locked = true;
+        throw err;
+      }
+    }
     if (next.id !== old.id) fail(422, "This price list belongs to a different business. Reload the page and try again.");
     if (next.manufacturer !== old.manufacturer) fail(422, "The builder's library cannot change here.");
     next.cfg = priceFingerprint(next) === priceFingerprint(old) ? old.cfg : (old.cfg || 1) + 1;
     check(next);
     const changes = describeChanges(old, next, manufacturer);
     if (restoring) changes.unshift(`Put back the price list saved ${restoring}`);
+    return { next, changes };
+  }
+
+  /* -> {next, changes, version}: what saving these settings over `version`
+     would store, with nothing written. */
+  async function preview(settings, version, options = {}) {
+    const previous = await current();
+    return { ...prepared(previous, settings, version, options), version: previous?.data.version ?? null };
+  }
+
+  /* Save the whole price list. The browser sends the version it started
+     from; if someone else saved since, nothing is written (409).
+     options: restoring (the day of the price list put back), lock,
+     savedBy (who, when it isn't `by`: Barnwright), ensureHistory (keep a
+     copy of the one in use first, or refuse). */
+  async function save(by, { settings, version }, { restoring = null, lock = null, savedBy = null, ensureHistory = false } = {}) {
+    const previous = await current();
+    const { next, changes } = prepared(previous, settings, version, { restoring, lock });
+    const old = previous.data.settings;
     if (!changes.length) return { ...previous.data, cfg: old.cfg, changes: [] };
-    const record = { settings: next, version: previous.data.version + 1, cfg: next.cfg, savedAt: iso(), savedBy: { id: by.userId, name: by.name || by.email } };
-    if (!(await store.replace("price-list", previous, record))) fail(409, SAVED_FIRST);
+    if (ensureHistory) await keepCopy(previous.data);
+    if (next.status !== "suspended" && markLive) await markLive("opened");
+    const record = { settings: next, version: previous.data.version + 1, cfg: next.cfg, savedAt: iso(), savedBy: savedBy || { id: by.userId, name: by.name || by.email } };
+    if (!(await store.replace("price-list", previous, record))) savedFirst(await current());
     await keepHistory({ version: record.version, savedAt: record.savedAt, savedBy: record.savedBy, changes, settings: next });
     return { ...record, changes };
   }
@@ -464,12 +535,20 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     return d.toLocaleDateString("en-US", { month: "short", day: "numeric", ...(sameYear ? {} : { year: "numeric" }), timeZone: "UTC" });
   }
 
-  async function restore(by, { version, current: currentVersion }) {
+  /* options as save(), plus carry(now, earlier) -> the settings to save
+     (Barnwright's put back keeps the parts it may never change as they
+     are now: setup-lock.js carryLocked). */
+  async function restore(by, { version, current: currentVersion }, { carry = null, ...options } = {}) {
     if (!Number.isSafeInteger(version) || version < 1) fail(422, "Pick a saved price list.");
-    const entry = await store.get(`price-list-history/${String(version).padStart(6, "0")}`);
+    const entry = await store.get(historyKey(version));
     if (!entry) fail(404, "That saved price list is gone.");
-    return save(by, { settings: entry.settings, version: currentVersion }, { restoring: dayWords(entry.savedAt) });
+    let settings = entry.settings;
+    if (carry) {
+      const now = await current();
+      if (now) settings = carry(now.data.settings, entry.settings);
+    }
+    return save(by, { settings, version: currentVersion }, { ...options, restoring: dayWords(entry.savedAt) });
   }
 
-  return { get, current, catalogue, setup, save, history, restore, check };
+  return { get, current, catalogue, setup, preview, save, history, restore, check };
 }

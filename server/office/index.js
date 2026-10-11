@@ -40,6 +40,7 @@ import { createEmail } from "./email.js";
 import { createAccount } from "./account.js";
 import { createTerms, TERMS, AGREE_FIRST } from "./terms.js";
 import { createHelp } from "./help.js";
+import { createSetupAccess } from "./setup-access.js";
 
 export function createOffice(deps) {
   const now = deps.now || (() => new Date());
@@ -48,9 +49,13 @@ export function createOffice(deps) {
   const email = createEmail({ send: deps.sendEmail || null, siteUrl: deps.siteUrl || "" });
   const people = createPeople({ store, identityUser: deps.identityUser, ownerEmail: deps.ownerEmail, now });
   const lots = createLots({ store, now });
-  const priceList = createPriceList({ store, manufacturer: deps.manufacturer, library: deps.library, templates: deps.templates || {}, now, log });
-  const customers = createCustomers({ store, now, lots, priceList, log });
-  const account = createAccount({ store, license: deps.license || null, lots, now, appVersion: deps.appVersion, log });
+  /* Barnwright setup access (setup-access.js), made below: the price list,
+     the customers and the check-in reach it through these. */
+  let setup = null;
+  const markLive = (how) => setup.markLive(how);
+  const priceList = createPriceList({ store, manufacturer: deps.manufacturer, library: deps.library, templates: deps.templates || {}, now, log, markLive });
+  const customers = createCustomers({ store, now, lots, priceList, log, markLive });
+  const account = createAccount({ store, license: deps.license || null, lots, now, appVersion: deps.appVersion, log, setupReport: () => setup.report() });
   const terms = createTerms({ store, account, now });
   const help = createHelp({
     store, license: deps.license || null, inbox: deps.help || null, account, lots, priceList,
@@ -66,6 +71,10 @@ export function createOffice(deps) {
   const website = createWebsite({
     store, now, lots, priceList, customers, log, account,
     notify: async (event) => { if (event.type === "website-quote") await email.websiteQuote(event); },
+  });
+  setup = createSetupAccess({
+    store, license: deps.license || null, priceList, account, lots, website, now, log,
+    appVersion: deps.appVersion || "dealer-center", standardRise: deps.library?.roof?.shapes?.gable?.rise?.w ?? null,
   });
   const signIn = deps.signIn || "netlify";
 
@@ -88,7 +97,8 @@ export function createOffice(deps) {
       throw e;
     }
     if (who.person) await account.checkIn();
-    const record = (await priceList.current())?.data || null;
+    const current = await priceList.current();
+    const record = current?.data || null;
     const visible = who.person ? (await lots.all()).filter((l) => can.seeLot(who.person, l.slug)) : [];
     /* everybody's names, so screens can say who is working a customer */
     const teamNames = who.person ? (await store.all("people/")).map((p) => ({
@@ -110,6 +120,10 @@ export function createOffice(deps) {
       /* Help: connected to Barnwright, and whether questions can go (the
          Help screen draws its Ask box from this at once) */
       help: who.person ? { connected: help.connected, canAsk: help.canAsk } : null,
+      /* Barnwright setup access, for the owner's banner (stored records
+         only): {mode, until, live}; null for everyone else, or when not
+         connected */
+      setup: who.person?.role === "owner" ? await setup.mine(current) : null,
     });
   }
 
@@ -154,6 +168,7 @@ export function createOffice(deps) {
       start: data.start === "small" ? "small" : "full",
     });
     if (terms.asks()) await terms.agree({ ...who.person, name: yourName || who.person.name });
+    await setup.started();
     return json({ business: business(record) }, 201);
   });
 
@@ -256,18 +271,59 @@ export function createOffice(deps) {
     return json(await team.cancelInvite(id));
   });
 
-  /* Help from Barnwright (only with a Barnwright account): the owner lets
-     Barnwright run checks for 1 to 24 hours, or turns it off. */
+  /* Settings, Barnwright: the owner's one card (only with a Barnwright
+     account). Run checks (Help from Barnwright, forwarded to the control
+     room as before), or run checks and change the price list and settings
+     (the switch kept here, setup-access.js), for 1 to 24 hours; before the
+     business is live, stop or allow Barnwright's setup. No mustWrite, so
+     turning it off always works. A visit's cookie is not a sign-in here. */
   route("GET", /^\/api\/office\/barnwright-help$/, async (req) => {
     const who = await people.member(req);
     must(can.changeSettings(who.person), "Only the owner can see this.");
-    return json({ help: await account.help() });
+    if (!account.connected) return json({ help: null, setup: null });
+    return json(await setup.owner.get());
   });
   route("POST", /^\/api\/office\/barnwright-help$/, async (req) => {
     const who = await people.member(req);
     must(can.changeSettings(who.person), "Only the owner can let Barnwright help.");
-    return json({ help: await account.setHelp(who.person, await readBody(req)) });
+    const data = await readBody(req);
+    if (!account.connected) fail(404, "This Dealer Center isn't connected to Barnwright.");
+    return json(await setup.owner.set(who.person, data));
   });
+
+  /* A lot's 3D designer while it is closed, for the team to check before
+     the owner opens it (a preview never takes a quote). */
+  route("GET", /^\/api\/office\/lots\/([a-z0-9-]{2,40})\/preview$/, async (req, [slug]) => {
+    const who = await people.member(req);
+    if (!can.seeLot(who.person, slug)) fail(404, "We couldn't find that lot.");
+    return json(await website.previewLot(slug));
+  });
+
+  /* Barnwright's visit (setup-access.js): the cookie __Host-bw_setup only,
+     never Identity; every request checks the visit and access() again. */
+  const visit = (fn) => async (req, m) => {
+    const s = await setup.visit.from(req);
+    return setup.visit.keep(json(await fn(req, s, m)), s);
+  };
+  route("POST", /^\/api\/office\/barnwright\/start$/, (req) => setup.visit.start(req));
+  route("POST", /^\/api\/office\/barnwright\/end$/, (req) => setup.visit.end(req));
+  route("GET", /^\/api\/office\/barnwright\/me$/, visit(async (_req, s) => ({
+    barnwright: { actor: s.actor, mode: s.view.mode, until: s.view.until, visitEndsAt: s.endsAt },
+    business: business(s.view.record?.data || null),
+  })));
+  route("GET", /^\/api\/office\/barnwright\/price-list$/, visit(async () => priceList.get()));
+  route("PUT", /^\/api\/office\/barnwright\/price-list$/, visit(async (req, s) => {
+    const data = await readBody(req);
+    const lotCount = (await lots.all()).filter((l) => l.active !== false).length;
+    return { ...(await setup.visit.save(s, { settings: data.settings, version: data.version })), lotCount };
+  }));
+  route("GET", /^\/api\/office\/barnwright\/price-list\/history$/, visit(async () => priceList.history()));
+  route("POST", /^\/api\/office\/barnwright\/price-list\/restore$/, visit(async (req, s) => {
+    const data = await readBody(req);
+    return setup.visit.save(s, { version: data.version, current: data.current }, { restore: true });
+  }));
+  route("GET", /^\/api\/office\/barnwright\/lots$/, visit(async () => setup.visit.lots()));
+  route("GET", /^\/api\/office\/barnwright\/lots\/([a-z0-9-]{2,40})\/preview$/, visit(async (_req, _s, [slug]) => setup.visit.preview(slug)));
 
   /* Help (help.js): everyone on the team can read the business's questions
      (a dealer their own) and ask Barnwright -- also while changes are
@@ -363,6 +419,8 @@ export function createOffice(deps) {
     /* for netlify/functions: the control room's support check, and the check-in every six hours */
     diagnostics: account.diagnostics,
     checkIn: account.checkIn,
-    parts: { store, people, lots, priceList, customers, team, website, account, help },
+    /* the scheduled check-in looks back for Barnwright setup access first, in its own try */
+    setupLookBack: async () => { if (setup.connected) await setup.liveRecord(); },
+    parts: { store, people, lots, priceList, customers, team, website, account, help, setup },
   };
 }
