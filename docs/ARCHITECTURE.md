@@ -621,6 +621,7 @@ without overlapping; the demo reproduces the golden `includedItems` exactly.
   "items": { "w48": 150, "w72": 300, … },            // offered items and their prices
   "options": { "dormers": {"6": 1300}, "ramps": {…}, "elec": {"1": {"price": 675, "name": "Basic electric"}, …},
                "misc": {…}, "rates": {…}, "extras": [] },   // each option: a price, or {"price", "name"}
+             // an extra: {key, name, input, price, built?: {roofPitch: 7}, styles?: ["UT", "SU"]} -- styles: offered only there
   "palettes": { "paint": ["White", "Navy", …] },     // names picked from the manufacturer, or [name, hex] pairs
   "defaults": { "style": "LB", "size": "10x20", "colors": { "body": "White", "trim": "Black", "roof": "Black" } },
   "construction": { … },

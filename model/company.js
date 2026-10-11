@@ -503,6 +503,13 @@ export function validate(company, manufacturer) {
           if (typeof x.name !== "string" || !x.name.trim()) err.push(`${at}.name is missing.`);
           if (EXTRA_INPUTS.indexOf(x.input) < 0) err.push(`${at}.input ${q(x.input)} is not a kind of extra (use ${EXTRA_INPUTS.join(", ")}).`);
           if (!isPrice(x.price)) err.push(`${at}.price must be a number, 0 or more.`);
+          /* the buildings it is offered on (left out: every building). A
+             style the business stopped selling is simply not reached; a
+             code that is no building style at all is a mistake. */
+          if (x.styles != null) {
+            if (!Array.isArray(x.styles) || !x.styles.length || x.styles.some((k) => typeof k !== "string")) err.push(`${at}.styles must be a list of building style codes, like ["UT", "SU"] (leave it out for every building).`);
+            else for (const k of x.styles) if (!own(styles, k) && !own(offer, k)) err.push(`${at}.styles lists ${q(k)}, which is not a building style${didYouMean(k, keysOf(styles).concat(keysOf(offer)))}`);
+          }
         });
       }
     }
@@ -762,6 +769,14 @@ function stripHelp(v) {
   return v;
 }
 
+/* Is a business's own extra offered on this building style? An extra with
+   a styles list is offered only on those styles and on the styles of the
+   business's own built like them; one without, on every building. */
+export function extraOfferedOn(x, t, key) {
+  if (!x || !Array.isArray(x.styles)) return true;
+  return x.styles.indexOf(key) >= 0 || !!(t && t.base && x.styles.indexOf(t.base) >= 0);
+}
+
 export function resolve(company, manufacturer, library) {
   const mErr = validateManufacturer(manufacturer);
   const cErr = validate(company, manufacturer);
@@ -872,6 +887,9 @@ export function resolve(company, manufacturer, library) {
   const settingsWarnings = built.warnings.slice();
   const extras = (O.extras || []).map((x) => {
     const e = { key: x.key, name: x.name, input: x.input, price: x.price };
+    /* offered only on these buildings (and the styles of the business's own
+       built like them); left out, on every building */
+    if (Array.isArray(x.styles)) e.styles = x.styles.slice();
     /* an extra's construction effect is used only when every bit of it is a
        real setting with a buildable value, and never on a number a How it's
        built knob owns; otherwise it changes nothing and the owner is told */
@@ -883,6 +901,7 @@ export function resolve(company, manufacturer, library) {
        reaches (its roof pitch only ever makes a roof steeper) */
     if (isObj(x.built)) {
       for (const k of Object.keys(TYPES)) {
+        if (!extraOfferedOn(e, TYPES[k], k)) continue;
         const fx = BUILT.optionEffectFor(x.built, TYPES[k]);
         if (fx) (TYPES[k].optionEffects = TYPES[k].optionEffects || {})[x.key] = fx;
       }

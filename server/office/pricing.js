@@ -18,6 +18,7 @@ import { frameOf } from "../../model/frame.js";
 import { standardItems } from "../../model/loadouts.js";
 import { pkFixtures, fitsOnWall } from "../../model/layout.js";
 import { priceParts } from "../../model/pricing.js";
+import { extraOfferedOn } from "../../model/company.js";
 import { OfficeError } from "./http.js";
 
 export class DesignProblem extends Error {
@@ -90,7 +91,7 @@ function checkDesign(design, cat) {
   const extras = new Map((cat.OPTX?.extras || []).map((x) => [x.key, x]));
   for (const [key, value] of Object.entries(design.xopt)) {
     const extra = extras.get(key);
-    if (!extra) notOffered();
+    if (!extra || !extraOfferedOn(extra, cat.TYPES[design.type], design.type)) notOffered();
     isNumber(value, 0, extra.input === "qty" ? 99 : extra.input === "lf" ? 200 : 1, true);
   }
 

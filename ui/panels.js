@@ -171,7 +171,7 @@ export function createPanels(ctx) {
   function updateXopts() {
     const box = el("xoptrows"); box.innerHTML = "";
     const state = ctx.state, fr = ctx.frame();
-    optxList(cat).forEach((x) => {
+    optxList(cat, state).forEach((x) => {
       const row = document.createElement("div"); row.className = "optrow";
       const nm = document.createElement("span");
       nm.innerHTML = esc(x.name) + (optxLabel(x) ? (" <small>(" + esc(optxLabel(x)) + ")</small>") : "");
@@ -278,7 +278,7 @@ export function createPanels(ctx) {
     el("insidehint").style.display = (CAT.bench || CAT.shelf) ? "" : "none";
     updateOpts();
     el("insidecard").style.display = (CAT.bench || CAT.shelf || (cat.ELECPK || []).length > 1 || (cat.RAMPS || []).length > 1 ||
-      Object.keys(cat.RATES || {}).length || optxList(cat).length) ? "" : "none";
+      Object.keys(cat.RATES || {}).length || optxList(cat, ctx.state).length) ? "" : "none";
     refreshLists();
   }
 

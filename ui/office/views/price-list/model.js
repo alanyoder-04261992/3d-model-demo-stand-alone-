@@ -362,11 +362,17 @@ export function describe(before, after, M) {
   const xb = Array.isArray(before.options?.extras) ? before.options.extras : [];
   const xa = Array.isArray(after.options?.extras) ? after.options.extras : [];
   const label = (x) => (x?.name || "").trim() || "a new option";
+  const offeredOn = (x) => {
+    if (!Array.isArray(x.styles)) return `${label(x)} is offered on every building`;
+    const names = x.styles.map((k) => sName(after, k));
+    return `${label(x)} is offered on the ${names.length < 2 ? names.join("") : names.slice(0, -1).join(", ") + " and " + names[names.length - 1]}`;
+  };
   for (const x of xa) {
     const old = x.key ? xb.find((o) => o.key === x.key) : null;
-    if (!old) out.push(`Add your option "${label(x)}"${x.price != null ? ` at ${x.input === "pct" ? `${x.price}%` : money(x.price)}` : ""}`, ...describeExtraBuilt(label(x), undefined, x.built));
+    if (!old) out.push(`Add your option "${label(x)}"${x.price != null ? ` at ${x.input === "pct" ? `${x.price}%` : money(x.price)}` : ""}`, ...describeExtraBuilt(label(x), undefined, x.built), ...(Array.isArray(x.styles) ? [offeredOn(x)] : []));
     else if (!same(old, x)) {
       out.push(...describeExtraBuilt(label(x), old.built, x.built));
+      if (!same(old.styles, x.styles)) out.push(offeredOn(x));
       if (old.price !== x.price) out.push(`${label(x)}: ${x.input === "pct" ? `${old.price}%` : money(old.price)} → ${x.price == null ? "no price yet" : x.input === "pct" ? `${x.price}%` : money(x.price)}`);
       if (old.name !== x.name) out.push(`Your option "${old.name}" is now called "${label(x)}"`);
       if (old.input !== x.input) out.push(`${label(x)} is priced ${EXTRA_KINDS.find((e) => e[0] === x.input)?.[1].toLowerCase() || "another way"} now`);
@@ -447,6 +453,7 @@ export function explain(problem, draft, M) {
     [/^options\.extras\[(\d+)\]\.name is missing/, (m) => ({ words: "Give this option a name.", tab: "options", where: `extra:${m[1]}`, field: `extra:${m[1]}:name` })],
     [/^options\.extras\[(\d+)\]\.input/, (m) => ({ words: `Pick how ${xName(m[1])} is priced.`, tab: "options", where: `extra:${m[1]}`, field: `extra:${m[1]}:input` })],
     [/^options\.extras\[(\d+)\]\.price/, (m) => ({ words: `${xName(m[1])} needs a price, $0 or more.`, tab: "options", where: `extra:${m[1]}`, field: `extra:${m[1]}:price` })],
+    [/^options\.extras\[(\d+)\]\.styles/, (m) => ({ words: `${xName(m[1])}: pick again which buildings it is offered on.`, tab: "options", where: `extra:${m[1]}`, field: `extra:${m[1]}:styles` })],
     [/^options\.(\w+)\.([^:\s.]+)\.name .*too long/, (m) => ({ words: `Use a shorter name: ${NAME_MAX} letters at most.`, tab: "options", where: `opt:${m[1]}:${m[2]}`, field: `opt:${m[1]}:${m[2]}` })],
     [/^options\.(\w+)\.([^:\s.]+)\.name must be text/, (m) => ({ words: "Give it a name customers will see.", tab: "options", where: `opt:${m[1]}:${m[2]}`, field: `opt:${m[1]}:${m[2]}` })],
     [/^options\.(\w+)\.([^:\s.]+) has no price/, (m) => ({ words: `${optionName(M, m[1], m[2], S.options?.[m[1]]?.[m[2]])} needs a price. $0 is fine.`, tab: "options", where: `opt:${m[1]}:${m[2]}`, field: `opt:${m[1]}:${m[2]}` })],

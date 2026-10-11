@@ -178,6 +178,7 @@ export function explainProblem(problem, manufacturer, settings = {}) {
     [/^options\.extras\[(\d+)\]\.name is missing/, () => "Every extra needs a name."],
     [/^options\.extras\[(\d+)\]\.input/, (m) => `Pick how ${extraName(m[1])} is charged.`],
     [/^options\.extras\[(\d+)\]\.price/, (m) => `${extraName(m[1])} needs a price, $0 or more.`],
+    [/^options\.extras\[(\d+)\]\.styles/, (m) => `${extraName(m[1])}: pick again which buildings it is offered on.`],
     [/^options\.extras/, () => "One of your extras could not be saved. Reload the page and try again."],
     [/^options\.(\w+)\.([^:\s]+): the manufacturer has no/, (m) => `One of the ${OPTION_GROUP_WORDS[m[1]] || "options"} is not in the builder's library. Reload the page and try again.`],
     [/^options\.(\w+)\.([^:\s]+) has no price/, (m) => `${optionWords(m[1], m[2], S, M)} needs a price ($0 is fine).`],
@@ -319,14 +320,21 @@ export function describeChanges(before, after, manufacturer) {
   }
   const ox = new Map((before.options?.extras || []).map((x) => [x.key, x]));
   const nx = new Map((after.options?.extras || []).map((x) => [x.key, x]));
+  /* "Steep roof (7/12) is offered on the Utility Shed and Side Utility" */
+  const offeredOn = (x) => {
+    if (!Array.isArray(x.styles)) return `${x.name} is offered on every building`;
+    const names = x.styles.map((k) => styleName(after, k));
+    return `${x.name} is offered on the ${names.length < 2 ? names.join("") : names.slice(0, -1).join(", ") + " and " + names[names.length - 1]}`;
+  };
   for (const [k, x] of nx) {
     const old = ox.get(k);
     const built = describeExtraBuilt(x.name, old?.built, x.built);
-    if (!old) out.push(`Added the extra "${x.name}" at ${fmtMoney(x.price)}`, ...built);
+    const where = (!old ? Array.isArray(x.styles) : !same(old.styles, x.styles)) ? [offeredOn(x)] : [];
+    if (!old) out.push(`Added the extra "${x.name}" at ${fmtMoney(x.price)}`, ...built, ...where);
     else if (!same(old, x)) {
       if (old.price !== x.price) out.push(`${x.name}: ${fmtMoney(old.price)} → ${fmtMoney(x.price)}`);
-      out.push(...built);
-      if (old.price === x.price && !built.length) out.push(`Changed the extra "${x.name}"`);
+      out.push(...built, ...where);
+      if (old.price === x.price && !built.length && !where.length) out.push(`Changed the extra "${x.name}"`);
     }
   }
   for (const [k, x] of ox) if (!nx.has(k)) out.push(`Removed the extra "${x.name}"`);

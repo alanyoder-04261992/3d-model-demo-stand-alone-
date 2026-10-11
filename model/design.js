@@ -43,7 +43,7 @@ import { frameOf, porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, porchLe
 import { resetItems, clampPos, keepOnWall, pkFixtures } from "./layout.js";
 import { standardItems } from "./loadouts.js";
 import { pPrice, pSizes, priceParts } from "./pricing.js";
-import { colorName, hexOfName, pickByName, sidingPalette } from "./company.js";
+import { colorName, hexOfName, pickByName, sidingPalette, extraOfferedOn } from "./company.js";
 
 /* own keys only: a link naming "constructor" or "__proto__" is not a style,
    an item, a wall or a size */
@@ -163,6 +163,11 @@ export function normalize(state, frame, cat) {
   const X = state.xopt || {};
   const keys = new Set(((cat.OPTX && cat.OPTX.extras) || []).map((x) => x.key));
   for (const k of Object.keys(X)) if (!keys.has(k)) { delete X[k]; changed.push(`The extra "${k}" is not offered, so it was taken off.`); }
+  /* an extra offered only on some buildings (a Steep roof on the Utility
+     Shed) comes off when the building is one it is not offered on */
+  for (const x of ((cat.OPTX && cat.OPTX.extras) || [])) {
+    if (X[x.key] != null && !extraOfferedOn(x, t, state.type)) { delete X[x.key]; changed.push(`${x.name} is not offered on the ${t.name}, so it was taken off.`); }
+  }
   if (t.dormer && state.dormer !== "none" && !(cat.DORMERS || []).some((d) => d[0] === state.dormer)) {
     const fallback = (cat.DORMERS || []).some((d) => d[0] === cat.defaults.dormer) ? cat.defaults.dormer : "none";
     changed.push(`The ${state.dormer} ft dormer is not offered; it is now ${fallback === "none" ? "no dormer" : fallback + " ft"}.`);

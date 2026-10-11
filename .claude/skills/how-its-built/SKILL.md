@@ -44,7 +44,14 @@ says it.
    number set on that style itself replaces the feature.
 4. `library/manufacturers/<m>.json` `styles.<KEY>.built` -- the shop
    standard, except on a construction path the business's own raw
-   `construction` already sets.
+   `construction` already sets. Today the Utility Shed and Side Utility
+   (5/12, a 4 in eave, 93 1/2 in walls) and the Lofted Barn and Side Lofted
+   Barn (79 1/2 in walls, barn roofs 43 3/4, 48 and 51 in at 8, 10 and
+   12 ft wide) carry Alan's shop numbers (Oct 2026, "yes match"), each with
+   a `_source` note. Barnwright's own company in the checks is the standard
+   without these blocks (`tools/lib/barnwright-company.mjs`), so the golden
+   test still draws Barnwright's numbers; `node tools/check-shop-numbers.mjs`
+   holds the shop numbers (`test/golden-shop/`).
 5. The library's raw number (`library/construction.json`, the style's raw
    traits).
 
@@ -52,7 +59,13 @@ An extra (`options.extras[i].built`) may hold roof pitch, barn roof height,
 eave and gable-end overhang and door height. Its roof pitch only ever makes
 a roof steeper (`constructionFor`'s "at least"); its other numbers replace
 the style's for that design. An extra may not change the wall height, the
-porch or the dormer.
+porch or the dormer. `options.extras[i].styles` (["UT", "SU"]) offers it
+only on those buildings and the styles built like them
+(`model/company.js extraOfferedOn`): the designer's list
+(`model/pricing.js optxList(cat, state)`), `normalize` (takes it off in
+words), the server (409) and the Options tab ("Offered on" chips) all
+follow it. The example price list's **Steep roof (7/12)** is one: Alan's
+steep A-frame pitch, on the Utility Shed and Side Utility.
 
 ## How a number reaches the drawing
 

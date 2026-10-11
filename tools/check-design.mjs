@@ -38,12 +38,12 @@
 
 import { barnwrightCatalogue, golden } from "./lib/barnwright-company.mjs";
 import { readJSON, readManufacturer, loadCatalogue } from "./lib/load.mjs";
-import { resolve } from "../model/company.js";
+import { resolve, validate } from "../model/company.js";
 import { frameOf } from "../model/frame.js";
 import { resetItems, pkFixtures, clampPos, freeSpot } from "../model/layout.js";
 import * as LAYOUT from "../model/layout.js";
 import * as S from "../ui/state.js";
-import { priceParts } from "../model/pricing.js";
+import { priceParts, optxList } from "../model/pricing.js";
 import { defaults, fromState, toState, normalize, encode, encodeSync, decode, decodeSync, setType, flipPorch } from "../model/design.js";
 import { mulberry32 } from "../engine/seeded.js";
 import { priceDesign } from "../server/office/pricing.js";
@@ -419,6 +419,48 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   const kept = back.state.items.find((i) => i.cat === "g1824" && i.wall === "F");
   const r1 = kept && LAYOUT.openingRect(kept, Object.assign({ state: back.state }, frameOf(back.state, fiveTwelve)));
   check(G9, back.warnings.length === 0 && kept && J(r0) === J(r1), `the saved design changed on opening: ${J(back.warnings)}`);
+}
+
+/* ---------------------------------------------------------------- 10 an option on some buildings only */
+{
+  /* Alan's steep roof (7/12, utility-framing skill): the sample price list
+     sells "Steep roof (7/12)" on the Utility Shed and Side Utility only
+     (options.extras[].styles). It is offered there and nowhere else, comes
+     off when the building changes to one it is not on, and the server
+     refuses it on another building. */
+  const G10 = "an option offered on some buildings only (Steep roof)";
+  const steep = (DEMO.OPTX.extras || []).find((x) => x.key === "steep-roof");
+  check(G10, !!steep && J(steep.styles) === J(["UT", "SU"]), `the sample price list has no Steep roof for the Utility Shed and Side Utility: ${J(steep)}`);
+  const st = (t, z) => { const s = defaults(DEMO); setType(s, t, DEMO); s.size = z; resetItems(s, frameOf(s, DEMO), DEMO); return s; };
+  const ut = st("UT", "10x16"), lb = st("LB", "10x16");
+  check(G10, optxList(DEMO, ut).some((x) => x.key === "steep-roof") && optxList(DEMO, st("SU", "10x16")).some((x) => x.key === "steep-roof"), "the Steep roof is not offered on the Utility Shed and Side Utility");
+  check(G10, !optxList(DEMO, lb).some((x) => x.key === "steep-roof") && !optxList(DEMO, st("G", "12x24")).some((x) => x.key === "steep-roof"), "the Steep roof is offered on the Lofted Barn or the Garage");
+  ut.xopt = { "steep-roof": 1 };
+  const fr = frameOf(ut, DEMO), peak = (Math.max(...fr.prof.map((p) => p[1])) - fr.topY) * 12;
+  const parts = priceParts(ut, DEMO);
+  check(G10, Math.abs(peak - 35) < 1e-9 && parts.lines.some((l) => /Steep roof/.test(l[0] || l.label || l.name || "") || J(l).includes("Steep roof")) && parts.total === priceParts(st("UT", "10x16"), DEMO).total + 350,
+    `picked on a 10x16 Utility Shed: roof ${peak} in above the wall (7/12 is 35 in), total ${parts.total}`);
+  /* the building changes to a Lofted Barn: it comes off, said once */
+  const moved = JSON.parse(JSON.stringify(ut)); setType(moved, "LB", DEMO);
+  const said = normalize(moved, frameOf(moved, DEMO), DEMO);
+  check(G10, !moved.xopt["steep-roof"] && said.includes("Steep roof (7/12) is not offered on the Lofted Barn, so it was taken off."), `after changing to a Lofted Barn: ${J(moved.xopt)} ${J(said)}`);
+  /* the server: priced on the Utility Shed, refused on the Lofted Barn */
+  let ok10 = null; try { ok10 = priceDesign(fromState(ut, DEMO), DEMO); } catch (e) { ok10 = e; }
+  check(G10, ok10 && ok10.price && ok10.price.total === parts.total, `the server would not price the Steep roof on a Utility Shed: ${ok10 && ok10.message}`);
+  const onBarn = fromState(lb, DEMO); onBarn.xopt = { "steep-roof": 1 };
+  let err10 = null; try { priceDesign(onBarn, DEMO); } catch (e) { err10 = e; }
+  check(G10, err10 && err10.status === 409 && /no longer offered/.test(err10.message), `the server took a Steep roof on a Lofted Barn: ${err10 ? err10.status + " " + err10.message : "priced"}`);
+  /* a style of the business's own built like the Utility Shed gets it too */
+  const own = copy(readJSON("companies/demo/company.json"));
+  own.offer.UTX1 = { base: "UT", name: "Premium Utility", sizes: { "10x16": 6000 } }; own.categories[0][1].push("UTX1");
+  const catOwn = resolve(own, M, LIB);
+  const sOwn = defaults(catOwn); setType(sOwn, "UTX1", catOwn);
+  check(G10, optxList(catOwn, sOwn).some((x) => x.key === "steep-roof"), "a Premium Utility built like the Utility Shed did not get the Steep roof");
+  /* a code that is no building style is named */
+  const typo = copy(readJSON("companies/demo/company.json"));
+  typo.options.extras = [{ key: "steep-roof", name: "Steep roof (7/12)", input: "check", price: 350, built: { roofPitch: 7 }, styles: ["UT", "SUU"] }];
+  const errs = validate(typo, M);
+  check(G10, errs.some((e) => /^options\.extras\[0\]\.styles lists "SUU", which is not a building style\. Did you mean SU\?/.test(e)), J(errs));
 }
 
 /* ---------------------------------------------------------------- report */

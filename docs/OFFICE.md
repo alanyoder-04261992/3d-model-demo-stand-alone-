@@ -163,7 +163,15 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   gable end").
 * **On an option** (Options tab, "Roof pitch at least"): an option like a
   steep roof makes the roof at least that steep when a customer picks it;
-  it never makes a roof flatter.
+  it never makes a roof flatter. "Offered on" picks the buildings it is
+  sold on (every building, or only the ones pressed; a style of the
+  business's own follows the style it is built like); on any other
+  building the 3D designer does not show it, takes it off with one plain
+  line when the customer changes building, and the server refuses it. The
+  example price list starts with **Steep roof (7/12)** on the Utility Shed
+  and Side Utility (Alan's steep A-frame roof, $350 as an example price).
+  History says "Steep roof (7/12) is offered on the Utility Shed and Side
+  Utility".
 * **As it is typed**, a number that cannot be read or is past its limits
   is said under its box ("Roof pitch: write it like 5/12.", "Porch depth
   72 ft is deeper than 8 ft. Did you mean 72 in (6 ft)?") with the red

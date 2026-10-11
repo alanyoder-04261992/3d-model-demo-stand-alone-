@@ -882,14 +882,36 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   /* an extra that makes roofs steeper is drawn on every style it reaches */
   cur = await want(200, "GET", "/api/office/price-list");
   s = clone(cur.settings);
-  s.options.extras = [...(s.options.extras || []), { key: "steep-roof", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 12 } }];
+  s.options.extras = [...(s.options.extras || []), { key: "very-steep", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 12 } }];
   out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "an extra Steep roof at 12/12" });
   const gableNames = Object.keys(cur.settings.offer).filter((k) => manufacturer.styles[cur.settings.offer[k].base || k]?.roof === "gable").map((k) => cur.settings.offer[k].name || manufacturer.styles[cur.settings.offer[k].base || k].name);
   ok(`... is checked on the gable styles (${gableNames.length}) and on no barn`, gableNames.every((n) => out.sizeCheck.checked.includes(n)) && !out.sizeCheck.checked.includes(cur.settings.offer.LB.name || manufacturer.styles.LB.name), JSON.stringify(out.sizeCheck.checked));
   ok("... and History says what it does (\"Steep roof: roof pitch at least 12/12\")", out.changes.includes("Steep roof: roof pitch at least 12/12"), JSON.stringify(out.changes));
   cur = await want(200, "GET", "/api/office/price-list");
-  s = clone(cur.settings); s.options.extras = s.options.extras.filter((x) => x.key !== "steep-roof");
+  s = clone(cur.settings); s.options.extras = s.options.extras.filter((x) => x.key !== "very-steep");
   await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "taking the Steep roof extra off" });
+
+  /* the sample price list's own Steep roof (7/12) is offered on the Utility
+     Shed and Side Utility only; History says where an option is offered */
+  const steep = (templates.full.options.extras || []).find((x) => x.key === "steep-roof");
+  ok("the full example price list starts with Steep roof (7/12) on the Utility Shed and Side Utility", !!steep && same(steep.styles, ["UT", "SU"]) && steep.built?.roofPitch === 7, JSON.stringify(steep));
+  cur = await want(200, "GET", "/api/office/price-list");
+  if (!(cur.settings.options.extras || []).some((x) => x.key === "steep-roof")) {
+    s = clone(cur.settings); s.options.extras = [...(s.options.extras || []), clone(steep)];
+    await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the example Steep roof (7/12) back on the price list" });
+    cur = await want(200, "GET", "/api/office/price-list");
+  }
+  s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT"];
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Steep roof on the Utility Shed only" });
+  const utWords = cur.settings.offer.UT.name || manufacturer.styles.UT.name;
+  ok(`... History says "Steep roof (7/12) is offered on the ${utWords}"`, out.changes.includes(`Steep roof (7/12) is offered on the ${utWords}`) && out.cfg === cur.cfg + 1, JSON.stringify(out.changes));
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT", "SUU"];
+  const typoStyle = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("... a building code that is no style is refused in words", typoStyle.status === 422 && /Steep roof \(7\/12\): pick again which buildings it is offered on\./.test(typoStyle.data.error || ""), `${typoStyle.status} ${typoStyle.data && typoStyle.data.error}`);
+  s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT", "SU"];
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Steep roof on both again" });
+  ok("... and back on both", out.changes.includes(`Steep roof (7/12) is offered on the ${utWords} and ${cur.settings.offer.SU.name || manufacturer.styles.SU.name}`), JSON.stringify(out.changes));
 }
 sectionDone();
 

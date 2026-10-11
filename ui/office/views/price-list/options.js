@@ -163,7 +163,47 @@ function extraRow(x, i) {
       priceSlot,
       h("div", { class: "pl-extra-rm" }, rm)),
     extraPitch(x, i),
+    extraStyles(x, i),
     msgs(`extra:${i}`));
+}
+
+/* Which buildings an option is offered on (options.extras[i].styles): every
+   building, or only the ones pressed -- a Steep roof only on the Utility
+   Shed and Side Utility. A style of the business's own follows the style it
+   is built like. A code the business does not sell today is kept as it is. */
+function extraStyles(x, i) {
+  const offer = S.draft.offer || {};
+  const sold = keysOf(offer).filter((k) => !isObj(offer[k]) || offer[k].base == null);
+  const label = `Offered on, for ${x.name || "this option"}`;
+  const row = h("div", { class: "pl-built-chips", role: "group", "aria-label": label });
+  const chips = [["", "Every building"], ...sold.map((k) => [k, styleName(S.M, k, offer[k])])].map(([k, words]) => {
+    const b = h("button", { type: "button", class: "pl-built-chip", dataset: { field: k ? `extra:${i}:style:${k}` : `extra:${i}:styles` } }, words);
+    b.addEventListener("click", () => {
+      if (!k) delete x.styles;
+      else {
+        const list = Array.isArray(x.styles) ? x.styles.slice() : [];
+        const next = list.includes(k) ? list.filter((c) => c !== k) : [...list, k];
+        if (next.length) x.styles = next; else delete x.styles;
+      }
+      paint();
+      edited();
+    });
+    row.appendChild(b);
+    return [k, b];
+  });
+  function paint() {
+    const list = Array.isArray(x.styles) ? x.styles : null;
+    for (const [k, b] of chips) b.setAttribute("aria-pressed", String(k ? !!list && list.includes(k) : !list));
+  }
+  paint();
+  return h("div", { class: "field pl-extra-built" },
+    h("span", { class: "pl-label" }, "Offered on"), row,
+    h("p", { class: "hint" }, "Every building, or only the ones you press. A Steep roof goes only on the buildings with an A roof."));
+}
+
+/* "the Utility Shed, Side Utility and Garage" */
+function andList(names) {
+  return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
 }
 
 /* How it's built for an option like a steep roof: the roof is at least this
@@ -221,7 +261,9 @@ function sheet(groups) {
       h("ul", { class: "pl-sheet-rows wide" }, extras.map((x) => {
         const kind = EXTRA_KINDS.find((e) => e[0] === x.input);
         const price = x.input === "pct" ? `${x.price}% of the building` : `${money(x.price)}${x.input === "check" ? "" : ` ${kind?.[2] || ""}`}`;
-        return h("li", {}, h("span", { class: "pl-sheet-size" }, x.name), h("span", { class: "pl-sheet-dots", "aria-hidden": "true" }), h("span", { class: "pl-sheet-price" }, price));
+        const only = Array.isArray(x.styles) ? x.styles.filter((k) => S.saved.settings.offer?.[k]).map((k) => styleName(S.M, k, S.saved.settings.offer[k])) : null;
+        const where = !only ? null : only.length ? `Only on the ${andList(only)}` : "Not on any building you sell";
+        return h("li", {}, h("span", { class: "pl-sheet-size" }, x.name, where ? h("small", {}, where) : null), h("span", { class: "pl-sheet-dots", "aria-hidden": "true" }), h("span", { class: "pl-sheet-price" }, price));
       }))));
   }
   return h("div", { class: "pl-tab stack" },
