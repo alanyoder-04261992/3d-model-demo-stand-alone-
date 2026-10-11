@@ -13,11 +13,35 @@
    people who can open that screen. `when: "connected"` is for a Dealer
    Center connected to Barnwright's control room only (a plan, its notes at
    the top, the Barnwright card), `when: "not-connected"` for one that
-   isn't (Alan's own business, the demo); no `when` fits both. Each Dealer
-   Center shows at most 15 (the 15th, Oct 7 2026: putting the Dealer Center
-   on a computer or phone). */
+   isn't (Alan's own business, the demo); no `when` fits both. `terms:
+   "change"` is for a Dealer Center whose Barnwright terms let Barnwright
+   change the price list (2.2 or later, see barnwrightCanChange), `terms:
+   "checks"` for one where Barnwright can only run checks; no `terms` fits
+   both. Each Dealer Center shows at most 15 (the 15th, Oct 7 2026: putting
+   the Dealer Center on a computer or phone). */
 
 export const SUPPORT_EMAIL = "support@barnwrightsoftware.com";
+
+/* Barnwright changes a price list only under the Barnwright Terms and
+   Conditions 2.2 or later (server/office/setup-access.js TERMS_NEEDED):
+   when this Dealer Center ships them, or when the owner has agreed to them.
+   That is the Barnwright card's own rule (setup.termsOut or setup.termsOk),
+   so the answer and the card never disagree. terms: GET me's terms
+   ({version, agreed}), null when the Dealer Center isn't connected. */
+export const CHANGE_TERMS = "2.2";
+export function barnwrightCanChange(terms) {
+  return !!terms && (versionAtLeast(terms.version, CHANGE_TERMS) || versionAtLeast(terms.agreed?.version, CHANGE_TERMS));
+}
+/* "2.2" or later, compared as numbers: server/office/terms.js
+   versionAtLeast, which this screen can't load (check-help keeps them the same) */
+export function versionAtLeast(version, need) {
+  if (typeof version !== "string" || !/^\d{1,4}(\.\d{1,4}){0,3}$/.test(version)) return false;
+  const a = version.split(".").map(Number), b = String(need).split(".").map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) {
+    if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+  }
+  return true;
+}
 
 /* The Help screen's own words (server/office/help.js says the "not
    connected" one too, when someone asks anyway; check-help keeps them equal). */
@@ -159,9 +183,11 @@ export const ANSWERS = Object.freeze([
     link: ["#/orders", "Open the orders"],
   },
   {
-    /* the owner's one Barnwright card (server/office/setup-access.js) */
+    /* the owner's one Barnwright card (server/office/setup-access.js),
+       once the terms let Barnwright change things */
     id: "barnwright",
     when: "connected",
+    terms: "change",
     title: "Let Barnwright change your prices",
     lines: [
       "Only the owner can. Tap **Settings**, then the **Barnwright** card at the bottom.",
@@ -170,6 +196,21 @@ export const ANSWERS = Object.freeze([
       "Every change is listed on the card and in **Price list**, **History**, where **Put this back** undoes it. **Turn off now** stops it at once, and it turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team.",
     ],
     find: "barnwright change prices setup access switch support check diagnostics look problem broken help",
+    link: ["#/settings", "Open Settings"],
+  },
+  {
+    /* the same card before the terms let Barnwright change anything: the
+       card offers Run checks only (its "aren't out yet" line) */
+    id: "barnwright-checks",
+    when: "connected",
+    terms: "checks",
+    title: "Let Barnwright run checks on your Dealer Center",
+    lines: [
+      "Only the owner can. Tap **Settings**, then the **Barnwright** card at the bottom.",
+      "Type what Barnwright should check, pick how long (1 to 24 hours) and tap **Turn on**.",
+      "Barnwright sees how your Dealer Center runs, never your customers, quotes, orders or team, and can't change anything. **Turn off now** stops it at once, and it turns itself off when the time is up.",
+    ],
+    find: "barnwright support check checks diagnostics look problem broken help",
     link: ["#/settings", "Open Settings"],
   },
   {
@@ -219,15 +260,17 @@ export const ANSWERS = Object.freeze([
 ]);
 
 /* The answers for this Dealer Center: connected to Barnwright's control
-   room or not (see `when` above). */
-export function answersFor(connected) {
-  return ANSWERS.filter((a) => !a.when || a.when === (connected ? "connected" : "not-connected"));
+   room or not, and whether its terms let Barnwright change things (see
+   `when` and `terms` above; terms: GET me's terms). */
+export function answersFor(connected, terms = null) {
+  const change = barnwrightCanChange(terms) ? "change" : "checks";
+  return ANSWERS.filter((a) => (!a.when || a.when === (connected ? "connected" : "not-connected")) && (!a.terms || a.terms === change));
 }
 
 /* The answers that match what someone typed (every word, anywhere in an
    answer), in the order above. */
-export function findAnswers(typed, connected = true) {
-  const mine = answersFor(connected);
+export function findAnswers(typed, connected = true, terms = null) {
+  const mine = answersFor(connected, terms);
   const words = String(typed || "").toLowerCase().replace(/[^a-z0-9$ ]+/g, " ").split(/\s+/).filter(Boolean);
   if (!words.length) return mine;
   return mine.filter((a) => {
