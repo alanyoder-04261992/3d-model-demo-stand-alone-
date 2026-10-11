@@ -513,7 +513,7 @@ PARTS = [
         ("The owner's login", [
             "On the owner's computer, open <b>https://(their 3D designer web address)/dealer</b>, for example https://cedar-ridge-sheds." + DOMAIN + "/dealer.",
             "They tap <b>Make your login</b>, type the email from their sign-up and a password, then open the email that comes and tap the link in it.",
-            "They sign in. The first setup asks for their business, has them tick <b>I agree</b> to the terms, makes a starting price list and their first lot.",
+            "They sign in. The first setup asks for their business, has them tick <b>I agree</b> to the terms, and makes their first lot. If Claude already started their price list, it is there, ready; if not, the first setup makes a starting one.",
         ]),
         ("Keep it on their computer and their phone", [
             "<b>Computer</b> (Chrome or Edge): click the <b>Install</b> button at the right end of the address bar, then <b>Install</b>. The Dealer Center gets its own icon on their desktop.",
@@ -1136,7 +1136,7 @@ print("written:", terms_out, terms_json_out, steps_out, welcome_out, questions_o
 if len(sys.argv) == 1:
     PAPERS = [
         ("adding-a-new-customer", "Adding a New Customer", "you", GUIDE_TITLE,
-         "Your steps, from saying hello at their lot to their first quote: the sign-up link, the photos, their Dealer Center, their computer, their other lots and the monthly fee.",
+         "Your steps, from saying hello at their lot to their first quote: the sign-up link, the photos, their Dealer Center, their price list with Claude, their computer, their other lots and the monthly fee.",
          "docs/legal/Barnwright-Adding-a-New-Customer.pdf", "Barnwright Adding a New Customer.pdf"),
         ("welcome-sheet", "Welcome Sheet", "customer", "Welcome Sheet",
          "Give it to the owner when you set up their computer: signing in, putting it on their computer and phone, prices, lots, team, their website and help.",
