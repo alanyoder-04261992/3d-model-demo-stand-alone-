@@ -37,6 +37,10 @@ nobody can look at every size after every change.
 Each building is drawn from the model's own geometry (`openingRect`,
 `gableBandY`, `roofOutline`, `dormerGeom`, `loftZones`, `roomOutline`,
 `porchOutlines`, every framing part's `members(plan)`), never a copy of it.
+Where framing may stand follows the How it's built numbers too: the rake
+past a barn's gable ends is `gableEndOverhangOf(plan)` (not a fixed 0.10 ft)
+and the dormer's box is `dormerGeom(plan)` on the side it stands on (a
+back-side dormer is the door-side one mirrored).
 
 | Check | Problem (fails) | Warning (shown) |
 |---|---|---|

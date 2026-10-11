@@ -16,7 +16,9 @@
      regionOf(plan)                 where framing may be: below y0 inside the
                                     footprint, y0..topY inside the walls (not on
                                     a porch deck), above topY under the roof
-                                    (its overhangs included, the dormer's too)
+                                    (its overhangs included -- a barn's gable
+                                    ends from gableEndOverhangOf -- and the
+                                    dormer's, from dormerGeom on its own side)
      regionProblems(plan, solids)   every corner of every solid outside it
      bearingProblems(solids, supports)  every member that rests on nothing
      skidSolids(plan)               the skids as drawn, which the floor frame rests on
@@ -46,7 +48,8 @@
 import { norm3, sub3, cross3, dot3 } from "../engine/math.js";
 import { y0 } from "../engine/constants.js";
 import { profileYat, ROOF_TH, RAKE_STEP, roofShape, cottageEave } from "./roof-shapes.js";
-import { eaveOverhangs, rakeOverhangOf } from "../parts/roofing.js";
+import { eaveOverhangs, rakeOverhangOf, gableEndOverhangOf } from "../parts/roofing.js";
+import { dormerGeom } from "../parts/roof-frame.js";
 import { skidXs } from "../parts/skids.js";
 import { floorSegments } from "../parts/floor.js";
 import { triangulate, polyArea, porchOutlines, roomOutline, pointInPoly } from "../parts/floor-frame.js";
@@ -263,7 +266,8 @@ export function roofOutline(plan) {
   else if (t.roof === "slope") { ext(P.length - 1, P.length - 2, EO.right); ext(0, 1, EO.left); }
   else if (t.cottage) cottageEave(P, ROOF_TH, roofShape(t, plan.construction).cottageEave);
   else { ext(0, 1, EO.left); ext(P.length - 1, P.length - 2, EO.right); }
-  var ov = t.roof === "gambrel" ? 0.10 + RAKE_STEP : rakeOverhangOf(plan);
+  /* a barn roof's upper panels stand RAKE_STEP past its lower ones */
+  var ov = t.roof === "gambrel" ? gableEndOverhangOf(plan) + RAKE_STEP : rakeOverhangOf(plan);
   /* the lowest the eave reaches: its tip, less a fascia's depth */
   var eaveFloor = Math.min(P[0][1], P[P.length - 1][1]) - EAVE_DROP;
   return { P: P, zMax: plan.L / 2 + ov, eaveFloor: eaveFloor };
@@ -276,16 +280,16 @@ function polylineY(P, x) {
   }
   return P[P.length - 1][1];
 }
-/* The dormer's box, as parts/dormer.js draws it (face, cheeks and its roof). */
+/* The dormer's box, as parts/dormer.js draws it (face, cheeks and its roof),
+   from the drawing's own dormerGeom (parts/roof-frame.js), on the side it
+   stands on: x0..x1 and yAt(x) are in world x (a back-side dormer, side -1,
+   is the door-side one mirrored to -x). */
 export function dormerRegion(plan) {
-  var t = plan.t, st = plan.state;
-  if (!t.dormer || !st.dormer || st.dormer === "none") return null;
-  var prof = plan.prof, W = plan.W, L = plan.L, topY = y0 + t.wallH, half = W / 2;
-  var xF = half - 0.50, yB = profileYat(prof, xF), xI = 0.12, yI = profileYat(prof, xI) + 0.03;
-  var faceH = Math.min(1.95, yI - 0.35 - yB); if (faceH < 1.2) faceH = 1.2;
-  var yT = yB + faceH, m = (yI - yT) / (xF - xI), ovF = 0.30, ovS = 0.26, yF = yT - ovF * m;
-  var D = Math.min(+st.dormer, L - 2), hw = D / 2;
-  return { x0: xI, x1: xF + ovF, zMax: hw + ovS, yAt: function (x) { return yI + (yF - yI) * (x - xI) / ((xF + ovF) - xI) + 0.02; } };
+  var dg = dormerGeom(plan);
+  if (!dg) return null;
+  var a = dg.xI, b = dg.xF + dg.ovF, s = dg.side < 0 ? -1 : 1;
+  function yAt(x) { var u = s * x; return dg.yI + (dg.yF - dg.yI) * (u - a) / (b - a) + 0.02; }
+  return { x0: s > 0 ? a : -b, x1: s > 0 ? b : -a, zMax: dg.hw + dg.ovS, side: s, yAt: yAt };
 }
 
 /* Where framing may stand, as a test of one point. */

@@ -20,9 +20,10 @@
        the shortest under 20 ft long.
     3. Dormer side: a back-side dormer draws every triangle at x < 0, the
        mirror image of the door-side one, and its framing and the cut roof
-       framing are the mirror of the door side's.
+       framing are the mirror of the door side's; the every-size check finds
+       none of its framing outside where framing may stand.
     4. Barn gable-end overhang: 6 in draws the roof 0.4 ft further past each
-       end than today's 0.10 ft.
+       end than today's 0.10 ft, and the every-size check follows it.
     5. Eaves measured level: a 4 in eave on a 5/12 roof ends exactly 4 in
        past the wall.
     6. Barn roof height by width: 48 in on a 10 ft barn draws the peak 4 ft
@@ -59,6 +60,7 @@ import { dormerFrameMembers } from "../parts/dormer-frame.js";
 import { roofDeckMembers } from "../parts/roof-deck.js";
 import { porchRect } from "../ui/blueprint.js";
 import { constructionFor } from "../model/construction.js";
+import { checkStyle } from "../model/style-check.js";
 
 const LIB = readJSON("library/construction.json");
 const M = readManufacturer("standard");
@@ -180,6 +182,11 @@ group("3. dormer side");
     const mid = (hb[0].x0 + hb[0].x1) / 2, deck = roofDeckMembers(back);
     ok(`${z}: ... so the deck is open under the dormer on the back and closed on the door side`, !covers(deck, mid) && covers(deck, -mid));
   }
+  /* the every-size check's "where framing may stand" follows the dormer to
+     the back (model/framing-geometry.js dormerRegion reads dormerGeom) */
+  const all = checkStyle(cat, "DS");
+  const outside = all.problems.filter((f) => f.code === "framing");
+  ok(`the every-size check finds no framing problem on a back-side dormer (${all.buildings} buildings: every size, every dormer)`, all.buildings > 0 && outside.length === 0, outside.slice(0, 2).map((f) => f.words).join(" | "));
 }
 
 /* ------------------------------------------------------------------ 4 */
@@ -193,6 +200,13 @@ group("4. barn gable-end overhang");
   }
   const sec = roofSection(makePlan(stateOf(cat, "LB", "10x16"), cat));
   ok("... and the roof framing follows it", sec && near(sec.ov !== undefined ? sec.ov : 0.5, 0.5), J(sec.ov));
+  /* the every-size check's rake (model/framing-geometry.js roofOutline reads
+     gableEndOverhangOf): the roof deck out past a 6 in end is not "outside" */
+  for (const t of ["LB", "SB"]) {
+    const all = checkStyle(cat, t);
+    const outside = all.problems.filter((f) => f.code === "framing");
+    ok(`${t}: the every-size check finds no framing problem with a 6 in barn gable-end overhang (${all.buildings} buildings)`, all.buildings > 0 && outside.length === 0, outside.slice(0, 2).map((f) => f.words).join(" | "));
+  }
 }
 
 /* ------------------------------------------------------------------ 5 */
