@@ -10,8 +10,9 @@
      * change which websites may show it (embed), the license settings,
        the credit line, or where quotes go (every `leads` key except the
        quote form's boxes, its plan question and its texting words);
-     * change how the buildings are built, except a building style's own
-       numbers in How it's built (offer.<code>.built, which the door's
+     * change how the buildings are built (nor which library style a style
+       of their own is built like, offer.<code>.base), except a building
+       style's own numbers in How it's built (offer.<code>.built, which the door's
        set_built writes, and set_roof_pitch, its short form; checked by
        model/build-settings.js and the
        every-size check like the owner's own): not the construction
@@ -169,7 +170,14 @@ export function lockProblems(old, next, { door = false, mode = "prelive", manufa
   if (routing.some((k) => !same(ol[k], nl[k]))) out.push(LOCK_WORDS.leads);
   const ob = isObj(o.brand) ? o.brand : {}, nb = isObj(n.brand) ? n.brand : {};
   if (!same(ob.credit, nb.credit)) out.push(LOCK_WORDS.credit);
-  if (!same(emptyAsNull(o.construction), emptyAsNull(n.construction))) out.push(LOCK_WORDS.construction);
+  /* which library style a style of their own is built like (offer.<code>.
+     base) is its shape: the Premium Utility re-based on the Lofted Barn is
+     a barn, and the owner's extras pinned to it land on a barn. Only the
+     owner changes it; a new style of their own names its own (review
+     SEC-BUILT-3). */
+  const oo = isObj(o.offer) ? o.offer : {}, no = isObj(n.offer) ? n.offer : {};
+  const rebased = Object.keys(no).some((k) => Object.prototype.hasOwnProperty.call(oo, k) && isObj(oo[k]) && isObj(no[k]) && (oo[k].base ?? null) !== (no[k].base ?? null));
+  if (rebased || !same(emptyAsNull(o.construction), emptyAsNull(n.construction))) out.push(LOCK_WORDS.construction);
   if (!same(emptyAsNull(o.built), emptyAsNull(n.built))) out.push(LOCK_WORDS.built);
   for (const name of extraEffectChanges(o, n)) out.push(LOCK_WORDS.extraConstruction(name));
   const logo = nb.logo ?? "";

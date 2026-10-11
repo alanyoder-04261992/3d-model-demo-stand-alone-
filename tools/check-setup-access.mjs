@@ -2010,6 +2010,43 @@ section("F15 item 4. The lock: an extra that changes how the building is built")
   const pitch = applyEdits(s0, [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }], { manufacturer });
   ok("... while a gable roof's pitch (set_roof_pitch) still passes the lock with the effect extras there", pitch.problems.length === 0 && lockProblems(s0, pitch.settings, { door: true, manufacturer }).length === 0);
 }
+{
+  /* Which library style a style of their own is built like (offer.<code>.base)
+     is its shape: the Premium Utility re-based on the Lofted Barn becomes a
+     barn, and an extra of the owner's pinned to it lands on a barn. Only the
+     owner changes it; a new style of their own still names its own (review
+     SEC-BUILT-3). */
+  const R = await fixtureBusiness();
+  const rb = await R.ownerSave((x) => {
+    x.offer.UT1 = { base: "UT", name: "Premium Utility", sizes: { "10x16": 6000, "12x20": 8000 } }; x.categories[0][1].push("UT1");
+    x.options.extras.push({ key: "jo12", name: "Joists 12 in", input: "check", price: 100, construction: { "floor.spacingIn": 12 }, styles: ["UT1"] });
+  });
+  const rc = cookieFrom(await R.start());
+  const put = async (fn) => {
+    const pl = (await R.visit("GET", "price-list", undefined, rc)).data;
+    const settings = structuredClone(pl.settings);
+    fn(settings);
+    return R.visit("PUT", "price-list", { settings, version: pl.version }, rc);
+  };
+  const rebase = await put((x) => { x.offer.UT1.base = "LB"; });
+  const libBase = await put((x) => { x.offer.G.base = "UT"; });
+  const fresh = await put((x) => { x.offer.LB1 = { base: "LB", name: "Tall Loft Barn", sizes: { "10x16": 6490 } }; x.categories[0][1].push("LB1"); });
+  ok("A4: the visit can't change which building a style of their own is built like, nor make a library style built like another, in the lock's words (old code: allowed); a new style of their own still names its own",
+    rb.status === 200 && rebase.status === 422 && JSON.stringify(rebase.data.problems) === JSON.stringify([LOCK_WORDS.construction])
+    && libBase.status === 422 && (libBase.data.problems || []).includes(LOCK_WORDS.construction) && fresh.status === 200,
+    JSON.stringify([rb.status, rebase.status, rebase.data, libBase.status, libBase.data?.problems, fresh.status]).slice(0, 500));
+  const stored = (await R.store.get("price-list")).settings;
+  const reb = structuredClone(stored); reb.offer.UT1.base = "LB";
+  ok("A4: ... and at the door's lock too, in both modes", ["prelive", "switch"].every((mode) => JSON.stringify(lockProblems(stored, reb, { door: true, mode, manufacturer })) === JSON.stringify([LOCK_WORDS.construction])),
+    JSON.stringify(lockProblems(stored, reb, { door: true, mode: "switch", manufacturer })));
+  /* the owner re-bases it; putting back the copy from before would re-base it again */
+  const own = await R.ownerSave((x) => { x.offer.UT1.base = "LB"; });
+  const ownHist = await R.store.get(`price-list-history/${String((await R.store.get("price-list")).version).padStart(6, "0")}`);
+  const back = await R.visit("POST", "price-list/restore", { version: 2, current: (await R.store.get("price-list")).version }, rc);
+  ok("A4: the owner may (History says \"Premium Utility: now built like the Lofted Barn (was the Utility Shed)\", old code: nothing), and a put back in the visit that would re-base it again is refused by the lock",
+    own.status === 200 && (ownHist?.changes || []).includes("Premium Utility: now built like the Lofted Barn (was the Utility Shed)")
+    && back.status === 422 && JSON.stringify(back.data.problems) === JSON.stringify([LOCK_WORDS.construction]), JSON.stringify([own.status, ownHist?.changes, back.status, back.data]).slice(0, 500));
+}
 section("HB. How it's built through Barnwright's setup access: a building style's own numbers, checked like the owner's");
 {
   const H = await fixtureBusiness();
@@ -2263,4 +2300,4 @@ if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} setup access checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, the construction settings, How it's built for the whole business, an extra that changes how a building is built and a web address logo, and putting back carries them forward, checked like a save, while a building style's own How it's built numbers pass to the owner's own checks and the every-size check (set_roof_pitch writes the style's roof pitch there, and an older rule list reads as the pitch it draws); a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set; set_built writes a building style's own How it's built numbers from a builder's words, only those that apply, checked with How it's built's limits and the every-size check, whose warnings and unchecked sizes come back with the check; read part library gives every library style's numbers now and the standard's; the door takes only a one-use pass made for its exact body from the Control Room's server, reads in parts with no contact details, refuses what the owner's own save refuses, saves exactly what was checked with a copy kept first, saves for Claude only before live, and undoes only Barnwright's last change.`);
+console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, the construction settings, what a style of their own is built like, How it's built for the whole business, an extra that changes how a building is built and a web address logo, and putting back carries them forward, checked like a save, while a building style's own How it's built numbers pass to the owner's own checks and the every-size check (set_roof_pitch writes the style's roof pitch there, and an older rule list reads as the pitch it draws); a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set; set_built writes a building style's own How it's built numbers from a builder's words, only those that apply, checked with How it's built's limits and the every-size check, whose warnings and unchecked sizes come back with the check; read part library gives every library style's numbers now and the standard's; the door takes only a one-use pass made for its exact body from the Control Room's server, reads in parts with no contact details, refuses what the owner's own save refuses, saves exactly what was checked with a copy kept first, saves for Claude only before live, and undoes only Barnwright's last change.`);

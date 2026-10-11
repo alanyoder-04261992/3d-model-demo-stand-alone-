@@ -1437,6 +1437,7 @@ Barnwright save can never be anything an owner's save couldn't be.
 | a building style's own How it's built numbers (`offer.<code>.built`) | yes, through `set_built` (and its short form `set_roof_pitch`), before live and while the switch is on | yes, every number its screen has |
 | How it's built for the whole business (`built`) | never | never |
 | `construction` | never | never (no screen edits it) |
+| which library style a style of their own is built like (`offer.<code>.base`, its shape) | never (a new style of their own names its own, `add_own_style`) | never (the same); History says the owner's: "Premium Utility: now built like the Lofted Barn (was the Utility Shed)" |
 | an extra that changes how the building is built: its construction effect (`options.extras[].construction`), its own How it's built numbers (`options.extras[].built`) and, for such an extra, the buildings it is offered on (`styles`) | never: no new one, no change, no removing an extra that has one | never, the same |
 | `status`, `id`, `manufacturer`, `license`, `embed`, `brand.credit`, every other `leads` key (`mode`, `url`, `email`, `images`) | never | never |
 | `cfg` | worked out by the server | worked out by the server |
@@ -1452,7 +1453,7 @@ Each refusal is one plain sentence:
 | `embed` | Only the owner can change which websites may show the 3D designer. |
 | where quotes go (`leads` other than the three above) | Only the owner can change where quotes go. |
 | `brand.credit` | The 3D designer credit line can't be changed by Barnwright. |
-| `construction` | How the buildings are built can't be changed here, except a building style's own numbers in How it's built. |
+| `construction`, and what a style of their own is built like | How the buildings are built can't be changed here, except a building style's own numbers in How it's built. |
 | `built` (for the whole business) | Only the owner can change How it's built for the whole business. A building style's own numbers can be changed here. |
 | an extra that changes how the building is built | The extra "<name>" changes how the building is built, so only the owner can add it, remove it or change what it builds. |
 | a logo that is a web address | The logo must be a picture uploaded in Settings, Logo, not a web address. |

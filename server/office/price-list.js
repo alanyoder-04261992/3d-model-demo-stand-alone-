@@ -398,6 +398,11 @@ export function describeChanges(before, after, manufacturer, { contact = "full",
     const o = before.offer[k], n = after.offer[k];
     if ((o.name || "") !== (n.name || "")) out.push(`The ${styleName(before, k)} is now called the ${styleName(after, k)}`);
     const name = styleName(after, k);
+    /* which library style a style of their own is built like: its shape */
+    if ((o.base || null) !== (n.base || null)) {
+      const like = (b) => M.styles?.[b]?.name || b;
+      out.push(n.base ? `${name}: now built like the ${like(n.base)}${o.base ? ` (was the ${like(o.base)})` : ""}` : `${name}: no longer built like the ${like(o.base)}`);
+    }
     const os = o.sizes || {}, ns = n.sizes || {};
     for (const z of keys(ns)) {
       if (!(z in os)) out.push(`${name}: added ${fmtSize(z)} at ${fmtMoney(ns[z])}`);
