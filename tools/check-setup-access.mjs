@@ -2085,7 +2085,7 @@ section("HB. How it's built through Barnwright's setup access: a building style'
     t.x.status === 200 && savedLB.settings.offer.LB.built?.wallHeight === 84 && (histLB?.changes || []).includes("Loft Barn wall height: 6 ft 7 1/2 in → 7 ft"), JSON.stringify([t.x.data, histLB?.changes]).slice(0, 400));
   t = await put((s) => { s.offer.UT.built = { wallHeight: 60 }; });
   ok("HB: ... and the every-size check judges it as it does the owner's: a 5 ft Utility Shed wall that no door fits is refused in words, nothing saved",
-    t.x.status === 422 && /Utility Shed 12x20: the 72″ Wooden Double Doors on the front should be 76 1\/2 in tall, but the wall leaves room for/.test((t.x.data.problems || [])[0] || "") && t.after === t.before, JSON.stringify(t.x.data).slice(0, 400));
+    t.x.status === 422 && /Utility Shed 12×20: the 72″ Wooden Double Doors on the front should be 76 1\/2 in tall, but the wall leaves room for/.test((t.x.data.problems || [])[0] || "") && t.after === t.before, JSON.stringify(t.x.data).slice(0, 400));
   t = await put((s) => { s.offer.UT.built = { roofPitch: "5\\12" }; });
   ok("HB: ... and How it's built's own words refuse a number it can't read", t.x.status === 422 && JSON.stringify(t.x.data.problems) === JSON.stringify(["Roof pitch: write it like 5/12."]) && t.after === t.before, JSON.stringify(t.x.data));
   t = await put((s) => { s.built = { roofPitch: { gable: 6 } }; });
@@ -2132,7 +2132,7 @@ section("HB. How it's built through Barnwright's setup access: a building style'
   const pAfter = await P.store.get("price-list");
   ok("HB: a put back in the visit whose own 6 ft 9 in wall doesn't fit the 78 in shop doors the owner set for the whole business since is refused, in the every-size words, nothing saved (old code: saved)",
     p2.status === 200 && p3.status === 200 && mixOwn.status === 422 && px.status === 422
-    && /^Utility Shed \d+x\d+: the 72″ Wooden Double Doors on the front should be 78 in tall, but the wall leaves room for 76 5\/8 in\./.test(px.data.problems?.[0] || "")
+    && /^Utility Shed \d+×\d+: the 72″ Wooden Double Doors on the front should be 78 in tall, but the wall leaves room for 76 5\/8 in\./.test(px.data.problems?.[0] || "")
     && pAfter.version === 3 && JSON.stringify(pAfter.settings) === JSON.stringify(kept.settings), JSON.stringify([p2.status, p3.status, mixOwn.status, px.status, px.data]).slice(0, 500));
   /* the strict half: a style's own barn height joined with a business-wide one set since */
   const Q = await fixtureBusiness();
@@ -2156,7 +2156,7 @@ section("HB. How it's built through Barnwright's setup access: a building style'
   ok("HB: ... while what the copy put back had already (kept that way) still goes back, the every-size words said, and the website list kept as now",
     r2.status === 200 && r3.status === 200 && rx.status === 200 && rAfter.version === 4 && rAfter.settings.offer.UT.built?.wallHeight === 81
     && JSON.stringify(rAfter.settings.embed) === JSON.stringify({ origins: ["https://testingsheds.example"] })
-    && /^Utility Shed \d+x\d+: the 72″ Wooden Double Doors on the front should be 78 in tall/.test(rx.data.sizeCheck?.problems?.[0] || ""), JSON.stringify([r2.status, r3.status, rx.status, rx.data]).slice(0, 500));
+    && /^Utility Shed \d+×\d+: the 72″ Wooden Double Doors on the front should be 78 in tall/.test(rx.data.sizeCheck?.problems?.[0] || ""), JSON.stringify([r2.status, r3.status, rx.status, rx.data]).slice(0, 500));
   /* the owner's own put back takes the whole copy, its numbers for the whole business too, so it builds */
   const ownBack = await P.call("POST", "/api/office/price-list/restore", { version: 2, current: (await P.store.get("price-list")).version }, { as: "pat" });
   ok("HB: (the owner's own put back of that copy takes it whole, the business-wide door height too, and goes back as before)",
@@ -2205,7 +2205,7 @@ section("SB. set_built: a building style's own numbers in How it's built, in a b
   /* the every-size result in the check answer: what it warns, and what it had no time for */
   /* (set_roof_pitch, set_built's short form, so the old code can be asked too) */
   const w = await D2.door({ action: "check", version: 2, edits: [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }] });
-  const gw = (w.data.warnings || []).filter((x) => /^Utility Shed 12x20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof\./.test(x));
+  const gw = (w.data.warnings || []).filter((x) => /^Utility Shed 12×20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof\./.test(x));
   ok("SB: the door's check answer carries the every-size check's warnings in plain words, counted (old code: warnings [])",
     w.status === 200 && gw.length === 1 && w.data.counts?.warnings === w.data.warnings?.length, JSON.stringify(w.data.warnings));
   const H2 = await fixtureBusiness(FX.edits.baseSettings, { sizeCheckMs: 0 });
@@ -2216,7 +2216,7 @@ section("SB. set_built: a building style's own numbers in How it's built, in a b
     hurried.status === 200 && later.length === 1 && hs.status === 200 && hs.data.version === 2, JSON.stringify([hurried.data.warnings, hs.data]).slice(0, 500));
   const low = await D2.door({ action: "check", version: 2, edits: [{ do: "set_built", style: "UT", wallHeight: "5 ft" }] });
   ok("SB: what the every-size check finds refuses the change, in its own words (422 problems), nothing saved",
-    low.status === 422 && low.data.code === "problems" && /^Utility Shed 12x20: the 72″ Wooden Double Doors on the front should be 80 in tall, but the wall leaves room for/.test(low.data.problems?.[0] || "")
+    low.status === 422 && low.data.code === "problems" && /^Utility Shed 12×20: the 72″ Wooden Double Doors on the front should be 80 in tall, but the wall leaves room for/.test(low.data.problems?.[0] || "")
     && (await D2.store.get("price-list")).version === 2, JSON.stringify(low.data).slice(0, 400));
 
   /* an extra of the owner's whose roof pitch only counts when steeper: a

@@ -58,7 +58,9 @@ export function porchLen(v) {
   return Number.isInteger(n) && n >= 4 && n <= 20 ? n : 12;
 }
 /* "4 ft x 8 ft" */
-function porchWords(t, len) { return `${fmtFt(porchDepthOf(t))} x ${fmtFt(len)}`; }
+/* a size the way a person reads it: "10x16" -> "10×16", "4 ft × 8 ft" */
+function times(z) { return String(z).replace("x", "×"); }
+function porchWords(t, len) { return `${fmtFt(porchDepthOf(t))} × ${fmtFt(len)}`; }
 function fmtFt(ft) {
   const i = Math.round(ft * 12), f = Math.floor(i / 12), r = i - f * 12;
   return r ? (f ? `${f} ft ${r} in` : `${r} in`) : `${f} ft`;
@@ -275,7 +277,7 @@ export function toState(design, cat) {
   if (size) s.size = size;
   setType(s, type, cat);
   let asSaved = type === d.type && size === d.size && d.company === cat.id && d.cfg === cat.cfg;
-  if (size && s.size !== size) { warnings.push(`The ${size} size of the ${cat.TYPES[type].name} is no longer sold; showing the ${s.size} instead.`); asSaved = false; }
+  if (size && s.size !== size) { warnings.push(`The ${times(size)} size of the ${cat.TYPES[type].name} is no longer sold; showing the ${times(s.size)} instead.`); asSaved = false; }
   else if (size) setSize(s, size, cat);
 
   const C = d.colors || {};

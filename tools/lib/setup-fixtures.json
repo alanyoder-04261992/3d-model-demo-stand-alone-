@@ -5313,7 +5313,7 @@
             "Utility Shed roof pitch: 5/12 → 6/12"
           ],
           "warnings": [
-            "Utility Shed 12x20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 12x24 and 12x16."
+            "Utility Shed 12×20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 12×24 and 12×16."
           ],
           "contactDetailsChange": false,
           "newCodes": {},
@@ -5351,7 +5351,7 @@
             "Utility Shed roof pitch: 5/12 → 6/12 (and Premium Utility, built like it)"
           ],
           "warnings": [
-            "Utility Shed 12x20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 12x24 and 12x16."
+            "Utility Shed 12×20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 12×24 and 12×16."
           ],
           "contactDetailsChange": false,
           "newCodes": {
@@ -5472,7 +5472,7 @@
             "Utility Shed wooden shop door height: 76 1/2 in → 80 in"
           ],
           "warnings": [
-            "Utility Shed 12x20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 12x24 and 12x16."
+            "Utility Shed 12×20: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 12×24 and 12×16."
           ],
           "contactDetailsChange": false,
           "newCodes": {},
@@ -7308,9 +7308,9 @@
           "ok": false,
           "code": "problems",
           "problems": [
-            "Utility Shed 12x20: the 72″ Wooden Double Doors on the front should be 76 1/2 in tall, but the wall leaves room for 55 5/8 in. The same at 8x12, 12x24 and 3 more.",
-            "Utility Shed 12x20: the roof edge over the left side is only 4 ft 10 3/8 in above the floor (6 ft at least). The same at 8x12, 12x24 and 3 more.",
-            "Utility Shed 12x20: the roof edge over the right side is only 4 ft 10 3/8 in above the floor (6 ft at least). The same at 8x12, 12x24 and 3 more."
+            "Utility Shed 12×20: the 72″ Wooden Double Doors on the front should be 76 1/2 in tall, but the wall leaves room for 55 5/8 in. The same at 8×12, 12×24 and 3 more.",
+            "Utility Shed 12×20: the roof edge over the left side is only 4 ft 10 3/8 in above the floor (6 ft at least). The same at 8×12, 12×24 and 3 more.",
+            "Utility Shed 12×20: the roof edge over the right side is only 4 ft 10 3/8 in above the floor (6 ft at least). The same at 8×12, 12×24 and 3 more."
           ]
         }
       },
@@ -7824,7 +7824,7 @@
             ],
             "warnings": [
               "Steeper roof does not change the Utility Shed (its roof is already 8/12). A customer would pay for nothing there.",
-              "Utility Shed 10x12: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 10x16."
+              "Utility Shed 10×12: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 10×16."
             ],
             "contactDetailsChange": false,
             "newCodes": {},

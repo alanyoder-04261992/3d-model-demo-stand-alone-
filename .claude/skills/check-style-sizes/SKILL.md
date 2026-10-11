@@ -60,7 +60,7 @@ back-side dormer is the door-side one mirrored).
 | `framing` | a framing part that cannot be worked out; a piece where framing may not stand; two pieces overlapping by over 0.01 ft; a piece resting on nothing | |
 | `loft` | under 24 in from the loft floor to the roof framing at the middle | under 36 in |
 
-Every line starts with the building ("Side Utility 8x12: ...") and says the
+Every line starts with the building ("Side Utility 8×12: ...") and says the
 measurement the way a shed builder does (`lengthWords`: 2 3/8 in, 4 ft 3 in).
 
 ## Reading the report

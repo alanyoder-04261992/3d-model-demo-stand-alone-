@@ -207,7 +207,7 @@ export function applyPrices(company, parsed, manufacturer, opts) {
     const zs = Object.keys(c.offer[c.defaults.style].sizes || {});
     if (c.defaults.size && zs.indexOf(c.defaults.size) < 0 && zs.length) {
       const nz = zs[Math.floor((zs.length - 1) / 2)];
-      changes.push(`the starting building's size ${c.defaults.size} is no longer sold, so a new visitor now starts on ${nz}`);
+      changes.push(`the starting building's size ${String(c.defaults.size).replace("x", "×")} is no longer sold, so a new visitor now starts on ${String(nz).replace("x", "×")}`);
       c.defaults.size = nz;
     }
   }

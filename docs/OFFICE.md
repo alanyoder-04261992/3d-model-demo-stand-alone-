@@ -203,7 +203,7 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   time and gives the page back in between, so a style with many sizes never
   freezes the page. What the same building has with the standard numbers,
   no worse, never stops a save; it is listed under "Already so in the
-  standard building:" ("Side Utility 8x12: the 72″ Wooden Double Doors and
+  standard building:" ("Side Utility 8×12: the 72″ Wooden Double Doors and
   the 2×3 Window on the right side overlap by 2 3/8 in.").
 * **On save** the server does the same for every style whose numbers
   changed, each also with every option that changes how it is built
@@ -1283,7 +1283,7 @@ dealer's building match the photos: its roof, its walls, its doors.
   standard) would be lower than the 10 ft wide barn (5 ft). Type a height
   for the 12 ft wide barn too.") and the every-size check
   (`server/office/built-check.js`): what the new numbers cause at some
-  size refuses the change in its words ("Utility Shed 12x20: the 72″
+  size refuses the change in its words ("Utility Shed 12×20: the 72″
   Wooden Double Doors on the front should be 76 1/2 in tall, but the wall
   leaves room for 55 5/8 in. ..."); what it finds that still builds, and
   the sizes it had no time for, come back as warnings (see Warnings).
@@ -1418,9 +1418,9 @@ are for Alan to read before he says yes. In this order:
    changed nothing on before isn't said again.
 10. What the every-size check of How it's built finds that still builds,
    when a building style's own numbers change (`set_built`,
-   `set_roof_pitch`): "Utility Shed 12x20: even set as low as it goes, right
+   `set_roof_pitch`): "Utility Shed 12×20: even set as low as it goes, right
    under the peak, the 18×24 Gable Window's trim runs into the roof. The
-   same at 12x24 and 12x16." (What it finds that doesn't build refuses the
+   same at 12×24 and 12×16." (What it finds that doesn't build refuses the
    change instead, 422 `problems`.)
 11. The sizes the every-size check had no time for (about 3 seconds):
    "Not checked yet: 14 sizes of the Lofted Barn. To check the rest, tap
@@ -1516,7 +1516,7 @@ What it carries forward makes a price list nobody saved before (the copy's
 own wall height with the door height set for the whole business since), so
 it is checked like a save: what How it's built's own rules or the every-size
 check find that neither the copy as it was kept nor the price list in use
-already had refuses it, in their words ("Utility Shed 10x20: the 72″
+already had refuses it, in their words ("Utility Shed 10×20: the 72″
 Wooden Double Doors on the front should be 78 in tall, but the wall leaves
 room for 76 5/8 in. ..."), and nothing is saved. What the copy already had
 goes back with it, said.

@@ -182,7 +182,7 @@ try {
   await page.waitForSelector('[data-built="SU"] .pl-built-box', { timeout: 30000 });
   const suSaid = await page.textContent('[data-built="SU"] .pl-built-result');
   ok("Check every size on the Side Utility says everything fits and lists what the standard building has too",
-    /Everything fits: 11 buildings drawn\./.test(suSaid) && /Already so in the standard building:/.test(suSaid) && /Side Utility 8x12: the 72″ Wooden Double Doors and the 2×3 Window on the right side overlap by 2 3\/8 in\./.test(suSaid) && !/not yours to fix/.test(suSaid), suSaid.slice(0, 300));
+    /Everything fits: 11 buildings drawn\./.test(suSaid) && /Already so in the standard building:/.test(suSaid) && /Side Utility 8×12: the 72″ Wooden Double Doors and the 2×3 Window on the right side overlap by 2 3\/8 in\./.test(suSaid) && !/not yours to fix/.test(suSaid), suSaid.slice(0, 300));
   await typeIn(page, "built:UT:wallHeight", "60");
   ok("a bare 60 in the wall height box reads as inches: 5 ft", (await page.inputValue('[data-field="built:UT:wallHeight"]')) === "5 ft");
   await page.click('[data-built="UT"] .pl-built-check button');

@@ -40,7 +40,7 @@
    building has too is counted, never shown as the owner's. */
 
 import * as BUILT from "./build-settings.js";
-import { checkStyle, checkBuilding, variantsOf, orderSizes, amountWords, AMOUNT_SLACK_IN } from "./style-check.js";
+import { checkStyle, checkBuilding, variantsOf, orderSizes, amountWords, sizeWords, AMOUNT_SLACK_IN } from "./style-check.js";
 import { defaults, setType } from "./design.js";
 import { frameOf } from "./frame.js";
 import { makePlan } from "./plan.js";
@@ -322,7 +322,7 @@ export function checkJobs(cat, std, jobs, { budgetMs = Infinity } = {}) {
     const j = jobs[step.job], r0 = res[step.job];
     const left = budgetMs - (now() - t0);
     if (left <= 0) {
-      for (const z of step.sizes) r0.unchecked.push({ size: z, variant: "", words: `${r0.name} ${z}` });
+      for (const z of step.sizes) r0.unchecked.push({ size: z, variant: "", words: `${r0.name} ${sizeWords(z)}` });
       continue;
     }
     const r = checkAgainstStandard(cat, std, j.key, { sizes: step.sizes, extra: j.extra, budgetMs: left, widths: step.first });
@@ -353,15 +353,15 @@ export async function checkInSteps(cat, std, key, { extra = null, pause = null }
   return all;
 }
 
-/* "8x12" sizes in a sentence: "8x12, 10x12 and 3 more" */
+/* sizes in a sentence, as a person reads them: "8×12, 10×12 and 3 more" */
 function sizeList(sizes) {
   const list = [...new Set(sizes)];
   if (list.length <= 3) return list.length < 2 ? list.join("") : list.slice(0, -1).join(", ") + " and " + list[list.length - 1];
   return list.slice(0, 2).join(", ") + ` and ${list.length - 2} more`;
 }
-/* The size a finding is about, read off its words ("Utility Shed 10x20: ..."). */
+/* The size a finding is about, read off its words ("Utility Shed 10×20: ..."). */
 function sizeOf(f, name) {
-  const m = new RegExp("^" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + " (\\d+x\\d+)").exec(f.words);
+  const m = new RegExp("^" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + " (\\d+×\\d+)").exec(f.words);
   return m ? m[1] : null;
 }
 

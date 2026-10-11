@@ -708,7 +708,7 @@ const BROKEN = [
   ["a side porch as long as the building", (s) => { s.offer.SC.built = { sidePorchLengths: [12, 20] }; }, /Side porch lengths: 20 ft is as long as the 10x20 .+\. Leave at least 4 ft of side wall beside the porch\./],
   /* a fault the standard building has a little of, made worse (review
      GL-4, F6): the business's, said with the standard's amount */
-  ["a 3 in eave that makes the Lofted Barn Garage's door head worse", (s) => { s.offer.LBG.built = { eaveOverhang: 3 }; }, /\d+x\d+: the roof edge hangs 2 3\/8 in in front of the head of the 36″ In-Swing Door on the right side\. With the standard numbers it is 5\/8 in\./],
+  ["a 3 in eave that makes the Lofted Barn Garage's door head worse", (s) => { s.offer.LBG.built = { eaveOverhang: 3 }; }, /\d+×\d+: the roof edge hangs 2 3\/8 in in front of the head of the 36″ In-Swing Door on the right side\. With the standard numbers it is 5\/8 in\./],
   ["a size too short for the side porch", (s) => { s.offer.SC.sizes["10x8"] = 4000; }, /The 10x8 .+ is too short for its 8 ft side porch: sell it 12 ft long and up, or set a shorter side porch length\./],
   ["an extra with a construction setting misspelled", (s) => { s.options.extras = [{ key: "joists", name: "Close joists", input: "check", price: 1, construction: { "floor.spacingInn": 12 } }]; }, /Close joists: "spacingInn" is not a construction setting\. Did you mean spacingIn\?/],
   /* which setting is wrong is named in words (review F8): never "one of its
@@ -879,7 +879,7 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   const low = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
   ok("a 5 ft Utility Shed wall under its 76 1/2 in shop door is refused (422)", low.status === 422, `${low.status} ${low.text.slice(0, 200)}`);
   ok("... with the door words, at the size the designer opens on and the others",
-    new RegExp(`${utName} \\d+x\\d+: the 72″ Wooden Double Doors on the front should be 76 1/2 in tall, but the wall leaves room for 55 5/8 in\\. The same at .+ more\\.`).test(low.data.error || ""), low.data.error);
+    new RegExp(`${utName} \\d+×\\d+: the 72″ Wooden Double Doors on the front should be 76 1/2 in tall, but the wall leaves room for 55 5/8 in\\. The same at .+ more\\.`).test(low.data.error || ""), low.data.error);
   /* (the shop standard's 5/12 roof with its 4 in eave measured level) */
   ok("... and the roof edge too low to walk under", /the roof edge over the left side is only 4 ft 10 3\/8 in above the floor \(6 ft at least\)/.test(low.data.error || ""), low.data.error);
   ok("... every line in the owner's words, never a settings path", Array.isArray(low.data.problems) && low.data.problems.length >= 2 && low.data.problems.every((p) => !PATHS.test(p) && !/[{}]/.test(p)), JSON.stringify(low.data.problems));
@@ -929,6 +929,15 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
     const whole = BC.summarize([BC.checkAgainstStandard(catL, stdL, "LB", {})]);
     const stepped = BC.summarize([await BC.checkInSteps(catL, stdL, "LB", { pause: () => Promise.resolve() })]);
     ok("... Check every size a size at a time (the page never freezes) says what the whole style at once says", whole.problems.length > 0 && JSON.stringify(whole) === JSON.stringify(stepped), JSON.stringify([whole.problems.slice(0, 2), stepped.problems.slice(0, 2)]));
+    /* a size a person reads is written 10×16 everywhere: the end-to-end walk
+       saw "12x16" in the every-size check beside "10×16" in the change lines
+       and History. The size itself stays the key ("10x16"). */
+    const said = [...whole.problems, ...whole.warnings, ...whole.alreadyWords];
+    const late = BC.checkJobs(catL, stdL, [{ key: "LB" }], { budgetMs: 0 })[0].unchecked;
+    ok("... every size in the every-size check's words is written 10×16, the way the change lines and History write it, never 10x16",
+      said.length > 0 && said.every((l) => !/\d+x\d+/.test(l)) && said.some((l) => /^.+ \d+×\d+: /.test(l)) && /The same at \d+×\d+/.test(said.join(" "))
+        && late.length > 0 && late.every((u) => /^.+ \d+×\d+$/.test(u.words) && /^\d+x\d+$/.test(u.size)),
+      JSON.stringify([said.slice(0, 2), late.slice(0, 2)]));
     /* an owner's extra that changes only the floor framing (Heavy-duty
        floor: joists every 12 in) changes nothing the low wall's problems are
        about: each is said once, not again "... and Heavy-duty floor: ..."
@@ -1014,7 +1023,7 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   s = clone(cur.settings); s.offer.SU.built = { wallHeight: 85, eaveOverhang: 12 };
   const withSteep = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
   ok("a Side Utility wall that fits alone but not under the Steep roof is refused (422)", withSteep.status === 422, `${withSteep.status} ${JSON.stringify(withSteep.data?.sizeCheck || withSteep.data?.error).slice(0, 300)}`);
-  ok("... with the size and the extra named: \"... with Steep roof: the roof edge hangs ...\"", new RegExp(`${suName} \\d+x\\d+ with Steep roof: the roof edge hangs .+ in front of the head of the 72″ Wooden Double Doors on the right side\\.`).test(withSteep.data?.error || ""), withSteep.data?.error);
+  ok("... with the size and the extra named: \"... with Steep roof: the roof edge hangs ...\"", new RegExp(`${suName} \\d+×\\d+ with Steep roof: the roof edge hangs .+ in front of the head of the 72″ Wooden Double Doors on the right side\\.`).test(withSteep.data?.error || ""), withSteep.data?.error);
   /* an extra with numbers that newly reaches a style, though its numbers did
      not change: a Tall door extra on the Utility Shed, then on the Lofted
      Barn too, then the Lofted Barn stopped and sold again */
@@ -1026,7 +1035,7 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   cur = await want(200, "GET", "/api/office/price-list");
   s = clone(cur.settings); s.options.extras.find((x) => x.key === "tall-door").styles = ["UT", "LB"];
   const widened = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
-  ok("... offered on the Lofted Barn too, with its numbers unchanged: refused, the door does not fit its walls", widened.status === 422 && new RegExp(`${lbName} \\d+x\\d+ with Tall door: the .+ should be 84 in tall, but the wall leaves room for`).test(widened.data?.error || ""), `${widened.status} ${widened.data?.error}`);
+  ok("... offered on the Lofted Barn too, with its numbers unchanged: refused, the door does not fit its walls", widened.status === 422 && new RegExp(`${lbName} \\d+×\\d+ with Tall door: the .+ should be 84 in tall, but the wall leaves room for`).test(widened.data?.error || ""), `${widened.status} ${widened.data?.error}`);
   /* the Side Lofted Barn listed while it is not sold, then sold again */
   const slbName = cur.settings.offer.SLB.name || manufacturer.styles.SLB.name;
   const slbOffer = clone(cur.settings.offer.SLB), cats = clone(cur.settings.categories);
@@ -1036,7 +1045,7 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   cur = await want(200, "GET", "/api/office/price-list");
   s = clone(cur.settings); s.offer.SLB = slbOffer; s.categories = cats;
   const resold = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
-  ok("... selling the Side Lofted Barn again draws it with the Tall door on: refused", resold.status === 422 && new RegExp(`${slbName} \\d+x\\d+ with Tall door: the .+ should be 84 in tall`).test(resold.data?.error || ""), `${resold.status} ${resold.data?.error}`);
+  ok("... selling the Side Lofted Barn again draws it with the Tall door on: refused", resold.status === 422 && new RegExp(`${slbName} \\d+×\\d+ with Tall door: the .+ should be 84 in tall`).test(resold.data?.error || ""), `${resold.status} ${resold.data?.error}`);
   s.options.extras = s.options.extras.filter((x) => x.key !== "tall-door");
   await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Side Lofted Barn sold again, without the Tall door" });
   /* a roof number no How it's built setting owns: limited, and drawn */
@@ -1051,7 +1060,7 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   if (csName) {
     s = clone(cur.settings); s.construction = { roof: { shapes: { salt: { rise: { w: 0.05 } } } } };
     const flatSalt = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
-    ok("... and a saltbox too low to draw (inside the limits) is drawn on the cottages and refused", flatSalt.status === 422 && new RegExp(`${csName} \\d+x\\d+: the roof peak is only .+ above the wall \\(1 ft at least\\)`).test(flatSalt.data?.error || ""), `${flatSalt.status} ${flatSalt.data?.error}`);
+    ok("... and a saltbox too low to draw (inside the limits) is drawn on the cottages and refused", flatSalt.status === 422 && new RegExp(`${csName} \\d+×\\d+: the roof peak is only .+ above the wall \\(1 ft at least\\)`).test(flatSalt.data?.error || ""), `${flatSalt.status} ${flatSalt.data?.error}`);
   }
 }
 sectionDone();

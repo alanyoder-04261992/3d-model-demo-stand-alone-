@@ -22,7 +22,7 @@
      lengthWords(ft)             "2 3/8 in", "4 ft 3 in" (a shed builder's words)
 
    A FINDING is {code, id, words, detail, where}. `words` starts with the
-   building ("Side Utility 8x12: ..."), `detail` is the same without it,
+   building ("Side Utility 8×12: ..."), `detail` is the same without it,
    `id` is code + a stable name for what was found ("overlap:R:w23/w72"),
    which is what test/style-sizes-known.json matches. A PROBLEM blocks (the
    tools check fails, a save is refused); a WARNING is shown only.
@@ -518,10 +518,15 @@ function checkLoft(plan, add) {
      allGableItems  true: try every gable item even where the designer would
                     not offer it (the fixtures that prove the check)
      framing        false: skip the framing (the slowest part, ~8 ms) */
+/* A size the way a person reads it, as the Dealer Center's change lines
+   and History write it: "10x16" -> "10×16". The size itself ("10x16") stays
+   the key everywhere else (the known list, the price list). */
+export const sizeWords = (z) => String(z).replace("x", "×");
+
 export function checkBuilding(plan, opts) {
   opts = opts || {};
   const t0 = now();
-  const label = opts.label || (plan.t.name + " " + plan.state.size);
+  const label = opts.label || (plan.t.name + " " + sizeWords(plan.state.size));
   const out = { problems: [], warnings: [], ms: 0 };
   function add(level, code, id, detail, where, amount) {
     (level === "problem" ? out.problems : out.warnings).push(finding(code, id, label + ": ", detail, where, amount));
@@ -671,7 +676,7 @@ export function checkStyle(cat, key, opts) {
     const seen = new Set();
     let first = true;
     for (const v of variants) {
-      const label = t.name + " " + z + (v.words ? " " + v.words : "");
+      const label = t.name + " " + sizeWords(z) + (v.words ? " " + v.words : "");
       const st = structuredClone(base);
       st.size = z;
       Object.assign(st, v.set);

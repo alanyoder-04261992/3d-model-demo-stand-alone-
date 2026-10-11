@@ -206,7 +206,7 @@ for (const [name, cat] of [["Barnwright", BW], ["demo", DEMO], ["Barnwright + ex
   const base = fromState(defaults(DEMO), DEMO);
   const cases = [
     ["a style no longer offered", (d) => { d.type = "ZZ"; }, "ZZ"],
-    ["a size no longer sold", (d) => { d.size = "99x99"; }, "99x99"],
+    ["a size no longer sold", (d) => { d.size = "99x99"; }, "99×99"],
     ["an item no longer offered", (d) => { d.items.push({ cat: "zz9", wall: "F", pos: 1 }); }, "zz9"],
     ["an item on a wall the building lacks", (d) => { d.items.push({ cat: "w23", wall: "S1", pos: 1 }); }, "\"S1\""],
     ["a colour no longer offered", (d) => { d.colors.body = "Nope Blue"; }, "Nope Blue"],
@@ -217,6 +217,13 @@ for (const [name, cat] of [["Barnwright", BW], ["demo", DEMO], ["Barnwright + ex
     ["another company's design", (d) => { d.company = "acme"; }, "acme"],
     ["an older price list", (d) => { d.cfg = 99; }, "changed since"],
   ];
+  /* a size a person reads is written 10×16, the way the Dealer Center's
+     change lines and History write it; the design keeps "10x16" */
+  {
+    const d = copy(base); d.size = "99x99";
+    const { state, warnings } = toState(d, DEMO);
+    check("a size in the words is written 99×99 and 10×20, never 99x99", warnings.includes(`The 99×99 size of the ${DEMO.TYPES[state.type].name} is no longer sold; showing the ${state.size.replace("x", "×")} instead.`) && /^\d+x\d+$/.test(state.size), J(warnings));
+  }
   for (const [what, mutate, word] of cases) {
     const d = copy(base); mutate(d);
     const { state, warnings } = toState(d, DEMO);
@@ -332,7 +339,7 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   const catS = resolve(sp, M, LIB);
   const s4 = defaults(catS); setType(s4, "SC", catS); s4.size = "10x16"; s4.pLen = 12; resetItems(s4, frameOf(s4, catS), catS);
   const ch4 = normalize(s4, frameOf(s4, catS), catS);
-  if (check("normalize switches off what is not offered", s4.pLen === 8 && ch4.some((c) => c === "The side porch is 4 ft x 8 ft on a building under 20 ft long."), `a 10x16 side cabin kept a ${s4.pLen} ft porch: ${J(ch4)}`)) porch++;
+  if (check("normalize switches off what is not offered", s4.pLen === 8 && ch4.some((c) => c === "The side porch is 4 ft × 8 ft on a building under 20 ft long."), `a 10x16 side cabin kept a ${s4.pLen} ft porch: ${J(ch4)}`)) porch++;
   const s5 = defaults(catS); setType(s5, "SC", catS); s5.size = "10x20"; s5.pLen = 12;
   check("normalize switches off what is not offered", normalize(s5, frameOf(s5, catS), catS).length === 0 && s5.pLen === 12, "a 20 ft side cabin lost its 12 ft porch");
   counts["normalize switches off what is not offered"].note = `${untouched} Barnwright designs untouched, ${porch} short side porch made 4x8`;
@@ -365,13 +372,13 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   const s12 = defaults(DEMO); setType(s12, "SC", DEMO); s12.size = "12x24"; s12.pLen = 12; resetItems(s12, frameOf(s12, DEMO), DEMO);
   const old = fromState(s12, DEMO); old.cfg = c1014.cfg;
   const r = toState(old, c1014);
-  check(G8, r.state.pLen === 14 && frameOf(r.state, c1014).span.P === 14 && r.warnings.length === 1 && /^The side porch is now 4 ft x 14 ft; its windows were set back to the standard ones\.$/.test(r.warnings[0]),
+  check(G8, r.state.pLen === 14 && frameOf(r.state, c1014).span.P === 14 && r.warnings.length === 1 && /^The side porch is now 4 ft × 14 ft; its windows were set back to the standard ones\.$/.test(r.warnings[0]),
     `an old 12 ft link on a 10/14 style: ${r.state.pLen}, ${J(r.warnings)}`);
   /* the porch-snap case: a 12x24 Side Cabin saved at 12 ft, the porch now 8 ft only */
   const c8 = mk([8]);
   const fixed = fromState(s12, DEMO); fixed.cfg = c8.cfg; fixed.company = c8.id;
   const re = toState(fixed, c8);
-  check(G8, re.state.pLen === 8 && re.warnings.length === 1 && /4 ft x 8 ft/.test(re.warnings[0]), `reopened: ${re.state.pLen} ${J(re.warnings)}`);
+  check(G8, re.state.pLen === 8 && re.warnings.length === 1 && /4 ft × 8 ft/.test(re.warnings[0]), `reopened: ${re.state.pLen} ${J(re.warnings)}`);
   const resaved = fromState(re.state, c8);
   let priced = null, err = null;
   try { priced = priceDesign(resaved, c8); } catch (e) { err = e; }
