@@ -864,7 +864,8 @@ and then, the log).
   price list exists the current version is 0: the edits are tried on the
   starting price list (see "Before the owner first signs in").
 * `edits`: 1 to 300 (below); with `version: 0`, 0 to 300 (`[]` or left
-  out: the starting price list alone). Each is tried in order on a copy of
+  out: the starting price list alone). The version is checked first, so a
+  version that isn't the current one is 409 `version` whatever the edits. Each is tried in order on a copy of
   the current settings; a later edit sees the earlier ones. Every problem
   is listed, `"Edit 3: ..."`, and nothing is saved.
 * Then the lock, then the very same `check()` the owner's save uses.
@@ -1530,7 +1531,7 @@ access is `prelive`:
   Center that has never checked in (the check-in right after its deploy
   didn't come and nobody has opened it) checks in once first.
 * Any other version: 409 `version`. Once a price list exists, `version: 0`
-  is 409 `version` too.
+  is 409 `version` too, with edits or with none.
 * `undo`: nothing to undo (409 `cant-undo`). At the starting price list
   itself (version 1, made this way), undo says "This is the starting price
   list Barnwright set up, so there is nothing before it to put back." and

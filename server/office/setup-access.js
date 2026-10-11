@@ -800,6 +800,9 @@ export function createSetupAccess({
     const version = data.version;
     if (!Number.isSafeInteger(version)) throw doorNo(400, "bad-request", BAD_REQUEST);
     if (version !== current.version) throw doorNo(409, "version", DOOR_WORDS.version);
+    /* the edits only once the version is right: a version 0 sent after a
+       price list appeared is someone saving first (409), not the edits */
+    if (!undo) editsOk(v, data);
     let settings, newCodes = {}, edits = 0, lead = null;
     if (undo) {
       if (data.edits !== undefined) throw doorNo(400, "bad-request", BAD_REQUEST);
@@ -879,7 +882,6 @@ export function createSetupAccess({
     if (action === "check") {
       const undo = data.undo === true;
       if (data.undo !== undefined && !undo) throw doorNo(400, "bad-request", BAD_REQUEST);
-      if (!undo) editsOk(v, data);
       const p = await plan(v, data, undo, start);
       /* the undo's first line ("Put back the price list from before ...") says what this is; it isn't a change of its own */
       const counted = p.changes.length - (p.lead && p.changes[0] === p.lead ? 1 : 0);
@@ -896,7 +898,6 @@ export function createSetupAccess({
     }
     if (v.mode === "switch" && claims.via !== "control-room") throw doorNo(403, "needs-alan", DOOR_WORDS.needsAlan);
     const undo = action === "undo";
-    if (!undo) editsOk(v, data);
     const p = await plan(v, data, undo, start);
     if (typeof data.settingsSha256 !== "string" || data.settingsSha256 !== p.sha) throw doorNo(409, "changed", DOOR_WORDS.changed);
     const savedBy = { id: "barnwright", name: `Barnwright (${claims.actor})`, passId: claims.id };

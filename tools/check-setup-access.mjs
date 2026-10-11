@@ -1629,6 +1629,19 @@ section("F15. The door before the owner first signs in");
     leaked.length === 0, leaked.join("\n       "));
   x = await S1.replay(doorEx("refused: version 0 once a price list exists").request);
   ok("version 0 once a price list exists: 409 version (the fixtures' answer)", sameAnswer(x, doorEx("refused: version 0 once a price list exists")), asJson(x.data).slice(0, 300));
+  /* F15-R2: with no edits too (the starting price list alone, sent after
+     someone else made one): the version is checked before the edits */
+  const r2wrong = [];
+  for (const body of [{ action: "check", version: 0, edits: [] }, { action: "check", version: 0 }, { action: "save", version: 0, edits: [], settingsSha256: BS.startingPriceList.settingsSha256 },
+    { action: "save", version: 0, settingsSha256: BS.startingPriceList.settingsSha256 }, { action: "check", version: 7, edits: [] }]) {
+    const y = await S1.door(body);
+    if (y.status !== 409 || y.data.code !== "version" || y.data.error !== DOOR_WORDS.version) r2wrong.push(`${asJson(body).slice(0, 80)}: ${y.status} ${asJson(y.data).slice(0, 200)}`);
+  }
+  const atNow = (await S1.store.get("price-list")).version;
+  const y1 = await S1.door({ action: "check", version: atNow, edits: [] });
+  if (y1.status !== 422 || asJson(y1.data.problems) !== asJson(["Send 1 to 300 edits at a time."])) r2wrong.push(`at the current version with no edits: ${y1.status} ${asJson(y1.data).slice(0, 200)}`);
+  ok("version 0 with no edits ([] or left out) once a price list exists, check or save, and any other old version with none: 409 version, never \"Send 1 to 300 edits\"; at the current version, no edits is still 422",
+    r2wrong.length === 0 && (await S1.store.get("price-list")).version === atNow, r2wrong.join("\n       "));
   const answers = JSON.stringify([...(await S1.log()).map((e) => e.words), h1?.changes, h2?.changes, x.data]);
   ok("the sign-up's phone and email are in no door answer, log line or change line", ![BS.signup.phone, BS.signup.email].some((t) => answers.includes(t)), answers.slice(0, 200));
 
