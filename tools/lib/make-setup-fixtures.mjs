@@ -85,7 +85,7 @@ const listWords = (a) => (a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") 
 export const WHY = {
   "not-connected": "This Dealer Center isn't connected to Barnwright.",
   "no-price-list": "The owner hasn't finished First setup yet, so there is no price list to change.",
-  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center.",
+  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center.",
   stopped: "The owner stopped Barnwright's setup access in Settings, Barnwright.",
   "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
   "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",

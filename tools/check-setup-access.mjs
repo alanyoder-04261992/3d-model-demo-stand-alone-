@@ -1823,6 +1823,13 @@ section("F15. The visit that starts the price list");
   put = await V.visit("PUT", "price-list", { settings: s1, version: 2 }, cookie);
   ok("the owner makes their login: the visit started on the sign-up agreement ends (401 visit-ended, the words for terms)",
     put.status === afterIn.answer.status && Object.keys(afterIn.answer.body).length === Object.keys(put.data).length && Object.entries(afterIn.answer.body).every(([k, v]) => put.data[k] === v), asJson(put.data));
+  /* F15-R3: the owner who just made their login is in First setup, with the
+     terms box and no button on top (closedBanner leaves the terms banner
+     out while setupNeeded): the words say both places, never only the button */
+  const firstSetupNow = (await V.me("signup")).setupNeeded === true;
+  ok("F15-R3: ... the owner is in First setup (no button on top yet), and the words say to tick the box in First setup, or tap the button after it: never only \"They see the button at the top\"",
+    firstSetupNow && /They tick the box in First setup, or tap the button at the top of their Dealer Center\./.test(put.data.error || "") && !/They see the button at the top/.test(put.data.error || "")
+    && WHY.terms === FX.door.why.terms && /tick the box in First setup/.test(WHY.terms), asJson([firstSetupNow, put.data.error]));
   await V.call("POST", "/api/office/setup", { yourName: "Pat Owner", businessName: BS.signup.business, phone: BS.signup.phone, email: BS.signup.email, agreeTerms: true }, { as: "signup" });
   const sessKey = Object.keys(await V.store.get("barnwright-sessions") || {});
   await V.store.put("barnwright-sessions", { [sha256(cookie.split("=")[1])]: { ...sess, endsAt: new Date(V.clock.t + 3600_000).toISOString() } });

@@ -92,7 +92,11 @@ const REFUSED_NOTE_EVERY = 60_000;
 export const WHY = Object.freeze({
   "not-connected": "This Dealer Center isn't connected to Barnwright.",
   "no-price-list": "The owner hasn't finished First setup yet, so there is no price list to change.",
-  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center.",
+  /* both places the owner agrees: the box in First setup (where an owner
+     who just signed in is, with no button on top, even when Barnwright
+     already started their price list), or the button at the top of their
+     Dealer Center after it (the Control Room's OWNER_TERMS, word for word) */
+  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center.",
   "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
   "signup-unknown": "Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy.",
   stopped: "The owner stopped Barnwright's setup access in Settings, Barnwright.",

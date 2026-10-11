@@ -651,11 +651,17 @@ What Alan and Claude read for each `why` (the door sends it as `error`):
 | why | words |
 |---|---|
 | `no-price-list` | The owner hasn't finished First setup yet, so there is no price list to change. |
-| `terms` | The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center. |
+| `terms` | The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center. |
 | `signup-terms` | They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center. |
 | `signup-unknown` | Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy. |
 | `stopped` | The owner stopped Barnwright's setup access in Settings, Barnwright. |
 | `live-off` | Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright. |
+
+An owner who has just signed in is in First setup, where the terms are a
+box to tick, even when Barnwright already started their price list; the
+button at the top of the Dealer Center comes only after First setup. So the
+words for `terms` name both places, and so does the visit that ends when
+the owner first signs in (the Control Room says the same, `OWNER_TERMS`).
 
 Until this Dealer Center's own terms (`TERMS.version`) are 2.2 or later, no
 owner can agree to them and no sign-up agreement counts, so `why: "terms"`

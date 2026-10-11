@@ -724,7 +724,7 @@
     "why": {
       "not-connected": "This Dealer Center isn't connected to Barnwright.",
       "no-price-list": "The owner hasn't finished First setup yet, so there is no price list to change.",
-      "terms": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center.",
+      "terms": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center.",
       "stopped": "The owner stopped Barnwright's setup access in Settings, Barnwright.",
       "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
       "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
@@ -2630,7 +2630,7 @@
           "body": {
             "ok": false,
             "code": "closed",
-            "error": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center.",
+            "error": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center.",
             "why": "terms",
             "v": 2,
             "live": false,
@@ -8478,7 +8478,7 @@
           "answer": {
             "status": 401,
             "body": {
-              "error": "Your Barnwright visit ended. The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center. Your changes are kept in this tab.",
+              "error": "Your Barnwright visit ended. The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center. Your changes are kept in this tab.",
               "code": "visit-ended",
               "why": "terms"
             }
