@@ -19,7 +19,7 @@
     },
     {
       "styles": ["LBG"], "sizes": ["12x20", "12x24", "12x30", "12x32"], "code": "eave", "id": "eave:R:d36in", "maxIn": 0.8125,
-      "reason": "Barnwright's standard layout: the barn roof's edge comes down 3/4 in in front of the head of the side door on the 12 ft wide Lofted Barn Garage. Kept for the golden test; reported to Alan (Oct 2026)."
+      "reason": "Barnwright's standard layout: the barn roof's edge comes down 3/4 in in front of the head of the side door on the 12 ft wide Lofted Barn Garage (5/8 in with Alan's barn roof heights, the shop standard since Oct 11 2026). Kept for the golden test; reported to Alan (Oct 2026)."
     }
   ]
 }

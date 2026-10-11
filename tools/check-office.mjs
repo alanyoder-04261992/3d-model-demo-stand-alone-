@@ -708,7 +708,7 @@ const BROKEN = [
   ["a side porch as long as the building", (s) => { s.offer.SC.built = { sidePorchLengths: [12, 20] }; }, /Side porch lengths: 20 ft is as long as the 10x20 .+\. Leave at least 4 ft of side wall beside the porch\./],
   /* a fault the standard building has a little of, made worse (review
      GL-4, F6): the business's, said with the standard's amount */
-  ["a 3 in eave that makes the Lofted Barn Garage's door head worse", (s) => { s.offer.LBG.built = { eaveOverhang: 3 }; }, /\d+x\d+: the roof edge hangs 4 in in front of the head of the 36″ In-Swing Door on the right side\. With the standard numbers it is 3\/4 in\./],
+  ["a 3 in eave that makes the Lofted Barn Garage's door head worse", (s) => { s.offer.LBG.built = { eaveOverhang: 3 }; }, /\d+x\d+: the roof edge hangs 2 3\/8 in in front of the head of the 36″ In-Swing Door on the right side\. With the standard numbers it is 5\/8 in\./],
   ["a size too short for the side porch", (s) => { s.offer.SC.sizes["10x8"] = 4000; }, /The 10x8 .+ is too short for its 8 ft side porch: sell it 12 ft long and up, or set a shorter side porch length\./],
   ["an extra with a construction setting misspelled", (s) => { s.options.extras = [{ key: "joists", name: "Close joists", input: "check", price: 1, construction: { "floor.spacingInn": 12 } }]; }, /Close joists: "spacingInn" is not a construction setting\. Did you mean spacingIn\?/],
   /* which setting is wrong is named in words (review F8): never "one of its
@@ -845,7 +845,7 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   cur = await want(200, "GET", "/api/office/price-list");
   s = clone(cur.settings); s.built = { roofPitch: { gable: 6 } };
   out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "saving a business-wide roof pitch" });
-  ok("a business-wide roof pitch says so in History and raises cfg", out.changes.some((c) => c.startsWith("Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed and Side Utility 5/12 → 6/12; ")) && out.cfg === cur.cfg + 1, JSON.stringify(out.changes));
+  ok("a business-wide roof pitch says so in History and raises cfg", out.changes.some((c) => c.startsWith("Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed, Side Utility and 3 more 5/12 → 6/12; ")) && out.cfg === cur.cfg + 1, JSON.stringify(out.changes));
   /* the connector's rule list, as it writes it */
   cur = await want(200, "GET", "/api/office/price-list");
   const raw = await S.read("price-list");
@@ -968,14 +968,18 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   s = clone(cur.settings); s.options.extras = s.options.extras.filter((x) => x.key !== "very-steep");
   await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "taking the Steep roof extra off" });
 
-  /* the sample price list's own Steep roof is offered on the Utility
-     Shed and Side Utility only; History says where an option is offered */
-  const steep = (templates.full.options.extras || []).find((x) => x.key === "steep-roof");
-  ok("the full example price list starts with Steep roof on the Utility Shed and Side Utility", !!steep && same(steep.styles, ["UT", "SU"]) && steep.built?.roofPitch === 7, JSON.stringify(steep));
+  /* no example price list starts with a Steep roof (Alan, Oct 11 2026:
+     take it out); an owner makes one of their own, "Roof pitch at least
+     7/12" on the Utility Shed and Side Utility only, and History says where
+     an option is offered */
+  const roofy = (t) => (t.options.extras || []).filter((x) => x.built || x.construction || /steep/i.test(`${x.key} ${x.name}`));
+  ok("neither example price list a new business starts with has a Steep roof (nor any option that changes the roof)", roofy(templates.full).length === 0 && roofy(templates.small).length === 0, JSON.stringify([roofy(templates.full), roofy(templates.small)]));
+  const steep = { key: "steep-roof", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 7 }, styles: ["UT", "SU"] };
   cur = await want(200, "GET", "/api/office/price-list");
   if (!(cur.settings.options.extras || []).some((x) => x.key === "steep-roof")) {
     s = clone(cur.settings); s.options.extras = [...(s.options.extras || []), clone(steep)];
-    await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the example Steep roof back on the price list" });
+    out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the owner's own Steep roof (roof pitch at least 7/12) on the Utility Shed and Side Utility" });
+    ok("... an owner's own Steep roof saves, and History says what it does (\"Steep roof: roof pitch at least 7/12\")", out.changes.includes("Steep roof: roof pitch at least 7/12"), JSON.stringify(out.changes));
     cur = await want(200, "GET", "/api/office/price-list");
   }
   s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT"];
@@ -991,7 +995,7 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   ok("... and back on both", out.changes.includes(`Steep roof is offered on the ${utWords} and ${cur.settings.offer.SU.name || manufacturer.styles.SU.name}`), JSON.stringify(out.changes));
 
   /* WHAT A SAVE REACHES (review GL-3, F4, F3). A new Side Utility wall and
-     eave that fit alone but not with the sample's own Steep roof on:
+     eave that fit alone but not with the owner's Steep roof on:
      the save draws the style with each extra that changes it switched on. */
   const suName = cur.settings.offer.SU.name || manufacturer.styles.SU.name;
   cur = await want(200, "GET", "/api/office/price-list");

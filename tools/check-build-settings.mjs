@@ -49,8 +49,10 @@
        rises 25 in above its 93 1/2 in walls (5/12) and its eave ends 4 in
        past the wall; Lofted Barn and Side Lofted Barn walls are 79 1/2 in
        and their barn roofs 43 3/4, 48 and 51 in tall at 8, 10 and 12 ft
-       wide; an 11 ft barn is no taller than 51 in; the 14 ft barn, the
-       Garage, the Dormer Shed and every other style are exactly Barnwright's;
+       wide; an 11 ft barn is no taller than 51 in; the Garage 5/12 with
+       93 1/2 in walls and the Dormer Shed's main roof 7/12 (Oct 11 2026);
+       the 14 ft barn, the Metal Garage and every style without shop numbers
+       are exactly Barnwright's;
        Barnwright's own company keeps 6.48/12; the screens say "5/12" from
        "standard"; and every style still passes the every-size check.
    Prints PROVED with the counts, or FAIL with what broke. */
@@ -452,9 +454,10 @@ group("11. problems, screens and History words");
   ok("History: \"Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed, Side Utility and 8 more about 6 1/2/12 → 6/12)\"", lines.includes("Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed, Side Utility and 8 more about 6 1/2/12 → 6/12)"), J(lines));
   {
     const SMx = standardManufacturer(), plainCo = readJSON("companies/demo/company.json"), biz6 = copy(plainCo); biz6.built = { roofPitch: { gable: 6 } };
-    ok("History on the shop standard: \"... (Utility Shed and Side Utility 5/12 → 6/12; Garden Utility, Cabin and 6 more about 6 1/2/12 → 6/12)\"", J(BUILT.describeChanges(plainCo, biz6, SMx)) === J(["Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed and Side Utility 5/12 → 6/12; Garden Utility, Cabin and 6 more about 6 1/2/12 → 6/12)"]), J(BUILT.describeChanges(plainCo, biz6, SMx)));
+    /* the Dormer Shed is not among them: its own main roof (7/12) stays */
+    ok("History on the shop standard: \"... (Utility Shed, Side Utility and 3 more 5/12 → 6/12; Cabin, Side Cabin and 3 more about 6 1/2/12 → 6/12)\"", J(BUILT.describeChanges(plainCo, biz6, SMx)) === J(["Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed, Side Utility and 3 more 5/12 → 6/12; Cabin, Side Cabin and 3 more about 6 1/2/12 → 6/12)"]), J(BUILT.describeChanges(plainCo, biz6, SMx)));
     const biz12 = copy(plainCo); biz12.built = { barnPeak: { 12: 54 } };
-    ok("... and a business-wide barn height width by width (\"Lofted Barn and Side Lofted Barn at 12 ft wide 4 ft 3 in → 4 ft 6 in; ...\")", /^Business-wide barn roof height: standard → 12 ft wide: 4 ft 6 in \(Lofted Barn and Side Lofted Barn at 12 ft wide 4 ft 3 in → 4 ft 6 in; /.test(BUILT.describeChanges(plainCo, biz12, SMx)[0] || ""), J(BUILT.describeChanges(plainCo, biz12, SMx)));
+    ok("... and a business-wide barn height width by width (\"Lofted Barn, Side Lofted Barn and 2 more at 12 ft wide 4 ft 3 in → 4 ft 6 in; ...\")", /^Business-wide barn roof height: standard → 12 ft wide: 4 ft 6 in \(Lofted Barn, Side Lofted Barn and 2 more at 12 ft wide 4 ft 3 in → 4 ft 6 in; /.test(BUILT.describeChanges(plainCo, biz12, SMx)[0] || ""), J(BUILT.describeChanges(plainCo, biz12, SMx)));
   }
   /* the Dealer Center's change list while a box holds words that cannot be read */
   const typo = copy(before); typo.offer.LB.built = { wallHeight: "5\\12" };
@@ -566,16 +569,18 @@ group("13. the shop standard (Alan's numbers)");
   const cat11 = resolve(c11, SM, LIB);
   ok("an 11 ft Lofted Barn is no taller than the 12 ft one (51 in)", peakIn(cat11, "LB", "11x16") <= 51 + 1e-9, String(peakIn(cat11, "LB", "11x16")));
   /* every other style is Barnwright's, number for number */
-  const same = Object.keys(DEMO.TYPES).filter((k) => ["UT", "SU", "LB", "SLB"].indexOf(k) < 0);
+  const SHOP_STYLES = ["UT", "SU", "G", "DK", "GU", "DS", "LB", "SLB", "MLB", "LBG"];
+  const same = Object.keys(DEMO.TYPES).filter((k) => SHOP_STYLES.indexOf(k) < 0);
   const differs = same.filter((k) => Object.keys(DEMO.P[k]).some((z) => J(fr(DEMO, k, z).prof) !== J(fr(BW, k, z).prof) || fr(DEMO, k, z).t.wallH !== fr(BW, k, z).t.wallH));
-  ok(`the other ${same.length} styles (the Garage, the Dormer Shed ...) draw Barnwright's roof and walls at every size`, same.length === 19 && differs.length === 0, differs.join(", "));
-  ok("G 12x24 and DS 10x16 unchanged", near(peakIn(DEMO, "G", "12x24"), 38.88, 1e-9) && near(peakIn(DEMO, "DS", "10x16"), 36, 1e-9));
+  ok(`the other ${same.length} styles (the Metal Garage, the Metal Utility, the cabins ...) draw Barnwright's roof and walls at every size`, same.length === 13 && same.includes("MG") && same.includes("MU") && differs.length === 0, differs.join(", "));
+  ok("G 12x24: 5/12 (30 in) on 93 1/2 in walls; DS 10x16: its main roof 7/12 (35 in; Barnwright 36 in); MG 12x24 unchanged (38.88 in)", near(peakIn(DEMO, "G", "12x24"), 30, 1e-9) && near(wallIn(DEMO, "G", "12x24"), 93.5, 1e-9) && near(peakIn(DEMO, "DS", "10x16"), 35, 1e-9) && near(peakIn(DEMO, "MG", "12x24"), 38.88, 1e-9),
+    J([peakIn(DEMO, "G", "12x24"), wallIn(DEMO, "G", "12x24"), peakIn(DEMO, "DS", "10x16"), peakIn(DEMO, "MG", "12x24")]));
   ok("Barnwright's own company keeps Barnwright's numbers (6.48/12, 93 in, 54 in at 10 ft)", near(peakIn(BW, "UT", "10x16"), 32.4, 1e-9) && near(wallIn(BW, "UT", "10x16"), 93, 1e-9) && near(lineIn(BW, "LB", "10x16"), 54, 1e-9));
   const eff = BUILT.effective(DEMO, "UT");
   const pitch = eff.find((e) => e.id === "roofPitch"), wall = eff.find((e) => e.id === "wallHeight");
   ok("the screens say 5/12 and 7 ft 9 1/2 in, from the standard", pitch && pitch.words === "5/12" && pitch.from === "standard" && wall && wall.words === "7 ft 9 1/2 in" && wall.from === "standard", J(eff));
   ok("the manufacturer file's shop numbers have no problems", validateManufacturer(SM).length === 0 && BUILT.libraryProblems(SM).length === 0, J(BUILT.libraryProblems(SM)));
-  ok("each shop number says where it came from (_source)", ["UT", "SU", "LB", "SLB"].every((k) => SM.styles[k].built && /Alan's shop numbers/.test(SM.styles[k].built._source || "")));
+  ok("each shop number says where it came from (_source)", SHOP_STYLES.every((k) => SM.styles[k].built && /Alan's shop numbers/.test(SM.styles[k].built._source || "")) && Object.keys(SM.styles).filter((k) => SM.styles[k].built).length === SHOP_STYLES.length);
   /* a business's own number still wins over the shop standard */
   const own = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json"))); own.offer.UT.built = { roofPitch: 6 };
   ok("a business's own roof pitch (6/12) beats the shop standard's 5/12", near(peakIn(resolve(own, SM, LIB), "UT", "10x16"), 30, 1e-9));
@@ -607,13 +612,16 @@ group("13. the shop standard (Alan's numbers)");
   /* an option's roof pitch that changes nothing where it is offered is said
      (review W2): a barn roof, past a lean-to's limit, a roof already steeper */
   {
+    /* the sample price list has no Steep roof (Alan, Oct 11 2026): an
+       owner's own, at 7/12, on the Utility Shed and Side Utility */
     const steepEverywhere = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json")));
-    const sx = steepEverywhere.options.extras.find((x) => x.key === "steep-roof");
-    ok("the sample's Steep roof (Utility Shed and Side Utility only) changes the roof everywhere it is offered", !!sx && BUILT.extrasThatChangeNothing(readJSON("companies/demo/company.json"), SM).length === 0);
+    const sx = { key: "steep-roof", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 7 }, styles: ["UT", "SU"] };
+    steepEverywhere.options.extras.push(sx);
+    ok("an owner's own Steep roof (Utility Shed and Side Utility only) changes the roof everywhere it is offered", BUILT.extrasThatChangeNothing(steepEverywhere, SM).length === 0, J(BUILT.extrasThatChangeNothing(steepEverywhere, SM)));
     sx.styles = ["UT", "SU", "LB", "BU", "DS"];
     const said = BUILT.extrasThatChangeNothing(steepEverywhere, SM);
     ok("offered on the Lofted Barn, Backyard Utility and Dormer Shed too, it says where it changes nothing and why",
-      said.length === 1 && said[0].words === "Steep roof does not change the Dormer Shed (its roof is already about 7 1/4/12), the Backyard Utility (its lean-to roof can be 6/12 at most) or the Lofted Barn (it has a barn roof). A customer would pay for nothing there." && J(said[0].styles.sort()) === J(["BU", "DS", "LB"]), J(said));
+      said.length === 1 && said[0].words === "Steep roof does not change the Dormer Shed (its roof is already 7/12), the Backyard Utility (its lean-to roof can be 6/12 at most) or the Lofted Barn (it has a barn roof). A customer would pay for nothing there." && J(said[0].styles.sort()) === J(["BU", "DS", "LB"]), J(said));
     steepEverywhere.offer.UT.built = { roofPitch: 8 };
     ok("... and on a Utility Shed set to 8/12 of its own (\"its roof is already 8/12\")", /the Utility Shed \(its roof is already 8\/12\)/.test((BUILT.extrasThatChangeNothing(steepEverywhere, SM)[0] || {}).words || ""), J(BUILT.extrasThatChangeNothing(steepEverywhere, SM)));
   }
@@ -631,4 +639,4 @@ if (failures.length) {
   console.log(`\nFAIL: ${failures.length} of ${passed + failures.length} checks failed.`);
   process.exit(1);
 }
-console.log(`\nPROVED (${passed} checks): the porch depth, the side porch lengths, the dormer side, the barn roof's gable-end overhang, its height by width and eaves measured level are settings the drawing follows; How it's built numbers are typed, checked and layered; an extra's construction settings are checked like the rest; with no setting every building is drawn as Barnwright's numbers say; and every company on the standard manufacturer draws Alan's shop numbers on the Utility Shed, Side Utility, Lofted Barn and Side Lofted Barn, and Barnwright's on the rest.`);
+console.log(`\nPROVED (${passed} checks): the porch depth, the side porch lengths, the dormer side, the barn roof's gable-end overhang, its height by width and eaves measured level are settings the drawing follows; How it's built numbers are typed, checked and layered; an extra's construction settings are checked like the rest; with no setting every building is drawn as Barnwright's numbers say; and every company on the standard manufacturer draws Alan's shop numbers on the Utility Shed, Side Utility, Garage, Dog Kennel, Garden Utility, Dormer Shed, Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage, and Barnwright's on the rest.`);

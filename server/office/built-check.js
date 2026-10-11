@@ -13,7 +13,7 @@
    * Only what changed is checked: a price-only save draws nothing and stays
      instant. A style whose numbers changed is checked at every size; a style
      that only gained sizes, at the new sizes; each of those again with every
-     extra that changes how it is built switched on (the sample's Steep roof
+     extra that changes how it is built switched on (an owner's Steep roof
      with a new wall); an extra that changed, or that reaches a style it did
      not reach before, on each style it reaches, with that extra on
      (model/built-check.js changedStyles).

@@ -586,6 +586,12 @@ try {
   if (want(7)) section("7. The Inside button, the mode, the events, a shared link, read-only");
   if (want(7)) {
     const ctx = await newContext(browser);
+    /* no sample price list has a Steep roof (Alan, Oct 11 2026); the demo
+       here carries an owner's own, "Roof pitch at least 7/12" on the
+       Utility Shed and Side Utility, for the Steep roof checks below */
+    const ownSteep = readJSON("companies/demo/company.json");
+    ownSteep.options.extras = [...(ownSteep.options.extras || []), { key: "steep-roof", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 7 }, styles: ["UT", "SU"] }];
+    await ctx.route(/\/companies\/demo\/company\.json/, (r) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(ownSteep) }));
     const { page, noise } = await openPage(ctx, "?company=demo");
     const r = await page.evaluate(async () => {
       const api = window.shedUI, calls = [], ev = { change: 0, select: 0, rebuild: 0, mode: 0 };
@@ -616,7 +622,7 @@ try {
     ok("'change', 'select', 'rebuild' and 'mode' events fire", r.ev.change > 0 && r.ev.select >= 2 && r.ev.rebuild > 0 && r.ev.mode === 2, J(r.ev));
     ok("applyDesign opens a saved design (the standard doors when it has none, the package it had) with no warnings", r.after.type === "UT" && r.after.size === "10x12" && r.after.n === 1 && r.after.pk > 0 && r.warnings.length === 0 && /10 × 12/.test(r.after.plate), J(r));
     ok("a read-only page selects nothing and hides the cards", r.ro.sel === null && r.ro.cls, J(r.ro));
-    /* the Steep roof lets an 18x24 sit on a 12 ft Utility Shed's
+    /* the owner's Steep roof lets an 18x24 sit on a 12 ft Utility Shed's
        gable; turned off again, the window is too tall for the 5/12 gable:
        it comes off and the extras card says so (review GL-2, F2) */
     const st = await page.evaluate(() => {

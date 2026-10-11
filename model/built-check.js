@@ -145,7 +145,7 @@ function rawSig(c, k) {
        own (the tools check covers the standard).
      - with each extra that changes how that style is built (a Steep roof,
        an extra's construction settings) switched on, too: a new wall with
-       the sample's Steep roof may not fit when the wall alone does.
+       an owner's Steep roof may not fit when the wall alone does.
      - an extra whose numbers changed, that is new, or that reaches a style
        it did not reach before (its styles list widened, a style it lists is
        sold again): every size of each style it reaches, with it on. */

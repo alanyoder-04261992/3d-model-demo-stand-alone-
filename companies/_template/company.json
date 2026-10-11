@@ -45,7 +45,7 @@
     "shelf": 1
   },
   "options": {
-    "_help": "Option prices. dormers (by size in feet), ramps (r4 r6 kit), elec (electrical packages 1-3: they need outlet, gfci and ilight priced in items), misc (shutter = one pair, lite = a window in a wooden door, ext = the exterior light with a package), rates (per square foot: dbl double floor, jo12 12 in joists, mbF/mbW moisture barrier floor/walls, rbS/rbR radiant barrier siding/roof), extras (the company's own: {key, name, input: check | qty | lf | sqftF | sqftW | sqftR | pct, price}, and optionally built: {roofPitch: 7} for a steep roof and styles: [UT, SU] to offer it only on those buildings). Leave one out and it is not offered.",
+    "_help": "Option prices. dormers (by size in feet), ramps (r4 r6 kit), elec (electrical packages 1-3: they need outlet, gfci and ilight priced in items), misc (shutter = one pair, lite = a window in a wooden door, ext = the exterior light with a package), rates (per square foot: dbl double floor, jo12 12 in joists, mbF/mbW moisture barrier floor/walls, rbS/rbR radiant barrier siding/roof), extras (the company's own: {key, name, input: check | qty | lf | sqftF | sqftW | sqftR | pct, price}, and optionally built: {roofPitch: 7} for an option the business makes itself that makes the roof at least that steep, and styles: [UT, SU] to offer it only on those buildings; no sample price list has one). Leave one out and it is not offered.",
     "ramps": {"r4": 1, "r6": 1},
     "elec": {"1": 1},
     "misc": {"shutter": 1, "lite": 1, "ext": 1},

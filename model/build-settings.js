@@ -416,14 +416,18 @@ function layersOf(settings, M, k, id) {
   if (base !== k && isObj(offer[base]) && isObj(offer[base].built) && own(offer[base].built, id)) {
     out.push({ value: offer[base].built[id], from: `built like ${styleName(settings, M, base)}`, path: `offer.${base}.built.${id}` });
   }
+  const sb = isObj(s.built) && own(s.built, id) ? s.built[id] : undefined;
+  const standard = sb !== undefined && !rawSets(settings && settings.construction, id, s);
   const bv = businessValue(settings && settings.built, id, s);
   if (bv) {
     const f = feature(id, s);
-    if (f) out.push({ feature: f, from: "style feature" });
-    else out.push({ value: bv.value, from: "business-wide", path: `built.${id}${bv.key ? "." + bv.key : ""}` });
+    /* a style feature keeps the business-wide number off; the shop
+       standard's own number for that style (the Dormer Shed's 7/12 main
+       roof) still holds, so the feature only stands in when there is none */
+    if (!f) out.push({ value: bv.value, from: "business-wide", path: `built.${id}${bv.key ? "." + bv.key : ""}` });
+    else if (!standard) out.push({ feature: f, from: "style feature" });
   }
-  const sb = isObj(s.built) && own(s.built, id) ? s.built[id] : undefined;
-  if (sb !== undefined && !rawSets(settings && settings.construction, id, s)) out.push({ value: sb, from: "standard", path: `styles.${base}.built.${id}` });
+  if (standard) out.push({ value: sb, from: "standard", path: `styles.${base}.built.${id}` });
   return id === "barnPeak" ? byWidthFirst(out) : out;
 }
 /* Barn roof heights are kept width by width (review W1): each width takes
@@ -808,7 +812,10 @@ function plainValue(id, t, merged, sizes) {
         const sh = Object.assign({}, roofOf(t.roof), t.roof === "gambrel" ? t.gambrel || {} : {});
         const eo = settle(sh.eaveOverhang) || {}, e = settle(eo.right);
         if (e && typeof e === "object" && e.flatIn != null) return e.flatIn;
-        const rL = t.roof === "gambrel" ? lengthOfFt(settle(sh.lowerRise), W0) : lengthOfFt(settle(sh.rise), W0);
+        /* a dormer style's main roof has its own rise (roof.dormerRise):
+           its eave is measured on that slope, as it is drawn */
+        const gableRise = t.dormer ? (merged.roof && merged.roof.dormerRise) || DEFAULT_ROOF.dormerRise : sh.rise;
+        const rL = t.roof === "gambrel" ? lengthOfFt(settle(sh.lowerRise), W0) : lengthOfFt(settle(gableRise), W0);
         const run = t.roof === "gambrel" ? W0 / 2 - lengthOfFt(settle(sh.knee), W0) : W0 / 2;
         return r4(lengthOfFt(e, W0) * 12 * run / Math.hypot(run, rL));
       }

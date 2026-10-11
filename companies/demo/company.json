@@ -246,9 +246,7 @@
     "elec": {"1": 675, "2": 775, "3": 875},
     "misc": {"shutter": 70, "lite": 45, "ext": 95},
     "rates": {"dbl": 1.9, "jo12": 0.8, "mbF": 0.55, "mbW": 0.55, "rbS": 0.65, "rbR": 0.85},
-    "extras": [
-      { "key": "steep-roof", "name": "Steep roof", "input": "check", "price": 350, "built": { "roofPitch": 7 }, "styles": ["UT", "SU"] }
-    ]
+    "extras": []
   },
   "defaults": {
     "style": "LB",

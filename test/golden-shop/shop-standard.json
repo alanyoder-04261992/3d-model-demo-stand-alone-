@@ -1,8 +1,8 @@
 {
  "_help": [
-  "THE STANDARD BUILDINGS WITH ALAN'S SHOP NUMBERS (Oct 2026, \"yes match\"), recorded by node tools/check-shop-numbers.mjs --record and checked by node tools/check-shop-numbers.mjs.",
+  "THE STANDARD BUILDINGS WITH ALAN'S SHOP NUMBERS (Oct 2026, \"yes match\"; more styles Oct 11 2026), recorded by node tools/check-shop-numbers.mjs --record and checked by node tools/check-shop-numbers.mjs.",
   "For every library style at every size Barnwright sells, drawn with library/manufacturers/standard.json as every Dealer Center business gets it: wallIn (floor to the top of the wall plate), peakIn (the roof line's peak above the wall top), trussPeakIn (a barn roof's trusses' peak above the wall top: what Alan measures), pitch (rise per 12, gable, lean-to and single slope roofs), eaveLeftIn and eaveRightIn (how far the roof edge reaches past each long wall, measured level), gableEndIn (past the gable ends), doorIn (the wooden shop door opening), all in inches to a thousandth.",
-  "triangles and hash (Utility Shed, Side Utility, Lofted Barn, Side Lofted Barn only): every finished triangle, hashed the golden test's way (tools/lib/golden-cases.mjs).",
+  "triangles and hash (the ten styles with shop numbers only: Utility Shed, Side Utility, Garage, Dog Kennel, Garden Utility, Dormer Shed, Lofted Barn, Side Lofted Barn, Metal Lofted Barn, Lofted Barn Garage): every finished triangle, hashed the golden test's way (tools/lib/golden-cases.mjs).",
   "Re-record only on purpose (a confirmed shop number changed, or the drawing changed and check-golden still passes), and say why in the commit."
  ],
  "styles": {
@@ -296,102 +296,124 @@
    "sizes": {
     "8x12": {
      "wallIn": 93,
-     "peakIn": 28.8,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 28,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 1936,
+     "hash": "9abf43b3bb26fefedd4f2d37580b3439c5d9e3fe7280fda8feaba1f734b85643"
     },
     "8x16": {
      "wallIn": 93,
-     "peakIn": 28.8,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 28,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 2368,
+     "hash": "b14fee0290585cb9bf539b1dd229a4d6adb9a7a84589b50ca0b7ea7676fd97cd"
     },
     "10x12": {
      "wallIn": 93,
-     "peakIn": 36,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 35,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 2000,
+     "hash": "1053632412a5163e9f00c95e785141921ec1c93f2f870a7266c1ef03c21d091d"
     },
     "10x14": {
      "wallIn": 93,
-     "peakIn": 36,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 35,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 2180,
+     "hash": "f0e3cf52cf670d95711d6455d029476b1b31cc83b67b15b0f349632382346498"
     },
     "10x16": {
      "wallIn": 93,
-     "peakIn": 36,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 35,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 2456,
+     "hash": "82385724cbff6152d4ce7b0734ad68b9a40f932038a4dca9aff266475184a73a"
     },
     "10x20": {
      "wallIn": 93,
-     "peakIn": 36,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 35,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 2764,
+     "hash": "1c6ffcefdedbf1d2a382a6334e96ba13e9c12e7717c66e5f7c77827f52975aac"
     },
     "12x16": {
      "wallIn": 93,
-     "peakIn": 43.2,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 42,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 2624,
+     "hash": "83ac25fee7bd818d19f6ca7e60aff6d0d0e8ab11ea03d80646301fd928257716"
     },
     "12x20": {
      "wallIn": 93,
-     "peakIn": 43.2,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 42,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 2956,
+     "hash": "632202eea59cee51460759a8ecd878395ba40ca7779689301086861ee8731d66"
     },
     "12x24": {
      "wallIn": 93,
-     "peakIn": 43.2,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 42,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 3444,
+     "hash": "be645a19917a16d53914c2814516174f762067f910209ca92ef0d28aabfe7598"
     },
     "12x30": {
      "wallIn": 93,
-     "peakIn": 43.2,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 42,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 4076,
+     "hash": "6cc3651b7fa082afd9a1cb493c04eed828cb87be2eafc9111d22b49fa0a50c86"
     },
     "12x32": {
      "wallIn": 93,
-     "peakIn": 43.2,
-     "pitch": 7.2,
-     "eaveLeftIn": 4.322,
-     "eaveRightIn": 4.322,
+     "peakIn": 42,
+     "pitch": 7,
+     "eaveLeftIn": 4.353,
+     "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 4280,
+     "hash": "07bbf1c39213416ad59c2d2d4dd5ec63177582340c1b5601c2ce596a5ba32a31"
     }
    }
   },
@@ -432,30 +454,36 @@
    "sizes": {
     "6x8": {
      "wallIn": 82.8,
-     "peakIn": 19.44,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "peakIn": 15,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 0.36,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 1087,
+     "hash": "f085461bbe3fad01aefd6c2470a7425f09816aa14db93c7103f5cf735477e093"
     },
     "6x10": {
      "wallIn": 82.8,
-     "peakIn": 19.44,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "peakIn": 15,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 0.36,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 1207,
+     "hash": "44edcb9234c3048774f2c86035c271afad8c8ff05cd4a94eb4584059133e7c7a"
     },
     "6x12": {
      "wallIn": 82.8,
-     "peakIn": 19.44,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "peakIn": 15,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 0.36,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 1355,
+     "hash": "96c7ac1191f408bda5d096f344fe0fbcde33655782c38b79a2afeb5e44511c20"
     }
    }
   },
@@ -1240,85 +1268,103 @@
    "name": "Garage",
    "sizes": {
     "12x20": {
-     "wallIn": 93,
-     "peakIn": 38.88,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 3106,
+     "hash": "2eb0f74cde985434defbf1a3eace7a82d74fcfbd39ce67909f3812e6b85dbb82"
     },
     "12x24": {
-     "wallIn": 93,
-     "peakIn": 38.88,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 3594,
+     "hash": "91ad207291398d68735a5d227c3ba312f45e9453ef70d62519d6b3f9a8e37e49"
     },
     "12x30": {
-     "wallIn": 93,
-     "peakIn": 38.88,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 4226,
+     "hash": "bb3974c742112d8b07645926535ac05b5ac990bb24bb5b7c9de98468fc1825d9"
     },
     "12x32": {
-     "wallIn": 93,
-     "peakIn": 38.88,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "wallIn": 93.5,
+     "peakIn": 30,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 4430,
+     "hash": "016a6a6c1f5e38f2323ac1a9d5791f91dd2be61eeeef761dee408483b31cb3d3"
     },
     "14x20": {
-     "wallIn": 93,
-     "peakIn": 45.36,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 3214,
+     "hash": "7ceadebbdfb3b0f4db2d419903ddae2fc88513fcbb6c7b72cfd470c40f8ba37a"
     },
     "14x24": {
-     "wallIn": 93,
-     "peakIn": 45.36,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 3722,
+     "hash": "b0c206efa294952e881fd1ad278dd82b901968d430a1c4471f98cca8224fa091"
     },
     "14x28": {
-     "wallIn": 93,
-     "peakIn": 45.36,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 4250,
+     "hash": "f837327d8563c148d5d2f5b911f6b0d949220425fd867ffb05106cb42444bc64"
     },
     "14x32": {
-     "wallIn": 93,
-     "peakIn": 45.36,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 4602,
+     "hash": "9452bc7df4ec434f2dafd3ca84a1e137274ac03adf732dfa1f4ab219c2f96290"
     },
     "14x40": {
-     "wallIn": 93,
-     "peakIn": 45.36,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "wallIn": 93.5,
+     "peakIn": 35,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 5578,
+     "hash": "39044492e3efb72ed35440e6af529f32a9b3f171084c9aebe2ca78b1a21e29f5"
     }
    }
   },
@@ -1327,39 +1373,47 @@
    "sizes": {
     "12x20": {
      "wallIn": 82.8,
-     "peakIn": 64.8,
-     "trussPeakIn": 64.338,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 4906,
+     "hash": "1fca8765b42ba0a3bf05f6cd4e8167393142c76a19b6d6113e8d8bc0c2f1bdd9"
     },
     "12x24": {
      "wallIn": 82.8,
-     "peakIn": 64.8,
-     "trussPeakIn": 64.338,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 5782,
+     "hash": "106f3e2555b2140b17b9c1b5419027fe371060479d27195491308b18be21423f"
     },
     "12x30": {
      "wallIn": 82.8,
-     "peakIn": 64.8,
-     "trussPeakIn": 64.338,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 6926,
+     "hash": "909a3bafb74d76c27c6cb77803e0dfcb89ff61ca26393cf19a737f2a0c3023d4"
     },
     "12x32": {
      "wallIn": 82.8,
-     "peakIn": 64.8,
-     "trussPeakIn": 64.338,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "peakIn": 51.453,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.152,
+     "eaveRightIn": 2.152,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 7254,
+     "hash": "5940d8fdb4e7346fee31ac34b0b803e482fc2345648e8cb75a3a41096c2f7344"
     }
    }
   },
@@ -1444,76 +1498,92 @@
    "name": "Metal Lofted Barn",
    "sizes": {
     "8x12": {
-     "wallIn": 80.04,
-     "peakIn": 43.2,
-     "trussPeakIn": 41.615,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "wallIn": 79.5,
+     "peakIn": 45.344,
+     "trussPeakIn": 43.75,
+     "eaveLeftIn": 1.696,
+     "eaveRightIn": 1.696,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 2760,
+     "hash": "d093255943bab1fe2bd1037f25285d90366dbe3c0b189f01413887dcd5a76857"
     },
     "10x12": {
-     "wallIn": 80.04,
-     "peakIn": 54,
-     "trussPeakIn": 52.415,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "wallIn": 79.5,
+     "peakIn": 49.572,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.906,
+     "eaveRightIn": 1.906,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 2824,
+     "hash": "63e53a49bbb6c35f9280bdc4c5db3dabd33d64fe82375ce7c43f37f1839f9e0b"
     },
     "10x16": {
-     "wallIn": 80.04,
-     "peakIn": 54,
-     "trussPeakIn": 52.415,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "wallIn": 79.5,
+     "peakIn": 49.572,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.906,
+     "eaveRightIn": 1.906,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 3428,
+     "hash": "06d6d090baaa7e5ebe359e1d5703ba55f93ee0842b1e3337254c2c11f20deece"
     },
     "10x20": {
-     "wallIn": 80.04,
-     "peakIn": 54,
-     "trussPeakIn": 52.415,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "wallIn": 79.5,
+     "peakIn": 49.572,
+     "trussPeakIn": 48,
+     "eaveLeftIn": 1.906,
+     "eaveRightIn": 1.906,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 4224,
+     "hash": "c10b2f4ce134f3ccfdf6c8ecdf97868dd275baa45f160fee9d407805950e25fa"
     },
     "12x16": {
-     "wallIn": 80.04,
-     "peakIn": 64.8,
-     "trussPeakIn": 63.215,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "wallIn": 79.5,
+     "peakIn": 52.557,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.115,
+     "eaveRightIn": 2.115,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 3596,
+     "hash": "9b2ccb4d31af0b4280c498e8ab9edc660c3afae44b44132e400c512afc3eaa88"
     },
     "12x20": {
-     "wallIn": 80.04,
-     "peakIn": 64.8,
-     "trussPeakIn": 63.215,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "wallIn": 79.5,
+     "peakIn": 52.557,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.115,
+     "eaveRightIn": 2.115,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 4416,
+     "hash": "830a08ca1a08041a265b8b1304db4afe4deedba0c882fa44fc1a117674947f44"
     },
     "12x24": {
-     "wallIn": 80.04,
-     "peakIn": 64.8,
-     "trussPeakIn": 63.215,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "wallIn": 79.5,
+     "peakIn": 52.557,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.115,
+     "eaveRightIn": 2.115,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 5292,
+     "hash": "0b65c0d57eb1f2d0e63ec4dbaecf27f00f759a2904fb6f20a9626c80ef225dc0"
     },
     "12x32": {
-     "wallIn": 80.04,
-     "peakIn": 64.8,
-     "trussPeakIn": 63.215,
-     "eaveLeftIn": 1.77,
-     "eaveRightIn": 1.77,
+     "wallIn": 79.5,
+     "peakIn": 52.557,
+     "trussPeakIn": 51,
+     "eaveLeftIn": 2.115,
+     "eaveRightIn": 2.115,
      "gableEndIn": 1.2,
-     "doorIn": 71.5
+     "doorIn": 71.5,
+     "triangles": 6764,
+     "hash": "ba67e9ca25e0da671f71fdcebdc65bbfbf5eb6409c0b5f9a70308816d2166067"
     }
    }
   },
@@ -1632,21 +1702,25 @@
    "sizes": {
     "8x12": {
      "wallIn": 88.8,
-     "peakIn": 25.92,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "peakIn": 20,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 2845,
+     "hash": "e3d89b2a1cf41392611976c23a91bc3da6651f9fa8f6c522d9fa6dfca39d3688"
     },
     "8x16": {
      "wallIn": 88.8,
-     "peakIn": 25.92,
-     "pitch": 6.48,
-     "eaveLeftIn": 4.435,
-     "eaveRightIn": 4.435,
+     "peakIn": 20,
+     "pitch": 5,
+     "eaveLeftIn": 4,
+     "eaveRightIn": 4,
      "gableEndIn": 5.4,
-     "doorIn": 76.5
+     "doorIn": 76.5,
+     "triangles": 3373,
+     "hash": "05c27be245bc32bf4440fef53e682e394b09ddc49b5ca6be6cd441999df65c30"
     }
    }
   }
