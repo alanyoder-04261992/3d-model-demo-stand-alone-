@@ -218,4 +218,7 @@ Say plainly in your report which of these you looked at.
   `TELLS` (`tools/lib/style-facts.mjs`), make sure the sample price list
   (`companies/demo`) sells it, then run `node tools/make-style-refs.mjs`
   (a browser, under a minute) and `node tools/check-style-refs.mjs`. Commit
-  the new pictures in `library/style-refs/` with the style.
+  the new pictures in `library/style-refs/` with the style. A style given
+  shop numbers (`styles.<KEY>.built`) draws differently too: make the
+  pictures again, name the style in `PITCH_NOTE` (the check says when one
+  is missing) and read its `TELLS` lines against the new pictures.

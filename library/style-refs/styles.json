@@ -1,11 +1,11 @@
 {
  "format": 1,
  "about": "Pictures and shape facts for every style in the 3D designer's library, for matching a dealer's photos to a style. Made by node tools/make-style-refs.mjs and checked by node tools/check-style-refs.mjs in the 3D designer repository.",
- "pitch_note": "Every pitch, height and size here is the library's own number: Barnwright's drawing of the standard building line. They are not a shop's measured numbers. A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.",
- "library_version": "59ae40cd19e9e5f8",
+ "pitch_note": "Every pitch, height and size here is the standard building line as the 3D designer draws it. The Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility use Alan's 5/12, the Dormer Shed's main roof his 7/12, and the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage his barn roof heights (3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide); the other styles use Barnwright's drawing. A barn roof's height is to the peak of its trusses, the way a builder measures it; every other roof's is to the top of the roof. A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.",
+ "library_version": "a4a5f102583fba9b",
  "library_files": {
-  "library/manufacturers/standard.json": "3d6739549000d880ea4c77c276efcbe5dc121aaa81fe5e299c6d382defc457d4",
-  "library/construction.json": "1c8d23375d5aee281e48fad24319d7e993604f6bab8a8c079df87fe8dbd79867"
+  "library/manufacturers/standard.json": "7322ec1f20b74c8b8d0bfaac431c77d327c37fa5bc0f6e7656ef6e6624e5d267",
+  "library/construction.json": "bc45a625290a988f7ee7b274352eb7f4f6a6ce7aa5b971f568837dc0fc5a1297"
  },
  "drawn_with": {
   "price_list": "companies/demo",
@@ -46,8 +46,8 @@
  },
  "sheet": {
   "file": "sheet.jpg",
-  "sha256": "7f59dd494ffdfc2018ae29d2d420a2fa9c319ad83496e80f0bd15d8c2abac6c5",
-  "bytes": 96705,
+  "sha256": "fae1e5e735756b20567996ae40fb4766171c177808eb764307584779c7abd062",
+  "bytes": 96145,
   "width": 1024,
   "height": 1194,
   "columns": 4,
@@ -90,24 +90,24 @@
     "slopes": [
      {
       "where": "each side",
-      "pitch": "6.48/12",
-      "degrees": 28.4
+      "pitch": "5/12",
+      "degrees": 22.6
      }
     ],
     "peak_over_wall": {
-     "ft": 2.7,
-     "in": 32.4,
-     "words": "2 ft 8½ in"
+     "ft": 2.08,
+     "in": 25,
+     "words": "2 ft 1 in"
     },
-    "peak_per_width": 0.27,
+    "peak_per_width": 0.208,
     "same_at_every_width": true,
     "by_width": []
    },
    "walls": {
     "height": {
-     "ft": 7.75,
-     "in": 93,
-     "words": "7 ft 9 in"
+     "ft": 7.79,
+     "in": 93.5,
+     "words": "7 ft 9½ in"
     }
    },
    "main_door": {
@@ -118,8 +118,8 @@
      "in": 76.5,
      "words": "6 ft 4½ in"
     },
-    "wall_over_it_in": 16.5,
-    "words": "16.5 in of wall above it"
+    "wall_over_it_in": 17,
+    "words": "17 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -155,7 +155,7 @@
     {
      "code": "MU",
      "name": "Metal Utility",
-     "how": "Metal siding and no trim band."
+     "how": "Metal siding, no trim band, and a steeper roof."
     },
     {
      "code": "G",
@@ -187,15 +187,15 @@
    "pictures": {
     "three_quarter": {
      "file": "UT.jpg",
-     "sha256": "26d528671a68c99681a6336f0e342590bffcf3a0b125f6b9153db5cc0763a90b",
-     "bytes": 44446,
+     "sha256": "801f7dfd8a1a1a2d6268b48eb10ad51f7bf1cb87a71972f2279463394967bc92",
+     "bytes": 42925,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "UT-end.jpg",
-     "sha256": "35527f35425edeb4448399bd615c434ceaaad7c696eb42f6d9ded6abc4ef8477",
-     "bytes": 25446,
+     "sha256": "7991ca11adbee96c5a98025b52b02809c85507624606f0ad2491492e56952cd1",
+     "bytes": 24951,
      "width": 1024,
      "height": 761
     }
@@ -212,24 +212,24 @@
     "slopes": [
      {
       "where": "each side",
-      "pitch": "6.48/12",
-      "degrees": 28.4
+      "pitch": "5/12",
+      "degrees": 22.6
      }
     ],
     "peak_over_wall": {
-     "ft": 2.7,
-     "in": 32.4,
-     "words": "2 ft 8½ in"
+     "ft": 2.08,
+     "in": 25,
+     "words": "2 ft 1 in"
     },
-    "peak_per_width": 0.27,
+    "peak_per_width": 0.208,
     "same_at_every_width": true,
     "by_width": []
    },
    "walls": {
     "height": {
-     "ft": 7.75,
-     "in": 93,
-     "words": "7 ft 9 in"
+     "ft": 7.79,
+     "in": 93.5,
+     "words": "7 ft 9½ in"
     }
    },
    "main_door": {
@@ -240,8 +240,8 @@
      "in": 76.5,
      "words": "6 ft 4½ in"
     },
-    "wall_over_it_in": 16.5,
-    "words": "16.5 in of wall above it"
+    "wall_over_it_in": 17,
+    "words": "17 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -317,15 +317,15 @@
    "pictures": {
     "three_quarter": {
      "file": "SU.jpg",
-     "sha256": "97febf8329a9531bcd287f077dece664a03e7068ef2d85bbe5ff521d17b95167",
-     "bytes": 45177,
+     "sha256": "39ceaf4f1703d9fd4b4285876d70146e8a5d23b0f996aa897f053719407d3c6d",
+     "bytes": 43630,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "SU-end.jpg",
-     "sha256": "0181e0188e1422b0d39ea4386e8a0e71a1082b7fb76b5b85f9c9ae592ddc9da0",
-     "bytes": 20675,
+     "sha256": "95d9256a9bb7756f911831521621daccc933ab7694defdc20cfd5478ba79c78c",
+     "bytes": 19916,
      "width": 1024,
      "height": 761
     }
@@ -342,16 +342,16 @@
     "slopes": [
      {
       "where": "each side",
-      "pitch": "7.2/12",
-      "degrees": 31
+      "pitch": "7/12",
+      "degrees": 30.3
      }
     ],
     "peak_over_wall": {
-     "ft": 3,
-     "in": 36,
-     "words": "3 ft"
+     "ft": 2.92,
+     "in": 35,
+     "words": "2 ft 11 in"
     },
-    "peak_per_width": 0.3,
+    "peak_per_width": 0.292,
     "same_at_every_width": true,
     "by_width": []
    },
@@ -446,15 +446,15 @@
    "pictures": {
     "three_quarter": {
      "file": "DS.jpg",
-     "sha256": "9e0b379a7bf86e49f0074e3984715977613666ae296fab60c51b60177cde655c",
-     "bytes": 45971,
+     "sha256": "bf5d135541b9242fabdeefff77bfa895dc1a8b57865df985db93e707ed6af805",
+     "bytes": 45507,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "DS-end.jpg",
-     "sha256": "2048644573f32302e9203027c7454472c58c14adab45d925a81aa5a79b20b032",
-     "bytes": 20750,
+     "sha256": "a9a695913b22216b1294ae6551d927d060cadbba61357c3021bf7e81c4c4bb6f",
+     "bytes": 20659,
      "width": 1024,
      "height": 761
     }
@@ -609,16 +609,16 @@
     "slopes": [
      {
       "where": "each side",
-      "pitch": "6.48/12",
-      "degrees": 28.4
+      "pitch": "5/12",
+      "degrees": 22.6
      }
     ],
     "peak_over_wall": {
-     "ft": 1.62,
-     "in": 19.4,
-     "words": "1 ft 7½ in"
+     "ft": 1.25,
+     "in": 15,
+     "words": "1 ft 3 in"
     },
-    "peak_per_width": 0.27,
+    "peak_per_width": 0.208,
     "same_at_every_width": true,
     "by_width": []
    },
@@ -686,15 +686,15 @@
    "pictures": {
     "three_quarter": {
      "file": "GU.jpg",
-     "sha256": "b94a0d11cacaf665201998fbb26971a544640d3d4089a6f41852eea6b98c24da",
-     "bytes": 38256,
+     "sha256": "0577a9a7b5acae25f7eb6a128ac7146ee2fa03b228516f0aa59aee6f5e671b56",
+     "bytes": 37470,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "GU-end.jpg",
-     "sha256": "ee5ecb2b2af50c0d5844bc14a5ff8fbdedbdf3db16b2833aa3c72c2aa3753a51",
-     "bytes": 22271,
+     "sha256": "5a42364e5334b61a3f7c1d6ed46c7aaa95e467b166621ba0d3f975c81e23c336",
+     "bytes": 21976,
      "width": 1024,
      "height": 761
     }
@@ -721,11 +721,11 @@
      }
     ],
     "peak_over_wall": {
-     "ft": 3.43,
-     "in": 41.2,
-     "words": "3 ft 5 in"
+     "ft": 3.39,
+     "in": 40.7,
+     "words": "3 ft 4½ in"
     },
-    "peak_per_width": 0.343,
+    "peak_per_width": 0.339,
     "same_at_every_width": false,
     "by_width": [
      {
@@ -734,7 +734,7 @@
        "18.23/12",
        "5/12"
       ],
-      "peak_over_wall_in": 41.2
+      "peak_over_wall_in": 40.7
      },
      {
       "width_ft": 10,
@@ -742,7 +742,7 @@
        "14.58/12",
        "4/12"
       ],
-      "peak_over_wall_in": 41.2
+      "peak_over_wall_in": 40.7
      }
     ]
    },
@@ -833,29 +833,62 @@
     "slopes": [
      {
       "where": "lower part, each side",
-      "pitch": "32/12",
-      "degrees": 69.4
+      "pitch": "28.72/12",
+      "degrees": 67.3
      },
      {
       "where": "upper part, each side",
-      "pitch": "4.11/12",
-      "degrees": 18.9
+      "pitch": "3.68/12",
+      "degrees": 17.1
      }
     ],
     "peak_over_wall": {
-     "ft": 4.5,
-     "in": 54,
-     "words": "4 ft 6 in"
+     "ft": 4,
+     "in": 48,
+     "words": "4 ft"
     },
-    "peak_per_width": 0.45,
-    "same_at_every_width": true,
-    "by_width": []
+    "peak_per_width": 0.4,
+    "same_at_every_width": false,
+    "by_width": [
+     {
+      "width_ft": 8,
+      "pitches": [
+       "32.75/12",
+       "4.2/12"
+      ],
+      "peak_over_wall_in": 43.8
+     },
+     {
+      "width_ft": 10,
+      "pitches": [
+       "28.72/12",
+       "3.68/12"
+      ],
+      "peak_over_wall_in": 48
+     },
+     {
+      "width_ft": 12,
+      "pitches": [
+       "25.41/12",
+       "3.26/12"
+      ],
+      "peak_over_wall_in": 51
+     },
+     {
+      "width_ft": 14,
+      "pitches": [
+       "32/12",
+       "4.11/12"
+      ],
+      "peak_over_wall_in": 75.1
+     }
+    ]
    },
    "walls": {
     "height": {
-     "ft": 6.67,
-     "in": 80,
-     "words": "6 ft 8 in"
+     "ft": 6.63,
+     "in": 79.5,
+     "words": "6 ft 7½ in"
     }
    },
    "main_door": {
@@ -866,8 +899,8 @@
      "in": 71.5,
      "words": "5 ft 11½ in"
     },
-    "wall_over_it_in": 8.5,
-    "words": "8.5 in of wall above it"
+    "wall_over_it_in": 8,
+    "words": "8 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -941,15 +974,15 @@
    "pictures": {
     "three_quarter": {
      "file": "LB.jpg",
-     "sha256": "7cc9fa087828d6e81d65f242c925b6cac0c25bdd53a26210887af64da0d701b7",
-     "bytes": 42179,
+     "sha256": "bc3453d945c9f9fb9aee6e02b9a6d31a4399caa537d3134f04cf386f338b917c",
+     "bytes": 41483,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "LB-end.jpg",
-     "sha256": "757a0b2ba2a21b32da64b2b7e26c809fac33136da819b155644f1e2ff7969e70",
-     "bytes": 26345,
+     "sha256": "f2d65e6df0755eb0a47442d43a69948444e5cff37e6a58bdc667622af953f374",
+     "bytes": 26214,
      "width": 1024,
      "height": 761
     }
@@ -966,29 +999,54 @@
     "slopes": [
      {
       "where": "lower part, each side",
-      "pitch": "32/12",
-      "degrees": 69.4
+      "pitch": "28.72/12",
+      "degrees": 67.3
      },
      {
       "where": "upper part, each side",
-      "pitch": "4.11/12",
-      "degrees": 18.9
+      "pitch": "3.68/12",
+      "degrees": 17.1
      }
     ],
     "peak_over_wall": {
-     "ft": 4.5,
-     "in": 54,
-     "words": "4 ft 6 in"
+     "ft": 4,
+     "in": 48,
+     "words": "4 ft"
     },
-    "peak_per_width": 0.45,
-    "same_at_every_width": true,
-    "by_width": []
+    "peak_per_width": 0.4,
+    "same_at_every_width": false,
+    "by_width": [
+     {
+      "width_ft": 8,
+      "pitches": [
+       "32.75/12",
+       "4.2/12"
+      ],
+      "peak_over_wall_in": 43.8
+     },
+     {
+      "width_ft": 10,
+      "pitches": [
+       "28.72/12",
+       "3.68/12"
+      ],
+      "peak_over_wall_in": 48
+     },
+     {
+      "width_ft": 12,
+      "pitches": [
+       "25.41/12",
+       "3.26/12"
+      ],
+      "peak_over_wall_in": 51
+     }
+    ]
    },
    "walls": {
     "height": {
-     "ft": 6.67,
-     "in": 80,
-     "words": "6 ft 8 in"
+     "ft": 6.63,
+     "in": 79.5,
+     "words": "6 ft 7½ in"
     }
    },
    "main_door": {
@@ -999,8 +1057,8 @@
      "in": 71.5,
      "words": "5 ft 11½ in"
     },
-    "wall_over_it_in": 8.5,
-    "words": "8.5 in of wall above it"
+    "wall_over_it_in": 8,
+    "words": "8 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -1069,15 +1127,15 @@
    "pictures": {
     "three_quarter": {
      "file": "SLB.jpg",
-     "sha256": "99f2587c23c7be6d19754c6f689be6790e8b2cb48e39467e5df3aa022adc0087",
-     "bytes": 40330,
+     "sha256": "0d331d76b3301d87d43950262ca84abb1c8d1f655e776327ce49cd894f9a20a4",
+     "bytes": 39740,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "SLB-end.jpg",
-     "sha256": "33d5d14963854e81acf742e49eb90f967a9419c23b571fd788eab85f1a1e75bf",
-     "bytes": 20941,
+     "sha256": "4a3ec3f7b9d5cbd60df75b68eae0952e239d6490b678eba686ebba6206f435c1",
+     "bytes": 20645,
      "width": 1024,
      "height": 761
     }
@@ -1621,11 +1679,11 @@
      }
     ],
     "peak_over_wall": {
-     "ft": 4.5,
-     "in": 54,
-     "words": "4 ft 6 in"
+     "ft": 4.46,
+     "in": 53.5,
+     "words": "4 ft 5½ in"
     },
-    "peak_per_width": 0.45,
+    "peak_per_width": 0.446,
     "same_at_every_width": true,
     "by_width": []
    },
@@ -1920,11 +1978,11 @@
      }
     ],
     "peak_over_wall": {
-     "ft": 4.5,
-     "in": 54,
-     "words": "4 ft 6 in"
+     "ft": 4.46,
+     "in": 53.5,
+     "words": "4 ft 5½ in"
     },
-    "peak_per_width": 0.45,
+    "peak_per_width": 0.446,
     "same_at_every_width": true,
     "by_width": []
    },
@@ -2193,11 +2251,11 @@
      }
     ],
     "peak_over_wall": {
-     "ft": 5.4,
-     "in": 64.8,
-     "words": "5 ft 5 in"
+     "ft": 5.36,
+     "in": 64.3,
+     "words": "5 ft 4½ in"
     },
-    "peak_per_width": 0.45,
+    "peak_per_width": 0.447,
     "same_at_every_width": true,
     "by_width": []
    },
@@ -2324,24 +2382,24 @@
     "slopes": [
      {
       "where": "each side",
-      "pitch": "6.48/12",
-      "degrees": 28.4
+      "pitch": "5/12",
+      "degrees": 22.6
      }
     ],
     "peak_over_wall": {
-     "ft": 3.78,
-     "in": 45.4,
-     "words": "3 ft 9½ in"
+     "ft": 2.92,
+     "in": 35,
+     "words": "2 ft 11 in"
     },
-    "peak_per_width": 0.27,
+    "peak_per_width": 0.208,
     "same_at_every_width": true,
     "by_width": []
    },
    "walls": {
     "height": {
-     "ft": 7.75,
-     "in": 93,
-     "words": "7 ft 9 in"
+     "ft": 7.79,
+     "in": 93.5,
+     "words": "7 ft 9½ in"
     }
    },
    "main_door": {
@@ -2352,8 +2410,8 @@
      "in": 76.8,
      "words": "6 ft 5 in"
     },
-    "wall_over_it_in": 16.2,
-    "words": "16.2 in of wall above it"
+    "wall_over_it_in": 16.7,
+    "words": "16.7 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -2401,7 +2459,7 @@
     {
      "code": "MG",
      "name": "Metal Garage",
-     "how": "Metal siding and no trim band."
+     "how": "Metal siding, no trim band, and a steeper roof."
     },
     {
      "code": "LBG",
@@ -2428,15 +2486,15 @@
    "pictures": {
     "three_quarter": {
      "file": "G.jpg",
-     "sha256": "6ac09a49c56a13da2f4676adc7ff11367fd56a8e694d7af8b99d5e0a0f06cd7a",
-     "bytes": 59167,
+     "sha256": "32e9f3c262e4b929aac10c4931dc79f37e8053be31b74690a61903989ed23151",
+     "bytes": 57388,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "G-end.jpg",
-     "sha256": "7b18e77e3a60cba3545e39d1cb0ba8cead656ca8e7113aa1492d6d9d8e7b4303",
-     "bytes": 32940,
+     "sha256": "e250eb0e715614cb895b3aa1922d60b9a0b034b84bdcac6715d3762e13006180",
+     "bytes": 32137,
      "width": 1024,
      "height": 761
     }
@@ -2453,21 +2511,21 @@
     "slopes": [
      {
       "where": "lower part, each side",
-      "pitch": "32/12",
-      "degrees": 69.4
+      "pitch": "25.41/12",
+      "degrees": 64.7
      },
      {
       "where": "upper part, each side",
-      "pitch": "4.11/12",
-      "degrees": 18.9
+      "pitch": "3.26/12",
+      "degrees": 15.2
      }
     ],
     "peak_over_wall": {
-     "ft": 5.4,
-     "in": 64.8,
-     "words": "5 ft 5 in"
+     "ft": 4.25,
+     "in": 51,
+     "words": "4 ft 3 in"
     },
-    "peak_per_width": 0.45,
+    "peak_per_width": 0.354,
     "same_at_every_width": true,
     "by_width": []
    },
@@ -2552,15 +2610,15 @@
    "pictures": {
     "three_quarter": {
      "file": "LBG.jpg",
-     "sha256": "3e892874592b5379c90841e36f928ed7822b089a44ccac4274cb41689a35f9cf",
-     "bytes": 41940,
+     "sha256": "3de5c24e5b8949222bd68d0e99b90a22ccc49c2a63130a411d37c8bd6e97fce3",
+     "bytes": 40946,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "LBG-end.jpg",
-     "sha256": "03bd67e64237983181d454a772ab71625bd04761e8212c8364dc093040508ca5",
-     "bytes": 23993,
+     "sha256": "ac829769ff50b050fee37c4a6cefac4db40097cb46b641a85c1e1921b6d41da7",
+     "bytes": 23194,
      "width": 1024,
      "height": 761
     }
@@ -2642,7 +2700,7 @@
     {
      "code": "UT",
      "name": "Utility Shed",
-     "how": "Painted siding with a trim band."
+     "how": "Painted siding with a trim band, and a flatter roof."
     },
     {
      "code": "MG",
@@ -2688,29 +2746,54 @@
     "slopes": [
      {
       "where": "lower part, each side",
-      "pitch": "32/12",
-      "degrees": 69.4
+      "pitch": "29.38/12",
+      "degrees": 67.8
      },
      {
       "where": "upper part, each side",
-      "pitch": "4.11/12",
-      "degrees": 18.9
+      "pitch": "3.77/12",
+      "degrees": 17.4
      }
     ],
     "peak_over_wall": {
-     "ft": 4.5,
-     "in": 54,
-     "words": "4 ft 6 in"
+     "ft": 4,
+     "in": 48,
+     "words": "4 ft"
     },
-    "peak_per_width": 0.45,
-    "same_at_every_width": true,
-    "by_width": []
+    "peak_per_width": 0.4,
+    "same_at_every_width": false,
+    "by_width": [
+     {
+      "width_ft": 8,
+      "pitches": [
+       "33.59/12",
+       "4.31/12"
+      ],
+      "peak_over_wall_in": 43.8
+     },
+     {
+      "width_ft": 10,
+      "pitches": [
+       "29.38/12",
+       "3.77/12"
+      ],
+      "peak_over_wall_in": 48
+     },
+     {
+      "width_ft": 12,
+      "pitches": [
+       "25.95/12",
+       "3.33/12"
+      ],
+      "peak_over_wall_in": 51
+     }
+    ]
    },
    "walls": {
     "height": {
-     "ft": 6.67,
-     "in": 80,
-     "words": "6 ft 8 in"
+     "ft": 6.63,
+     "in": 79.5,
+     "words": "6 ft 7½ in"
     }
    },
    "main_door": {
@@ -2721,8 +2804,8 @@
      "in": 71.5,
      "words": "5 ft 11½ in"
     },
-    "wall_over_it_in": 8.5,
-    "words": "8.5 in of wall above it"
+    "wall_over_it_in": 8,
+    "words": "8 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -2773,15 +2856,15 @@
    "pictures": {
     "three_quarter": {
      "file": "MLB.jpg",
-     "sha256": "a39036699e497e211a2333c9ffd2b4fd543622e3587d94ca2ec5aff42777bbf4",
-     "bytes": 42488,
+     "sha256": "184cc70e60e2a2f2015f5a808c3ffe1f461e84609ed8e73de07ca88b94d99bfb",
+     "bytes": 41973,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "MLB-end.jpg",
-     "sha256": "cc4981920b310cee9b3644d8ea43ce06349fcfc8072a5c9949d5aca0eb2b9276",
-     "bytes": 27945,
+     "sha256": "18458f16445f19a7a520f668f38030340580ad602b0869c9b412431cf11f98ca",
+     "bytes": 27680,
      "width": 1024,
      "height": 761
     }
@@ -2874,7 +2957,7 @@
     {
      "code": "G",
      "name": "Garage",
-     "how": "Painted siding with a trim band."
+     "how": "Painted siding with a trim band, and a flatter roof."
     },
     {
      "code": "MU",
@@ -3057,16 +3140,16 @@
     "slopes": [
      {
       "where": "each side",
-      "pitch": "6.48/12",
-      "degrees": 28.4
+      "pitch": "5/12",
+      "degrees": 22.6
      }
     ],
     "peak_over_wall": {
-     "ft": 2.16,
-     "in": 25.9,
-     "words": "2 ft 2 in"
+     "ft": 1.67,
+     "in": 20,
+     "words": "1 ft 8 in"
     },
-    "peak_per_width": 0.27,
+    "peak_per_width": 0.208,
     "same_at_every_width": true,
     "by_width": []
    },
@@ -3138,15 +3221,15 @@
    "pictures": {
     "three_quarter": {
      "file": "DK.jpg",
-     "sha256": "ff7698942e5b5457889cebb15a8fac3952bfc8693ffa7642af1e84c5fb374fbf",
-     "bytes": 64726,
+     "sha256": "f368df41091c8465e949266bbe48aebab4a724b094657edc5fe4277aacc41be3",
+     "bytes": 63540,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "DK-end.jpg",
-     "sha256": "b1eb6e168a4f246fdbf63a3ad618240ecc2aacc9cc310b4d155905921c26b07b",
-     "bytes": 32094,
+     "sha256": "02affcff3a5febb2dd5b6042ffa6faca7ab601530fb9ac792d5807cbc4cbdf04",
+     "bytes": 31877,
      "width": 1024,
      "height": 761
     }

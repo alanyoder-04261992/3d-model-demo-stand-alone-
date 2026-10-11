@@ -33,7 +33,7 @@ import { defaults, setType, normalize } from "../../model/design.js";
 import { frameOf } from "../../model/frame.js";
 import { resetItems, openingRect } from "../../model/layout.js";
 import { makePlan } from "../../model/plan.js";
-import { gableBandY } from "../../model/roof-shapes.js";
+import { gableBandY, barnTrussPeakFt } from "../../model/roof-shapes.js";
 import { pSizes } from "../../model/pricing.js";
 import { y0 } from "../../engine/constants.js";
 
@@ -67,8 +67,15 @@ export const base64Length = (bytes) => 4 * Math.ceil(bytes / 3);
 export const PICTURE_NAME = /^[A-Z0-9]{1,8}(-end)?\.jpg$/;
 export const fileOf = (code, view) => `${code}${VIEWS[view].suffix}.jpg`;
 
-export const PITCH_NOTE = "Every pitch, height and size here is the library's own number: Barnwright's drawing of the standard building line. " +
-  "They are not a shop's measured numbers. A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.";
+/* Which styles use Alan's shop numbers (library/manufacturers/standard.json
+   styles.<KEY>.built) is said by name; tools/check-style-refs.mjs proves
+   every style with shop numbers is named here. */
+export const PITCH_NOTE = "Every pitch, height and size here is the standard building line as the 3D designer draws it. " +
+  "The Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility use Alan's 5/12, the Dormer Shed's main roof his 7/12, " +
+  "and the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage his barn roof heights " +
+  "(3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide); the other styles use Barnwright's drawing. " +
+  "A barn roof's height is to the peak of its trusses, the way a builder measures it; every other roof's is to the top of the roof. " +
+  "A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.";
 
 export const WALL_WORDS = Object.freeze({
   F: "the front end", B: "the back end", R: "the right long side", L: "the left long side",
@@ -89,7 +96,7 @@ const WALLS_LEGEND = {
    Every library style needs an entry: the check fails without one. */
 export const TELLS = Object.freeze({
   UT: { tells: ["Plain A roof, both sides the same.", "Double doors in the middle of the front end.", "Painted siding, with a trim band across the gable at the top of the walls."],
-    look_alikes: [["MU", "Metal siding and no trim band."], ["G", "A roll-up door on the front end."], ["GU", "Smaller: 6 ft wide, short walls and one door."]] },
+    look_alikes: [["MU", "Metal siding, no trim band, and a steeper roof."], ["G", "A roll-up door on the front end."], ["GU", "Smaller: 6 ft wide, short walls and one door."]] },
   SU: { tells: ["Plain A roof.", "Double doors in the middle of a long side, with a window each side."],
     look_alikes: [["DS", "A dormer on the roof, and a steeper roof."], ["SLB", "A barn roof."], ["CS", "The roof's peak is off-centre."]] },
   DS: { tells: ["A dormer with windows on the roof, over the doors.", "A steeper A roof than the Side Utility.", "Doors and windows on a long side."],
@@ -121,15 +128,15 @@ export const TELLS = Object.freeze({
   SLC: { tells: ["Barn roof with a porch that wraps round a front corner.", "A loft window in the front gable."],
     look_alikes: [["DSC", "A plain A roof."], ["LSC", "The porch is cut into a long side."]] },
   G: { tells: ["Plain A roof.", "A big roll-up door on the front end.", "A steel walk-in door and a window on a long side."],
-    look_alikes: [["MG", "Metal siding and no trim band."], ["LBG", "A barn roof."], ["UT", "Wooden double doors instead of a roll-up door."]] },
+    look_alikes: [["MG", "Metal siding, no trim band, and a steeper roof."], ["LBG", "A barn roof."], ["UT", "Wooden double doors instead of a roll-up door."]] },
   LBG: { tells: ["Barn roof with a roll-up door on the front end.", "A loft window above the roll-up door."],
     look_alikes: [["G", "A plain A roof."]] },
   MU: { tells: ["Ribbed metal siding and no trim band.", "Plain A roof.", "Double doors in the middle of the front end."],
-    look_alikes: [["UT", "Painted siding with a trim band."], ["MG", "A roll-up door."]] },
+    look_alikes: [["UT", "Painted siding with a trim band, and a flatter roof."], ["MG", "A roll-up door."]] },
   MLB: { tells: ["Ribbed metal siding with a barn roof.", "Double doors on the front end, and no loft window."],
     look_alikes: [["LB", "Painted siding and a loft window."]] },
   MG: { tells: ["Ribbed metal siding.", "A roll-up door on the front end."],
-    look_alikes: [["G", "Painted siding with a trim band."], ["MU", "Double doors instead of a roll-up door."]] },
+    look_alikes: [["G", "Painted siding with a trim band, and a flatter roof."], ["MU", "Double doors instead of a roll-up door."]] },
   MCS: { tells: ["Ribbed metal siding.", "The roof's peak is off-centre, toward the door side."],
     look_alikes: [["CS", "Painted siding with a trim band."]] },
   DK: { tells: ["The front half is an open dog run with chain-link sides and gates.", "One door on the back end.", "Plain A roof."],
@@ -142,15 +149,18 @@ const r1 = (n) => Math.round(n * 10) / 10;
 const r2 = (n) => Math.round(n * 100) / 100;
 const r3 = (n) => Math.round(n * 1000) / 1000;
 const num = (n) => String(r2(n));
+/* a length the model worked out in feet, without the last bits of
+   floating-point noise (43.75 in, not 43.7499999) */
+const clean = (ft) => Math.round(ft * 12 * 1e6) / 1e6 / 12;
 /* feet and inches to the nearest half inch: "7 ft 9 in", "5 ft 11½ in", "11 in" */
 function feetInches(ft) {
-  const halves = Math.round(ft * 24);
+  const halves = Math.round(clean(ft) * 24);
   const f = Math.floor(halves / 24), rest = halves - f * 24;
   const inches = rest ? `${Math.floor(rest / 2) || (rest % 2 ? "" : 0)}${rest % 2 ? "½" : ""} in` : "";
   if (!f) return inches || "0 in";
   return inches ? `${f} ft ${inches}` : `${f} ft`;
 }
-const height = (ft) => ({ ft: r2(ft), in: r1(ft * 12), words: feetInches(ft) });
+const height = (ft) => ({ ft: r2(clean(ft)), in: r1(clean(ft) * 12), words: feetInches(ft) });
 function pitchOf(rise, run) {
   return { pitch: `${num(rise / run * 12)}/12`, degrees: r1(Math.atan2(rise, run) * 180 / Math.PI) };
 }
@@ -225,7 +235,11 @@ function roofFacts(plan) {
   else if (mirrored && n === 4) slopes = [{ where: "lower part, each side", ...segs[0] }, { where: "upper part, each side", ...segs[1] }];
   else if (n === 2) slopes = [{ where: `over ${WALL_WORDS.L}`, ...segs[0] }, { where: `over ${WALL_WORDS.R}`, ...segs[1] }];
   else slopes = segs.map((s, i) => ({ where: `part ${i + 1} of ${n}, left to right`, ...s }));
-  const peak = Math.max(...prof.map((p) => p[1]));
+  /* a barn roof's height at the peak of its trusses, as a builder measures
+     it (and as Alan's shop numbers are given); every other roof's at the top
+     of the roof line */
+  const line = Math.max(...prof.map((p) => p[1]));
+  const peak = plan.t.roof === "gambrel" && plan.construction ? barnTrussPeakFt(W, plan.t, plan.construction) : line;
   return { slopes, peak_over_wall: height(peak), peak_per_width: r3(peak / W) };
 }
 

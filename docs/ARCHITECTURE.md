@@ -860,8 +860,11 @@ branch on GitHub, the way it reads the papers and the terms
   they change with size), what tells it apart in a photo and the styles that
   look like it, the standard sizes, each picture's sha256, and the library's
   version (the sha256 of `standard.json` and `construction.json`). The
-  pitches are the library's own numbers, which are Barnwright's drawing, not
-  a shop's measurements, and the file says so.
+  numbers are the standard building line as the 3D designer draws it: Alan's
+  shop numbers on the styles that have them (`styles.<KEY>.built` in
+  `standard.json`), Barnwright's drawing on the rest, and the file says
+  which. A barn roof's height is to the peak of its trusses, the way a
+  builder measures it.
 
 `node tools/make-style-refs.mjs` draws them with the look harness
 (`tools/look.html`) at the size the designer lands on for each style, in the
@@ -870,9 +873,9 @@ code (`tools/lib/style-facts.mjs`; only "what tells it apart" is written by
 hand there). `node tools/check-style-refs.mjs` works every fact out again
 without a browser and fails when `styles.json`, a picture or the library
 disagree, and when a website build, the client package or a Netlify function
-would carry the pictures. Remake them when a library style or the
-construction numbers change (the `add-a-style` skill) or the look changes
-(the `check-the-look` skill).
+would carry the pictures. Remake them when a library style, a shop number
+or the construction numbers change (the `add-a-style` skill) or the look
+changes (the `check-the-look` skill).
 
 ## Porting rules (the only edits allowed to Barnwright code)
 

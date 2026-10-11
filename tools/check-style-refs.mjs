@@ -22,7 +22,8 @@
       the Control Room may send to Claude at once), the sheet fits too, and
       nothing else is in the folder;
    4. the comparison CAN fail: one changed byte in a picture, a steeper gable
-      in the library, and a missing picture are each caught;
+      in the library, a changed shop number, and a missing picture are each
+      caught;
    5. no dealer's website carries the pictures: the website build
       (npm run build) and the client package (npm run build:client) leave
       library/style-refs/ out and keep the rest of the library, and the Netlify
@@ -110,13 +111,21 @@ else if (prepared) {
     ok(`${STYLES_FILE} is exactly what the library says today: every pitch, wall height, door, window and size worked out again, and every picture's sha256 read again (library version ${fresh.library_version})`, same, detail);
     ok("every style's pitch is given as N/12 for each slope, with its wall height in feet and inches",
       fresh.styles.every((s) => s.roof.slopes.length && s.roof.slopes.every((x) => /^\d+(\.\d+)?\/12$/.test(x.pitch)) && /^\d+ ft( \d*½? in)?$/.test(s.walls.height.words)));
-    ok("the pitches are said to be the library's (Barnwright's) numbers, not a shop's", /library's own number/.test(fresh.pitch_note) && /Barnwright/.test(fresh.pitch_note));
+    /* the note says whose numbers they are: every style with Alan's shop
+       numbers (styles.<KEY>.built in the standard line) by name, and
+       Barnwright's drawing for the rest */
+    const shop = Object.entries(prepared.manufacturer.styles).filter(([, st]) => st.built && Object.keys(st.built).some((k) => !k.startsWith("_"))).map(([, st]) => st.name);
+    const unnamed = shop.filter((name) => !new RegExp(`(^|[ ,(])${name}([ ,);']|$)`).test(fresh.pitch_note));
+    ok(`the note names every style built to Alan's shop numbers (${shop.length}) and says the rest use Barnwright's drawing`,
+      shop.length > 0 && !unnamed.length && /Alan's/.test(fresh.pitch_note) && /other styles use Barnwright's drawing/.test(fresh.pitch_note), unnamed.length ? `not named: ${unnamed.join(", ")}` : fresh.pitch_note);
     const ut = fresh.styles.find((s) => s.code === "UT"), lb = fresh.styles.find((s) => s.code === "LB"), cs = fresh.styles.find((s) => s.code === "CS");
     if (ut && lb && cs) {
-      ok("spot check: the Utility Shed is a 6.48/12 gable on 7 ft 9 in walls; the Lofted Barn 32/12 and 4.11/12; the Cottage Shed 4.59/12 and 9.75/12",
-        ut.roof.slopes.map((x) => x.pitch).join() === "6.48/12" && ut.walls.height.words === "7 ft 9 in" &&
-        lb.roof.slopes.map((x) => x.pitch).join() === "32/12,4.11/12" && cs.roof.slopes.map((x) => x.pitch).join() === "4.59/12,9.75/12",
-        JSON.stringify([ut.roof.slopes, lb.roof.slopes, cs.roof.slopes]));
+      ok("spot check: the Utility Shed is a 5/12 gable on 7 ft 9½ in walls (Alan's); the Lofted Barn's trusses are 3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide on 6 ft 7½ in walls (Alan's), the 14 ft keeping its own; the Cottage Shed 4.59/12 and 9.75/12 (Barnwright's)",
+        ut.roof.slopes.map((x) => x.pitch).join() === "5/12" && ut.walls.height.words === "7 ft 9½ in" &&
+        lb.walls.height.words === "6 ft 7½ in" && lb.roof.same_at_every_width === false &&
+        JSON.stringify(lb.roof.by_width.map((b) => [b.width_ft, b.peak_over_wall_in])) === JSON.stringify([[8, 43.8], [10, 48], [12, 51], [14, 75.1]]) &&
+        cs.roof.slopes.map((x) => x.pitch).join() === "4.59/12,9.75/12",
+        JSON.stringify([ut.roof.slopes, ut.walls.height.words, lb.walls.height.words, lb.roof.by_width, cs.roof.slopes]));
     }
   }
 }
@@ -159,9 +168,16 @@ if (fresh && storedText) {
   lib.roof.shapes.gable.rise = { w: 0.25 };
   let t2 = null;
   try { t2 = styleRefsDoc({ ...inputs(), constructionBytes: Buffer.from(JSON.stringify(lib, null, 1)), pictureBytes: fromDisk }); } catch (e) { t2 = { error: e.message }; }
-  const ut2 = t2 && t2.styles && t2.styles.find((s) => s.code === "UT");
-  ok("a steeper or flatter library gable is caught: with the gable rise at 0.25 of the width the Utility Shed's pitch is worked out as 6/12 and the library version changes",
-    !!ut2 && ut2.roof.slopes[0].pitch === "6/12" && t2.library_version !== fresh.library_version, JSON.stringify(ut2 ? ut2.roof.slopes : t2));
+  const mu2 = t2 && t2.styles && t2.styles.find((s) => s.code === "MU");
+  ok("a steeper or flatter library gable is caught: with the gable rise at 0.25 of the width the Metal Utility's pitch (Barnwright's) is worked out as 6/12 and the library version changes",
+    !!mu2 && mu2.roof.slopes[0].pitch === "6/12" && t2.library_version !== fresh.library_version, JSON.stringify(mu2 ? mu2.roof.slopes : t2));
+  const std = JSON.parse(read(STANDARD_PATH).toString("utf8"));
+  std.styles.UT.built = { ...std.styles.UT.built, roofPitch: 6 };
+  let t4 = null;
+  try { t4 = styleRefsDoc({ ...inputs(), standardBytes: Buffer.from(JSON.stringify(std, null, 1)), pictureBytes: fromDisk }); } catch (e) { t4 = { error: e.message }; }
+  const ut4 = t4 && t4.styles && t4.styles.find((s) => s.code === "UT");
+  ok("a changed shop number is caught: with the Utility Shed's shop pitch at 6/12 it is worked out as 6/12 and the library version changes",
+    !!ut4 && ut4.roof.slopes[0].pitch === "6/12" && t4.library_version !== fresh.library_version, JSON.stringify(ut4 ? ut4.roof.slopes : t4));
   let t3 = null;
   try { styleRefsDoc({ ...inputs(), pictureBytes: (f) => (f === "LB-end.jpg" ? null : fromDisk(f)) }); } catch (e) { t3 = e.message; }
   ok("a missing picture is caught, in plain words", !!t3 && /LB-end\.jpg is not there/.test(t3) && /make-style-refs/.test(t3), t3 || "nothing was said");
