@@ -50,6 +50,22 @@ construction lists come from `library/`). Where each answer goes:
 | 8. Colors | Price list: `palettes`, `defaults` |
 | 9. Prices and quotes | Settings: `pricing.show`, `notes.finePrint`, `notes.sizeNotes`, `pricing.rto` (factor = 5000 / (monthly × months)), `leads.fields`, `leads.askPlan`, `leads.smsConsent` |
 
+**Barnwright can do sections 2, 5, 7, 8 and 9 for them** before their 3D
+designer opens to customers (Barnwright setup access, "Barnwright setup
+access" in `docs/OFFICE.md`): in the Control Room, **Open their price list**
+opens their Dealer Center as Barnwright with only the price list and
+settings, and the Claude connector will do the same through the Control
+Room once it is there. It works only after their owner agrees to the
+Barnwright terms 2.2, and their owner can stop it on the Barnwright card in
+Settings. It can't open the 3D designer, change where quotes go or which
+websites may show it, or change how the buildings are built (except a gable
+roof's pitch). Lots (3), team (4) and how they build (6) stay as above: the
+owner adds lots and the team, and construction is changed here with the
+`change-construction` skill. Before opening, go through each lot's preview
+with the owner (**Look at the preview**); then the owner opens it in
+Settings, 3D designer, **Open to customers**. After that, Barnwright changes
+nothing unless the owner turns on the switch on the Barnwright card.
+
 Run `npm run build:client` for a client delivery. Do not include learning pages,
 reference photos, setup tools, `.agents`, `.claude` or these skills. The existing
 learning preview's opt-in setting must not be copied to client deployments.

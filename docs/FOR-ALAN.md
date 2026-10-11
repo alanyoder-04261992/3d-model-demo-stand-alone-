@@ -306,11 +306,26 @@ Dealer Center guide](OFFICE.md).) From then on:
   control room) is how many lots they can have open. The Lots screen says
   "3 of 3 open lots in your Barnwright plan" and turns off **Add a lot**
   when they're at the limit.
-* **Help from Barnwright:** their owner can switch it on in Settings for 1 to
-  24 hours. Then **Run customer diagnostics** in your control room checks
-  how their Dealer Center is running. You never see their customers or
-  prices, and it turns itself off when the time is up. They can see each
-  check in a short list under the switch.
+* **Barnwright in their Settings:** one card, **Barnwright**, holds
+  everything you may do there. Setting up and changing things start
+  working once their owner agrees to the Barnwright terms 2.2 (the papers
+  still carry 2.1 today, so until then only the checks work).
+  * **Before they open to customers,** you may set up their price list and
+    settings (Barnwright setup access). In your control room, **Open their
+    price list** opens their Dealer Center as Barnwright for up to 8 hours,
+    with only the price list and settings. Their owner can stop this on the
+    card at any time.
+  * **They check it on the preview.** While their 3D designer is closed,
+    their team and you see each lot's 3D designer as a preview (**Look at
+    the preview**). Their customers still see it closed. Go through it with
+    the owner, then the owner opens it in Settings.
+  * **After they open,** you change nothing unless the owner switches it on
+    for 1 to 24 hours and says what you should do. Their owner can turn it
+    off any time, and it turns itself off when the time is up.
+  * **Run customer diagnostics** in your control room still only checks how
+    their Dealer Center is running, while the owner allows it. You never
+    see their customers.
+  * They see every check and every change in a short list on the card.
 
 Your own business isn't connected to a control room, so none of this ever
 limits it. On your own computer, `npm run office -- --control-room` shows

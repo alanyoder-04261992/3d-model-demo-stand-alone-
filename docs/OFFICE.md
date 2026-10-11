@@ -455,6 +455,14 @@ reply with Claude, and Alan approves it in his Sales Inbox.
 room and inbox; `tools/check-dealer-center.mjs` asks and answers in
 Chromium.
 
+With `--control-room`, `POST /__local/barnwright` tries Barnwright setup
+access on the computer: `{terms: "2.2"}` records the owner's agreement to
+terms 2.2, and `{visit: true}` answers `{url}`, a `/dealer#barnwright=...`
+address with a fresh pass from the pretend control room (what **Open their
+price list** opens). `tools/check-setup-access.mjs` proves the server's
+rules and `tools/check-setup-screens.mjs` clicks through the owner's card,
+the preview and a visit in Chromium.
+
 ## Barnwright setup access
 
 <!-- THE CONTRACT for Barnwright changing a business's price list and
@@ -566,6 +574,13 @@ customers can't see this until you open it in Settings."
   `GET /api/office/barnwright/lots/:slug/preview` (the visit) answer like
   `GET /api/lots/:slug`, plus `preview: true`, also while the 3D designer or
   that lot is closed.
+* The pages: `/d/<lot>/?preview=1` (the team; the Lots screen's and the
+  closed banner's **Look at the preview**) and `/d/<lot>/?preview=barnwright`
+  (the visit). Each serves the lot's 3D designer page even while it is
+  closed, and the page loads the preview answer above instead of the
+  customers' one. Nobody else gets a preview: without the sign-in or the
+  visit's cookie the answer is a 401 and the page says to sign in to the
+  Dealer Center first.
 * A preview has no Send: a quote can't come from it. Customers still get
   the closed page. Opening has no grace period: once open, Barnwright needs
   the owner's switch.
@@ -1244,6 +1259,11 @@ exactly as they were, and nothing here sends email.
   bodyBytes})`, and a refusing twin for incomplete settings.
 * `netlify/functions/barnwright-setup.mts` (new): the door, three lines like
   `tenant-diagnostics.mts`.
+* `ui/office/api.js`, `ui/office/main.js` and `ui/office/visit-draft.js`
+  (new): the visit's Barnwright mode, its reduced screens, the Done bar and
+  the unsaved work kept in the tab (`sessionStorage`) when the visit ends;
+  `ui/office/views/settings.js`: the Barnwright card.
+* `ui/app.js` and `ui/load.js`: the preview bar and the preview answer.
 * `tools/lib/setup-fixtures.json`: the examples (TEST ONLY key pairs),
   made by `node tools/lib/make-setup-fixtures.mjs`;
   `node tools/lib/make-setup-fixtures.mjs --check` proves the file is what
@@ -1485,6 +1505,11 @@ section 19).
 | `ui/problems-start.js` | starts it on a 3D designer page before anything else, so a problem while the designer is still loading is reported too |
 | `tools/check-help.mjs` | Help's rules, against a pretend control room and Sales Inbox |
 | `tools/lib/fake-help-inbox.mjs` | the pretend Sales Inbox (the checks and `--control-room`) |
+| `server/office/setup-access.js` | Barnwright setup access: when Barnwright may change things, the owner's Barnwright card, the visit, and what the check-in reports |
+| `server/office/setup-lock.js` | the lock: what Barnwright may never change in a price list |
+| `ui/office/visit-draft.js` | keeps a visit's unsaved work in the tab when the visit ends |
+| `tools/check-setup-access.mjs` | Barnwright setup access's rules, against a pretend control room |
+| `tools/check-setup-screens.mjs` | the Barnwright card, the preview and a visit, in Chromium |
 | `tools/lib/setup-fixtures.json`, `tools/lib/make-setup-fixtures.mjs` | Barnwright setup access: an example of every request and answer (with TEST ONLY key pairs), and the script that makes and checks it (`--check`) |
 
 ## The screens
