@@ -690,7 +690,7 @@ const BROKEN = [
   ["a quote form box that is neither", (s) => { s.leads.fields.phone = "maybe"; }, /Required, Optional or Off/],
   ["a * website for the designer", (s) => { s.embed.origins = ["*"]; }, /websites allowed to show the designer/],
   ["open or closed written wrong", (s) => { s.status = "open"; }, /open or closed/],
-  ["construction written wrong", (s) => { s.construction = { floor: { spacingIn: "lots" } }; }, /construction settings/],
+  ["construction written wrong", (s) => { s.construction = { floor: { spacingIn: "lots" } }; }, /The construction setting floor spacing in inches: "lots" is not a spacing in inches/],
   ["fine print that is not text", (s) => { s.notes.finePrint = 5; }, /line under the price/],
   ["a style renamed to nothing", (s) => { s.offer.LB.name = ""; }, /needs a name/],
   ["a dormer the builder does not make", (s) => { s.options.dormers["99"] = 100; }, /not in the builder's library/],
@@ -711,6 +711,11 @@ const BROKEN = [
   ["a 3 in eave that makes the Lofted Barn Garage's door head worse", (s) => { s.offer.LBG.built = { eaveOverhang: 3 }; }, /\d+x\d+: the roof edge hangs 4 in in front of the head of the 36″ In-Swing Door on the right side\. With the standard numbers it is 3\/4 in\./],
   ["a size too short for the side porch", (s) => { s.offer.SC.sizes["10x8"] = 4000; }, /The 10x8 .+ is too short for its 8 ft side porch: sell it 12 ft long and up, or set a shorter side porch length\./],
   ["an extra with a construction setting misspelled", (s) => { s.options.extras = [{ key: "joists", name: "Close joists", input: "check", price: 1, construction: { "floor.spacingInn": 12 } }]; }, /Close joists: "spacingInn" is not a construction setting\. Did you mean spacingIn\?/],
+  /* which setting is wrong is named in words (review F8): never "one of its
+     construction settings" or "reload the page" for a number written wrong */
+  ["an extra with 500 top plates", (s) => { s.options.extras = [{ key: "heavy", name: "Heavy floor", input: "check", price: 1, construction: { "walls.topPlates": 500 } }]; }, /Heavy floor \(top plates\): 500 should be a whole number from 1 to 3\./],
+  ["an extra whose construction is a word", (s) => { s.options.extras = [{ key: "heavy", name: "Heavy floor", input: "check", price: 1, construction: "heavy" }]; }, /Heavy floor: how it changes the building could not be read\. Take the extra out and add it again\./],
+  ["500 top plates in the construction settings", (s) => { s.construction = { walls: { topPlates: 500 } }; }, /The construction setting top plates: 500 should be a whole number from 1 to 3\./],
 ];
 for (const [label, change, words] of BROKEN) {
   const s = clone(cur.settings);
@@ -770,6 +775,26 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   const addPath = clone(olderNow.settings); addPath.construction.floor = { spacingInn: 12 };
   const refusedPath = await want(422, "PUT", "/api/office/price-list", { settings: addPath, version: olderNow.version }, { label: "(c) a save that adds a construction typo" });
   ok("(c) ... a construction typo is named too", /"spacingInn" is not a construction setting\. Did you mean spacingIn\?/.test(refusedPath.error || ""), refusedPath.error);
+  /* an old typo in an extra's construction stays the same old problem when
+     another extra above it is taken out or added (review F5): problems are
+     compared by the extra's key, not its place in the list */
+  {
+    const withJoists = clone(olderNow.settings);
+    const xs = withJoists.options.extras || [];
+    withJoists.options.extras = [{ key: "gutters-f5", name: "Gutters", input: "check", price: 80 }, ...xs, { key: "joists-f5", name: "Close joists", input: "check", price: 1, construction: { "floor.spacingInn": 12 } }];
+    const raw2 = await S.read("price-list");
+    await S.put("price-list", { ...raw2.data, settings: withJoists, version: raw2.data.version + 1 });
+    olderNow = await want(200, "GET", "/api/office/price-list");
+    const noGutters = clone(olderNow.settings); noGutters.options.extras = noGutters.options.extras.filter((x) => x.key !== "gutters-f5");
+    await want(200, "PUT", "/api/office/price-list", { settings: noGutters, version: olderNow.version }, { label: "(e) taking out an extra above an older extra that holds a construction typo" });
+    olderNow = await want(200, "GET", "/api/office/price-list");
+    const atTop = clone(olderNow.settings); atTop.options.extras = [{ key: "ridge-f5", name: "Ridge vent", input: "check", price: 90 }, ...atTop.options.extras];
+    await want(200, "PUT", "/api/office/price-list", { settings: atTop, version: olderNow.version }, { label: "(e) adding an extra at the top of the list" });
+    olderNow = await want(200, "GET", "/api/office/price-list");
+    const tidy = clone(olderNow.settings); tidy.options.extras = tidy.options.extras.filter((x) => !/-f5$/.test(x.key));
+    await want(200, "PUT", "/api/office/price-list", { settings: tidy, version: olderNow.version }, { label: "taking the older extras out again" });
+    olderNow = await want(200, "GET", "/api/office/price-list");
+  }
   const known = clone(olderNow.settings); known.construction.interior = { benchHeightIn: 30 }; known.construction.ramp = { lengthFt: 5 };
   await want(200, "PUT", "/api/office/price-list", { settings: known, version: olderNow.version }, { label: "(c) the bench height and ramp length settings the parts read are known settings" });
   olderNow = await want(200, "GET", "/api/office/price-list");

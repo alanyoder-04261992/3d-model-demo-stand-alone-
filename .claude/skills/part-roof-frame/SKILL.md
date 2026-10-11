@@ -81,7 +81,9 @@ All sloping lengths use longest points. Read the measurement skill's
 using the sales width in `state.size`. Missing actual width, peak height
 or projection blocks a full fit rather than borrowing the 10-wide inputs.
 Confirmed peak heights from the **top of the upper plate to the peak** are
-43.75 in for 8-wide, 48 in for 10-wide and 51 in for 12-wide. The 8/12-wide
+43.75 in for 8-wide, 48 in for 10-wide and 51 in for 12-wide (the standard
+buildings' `peakIn`; the roof framing's highest piece lands on it exactly,
+and the roof line over the deck stands about 1/2 in higher, Oct 2026). The 8/12-wide
 tip projections and actual 8-wide width remain unspecified. The following
 fit and 48-inch rise describe the existing **10-wide** lesson.
 

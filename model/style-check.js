@@ -91,13 +91,16 @@ import { PIPELINE } from "../parts/index.js";
 import { dormerGeom, loftZones, roofSection, envY } from "../parts/roof-frame.js";
 import { porchOutlines, roomOutline, pointInPoly } from "../parts/floor-frame.js";
 import * as G from "./framing-geometry.js";
+import { pitchLimits } from "./build-settings.js";
 
 export const CODES = Object.freeze(["draws", "past-wall", "overlap", "too-high", "gable-item", "eave", "door-fit", "roof", "roof-widths", "dormer", "porch", "framing", "loft"]);
 
 /* The roof pitch a style may have, rise per 12 in of run: the same limits
-   as the How it's built roof pitch setting (BUILDFAST-SPEC A.2). A barn roof
-   and a saltbox have no pitch setting, so no limit here. */
-export const ROOF_PITCH_LIMITS = Object.freeze({ gable: [3, 12], lean: [1, 6], slope: [1, 8] });
+   as the How it's built roof pitch setting (model/build-settings.js
+   pitchLimits: what the 3D designer draws and frames, 4/12 at least on a
+   metal building's purlin deck). A barn roof and a saltbox have no pitch
+   setting, so no limit here. */
+export const ROOF_PITCH_LIMITS = Object.freeze({ gable: pitchLimits("gable"), lean: pitchLimits("lean"), slope: pitchLimits("slope") });
 
 /* Every limit the checks use, in feet. */
 export const LIMITS = Object.freeze({
@@ -374,11 +377,11 @@ function checkRoof(plan, add) {
   if (rise < LIMITS.peakMinFt - EPS) add("problem", "roof", "peak-low", `the roof peak is only ${lengthWords(rise)} above the wall (1 ft at least).`, undefined, LIMITS.peakMinFt - rise);
   else if (rise > LIMITS.peakMaxFt + EPS) add("problem", "roof", "peak-high", `the roof peak is ${lengthWords(rise)} above the wall (8 ft at most).`, undefined, rise - LIMITS.peakMaxFt);
   else if (rise < LIMITS.peakWarnFt - EPS) add("warning", "roof", "peak-low", `the roof peak is only ${lengthWords(rise)} above the wall.`, undefined, LIMITS.peakWarnFt - rise);
-  const lim = ROOF_PITCH_LIMITS[t.roof];
+  const lim = ROOF_PITCH_LIMITS[t.roof] ? pitchLimits(t.roof, !!t.metal) : null;
   if (lim && rise > 0) {
     const pitch = rise / (t.roof === "gable" ? W / 2 : W) * 12;
-    if (pitch > lim[1] + 1e-6) add("problem", "roof", "pitch", `the roof pitch is ${pitchWords(pitch)}, steeper than ${lim[1]}/12, the steepest the 3D designer draws.`, undefined, pitch - lim[1]);
-    else if (pitch < lim[0] - 1e-6) add("problem", "roof", "pitch", `the roof pitch is ${pitchWords(pitch)}, flatter than ${lim[0]}/12, the flattest the 3D designer draws.`, undefined, lim[0] - pitch);
+    if (pitch > lim[1] + 1e-6) add("problem", "roof", "pitch", `the roof pitch is ${pitchWords(pitch)}, steeper than ${pitchWords(lim[1])}, the steepest the 3D designer draws.`, undefined, pitch - lim[1]);
+    else if (pitch < lim[0] - 1e-6) add("problem", "roof", "pitch", `the roof pitch is ${pitchWords(pitch)}, flatter than ${pitchWords(lim[0])}, the flattest the 3D designer ${t.metal && t.roof === "gable" ? "can frame a metal roof" : t.roof === "gable" ? "draws" : "can frame"}.`, undefined, lim[0] - pitch);
   }
 }
 

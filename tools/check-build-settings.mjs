@@ -71,6 +71,7 @@ import { roofDeckMembers } from "../parts/roof-deck.js";
 import { porchRect } from "../ui/blueprint.js";
 import { constructionFor } from "../model/construction.js";
 import { checkStyle } from "../model/style-check.js";
+import { barnTrussPeakFt, roofRise } from "../model/roof-shapes.js";
 
 const LIB = readJSON("library/construction.json");
 /* Barnwright's own numbers (the standard manufacturer without the shop
@@ -256,9 +257,16 @@ group("5. eaves measured level");
 /* ------------------------------------------------------------------ 6 */
 group("6. barn roof height by width");
 {
-  const peakOf = (cat, z) => { const fr = frameOf(stateOf(cat, "LB", z), cat); return { rise: Math.max(...fr.prof.map((p) => p[1])) - fr.topY, knee: fr.prof[1][0] }; };
+  /* the barn roof height is the TRUSSES' peak above the wall (Alan: "from
+     the top of the upper plate to the peak"); the roof line drawn over the
+     deck stands the deck's thickness higher (review GL-5) */
+  const peakOf = (cat, z) => { const fr = frameOf(stateOf(cat, "LB", z), cat); return { rise: barnTrussPeakFt(fr.W, fr.t, fr.construction), line: Math.max(...fr.prof.map((p) => p[1])) - fr.topY, knee: fr.prof[1][0] }; };
   const one = catalogue({ construction: { roof: { shapes: { gambrel: { peakIn: { 10: 48 } } } } } });
-  ok("48 in on a 10 ft barn draws the peak 4 ft above the wall", near(peakOf(one, "10x16").rise, 4), String(peakOf(one, "10x16").rise));
+  ok("48 in on a 10 ft barn draws the trusses' peak 4 ft above the wall", near(peakOf(one, "10x16").rise, 4), String(peakOf(one, "10x16").rise));
+  const plan10 = makePlan(stateOf(one, "LB", "10x16"), one);
+  const trussTop = Math.max(...roofFrameMembers(plan10).flatMap((m) => (m.poly || []).map((q) => q[1])));
+  ok("... the roof framing itself reaches it (its highest piece 4 ft above the wall)", near(trussTop - plan10.topY, 4, 1e-6), String((trussTop - plan10.topY) * 12));
+  ok("... and the roof line over the deck stands 15/32 in higher", near(peakOf(one, "10x16").line - 4, 0.4375 / 12 / Math.cos(Math.atan2(peakOf(one, "10x16").line - (plan10.prof[1][1] - plan10.topY), -plan10.prof[1][0])), 1e-9), String((peakOf(one, "10x16").line - 4) * 12));
   ok("... with the knee where it was", peakOf(one, "10x16").knee === peakOf(BASE, "10x16").knee);
   const three = catalogue({ construction: { roof: { shapes: { gambrel: { peakIn: { 8: 43.75, 10: 48, 12: 51 } } } } } });
   ok("8, 10 and 12 ft: 43 3/4, 48 and 51 in", near(peakOf(three, "8x12").rise * 12, 43.75) && near(peakOf(three, "10x16").rise * 12, 48) && near(peakOf(three, "12x16").rise * 12, 51));
@@ -268,7 +276,16 @@ group("6. barn roof height by width");
   const cat11 = resolve(m, M, LIB);
   ok("an 11 ft barn is no taller than the 12 ft one (51 in, not 4 ft 11 3/8 in)", near(peakOf(cat11, "11x16").rise * 12, 51), String(peakOf(cat11, "11x16").rise * 12));
   ok("a 9 ft barn is no taller than the 10 ft one (48 in)", near(peakOf(cat11, "9x12").rise * 12, 48), String(peakOf(cat11, "9x12").rise * 12));
-  ok("13 and 14 ft keep their own shape (taller than 51 in)", near(peakOf(cat11, "13x24").rise, 0.45 * 13) && near(peakOf(w11, "14x24").rise, peakOf(BASE, "14x24").rise));
+  /* the camera and the shadow box (roofRise) take a barn roof set taller
+     than Barnwright's 0.45 W, so its top is never cut off (review GL-6);
+     Barnwright's own barn keeps 0.45 W */
+  const tall = catalogue({ construction: { roof: { shapes: { gambrel: { peakIn: { 8: 96 } } } } } });
+  const fTall = frameOf(stateOf(tall, "LB", "8x12"), tall), fBase = frameOf(stateOf(BASE, "LB", "8x12"), BASE);
+  const bTall = assemble(makePlan(stateOf(tall, "LB", "8x12"), tall), { viewport: { w: 742, h: 803 }, fit: "barnwright", frames: false }).bounds;
+  ok("a 96 in barn roof on an 8 ft barn: the camera's box reaches its peak", near(roofRise(8, fTall.t, fTall.construction), Math.max(...fTall.prof.map((p) => p[1])) - fTall.topY) && (!bTall || bTall.H >= Math.max(...fTall.prof.map((p) => p[1])) - 1e-9),
+    J({ rise: roofRise(8, fTall.t, fTall.construction), peak: Math.max(...fTall.prof.map((p) => p[1])) - fTall.topY, bounds: bTall }));
+  ok("... while Barnwright's own barn keeps 0.45 W", near(roofRise(8, fBase.t, fBase.construction), 0.45 * 8));
+  ok("13 and 14 ft keep their own shape (taller than 51 in)", near(peakOf(cat11, "13x24").line, 0.45 * 13) && near(peakOf(w11, "14x24").line, peakOf(BASE, "14x24").line));
 }
 
 /* ------------------------------------------------------------------ 7 */
@@ -318,6 +335,13 @@ group("9. typing a value: parse, format and the plain errors");
   ok("a 6 in eave is refused on a barn roof", P("eaveOverhang", "6", { kind: "barn" }).problem === "Eave overhang 6 in is more than a barn roof can take: 3 in at most.");
   ok("barn heights must not drop as the barn gets wider", /the 12 ft wide barn \(4 ft\) is lower than the 10 ft wide barn \(4 ft 3 in\)/.test(P("barnPeak", { 10: 51, 12: 48 }).problem || ""));
   ok("side porch lengths: listed twice is said", P("sidePorchLengths", [8, 8]).problem === "Side porch lengths: 8 ft is listed twice.");
+  /* the flattest pitch the 3D designer can FRAME (review GL-7): a metal
+     building's purlin deck needs 4/12, a lean-to 1 1/4/12, a single slope
+     2/12; said for the setting, never as framing pieces */
+  ok("a metal gable roof at 3 1/2/12: \"... the flattest the 3D designer can frame a metal roof\"", P("roofPitch", "3 1/2/12", { kind: "gable", metal: true }).problem === "Roof pitch 3 1/2/12 is flatter than 4/12, the flattest the 3D designer can frame a metal roof." && P("roofPitch", "3/12", { kind: "gable" }).value === 3, J(P("roofPitch", "3 1/2/12", { kind: "gable", metal: true })));
+  ok("a lean-to at 1/12 and a single slope at 1 1/2/12 are refused for the setting", P("roofPitch", 1, { kind: "lean" }).problem === "Roof pitch 1/12 is flatter than 1 1/4/12, the flattest the 3D designer can frame on lean-to roofs." && /flatter than 2\/12, the flattest the 3D designer can frame on single slope roofs\./.test(P("roofPitch", 1.5, { kind: "slope" }).problem || ""));
+  const mu = barnwrightCompany(); mu.offer.MU.built = { roofPitch: 3 };
+  ok("... and on the Metal Utility itself, at its box", BUILT.problems(mu, M).some((x) => x.path === "offer.MU.built.roofPitch" && /flattest the 3D designer can frame a metal roof/.test(x.words)), J(BUILT.problems(mu, M)));
   ok("pitches write as a shed builder says them", BUILT.format("roofPitch", 5) === "5/12" && BUILT.format("roofPitch", 5.25) === "5 1/4/12" && BUILT.format("barnPeak", { 8: 43.75, 10: 48 }) === "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft");
 }
 
@@ -404,7 +428,7 @@ group("11. problems, screens and History words");
   ok("effective: a business-wide eave", eff.eaveOverhang.words === "5 in" && eff.eaveOverhang.from === "business-wide");
   ok("effective: the library's wall, in a builder's words", eff.wallHeight.words === "7 ft 9 in" && eff.wallHeight.from === "library", J(eff.wallHeight));
   const effLB = Object.fromEntries(BUILT.effective(BASE, "LB").map((e) => [e.id, e]));
-  ok("effective: the library's barn roof heights by width", /^8 ft wide: 3 ft 7 3\/16 in, 10 ft wide: 4 ft 6 in/.test(effLB.barnPeak.words), effLB.barnPeak.words);
+  ok("effective: the library's barn roof heights at every width sold, at the trusses' peak (the roof line over the deck stands 15/32 in higher)", /^8 ft wide: 3 ft 6 3\/4 in, 10 ft wide: 4 ft 5 9\/16 in, 12 ft wide: 5 ft 4 5\/16 in, 14 ft wide: 6 ft 3 1\/8 in$/.test(effLB.barnPeak.words), effLB.barnPeak.words);
   /* History */
   const before = barnwrightCompany(), after = copy(before);
   after.offer.LB.built = { wallHeight: 84 }; after.built = { roofPitch: { gable: 6 } };
@@ -473,7 +497,9 @@ group("13. the shop standard (Alan's numbers)");
 {
   const DEMO = loadCatalogue("demo"), BW = barnwrightCatalogue(), SM = standardManufacturer();
   const fr = (cat, t, z) => frameOf(stateOf(cat, t, z), cat);
-  const peakIn = (cat, t, z) => { const f = fr(cat, t, z); return (Math.max(...f.prof.map((p) => p[1])) - f.topY) * 12; };
+  /* a barn: its trusses' peak (what Alan measured); every other roof: its line */
+  const peakIn = (cat, t, z) => { const f = fr(cat, t, z); return (f.t.roof === "gambrel" ? barnTrussPeakFt(f.W, f.t, f.construction) : Math.max(...f.prof.map((p) => p[1])) - f.topY) * 12; };
+  const lineIn = (cat, t, z) => { const f = fr(cat, t, z); return (Math.max(...f.prof.map((p) => p[1])) - f.topY) * 12; };
   const wallIn = (cat, t, z) => fr(cat, t, z).t.wallH * 12;
   for (const t of ["UT", "SU"]) {
     ok(`${t} 10x16: the roof rises 25 in above the wall (5/12; Barnwright 32.4 in)`, near(peakIn(DEMO, t, "10x16"), 25, 1e-9), String(peakIn(DEMO, t, "10x16")));
@@ -498,7 +524,7 @@ group("13. the shop standard (Alan's numbers)");
   const differs = same.filter((k) => Object.keys(DEMO.P[k]).some((z) => J(fr(DEMO, k, z).prof) !== J(fr(BW, k, z).prof) || fr(DEMO, k, z).t.wallH !== fr(BW, k, z).t.wallH));
   ok(`the other ${same.length} styles (the Garage, the Dormer Shed ...) draw Barnwright's roof and walls at every size`, same.length === 19 && differs.length === 0, differs.join(", "));
   ok("G 12x24 and DS 10x16 unchanged", near(peakIn(DEMO, "G", "12x24"), 38.88, 1e-9) && near(peakIn(DEMO, "DS", "10x16"), 36, 1e-9));
-  ok("Barnwright's own company keeps Barnwright's numbers (6.48/12, 93 in, 54 in at 10 ft)", near(peakIn(BW, "UT", "10x16"), 32.4, 1e-9) && near(wallIn(BW, "UT", "10x16"), 93, 1e-9) && near(peakIn(BW, "LB", "10x16"), 54, 1e-9));
+  ok("Barnwright's own company keeps Barnwright's numbers (6.48/12, 93 in, 54 in at 10 ft)", near(peakIn(BW, "UT", "10x16"), 32.4, 1e-9) && near(wallIn(BW, "UT", "10x16"), 93, 1e-9) && near(lineIn(BW, "LB", "10x16"), 54, 1e-9));
   const eff = BUILT.effective(DEMO, "UT");
   const pitch = eff.find((e) => e.id === "roofPitch"), wall = eff.find((e) => e.id === "wallHeight");
   ok("the screens say 5/12 and 7 ft 9 1/2 in, from the standard", pitch && pitch.words === "5/12" && pitch.from === "standard" && wall && wall.words === "7 ft 9 1/2 in" && wall.from === "standard", J(eff));

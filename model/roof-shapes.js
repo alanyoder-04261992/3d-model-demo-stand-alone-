@@ -15,6 +15,8 @@
 
    roofShape(t, construction)            the numbers for this style's roof
    roofRise(W, t, construction)          ridge height above the wall top (camera and shadow box only)
+   barnTrussPeakFt(W, t, construction)   a barn roof's truss peak above the wall top (what peakIn sets)
+   deckThicknessFt(construction)         the roof deck under the roof line, feet
    roofProfile(W, topY, t, construction) the cross-section points
    profileYat(prof, x)                   the roof line's height at x
    cottageEave(P, th, eave)              the cottage's level-soffit eave (eave: construction
@@ -81,7 +83,35 @@ export function roofShape(t, construction) {
 export function roofRise(W, t, construction) {
   const s = roofShape(t, construction);
   if (t.dormer) return lengthOf(s.dormerRise, W);
+  /* a barn roof set taller by How it's built (peakIn) than Barnwright's
+     0.45W: the camera and the shadow box take the drawn peak, so the top of
+     the roof is never cut off. Barnwright's own company has no peakIn: the
+     same number as ever. */
+  if (t.roof === "gambrel" && s.peakIn) {
+    const prof = roofProfile(W, 0, t, construction);
+    return Math.max(lengthOf(s.rise, W), Math.max.apply(null, prof.map((p) => p[1])));
+  }
   return lengthOf(s.rise, W);
+}
+
+/* How thick the roof deck is under the roof line the profile draws (the
+   7/16 in sheathing, or a flat 2x purlin under steel), in feet -- the
+   trusses stand that far under it (parts/roof-frame.js roofSection). */
+export function deckThicknessFt(construction) {
+  const d = (construction && construction.roofDeck) || {};
+  if (d.type === "purlins") {
+    const m = /^\s*(\d+)\s*x/i.exec(String((d.purlins && d.purlins.size) || "2x4"));
+    const t = { 1: 0.75, 2: 1.5, 3: 2.5, 4: 3.5 }[m ? +m[1] : 2];
+    return (t != null ? t : 1.5) / 12;
+  }
+  return (d.sheathingIn != null ? +d.sheathingIn : 0.4375) / 12;
+}
+/* A barn roof's peak at the top of its trusses -- what a builder measures,
+   "from the top of the upper plate to the peak" -- for a roof line whose
+   upper slopes rise rU over kx: the roof line's peak less the deck
+   thickness over the cosine of the upper slope. */
+function trussPeakOf(lineH, rU, kx, deckT) {
+  return lineH - deckT / Math.cos(Math.atan2(rU, kx));
 }
 
 export function roofProfile(W, topY, t, construction) {
@@ -92,10 +122,20 @@ export function roofProfile(W, topY, t, construction) {
        steep shoulders, taller cap, break at the door frame corners */
     let rL = lengthOf(s.lowerRise, W), rU = lengthOf(s.upperRise, W);
     const kx = lengthOf(s.knee, W);
-    /* a barn roof height set by width (peakIn, "How it's built"): both rises
-       are scaled to it, the knee stays where it is */
-    const peak = barnPeakFt(s.peakIn, W, rL + rU);
-    if (peak != null) { const k = peak / (rL + rU); rL *= k; rU *= k; }
+    /* a barn roof height set by width (peakIn, "How it's built"): the height
+       of the TRUSSES' peak above the wall (Alan measures his "from the top
+       of the upper plate to the peak"), so the roof line drawn over the
+       deck stands the deck's thickness higher. Both rises are scaled to it,
+       the knee stays where it is. */
+    if (s.peakIn) {
+      const deckT = deckThicknessFt(construction), n = rL + rU;
+      const peak = barnPeakFt(s.peakIn, W, trussPeakOf(n, rU, kx, deckT));
+      if (peak != null) {
+        let H = peak;
+        for (let i = 0; i < 6; i++) H = peak + (H - trussPeakOf(H, rU * H / n, kx, deckT));
+        const k = H / n; rL *= k; rU *= k;
+      }
+    }
     return [[-W / 2, topY], [-kx, topY + rL], [0, topY + rL + rU], [kx, topY + rL], [W / 2, topY]];
   }
   /* THE RIDGE SITS OVER THE FRONT. Alan, Aug 2026: the doors and windows go on
@@ -108,6 +148,13 @@ export function roofProfile(W, topY, t, construction) {
   if (r === "lean") return [[-W / 2, topY + lengthOf(s.rise, W)], [W / 2, topY]];
   if (r === "slope") return [[-W / 2, topY], [W / 2, topY + lengthOf(s.rise, W)]];
   return [[-W / 2, topY], [0, topY + (t.dormer ? lengthOf(s.dormerRise, W) : lengthOf(s.rise, W))], [W / 2, topY]];
+}
+
+/* A barn roof's drawn peak at the top of its trusses, feet above the wall
+   top: what a builder measures, and what peakIn sets. */
+export function barnTrussPeakFt(W, t, construction) {
+  const P = roofProfile(W, 0, t, construction);
+  return trussPeakOf(P[2][1], P[2][1] - P[1][1], P[3][0], deckThicknessFt(construction));
 }
 
 /* THE BARN ROOF HEIGHT FOR THIS WIDTH, in feet above the top of the wall,

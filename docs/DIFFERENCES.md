@@ -213,7 +213,11 @@ finished designer retains the golden geometry.
     | Lofted Barn, Side Lofted Barn | barn roof height at 8, 10, 12 ft wide | 3 ft 7 3/16 in, 4 ft 6 in, 5 ft 4 13/16 in | 3 ft 7 3/4 in, 4 ft, 4 ft 3 in | shed-measurements skill: loft truss peaks |
 
     What "match" means and does not: the peak heights and wall heights match
-    his shop. The barn roof's knee is drawn where Barnwright drew it, so the
+    his shop. A barn roof's height is measured where he measured it, from
+    the top of the wall to the top of the trusses; the roof line drawn over
+    the roof deck stands about 1/2 in higher (44 1/4 in on an 8 ft barn).
+    The utility eave's 4 in is out to the edge of the roof deck; the rafter
+    tail under it stops about 3 3/4 in out. The barn roof's knee is drawn where Barnwright drew it, so the
     drawn slopes are not his truss pieces (at 8 ft wide the upper slope is
     about 38 5/8 in long against his 34 in piece). The utility eave is 4 in
     out but drawn sloping, not his level 2 in end. A 14 ft wide lofted barn,

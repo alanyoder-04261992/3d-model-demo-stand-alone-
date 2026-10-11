@@ -28,8 +28,9 @@
    2. The four matched styles carry Alan's confirmed numbers at every size:
       5/12 roofs, 4 in eaves and 93 1/2 in walls on the Utility Shed and Side
       Utility; 79 1/2 in walls and 43 3/4, 48 and 51 in barn roofs at 8, 10
-      and 12 ft wide on the Lofted Barn and Side Lofted Barn (other widths:
-      the library shape, held so a wider barn is never lower).
+      and 12 ft wide on the Lofted Barn and Side Lofted Barn, measured at the
+      top of the trusses as Alan measures them (other widths: the library
+      shape, held so a wider barn is never lower).
    3. Every other style, and the four at what Alan did not confirm, are
       Barnwright's numbers exactly: drawn side by side with Barnwright's
       company (tools/lib/barnwright-company.mjs barnwrightCatalogue).
@@ -48,6 +49,7 @@ import { resetItems } from "../model/layout.js";
 import { doorHeightFt } from "../model/construction.js";
 import { roofOutline } from "../model/framing-geometry.js";
 import { gableEndOverhangOf } from "../parts/roofing.js";
+import { barnTrussPeakFt } from "../model/roof-shapes.js";
 import { assemble } from "../engine/assemble.js";
 
 const FILE = "test/golden-shop/shop-standard.json";
@@ -81,6 +83,9 @@ function measures(cat, key, size) {
   let top = -Infinity, apexX = 0, low = Infinity;
   for (const p of P) { if (p[1] > top + 1e-9) { top = p[1]; apexX = p[0]; } low = Math.min(low, p[1]); }
   const out = { wallIn: r3(t.wallH * 12), peakIn: r3((top - plan.topY) * 12) };
+  /* a barn roof's height is its TRUSSES' peak (Alan: "from the top of the
+     upper plate to the peak"); the roof line over the deck stands higher */
+  if (t.roof === "gambrel") out.trussPeakIn = r3(barnTrussPeakFt(W, t, plan.construction) * 12);
   if (t.roof === "gable") out.pitch = r3((top - P[0][1]) / (apexX - P[0][0]) * 12);
   if (t.roof === "lean" || t.roof === "slope") out.pitch = r3((top - low) / W * 12);
   const O = roofOutline(plan).P;
@@ -121,7 +126,7 @@ if (RECORD) {
   const doc = {
     _help: [
       "THE STANDARD BUILDINGS WITH ALAN'S SHOP NUMBERS (Oct 2026, \"yes match\"), recorded by node tools/check-shop-numbers.mjs --record and checked by node tools/check-shop-numbers.mjs.",
-      "For every library style at every size Barnwright sells, drawn with library/manufacturers/standard.json as every Dealer Center business gets it: wallIn (floor to the top of the wall plate), peakIn (roof peak above the wall top), pitch (rise per 12, gable, lean-to and single slope roofs), eaveLeftIn and eaveRightIn (how far the roof edge reaches past each long wall, measured level), gableEndIn (past the gable ends), doorIn (the wooden shop door opening), all in inches to a thousandth.",
+      "For every library style at every size Barnwright sells, drawn with library/manufacturers/standard.json as every Dealer Center business gets it: wallIn (floor to the top of the wall plate), peakIn (the roof line's peak above the wall top), trussPeakIn (a barn roof's trusses' peak above the wall top: what Alan measures), pitch (rise per 12, gable, lean-to and single slope roofs), eaveLeftIn and eaveRightIn (how far the roof edge reaches past each long wall, measured level), gableEndIn (past the gable ends), doorIn (the wooden shop door opening), all in inches to a thousandth.",
       "triangles and hash (Utility Shed, Side Utility, Lofted Barn, Side Lofted Barn only): every finished triangle, hashed the golden test's way (tools/lib/golden-cases.mjs).",
       "Re-record only on purpose (a confirmed shop number changed, or the drawing changed and check-golden still passes), and say why in the commit.",
     ],
@@ -173,10 +178,10 @@ for (const key of ["LB", "SLB"]) {
   for (const [size, m] of rows) {
     ok(`${now.styles[key].name} ${size}: 79 1/2 in walls`, near(m.wallIn, 79.5), JSON.stringify(m));
     const w = width(size);
-    if (PEAK[w] != null) ok(`${now.styles[key].name} ${size}: the barn roof is ${PEAK[w]} in tall`, near(m.peakIn, PEAK[w]), JSON.stringify(m));
+    if (PEAK[w] != null) ok(`${now.styles[key].name} ${size}: the barn roof's trusses are ${PEAK[w]} in tall above the wall`, near(m.trussPeakIn, PEAK[w]), JSON.stringify(m));
   }
   const byW = {};
-  for (const [size, m] of rows) byW[width(size)] = m.peakIn;
+  for (const [size, m] of rows) byW[width(size)] = m.trussPeakIn;
   const ws = Object.keys(byW).map(Number).sort((a, b) => a - b);
   ok(`${now.styles[key].name}: a wider barn is never lower`, ws.every((w, i) => i === 0 || byW[w] >= byW[ws[i - 1]] - 1e-9), JSON.stringify(byW));
 }
@@ -188,7 +193,7 @@ const KEEP_ALL = ["doorIn", "gableEndIn"];
 for (const key of Object.keys(now.styles)) {
   for (const [size, m] of Object.entries(now.styles[key].sizes)) {
     const bw = measures(BW, key, size).out;
-    const fields = MATCHED.includes(key) ? KEEP_ALL.concat(key === "LB" || key === "SLB" ? (PEAK[width(size)] == null ? ["peakIn"] : []) : []) : Object.keys(bw);
+    const fields = MATCHED.includes(key) ? KEEP_ALL.concat(key === "LB" || key === "SLB" ? (PEAK[width(size)] == null ? ["peakIn", "trussPeakIn"] : []) : []) : Object.keys(bw);
     for (const f of fields) {
       if (ok(`${now.styles[key].name} ${size}: ${f} is Barnwright's`, bw[f] === m[f], `Barnwright ${bw[f]}, shop standard ${m[f]}`)) sameCount++;
     }

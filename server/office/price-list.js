@@ -124,8 +124,10 @@ export function explainProblem(problem, manufacturer, settings = {}) {
       (m) => `${extraName(m[1])}: set this extra's ${m[2]} in How it's built.`],
     [/^options\.extras\[(\d+)\]\.construction\S*?\.([^.\s\[\]]+) is not a construction setting(?:\. Did you mean (\w+)\?)?/,
       (m) => `${extraName(m[1])}: "${m[2]}" is not a construction setting.${m[3] ? ` Did you mean ${m[3]}?` : ""}`],
-    [/^options\.extras\[(\d+)\]\.construction\S*?: (.+)$/,
-      (m) => `${extraName(m[1])}: ${/[{}]/.test(m[2]) ? "one of its construction settings is not written right." : m[2]}`],
+    [/^options\.extras\[(\d+)\]\.construction(\S*?): (.+)$/,
+      (m) => `${extraName(m[1])}${settingWords(m[2]) ? ` (${settingWords(m[2])})` : ""}: ${/[{}]/.test(m[3]) ? "this construction setting is not written right." : m[3]}`],
+    [/^options\.extras\[(\d+)\]\.construction must be/,
+      (m) => `${extraName(m[1])}: how it changes the building could not be read. Take the extra out and add it again.`],
     [/^offer\.(\w+)\.\S+ is not part of a building style\. Set its (.+?) in How it's built instead\./,
       (m) => `${styleName(m[1])}: set its ${m[2]} in How it's built.`],
     [/^The company file is not a settings object/, () => "The price list is missing. Reload the page and try again."],
@@ -213,7 +215,8 @@ export function explainProblem(problem, manufacturer, settings = {}) {
       (m) => `"${m[1]}" is not a building width. Write the width in whole feet, like 10.`],
     [/^construction\S*?\.(rise|lowerRise|upperRise|knee|ridge|dormerRise|left|right)(?:\[\d+\]\.value)?: .* is not a length/,
       () => "One of the roof sizes in the construction settings is not a length. Write it in feet."],
-    [/^construction/, () => "The construction settings could not be saved. Reload the page and try again."],
+    [/^construction(\S*?): (.+)$/, (m) => `The construction setting${settingWords(m[1]) ? ` ${settingWords(m[1])}` : "s"}: ${/[{}]/.test(m[2]) ? "it is not written right." : m[2]}`],
+    [/^construction(\S*)/, (m) => `The construction setting${settingWords(m[1]) ? ` ${settingWords(m[1])}` : "s"} ${settingWords(m[1]) ? "is" : "are"} not written right. Take ${settingWords(m[1]) ? "it" : "them"} out, or ask Barnwright to set ${settingWords(m[1]) ? "it" : "them"}.`],
 
     [/^pricing\.show/, () => "Pick how prices show on the designer: the full price, a starting price, or no price."],
     [/^pricing\.(roundTo|minCharge|roofAreaFactor)/, () => "The per-square-foot rounding could not be saved. Reload the page and try again."],
@@ -380,6 +383,28 @@ export function describeChanges(before, after, manufacturer) {
 
 const SAVED_FIRST = "Someone else saved the price list while you were working. Reload to see their changes, then make yours again.";
 
+/* A construction setting's path in plain words: ".walls.topPlates" -> "top
+   plates", ".floor.spacingIn[1].value" -> "floor spacing in inches". */
+function settingWords(path) {
+  const bits = String(path || "").replace(/\[\d+\]/g, "").split(".").filter((b) => b && b !== "value" && b !== "shapes");
+  if (!bits.length) return "";
+  const last = bits[bits.length - 1], group = bits.length > 1 ? bits[bits.length - 2] : "";
+  const words = (w) => w.replace(/In$/, " in inches").replace(/Ft$/, " in feet").replace(/([a-z])([A-Z])/g, "$1 $2").toLowerCase();
+  const one = words(last);
+  return group && !/^\d+$/.test(group) && /^(spacing|size|type)/i.test(last) ? `${words(group)} ${one}` : one;
+}
+
+/* A strict problem with an extra's place in the list (options.extras[3])
+   swapped for the extra's own key, so moving, adding or removing another
+   extra never makes an old problem look new (an older price list keeps
+   saving). */
+function byExtraKey(settings, problem) {
+  return String(problem).replace(/^options\.extras\[(\d+)\]/, (m, i) => {
+    const x = Array.isArray(settings?.options?.extras) ? settings.options.extras[Number(i)] : null;
+    return x && typeof x === "object" && typeof x.key === "string" ? `options.extras[key=${x.key}]` : m;
+  });
+}
+
 export function createPriceList({ store, manufacturer, library, templates, now, log = console.error, sizeCheckMs = SAVE_BUDGET_MS }) {
   const iso = () => now().toISOString();
 
@@ -410,8 +435,8 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
      same words); [] when there is no previous to compare with. */
   function newStrictProblems(settings, previous) {
     if (previous === undefined) return [];
-    const had = new Set(previous && typeof previous === "object" ? strictProblems(previous, manufacturer) : []);
-    return strictProblems(settings, manufacturer).filter((p) => !had.has(p));
+    const had = new Set(previous && typeof previous === "object" ? strictProblems(previous, manufacturer).map((p) => byExtraKey(previous, p)) : []);
+    return strictProblems(settings, manufacturer).filter((p) => !had.has(byExtraKey(settings, p)));
   }
 
   async function current() {

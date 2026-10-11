@@ -142,8 +142,11 @@ width 0.52, lap 0.34 x 0.024.
   wall, turned into the length along that eave's end slope by
   `eaveOverhangs` (`flat / cos(slope)`); a plain number is feet along the
   slope as before. A gambrel may carry `roof.shapes.gambrel.peakIn` (the
-  barn roof's height above the wall by width, model/roof-shapes.js
-  `barnPeakFt`). `tools/check-build-settings.mjs` proves each.
+  barn roof's height by width from the top of the wall to the top of the
+  trusses, model/roof-shapes.js `barnPeakFt`; `roofProfile` raises the
+  roof line by the deck's thickness so the framing's highest piece lands
+  on it exactly, `barnTrussPeakFt` reads it back, and `roofRise` takes the
+  taller of 0.45 W and that line so the camera never cuts the top off). `tools/check-build-settings.mjs` proves each.
 * **The shop standard (Oct 2026, Alan: "yes match").** The standard
   manufacturer's How it's built blocks (`styles.<KEY>.built` in
   `library/manufacturers/standard.json`) give the Utility Shed and Side

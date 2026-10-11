@@ -15,8 +15,8 @@ use it). Read it with `docs/ARCHITECTURE.md` "How it's built".
 
 | id | words | unit (stored as a number) | limits | applies to |
 |---|---|---|---|---|
-| `roofPitch` | Roof pitch | rise per 12 (5 = 5/12) | gable 3-12, lean-to 1-6, single slope 1-8; typed in quarter steps | gable, lean-to, single slope roofs |
-| `barnPeak` | Barn roof height | inches above the wall top, by width in feet `{"10": 48}` | 24-96 in, widths 6-16, 1-8 widths, a wider barn never lower | barn (gambrel) roofs |
+| `roofPitch` | Roof pitch | rise per 12 (5 = 5/12) | gable 3-12 (a metal gable roof 4-12), lean-to 1 1/4-6, single slope 2-8 -- the flattest the 3D designer can frame (`pitchLimits`, shared with `model/style-check.js`); typed in quarter steps | gable, lean-to, single slope roofs |
+| `barnPeak` | Barn roof height | inches from the wall top to the top of the trusses, by width in feet `{"10": 48}`; the roof line over the deck stands about 1/2 in higher (`model/roof-shapes.js barnTrussPeakFt`) | 24-96 in, widths 6-16, 1-8 widths, a wider barn never lower | barn (gambrel) roofs |
 | `eaveOverhang` | Eave overhang | inches, measured level out from the long walls | gable 0-12, barn 0-3 | gable and barn roofs (not the cottages) |
 | `gableEndOverhang` | Gable-end overhang | inches | 0-12 | every roof |
 | `wallHeight` | Wall height | inches, floor to the top of the wall plate | 48-120 | every style; never business-wide |

@@ -193,6 +193,16 @@ const FIXTURES = [
     words: /^Utility Shed 10x16: the roof pitch is 15\/12, steeper than 12\/12, the steepest the 3D designer draws\.$/,
     style: () => checkStyle(testCatalogue({ construction: { roof: { shapes: { gable: { rise: { w: 15 / 24 } } } } }, offer: { UT: ["10x16"] } }), "UT", { framing: false }),
     control: () => checkStyle(testCatalogue({ offer: { UT: ["10x16"] } }), "UT", { framing: false }) },
+  /* the flattest pitch the 3D designer can FRAME (review GL-7): the same
+     limits as the How it's built roof pitch, said as a shed builder says them */
+  { name: "a metal gable roof at 3 1/2/12 (its purlin deck needs 4/12)", code: "roof",
+    words: /^Metal Utility 10x16: the roof pitch is 3 1\/2\/12, flatter than 4\/12, the flattest the 3D designer can frame a metal roof\.$/,
+    style: () => checkStyle(testCatalogue({ construction: { roof: { shapes: { gable: { rise: { w: 3.5 / 24 } } } } }, offer: { MU: ["10x16"] } }), "MU", { framing: false }),
+    control: () => checkStyle(testCatalogue({ offer: { MU: ["10x16"] } }), "MU", { framing: false }) },
+  { name: "a lean-to at 1/12", code: "roof",
+    words: /^Backyard Utility 8x12: the roof pitch is 1\/12, flatter than 1 1\/4\/12, the flattest the 3D designer can frame\.$/,
+    style: () => checkStyle(testCatalogue({ construction: { roof: { shapes: { lean: { rise: { w: 1 / 12 } } } } }, offer: { BU: ["8x12"] } }), "BU", { framing: false }),
+    control: () => checkStyle(testCatalogue({ offer: { BU: ["8x12"] } }), "BU", { framing: false }) },
   { name: "a lofted barn roof too low for its loft", code: "loft",
     words: /^Lofted Barn 8x12: the loft has only 6 3\/4 in of headroom under the roof framing \(2 ft at least\)\.$/,
     style: () => checkStyle(testCatalogue({ construction: { roof: { shapes: { gambrel: { lowerRise: 1.0, upperRise: 0.4 } } } }, offer: { LB: ["8x12"] } }), "LB"),

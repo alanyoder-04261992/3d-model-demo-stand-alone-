@@ -56,8 +56,8 @@
    the settings path: "offer.LB.built.roofPitch: The Lofted Barn has a barn
    roof, ...". */
 
-import { closest } from "./construction.js";
-import { DEFAULT_ROOF, lengthOf } from "./roof-shapes.js";
+import { closest, resolveConstruction, buildingFacts } from "./construction.js";
+import { DEFAULT_ROOF, lengthOf, barnTrussPeakFt } from "./roof-shapes.js";
 import { SIDE_WALL_MIN_FT, SIDE_PORCH_LENGTHS } from "./frame.js";
 
 const lengthOfFt = (v, W) => lengthOf(v, W);
@@ -86,7 +86,18 @@ const KNOB = Object.fromEntries(KNOBS.map((k) => [k.id, k]));
 const KNOB_IDS = KNOBS.map((k) => k.id);
 
 /* The limits, in each knob's unit. */
-const PITCH = { gable: [3, 12], lean: [1, 6], slope: [1, 8] };
+/* The pitches the 3D designer draws AND frames: flatter than these, its
+   trusses or gussets cannot be worked out (a lean-to at 1/12, a single
+   slope at 1 1/2/12), and on a metal building's purlin deck a gable roof
+   needs 4/12 (at 3 1/2/12 its top chords stop short of the wall). */
+const PITCH = { gable: [3, 12], lean: [1.25, 6], slope: [2, 8] };
+const METAL_GABLE_MIN = 4;
+/* -> [flattest, steepest] per 12 for a roof kind ("gable", "lean", "slope"),
+   on a metal building or not */
+export function pitchLimits(kind, metal) {
+  const l = PITCH[kind] || [1, 12];
+  return kind === "gable" && metal ? [METAL_GABLE_MIN, l[1]] : l;
+}
 const EAVE = { gable: [0, 12], barn: [0, 3] };
 const LIMITS = { gableEndOverhang: [0, 12], wallHeight: [48, 120], doorHeight: [60, 96], porchDepth: [3, 8], barnPeak: [24, 96] };
 
@@ -192,9 +203,11 @@ export function parse(id, input, ctx = {}) {
       v = typeof input === "number" ? input : (text ? readPitch(input) : null);
       if (v == null || !Number.isFinite(v)) return { problem: `${K.Words}: write it like 5/12.` };
       if (text && Math.abs(v * 4 - Math.round(v * 4)) > 1e-9) return { problem: `${K.Words}: use quarter steps, like 5 1/4/12.` };
-      const [lo, hi] = PITCH[ctx.kind] || [1, 12];
+      const [lo, hi] = pitchLimits(ctx.kind, ctx.metal);
       if (v > hi) return { problem: `${K.Words} ${format(id, v)} is steeper than ${hi}/12, the steepest the 3D designer draws${ctx.kind && ctx.kind !== "gable" ? ` on ${KIND_WORDS[ctx.kind]}` : ""}.` };
-      if (v < lo) return { problem: `${K.Words} ${format(id, v)} is flatter than ${lo}/12, the flattest the 3D designer draws${ctx.kind && ctx.kind !== "gable" ? ` on ${KIND_WORDS[ctx.kind]}` : ""}.` };
+      if (v < lo) return { problem: ctx.metal && ctx.kind === "gable"
+        ? `${K.Words} ${format(id, v)} is flatter than ${format(id, lo)}, the flattest the 3D designer can frame a metal roof.`
+        : `${K.Words} ${format(id, v)} is flatter than ${format(id, lo)}, the flattest the 3D designer ${ctx.kind && ctx.kind !== "gable" ? `can frame on ${KIND_WORDS[ctx.kind]}` : "draws"}.` };
       return { value: text ? v : r4(v) };
     }
     case "in": case "ft": {
@@ -396,7 +409,7 @@ function layersOf(settings, M, k, id) {
 
 /* A value checked for this style: -> { value } or { problem }. */
 function checkFor(id, value, s, name, sizes) {
-  const r = parse(id, value, { kind: kindOf(s), name });
+  const r = parse(id, value, { kind: kindOf(s), metal: !!s.metal, name });
   if (r.problem) return r;
   if (id === "porchDepth") {
     const d = r.value, Ws = sizes.map((z) => +String(z).split("x")[0]).filter((n) => n > 0), Ls = sizes.map((z) => +String(z).split("x")[1]).filter((n) => n > 0);
@@ -486,7 +499,7 @@ export function problems(settings, manufacturer) {
   for (const k of offered) {
     const o = offer[k], base = o.base != null ? o.base : k, s = styles[base], name = styleName(S, M, k);
     for (const id of knobsFor(s)) {
-      const win = layersOf(S, M, k, id).find((l) => !l.feature && !parse(id, l.value, { kind: kindOf(s) }).problem);
+      const win = layersOf(S, M, k, id).find((l) => !l.feature && !parse(id, l.value, { kind: kindOf(s), metal: !!s.metal }).problem);
       if (win && win.path === `offer.${k}.built.${id}`) continue;
       /* the standard side porch lengths still have to fit the sizes sold (a
          10x8 Side Cabin is too short for its 8 ft porch) */
@@ -541,7 +554,7 @@ export function libraryProblems(manufacturer) {
       if (id.startsWith("_")) continue;
       if (!KNOB[id]) { out.push(`${at}.${id}: "${id}" is not a building setting${dym(id)}`); continue; }
       if (applies.indexOf(id) < 0) { out.push(`${at}.${id}: ${notApplying(id, s.name || k, s)}`); continue; }
-      const r = parse(id, s.built[id], { kind: kindOf(s), name: s.name });
+      const r = parse(id, s.built[id], { kind: kindOf(s), metal: !!s.metal, name: s.name });
       if (r.problem) out.push(`${at}.${id}: ${r.problem}`);
     }
   }
@@ -645,7 +658,7 @@ export function optionEffectFor(built, t) {
   for (const id of Object.keys(built)) {
     const K = KNOB[id];
     if (!K || !K.inExtra || applies.indexOf(id) < 0) continue;
-    const r = parse(id, built[id], { kind: kindOf(t) });
+    const r = parse(id, built[id], { kind: kindOf(t), metal: !!t.metal });
     if (r.problem) continue;
     mapKnob(id, r.value, t, res);
     if (id === "roofPitch") atLeast.push(t.dormer ? "roof.dormerRise" : `roof.shapes.${t.roof}.rise`);
@@ -688,9 +701,14 @@ function plainValue(id, t, merged, sizes) {
         return r4(lengthOfFt(rise, W0) / run * 12);
       }
       case "barnPeak": {
-        const sh = Object.assign({}, roofOf("gambrel"), t.gambrel || {});
+        /* what is drawn at each width sold: the trusses' peak above the wall
+           (model/roof-shapes.js barnTrussPeakFt), as a builder measures it */
         const value = {};
-        for (const z of sizes) { const W = +String(z).split("x")[0]; value[W] = r4((lengthOfFt(settle(sh.lowerRise), W) + lengthOfFt(settle(sh.upperRise), W)) * 12); }
+        for (const z of sizes) {
+          const W = +String(z).split("x")[0];
+          if (value[W] !== undefined) continue;
+          value[W] = r4(barnTrussPeakFt(W, t, settledAt(merged, W, t)) * 12);
+        }
         return value;
       }
       case "eaveOverhang": {
@@ -716,6 +734,10 @@ function plainValue(id, t, merged, sizes) {
     }
   } catch (e) { return undefined; }
   return undefined;
+}
+/* The construction settled for a building this wide (rule lists picked). */
+function settledAt(merged, W, t) {
+  try { return resolveConstruction(merged, buildingFacts(t.base || null, t, { W, L: 16 })); } catch (e) { return merged; }
 }
 function mergeTwo(a, b) {
   if (!isObj(b)) return b === undefined ? a : b;
