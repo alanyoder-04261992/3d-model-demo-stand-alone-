@@ -46,7 +46,7 @@ const KNOB = Object.fromEntries(BUILT.KNOBS.map((k) => [k.id, k]));
 /* What each box is, in a builder's words, with its unit. */
 const HINTS = {
   roofPitch: "Rise for every 12 in of run, like 5/12.",
-  barnPeak: "From the top of the wall to the peak, for each width. Like 4 ft 3 in.",
+  barnPeak: "From the top of the wall to the top of the trusses, for each width. Like 4 ft 3 in.",
   eaveOverhang: "Inches the roof reaches past the long walls, measured level.",
   gableEndOverhang: "Inches the roof reaches past the gable ends.",
   wallHeight: "Floor to the top of the wall plate, like 7 ft 9 1/2 in.",

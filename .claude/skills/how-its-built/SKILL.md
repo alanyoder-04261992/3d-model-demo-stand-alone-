@@ -55,6 +55,18 @@ says it.
 5. The library's raw number (`library/construction.json`, the style's raw
    traits).
 
+Barn roof heights are found **width by width** (`byWidthFirst`): each width
+takes the first layer that names it, so a height typed for 10 ft wide keeps
+the shop's 8 and 12 ft heights, and an empty box really is the next number.
+`t.built.barnPeak.parts` says where each width came from. If the joined
+heights would drop as the barn gets wider, the save is refused in words
+("Barn roof height: the 12 ft wide barn (4 ft 3 in, the standard) would be
+lower than the 10 ft wide barn (5 ft). Type a height for the 12 ft wide
+barn too."). `effective()` lists the height at every width sold, a width
+no number names (the Lofted Barn's 14 ft) at the height it is drawn, and
+History says each width that moved ("Lofted Barn barn roof height at 10 ft
+wide: 4 ft → 4 ft 2 in").
+
 An extra (`options.extras[i].built`) may hold roof pitch, barn roof height,
 eave and gable-end overhang and door height. Its roof pitch only ever makes
 a roof steeper (`constructionFor`'s "at least"); its other numbers replace

@@ -153,12 +153,14 @@ function notApplying(id, name, t) {
 
 /* "93", "93.5", "93 1/2", "1/2" -> the number, or NaN */
 const NUM = "(?:\\d+(?:\\.\\d+)?(?:\\s+\\d+\\s*\\/\\s*\\d+)?|\\d+\\s*\\/\\s*\\d+)";
+/* A fraction is less than one ("1/2", "7 1/2"): "6'71/2"" is 6 ft 7 1/2 in
+   with the space left out, never 6 ft and 35 3/4 in (review W9). */
 function numOf(s) {
   const t = String(s).trim();
   let m = /^(\d+(?:\.\d+)?)\s+(\d+)\s*\/\s*(\d+)$/.exec(t);
-  if (m) return +m[3] ? +m[1] + +m[2] / +m[3] : NaN;
+  if (m) return +m[3] && +m[2] < +m[3] ? +m[1] + +m[2] / +m[3] : NaN;
   m = /^(\d+)\s*\/\s*(\d+)$/.exec(t);
-  if (m) return +m[2] ? +m[1] / +m[2] : NaN;
+  if (m) return +m[2] && +m[1] < +m[2] ? +m[1] / +m[2] : NaN;
   return /^\d+(?:\.\d+)?$/.test(t) ? +t : NaN;
 }
 function clean(s) {
@@ -218,17 +220,20 @@ export function parse(id, input, ctx = {}) {
       if (!Number.isFinite(v) || v < 0) return { problem: `${K.Words}: write it like ${K.unit === "ft" ? "4 ft" : "7 ft 9 1/2 in"}.` };
       const lim = id === "eaveOverhang" ? (EAVE[ctx.kind] || EAVE.gable) : LIMITS[id];
       const [lo, hi] = lim;
-      const shown = (x) => (K.unit === "ft" ? fmtFt(x) : id === "doorHeight" ? fmtInOnly(x) : fmtIn(x));
-      /* a bare number is in the box's unit; when it only makes sense in the
-         other unit, say so */
-      const typed = bare ? `${fmtNum(v)} ${K.unit}` : shown(v);
+      /* the way a builder says each: overhangs and door openings in inches
+         ("12 in"), walls in feet and inches, porches in feet (review W13) */
+      const overhang = id === "eaveOverhang" || id === "gableEndOverhang";
+      const shown = (x) => (K.unit === "ft" ? fmtFt(x) : id === "doorHeight" || overhang ? fmtInOnly(x) : fmtIn(x));
+      const typed = shown(v);
       if (v > hi) {
         if (id === "eaveOverhang" && ctx.kind === "barn") return { problem: `${K.Words} ${typed} is more than a barn roof can take: ${shown(hi)} at most.` };
+        /* a bare number is in the box's unit; when it only makes sense in
+           the other unit, say so */
         const hint = bare && K.unit === "ft" && v / 12 >= lo && v / 12 <= hi ? ` Did you mean ${fmtNum(v)} in (${shown(v / 12)})?` : "";
-        return { problem: `${K.Words} ${typed} is ${K.unit === "ft" ? "deeper" : id === "wallHeight" || id === "doorHeight" ? "taller" : "more"} than ${shown(hi)}.${hint}` };
+        return { problem: `${K.Words} ${typed} is ${K.unit === "ft" ? "deeper" : id === "wallHeight" || id === "doorHeight" ? "taller" : "more"} than ${shown(hi)}${overhang ? ", the most the 3D designer draws" : ""}.${hint}` };
       }
       if (v < lo) {
-        const hint = bare && K.unit === "in" && v * 12 >= lo && v * 12 <= hi ? ` Did you mean ${fmtNum(v)} ft?` : "";
+        const hint = bare && K.unit === "in" && v * 12 >= lo && v * 12 <= hi ? ` Did you mean ${fmtIn(v * 12)}?` : "";
         return { problem: `${K.Words} ${typed} is ${K.unit === "ft" ? "shallower" : id === "wallHeight" || id === "doorHeight" ? "lower" : "less"} than ${shown(lo)}.${hint}` };
       }
       return { value: r4(v) };
@@ -406,7 +411,27 @@ function layersOf(settings, M, k, id) {
   }
   const sb = isObj(s.built) && own(s.built, id) ? s.built[id] : undefined;
   if (sb !== undefined && !rawSets(settings && settings.construction, id, s)) out.push({ value: sb, from: "standard", path: `styles.${base}.built.${id}` });
-  return out;
+  return id === "barnPeak" ? byWidthFirst(out) : out;
+}
+/* Barn roof heights are kept width by width (review W1): each width takes
+   the first layer that names it, so a height typed for 10 ft wide keeps the
+   shop's 8 and 12 ft heights (an empty box really is the standard). The
+   joined list goes first, `parts` saying where each width came from; the
+   layers stay behind it for when the joined list cannot be used. */
+function byWidthFirst(layers) {
+  const values = [];
+  for (const l of layers) { if (l.feature) break; values.push(l); }
+  if (values.length < 2 || !values.every((l) => isObj(l.value) && !parse("barnPeak", l.value).problem)) return layers;
+  const value = {}, parts = {};
+  for (const l of values) {
+    for (const w of keysOf(l.value)) {
+      const key = /^\d{1,2}$/.test(w) ? String(+w) : w;
+      if (own(value, key)) continue;
+      value[key] = l.value[w]; parts[key] = l.from;
+    }
+  }
+  if (new Set(Object.values(parts)).size < 2) return layers;
+  return [{ value, from: values[0].from, path: values[0].path, parts }, ...layers];
 }
 
 /* A value checked for this style: -> { value } or { problem }. */
@@ -501,7 +526,15 @@ export function problems(settings, manufacturer) {
   for (const k of offered) {
     const o = offer[k], base = o.base != null ? o.base : k, s = styles[base], name = styleName(S, M, k);
     for (const id of knobsFor(s)) {
-      const win = layersOf(S, M, k, id).find((l) => !l.feature && !parse(id, l.value, { kind: kindOf(s), metal: !!s.metal }).problem);
+      const layers = layersOf(S, M, k, id);
+      /* barn heights joined width by width: a 10 ft height of the style's
+         own taller than the standard's 12 ft is said, never quietly
+         dropped for the standard */
+      if (layers[0] && layers[0].parts && layers[0].path && !layers[0].path.startsWith("styles.")) {
+        const r = checkFor(id, layers[0].value, s, name, keysOf(o.sizes));
+        if (r.problem) { say(layers[0].path, id, k, joinedPeakWords(layers[0]) || r.problem); continue; }
+      }
+      const win = layers.find((l) => !l.feature && !parse(id, l.value, { kind: kindOf(s), metal: !!s.metal }).problem);
       if (win && win.path === `offer.${k}.built.${id}`) continue;
       /* the standard side porch lengths still have to fit the sizes sold (a
          10x8 Side Cabin is too short for its 8 ft porch) */
@@ -520,6 +553,22 @@ export function problems(settings, manufacturer) {
   /* set twice: raw construction on a knob's own path */
   out.push(...rawKnobProblems(S));
   return out;
+}
+
+/* "Barn roof height: the 12 ft wide barn (4 ft 3 in, the standard) would
+   be lower than the 10 ft wide barn (5 ft). Type a height for the 12 ft
+   wide barn too." -- for barn heights joined width by width. */
+function joinedPeakWords(layer) {
+  const v = layer.value, parts = layer.parts || {};
+  const ws = Object.keys(v).map(Number).sort((a, b) => a - b);
+  const whose = (w) => (parts[w] === layer.from ? "" : `, ${parts[w] === "standard" ? "the standard" : parts[w]}`);
+  for (let i = 1; i < ws.length; i++) {
+    const lo = ws[i], hi = ws[i - 1];
+    if (!(v[lo] < v[hi])) continue;
+    const other = parts[lo] !== layer.from ? lo : hi;
+    return `Barn roof height: the ${lo} ft wide barn (${fmtIn(v[lo])}${whose(lo)}) would be lower than the ${hi} ft wide barn (${fmtIn(v[hi])}${whose(hi)}). Type a height for the ${other} ft wide barn too.`;
+  }
+  return null;
 }
 
 /* A raw construction value on a path a knob owns. */
@@ -636,7 +685,7 @@ export function apply(settings, manufacturer) {
         const r = checkFor(id, l.value, s, name, keysOf(o.sizes));
         if (r.problem) { out.warnings.push(`${name}: ${r.problem} The ${l.from === "standard" ? "library" : "next"} number is used instead.`); continue; }
         mapKnob(id, r.value, s, res);
-        res.built[id] = { value: r.value, from: l.from };
+        res.built[id] = l.parts ? { value: r.value, from: l.from, parts: l.parts } : { value: r.value, from: l.from };
         break;
       }
       if (!res.built[id] && rawSets(S.construction, id, s)) res.built[id] = { from: "your construction settings" };
@@ -683,7 +732,13 @@ export function effective(cat, key) {
   const out = [];
   for (const id of knobsFor(t)) {
     const b = (t.built && t.built[id]) || { from: "library" };
-    const value = b.value !== undefined ? b.value : plainValue(id, t, merged, sizes);
+    let value = b.value !== undefined ? b.value : plainValue(id, t, merged, sizes);
+    /* barn heights at every width sold, as drawn: a width no number names
+       (the Lofted Barn's 14 ft) shows the height it is built at (review W6) */
+    if (id === "barnPeak" && isObj(value) && b.value !== undefined && sizes.length) {
+      const drawn = plainValue(id, t, merged, sizes);
+      if (isObj(drawn)) value = Object.assign({}, drawn, Object.fromEntries(Object.keys(value).filter((w) => own(drawn, w)).map((w) => [w, value[w]])));
+    }
     out.push({ id, value, words: value === undefined ? "" : format(id, value), from: b.from, feature: b.feature });
   }
   return out;
@@ -876,13 +931,38 @@ export function describeChanges(before, after, manufacturer) {
     };
     for (const id of KNOB_IDS) {
       if (same(ob[id], oa[id])) continue;
+      /* barn heights width by width, as drawn: "Lofted Barn barn roof
+         height at 10 ft wide: 4 ft → 5 ft" (the other widths kept theirs) */
+      if (id === "barnPeak" && s) {
+        const usable = (S, E) => { const typed = S.offer[k].built && S.offer[k].built[id]; return typed === undefined || (E[k] && E[k].built[id] && E[k].built[id].from === "this style"); };
+        if (usable(b, ea) && usable(a, eb)) {
+          const sizes = [...new Set([...keysOf(b.offer[k] && b.offer[k].sizes), ...keysOf(a.offer[k].sizes)])];
+          const ws = [...new Set(sizes.map((z) => +String(z).split("x")[0]).filter((w) => w > 0))].sort((x, y) => x - y);
+          const drawn = (S, E, W) => {
+            const merged = mergeTwo(mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {}), (E[k] && E[k].construction) || {});
+            try { return fmtIn(barnTrussPeakFt(W, s, settledAt(merged, W, s)) * 12); } catch (e) { return null; }
+          };
+          const lines = [];
+          for (const W of ws) {
+            const x = drawn(b, ea, W), y = drawn(a, eb, W);
+            if (x && y && x !== y) lines.push(`${name} ${KNOB[id].words} at ${W} ft wide: ${x} → ${y}`);
+          }
+          if (lines.length) { out.push(...lines); continue; }
+        }
+      }
       const was = words(b, ea, id), now = words(a, eb, id);
       /* the same number in other words ("5/12" for 5) is no change; the
          standard's number typed as the style's own is: the style now keeps
          it when the standard moves (review W12) */
       if (was === now) {
-        if (ob[id] === undefined) out.push(`${name} ${KNOB[id].words}: standard (${was}) → ${now} of its own`);
-        else if (oa[id] === undefined) out.push(`${name} ${KNOB[id].words}: ${was} of its own → standard (${now})`);
+        const typed = ob[id] === undefined ? oa[id] : oa[id] === undefined ? ob[id] : undefined;
+        const r = id === "barnPeak" && typed !== undefined ? parse(id, typed, {}) : null;
+        const at = r && r.value ? Object.keys(r.value).map((w) => ({ w, words: fmtIn(r.value[w]) })) : [{ w: null, words: was }];
+        for (const x of at) {
+          const what = `${name} ${KNOB[id].words}${x.w ? ` at ${x.w} ft wide` : ""}`;
+          if (ob[id] === undefined) out.push(`${what}: standard (${x.words}) → ${x.words} of its own`);
+          else if (oa[id] === undefined) out.push(`${what}: ${x.words} of its own → standard (${x.words})`);
+        }
         continue;
       }
       out.push(`${name} ${KNOB[id].words}: ${was} → ${now}`);

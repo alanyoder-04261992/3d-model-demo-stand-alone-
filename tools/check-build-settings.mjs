@@ -335,6 +335,12 @@ group("9. typing a value: parse, format and the plain errors");
   ok("a 6 in eave is refused on a barn roof", P("eaveOverhang", "6", { kind: "barn" }).problem === "Eave overhang 6 in is more than a barn roof can take: 3 in at most.");
   ok("barn heights must not drop as the barn gets wider", /the 12 ft wide barn \(4 ft\) is lower than the 10 ft wide barn \(4 ft 3 in\)/.test(P("barnPeak", { 10: 51, 12: 48 }).problem || ""));
   ok("side porch lengths: listed twice is said", P("sidePorchLengths", [8, 8]).problem === "Side porch lengths: 8 ft is listed twice.");
+  /* a fraction is less than one: 6'71/2" (the space left out) is a typo,
+     never 6 ft and 35 3/4 in = 8 ft 11 3/4 in (review W9) */
+  ok("\"6'71/2\\\"\" is refused (\"Wall height: write it like 7 ft 9 1/2 in.\"), \"6' 7 1/2\\\"\" reads 6 ft 7 1/2 in", P("wallHeight", "6'71/2\"").problem === "Wall height: write it like 7 ft 9 1/2 in." && P("wallHeight", "6' 7 1/2\"").value === 79.5 && P("wallHeight", "13/8").problem !== undefined, J([P("wallHeight", "6'71/2\""), P("wallHeight", "6' 7 1/2\"")]));
+  /* limits the way a builder says them (review W13) */
+  ok("overhang limits in inches: \"Eave overhang 16 in is more than 12 in, the most the 3D designer draws.\"", P("eaveOverhang", "16").problem === "Eave overhang 16 in is more than 12 in, the most the 3D designer draws." && P("gableEndOverhang", "13").problem === "Gable-end overhang 13 in is more than 12 in, the most the 3D designer draws.", J([P("eaveOverhang", "16"), P("gableEndOverhang", "13")]));
+  ok("a wall of 7.75 asks \"Did you mean 7 ft 9 in?\", never \"7.75 ft\"", P("wallHeight", "7.75").problem === "Wall height 7 3/4 in is lower than 4 ft. Did you mean 7 ft 9 in?", P("wallHeight", "7.75").problem);
   /* the flattest pitch the 3D designer can FRAME (review GL-7): a metal
      building's purlin deck needs 4/12, a lean-to 1 1/4/12, a single slope
      2/12; said for the setting, never as framing pieces */
@@ -558,6 +564,24 @@ group("13. the shop standard (Alan's numbers)");
   /* a business's own number still wins over the shop standard */
   const own = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json"))); own.offer.UT.built = { roofPitch: 6 };
   ok("a business's own roof pitch (6/12) beats the shop standard's 5/12", near(peakIn(resolve(own, SM, LIB), "UT", "10x16"), 30, 1e-9));
+  /* barn heights width by width (review W1): one width typed keeps the
+     shop's other widths; the empty boxes are really the standard */
+  const one = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json"))); one.offer.LB.built = { barnPeak: { 10: 50 } };
+  const catOne = resolve(one, SM, LIB);
+  ok("the Lofted Barn with only 10 ft wide typed (4 ft 2 in): 8 and 12 ft keep 43 3/4 and 51 in", near(peakIn(catOne, "LB", "8x12"), 43.75, 1e-9) && near(peakIn(catOne, "LB", "10x12"), 50, 1e-9) && near(peakIn(catOne, "LB", "12x16"), 51, 1e-9),
+    J(["8x12", "10x12", "12x16"].map((z) => peakIn(catOne, "LB", z))));
+  ok("... with no problem, and the screens say where each width comes from", BUILT.problems(one, SM).length === 0 && J(catOne.TYPES.LB.built.barnPeak.parts) === J({ 8: "standard", 10: "this style", 12: "standard" }), J([BUILT.problems(one, SM), catOne.TYPES.LB.built.barnPeak]));
+  const biz = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json"))); biz.built = { barnPeak: { 12: 54 } };
+  ok("a business-wide 12 ft height (4 ft 6 in) leaves the 8 and 10 ft standard alone", near(peakIn(resolve(biz, SM, LIB), "LB", "8x12"), 43.75, 1e-9) && near(peakIn(resolve(biz, SM, LIB), "LB", "10x12"), 48, 1e-9) && near(peakIn(resolve(biz, SM, LIB), "LB", "12x16"), 54, 1e-9));
+  const tall = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json"))); tall.offer.LB.built = { barnPeak: { 10: 60 } };
+  ok("a 10 ft height above the standard's 12 ft is said, never quietly dropped (\"... Type a height for the 12 ft wide barn too.\")",
+    BUILT.problems(tall, SM).some((p) => p.path === "offer.LB.built.barnPeak" && p.words === "Barn roof height: the 12 ft wide barn (4 ft 3 in, the standard) would be lower than the 10 ft wide barn (5 ft). Type a height for the 12 ft wide barn too."), J(BUILT.problems(tall, SM)));
+  /* every width sold, as drawn (review W6) */
+  const effOne = BUILT.effective(catOne, "LB").find((e) => e.id === "barnPeak");
+  ok("the screens list the barn height at every width sold, 14 ft too (\"... 14 ft wide: 6 ft 3 1/8 in\")", effOne.words === "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft 2 in, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 3 1/8 in", effOne.words);
+  /* History, width by width */
+  const plain = readJSON("companies/demo/company.json");
+  ok("History: \"Lofted Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in\" and nothing about the other widths", J(BUILT.describeChanges(plain, one, SM)) === J(["Lofted Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in"]), J(BUILT.describeChanges(plain, one, SM)));
 }
 
 /* ---------------------------------------------------------------- report */

@@ -521,7 +521,9 @@ for that knob (the flush gable ends of the Garden Utility and the cottages,
 the Standard Barn's shoulders, the Dormer Shed's main roof) -- a number on
 that style itself replaces the feature; the shop standard
 `styles.<KEY>.built` in the manufacturer file, unless the business's raw
-`construction` already sets that path; the library. `resolve()` calls
+`construction` already sets that path; the library. Barn roof heights are
+found width by width (each width from the first layer that names it), so
+one width typed keeps the others. `resolve()` calls
 `apply()`, which sets the traits and writes the roof and door numbers into
 the style's own construction layer `t.construction`; `t.built` keeps where
 each came from and `effective(cat, key)` gives the screens every knob's

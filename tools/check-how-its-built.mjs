@@ -28,7 +28,9 @@
         it too;
      5. when the price list opens, a style whose own numbers no longer fit
         (the standard changed under them) shows a yellow note with the words;
-     6. a manager sees the numbers read only, never a box;
+     6. a manager sees the numbers read only, never a box, with the barn
+        height at every width sold; typing one barn width keeps the other
+        widths' numbers (the empty boxes say them, and they are drawn);
      7. the "try it" demo (/dealer?demo) shows the same screens and saves a
         wall height with its in-page copy of the server.
    Pictures: test/out/how-its-built/. --keep leaves the server running. */
@@ -252,11 +254,46 @@ try {
     await lb.locator(".pl-built-ro summary").click();
     const lines = await lb.locator(".pl-built-ro").textContent();
     ok(`${width} wide: the Lofted Barn's numbers show, with its own 7 ft wall`, /Wall height\s*7 ft/.test(lines) && /Barn roof height, 10 ft wide\s*4 ft(?!\s*\d)/.test(lines), lines.slice(0, 200));
+    /* every width sold, the 14 ft one too (review W6) */
+    ok(`${width} wide: ... and the barn height at 14 ft wide, which it is sold in (6 ft 3 1/8 in)`, /Barn roof height, 14 ft wide\s*6 ft 3 1\/8 in/.test(lines), lines.slice(0, 400));
     ok(`${width} wide: no sideways scrolling`, (await sideways(p)) <= 0);
     const small = await smallTaps(p, ".pl-built-ro");
     ok(`${width} wide: the "How it's built" line is at least 44 px tall`, small.length === 0, small.join("; "));
     await lb.screenshot({ path: `${OUT}/manager-${width}.png` });
     ok(`${width} wide: no errors`, p.errors.length === 0, p.errors.slice(0, 3).join(" | "));
+    await p.context().close();
+  }
+
+  /* ---- 6b ---------------------------------------------------------------- */
+  section("6b. One barn width typed: the other widths keep their numbers");
+  {
+    /* review W1: a height typed for 10 ft wide keeps the shop's 8 and 12 ft
+       heights; the empty boxes say what they build with, and they do */
+    const p = await pageFor(OWNER);
+    await openPriceList(p);
+    await openStyle(p, "LB");
+    const ph = async (w) => p.getAttribute(`[data-field="built:LB:barnPeak${w === 8 ? "" : ":" + w}"]`, "placeholder");
+    ok(`the empty barn boxes say what each width is built at (${[await ph(8), await ph(10), await ph(12), await ph(14)].join(", ")})`,
+      (await ph(8)) === "3 ft 7 3/4 in" && (await ph(10)) === "4 ft" && (await ph(12)) === "4 ft 3 in" && (await ph(14)) === "6 ft 3 1/8 in");
+    await typeIn(p, "built:LB:barnPeak:10", "4 ft 2 in");
+    ok("typing 4 ft 2 in for 10 ft wide leaves the 8 and 12 ft boxes saying the standard's", (await ph(8)) === "3 ft 7 3/4 in" && (await ph(12)) === "4 ft 3 in" && (await msgText(p, "built:LB:barnPeak")) === "");
+    await p.click(".pl-bar .btn-accent");
+    await p.waitForSelector(".pl-saved", { timeout: 30000 });
+    const saved = await p.textContent(".pl-saved");
+    ok("the Saved box says \"Lofted Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in\" and nothing about the other widths", saved.includes("Lofted Barn barn roof height at 10 ft wide: 4 ft → 4 ft 2 in") && !/at (8|12) ft wide:/.test(saved), saved.slice(0, 300));
+    /* what the lot's designer draws, from the stored price list */
+    const { raw } = storedPriceList();
+    const { resolve: resolveCo } = await import("../model/company.js");
+    const { frameOf } = await import("../model/frame.js");
+    const { defaults, setType } = await import("../model/design.js");
+    const { barnTrussPeakFt } = await import("../model/roof-shapes.js");
+    const M = JSON.parse(readFileSync(resolve(ROOT, "library/manufacturers/standard.json"), "utf8"));
+    const L = JSON.parse(readFileSync(resolve(ROOT, "library/construction.json"), "utf8"));
+    const cat = resolveCo(raw.data.settings, M, L);
+    const peak = (z) => { const st = setType(defaults(cat), "LB", cat) || defaults(cat); const s2 = { ...st, type: "LB", size: z }; const f = frameOf(s2, cat); return Math.round(barnTrussPeakFt(f.W, f.t, f.construction) * 12 * 16) / 16; };
+    ok(`... and the 3D designer draws 8, 10 and 12 ft wide at 43 3/4, 50 and 51 in (${[peak("8x12"), peak("10x12"), peak("12x16")].join(", ")})`, peak("8x12") === 43.75 && peak("10x12") === 50 && peak("12x16") === 51);
+    await p.locator('[data-built="LB"]').screenshot({ path: `${OUT}/barn-one-width-1280.png` });
+    ok("no errors", p.errors.length === 0, p.errors.slice(0, 3).join(" | "));
     await p.context().close();
   }
 
