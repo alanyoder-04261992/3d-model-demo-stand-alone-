@@ -31,7 +31,9 @@
    4b. every length and pitch a person reads is said the way How it's built
       says it (feet and inches to the nearest 1/16 in, "5/12", "about
       6 1/2/12"): no decimal like "16.5 in" or "6.4 ft" and no "½" anywhere
-      in the words, and each height's words say exactly its number; and each
+      in the words, a count of doors or windows is said in words ("two
+      2×3 Windows", never "2 x 2×3 Window"), and each height's words say
+      exactly its number; and each
       style's wall height, roof pitch and barn roof heights are the same
       numbers, in the same words, as the Dealer Center's How it's built
       shows for that style (model/build-settings.js effective). A barn's
@@ -96,7 +98,8 @@ function readerWordsProblems(doc) {
   (function walk(v, path, key) {
     if (MACHINE_KEYS.has(key)) return;
     if (typeof v === "string") {
-      if (/\d\.\d|[½¼¾⅛]/.test(v)) out.push(`${path}: ${v}`);
+      /* a decimal, a "½", or a count written "2 x" beside a size ("2 x 2×3 Window") */
+      if (/\d\.\d|[½¼¾⅛]|\b\d+ x\b/.test(v)) out.push(`${path}: ${v}`);
       return;
     }
     if (Array.isArray(v)) { v.forEach((x, i) => walk(x, `${path}[${i}]`, key)); return; }
@@ -224,7 +227,7 @@ else if (prepared) {
 /* ------------------------- 4b. builder's words, How it's built's numbers */
 if (fresh && prepared) {
   const problems = readerWordsProblems(fresh);
-  ok("every length and pitch a person reads is said the way How it's built says it: feet and inches to the nearest 1/16 in, no decimal (\"16.5 in\", \"6.4 ft\", \"14.58/12\") and no \"½\" in any words, and each height's words say exactly its number",
+  ok("every length and pitch a person reads is said the way How it's built says it: feet and inches to the nearest 1/16 in, no decimal (\"16.5 in\", \"6.4 ft\", \"14.58/12\") and no \"½\" in any words, each height's words say exactly its number, and a count of doors or windows is a word (\"two 2×3 Windows\", never \"2 x 2×3 Window\")",
     !problems.length, problems.slice(0, 6).join("; "));
   const off = [];
   for (const s of fresh.styles) {
@@ -269,9 +272,10 @@ if (fresh && prepared) {
   dk.main_door.words = "16.5 in of wall above it";
   bad.styles[0].standard_doors_windows.push({ item: "w23", name: "2×3 Window", wall: "R", words: "2×3 Window, on the right long side, 6.4 ft left of its middle" });
   bad.styles[0].walls.height.words = "7 ft 9½ in";
+  bad.styles[0].changes_with_size.push({ sizes: ["10x12"], doors_windows: ["2 x 2×3 Window on the right long side"] });
   const caught = readerWordsProblems(bad);
-  ok("a decimal or a \"½\" in the words is caught: \"16.5 in of wall above it\", \"6.4 ft left of its middle\" and \"7 ft 9½ in\" each named",
-    caught.length >= 3 && ["16.5 in", "6.4 ft", "9½"].every((w) => caught.some((c) => c.includes(w))), caught.join("; "));
+  ok("a decimal, a \"½\" or a count written like a size in the words is caught: \"16.5 in of wall above it\", \"6.4 ft left of its middle\", \"7 ft 9½ in\" and \"2 x 2×3 Window\" each named",
+    caught.length >= 4 && ["16.5 in", "6.4 ft", "9½", "2 x 2×3"].every((w) => caught.some((c) => c.includes(w))), caught.join("; "));
 }
 
 /* ------------------------------- 3. what the Control Room's reader accepts */
