@@ -471,7 +471,10 @@ computer (add `via: "claude"` for a pass as Claude's). Add `signup: true`
 (beside `visit` or `door`) for a pass that carries the pretend owner's
 sign-up agreement to the terms this copy ships, as the Control Room sends
 for a customer who signed up; with no owner signed in yet, that is how to
-try "Before the owner first signs in" on the computer.
+try "Before the owner first signs in" on the computer. While terms 2.2
+aren't out, start the local copy with `--terms-version 2.2` so it acts as
+if it shipped them (the checks do the same with the `termsVersion`
+option of `createOffice`).
 `tools/check-setup-access.mjs` proves the server's rules (the door's too)
 and `tools/check-setup-screens.mjs` clicks through the owner's card, the
 preview and a visit in Chromium.
@@ -1458,7 +1461,8 @@ these hold:
   `{"versions": {"2.2": ["<64 lowercase hex>", ...]}}`:
   `tools/legal/make-legal-pdfs.py` adds the SHA-256 of every
   `docs/legal/terms.json` it writes for 2.2 or later and never takes one
-  away, and `server/office/terms.js` reads it;
+  away (`tools/legal/terms_sha256.py`, which also runs on its own), and
+  `server/office/terms.js` reads it;
 * no owner has signed in yet (no `setup` record).
 
 When a sign-up agreement is there but doesn't count, access says why:
@@ -1516,7 +1520,11 @@ access is `prelive`:
   them as version 2 the usual way. The answer is the status fields plus
   `{versionBefore: 0, version, changes, newCodes}` (`version` is 1 with no
   edits, else 2; `changes` are the edits' lines). It counts as one save. A
-  price list that appeared since the check: 409 `version`.
+  price list that appeared since the check: 409 `version`. A pass that
+  carries no sign-up (the agreement only remembered) can't make one: 403
+  `closed`, `no-price-list`. It needs the lease like every save; a Dealer
+  Center that has never checked in (the check-in right after its deploy
+  didn't come and nobody has opened it) checks in once first.
 * Any other version: 409 `version`. Once a price list exists, `version: 0`
   is 409 `version` too.
 * `undo`: nothing to undo (409 `cant-undo`). At the starting price list
@@ -1535,9 +1543,9 @@ list from the door. Claude's `propose_change` checks with version 0, and
 too. Its start pass (action `session`) carries the sign-up agreement; when
 it counts and there is no price list, `POST /api/office/barnwright/start`
 first makes the starting price list exactly as a version-0 save with no
-edits (the same history line and log line; it needs the lease, else 423
-`account-off` with the door's words; it counts as a save), then starts the
-visit. The answer adds `started: true`, the price list screens open on the
+edits (the same history line and log line; it needs the lease, checking
+in once first when it never has, else 423 `account-off` with the door's
+words; it counts as a save), then starts the visit. The answer adds `started: true`, the price list screens open on the
 template ready to edit, and the start is told to the Control Room's service
 record (`version: 1`, `versionBefore: 0`, the start line). A visit started
 on the sign-up agreement (`agreement: "signup"` in `barnwright-sessions`)

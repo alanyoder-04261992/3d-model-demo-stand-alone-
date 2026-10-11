@@ -277,6 +277,8 @@ function closedBanner() {
   if (app.barnwright) return visitBar();
   const account = accountBanner();
   if (account) return account;
+  /* First setup asks for the tick itself, and says the rest */
+  if (app.me?.setupNeeded) return null;
   const terms = termsBanner();
   if (terms) return terms;
   const setup = switchBanner();

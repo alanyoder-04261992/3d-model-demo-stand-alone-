@@ -26,6 +26,13 @@
         when, and the owner's banner says so with Turn off;
      8. on a phone the visit fits with no sideways scrolling, and the bars'
         buttons are full touch size (44 px);
+     9. before the owner first signs in (a second local Dealer Center, on
+        the next port, as if it shipped terms 2.2): Alan's visit with the
+        owner's sign-up agreement starts the price list and opens on it;
+        the owner's first sign-in has two steps, says "Barnwright set up
+        your price list. You can change anything.", still asks for the
+        tick and the first lot, and the card then says Barnwright is
+        setting up, with Stop and the start in its log;
      and the review's fixes: a kept draft comes back once (Undo changes
      lets it go), a new visit opened in another tab brings the bar back,
      the visit's words say why it ended, Turn off before live says that
@@ -50,6 +57,11 @@ const KEEP = process.argv.includes("--keep");
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "/opt/node22/lib/node_modules/playwright/index.js");
 const OWNER = "owner@example.com";
+/* the second local Dealer Center, for "Before the owner first signs in" (section 9) */
+const PORT2 = PORT + 1;
+const BASE2 = `http://127.0.0.1:${PORT2}`;
+const DATA2 = "test/out/setup-screens-data-signup";
+let server2 = null;
 
 const WORDS = {
   prelive: "Barnwright is setting up your prices. Look at the preview, check it with Alan, then open it to customers in Settings.",
@@ -63,6 +75,9 @@ const WORDS = {
   visitOnly: "A Barnwright visit has only the price list and settings.",
   opening: "Opening ends Barnwright's setup access. After this, Barnwright needs your switch to change your prices.",
   change: "Run checks and change my price list and settings",
+  started: "Barnwright set up your price list. You can change anything.",
+  helloStarted: "Two short steps. You can change all of it later.",
+  startLine: "started your price list from Every standard building, using the terms you agreed to when you signed up.",
 };
 
 let pass = 0, fail = 0;
@@ -389,6 +404,89 @@ try {
   ok("W9: ... and the owner's Turn off in the banner too", offButton.length === 1 && offButton[0] >= 44, JSON.stringify(offButton));
   await shot(ownerPhone, "8-owner-banner-phone");
 
+  section("9. Before the owner first signs in");
+  {
+    rmSync(resolve(ROOT, DATA2), { recursive: true, force: true });
+    server2 = spawn(process.execPath, ["tools/office-local.mjs", "--reset", "--empty", "--control-room", "--terms-version", "2.2", "--port", String(PORT2), "--data", DATA2], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+    let log2 = "";
+    server2.stdout.on("data", (d) => { log2 += d; });
+    server2.stderr.on("data", (d) => { log2 += d; });
+    for (let i = 0; i < 120 && !/is running/.test(log2); i++) await new Promise((r) => setTimeout(r, 250));
+    ok("(a second local Dealer Center, just made: connected, as if it shipped terms 2.2, nobody signed in)", /is running/.test(log2), log2.slice(-400));
+    const call2 = async (path, { method = "GET", body, email = OWNER } = {}) => {
+      const r = await fetch(BASE2 + path, {
+        method, headers: { ...(email ? { cookie: `dealer_local_user=${encodeURIComponent(email)}` } : {}), origin: BASE2, "content-type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      return { status: r.status, data: await r.json().catch(() => null) };
+    };
+    const ctx2 = async (email, opts = {}) => {
+      const c2 = await browser.newContext({ viewport: { width: opts.width || 1280, height: opts.height || 900 }, deviceScaleFactor: 1, reducedMotion: "reduce" });
+      await c2.route(/^https?:\/\/(?!127\.0\.0\.1)/, (r) => r.abort());
+      if (email) await c2.addCookies([{ name: "dealer_local_user", value: encodeURIComponent(email), url: BASE2 }]);
+      return c2;
+    };
+    const link2 = (await call2("/__local/barnwright", { method: "POST", email: null, body: { visit: true, signup: true } })).data?.url;
+    const alan2 = await pageIn(await ctx2(null));
+    await alan2.goto(BASE2 + link2);
+    await settle(alan2);
+    await alan2.waitForSelector(".pl-style", { timeout: 15000 }).catch(() => {});
+    const bar9 = await text(alan2, ".bw-bar");
+    const styles = await alan2.$$eval(".pl-style", (els) => els.length).catch(() => 0);
+    ok("Alan's visit with the owner's sign-up agreement starts the price list and opens on it: the bar, and Every standard building (23 styles)",
+      /^Working on Testing Sheds as Barnwright until \d{1,2}:\d{2} [AP]M\./.test(bar9 || "") && styles === 23 && /#\/price-list$/.test(alan2.url()), `${bar9} | ${styles} styles | ${alan2.url()}`);
+    await shot(alan2, "9-visit-before-sign-in");
+    await alan2.click(".pl-style[data-style='UT'] .pl-style-open");
+    await alan2.waitForSelector("input[data-field='size:UT:10x16']");
+    await alan2.fill("input[data-field='size:UT:10x16']", "5995");
+    await alan2.waitForTimeout(300);
+    await alan2.click(".pl-bar .btn-accent");
+    await alan2.waitForTimeout(1500);
+    const pl9 = await alan2.evaluate(() => fetch("/api/office/barnwright/price-list").then((r) => r.json()));
+    ok("... and Alan saves a change in it (version 2, by Barnwright), before anyone has signed in",
+      pl9?.version === 2 && pl9.settings?.offer?.UT?.sizes?.["10x16"] === 5995 && pl9.savedBy?.id === "barnwright", JSON.stringify([pl9?.version, pl9?.savedBy]));
+    const owner2 = await pageIn(await ctx2(OWNER));
+    await owner2.goto(`${BASE2}/dealer`);
+    await settle(owner2);
+    await owner2.waitForSelector(".setup-page", { timeout: 15000 }).catch(() => {});
+    const page9 = await text(owner2, ".setup-page");
+    const steps9 = await owner2.$$eval(".setup-steps .setup-step", (els) => els.map((e) => e.textContent.trim())).catch(() => []);
+    ok("the owner's first sign-in: First setup says \"Barnwright set up your price list. You can change anything.\" and \"Two short steps\"",
+      page9?.includes(WORDS.started) && page9.includes(WORDS.helloStarted) && /#\/setup$/.test(owner2.url()), page9);
+    ok("... two steps: Your business and Your first lot (no starting price list)", JSON.stringify(steps9) === JSON.stringify(["1Your business", "2Your first lot"]), JSON.stringify(steps9));
+    const filled = await owner2.$$eval(".setup-card input", (els) => els.map((e) => [e.type, e.value]));
+    ok("... Your business is filled in from the price list (the business name, phone and email from the sign-up)", filled.some(([, v]) => v === "Testing Sheds") && filled.some(([, v]) => v === "941-555-0100") && filled.some(([, v]) => v === OWNER), JSON.stringify(filled));
+    ok("... with the terms box, and no terms banner on top", !!(await owner2.$(".setup-terms input[type=checkbox]")) && !(await owner2.$(".banner.terms")));
+    await shot(owner2, "9-first-setup-two-steps");
+    await owner2.fill(".setup-card input[autocomplete=name]", "Pat Owner");
+    await owner2.click(".setup-card button[type=submit]");
+    await owner2.waitForTimeout(500);
+    const refusedTick = await owner2.$$eval(".setup-card .form-status.error", (els) => els.map((e) => e.textContent.trim()).join(" | ")).catch(() => "");
+    ok("... without the tick it is refused in plain words (the sign-up agreement is never the owner's tick here)", /Tick the box to agree to the Barnwright Terms and Conditions/.test(refusedTick) && !!(await owner2.$(".setup-terms")), refusedTick);
+    await owner2.check(".setup-terms input[type=checkbox]");
+    await owner2.click(".setup-card button[type=submit]");
+    await owner2.waitForSelector(".setup-card input[placeholder=Riverside]", { timeout: 10000 }).catch(() => {});
+    const title9 = await text(owner2, ".setup-card .card-title");
+    ok("... then Your first lot, as step 2", title9 === "2Your first lot", title9);
+    await owner2.fill(".setup-card input[placeholder=Riverside]", "Riverside");
+    await owner2.click(".setup-card button[type=submit]");
+    await owner2.waitForSelector(".setup-ready", { timeout: 10000 }).catch(() => {});
+    ok("... and \"Your Dealer Center is ready.\"", /Your Dealer Center is ready\./.test((await text(owner2, ".setup-ready")) || ""), await text(owner2, ".setup-page"));
+    const after9 = (await call2("/api/office/price-list")).data;
+    ok("the owner finds Alan's work kept (the Utility Shed 10x16 at $5,995), the details unchanged, and the agreement is now the owner's own",
+      after9?.settings?.offer?.UT?.sizes?.["10x16"] === 5995 && after9.version === 2 && (await call2("/api/office/me")).data?.terms?.agreed?.version === "2.2", JSON.stringify([after9?.version, after9?.settings?.offer?.UT?.sizes]));
+    await owner2.goto("about:blank");
+    await owner2.goto(`${BASE2}/dealer#/settings`);
+    await settle(owner2);
+    const card9 = await text(owner2, ".set-card:has(.card-title:text-is('Barnwright'))");
+    ok("Settings, Barnwright: setting up, with Stop Barnwright's setup access, and the log starts with Barnwright's start and change",
+      card9?.includes(WORDS.beforeLive) && card9.includes("Stop Barnwright's setup access") && card9.includes(WORDS.startLine) && card9.includes("changed your price list"), card9);
+    await owner2.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
+    await shot(owner2, "9-owner-card-after-first-setup");
+    const err9 = [alan2, owner2].flatMap((p) => p.errors).filter((e) => !/status of 4\d\d/.test(e));
+    ok("no errors in those pages", err9.length === 0, err9.join(" | "));
+  }
+
   /* the customer's ?preview=1 was refused on purpose (401): that one line is expected */
   const errors = [owner, alan, customer, phone, ownerPhone].flatMap((p) => p.errors).filter((e) => !/preview \(the server said 401\)/.test(e));
   ok("no errors in any page (but the customer's refused preview)", errors.length === 0, errors.join(" | "));
@@ -398,7 +496,7 @@ try {
   console.log("    FAIL the check stopped: " + (e.stack || e.message));
 } finally {
   await browser.close();
-  if (!KEEP) server.kill();
+  if (!KEEP) { server.kill(); server2?.kill(); }
   else console.log(`\n  The local Dealer Center is still running at ${BASE}/dealer (stop it with Ctrl+C).`);
 }
 
