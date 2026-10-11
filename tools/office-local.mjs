@@ -15,6 +15,14 @@
                                         Barnwright terms (to try terms that
                                         aren't out yet, such as setting up
                                         before the owner first signs in)
+         npm run office -- --identity   the live site's sign-in instead of
+                                        "pick who you are": an email and a
+                                        password against a pretend Netlify
+                                        Identity (tools/lib/fake-identity.mjs),
+                                        with the Dealer Center's own sign-in
+                                        cookie and "Keep me signed in on this
+                                        device for 30 days" (every sample
+                                        person's password: sample-password)
 
    Then open http://127.0.0.1:8383/dealer
 
@@ -46,6 +54,8 @@ import { TenantLicenseClient, createLeaseStore } from "../server/office/control-
 import { TERMS } from "../server/office/terms.js";
 import { fakeControlRoom } from "./lib/fake-control-room.mjs";
 import { fakeHelpInbox } from "./lib/fake-help-inbox.mjs";
+import { fakeIdentity } from "./lib/fake-identity.mjs";
+import { netlifyIdentity, identityClient } from "../server/office/identity.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const args = process.argv.slice(2);
@@ -57,6 +67,8 @@ const EMPTY = flag("--empty");
 const OWNER_EMAIL = value("--owner", EMPTY ? "owner@example.com" : SAMPLE_PEOPLE[0].email);
 const CONTROL_ROOM = flag("--control-room") || flag("--control-room-off");
 const TERMS_VERSION = value("--terms-version", "");
+const IDENTITY = flag("--identity");
+const SAMPLE_PASSWORD = "sample-password";
 if (TERMS_VERSION && !/^\d{1,4}(\.\d{1,4}){0,3}$/.test(TERMS_VERSION)) {
   console.log("FAIL: --terms-version takes a version like 2.2.");
   process.exit(1);
@@ -95,16 +107,33 @@ function cookieEmail(request) {
 }
 
 let seeding = null;          /* during seeding, the person the sample script acts as */
-const clock = { at: null };
+/* at: a fixed time while the sample is made; shift: ms the clock runs
+   ahead (POST /__local/clock, --identity only), for "30 days later" */
+const clock = { at: null, shift: 0 };
 const blobs = new FileBlobs(DATA);
+/* --identity: a pretend Netlify Identity at /.netlify/identity, with every
+   sample person (and the owner's email) as a confirmed login. POST
+   /__local/identity changes it: {ttl: seconds}, {server: "down" | "slow" |
+   429 | 503 | null} (the Dealer Center server's own calls), {browser: 429 |
+   503 | "slow" | null}, {logout: "hang" | null}, {link: {type: "invite" |
+   "recovery" | "signup", email}} -> {token} (what an email link would
+   carry); the answer also lists the calls it had. */
+const idp = IDENTITY ? fakeIdentity({ clock: () => Date.now() + clock.shift }) : null;
+if (idp) {
+  for (const p of SAMPLE_PEOPLE) idp.addUser({ id: p.id, email: p.email, password: SAMPLE_PASSWORD, name: p.name });
+  if (!SAMPLE_PEOPLE.some((p) => p.email === OWNER_EMAIL)) idp.addUser({ email: OWNER_EMAIL, password: SAMPLE_PASSWORD });
+}
+const idClient = idp ? identityClient({ fetchImpl: idp.fetch, now: () => Date.now() + clock.shift }) : null;
+const idUser = idClient ? netlifyIdentity({ client: idClient }) : null;
 const deps = {
   blobs,
-  identityUser: async (request) => (seeding ? seeding.user : localUserFrom(cookieEmail(request || requestStore.getStore()))),
+  identityUser: async (request) => (seeding ? seeding.user : idUser ? idUser(request || requestStore.getStore()) : localUserFrom(cookieEmail(request || requestStore.getStore()))),
+  ...(idClient ? { identity: idClient } : {}),
   ownerEmail: OWNER_EMAIL,
   manufacturer, library, templates,
-  now: () => clock.at || new Date(),
+  now: () => clock.at || new Date(Date.now() + clock.shift),
   siteUrl: `http://127.0.0.1:${PORT}`,
-  signIn: "local",
+  signIn: IDENTITY ? "netlify" : "local",
   log: (...a) => console.error(...a),
   ...(TERMS_VERSION ? { termsVersion: TERMS_VERSION } : {}),
 };
@@ -171,7 +200,8 @@ const demoBundler = await esbuildContext({
 const bundler = await esbuildContext({
   entryPoints: [resolve(ROOT, "ui/office/main.js")], bundle: true, format: "esm", platform: "browser",
   target: "es2022", write: false, outfile: "main.js", logLevel: "silent", sourcemap: "inline",
-  define: { __DEALER_DEMO__: "true" },   /* the local copy always offers the "try it" demo */
+  /* the local copy offers the "try it" demo; with --identity it is the live site's sign-in card */
+  define: { __DEALER_DEMO__: IDENTITY ? "false" : "true" },
 });
 async function officeBundle() {
   const r = await bundler.rebuild();
@@ -255,6 +285,19 @@ async function route(request) {
   }
   if (path === "/.netlify/functions/tenant-diagnostics") return office.diagnostics(request);
   if (path === "/.netlify/functions/barnwright-setup") return office.setupDoor(request);
+  if (idp && path.startsWith("/.netlify/identity/")) return idp.handle(request);
+  if (idp && path === "/__local/identity" && request.method === "POST") {
+    const body = await request.json().catch(() => ({}));
+    if (Number.isFinite(body.ttl) && body.ttl > 0) idp.ttl = body.ttl;
+    for (const k of ["server", "browser", "logout"]) if (k in body) idp.trouble[k] = body[k] ?? null;
+    const token = body.link && typeof body.link.email === "string" ? idp.linkToken(body.link.type, body.link.email) : undefined;
+    return Response.json({ ttl: idp.ttl, trouble: idp.trouble, ...(token ? { token } : {}), lastSignup: idp.lastSignup || null, lastRecovery: idp.lastRecovery || null, calls: idp.calls.slice(-200), live: idp.liveRefresh().length });
+  }
+  if (idp && path === "/__local/clock" && request.method === "POST") {
+    const body = await request.json().catch(() => ({}));
+    if (Number.isFinite(body.shift)) clock.shift = body.shift;
+    return Response.json({ shift: clock.shift, now: new Date(Date.now() + clock.shift).toISOString() });
+  }
   if (path === "/__local/people" && request.method === "GET") {
     const people = (await office.parts.store.all("people/")).filter((p) => p.active !== false)
       .map((p) => ({ email: p.email, name: p.name, role: p.role, lots: p.lots }));
@@ -323,6 +366,9 @@ const server = http.createServer(async (req, res) => {
     const answer = await requestStore.run(request, () => route(request));
     const headers = {};
     answer.headers.forEach((v, k) => { headers[k] = v; });
+    /* every Set-Cookie line, not only the last */
+    const setCookies = answer.headers.getSetCookie?.() || [];
+    if (setCookies.length) headers["set-cookie"] = setCookies;
     res.writeHead(answer.status, headers);
     res.end(req.method === "HEAD" ? undefined : Buffer.from(await answer.arrayBuffer()));
   } catch (e) {
@@ -335,7 +381,8 @@ const server = http.createServer(async (req, res) => {
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`The Dealer Center is running: http://127.0.0.1:${PORT}/dealer`);
   console.log(`A lot's 3D designer:          http://127.0.0.1:${PORT}/d/riverside/`);
-  console.log(EMPTY ? `No sample data. Sign in as ${OWNER_EMAIL} to set up the business.` : "Sign in as anyone on the sample team. Press Ctrl+C to stop.");
+  console.log(IDENTITY ? `Sign in with an email of the sample team (${SAMPLE_PEOPLE[0].email} is the owner${EMPTY ? `; ${OWNER_EMAIL} sets up the business` : ""}) and the password ${SAMPLE_PASSWORD}. Press Ctrl+C to stop.`
+    : EMPTY ? `No sample data. Sign in as ${OWNER_EMAIL} to set up the business.` : "Sign in as anyone on the sample team. Press Ctrl+C to stop.");
 });
 
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { bundler.dispose(); demoBundler.dispose(); server.close(); process.exit(0); });

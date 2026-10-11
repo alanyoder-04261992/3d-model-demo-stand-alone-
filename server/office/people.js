@@ -42,10 +42,17 @@ export function publicPerson(p) {
 export function createPeople({ store, identityUser, ownerEmail = "", now }) {
   const iso = () => now().toISOString();
 
-  /* -> {user, person|null}. Throws 401 without a confirmed login. */
+  /* -> {user, person|null, session}. Throws 401 without a confirmed login
+     (with {ended, kept} when the sign-in cookie's sign-in ended, so the
+     page can say why), and 503 when Identity can't be asked (never "not
+     signed in"). */
   async function whoIsAsking(request) {
     let user = null;
-    try { user = await identityUser(request); } catch { user = null; }
+    try { user = await identityUser(request); } catch (e) {
+      if (e?.status === 503) throw e;
+      user = null;
+    }
+    if (user?.ended) fail(401, "Please sign in.", { ended: user.ended, kept: !!user.keep });
     if (!confirmed(user)) fail(401, "Please sign in.");
     const address = user.email.trim().toLowerCase();
     const display = { id: user.id, email: address, name: user.name || user.userMetadata?.full_name || "" };
@@ -57,7 +64,7 @@ export function createPeople({ store, identityUser, ownerEmail = "", now }) {
     if (!person && checked) person = await claimFirstOwner(display);
     if (person && person.active === false) person = null;
     if (person) person = await noteVisit(person);
-    return { user: display, person };
+    return { user: display, person, session: user.session || null };
   }
 
   async function claimInvite(user) {
