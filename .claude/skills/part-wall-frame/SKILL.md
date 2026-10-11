@@ -220,6 +220,8 @@ with `frames: true`.
   `wallH`).
 * `porch.post` -- the kennel run's posts.
 * `openings.doorHeightIn`, `openings.windowTop` -- through `openingRect`.
+* How it's built (Oct 2026): the framed wall runs follow the porch depth
+  (`plan.t.porchDepthFt`, 4 ft standard) exactly as the siding's cut-outs do.
 
 ## Where it came from in Barnwright
 

@@ -75,11 +75,31 @@ export function rakeOverhangOf(plan) {
   return roofShape(plan.t, plan.construction).rakeOverhang;
 }
 
+/* The gable-end overhang the roof is drawn with, in feet past each gable end
+   (a gambrel's upper panels stand RAKE_STEP further out). A gambrel's is
+   roof.shapes.gambrel.endOverhang -- 0.10, which Barnwright wrote into
+   profileRoof as a fixed number -- every other roof's is rakeOverhangOf. */
+export function gableEndOverhangOf(plan) {
+  if (plan.t.roof !== "gambrel") return rakeOverhangOf(plan);
+  var e = roofShape(plan.t, plan.construction).endOverhang;
+  return typeof e === "number" ? e : 0.10;
+}
+
 /* The eave overhangs in feet ALONG THE SLOPE at the -x (left) and +x (right)
-   eaves (a cottage uses its level cottage eave instead). */
+   eaves (a cottage uses its level cottage eave instead). A setting may also
+   be {"flatIn": n}: n inches measured level, out from the wall, which is
+   turned into the length along that eave's end slope (flat / cos(slope)). */
 export function eaveOverhangs(plan) {
   var eo = roofShape(plan.t, plan.construction).eaveOverhang;
-  return { left: lengthOf(eo.left, plan.W), right: lengthOf(eo.right, plan.W) };
+  return { left: eaveLength(eo.left, plan, false), right: eaveLength(eo.right, plan, true) };
+}
+function eaveLength(v, plan, right) {
+  if (v && typeof v === "object" && typeof v.flatIn === "number") {
+    var P = plan.prof, a = right ? P[P.length - 2] : P[0], b = right ? P[P.length - 1] : P[1];
+    var run = Math.abs(b[0] - a[0]), rise = Math.abs(b[1] - a[1]);
+    return run > 0 ? v.flatIn / 12 * Math.hypot(run, rise) / run : v.flatIn / 12;
+  }
+  return lengthOf(v, plan.W);
 }
 
 /* ---------- roof ---------- */
@@ -90,8 +110,7 @@ function profileRoof(plan,kit,prof,L,ov,W){
      Barnwright wrote here, so every building draws as before */
   var EO=eaveOverhangs(plan), CE=roofShape(plan.t,plan.construction).cottageEave;
   /* gambrel (barn/lofted) roofs: metal wraps a near-flush edge */
-  var gam=(plan.t.roof==="gambrel");
-  if(gam) ov=0.10;
+  var gam=(plan.t.roof==="gambrel");   /* (ov: a gambrel's is its end overhang, gableEndOverhangOf, 0.10 standard) */
   var zF=L/2+ov, zB=-L/2-ov;
   /* THE TOP ANGLE STICKS PAST. On a real gambrel the shallow upper panels are
      cut longer at the gable end than the steep lower ones, so the rake edge
@@ -525,6 +544,6 @@ export default {
     /* NO OVERHANG ON THE GABLE ENDS for a cottage (Alan, Aug 2026) -- 0.03 is the
      same nothing the Garden Utility uses, enough to keep the roof edge off the
      wall plane without reading as an overhang. It was 0.70, an 8 inch rake. */
-    profileRoof(plan,kit,plan.prof,plan.L,rakeOverhangOf(plan),plan.W);
+    profileRoof(plan,kit,plan.prof,plan.L,gableEndOverhangOf(plan),plan.W);
   },
 };

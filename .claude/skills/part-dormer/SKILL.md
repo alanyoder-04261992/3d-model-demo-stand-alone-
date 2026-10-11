@@ -59,6 +59,12 @@ triangles with NaN corners (the window band) -- nothing validates that a
 manufacturer's dormer ids are numbers, so a new manufacturer file must name
 its dormers by their width in feet until that is fixed. (The dormer framing,
 `parts/roof-frame.js dormerGeom`, draws nothing for such an id.)
+* **How it's built (Oct 2026): the dormer side** is the style's
+  `dormerSide` trait: "door" (+x, the R wall, where the Dormer Shed's doors
+  are -- today's and the default) or "back" (-x). On the back every quad is
+  drawn mirrored (x negated, corners a d c b so it keeps its faces outward
+  and its a-c diagonal): the same triangles mirrored, which
+  `tools/check-build-settings.mjs` proves.
 
 ## Where it came from in Barnwright
 

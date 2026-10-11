@@ -125,7 +125,7 @@
    out and a very long name is cut short so it cannot run off the paper. */
 
 import { wallPt } from "../engine/wall.js";
-import { frameOf } from "../model/frame.js";
+import { frameOf, porchDepthOf } from "../model/frame.js";
 import { itemById, itemW, clampPos, snapCenter, neighborGaps } from "../model/layout.js";
 import { rampLength, rampSite } from "../parts/ramp.js";
 import { listOf } from "./state.js";
@@ -453,18 +453,20 @@ export function drawPlan(x, Wc, Hc, d, state, cat, view, opts) {
 }
 
 /* The porch outline [x, z, width, length] in feet, or null. Barnwright's
-   rules: a front porch is the 4 ft across the front, a right-side porch the
-   3 1/2 ft down the side, the corner porch its span across the width. A side
-   porch (the Side Cabins) is its 4 ft notch (Barnwright boxed the whole width
+   rules: a front porch is the porch depth (4 ft standard) across the front,
+   a right-side porch the 3 1/2 ft down the side, the corner porch its span
+   across the width. A side porch (the Side Cabins) is its notch, the porch
+   depth deep (Barnwright boxed the whole width
    here -- see the note at the top). */
 export function porchRect(fr) {
   const t = fr.t, W = fr.d.W, L = fr.d.L;
   if (!t.porch) return null;
-  if (t.porch === "F") return [-W / 2, L / 2 - 4, W, 4];
+  const pd = porchDepthOf(t);
+  if (t.porch === "F") return [-W / 2, L / 2 - pd, W, pd];
   if (t.porch === "R") return [W / 2 - 3.5, -L / 2, 3.5, L];
   const sp = fr.span;
   if (!sp) return null;
-  if (t.porch === "S") return [W / 2 - 4, sp.z0, 4, sp.z1 - sp.z0];
+  if (t.porch === "S") return [W / 2 - pd, sp.z0, pd, sp.z1 - sp.z0];
   return [-W / 2, sp.z0, W, sp.z1 - sp.z0];
 }
 

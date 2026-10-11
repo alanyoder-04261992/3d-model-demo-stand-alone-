@@ -73,6 +73,9 @@ a style with the `dormer` trait with a dormer chosen (`state.dormer` not
   steeper 0.30W gable, which gives the dormer room to stand).
 * The dormer's size is the design's (`state.dormer`: 6, 9 or 12 ft on the
   standard line), clamped to the length less 2 ft, as `parts/dormer.js` does.
+* How it's built (Oct 2026): a back-side dormer (`dormerSide: "back"`) is
+  framed in the dormer's own x and mirrored with `mirrorMembers`, as the
+  roof framing it cuts is.
 
 ## Where it came from in Barnwright
 

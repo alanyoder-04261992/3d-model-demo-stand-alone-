@@ -31,7 +31,7 @@ import { y0, CASING, OCT_WIN } from "../engine/constants.js";
 import { profileYat, gableClip, gableBandY } from "./roof-shapes.js";
 import { standardItems, evalFormula } from "./loadouts.js";
 import { doorHeightFt, windowTopFt } from "./construction.js";
-import { frameOf } from "./frame.js";
+import { frameOf, porchDepthOf } from "./frame.js";
 
 /* THE DOUBLE WINDOW: two windows butted together in ONE opening, sharing a
    single trim board down the middle. CASING is the 3 1/2 in board that runs
@@ -128,8 +128,10 @@ export function clampPos(it, state, frame) {
           it.pos = (rh < rl) ? (rl + rh) / 2 : Math.max(rl, Math.min(rh, it.pos));
         }
       }
-      if (!spS.mid && it.wall === "F" && !spS.f) it.pos = Math.min(dS.W / 2 - 4 - c.w / 2 - 0.35, it.pos);
-      if (!spS.mid && it.wall === "B" && spS.f) it.pos = Math.max(4 - dS.W / 2 + c.w / 2 + 0.35, it.pos);
+      /* clear of the porch notch (the porch depth, 4 ft standard) */
+      var pdS = porchDepthOf(T);
+      if (!spS.mid && it.wall === "F" && !spS.f) it.pos = Math.min(dS.W / 2 - pdS - c.w / 2 - 0.35, it.pos);
+      if (!spS.mid && it.wall === "B" && spS.f) it.pos = Math.max(pdS - dS.W / 2 + c.w / 2 + 0.35, it.pos);
     }
   }
   if (T.porch === "C") {
@@ -143,7 +145,7 @@ export function clampPos(it, state, frame) {
         it.pos = (f1 < f0) ? -dC.W / 2 + 2 : Math.max(f0, Math.min(f1, it.pos));
       }
       if (it.wall === "R") it.pos = Math.max(12 - dC.L / 2 + c.w / 2 + 0.45, it.pos);
-      if (it.wall === "L") it.pos = Math.min(dC.L / 2 - 4 - c.w / 2 - 0.45, it.pos);
+      if (it.wall === "L") it.pos = Math.min(dC.L / 2 - porchDepthOf(T) - c.w / 2 - 0.45, it.pos);   /* clear of the porch deck */
     }
   }
 }

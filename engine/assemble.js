@@ -22,8 +22,8 @@
    * fitDist -- how far back the camera stands (engine/camera.js fitDistFor).
    * gr      -- the lawn's radius, returned by the ground part (Barnwright's
                 window.__GR); the renderer's haze is sized from it.
-   * bounds  -- W and L of the building (L includes the corner porch's 4 ft, as
-                Barnwright's dims() does) and H = y0 + wallH + roofRise(W),
+   * bounds  -- W and L of the building (L includes the corner porch's deck,
+                the porch depth -- 4 ft standard -- as Barnwright's dims() does) and H = y0 + wallH + roofRise(W),
                 added in THAT order: the renderer aims the camera at H x 0.42
                 and sizes the shadow box from H, and adding in another order
                 changes the last digit.

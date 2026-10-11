@@ -70,6 +70,7 @@ import { y0, CASING } from "../engine/constants.js";
 import { openingRect } from "../model/layout.js";
 import { profileYat } from "../model/roof-shapes.js";
 import { pickRule } from "../model/construction.js";
+import { porchDepthOf } from "../model/frame.js";
 import { sidingWalls } from "./siding.js";
 import { gableOpenings } from "./roof-frame.js";
 import { lumberSize, WALL_INSET, PARTITION_INSET, wallMember, drawMembers, framePt } from "./floor-frame.js";
@@ -124,11 +125,13 @@ export function wallRuns(plan) {
         if (sp.f) add("R", w, -half, half - sp.P); else add("R", w, -half + sp.P, half);
         return;
       }
-      if (t.porch === "S" && k === "F" && !sp.f && !sp.mid) { add("F", w, -half, half - 4); return; }
-      if (t.porch === "S" && k === "B" && sp.f) { add("B", w, -half + 4, half); return; }
+      /* the porch notch and deck are the porch depth (4 ft standard); the
+         corner porch's 4 ft F stub and 12 ft run are fixed */
+      if (t.porch === "S" && k === "F" && !sp.f && !sp.mid) { add("F", w, -half, half - porchDepthOf(t)); return; }
+      if (t.porch === "S" && k === "B" && sp.f) { add("B", w, -half + porchDepthOf(t), half); return; }
       if (t.porch === "C" && k === "F") { add("F", w, -half, -half + 4); return; }
       if (t.porch === "C" && k === "R") { add("R", w, -half + 12, half); return; }
-      if (t.porch === "C" && k === "L") { add("L", w, -half, half - 4); return; }
+      if (t.porch === "C" && k === "L") { add("L", w, -half, half - porchDepthOf(t)); return; }
       add(k, w, -half, half);
     });
   }

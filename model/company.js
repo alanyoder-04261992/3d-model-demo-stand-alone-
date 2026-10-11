@@ -55,7 +55,7 @@
 
 import { constructionProblems, mergeConstruction, strictConstructionProblems, effectsToTree, didYouMean } from "./construction.js";
 import { standardItems, NAMED_RECIPES } from "./loadouts.js";
-import { dims, pSpan, wallDefs } from "./frame.js";
+import { dims, pSpan, wallDefs, sidePorchLengthsOf } from "./frame.js";
 
 export const ID_RE = /^[a-z0-9-]{2,40}$/;
 export const SIZE_RE = /^(\d{1,3}(?:\.\d+)?)x(\d{1,3}(?:\.\d+)?)$/;
@@ -76,7 +76,7 @@ const OPTION_GROUPS = ["dormers", "ramps", "elec", "misc", "rates", "extras"];
    typo that used to be ignored without a word (offer.UT.wallH, sizez). */
 export const OFFER_KEYS = ["sizes", "name", "base"];
 export const STYLE_KEYS = ["name", "category", "roof", "wallH", "side", "dormer", "porch", "metal", "kennel", "cottage",
-  "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft", "loadout"];
+  "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft", "loadout", "porchDepthFt", "sidePorch", "dormerSide"];
 
 const DEFAULT_CREDIT = { text: "3D designer by Barnwright", url: "", show: true };
 
@@ -190,6 +190,10 @@ export function validateManufacturer(m) {
     if (s.gambrel != null && (!isObj(s.gambrel) || s.roof !== "gambrel")) err.push(`${at}.gambrel only makes sense on a gambrel roof, as {lowerRise, upperRise, knee}.`);
     if (s.loft != null && !(isObj(s.loft) && Array.isArray(s.loft.ends) && typeof s.loft.depthFt === "number")) err.push(`${at}.loft must look like {"ends": ["F", "B"], "depthFt": 4}.`);
     if (s.rakeOverhang != null && typeof s.rakeOverhang !== "number") err.push(`${at}.rakeOverhang must be a number of feet.`);
+    if (s.porchDepthFt != null && !(s.porch && typeof s.porchDepthFt === "number" && s.porchDepthFt >= 3 && s.porchDepthFt <= 8)) err.push(`${at}.porchDepthFt is the porch depth in feet, 3 to 8, on a style with a porch.`);
+    if (s.sidePorch != null && !(s.porch === "S" && isObj(s.sidePorch) && Array.isArray(s.sidePorch.lengthsFt) && s.sidePorch.lengthsFt.length >= 1 && s.sidePorch.lengthsFt.length <= 4 &&
+      s.sidePorch.lengthsFt.every((n) => Number.isInteger(n) && n >= 4 && n <= 20))) err.push(`${at}.sidePorch must look like {"lengthsFt": [8, 12]}: 1 to 4 whole feet from 4 to 20, on a side porch style.`);
+    if (s.dormerSide != null && !(s.dormer && (s.dormerSide === "door" || s.dormerSide === "back"))) err.push(`${at}.dormerSide is "door" or "back", on a style with a dormer.`);
     /* the manufacturer file lives in the repo and is checked before every
        deploy, so a typo in it is an error, not a warning */
     for (const f of Object.keys(s)) if (!f.startsWith("_") && STYLE_KEYS.indexOf(f) < 0) err.push(`${at}.${f} is not part of a style${didYouMean(f, STYLE_KEYS)}`);
@@ -258,11 +262,15 @@ function traitsOf(it) {
 /* Every item a style's standard layout uses at any of these sizes. */
 function loadoutCats(t, key, sizes, CAT) {
   const cats = new Set();
-  const variants = t.porch === "S" ? [{ pLen: 12 }, { pLen: 12, pMid: true }, { pLen: 8, pFlip: true }] : [{ pLen: 12 }];
+  /* a side porch at each length the style allows: at the end, flipped and
+     in the middle (the layout differs at 12 ft and longer) */
+  const variants = t.porch === "S"
+    ? [].concat(...sidePorchLengthsOf(t).map((n) => [{ pLen: n }, { pLen: n, pMid: true }, { pLen: n, pFlip: true }]))
+    : [{ pLen: 12 }];
   for (const z of sizes) {
     const d = dims(z, t);
     for (const v of variants) {
-      const span = pSpan(v, d);
+      const span = pSpan(v, d, t);
       const ws = wallDefs(t, d, span, null);
       for (const it of standardItems(t, d.W, d.L, { CAT, span, ws }, key)) cats.add(it.cat);
     }
@@ -734,7 +742,7 @@ export function resolve(company, manufacturer, library) {
     const o = c.offer[k], base = o.base != null ? o.base : k, s = m.styles[base];
     const t = { name: o.base != null ? o.name.trim() : (o.name || s.name), roof: s.roof, wallH: s.wallH };
     for (const f of ["side", "dormer", "porch", "metal"]) if (s[f] !== undefined) t[f] = s[f];
-    for (const f of ["kennel", "cottage", "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft"]) if (s[f] !== undefined) t[f] = copy(s[f]);
+    for (const f of ["kennel", "cottage", "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft", "porchDepthFt", "sidePorch", "dormerSide"]) if (s[f] !== undefined) t[f] = copy(s[f]);
     t.loadout = copy(s.loadout);
     t.category = s.category || "";
     if (o.base != null) t.base = base;

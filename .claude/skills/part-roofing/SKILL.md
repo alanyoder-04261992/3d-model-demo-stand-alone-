@@ -133,6 +133,16 @@ Not settings (kept in the code, they are the roofing PRODUCT, not the shop):
 rib spacing 9 in (`RIB`, shared with metal siding), rib height 0.07 and
 half-widths 0.058/0.02, screw size 0.038 and row pitch 1.95, ridge cap half
 width 0.52, lap 0.34 x 0.024.
+* **How it's built (Oct 2026).** A gambrel's gable-end overhang is
+  `roof.shapes.gambrel.endOverhang` (0.10 ft, Barnwright's), read by
+  `gableEndOverhangOf(plan)` -- it used to be a fixed 0.10 inside
+  `profileRoof`. The upper panels still stand `RAKE_STEP` further out. An
+  eave overhang may be `{"flatIn": n}`: n inches measured level out from the
+  wall, turned into the length along that eave's end slope by
+  `eaveOverhangs` (`flat / cos(slope)`); a plain number is feet along the
+  slope as before. A gambrel may carry `roof.shapes.gambrel.peakIn` (the
+  barn roof's height above the wall by width, model/roof-shapes.js
+  `barnPeakFt`). `tools/check-build-settings.mjs` proves each.
 
 ## Where it came from in Barnwright
 

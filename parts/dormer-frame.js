@@ -52,7 +52,7 @@
 import { pickRule } from "../model/construction.js";
 import { ROOF_TH } from "../model/roof-shapes.js";
 import {
-  trussLayout, band, offY, above, below, clipAll, clipHalf, cleanPoly, rectPoly, lumberFt, drawMembers,
+  trussLayout, band, offY, above, below, clipAll, clipHalf, cleanPoly, rectPoly, lumberFt, drawMembers, mirrorMembers,
 } from "./roof-frame.js";
 import { deckOnSection } from "./roof-deck.js";
 
@@ -205,7 +205,9 @@ export function dormerFrameMembers(plan) {
     deck([hw, hw + dg.ovS], fitSide);
     deck([-hw - dg.ovS, -hw], fitSide);
   }
-  return out;
+  /* built in the dormer's own x (toward its front, +x); a back-side dormer
+     (dormerSide "back") is mirrored to -x. The main roof is symmetric. */
+  return dg.side < 0 ? mirrorMembers(out) : out;
 }
 
 export default {

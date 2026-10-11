@@ -280,7 +280,8 @@ export const CONSTRUCTION_SCHEMA = freezeAll({
     cottageEave: { backIn: VALUE, frontIn: VALUE, fasciaIn: VALUE },
     shapes: {
       gable: { rise: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE },
-      gambrel: { rise: VALUE, lowerRise: VALUE, upperRise: VALUE, knee: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE },
+      gambrel: { rise: VALUE, lowerRise: VALUE, upperRise: VALUE, knee: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE,
+        endOverhang: VALUE, peakIn: byWidth(VALUE) },
       salt: { rise: VALUE, ridge: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE },
       lean: { rise: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE },
       slope: { rise: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE },
@@ -376,20 +377,21 @@ export function constructionPathProblems(tree, where = "construction") {
    {"in"} or {"w"} (a share of the width). A bad one used to throw when the
    building was drawn. */
 const LENGTH_KEYS = ["rise", "lowerRise", "upperRise", "knee", "ridge"];
-function lengthProblem(v) {
+function lengthProblem(v, flat) {
   if (typeof v === "number") return Number.isFinite(v) ? null : "is not a number";
+  const units = flat ? ["ft", "in", "w", "flatIn"] : ["ft", "in", "w"];
   if (isPlainObject(v)) {
     const ks = Object.keys(v).filter((k) => !k.startsWith("_"));
-    if (ks.length === 1 && ["ft", "in", "w"].indexOf(ks[0]) >= 0 && typeof v[ks[0]] === "number" && Number.isFinite(v[ks[0]])) return null;
+    if (ks.length === 1 && units.indexOf(ks[0]) >= 0 && typeof v[ks[0]] === "number" && Number.isFinite(v[ks[0]])) return null;
   }
-  return `${JSON.stringify(v)} is not a length: write feet (2.5), {"ft": 2.5}, {"in": 30} or a share of the width ({"w": 0.27})`;
+  return `${JSON.stringify(v)} is not a length: write feet (2.5), {"ft": 2.5}, {"in": 30}${flat ? ", inches out from the wall ({\"flatIn\": 4})" : ""} or a share of the width ({"w": 0.27})`;
 }
 export function roofValueProblems(tree, where = "construction") {
   const out = [];
   const roof = isPlainObject(tree) && isPlainObject(tree.roof) ? tree.roof : null;
   if (!roof) return out;
   const each = (v, path, fn) => { if (isRuleList(v)) v.forEach((r, i) => fn(r.value, `${path}[${i}].value`)); else fn(v, path); };
-  const len = (v, path) => { if (v === undefined) return; each(v, path, (x, p) => { const why = lengthProblem(x); if (why) out.push(`${p}: ${why}.`); }); };
+  const len = (v, path, flat) => { if (v === undefined) return; each(v, path, (x, p) => { const why = lengthProblem(x, flat); if (why) out.push(`${p}: ${why}.`); }); };
   len(roof.dormerRise, `${where}.roof.dormerRise`);
   const shapes = isPlainObject(roof.shapes) ? roof.shapes : {};
   for (const s of Object.keys(shapes)) {
@@ -397,9 +399,12 @@ export function roofValueProblems(tree, where = "construction") {
     if (!isPlainObject(sh)) continue;
     const at = `${where}.roof.shapes.${s}`;
     for (const k of LENGTH_KEYS) len(sh[k], `${at}.${k}`);
-    if (isPlainObject(sh.eaveOverhang)) for (const side of ["left", "right"]) len(sh.eaveOverhang[side], `${at}.eaveOverhang.${side}`);
-    if (sh.rakeOverhang !== undefined) each(sh.rakeOverhang, `${at}.rakeOverhang`, (x, p) => {
+    if (isPlainObject(sh.eaveOverhang)) for (const side of ["left", "right"]) len(sh.eaveOverhang[side], `${at}.eaveOverhang.${side}`, true);
+    for (const k of ["rakeOverhang", "endOverhang"]) if (sh[k] !== undefined) each(sh[k], `${at}.${k}`, (x, p) => {
       if (!(typeof x === "number" && x >= 0 && x <= 3)) out.push(`${p}: ${JSON.stringify(x)} should be feet past the gable end, from 0 to 3.`);
+    });
+    if (isPlainObject(sh.peakIn)) for (const w of Object.keys(sh.peakIn)) if (!w.startsWith("_")) each(sh.peakIn[w], `${at}.peakIn.${w}`, (x, p) => {
+      if (!(typeof x === "number" && x >= 12 && x <= 120)) out.push(`${p}: ${JSON.stringify(x)} should be the barn roof's height above the wall in inches, from 12 to 120.`);
     });
   }
   return out;
@@ -411,7 +416,7 @@ export function strictConstructionProblems(tree, where = "construction") {
   return constructionPathProblems(tree, where).concat(roofValueProblems(tree, where));
 }
 
-/* The facts a building rule can test. d is {W, L} (the corner porch's 4 ft
+/* The facts a building rule can test. d is {W, L} (the corner porch's
    deck is part of L, as it is everywhere else in the model). A company's own
    style built like another (t.base, model/company.js) is framed exactly like
    that one, so a "styles" rule tests the base: "LB" covers the Lofted Barn and
@@ -439,11 +444,13 @@ export function chosenOptionKeys(state, t) {
 }
 
 /* The construction for one live design: library < manufacturer < company
-   (already merged into cat.construction by model/company.js) < the effects of
-   the options chosen, then settled for this building. */
+   (already merged into cat.construction by model/company.js) < the style's
+   own numbers (t.construction: what "How it's built" sets for this style,
+   model/build-settings.js) < the effects of the options chosen, then settled
+   for this building. */
 export function constructionFor(cat, state, t, d) {
   const effects = (cat && cat.optionEffects) || {};
-  const layers = [cat && cat.construction];
+  const layers = [cat && cat.construction, t && t.construction];
   for (const k of chosenOptionKeys(state, t)) if (effects[k]) layers.push(effectsToTree(effects[k]));
   return resolveConstruction(mergeConstruction(...layers), buildingFacts(state.type, t, d));
 }

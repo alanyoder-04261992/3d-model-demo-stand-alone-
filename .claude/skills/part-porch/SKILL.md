@@ -36,8 +36,8 @@ Three kinds, set by the style's `porch` trait:
 
 | `porch` | styles (standard line) | what it is |
 |---|---|---|
-| `F` | Cabin, Lofted Barn Cabin | a 4 ft deep porch across the whole front end, inside the length (the front wall stands 4 ft back). Header band across the end, a 4 ft wrap band down each side, ceiling, two corner posts, railing across the front and down both sides from 3.75 ft back. |
-| `S` | Side Cabin, Loft Side Cabin | a 4 ft deep notch in the door side (+x), 8 or 12 ft long -- 8 on a building under 20 ft -- at the back end, flipped to the front end, or in the middle (the design's `pLen`, `pFlip`, `pMid`; `plan.span`). Header band across the open end (not when centred), a band along the opening, ceiling, a fixed post at the wrap corner (not when centred), railing along the edge, a railing across the porch end (not when centred), the step. |
+| `F` | Cabin, Lofted Barn Cabin | a porch the porch depth deep (4 ft standard) across the whole front end, inside the length (the front wall stands 4 ft back). Header band across the end, a 4 ft wrap band down each side, ceiling, two corner posts, railing across the front and down both sides from 3.75 ft back. |
+| `S` | Side Cabin, Loft Side Cabin | a notch the porch depth deep (4 ft standard) in the door side (+x), one of the style's side porch lengths long (8 or 12 standard) -- the shortest on a building under 20 ft -- at the back end, flipped to the front end, or in the middle (the design's `pLen`, `pFlip`, `pMid`; `plan.span`). Header band across the open end (not when centred), a band along the opening, ceiling, a fixed post at the wrap corner (not when centred), railing along the edge, a railing across the porch end (not when centred), the step. |
 | `C` | Deluxe Side Cabin, Deluxe Loft Side Cabin | a wrap porch: a 4 ft deck across the front end (the style adds 4 ft to L for it) plus a 12 ft run down the door side, closed behind by the P1 (angled), P2 and P3 porch walls. Bands across the end, along the 12 ft opening and on the 4 ft stub on the -x side, ceiling over the end 12 ft, two corner posts, railing across the end and down the side, a rail stub on the -x side. |
 
 There is no porch deck here: the building's floor slab (`parts/floor.js`)
@@ -74,6 +74,18 @@ the trim material's triangles must come out in that order.
   porch's `plan.span` (from `pLen`, `pFlip`, `pMid`, `model/frame.js pSpan`),
   the porch posts (`plan.state.items` with `plan.CAT[cat].k === "post"`, on
   wall F or R) and the side porch's door (`k === "door"` on wall S1).
+* **How it's built (Oct 2026): the porch depth and the side porch lengths
+  are style settings**, not fixed numbers. `plan.t.porchDepthFt`
+  (`model/frame.js porchDepthOf`, 4 ft standard) is how far a front porch's
+  wall stands back, how deep a side porch's notch is, and how deep a wrap
+  porch's deck and side run are; `plan.t.sidePorch.lengthsFt` (8 and 12
+  standard, `sidePorchLengthsOf`) are the side porch lengths a customer can
+  pick (`plan.span.P`; only the shortest under 20 ft long). Every expression
+  is written so it is EXACTLY Barnwright's number at 4 ft (`L/2-(d-0.25)`,
+  not `L/2-d+0.25`: the two differ in the last bit). Fixed whatever the
+  depth: the wrap porch's 4 ft stub of front wall on -x and its 12 ft run
+  down the door side, the posts' and rails' offsets from the edges.
+  `tools/check-build-settings.mjs` proves a 6 ft porch moves every piece.
 
 ## Where it came from in Barnwright
 

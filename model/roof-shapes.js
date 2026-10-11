@@ -40,7 +40,7 @@ export const DEFAULT_ROOF = Object.freeze({
   cottageEave: { backIn: 4, frontIn: 8, fasciaIn: 4 },
   shapes: {
     gable: { rise: { w: 0.27 }, eaveOverhang: { left: 0.42, right: 0.42 }, rakeOverhang: 0.45 },
-    gambrel: { rise: { w: 0.45 }, lowerRise: { w: 0.32 }, upperRise: { w: 0.13 }, knee: { w: 0.38 }, eaveOverhang: { left: 0.42, right: 0.42 }, rakeOverhang: 0.12 },
+    gambrel: { rise: { w: 0.45 }, lowerRise: { w: 0.32 }, upperRise: { w: 0.13 }, knee: { w: 0.38 }, eaveOverhang: { left: 0.42, right: 0.42 }, rakeOverhang: 0.12, endOverhang: 0.10 },
     salt: { rise: { w: 0.26 }, ridge: { w: 0.18 }, eaveOverhang: { left: 0.42, right: 0.42 }, rakeOverhang: 0.45 },
     lean: { rise: { w: 0.17 }, eaveOverhang: { left: 0, right: 0.333 }, rakeOverhang: 0.12 },
     slope: { rise: { w: 0.28 }, eaveOverhang: { left: 0.35, right: 1.15 }, rakeOverhang: 0.45 },
@@ -90,7 +90,12 @@ export function roofProfile(W, topY, t, construction) {
   if (r === "gambrel") {
     /* the mini barn (Standard Barn) overrides these through its gambrel trait:
        steep shoulders, taller cap, break at the door frame corners */
-    const rL = lengthOf(s.lowerRise, W), rU = lengthOf(s.upperRise, W), kx = lengthOf(s.knee, W);
+    let rL = lengthOf(s.lowerRise, W), rU = lengthOf(s.upperRise, W);
+    const kx = lengthOf(s.knee, W);
+    /* a barn roof height set by width (peakIn, "How it's built"): both rises
+       are scaled to it, the knee stays where it is */
+    const peak = barnPeakFt(s.peakIn, W, rL + rU);
+    if (peak != null) { const k = peak / (rL + rU); rL *= k; rU *= k; }
     return [[-W / 2, topY], [-kx, topY + rL], [0, topY + rL + rU], [kx, topY + rL], [W / 2, topY]];
   }
   /* THE RIDGE SITS OVER THE FRONT. Alan, Aug 2026: the doors and windows go on
@@ -103,6 +108,31 @@ export function roofProfile(W, topY, t, construction) {
   if (r === "lean") return [[-W / 2, topY + lengthOf(s.rise, W)], [W / 2, topY]];
   if (r === "slope") return [[-W / 2, topY], [W / 2, topY + lengthOf(s.rise, W)]];
   return [[-W / 2, topY], [0, topY + (t.dormer ? lengthOf(s.dormerRise, W) : lengthOf(s.rise, W))], [W / 2, topY]];
+}
+
+/* THE BARN ROOF HEIGHT FOR THIS WIDTH, in feet above the top of the wall,
+   from peakIn ({"8": 43.75, "10": 48} -- inches by width in feet), or null
+   when the shape's own height stands. A listed width gets its number. A
+   width that is not listed keeps the shape's own height (natural, feet), held
+   between its listed neighbours: never taller than the next wider listed
+   width, never lower than the next narrower one -- so a wider barn is never
+   lower than a narrower one. This is a drawing rule only: no cut length is
+   worked out from it. */
+export function barnPeakFt(peakIn, W, natural) {
+  if (!peakIn || typeof peakIn !== "object") return null;
+  const own = peakIn[String(W)];
+  if (typeof own === "number" && own > 0) return own / 12;
+  let lo = null, hi = null, loW = -Infinity, hiW = Infinity;
+  for (const k of Object.keys(peakIn)) {
+    const w = +k, v = peakIn[k];
+    if (!(w > 0) || !(typeof v === "number" && v > 0)) continue;
+    if (w < W && w > loW) { loW = w; lo = v / 12; }
+    if (w > W && w < hiW) { hiW = w; hi = v / 12; }
+  }
+  let h = natural;
+  if (hi != null && h > hi) h = hi;
+  if (lo != null && h < lo) h = lo;
+  return h === natural ? null : h;
 }
 
 export function profileYat(prof, x) {
