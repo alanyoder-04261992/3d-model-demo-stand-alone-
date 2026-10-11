@@ -366,6 +366,16 @@ group("11. problems, screens and History words");
   const lines = BUILT.describeChanges(before, after, M);
   ok("History: \"Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft\"", lines.includes("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft"), J(lines));
   ok("History: \"Business-wide roof pitch for gable roofs: standard → 6/12\"", lines.includes("Business-wide roof pitch for gable roofs: standard → 6/12"), J(lines));
+  /* the Dealer Center's change list while a box holds words that cannot be read */
+  const typo = copy(before); typo.offer.LB.built = { wallHeight: "5\\12" };
+  const typoLines = BUILT.describeChanges(before, typo, M);
+  ok("changes: a wall height typed wrong says what was typed (\"... → \"5\\12\"\")", typoLines.includes('Lofted Barn wall height: 6 ft 8 1/16 in → "5\\12"'), J(typoLines));
+  ok("words: a pitch between quarters is \"about 6 1/2/12\"; a door opening in inches", BUILT.format("roofPitch", 6.48) === "about 6 1/2/12" && BUILT.format("roofPitch", 5.25) === "5 1/4/12" && BUILT.format("doorHeight", 76.5) === "76 1/2 in");
+  ok("History: an extra's roof pitch (\"Steep roof: roof pitch at least 7/12\")", J(BUILT.describeExtraBuilt("Steep roof", undefined, { roofPitch: 7 })) === J(["Steep roof: roof pitch at least 7/12"])
+    && J(BUILT.describeExtraBuilt("Steep roof", { roofPitch: 7 }, undefined)) === J(["Steep roof no longer changes the roof pitch"]));
+  const reach = BUILT.businessReach(barnwrightCompany(), M, "gableEndOverhang", "gable");
+  ok("businessReach: a business-wide gable-end overhang reaches the Utility Shed, and the Garden Utility keeps its flush gable end",
+    reach.reaches.includes("UT") && reach.kept.some((k) => k.key === "GU" && /flush gable end/.test(k.feature)), J(reach));
   /* a pure edit */
   const e1 = BUILT.setBuilt(before, { style: "UT", knob: "roofPitch", value: "5/12" });
   ok("setBuilt writes the number", e1.problems.length === 0 && e1.settings.offer.UT.built.roofPitch === 5 && before.offer.UT.built === undefined);
