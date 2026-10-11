@@ -107,7 +107,8 @@ the roof paint the dormer then shares).
 
 All from `plan.construction.roof` through `roofShape(t, construction)`
 (`model/roof-shapes.js`); every default is Barnwright's number, so nothing
-moves unless a company changes one:
+moves unless the shop standard or a company changes one (the shop standard's
+numbers are listed at the end of this section):
 
 * **`roof.shapes.<roof>.rakeOverhang`** -- the gable-end overhang in feet
   (`rakeOverhangOf(plan)`). Defaults: gable 0.45, salt 0.45, slope 0.45,
@@ -143,6 +144,20 @@ width 0.52, lap 0.34 x 0.024.
   slope as before. A gambrel may carry `roof.shapes.gambrel.peakIn` (the
   barn roof's height above the wall by width, model/roof-shapes.js
   `barnPeakFt`). `tools/check-build-settings.mjs` proves each.
+* **The shop standard (Oct 2026, Alan: "yes match").** The standard
+  manufacturer's How it's built blocks (`styles.<KEY>.built` in
+  `library/manufacturers/standard.json`) give the Utility Shed and Side
+  Utility a 5/12 roof at every width (Barnwright: about 6 1/2/12) and an
+  eave 4 in out from the wall measured level (`{"flatIn": 4}`; Barnwright:
+  0.42 ft along the slope), and the Lofted Barn and Side Lofted Barn a barn
+  roof 43 3/4, 48 and 51 in above the wall at 8, 10 and 12 ft wide
+  (`peakIn`; Barnwright: 0.45 of the width; 14 ft unchanged). The knee
+  stays where Barnwright put it, so the slopes are not Alan's truss pieces
+  yet. Barnwright's own company leaves these blocks out, so
+  `check-golden.mjs --part roofing` still compares Barnwright's numbers;
+  `node tools/check-shop-numbers.mjs` holds the shop numbers (every roof
+  height, pitch and eave of every style and size, and every triangle of the
+  four styles that changed).
 
 ## Where it came from in Barnwright
 

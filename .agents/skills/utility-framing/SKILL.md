@@ -8,8 +8,13 @@ description: "Learn or apply Alan's utility wall, opening and A-frame roof rules
 This is internal knowledge for Alan and the setup agent to learn a builder's
 construction and configure customer buildings faster. The lesson pages,
 framing previews and study settings are development aids; do not ship them
-as customer designer features. Apply confirmed rules to a customer's
-settings/model only within that builder's scope.
+as customer designer features. Alan's confirmed rules are now the standard
+for every dealer (Oct 2026, "yes match"): the standard Utility Shed and Side
+Utility (`styles.UT.built` and `styles.SU.built` in
+`library/manufacturers/standard.json`) have the 5/12 roof, the 4 in roof
+edge and the derived 93.5 in wall. A business that builds differently sets
+its own numbers in the Dealer Center (How it's built, the `how-its-built`
+skill); a rule not yet on the standard waits for Alan's yes.
 
 Alan confirmed these rules October 1, 2026. Use his terminology and keep
 the utility lesson distinct from the learned lofted wall.
@@ -25,13 +30,19 @@ the utility lesson distinct from the learned lofted wall.
 - Roof name: **A-frame roof**, also **utility-style roof**. Standard pitch
   is **5/12**; steep is **7/12**. The denominator is horizontal run, not
   distance along the sloping board. Rise = horizontal run × rise/run ratio.
+  The standard draws 5/12 at every width; 7/12 is the sample price list's
+  **Steep roof (7/12)** option (`options.extras` with `built.roofPitch: 7`,
+  offered only on the Utility Shed and Side Utility).
 - Roof stock follows the **nominal sales width**: **10-wide and under
   use 2x4** (actual 1.5 x 3.5); wider uses **2x6** (actual 1.5 x 5.5).
   Actual building width is a separate geometry input (12-wide is 134 in).
 - Roof projects **4 in beyond each side wall**; its outer end is **2 in
   high** before the top slopes to the peak. The bottom cut is level with
   the **top of the side wall's upper plate**. Exact seat shape is pending
-  fit confirmation; do not quietly borrow the lofted truss tail.
+  fit confirmation; do not quietly borrow the lofted truss tail. The
+  standard draws the 4 in measured level out from the wall
+  (`built.eaveOverhang: 4`); the 2 in end is not drawn yet (the roof edge
+  still slopes to its tip).
 - **Siding** is actual **1/2 in thick**, with its top flush with the
   **upper-plate top**. Its bottom overhang differs from the lofted barn's
   3.5 in and remains to be measured.

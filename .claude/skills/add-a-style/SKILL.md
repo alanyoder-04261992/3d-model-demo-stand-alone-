@@ -78,7 +78,9 @@ standard door and window layout -- it is a new library style: carry on below.
 
 **Never change an existing Barnwright style's entry** (its `roof`, `wallH`,
 traits or `loadout`): the 148 golden buildings and `check-model-live.mjs`
-hold those to Barnwright's own numbers. A new style has a new key.
+hold those to Barnwright's own numbers. A new style has a new key. A shop
+number Alan confirms for an existing style goes in its `built` block, never
+in these traits.
 
 ## 2. The style entry
 
@@ -124,7 +126,16 @@ hold those to Barnwright's own numbers. A new style has a new key.
 * `built` -- the shop standard's How it's built numbers for this style
   (`{"roofPitch": 5, "wallHeight": 93.5}`), only where Alan confirmed them;
   every business gets them unless it sets its own (the `how-its-built`
-  skill). `validateManufacturer` checks them like a business's.
+  skill). `validateManufacturer` checks them like a business's. Today the
+  Utility Shed, Side Utility, Lofted Barn and Side Lofted Barn carry Alan's
+  shop numbers (Oct 2026, "yes match"), each with a `_source` note saying
+  where the number came from; Barnwright's own numbers stay in the raw
+  traits, and the golden test draws those (it leaves every `built` block
+  out: `tools/lib/barnwright-company.mjs`). A new style built like one of
+  them gets no `built` by itself: copy the block only if Alan says the new
+  style is built the same way; then add it to `MATCHED` in
+  `tools/check-shop-numbers.mjs` and run that with `--record`, saying why
+  in the commit.
 * A key the style entry does not know (`"wallHeight"` instead of `wallH`,
   `"porchDepth"`) is named with a did-you-mean by `validateManufacturer`, and
   a business's `offer` entry likewise ("Side Utility: "sizez" is not part of

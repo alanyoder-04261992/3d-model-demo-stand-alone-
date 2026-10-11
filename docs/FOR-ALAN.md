@@ -8,10 +8,12 @@
      "What you still need to decide". -->
 
 This is Barnwright's 3D designer, on its own, so you can sell it to a shed
-company that wants the designer and not the rest of Barnwright. Its buildings
-are Barnwright's shape for shape (one check compares every triangle of 148
-buildings, another every pixel of 24 finished pictures), lit the way your own
-Yoder Storage Barns website lights them (see "How the buildings look"). Every
+company that wants the designer and not the rest of Barnwright. It draws
+Barnwright's buildings shape for shape (one check compares every triangle of
+148 buildings, another every pixel of 24 finished pictures), lit the way your
+own Yoder Storage Barns website lights them (see "How the buildings look"),
+and its standard Utility Shed, Side Utility, Lofted Barn and Side Lofted Barn
+are built with your own shop numbers (see "Your shop numbers"). Every
 real part of a shed is its own piece with its own notes for Claude, and a new
 company is one settings file rather than new programming.
 
@@ -112,6 +114,37 @@ inside out, so they never appear); a corner board casts a hairline shadow
 instead of a dark band; a door's side boards stop just under its head board;
 the octagon window shrinks to fit a small gable instead of being cut off; and
 a door made from a metal building's siding is steel like the walls.
+
+## Your shop numbers
+
+You said "yes match" in October 2026: the standard buildings every dealer
+gets are built the way your shop builds them, where you gave us the numbers.
+
+* **Utility Shed and Side Utility:** a 5/12 roof at every width (a 10 ft
+  wide roof rises 2 ft 1 in instead of 2 ft 8 3/8 in), the roof edge 4 in
+  past each side wall, and walls 7 ft 9 1/2 in (your 89 in studs and three
+  1 1/2 in plates).
+* **Lofted Barn and Side Lofted Barn:** walls 6 ft 7 1/2 in (75 in studs and
+  three plates) and the barn roof 3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall
+  (above the top of the wall) at 8, 10 and 12 ft wide. A 14 ft wide barn
+  keeps today's 6 ft 3 5/8 in.
+* **Everything else is as it was** until you say yes to it: garages, metal
+  buildings, the Dog Kennel, Garden Utility, Dormer Shed, Metal Lofted Barn,
+  Lofted Barn Garage, the cabins, the Standard Barn and the cottages.
+* **The 18x24 gable window is no longer offered** on 8, 10 and 12 ft Utility
+  Sheds and Side Utilities: with the lower roof it would poke through (on 8
+  and 10 ft it already did). The octagon window still fits.
+* **Barnwright's own buildings did not change.** The check that compares
+  every triangle with Barnwright still draws Barnwright's numbers.
+* **Each dealer can still change any of these** for its own buildings in the
+  Dealer Center (How it's built), and Steep roof (7/12) is a ready option in
+  the sample price list.
+
+What matches and what does not yet: the heights match your shop. The barn
+roof's bend is drawn where Barnwright drew it, so the two slopes are not your
+exact truss pieces, and the utility roof edge is drawn sloping rather than
+your level 2 in end. The before and after pictures go with this change; the
+questions are under "What you still need to decide".
 
 ## Lessons and skills
 
@@ -492,6 +525,26 @@ everybody or for one company):
 All of these live in two files: library/construction.json (how the sheds are
 built) and library/manufacturers/standard.json (the styles, including the
 loft). Any company can build differently in its own settings.
+
+### Your shop numbers: what we still need from you
+
+Each one has an answer we used until you say otherwise.
+
+1. **Cabins, garages, metal buildings, the Dog Kennel and the Garden
+   Utility** at 5/12 with a 4 in roof edge, like your utility roof? *For now:
+   unchanged.*
+2. **The 14 ft wide lofted barn's roof height** above the wall? *For now:
+   6 ft 3 5/8 in, as before.*
+3. **The Standard Barn, Metal Lofted Barn and Lofted Barn Garage**: the same
+   trusses and walls as the Lofted Barn? *For now: unchanged.*
+4. **The Dormer Shed's main roof at 7/12** (at 5/12 the dormer has no room)?
+   *For now: unchanged, about 7 1/4/12.*
+5. **The barn roof's bend.** Give us the 8 and 12 ft tip projections and the
+   slopes can match your truss pieces too. *For now: Barnwright's bend.*
+6. **The utility roof's level 2 in end.** *For now: drawn sloping.*
+7. **A 12 ft wide building is 11 ft 2 in actual.** *For now: drawn 12 ft.*
+8. **The Steep roof price** in the sample price list. *For now: $350, an
+   example like the other sample prices.*
 
 ### Choices about the product
 

@@ -106,6 +106,13 @@ current setup; do not ask the company to repeat information already supplied.
    the overhangs, the barn roof height, the shop door height and the dormer
    side are How it's built (the `how-its-built` skill); studs, joists,
    trusses, anchors and loft depth are the `change-construction` skill.
+   The standard already has Alan's shop numbers (Oct 2026): 5/12 roofs,
+   4 in roof edges and 7 ft 9 1/2 in walls on the Utility Shed and Side
+   Utility; 6 ft 7 1/2 in walls and barn roofs 3 ft 7 3/4 in, 4 ft and
+   4 ft 3 in tall at 8, 10 and 12 ft wide on the Lofted Barn and Side Lofted
+   Barn. Ask only what differs from those. A steep roof they sell as an
+   option is an extra with `built.roofPitch` and `styles` (the sample price
+   list's Steep roof (7/12), on the Utility Shed and Side Utility).
 
 Also ask Alan: the licence renewal date, and whether this company is
 white-label (no "3D designer by Barnwright" line).

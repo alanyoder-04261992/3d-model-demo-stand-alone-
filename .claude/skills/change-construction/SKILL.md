@@ -133,7 +133,17 @@ chose. When he answers:
 
 * record and apply the fact within its confirmed scope, usually the
   learning example or that company's settings; use the library for
-  everybody only when Alan has established that wider scope;
+  everybody only when Alan has established that wider scope. A How it's
+  built number he confirms for every dealer (the roof pitch, the barn roof
+  height, an overhang, a wall height, the shop door) goes in the style's
+  `built` block in `library/manufacturers/standard.json` with a `_source`
+  note, never in `library/construction.json` or the raw traits, which keep
+  Barnwright's numbers for the golden test (Oct 2026, "yes match": the
+  Utility Shed, Side Utility, Lofted Barn and Side Lofted Barn; the
+  `how-its-built` skill). Then add the style and its numbers to
+  `tools/check-shop-numbers.mjs` (`MATCHED` and the checks of Alan's
+  numbers), run it with `--record`, say why in the commit, and run
+  `node tools/check-style-sizes.mjs`;
 * take the ASSUMPTION note off: `site.anchorsAssumed` in
   `library/construction.json`, `"assumed": true` on a style's `loft`, and the
   word ASSUMPTION in the `_help` note;
