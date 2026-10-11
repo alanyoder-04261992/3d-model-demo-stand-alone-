@@ -237,6 +237,10 @@ let termsFacts = 0;
     says("2.4", "Until you first open your 3D designer to customers, we can change your price list and settings", "first quote or order is saved", "even if you close it again later"));
   fact("2.4 says the owner can stop it in Settings, Barnwright, and only the owner opens the 3D designer to customers",
     says("2.4", "Your owner can stop it sooner in Settings, Barnwright", "Only your owner can open your 3D designer to customers"));
+  fact("2.4 says setup can start as soon as the Dealer Center is made, before the owner first signs in, on the terms agreed on the sign-up page, from the business name, phone and email given there (docs/OFFICE.md, \"Before the owner first signs in\")",
+    says("2.4", "This can start as soon as we make your Dealer Center, before your owner first signs in", "the terms you agree to on your sign-up page allow it", "business name, phone and email you give us there"));
+  fact("the short version's \"Changes we make\" says it can start before the owner first signs in",
+    (t.summary.find((x) => x.title === "Changes we make")?.text || "").includes("starting before you first sign in"));
   fact("2.4 never promises that a person approves each change before the 3D designer is open (the Claude app's Allow can be skipped, so nothing enforces it)",
     !!item("2.4") && !/approv/i.test(item("2.4")));
   fact("10.4 says after setup access ends Barnwright changes things only while the owner turns on Run checks and change my price list and settings, for 1 to 24 hours",
@@ -266,4 +270,4 @@ if (problems.length) {
   process.exit(1);
 }
 console.log(`PROVED: ${checked} sentences on the Dealer Center's screens, its server answers and emails, the lot designer's quote messages and the Barnwright Terms and Conditions use none of the ${BANNED.length} old words (portal, workspace, admin, catalogue, submission, embed, origin, suspended...).`);
-console.log(`  The terms are version ${TERMS.version} (${TERMS_SETUP_ACCESS} or later) and say the ${termsFacts - 1} things Barnwright setup access really does, and no more: the preview before opening, setup access only until first open or the first quote or order, the owner's stop and the owner alone opening, no promise of a person approving each change before opening, the owner's Run checks and change my price list and settings for 1 to 24 hours after, a Barnwright person making or approving each change then, what the Dealer Center tells Barnwright, and what setup access never touches.`);
+console.log(`  The terms are version ${TERMS.version} (${TERMS_SETUP_ACCESS} or later) and say the ${termsFacts - 1} things Barnwright setup access really does, and no more: the preview before opening, setup access from before the owner first signs in (on the sign-up page's agreement) only until first open or the first quote or order, the owner's stop and the owner alone opening, no promise of a person approving each change before opening, the owner's Run checks and change my price list and settings for 1 to 24 hours after, a Barnwright person making or approving each change then, what the Dealer Center tells Barnwright, and what setup access never touches.`);

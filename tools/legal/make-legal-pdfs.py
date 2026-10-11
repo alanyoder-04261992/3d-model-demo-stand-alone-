@@ -237,7 +237,9 @@ def section_band(text):
 # checks, or Run checks and change my price list and settings), 10.4 a
 # Barnwright person makes or approves each change after that, 10.5 what the
 # Dealer Center tells us, 10.6 what setup access never does; the short version
-# gains "Changes we make". The words promise only what the code enforces:
+# gains "Changes we make". 2.4 and "Changes we make" also say it can start
+# before the owner first signs in, on the terms agreed on the sign-up page
+# (Alan, Oct 2026: "Start right away"). The words promise only what the code enforces:
 # tools/check-wording.mjs reads them against the screens.
 
 TERMS_INTRO = [
@@ -259,7 +261,7 @@ TERMS = [
         ("2.1", "We set up your 3D designer for you at no charge: your buildings, sizes, prices, options, colors, logo, lots and 3D designer web address."),
         ("2.2", "To do that we need your price list, photos of your buildings, and your options and colors. Please get them to us correct and on time."),
         ("2.3", "Before your customers can use it, we show you your buildings and prices. You and your team can look at your 3D designer as a <b>preview</b> before you open it. Your customers can't see the preview. You check your buildings and prices and tell us they are right. You are responsible for the prices you approve."),
-        ("2.4", "<b>Setting it up for you.</b> Until you first open your 3D designer to customers, we can change your price list and settings to set it up for you. That includes your buildings, sizes, prices, doors, windows, options, colors and logo, your business name and contact details, how your 3D designer looks and shows prices (including the line under the price), and your quote form (including the words that ask your customers if you may text them). We may use software, including AI assistants, to help make these changes. This ends for good the first time you open your 3D designer to customers or your first quote or order is saved, even if you close it again later. Your owner can stop it sooner in <b>Settings</b>, <b>Barnwright</b>. Only your owner can open your 3D designer to customers. What this never lets us do, and how your owner sees every change, is in 10.6."),
+        ("2.4", "<b>Setting it up for you.</b> Until you first open your 3D designer to customers, we can change your price list and settings to set it up for you. This can start as soon as we make your Dealer Center, before your owner first signs in: the terms you agree to on your sign-up page allow it, and we start from the business name, phone and email you give us there. That includes your buildings, sizes, prices, doors, windows, options, colors and logo, your business name and contact details, how your 3D designer looks and shows prices (including the line under the price), and your quote form (including the words that ask your customers if you may text them). We may use software, including AI assistants, to help make these changes. This ends for good the first time you open your 3D designer to customers or your first quote or order is saved, even if you close it again later. Your owner can stop it sooner in <b>Settings</b>, <b>Barnwright</b>. Only your owner can open your 3D designer to customers. What this never lets us do, and how your owner sees every change, is in 10.6."),
     ]),
     ("3. What it costs", [
         ("3.1", "There is no setup fee."),
@@ -371,7 +373,7 @@ TERMS = [
 # and a sign-up page that can't break a long address would run off a phone.
 TERMS_SUMMARY = [
     ("What you get", "Your 3D designer and your Dealer Center, on your own 3D designer web address. You also get a website code to show your 3D designer on your own website. We set it up for you (sections 1 and 2)."),
-    ("Changes we make", "Until you first open your 3D designer to customers, we can change your price list and settings to set it up. After that, only while your owner turns it on in Settings. Every change is listed for your owner (sections 2 and 10)."),
+    ("Changes we make", "Until you first open your 3D designer to customers, we can change your price list and settings to set it up, starting before you first sign in. After that, only while your owner turns it on in Settings. Every change is listed for your owner (sections 2 and 10)."),
     ("What it costs", "No setup fee. You save a card when you sign up; nothing is charged that day except one-time fees for any extra lots. The monthly fee is charged to your card from the day your 3D designer is ready, and it includes your first lot (section 3)."),
     ("Stopping", "Month to month. Either of us can stop with 30 days' notice by email (section 4)."),
     ("Your prices", "You check your price list and you are responsible for your prices, your buildings and your rent-to-own contracts. The 3D pictures are not construction drawings (section 6)."),
@@ -499,14 +501,14 @@ PARTS = [
             "On the customer, tap <b>Make their Dealer Center</b>. Check their 3D designer web address name (for example <b>cedar-ridge-sheds</b>) and tap <b>Make it</b>.",
             "Your Control Room makes their site in Netlify, gives it their 3D designer web address, turns on sign-in, connects it to your Control Room and starts it. It takes about 3 minutes.",
             "If it says <b>One more step</b>, tap the link it shows, then <b>Enable Identity</b> in Netlify.",
-            "When their Dealer Center first opens, your Control Room shows <b>Connected</b>.",
+            "About a minute after it finishes, your Control Room shows <b>Connected</b>. From then on you can set up their price list from your photos before the owner signs in: <b>Open their price list</b>, or ask Claude.",
         ]),
     ]),
     ("Part 3. At the owner's computer", "About 30 minutes, with the owner.", [
         ("The owner's login", [
             "On the owner's computer, open <b>https://(their 3D designer web address)/dealer</b>, for example https://cedar-ridge-sheds." + DOMAIN + "/dealer.",
             "They tap <b>Make your login</b>, type the email from their sign-up and a password, then open the email that comes and tap the link in it.",
-            "They sign in. The first setup asks for their business, has them tick <b>I agree</b> to the terms, makes a starting price list and their first lot.",
+            "They sign in. The first setup asks for their business, has them tick <b>I agree</b> to the terms, and adds their first lot. It keeps the price list you set up, or makes a starting one.",
         ]),
         ("Keep it on their computer and their phone", [
             "<b>Computer</b> (Chrome or Edge): click the <b>Install</b> button at the right end of the address bar, then <b>Install</b>. The Dealer Center gets its own icon on their desktop.",
