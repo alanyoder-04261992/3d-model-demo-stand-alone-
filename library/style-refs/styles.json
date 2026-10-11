@@ -1,7 +1,7 @@
 {
  "format": 1,
  "about": "Pictures and shape facts for every style in the 3D designer's library, for matching a dealer's photos to a style. Made by node tools/make-style-refs.mjs and checked by node tools/check-style-refs.mjs in the 3D designer repository.",
- "pitch_note": "Every pitch, height and size here is the standard building line as the 3D designer draws it. The Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility use Alan's 5/12, the Dormer Shed's main roof his 7/12, and the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage his barn roof heights (3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide); the other styles use Barnwright's drawing. A barn roof's height is to the peak of its trusses, the way a builder measures it; every other roof's is to the top of the roof. A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.",
+ "pitch_note": "Every pitch, height and size here is the standard building line as the 3D designer draws it. The Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility use Alan's 5/12, the Dormer Shed's main roof his 7/12, and the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage his barn roof heights (3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide); the other styles use Barnwright's drawing. A barn roof's height is to the peak of its trusses, the way a builder measures it; every other roof's is to the top of the roof. The words say every length and pitch the way How it's built does (5/12, about 6 1/2/12, 7 ft 4 13/16 in); a barn roof is said by its height, not by the pitch of its steep part. Each slope's pitch is also given as an exact number for measuring a photo. A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.",
  "library_version": "a4a5f102583fba9b",
  "library_files": {
   "library/manufacturers/standard.json": "7322ec1f20b74c8b8d0bfaac431c77d327c37fa5bc0f6e7656ef6e6624e5d267",
@@ -35,7 +35,7 @@
  "floor_above_ground": {
   "ft": 0.92,
   "in": 11,
-  "words": "11 in"
+  "words": "11 1/16 in"
  },
  "walls_legend": {
   "F": "The front end: the short end on the left in the corner picture, and the end the end picture looks at.",
@@ -86,7 +86,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at 5/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -107,7 +107,7 @@
     "height": {
      "ft": 7.79,
      "in": 93.5,
-     "words": "7 ft 9½ in"
+     "words": "7 ft 9 1/2 in"
     }
    },
    "main_door": {
@@ -116,10 +116,10 @@
     "top_from_floor": {
      "ft": 6.38,
      "in": 76.5,
-     "words": "6 ft 4½ in"
+     "words": "6 ft 4 1/2 in"
     },
     "wall_over_it_in": 17,
-    "words": "17 in of wall above it"
+    "words": "1 ft 5 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -208,7 +208,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at 5/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -229,7 +229,7 @@
     "height": {
      "ft": 7.79,
      "in": 93.5,
-     "words": "7 ft 9½ in"
+     "words": "7 ft 9 1/2 in"
     }
    },
    "main_door": {
@@ -238,10 +238,10 @@
     "top_from_floor": {
      "ft": 6.38,
      "in": 76.5,
-     "words": "6 ft 4½ in"
+     "words": "6 ft 4 1/2 in"
     },
     "wall_over_it_in": 17,
-    "words": "17 in of wall above it"
+    "words": "1 ft 5 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -254,13 +254,13 @@
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 6.4 ft left of its middle"
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 6.4 ft right of its middle"
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in right of its middle"
     }
    ],
    "changes_with_size": [],
@@ -338,7 +338,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at 7/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -368,10 +368,10 @@
     "top_from_floor": {
      "ft": 6.38,
      "in": 76.5,
-     "words": "6 ft 4½ in"
+     "words": "6 ft 4 1/2 in"
     },
     "wall_over_it_in": 16.5,
-    "words": "16.5 in of wall above it"
+    "words": "1 ft 4 1/2 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -384,13 +384,13 @@
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 6.4 ft left of its middle"
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 6.4 ft right of its middle"
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in right of its middle"
     }
    ],
    "changes_with_size": [],
@@ -467,7 +467,7 @@
    "drawn_at": "6x12",
    "roof": {
     "type": "lean",
-    "words": "lean-to: one slope",
+    "words": "lean-to: one slope at about 2/12",
     "slopes": [
      {
       "where": "one slope, high over the left long side and low over the right long side",
@@ -478,7 +478,7 @@
     "peak_over_wall": {
      "ft": 1.02,
      "in": 12.2,
-     "words": "1 ft"
+     "words": "1 ft 0 1/4 in"
     },
     "peak_per_width": 0.17,
     "same_at_every_width": true,
@@ -488,11 +488,11 @@
     "height": {
      "ft": 6.9,
      "in": 82.8,
-     "words": "6 ft 11 in"
+     "words": "6 ft 10 13/16 in"
     },
     "high_side": {
      "wall": "L",
-     "words": "7 ft 11 in",
+     "words": "7 ft 11 1/16 in",
      "ft": 7.92,
      "in": 95
     }
@@ -503,10 +503,10 @@
     "top_from_floor": {
      "ft": 6.38,
      "in": 76.5,
-     "words": "6 ft 4½ in"
+     "words": "6 ft 4 1/2 in"
     },
     "wall_over_it_in": 6.3,
-    "words": "6.3 in of wall above it"
+    "words": "6 5/16 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -519,13 +519,13 @@
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 3.7 ft left of its middle"
+     "words": "2×3 Window, on the right long side, 3 ft 8 3/8 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 3.7 ft right of its middle"
+     "words": "2×3 Window, on the right long side, 3 ft 8 3/8 in right of its middle"
     }
    ],
    "changes_with_size": [
@@ -605,7 +605,7 @@
    "drawn_at": "6x12",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at 5/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -626,7 +626,7 @@
     "height": {
      "ft": 6.9,
      "in": 82.8,
-     "words": "6 ft 11 in"
+     "words": "6 ft 10 13/16 in"
     }
    },
    "main_door": {
@@ -635,10 +635,10 @@
     "top_from_floor": {
      "ft": 6.38,
      "in": 76.5,
-     "words": "6 ft 4½ in"
+     "words": "6 ft 4 1/2 in"
     },
     "wall_over_it_in": 6.3,
-    "words": "6.3 in of wall above it"
+    "words": "6 5/16 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -707,7 +707,7 @@
    "drawn_at": "10x12",
    "roof": {
     "type": "gambrel",
-    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 4 11/16 in at 8 and 10 ft wide from the top of the wall to the peak of its trusses",
     "slopes": [
      {
       "where": "lower part, each side",
@@ -723,7 +723,7 @@
     "peak_over_wall": {
      "ft": 3.39,
      "in": 40.7,
-     "words": "3 ft 4½ in"
+     "words": "3 ft 4 11/16 in"
     },
     "peak_per_width": 0.339,
     "same_at_every_width": false,
@@ -750,7 +750,7 @@
     "height": {
      "ft": 4.2,
      "in": 50.4,
-     "words": "4 ft 2½ in"
+     "words": "4 ft 2 3/8 in"
     }
    },
    "main_door": {
@@ -759,10 +759,10 @@
     "top_from_floor": {
      "ft": 5.96,
      "in": 71.5,
-     "words": "5 ft 11½ in"
+     "words": "5 ft 11 1/2 in"
     },
     "wall_over_it_in": -21.1,
-    "words": "it rises 21.1 in into the gable"
+    "words": "it rises 1 ft 9 1/8 in into the gable"
    },
    "standard_doors_windows": [
     {
@@ -829,7 +829,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gambrel",
-    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 7 3/4 in at 8 ft wide, 4 ft at 10 ft wide, 4 ft 3 in at 12 ft wide and 6 ft 3 1/8 in at 14 ft wide from the top of the wall to the peak of its trusses",
     "slopes": [
      {
       "where": "lower part, each side",
@@ -888,7 +888,7 @@
     "height": {
      "ft": 6.63,
      "in": 79.5,
-     "words": "6 ft 7½ in"
+     "words": "6 ft 7 1/2 in"
     }
    },
    "main_door": {
@@ -897,7 +897,7 @@
     "top_from_floor": {
      "ft": 5.96,
      "in": 71.5,
-     "words": "5 ft 11½ in"
+     "words": "5 ft 11 1/2 in"
     },
     "wall_over_it_in": 8,
     "words": "8 in of wall above it"
@@ -995,7 +995,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gambrel",
-    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 7 3/4 in at 8 ft wide, 4 ft at 10 ft wide and 4 ft 3 in at 12 ft wide from the top of the wall to the peak of its trusses",
     "slopes": [
      {
       "where": "lower part, each side",
@@ -1046,7 +1046,7 @@
     "height": {
      "ft": 6.63,
      "in": 79.5,
-     "words": "6 ft 7½ in"
+     "words": "6 ft 7 1/2 in"
     }
    },
    "main_door": {
@@ -1055,7 +1055,7 @@
     "top_from_floor": {
      "ft": 5.96,
      "in": 71.5,
-     "words": "5 ft 11½ in"
+     "words": "5 ft 11 1/2 in"
     },
     "wall_over_it_in": 8,
     "words": "8 in of wall above it"
@@ -1071,13 +1071,13 @@
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 6.4 ft left of its middle"
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 6.4 ft right of its middle"
+     "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in right of its middle"
     }
    ],
    "changes_with_size": [],
@@ -1148,7 +1148,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "salt",
-    "words": "saltbox: an A roof with its peak off-centre",
+    "words": "saltbox: an A roof with its peak off-centre, about 4 1/2/12 over the left long side and 9 3/4/12 over the right long side",
     "slopes": [
      {
       "where": "over the left long side",
@@ -1164,7 +1164,7 @@
     "peak_over_wall": {
      "ft": 2.6,
      "in": 31.2,
-     "words": "2 ft 7 in"
+     "words": "2 ft 7 3/16 in"
     },
     "peak_per_width": 0.26,
     "same_at_every_width": true,
@@ -1183,23 +1183,23 @@
     "top_from_floor": {
      "ft": 6.38,
      "in": 76.5,
-     "words": "6 ft 4½ in"
+     "words": "6 ft 4 1/2 in"
     },
     "wall_over_it_in": 16.5,
-    "words": "16.5 in of wall above it"
+    "words": "1 ft 4 1/2 in of wall above it"
    },
    "standard_doors_windows": [
     {
      "item": "w72",
      "name": "72″ Wooden Double Doors",
      "wall": "R",
-     "words": "72″ Wooden Double Doors, on the right long side, 5.93 ft left of its middle"
+     "words": "72″ Wooden Double Doors, on the right long side, 5 ft 11 3/16 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window (a double: two sashes side by side)",
      "wall": "R",
-     "words": "2×3 Window (a double: two sashes side by side), on the right long side, 3.62 ft right of its middle"
+     "words": "2×3 Window (a double: two sashes side by side), on the right long side, 3 ft 7 3/8 in right of its middle"
     }
    ],
    "changes_with_size": [
@@ -1295,7 +1295,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "slope",
-    "words": "single slope: one slope",
+    "words": "single slope: one slope at about 3 1/4/12",
     "slopes": [
      {
       "where": "one slope, high over the right long side and low over the left long side",
@@ -1306,7 +1306,7 @@
     "peak_over_wall": {
      "ft": 2.8,
      "in": 33.6,
-     "words": "2 ft 9½ in"
+     "words": "2 ft 9 5/8 in"
     },
     "peak_per_width": 0.28,
     "same_at_every_width": true,
@@ -1320,7 +1320,7 @@
     },
     "high_side": {
      "wall": "R",
-     "words": "9 ft 9½ in",
+     "words": "9 ft 9 5/8 in",
      "ft": 9.8,
      "in": 117.6
     }
@@ -1331,10 +1331,10 @@
     "top_from_floor": {
      "ft": 6.3,
      "in": 75.6,
-     "words": "6 ft 3½ in"
+     "words": "6 ft 3 5/8 in"
     },
     "wall_over_it_in": 42,
-    "words": "42 in of wall above it"
+    "words": "3 ft 6 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -1347,25 +1347,25 @@
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 6.6 ft left of its middle"
+     "words": "2×3 Window, on the right long side, 6 ft 7 3/16 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 6.6 ft right of its middle"
+     "words": "2×3 Window, on the right long side, 6 ft 7 3/16 in right of its middle"
     },
     {
      "item": "tr",
      "name": "36×12 Transom Window",
      "wall": "R",
-     "words": "36×12 Transom Window, on the right long side, 7.4 ft left of its middle"
+     "words": "36×12 Transom Window, on the right long side, 7 ft 4 13/16 in left of its middle"
     },
     {
      "item": "tr",
      "name": "36×12 Transom Window",
      "wall": "R",
-     "words": "36×12 Transom Window, on the right long side, 3.7 ft left of its middle"
+     "words": "36×12 Transom Window, on the right long side, 3 ft 8 3/8 in left of its middle"
     },
     {
      "item": "tr",
@@ -1377,13 +1377,13 @@
      "item": "tr",
      "name": "36×12 Transom Window",
      "wall": "R",
-     "words": "36×12 Transom Window, on the right long side, 3.7 ft right of its middle"
+     "words": "36×12 Transom Window, on the right long side, 3 ft 8 3/8 in right of its middle"
     },
     {
      "item": "tr",
      "name": "36×12 Transom Window",
      "wall": "R",
-     "words": "36×12 Transom Window, on the right long side, 7.4 ft right of its middle"
+     "words": "36×12 Transom Window, on the right long side, 7 ft 4 13/16 in right of its middle"
     }
    ],
    "changes_with_size": [
@@ -1505,7 +1505,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at about 6 1/2/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -1516,7 +1516,7 @@
     "peak_over_wall": {
      "ft": 2.7,
      "in": 32.4,
-     "words": "2 ft 8½ in"
+     "words": "2 ft 8 3/8 in"
     },
     "peak_per_width": 0.27,
     "same_at_every_width": true,
@@ -1526,7 +1526,7 @@
     "height": {
      "ft": 7.4,
      "in": 88.8,
-     "words": "7 ft 5 in"
+     "words": "7 ft 4 13/16 in"
     }
    },
    "main_door": {
@@ -1535,10 +1535,10 @@
     "top_from_floor": {
      "ft": 6.3,
      "in": 75.6,
-     "words": "6 ft 3½ in"
+     "words": "6 ft 3 5/8 in"
     },
     "wall_over_it_in": 13.2,
-    "words": "13.2 in of wall above it"
+    "words": "1 ft 1 3/16 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -1557,13 +1557,13 @@
      "item": "w23",
      "name": "2×3 Window",
      "wall": "F",
-     "words": "2×3 Window, on the front end, 3.43 ft left of its middle"
+     "words": "2×3 Window, on the front end, 3 ft 5 1/8 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "F",
-     "words": "2×3 Window, on the front end, 3.43 ft right of its middle"
+     "words": "2×3 Window, on the front end, 3 ft 5 1/8 in right of its middle"
     }
    ],
    "changes_with_size": [
@@ -1665,7 +1665,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gambrel",
-    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 6 3/4 in at 8 ft wide, 4 ft 5 9/16 in at 10 ft wide and 5 ft 4 5/16 in at 12 ft wide from the top of the wall to the peak of its trusses",
     "slopes": [
      {
       "where": "lower part, each side",
@@ -1681,7 +1681,7 @@
     "peak_over_wall": {
      "ft": 4.46,
      "in": 53.5,
-     "words": "4 ft 5½ in"
+     "words": "4 ft 5 9/16 in"
     },
     "peak_per_width": 0.446,
     "same_at_every_width": true,
@@ -1691,7 +1691,7 @@
     "height": {
      "ft": 6.9,
      "in": 82.8,
-     "words": "6 ft 11 in"
+     "words": "6 ft 10 13/16 in"
     }
    },
    "main_door": {
@@ -1700,10 +1700,10 @@
     "top_from_floor": {
      "ft": 6.3,
      "in": 75.6,
-     "words": "6 ft 3½ in"
+     "words": "6 ft 3 5/8 in"
     },
     "wall_over_it_in": 7.2,
-    "words": "7.2 in of wall above it"
+    "words": "7 3/16 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -1722,13 +1722,13 @@
      "item": "w23",
      "name": "2×3 Window",
      "wall": "F",
-     "words": "2×3 Window, on the front end, 3.43 ft left of its middle"
+     "words": "2×3 Window, on the front end, 3 ft 5 1/8 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "F",
-     "words": "2×3 Window, on the front end, 3.43 ft right of its middle"
+     "words": "2×3 Window, on the front end, 3 ft 5 1/8 in right of its middle"
     },
     {
      "item": "oct",
@@ -1832,7 +1832,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at about 6 1/2/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -1843,7 +1843,7 @@
     "peak_over_wall": {
      "ft": 2.7,
      "in": 32.4,
-     "words": "2 ft 8½ in"
+     "words": "2 ft 8 3/8 in"
     },
     "peak_per_width": 0.27,
     "same_at_every_width": true,
@@ -1853,7 +1853,7 @@
     "height": {
      "ft": 7.4,
      "in": 88.8,
-     "words": "7 ft 5 in"
+     "words": "7 ft 4 13/16 in"
     }
    },
    "main_door": {
@@ -1862,10 +1862,10 @@
     "top_from_floor": {
      "ft": 6.3,
      "in": 75.6,
-     "words": "6 ft 3½ in"
+     "words": "6 ft 3 5/8 in"
     },
     "wall_over_it_in": 13.2,
-    "words": "13.2 in of wall above it"
+    "words": "1 ft 1 3/16 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -1878,13 +1878,13 @@
      "item": "w23",
      "name": "2×3 Window",
      "wall": "S1",
-     "words": "2×3 Window, on the porch's back wall, 4.1 ft left of its middle"
+     "words": "2×3 Window, on the porch's back wall, 4 ft 1 3/16 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "S1",
-     "words": "2×3 Window, on the porch's back wall, 4.1 ft right of its middle"
+     "words": "2×3 Window, on the porch's back wall, 4 ft 1 3/16 in right of its middle"
     },
     {
      "item": "w23",
@@ -1964,7 +1964,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gambrel",
-    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 4 ft 5 9/16 in at 10 ft wide and 5 ft 4 5/16 in at 12 ft wide from the top of the wall to the peak of its trusses",
     "slopes": [
      {
       "where": "lower part, each side",
@@ -1980,7 +1980,7 @@
     "peak_over_wall": {
      "ft": 4.46,
      "in": 53.5,
-     "words": "4 ft 5½ in"
+     "words": "4 ft 5 9/16 in"
     },
     "peak_per_width": 0.446,
     "same_at_every_width": true,
@@ -1990,7 +1990,7 @@
     "height": {
      "ft": 6.9,
      "in": 82.8,
-     "words": "6 ft 11 in"
+     "words": "6 ft 10 13/16 in"
     }
    },
    "main_door": {
@@ -1999,10 +1999,10 @@
     "top_from_floor": {
      "ft": 6.3,
      "in": 75.6,
-     "words": "6 ft 3½ in"
+     "words": "6 ft 3 5/8 in"
     },
     "wall_over_it_in": 7.2,
-    "words": "7.2 in of wall above it"
+    "words": "7 3/16 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -2015,13 +2015,13 @@
      "item": "w23",
      "name": "2×3 Window",
      "wall": "S1",
-     "words": "2×3 Window, on the porch's back wall, 4.1 ft left of its middle"
+     "words": "2×3 Window, on the porch's back wall, 4 ft 1 3/16 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "S1",
-     "words": "2×3 Window, on the porch's back wall, 4.1 ft right of its middle"
+     "words": "2×3 Window, on the porch's back wall, 4 ft 1 3/16 in right of its middle"
     },
     {
      "item": "w23",
@@ -2106,7 +2106,7 @@
    "drawn_at": "12x32",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at about 6 1/2/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -2117,7 +2117,7 @@
     "peak_over_wall": {
      "ft": 3.24,
      "in": 38.9,
-     "words": "3 ft 3 in"
+     "words": "3 ft 2 7/8 in"
     },
     "peak_per_width": 0.27,
     "same_at_every_width": true,
@@ -2127,7 +2127,7 @@
     "height": {
      "ft": 7.4,
      "in": 88.8,
-     "words": "7 ft 5 in"
+     "words": "7 ft 4 13/16 in"
     }
    },
    "main_door": {
@@ -2136,10 +2136,10 @@
     "top_from_floor": {
      "ft": 6.3,
      "in": 75.6,
-     "words": "6 ft 3½ in"
+     "words": "6 ft 3 5/8 in"
     },
     "wall_over_it_in": 13.2,
-    "words": "13.2 in of wall above it"
+    "words": "1 ft 1 3/16 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -2237,7 +2237,7 @@
    "drawn_at": "12x32",
    "roof": {
     "type": "gambrel",
-    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 5 ft 4 5/16 in at 12 ft wide from the top of the wall to the peak of its trusses",
     "slopes": [
      {
       "where": "lower part, each side",
@@ -2253,7 +2253,7 @@
     "peak_over_wall": {
      "ft": 5.36,
      "in": 64.3,
-     "words": "5 ft 4½ in"
+     "words": "5 ft 4 5/16 in"
     },
     "peak_per_width": 0.447,
     "same_at_every_width": true,
@@ -2263,7 +2263,7 @@
     "height": {
      "ft": 6.9,
      "in": 82.8,
-     "words": "6 ft 11 in"
+     "words": "6 ft 10 13/16 in"
     }
    },
    "main_door": {
@@ -2272,10 +2272,10 @@
     "top_from_floor": {
      "ft": 6.3,
      "in": 75.6,
-     "words": "6 ft 3½ in"
+     "words": "6 ft 3 5/8 in"
     },
     "wall_over_it_in": 7.2,
-    "words": "7.2 in of wall above it"
+    "words": "7 3/16 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -2378,7 +2378,7 @@
    "drawn_at": "14x20",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at 5/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -2399,7 +2399,7 @@
     "height": {
      "ft": 7.79,
      "in": 93.5,
-     "words": "7 ft 9½ in"
+     "words": "7 ft 9 1/2 in"
     }
    },
    "main_door": {
@@ -2408,10 +2408,10 @@
     "top_from_floor": {
      "ft": 6.4,
      "in": 76.8,
-     "words": "6 ft 5 in"
+     "words": "6 ft 4 13/16 in"
     },
     "wall_over_it_in": 16.7,
-    "words": "16.7 in of wall above it"
+    "words": "1 ft 4 11/16 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -2424,13 +2424,13 @@
      "item": "d36in",
      "name": "36″ In-Swing Door",
      "wall": "R",
-     "words": "36″ In-Swing Door, on the right long side, 6.6 ft right of its middle"
+     "words": "36″ In-Swing Door, on the right long side, 6 ft 7 3/16 in right of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 6.6 ft left of its middle"
+     "words": "2×3 Window, on the right long side, 6 ft 7 3/16 in left of its middle"
     }
    ],
    "changes_with_size": [],
@@ -2507,7 +2507,7 @@
    "drawn_at": "12x32",
    "roof": {
     "type": "gambrel",
-    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 4 ft 3 in at 12 ft wide from the top of the wall to the peak of its trusses",
     "slopes": [
      {
       "where": "lower part, each side",
@@ -2533,7 +2533,7 @@
     "height": {
      "ft": 6.9,
      "in": 82.8,
-     "words": "6 ft 11 in"
+     "words": "6 ft 10 13/16 in"
     }
    },
    "main_door": {
@@ -2542,7 +2542,7 @@
     "top_from_floor": {
      "ft": 6.4,
      "in": 76.8,
-     "words": "6 ft 5 in"
+     "words": "6 ft 4 13/16 in"
     },
     "wall_over_it_in": 6,
     "words": "6 in of wall above it"
@@ -2558,13 +2558,13 @@
      "item": "d36in",
      "name": "36″ In-Swing Door",
      "wall": "R",
-     "words": "36″ In-Swing Door, on the right long side, 9.6 ft right of its middle"
+     "words": "36″ In-Swing Door, on the right long side, 9 ft 7 3/16 in right of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 9.6 ft left of its middle"
+     "words": "2×3 Window, on the right long side, 9 ft 7 3/16 in left of its middle"
     },
     {
      "item": "fake",
@@ -2631,7 +2631,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at about 6 1/2/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -2642,7 +2642,7 @@
     "peak_over_wall": {
      "ft": 2.7,
      "in": 32.4,
-     "words": "2 ft 8½ in"
+     "words": "2 ft 8 3/8 in"
     },
     "peak_per_width": 0.27,
     "same_at_every_width": true,
@@ -2661,10 +2661,10 @@
     "top_from_floor": {
      "ft": 6.38,
      "in": 76.5,
-     "words": "6 ft 4½ in"
+     "words": "6 ft 4 1/2 in"
     },
     "wall_over_it_in": 16.5,
-    "words": "16.5 in of wall above it"
+    "words": "1 ft 4 1/2 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -2742,7 +2742,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "gambrel",
-    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top",
+    "words": "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 7 3/4 in at 8 ft wide, 4 ft at 10 ft wide and 4 ft 3 in at 12 ft wide from the top of the wall to the peak of its trusses",
     "slopes": [
      {
       "where": "lower part, each side",
@@ -2793,7 +2793,7 @@
     "height": {
      "ft": 6.63,
      "in": 79.5,
-     "words": "6 ft 7½ in"
+     "words": "6 ft 7 1/2 in"
     }
    },
    "main_door": {
@@ -2802,7 +2802,7 @@
     "top_from_floor": {
      "ft": 5.96,
      "in": 71.5,
-     "words": "5 ft 11½ in"
+     "words": "5 ft 11 1/2 in"
     },
     "wall_over_it_in": 8,
     "words": "8 in of wall above it"
@@ -2877,7 +2877,7 @@
    "drawn_at": "12x32",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at about 6 1/2/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -2888,7 +2888,7 @@
     "peak_over_wall": {
      "ft": 3.24,
      "in": 38.9,
-     "words": "3 ft 3 in"
+     "words": "3 ft 2 7/8 in"
     },
     "peak_per_width": 0.27,
     "same_at_every_width": true,
@@ -2907,10 +2907,10 @@
     "top_from_floor": {
      "ft": 6.4,
      "in": 76.8,
-     "words": "6 ft 5 in"
+     "words": "6 ft 4 13/16 in"
     },
     "wall_over_it_in": 16.2,
-    "words": "16.2 in of wall above it"
+    "words": "1 ft 4 3/16 in of wall above it"
    },
    "standard_doors_windows": [
     {
@@ -2923,13 +2923,13 @@
      "item": "d36in",
      "name": "36″ In-Swing Door",
      "wall": "R",
-     "words": "36″ In-Swing Door, on the right long side, 9.6 ft right of its middle"
+     "words": "36″ In-Swing Door, on the right long side, 9 ft 7 3/16 in right of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window",
      "wall": "R",
-     "words": "2×3 Window, on the right long side, 9.6 ft left of its middle"
+     "words": "2×3 Window, on the right long side, 9 ft 7 3/16 in left of its middle"
     }
    ],
    "changes_with_size": [],
@@ -2995,7 +2995,7 @@
    "drawn_at": "10x20",
    "roof": {
     "type": "salt",
-    "words": "saltbox: an A roof with its peak off-centre",
+    "words": "saltbox: an A roof with its peak off-centre, about 4 1/2/12 over the left long side and 9 3/4/12 over the right long side",
     "slopes": [
      {
       "where": "over the left long side",
@@ -3011,7 +3011,7 @@
     "peak_over_wall": {
      "ft": 2.6,
      "in": 31.2,
-     "words": "2 ft 7 in"
+     "words": "2 ft 7 3/16 in"
     },
     "peak_per_width": 0.26,
     "same_at_every_width": true,
@@ -3030,23 +3030,23 @@
     "top_from_floor": {
      "ft": 6.38,
      "in": 76.5,
-     "words": "6 ft 4½ in"
+     "words": "6 ft 4 1/2 in"
     },
     "wall_over_it_in": 16.5,
-    "words": "16.5 in of wall above it"
+    "words": "1 ft 4 1/2 in of wall above it"
    },
    "standard_doors_windows": [
     {
      "item": "w72",
      "name": "72″ Wooden Double Doors",
      "wall": "R",
-     "words": "72″ Wooden Double Doors, on the right long side, 5.93 ft left of its middle"
+     "words": "72″ Wooden Double Doors, on the right long side, 5 ft 11 3/16 in left of its middle"
     },
     {
      "item": "w23",
      "name": "2×3 Window (a double: two sashes side by side)",
      "wall": "R",
-     "words": "2×3 Window (a double: two sashes side by side), on the right long side, 3.62 ft right of its middle"
+     "words": "2×3 Window (a double: two sashes side by side), on the right long side, 3 ft 7 3/8 in right of its middle"
     }
    ],
    "changes_with_size": [
@@ -3136,7 +3136,7 @@
    "drawn_at": "8x16",
    "roof": {
     "type": "gable",
-    "words": "gable: an A roof, both sides the same",
+    "words": "gable: an A roof at 5/12, both sides the same",
     "slopes": [
      {
       "where": "each side",
@@ -3157,7 +3157,7 @@
     "height": {
      "ft": 7.4,
      "in": 88.8,
-     "words": "7 ft 5 in"
+     "words": "7 ft 4 13/16 in"
     }
    },
    "main_door": {
@@ -3166,10 +3166,10 @@
     "top_from_floor": {
      "ft": 6.38,
      "in": 76.5,
-     "words": "6 ft 4½ in"
+     "words": "6 ft 4 1/2 in"
     },
     "wall_over_it_in": 12.3,
-    "words": "12.3 in of wall above it"
+    "words": "1 ft 0 5/16 in of wall above it"
    },
    "standard_doors_windows": [
     {

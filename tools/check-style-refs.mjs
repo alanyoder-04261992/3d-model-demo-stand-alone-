@@ -24,6 +24,10 @@
    4. the comparison CAN fail: one changed byte in a picture, a steeper gable
       in the library, a changed shop number, and a missing picture are each
       caught;
+   4b. every length and pitch a person reads is said the way How it's built
+      says it (feet and inches to the nearest 1/16 in, "5/12", "about
+      6 1/2/12"): no decimal like "16.5 in" or "6.4 ft" and no "½" anywhere
+      in the words. A decimal put into the words is caught;
    5. no dealer's website carries the pictures: the website build
       (npm run build) and the client package (npm run build:client) leave
       library/style-refs/ out and keep the rest of the library, and the Netlify
@@ -62,6 +66,31 @@ const inputs = () => ({
 });
 const fromDisk = (file) => (existsSync(resolve(DIR, file)) ? readFileSync(resolve(DIR, file)) : null);
 const REMAKE = "Remake them: node tools/make-style-refs.mjs";
+
+/* A length the way How it's built says it: "7 ft", "7 ft 9 1/2 in",
+   "1 ft 0 5/16 in", "11 1/16 in", "3/4 in". */
+const BUILDER_LENGTH = /^(\d+ ft( (\d+|0)( \d+\/(2|4|8|16))? in)?|(\d+ )?\d+\/(2|4|8|16) in|\d+ in)$/;
+/* Keys whose strings no person reads as words: codes, file names, hashes,
+   sizes and the exact pitch kept for measuring a photo (the Control Room's
+   strict "N/12"). */
+const MACHINE_KEYS = new Set(["pitch", "pitches", "sha256", "file", "library_version", "library_files", "code", "item", "wall", "type", "drawn_at", "sizes", "standard_sizes", "order", "backdrop", "price_list"]);
+/* Every string a person reads in styles.json said with a decimal or a "½"
+   (How it's built never writes either). -> ["path: words"] */
+function readerWordsProblems(doc) {
+  const out = [];
+  (function walk(v, path, key) {
+    if (MACHINE_KEYS.has(key)) return;
+    if (typeof v === "string") {
+      if (/\d\.\d|[½¼¾⅛]/.test(v)) out.push(`${path}: ${v}`);
+      return;
+    }
+    if (Array.isArray(v)) { v.forEach((x, i) => walk(x, `${path}[${i}]`, key)); return; }
+    if (v && typeof v === "object") {
+      for (const k of Object.keys(v)) walk(v[k], path ? `${path}.${k}` : k, k);
+    }
+  })(doc, "", "");
+  return out;
+}
 
 /* the first place two values differ, as a readable path (a style is named by its code) */
 function firstDifference(a, b, path = "") {
@@ -110,7 +139,7 @@ else if (prepared) {
     }
     ok(`${STYLES_FILE} is exactly what the library says today: every pitch, wall height, door, window and size worked out again, and every picture's sha256 read again (library version ${fresh.library_version})`, same, detail);
     ok("every style's pitch is given as N/12 for each slope, with its wall height in feet and inches",
-      fresh.styles.every((s) => s.roof.slopes.length && s.roof.slopes.every((x) => /^\d+(\.\d+)?\/12$/.test(x.pitch)) && /^\d+ ft( \d*½? in)?$/.test(s.walls.height.words)));
+      fresh.styles.every((s) => s.roof.slopes.length && s.roof.slopes.every((x) => /^\d+(\.\d+)?\/12$/.test(x.pitch)) && BUILDER_LENGTH.test(s.walls.height.words)));
     /* the note says whose numbers they are: every style with Alan's shop
        numbers (styles.<KEY>.built in the standard line) by name, and
        Barnwright's drawing for the rest */
@@ -120,14 +149,31 @@ else if (prepared) {
       shop.length > 0 && !unnamed.length && /Alan's/.test(fresh.pitch_note) && /other styles use Barnwright's drawing/.test(fresh.pitch_note), unnamed.length ? `not named: ${unnamed.join(", ")}` : fresh.pitch_note);
     const ut = fresh.styles.find((s) => s.code === "UT"), lb = fresh.styles.find((s) => s.code === "LB"), cs = fresh.styles.find((s) => s.code === "CS");
     if (ut && lb && cs) {
-      ok("spot check: the Utility Shed is a 5/12 gable on 7 ft 9½ in walls (Alan's); the Lofted Barn's trusses are 3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide on 6 ft 7½ in walls (Alan's), the 14 ft keeping its own; the Cottage Shed 4.59/12 and 9.75/12 (Barnwright's)",
-        ut.roof.slopes.map((x) => x.pitch).join() === "5/12" && ut.walls.height.words === "7 ft 9½ in" &&
-        lb.walls.height.words === "6 ft 7½ in" && lb.roof.same_at_every_width === false &&
+      ok("spot check: the Utility Shed is a 5/12 gable on 7 ft 9 1/2 in walls (Alan's); the Lofted Barn's trusses are 3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide on 6 ft 7 1/2 in walls (Alan's), the 14 ft keeping its own (6 ft 3 1/8 in); the Cottage Shed 4.59/12 and 9.75/12 (Barnwright's)",
+        ut.roof.slopes.map((x) => x.pitch).join() === "5/12" && ut.walls.height.words === "7 ft 9 1/2 in" && ut.roof.words === "gable: an A roof at 5/12, both sides the same" &&
+        lb.walls.height.words === "6 ft 7 1/2 in" && lb.roof.same_at_every_width === false &&
         JSON.stringify(lb.roof.by_width.map((b) => [b.width_ft, b.peak_over_wall_in])) === JSON.stringify([[8, 43.8], [10, 48], [12, 51], [14, 75.1]]) &&
+        lb.roof.words === "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 7 3/4 in at 8 ft wide, 4 ft at 10 ft wide, 4 ft 3 in at 12 ft wide and 6 ft 3 1/8 in at 14 ft wide from the top of the wall to the peak of its trusses" &&
         cs.roof.slopes.map((x) => x.pitch).join() === "4.59/12,9.75/12",
         JSON.stringify([ut.roof.slopes, ut.walls.height.words, lb.walls.height.words, lb.roof.by_width, cs.roof.slopes]));
     }
   }
+}
+
+/* ------------------------- 4b. builder's words, How it's built's numbers */
+if (fresh && prepared) {
+  const problems = readerWordsProblems(fresh);
+  ok("every length and pitch a person reads is said the way How it's built says it: feet and inches to the nearest 1/16 in, no decimal (\"16.5 in\", \"6.4 ft\", \"14.58/12\") and no \"½\" in any words",
+    !problems.length, problems.slice(0, 6).join("; "));
+  /* the words check CAN fail */
+  const bad = structuredClone(fresh);
+  const dk = bad.styles.find((s) => s.main_door);
+  dk.main_door.words = "16.5 in of wall above it";
+  bad.styles[0].standard_doors_windows.push({ item: "w23", name: "2×3 Window", wall: "R", words: "2×3 Window, on the right long side, 6.4 ft left of its middle" });
+  bad.styles[0].walls.height.words = "7 ft 9½ in";
+  const caught = readerWordsProblems(bad);
+  ok("a decimal or a \"½\" in the words is caught: \"16.5 in of wall above it\", \"6.4 ft left of its middle\" and \"7 ft 9½ in\" each named",
+    caught.length >= 3 && ["16.5 in", "6.4 ft", "9½"].every((w) => caught.some((c) => c.includes(w))), caught.join("; "));
 }
 
 /* -------------------------------------------- 3. sizes, and nothing extra */
@@ -216,5 +262,6 @@ if (failures.length) {
 } else {
   console.log(`\nPROVED (${passed} checks): every one of the ${codes.length} library styles has its corner and end pictures and an entry in ${REFS_DIR}/${STYLES_FILE} ` +
     `that matches the library today (pitches as N/12 for each slope, wall heights, standard doors and windows, sizes; library version ${fresh ? fresh.library_version : "?"}), ` +
+    `every length and pitch in the words is said the way How it's built says it, `+
     `every picture's sha256 matches, the sizes fit what the Control Room sends, a changed picture or pitch is caught, and no dealer's website or function carries the pictures.`);
 }

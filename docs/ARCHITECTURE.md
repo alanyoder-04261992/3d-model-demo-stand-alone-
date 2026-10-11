@@ -864,7 +864,14 @@ branch on GitHub, the way it reads the papers and the terms
   shop numbers on the styles that have them (`styles.<KEY>.built` in
   `standard.json`), Barnwright's drawing on the rest, and the file says
   which. A barn roof's height is to the peak of its trusses, the way a
-  builder measures it.
+  builder measures it. Every length and pitch in the words is said the way
+  the Dealer Center's How it's built says it (its own `inchesWords` and
+  `pitchWords` in `model/build-settings.js`): feet and inches to the nearest
+  1/16 in ("1 ft 4 1/2 in of wall above it"), a pitch as "5/12" or "about
+  6 1/2/12", and a barn roof by its height at each width it is sold in, not
+  by the pitch of its steep part, since that height is what a builder sets
+  and measures. The exact pitch of each slope stays beside the words as
+  `"N/12"` (the Control Room's strict shape), for measuring a photo.
 
 `node tools/make-style-refs.mjs` draws them with the look harness
 (`tools/look.html`) at the size the designer lands on for each style, in the

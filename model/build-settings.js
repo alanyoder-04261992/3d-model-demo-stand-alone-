@@ -333,6 +333,12 @@ function fmtPitch(p) {
   const words = `${whole && f ? whole + " " + f : f || whole}/12`;
   return Math.abs(p * 4 - q) < 1e-6 ? words : `about ${words}`;
 }
+/* The same words for any length or pitch, so what other places say matches
+   How it's built to the 1/16 in: the style reference facts Claude reads
+   (tools/lib/style-facts.mjs). inchesWords(88.8125) -> "7 ft 4 13/16 in",
+   pitchWords(6.48) -> "about 6 1/2/12". */
+export const inchesWords = (inches) => fmtIn(+inches);
+export const pitchWords = (p) => fmtPitch(+p);
 function joinWords(list) { return list.length < 2 ? list.join("") : list.slice(0, -1).join(", ") + " and " + list[list.length - 1]; }
 /* "Utility Shed and Side Utility", "Cabin, Garage and 6 more" */
 export function namesWords(names) {

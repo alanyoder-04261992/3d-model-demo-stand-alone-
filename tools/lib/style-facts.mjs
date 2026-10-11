@@ -19,6 +19,17 @@
    Barnwright's own sizes. Only TELLS below is written by hand: what tells a
    style apart in a photo, and which styles look like it.
 
+   Every length and pitch a person reads here is said the way the Dealer
+   Center's How it's built says it, with its own words (model/build-settings.js
+   inchesWords, pitchWords): feet and inches to the nearest 1/16 in ("7 ft
+   4 13/16 in", "1 ft 4 1/2 in"), never a decimal
+   (tools/check-style-refs.mjs proves it).
+   A pitch is "5/12" or "about 6 1/2/12"; a barn roof is given by its height
+   from the top of the wall to the peak of its trusses, width by width, the
+   way How it's built sets it. The exact numbers stay beside the words for
+   measuring a photo: roof.slopes[].pitch ("6.48/12", the Control Room's
+   strict shape) and the inches as numbers.
+
    styleRefsDoc({standardBytes, constructionBytes, company, pictureBytes})
                        the whole styles.json, as an object. pictureBytes(file)
                        gives a picture's bytes, or null when it is not there.
@@ -35,6 +46,7 @@ import { resetItems, openingRect } from "../../model/layout.js";
 import { makePlan } from "../../model/plan.js";
 import { gableBandY, barnTrussPeakFt } from "../../model/roof-shapes.js";
 import { pSizes } from "../../model/pricing.js";
+import { inchesWords, pitchWords } from "../../model/build-settings.js";
 import { y0 } from "../../engine/constants.js";
 
 export const REFS_DIR = "library/style-refs";
@@ -75,6 +87,9 @@ export const PITCH_NOTE = "Every pitch, height and size here is the standard bui
   "and the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage his barn roof heights " +
   "(3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide); the other styles use Barnwright's drawing. " +
   "A barn roof's height is to the peak of its trusses, the way a builder measures it; every other roof's is to the top of the roof. " +
+  "The words say every length and pitch the way How it's built does (5/12, about 6 1/2/12, 7 ft 4 13/16 in); " +
+  "a barn roof is said by its height, not by the pitch of its steep part. " +
+  "Each slope's pitch is also given as an exact number for measuring a photo. " +
   "A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.";
 
 export const WALL_WORDS = Object.freeze({
@@ -152,17 +167,15 @@ const num = (n) => String(r2(n));
 /* a length the model worked out in feet, without the last bits of
    floating-point noise (43.75 in, not 43.7499999) */
 const clean = (ft) => Math.round(ft * 12 * 1e6) / 1e6 / 12;
-/* feet and inches to the nearest half inch: "7 ft 9 in", "5 ft 11½ in", "11 in" */
-function feetInches(ft) {
-  const halves = Math.round(clean(ft) * 24);
-  const f = Math.floor(halves / 24), rest = halves - f * 24;
-  const inches = rest ? `${Math.floor(rest / 2) || (rest % 2 ? "" : 0)}${rest % 2 ? "½" : ""} in` : "";
-  if (!f) return inches || "0 in";
-  return inches ? `${f} ft ${inches}` : `${f} ft`;
-}
-const height = (ft) => ({ ft: r2(clean(ft)), in: r1(clean(ft) * 12), words: feetInches(ft) });
+/* a length the model worked out in feet, in How it's built's words: "7 ft
+   9 1/2 in", "1 ft 4 1/2 in", "11 in" */
+const lengthWords = (ft) => inchesWords(clean(ft) * 12);
+const height = (ft) => ({ ft: r2(clean(ft)), in: r1(clean(ft) * 12), words: lengthWords(ft) });
+/* the exact pitch (the Control Room's strict "N/12", for measuring a photo),
+   its angle, and the pitch as a number for the words */
 function pitchOf(rise, run) {
-  return { pitch: `${num(rise / run * 12)}/12`, degrees: r1(Math.atan2(rise, run) * 180 / Math.PI) };
+  const p = rise / run * 12;
+  return { pitch: `${num(p)}/12`, degrees: r1(Math.atan2(rise, run) * 180 / Math.PI), value: p };
 }
 const plural = (n, word) => (n === 1 ? word : `${n} x ${word}`);
 
@@ -235,16 +248,41 @@ function roofFacts(plan) {
   else if (mirrored && n === 4) slopes = [{ where: "lower part, each side", ...segs[0] }, { where: "upper part, each side", ...segs[1] }];
   else if (n === 2) slopes = [{ where: `over ${WALL_WORDS.L}`, ...segs[0] }, { where: `over ${WALL_WORDS.R}`, ...segs[1] }];
   else slopes = segs.map((s, i) => ({ where: `part ${i + 1} of ${n}, left to right`, ...s }));
+  const values = slopes.map((x) => x.value);
+  slopes = slopes.map(({ value, ...x }) => x);
   /* a barn roof's height at the peak of its trusses, as a builder measures
      it (and as Alan's shop numbers are given); every other roof's at the top
      of the roof line */
   const line = Math.max(...prof.map((p) => p[1]));
   const peak = plan.t.roof === "gambrel" && plan.construction ? barnTrussPeakFt(W, plan.t, plan.construction) : line;
-  return { slopes, peak_over_wall: height(peak), peak_per_width: r3(peak / W) };
+  return { slopes, values, peak_over_wall: height(peak), peak_per_width: r3(peak / W) };
 }
 
-const ROOF_WORDS = { gable: "gable: an A roof, both sides the same", gambrel: "gambrel: a barn roof, steep at the bottom and flatter at the top",
-  salt: "saltbox: an A roof with its peak off-centre", lean: "lean-to: one slope", slope: "single slope: one slope" };
+/* The roof in words, its pitch said the way How it's built says it. A barn
+   roof is said by its height at each width it is sold in, from the top of
+   the wall to the peak of its trusses (How it's built's Barn roof height):
+   that is the number a builder sets and measures, and its steep part's
+   pitch (about 28 3/4/12 on a 10 ft Lofted Barn) is a number nobody frames
+   or checks by. */
+function roofWords(type, values, heights) {
+  /* to 4 places first, as How it's built reads a pitch off the drawing */
+  const p = values.map((v) => pitchWords(Math.round(v * 1e4) / 1e4));
+  switch (type) {
+    case "gable": return `gable: an A roof at ${p[0]}, both sides the same`;
+    case "salt": return `saltbox: an A roof with its peak off-centre, ${p[0]} over ${WALL_WORDS.L} and ${p[1]} over ${WALL_WORDS.R}`;
+    case "lean": return `lean-to: one slope at ${p[0]}`;
+    case "slope": return `single slope: one slope at ${p[0]}`;
+    case "gambrel": {
+      const and = (xs) => (xs.length < 2 ? xs.join("") : xs.slice(0, -1).join(", ") + " and " + xs[xs.length - 1]);
+      /* one height at every width (the Standard Barn): said once */
+      const list = new Set(heights.map((h) => h.words)).size === 1
+        ? `${heights[0].words} at ${and(heights.map((h) => String(h.width_ft)))} ft wide`
+        : and(heights.map((h) => `${h.words} at ${h.width_ft} ft wide`));
+      return `gambrel: a barn roof, steep at the bottom and flatter at the top, ${list} from the top of the wall to the peak of its trusses`;
+    }
+  }
+  return type;
+}
 
 function sizeOf(size) { const [w, l] = String(size).split("x").map(Number); return { w, l }; }
 
@@ -255,7 +293,7 @@ function itemWords(it, CAT) {
   const wall = WALL_WORDS[it.wall] || it.wall;
   const pos = typeof it.pos === "number" ? it.pos : 0;
   if (Math.abs(pos) < 0.05) return { name, where: `centred on ${wall}` };
-  return { name, where: `on ${wall}, ${num(Math.abs(pos))} ft ${pos > 0 ? "right" : "left"} of its middle` };
+  return { name, where: `on ${wall}, ${lengthWords(Math.abs(pos))} ${pos > 0 ? "right" : "left"} of its middle` };
 }
 const isOpening = (it, CAT) => { const c = CAT[it.cat]; return !!c && !c.int && (c.k === "door" || c.k === "ru" || c.k === "win"); };
 
@@ -287,8 +325,8 @@ function changesWithSize(cat, code, sizes) {
 function porchFacts(plan) {
   const t = plan.t;
   if (t.porch === "F") return "A 4 ft deep porch across the front end, under the main roof, with posts and rails.";
-  if (t.porch === "S") return `A 4 ft deep porch cut into the right long side at the ${plan.span.f ? "back" : "front"} end, ${num(plan.span.P)} ft long, with posts and rails.`;
-  if (t.porch === "C") return `A porch that wraps round the front corner: 4 ft deep across the front end and ${num(plan.L / 2 - plan.ws.P3.at)} ft down the right long side, with an angled wall behind it.`;
+  if (t.porch === "S") return `A 4 ft deep porch cut into the right long side at the ${plan.span.f ? "back" : "front"} end, ${lengthWords(plan.span.P)} long, with posts and rails.`;
+  if (t.porch === "C") return `A porch that wraps round the front corner: 4 ft deep across the front end and ${lengthWords(plan.L / 2 - plan.ws.P3.at)} down the right long side, with an angled wall behind it.`;
   return null;
 }
 
@@ -313,7 +351,7 @@ export function styleFacts(cat, manufacturer, code) {
     const s = JSON.parse(JSON.stringify(state));
     s.size = sizes.find((z) => sizeOf(z).w === w);
     const f = roofFacts(makePlan(s, cat));
-    return { width_ft: w, pitches: f.slopes.map((x) => x.pitch), peak_over_wall_in: f.peak_over_wall.in };
+    return { width_ft: w, pitches: f.slopes.map((x) => x.pitch), peak_over_wall_in: f.peak_over_wall.in, words: f.peak_over_wall.words };
   });
   const same = byWidth.every((b) => JSON.stringify(b.pitches) === JSON.stringify(byWidth[0].pitches));
 
@@ -331,16 +369,16 @@ export function styleFacts(cat, manufacturer, code) {
     const wallTop = plan.ws[it.wall].top - y0, doorTop = r.yb - y0 + r.ch;
     const over = (wallTop - doorTop) * 12;
     mainDoor = { name: CAT[it.cat].n, wall: it.wall, top_from_floor: height(doorTop),
-      wall_over_it_in: r1(over), words: over >= 0 ? `${num(r1(over))} in of wall above it` : `it rises ${num(r1(-over))} in into the gable` };
+      wall_over_it_in: r1(over), words: over >= 0 ? `${inchesWords(over)} of wall above it` : `it rises ${inchesWords(-over)} into the gable` };
   }
   const tells = TELLS[code];
   const out = {
     code, name: lib.name, group: lib.category,
     drawn_at: state.size,
     roof: {
-      type: t.roof, words: ROOF_WORDS[t.roof] || t.roof,
+      type: t.roof, words: roofWords(t.roof, roof.values, byWidth.map((b) => ({ width_ft: b.width_ft, words: b.words }))),
       slopes: roof.slopes, peak_over_wall: roof.peak_over_wall, peak_per_width: roof.peak_per_width,
-      same_at_every_width: same, by_width: same ? [] : byWidth,
+      same_at_every_width: same, by_width: same ? [] : byWidth.map(({ words, ...b }) => b),
     },
     walls: wall,
     main_door: mainDoor,
@@ -350,8 +388,8 @@ export function styleFacts(cat, manufacturer, code) {
     porch_posts: state.items.filter((it) => CAT[it.cat] && CAT[it.cat].k === "post").length,
     drawn_length_ft: plan.L !== sizeOf(state.size).l ? plan.L : null,
     dormer: t.dormer ? { width_ft: Number(state.dormer), choices_ft: (cat.DORMERS || []).filter((d) => d[0] !== "none").map((d) => Number(d[0])),
-      words: `A ${num(Number(state.dormer))} ft dormer with windows on the roof over the right long side.` } : null,
-    loft: t.loft ? `A ${num(t.loft.depthFt)} ft loft inside at ${t.loft.ends.length > 1 ? "each end" : "one end"}. It can't be seen from outside.` : null,
+      words: `A ${lengthWords(Number(state.dormer))} dormer with windows on the roof over the right long side.` } : null,
+    loft: t.loft ? `A ${lengthWords(t.loft.depthFt)} loft inside at ${t.loft.ends.length > 1 ? "each end" : "one end"}. It can't be seen from outside.` : null,
     siding: t.metal ? "ribbed metal" : "painted grooved panel",
     gable_vent: t.gableVent !== false,
     trim_band: { front: bandWords(plan, "F"), back: bandWords(plan, "B") },
