@@ -216,7 +216,7 @@ finished designer retains the golden geometry.
     | Dormer Shed | main roof | about 7 1/4/12 (7.2/12) | 7/12 (eave, walls and dormer as they were) | utility-framing skill: Alan's steep pitch |
     | Lofted Barn, Side Lofted Barn, Metal Lofted Barn | wall | 6 ft 8 1/16 in (80.04 in) | 6 ft 7 1/2 in | 75 in studs + three 1 1/2 in plates (derived) |
     | Lofted Barn, Side Lofted Barn, Metal Lofted Barn, Lofted Barn Garage | barn roof height at 8, 10, 12 ft wide, to the top of the trusses | 3 ft 6 3/4 in, 4 ft 5 9/16 in, 5 ft 4 5/16 in (the Metal Lofted Barn 3 ft 5 5/8 in, 4 ft 4 7/16 in, 5 ft 3 3/16 in; the Lofted Barn Garage is sold 12 ft wide only) | 3 ft 7 3/4 in, 4 ft, 4 ft 3 in (the Lofted Barn Garage on its own 6 ft 10 13/16 in walls) | shed-measurements skill: loft truss peaks |
-    | Side Utility 8x12, 10x12 | standard door | 72″ Wooden Double Doors, a 2x3 window 2 3/8 in into them (the clamp nudges the doubles 5 1/4 in left of the middle) | the 48″ Wooden Door in the middle of the door side, where the recipe puts the doubles; the windows where they were, about 9 5/8 in of siding between the door's side trim and each window's | Alan, Oct 11 2026: "replace 6 foot to 4 foot" |
+    | Side Utility 8x12, 10x12 | standard door | 72″ Wooden Double Doors, a 2x3 window 2 3/8 in into them (the designer pushes the doubles 5 1/4 in left of the middle and the left window 5/8 in further out to make room) | the 48″ Wooden Door in the middle of the door side, where the recipe puts the doubles; the two windows 4.4 ft either side of the middle (the left one 5/8 in closer than before, so both sides match), about 9 5/8 in of siding between the door's side trim and each window's | Alan, Oct 11 2026: "replace 6 foot to 4 foot" |
 
     What "match" means and does not: the peak heights and wall heights match
     his shop. A barn roof's height is measured where he measured it, from
@@ -269,14 +269,17 @@ finished designer retains the golden geometry.
     "replace 6 foot to 4 foot"). It is the Side Utility's
     `built.standardSwaps` in the library (no How it's built box): the door
     the recipe puts in the middle of the door side becomes the 48″ door,
-    and the two 2x3 windows stay 4.4 ft either side, so neither runs into
-    it any more. Every other size, the Dormer Shed and Side Lofted Barn
-    (same layout, same 2 3/8 in) and Barnwright's own Side Utility keep the
-    doubles. A price list must sell the 48″ door ($0 is fine; the Dealer
-    Center keeps it sold); one stored without it keeps the doubles and the
-    owner is told. A design saved with the doubles on an 8x12 or 10x12
-    opens with them kept in the 48″ door's place, priced as that upgrade
-    (the next item).
+    and the two 2x3 windows stay 4.4 ft either side of the middle, so
+    neither runs into it any more. Every other size, the Dormer Shed and
+    Side Lofted Barn (same layout, same 2 3/8 in; FOR-ALAN asks) and
+    Barnwright's own Side Utility keep the doubles. The door comes with the
+    building at no extra charge, and the size prices are as they were. A
+    price list must still list the 48″ door ($0 is fine; the Dealer Center
+    keeps it sold, names the two sizes, and shows the problem before Save);
+    one stored without it keeps the doubles and the owner is told, under a
+    heading about a door. Where the 48″ door is sold, the double doors are
+    needed only by the sizes that still come with them. A design that holds
+    the other door of the pair: #27.
 
     Barnwright's own company is the standard line without those blocks
     (`tools/lib/barnwright-company.mjs barnwrightManufacturer`), so
