@@ -22,8 +22,8 @@
    Every length and pitch a person reads here is said the way the Dealer
    Center's How it's built says it, with its own words (model/build-settings.js
    inchesWords, pitchWords): feet and inches to the nearest 1/16 in ("7 ft
-   4 13/16 in", "1 ft 4 1/2 in"), never a decimal
-   (tools/check-style-refs.mjs proves it).
+   4 13/16 in", "1 ft 4 1/2 in"), never a decimal, and the same number How
+   it's built shows for that style (tools/check-style-refs.mjs proves both).
    A pitch is "5/12" or "about 6 1/2/12"; a barn roof is given by its height
    from the top of the wall to the peak of its trusses, width by width, the
    way How it's built sets it. The exact numbers stay beside the words for
@@ -167,10 +167,12 @@ const num = (n) => String(r2(n));
 /* a length the model worked out in feet, without the last bits of
    floating-point noise (43.75 in, not 43.7499999) */
 const clean = (ft) => Math.round(ft * 12 * 1e6) / 1e6 / 12;
+/* inches to the nearest 1/16, as a number: the same inches the words say */
+const sixteenths = (inches) => Math.round(inches * 16) / 16;
 /* a length the model worked out in feet, in How it's built's words: "7 ft
    9 1/2 in", "1 ft 4 1/2 in", "11 in" */
 const lengthWords = (ft) => inchesWords(clean(ft) * 12);
-const height = (ft) => ({ ft: r2(clean(ft)), in: r1(clean(ft) * 12), words: lengthWords(ft) });
+const height = (ft) => ({ ft: r2(clean(ft)), in: sixteenths(clean(ft) * 12), words: lengthWords(ft) });
 /* the exact pitch (the Control Room's strict "N/12", for measuring a photo),
    its angle, and the pitch as a number for the words */
 function pitchOf(rise, run) {
@@ -369,7 +371,7 @@ export function styleFacts(cat, manufacturer, code) {
     const wallTop = plan.ws[it.wall].top - y0, doorTop = r.yb - y0 + r.ch;
     const over = (wallTop - doorTop) * 12;
     mainDoor = { name: CAT[it.cat].n, wall: it.wall, top_from_floor: height(doorTop),
-      wall_over_it_in: r1(over), words: over >= 0 ? `${inchesWords(over)} of wall above it` : `it rises ${inchesWords(-over)} into the gable` };
+      wall_over_it_in: sixteenths(over), words: over >= 0 ? `${inchesWords(over)} of wall above it` : `it rises ${inchesWords(-over)} into the gable` };
   }
   const tells = TELLS[code];
   const out = {

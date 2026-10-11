@@ -870,7 +870,10 @@ branch on GitHub, the way it reads the papers and the terms
   1/16 in ("1 ft 4 1/2 in of wall above it"), a pitch as "5/12" or "about
   6 1/2/12", and a barn roof by its height at each width it is sold in, not
   by the pitch of its steep part, since that height is what a builder sets
-  and measures. The exact pitch of each slope stays beside the words as
+  and measures. A style's wall height, roof pitch and barn roof heights are
+  the very numbers How it's built shows for it, to the 1/16 in (the Cabin's
+  walls are 7 ft 4 13/16 in in both), and every height's number in inches
+  is the number its words say. The exact pitch of each slope stays beside the words as
   `"N/12"` (the Control Room's strict shape), for measuring a photo.
 
 `node tools/make-style-refs.mjs` draws them with the look harness

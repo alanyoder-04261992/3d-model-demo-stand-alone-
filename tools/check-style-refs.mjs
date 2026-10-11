@@ -27,7 +27,11 @@
    4b. every length and pitch a person reads is said the way How it's built
       says it (feet and inches to the nearest 1/16 in, "5/12", "about
       6 1/2/12"): no decimal like "16.5 in" or "6.4 ft" and no "½" anywhere
-      in the words. A decimal put into the words is caught;
+      in the words, and each height's words say exactly its number; and each
+      style's wall height, roof pitch and barn roof heights are the same
+      numbers, in the same words, as the Dealer Center's How it's built
+      shows for that style (model/build-settings.js effective). A decimal put
+      into the words is caught;
    5. no dealer's website carries the pictures: the website build
       (npm run build) and the client package (npm run build:client) leave
       library/style-refs/ out and keep the rest of the library, and the Netlify
@@ -43,6 +47,7 @@ import { resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { ROOT } from "./lib/load.mjs";
 import { lookPort, PORT as LOOK_DEFAULT_PORT } from "./lib/look-page.mjs";
+import { effective, inchesWords, pitchWords } from "../model/build-settings.js";
 import {
   REFS_DIR, STYLES_FILE, SHEET_FILE, STANDARD_PATH, CONSTRUCTION_PATH, DRAW_COMPANY, VIEWS, LONG_SIDE,
   MAX_PICTURE_BYTES, MAX_PAIR_BASE64, PICTURE_NAME, base64Length, fileOf, jpegSize,
@@ -75,7 +80,8 @@ const BUILDER_LENGTH = /^(\d+ ft( (\d+|0)( \d+\/(2|4|8|16))? in)?|(\d+ )?\d+\/(2
    strict "N/12"). */
 const MACHINE_KEYS = new Set(["pitch", "pitches", "sha256", "file", "library_version", "library_files", "code", "item", "wall", "type", "drawn_at", "sizes", "standard_sizes", "order", "backdrop", "price_list"]);
 /* Every string a person reads in styles.json said with a decimal or a "½"
-   (How it's built never writes either). -> ["path: words"] */
+   (How it's built never writes either), and every height whose words are
+   not exactly its number. -> ["path: words"] */
 function readerWordsProblems(doc) {
   const out = [];
   (function walk(v, path, key) {
@@ -86,6 +92,7 @@ function readerWordsProblems(doc) {
     }
     if (Array.isArray(v)) { v.forEach((x, i) => walk(x, `${path}[${i}]`, key)); return; }
     if (v && typeof v === "object") {
+      if (typeof v.in === "number" && typeof v.words === "string" && v.words !== inchesWords(v.in)) out.push(`${path}.words: ${v.words} for ${v.in} in`);
       for (const k of Object.keys(v)) walk(v[k], path ? `${path}.${k}` : k, k);
     }
   })(doc, "", "");
@@ -152,7 +159,7 @@ else if (prepared) {
       ok("spot check: the Utility Shed is a 5/12 gable on 7 ft 9 1/2 in walls (Alan's); the Lofted Barn's trusses are 3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide on 6 ft 7 1/2 in walls (Alan's), the 14 ft keeping its own (6 ft 3 1/8 in); the Cottage Shed 4.59/12 and 9.75/12 (Barnwright's)",
         ut.roof.slopes.map((x) => x.pitch).join() === "5/12" && ut.walls.height.words === "7 ft 9 1/2 in" && ut.roof.words === "gable: an A roof at 5/12, both sides the same" &&
         lb.walls.height.words === "6 ft 7 1/2 in" && lb.roof.same_at_every_width === false &&
-        JSON.stringify(lb.roof.by_width.map((b) => [b.width_ft, b.peak_over_wall_in])) === JSON.stringify([[8, 43.8], [10, 48], [12, 51], [14, 75.1]]) &&
+        JSON.stringify(lb.roof.by_width.map((b) => [b.width_ft, b.peak_over_wall_in])) === JSON.stringify([[8, 43.75], [10, 48], [12, 51], [14, 75.125]]) &&
         lb.roof.words === "gambrel: a barn roof, steep at the bottom and flatter at the top, 3 ft 7 3/4 in at 8 ft wide, 4 ft at 10 ft wide, 4 ft 3 in at 12 ft wide and 6 ft 3 1/8 in at 14 ft wide from the top of the wall to the peak of its trusses" &&
         cs.roof.slopes.map((x) => x.pitch).join() === "4.59/12,9.75/12",
         JSON.stringify([ut.roof.slopes, ut.walls.height.words, lb.walls.height.words, lb.roof.by_width, cs.roof.slopes]));
@@ -163,8 +170,28 @@ else if (prepared) {
 /* ------------------------- 4b. builder's words, How it's built's numbers */
 if (fresh && prepared) {
   const problems = readerWordsProblems(fresh);
-  ok("every length and pitch a person reads is said the way How it's built says it: feet and inches to the nearest 1/16 in, no decimal (\"16.5 in\", \"6.4 ft\", \"14.58/12\") and no \"½\" in any words",
+  ok("every length and pitch a person reads is said the way How it's built says it: feet and inches to the nearest 1/16 in, no decimal (\"16.5 in\", \"6.4 ft\", \"14.58/12\") and no \"½\" in any words, and each height's words say exactly its number",
     !problems.length, problems.slice(0, 6).join("; "));
+  const off = [];
+  for (const s of fresh.styles) {
+    const rows = Object.fromEntries(effective(prepared.cat, s.code).map((r) => [r.id, r]));
+    if (!rows.wallHeight || s.walls.height.words !== rows.wallHeight.words) off.push(`${s.code} walls: ${s.walls.height.words}, How it's built: ${rows.wallHeight ? rows.wallHeight.words : "none"}`);
+    if (rows.roofPitch) {
+      const drawn = s.roof.slopes.map((x) => pitchWords(Number(x.pitch.split("/")[0])));
+      if (!s.roof.words.includes(`at ${rows.roofPitch.words}`) || drawn.some((w) => w !== rows.roofPitch.words)) off.push(`${s.code} roof: "${s.roof.words}" (drawn ${drawn.join(", ")}), How it's built: ${rows.roofPitch.words}`);
+    } else if (s.roof.type === "gambrel") {
+      const v = rows.barnPeak && rows.barnPeak.value;
+      const heights = v ? Object.keys(v).map((w) => [w, inchesWords(v[w])]) : [];
+      const drawnW = String(Number(s.drawn_at.split("x")[0]));
+      if (!heights.length || heights.some(([w, h]) => !s.roof.words.includes(h) || !new RegExp(`\\b${w}( and \\d+)* ft wide`).test(s.roof.words.slice(s.roof.words.indexOf(h))))
+        || !heights.some(([w, h]) => w === drawnW && h === s.roof.peak_over_wall.words)) off.push(`${s.code} barn roof: "${s.roof.words}", peak ${s.roof.peak_over_wall.words}; How it's built: ${rows.barnPeak ? rows.barnPeak.words : "none"}`);
+    } else {
+      const said = s.roof.slopes.map((x) => pitchWords(Number(x.pitch.split("/")[0])));
+      if (said.some((w) => !s.roof.words.includes(w))) off.push(`${s.code} roof: "${s.roof.words}" does not say ${said.join(" and ")}`);
+    }
+  }
+  ok(`one number for one wall: every style's wall height, roof pitch and barn roof heights are the numbers and words How it's built shows for it (the Cabin's walls 7 ft 4 13/16 in, its roof about 6 1/2/12; the Lofted Barn 4 ft at 10 ft wide)`,
+    !off.length, off.slice(0, 6).join("; "));
   /* the words check CAN fail */
   const bad = structuredClone(fresh);
   const dk = bad.styles.find((s) => s.main_door);
@@ -262,6 +289,6 @@ if (failures.length) {
 } else {
   console.log(`\nPROVED (${passed} checks): every one of the ${codes.length} library styles has its corner and end pictures and an entry in ${REFS_DIR}/${STYLES_FILE} ` +
     `that matches the library today (pitches as N/12 for each slope, wall heights, standard doors and windows, sizes; library version ${fresh ? fresh.library_version : "?"}), ` +
-    `every length and pitch in the words is said the way How it's built says it, `+
+    `every length and pitch in the words is said the way How it's built says it, with How it's built's own numbers, `+
     `every picture's sha256 matches, the sizes fit what the Control Room sends, a changed picture or pitch is caught, and no dealer's website or function carries the pictures.`);
 }
