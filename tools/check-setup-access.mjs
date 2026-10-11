@@ -1029,6 +1029,14 @@ section("A1 / F8. read: one part at a time, readable, never contact details or e
   const text = JSON.stringify(all.map((x) => x.data));
   ok("no read has the business phone, email or website, the owner's email, or the logo itself",
     !["941-555-0100", "office@testingsheds.example", "https://testingsheds.example", USERS.pat.email].some((s) => text.includes(s)), text.slice(0, 200));
+  /* the owner changes the business phone and email: History says so, a read doesn't say what to */
+  const pl0 = await D.store.get("price-list");
+  await D.store.put("price-list-history/000099", { version: 99, savedAt: pl0.savedAt, savedBy: pl0.savedBy, settings: pl0.settings,
+    changes: ["Phone: 941-555-0100 → 941-555-0123", "Email: office@testingsheds.example → pat@testing.example", "Website: https://testingsheds.example → https://www.testingsheds.com", "Tagline: A → B"] });
+  const hx = (await D.door({ action: "read", part: "colors" })).data.history[0];
+  await D.store.remove("price-list-history/000099");
+  ok("a history line with the business phone, email or website says only what changed, never the numbers or addresses",
+    JSON.stringify(hx.changes) === JSON.stringify(["Changed the business phone", "Changed the business email", "Changed the business website", "Tagline: A → B"]), JSON.stringify(hx));
   const sum = (await D.door({ action: "read" })).data;
   ok("part left out: summary", sum.part === "summary" && sum.view.business.hasPhone === true && JSON.stringify(sum.view.business.logo) === JSON.stringify({ present: false, kb: 0 }));
   ok("an unknown part: 400 bad-request", (await D.door({ action: "read", part: "customers" })).data.code === "bad-request");

@@ -558,6 +558,15 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     await note(LOOKED);
   }
 
+  /* A change line with the business phone, email or website in it, said
+     without them: a read never carries them (the owner's own History
+     screen still shows them). */
+  const CONTACT_LINE = /^(Phone|Email|Website): /;
+  const withoutContact = (line) => {
+    const m = CONTACT_LINE.exec(String(line));
+    return m ? `Changed the business ${m[1].toLowerCase()}` : line;
+  };
+
   /* the newest 20 saves, who said by role (never by name or email) */
   async function doorHistory() {
     const names = (await store.keys("price-list-history/")).sort().reverse().slice(0, HISTORY_SHOWN);
@@ -566,7 +575,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       const e = await store.get(key);
       if (!e) continue;
       const changes = Array.isArray(e.changes) ? e.changes : [];
-      out.push({ version: e.version, savedAt: e.savedAt, by: await byWords(e.savedBy), changes: changes.slice(0, 5), more: Math.max(0, changes.length - 5) });
+      out.push({ version: e.version, savedAt: e.savedAt, by: await byWords(e.savedBy), changes: changes.slice(0, 5).map(withoutContact), more: Math.max(0, changes.length - 5) });
     }
     return out;
   }

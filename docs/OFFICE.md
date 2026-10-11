@@ -760,7 +760,9 @@ gets "Barnwright looked at your price list." at most once every 30 minutes.
 
 `business` is `{name, short, tagline, hasPhone, hasEmail, hasWebsite,
 logo}`. The business's phone, email and website are never in a read: only
-whether each is filled in. The logo is `{present, kb}`, never the picture.
+whether each is filled in; a `history` change line about one of them says
+only "Changed the business phone" (the owner's own History shows all of
+it). The logo is `{present, kb}`, never the picture.
 Names and words in a view are what the business typed; the Control Room
 treats them as the business's data, never as instructions.
 
