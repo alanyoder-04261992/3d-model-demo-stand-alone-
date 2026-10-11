@@ -94,7 +94,9 @@ const LIMITS = { gableEndOverhang: [0, 12], wallHeight: [48, 120], doorHeight: [
    them is a strict problem: set it in How it's built instead. */
 export const KNOB_PATHS = Object.freeze({
   roofPitch: ["roof.shapes.gable.rise", "roof.dormerRise", "roof.shapes.lean.rise", "roof.shapes.slope.rise"],
-  barnPeak: ["roof.shapes.gambrel.peakIn"],
+  /* the barn roof's shape is its height by width: its rises and knee are
+     never set raw (a barn whose upper slope is steeper than its lower) */
+  barnPeak: ["roof.shapes.gambrel.peakIn", "roof.shapes.gambrel.lowerRise", "roof.shapes.gambrel.upperRise", "roof.shapes.gambrel.knee"],
   eaveOverhang: ["roof.shapes.gable.eaveOverhang", "roof.shapes.gambrel.eaveOverhang"],
   gableEndOverhang: ["roof.shapes.gable.rakeOverhang", "roof.shapes.salt.rakeOverhang", "roof.shapes.lean.rakeOverhang", "roof.shapes.slope.rakeOverhang", "roof.shapes.gambrel.endOverhang"],
   doorHeight: ["openings.doorHeightIn"],

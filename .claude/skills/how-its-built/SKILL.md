@@ -126,12 +126,27 @@ number, its words and its source.
   the problem under it (data-field / data-msgs `built:<KEY>:<knob>`,
   `built:biz:<knob>:<kind>`, `extra:<i>:roofPitch`) and Save waits.
 * `model/built-check.js` + `server/office/built-check.js`: every save draws
-  the styles whose numbers changed (or gained sizes, or that a changed extra
-  with numbers reaches) at every size within about 3 s; a problem the
-  business's numbers cause -- not one the standard building has too --
-  refuses the save in words. What is left after 3 s is listed ("Not
-  checked yet: ... Press Check every size.") and never refuses. Putting an
-  old copy back is never refused; what does not fit is said instead.
+  the styles whose numbers changed -- their own, business-wide, the style
+  they are built like, or the business's raw construction settings for that
+  roof -- (or gained sizes, or are newly sold) at every size, and each of
+  them again with every extra that changes how it is built switched on (the
+  sample's Steep roof with a new wall); an extra whose numbers or
+  construction changed, or that reaches a style it did not reach before
+  (its styles list widened, a style it lists is sold again), is drawn on
+  each style it reaches (`changedStyles`). Within about 3 s, the size each
+  style opens on first for every style, then the smallest and largest of
+  each, then the rest (`jobSteps`, `checkJobs`). A problem the business's
+  numbers cause -- not one the standard building has too, with the
+  business's raw construction as it was before the save -- refuses the
+  save in words. What is left after 3 s is listed ("Not checked yet: ...
+  Press Check every size.") and never refuses. Putting an old copy back is
+  never refused; what does not fit is said instead.
+* Raw construction and extras' construction settings: a barn roof's rises
+  and knee are How it's built's (`KNOB_PATHS.barnPeak`: "set it in How it's
+  built"); a roof length no knob owns (a saltbox rise or ridge, a lean-to
+  eave) must draw: 0 to 8 ft above the wall at 6 and 16 ft wide, knee and
+  ridge inside the walls, an eave 0 to 2 ft out
+  (`model/construction.js roofValueProblems`).
 * History: `describeChanges()` (per style and business-wide),
   `describeExtraBuilt()` ("Steep roof: roof pitch at least 7/12"), and
   "Wall upgrades priced by the square foot follow the new wall height: ..."

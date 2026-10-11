@@ -116,6 +116,9 @@ export function explainProblem(problem, manufacturer, settings = {}) {
        the owner's words, after the settings path */
     [/^(?:offer\.\w+\.|options\.extras\[\d+\]\.)?built(?:\.\S+)?: (.*)$/, (m) => m[1]],
     [/^construction\S*?: (The construction settings hold .+)$/, (m) => m[1]],
+    /* a roof length the 3D designer cannot draw (model/construction.js
+       roofValueProblems), already in the owner's words */
+    [/^construction\S*?: (The [^{}]+)$/, (m) => m[1]],
     /* an extra's construction effect (model/company.js effectProblems) */
     [/^options\.extras\[(\d+)\]\.construction\S*: An option's construction settings hold the (.+?)\. Set it in How it's built/,
       (m) => `${extraName(m[1])}: set this extra's ${m[2]} in How it's built.`],

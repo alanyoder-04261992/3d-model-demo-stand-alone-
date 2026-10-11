@@ -185,12 +185,16 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   freezes the page. What the same building has with the standard numbers is
   never the owner's to fix.
 * **On save** the server does the same for every style whose numbers
-  changed, and for every style a changed option reaches
-  (`server/office/built-check.js`): what the new numbers cause refuses the
-  save, in words, like any price list problem; a price-only save draws
-  nothing. It stops after about 3 seconds and lists what is left ("Not
-  checked yet: 14 sizes of the Lofted Barn. Press Check every size."),
-  which never stops a save. Putting an older copy back is never refused;
+  changed, each also with every option that changes how it is built
+  switched on (a new wall with the Steep roof), and for every style a
+  changed option reaches or now reaches (its buildings list widened, a
+  style sold again) (`server/office/built-check.js`): what the new numbers
+  cause refuses the save, in words, like any price list problem; a
+  price-only save draws nothing. It draws the size each style opens on
+  first, for every style, then the smallest and largest, then the rest; it
+  stops after about 3 seconds and lists what is left ("Not checked yet: 14
+  sizes of the Lofted Barn. Press Check every size."), which never stops a
+  save. Putting an older copy back is never refused;
   what no longer fits is said instead.
 * **History** says each change: "Lofted Barn wall height: 6 ft 7 1/2 in →
   7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12",

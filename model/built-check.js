@@ -43,6 +43,7 @@ import { defaults, setType } from "./design.js";
 import { frameOf } from "./frame.js";
 import { makePlan } from "./plan.js";
 import { resetItems } from "./layout.js";
+import { extraOfferedOn } from "./company.js";
 
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
 const keysOf = (o) => (isObj(o) ? Object.keys(o).filter((k) => !k.startsWith("_")) : []);
@@ -84,46 +85,98 @@ function drawnOf(settings, M) {
   return out;
 }
 
-/* The same price list with no How it's built number of the business's own:
-   no business-wide numbers, none on a style, none on an extra. (The shop
-   standard, styles.<KEY>.built in the builder's library, still counts: it
-   is the standard.) */
-export function withoutOwnNumbers(settings) {
+/* The same price list with no number of the business's own: no
+   business-wide numbers, none on a style, nothing an extra changes about
+   the building (its built and its construction). The business's raw
+   construction settings are the ones `rawFrom` had (the price list before
+   this save), so what a save changes there is the owner's and what was
+   already there is not. (The shop standard, styles.<KEY>.built in the
+   builder's library, still counts: it is the standard.) */
+export function withoutOwnNumbers(settings, rawFrom) {
   const s = structuredClone(settings);
   delete s.built;
   for (const k of keysOf(s.offer)) if (isObj(s.offer[k])) delete s.offer[k].built;
-  if (isObj(s.options) && Array.isArray(s.options.extras)) for (const x of s.options.extras) if (isObj(x)) delete x.built;
+  if (isObj(s.options) && Array.isArray(s.options.extras)) for (const x of s.options.extras) if (isObj(x)) { delete x.built; delete x.construction; }
+  if (rawFrom !== undefined) {
+    if (isObj(rawFrom) && rawFrom.construction !== undefined) s.construction = structuredClone(rawFrom.construction);
+    else delete s.construction;
+  }
   return s;
+}
+
+/* The business's extras that change how a building is built: their own
+   How it's built numbers (built) or construction settings. */
+function effectExtras(settings) {
+  const xs = isObj(settings) && isObj(settings.options) && Array.isArray(settings.options.extras) ? settings.options.extras : [];
+  return xs.filter((x) => isObj(x) && typeof x.key === "string" && ((isObj(x.built) && keysOf(x.built).length) || (isObj(x.construction) && keysOf(x.construction).length)));
+}
+/* Does extra x change style k in the resolved catalogue c? */
+function extraReaches(c, x, k) {
+  const t = c && c.TYPES && c.TYPES[k];
+  if (!t || !x || !extraOfferedOn(x, t, k)) return false;
+  return !!((t.optionEffects && t.optionEffects[x.key]) || (c.optionEffects && c.optionEffects[x.key]));
+}
+
+/* The construction settings that reach style k's drawing, as text: every
+   block but the roof, and of the roof only this style's shape (and the
+   Dormer Shed's main roof, the cottages' eave). */
+function rawSig(c, k) {
+  const t = c && c.TYPES && c.TYPES[k];
+  if (!t) return "";
+  const con = isObj(c.construction) ? c.construction : {};
+  const roof = isObj(con.roof) ? con.roof : {};
+  const rest = Object.assign({}, con);
+  delete rest.roof;
+  const others = Object.keys(roof).filter((x) => ["shapes", "dormerRise", "cottageEave"].indexOf(x) < 0).map((x) => [x, roof[x]]);
+  return JSON.stringify([rest, isObj(roof.shapes) ? roof.shapes[t.roof] : null, t.dormer ? roof.dormerRise : null, t.cottage ? roof.cottageEave : null, others]);
 }
 
 /* What a save from `before` to `after` must check: [{key, sizes, extra}].
    sizes null = every size; extra = {key, name} for a check with that extra
-   on. A price change, a new name or a style with only standard numbers
-   gives nothing to check. cat: after, resolved (model/company.js). */
-export function changedStyles(before, after, M, cat) {
+   on. cat: after, resolved (model/company.js); catBefore: before, resolved
+   (when it can be). A price change, a new name or a style with only
+   standard numbers gives nothing to check.
+     - a style whose drawing changed (its own numbers, the style it is built
+       like, business-wide numbers, the business's raw construction), or a
+       style newly sold: every size; a style that only gained sizes: those
+       sizes. Only a style with numbers of the business's own is drawn on its
+       own (the tools check covers the standard).
+     - with each extra that changes how that style is built (a Steep roof,
+       an extra's construction settings) switched on, too: a new wall with
+       the sample's Steep roof may not fit when the wall alone does.
+     - an extra whose numbers changed, that is new, or that reaches a style
+       it did not reach before (its styles list widened, a style it lists is
+       sold again): every size of each style it reaches, with it on. */
+export function changedStyles(before, after, M, cat, catBefore) {
   const out = [];
   if (!isObj(after) || !isObj(M)) return out;
   const mine = ownNumbersOf(after, M);
   const drawnA = drawnOf(after, M);
   const drawnB = isObj(before) ? drawnOf(before, M) : {};
   const offerB = isObj(before) && isObj(before.offer) ? before.offer : {};
+  const rawChanged = !same(isObj(before) ? before.construction : undefined, after.construction);
+  const extrasA = effectExtras(after);
+  const extrasB = new Map(effectExtras(before).map((x) => [x.key, x]));
+  const job = (key, sizes, x) => out.push({ key, sizes, extra: x ? { key: x.key, name: String(x.name || "").trim() || "your extra" } : null });
   for (const k of keysOf(after.offer)) {
-    if (!mine[k]) continue;
     const was = offerB[k];
-    if (!isObj(was) || drawnA[k] !== drawnB[k]) { out.push({ key: k, sizes: null, extra: null }); continue; }
-    const added = keysOf(after.offer[k].sizes).filter((z) => !own(was.sizes, z));
-    if (added.length) out.push({ key: k, sizes: added, extra: null });
-  }
-  /* an extra with numbers of its own, new or changed: every style it changes */
-  const extrasB = new Map((isObj(before) && isObj(before.options) && Array.isArray(before.options.extras) ? before.options.extras : []).filter(isObj).map((x) => [x.key, x]));
-  const extrasA = isObj(after.options) && Array.isArray(after.options.extras) ? after.options.extras : [];
-  for (const x of extrasA) {
-    if (!isObj(x) || !isObj(x.built) || !keysOf(x.built).length) continue;
-    const old = extrasB.get(x.key);
-    if (old && same(old.built, x.built)) continue;
-    for (const k of keysOf(after.offer)) {
-      const t = cat && cat.TYPES && cat.TYPES[k];
-      if (t && t.optionEffects && t.optionEffects[x.key]) out.push({ key: k, sizes: null, extra: { key: x.key, name: String(x.name || "").trim() || "your extra" } });
+    const isNew = !isObj(was);
+    /* the business's raw construction settings changed for this style (a
+       saltbox rise reaches the cottages, not the barns) */
+    const rawK = rawChanged && (!catBefore || rawSig(catBefore, k) !== rawSig(cat, k));
+    const styleChanged = isNew || drawnA[k] !== drawnB[k] || rawK;
+    const added = isNew ? [] : keysOf(after.offer[k].sizes).filter((z) => !own(was.sizes, z));
+    if (mine[k] || rawK) {
+      if (styleChanged) job(k, null, null);
+      else if (added.length) job(k, added, null);
+    }
+    for (const x of extrasA) {
+      if (!extraReaches(cat, x, k)) continue;
+      const old = extrasB.get(x.key);
+      const xChanged = !old || !same(old.built, x.built) || !same(old.construction, x.construction);
+      const newlyReaches = isNew || !old || !catBefore || !extraReaches(catBefore, old, k);
+      if (styleChanged || xChanged || newlyReaches) job(k, null, x);
+      else if (added.length) job(k, added, x);
     }
   }
   return out;
@@ -200,6 +253,53 @@ export function checkAgainstStandard(cat, std, key, opts) {
   }
   out.ms = now() - t0;
   return out;
+}
+
+/* The order the sizes of every job are drawn in, ACROSS styles: the size
+   the designer opens on of every job first, then the smallest and the
+   largest of each, then the rest -- so a business-wide change that reaches
+   many styles never leaves the last styles in the price list unchecked
+   while the first are done to the last size. -> [{job (its index), sizes,
+   first (the job's first step: the roof-widths test runs there)}] */
+export function jobSteps(cat, jobs) {
+  const phases = jobs.map((j) => {
+    const all = Object.keys((cat.P && cat.P[j.key]) || {});
+    const sizes = orderSizes(j.sizes ? all.filter((z) => j.sizes.indexOf(z) >= 0) : all);
+    return [sizes.slice(0, 1), sizes.slice(1, 3), sizes.slice(3)];
+  });
+  const out = [], started = new Set();
+  for (let ph = 0; ph < 3; ph++) {
+    phases.forEach((p, i) => {
+      if (!p[ph].length) return;
+      out.push({ job: i, sizes: p[ph], first: !started.has(i) });
+      started.add(i);
+    });
+  }
+  return out;
+}
+
+/* Every job of changedStyles within one time budget, in jobSteps order.
+   What the time does not reach is listed in `unchecked`.
+   -> one result per job, as checkAgainstStandard gives */
+export function checkJobs(cat, std, jobs, { budgetMs = Infinity } = {}) {
+  const t0 = now();
+  const res = jobs.map((j) => {
+    const t = cat.TYPES[j.key];
+    return { key: j.key, name: t ? t.name : j.key, extra: j.extra || null, problems: [], warnings: [], already: [], unchecked: [], buildings: 0, ms: 0 };
+  });
+  for (const step of jobSteps(cat, jobs)) {
+    const j = jobs[step.job], r0 = res[step.job];
+    const left = budgetMs - (now() - t0);
+    if (left <= 0) {
+      for (const z of step.sizes) r0.unchecked.push({ size: z, variant: "", words: `${r0.name} ${z}` });
+      continue;
+    }
+    const r = checkAgainstStandard(cat, std, j.key, { sizes: step.sizes, extra: j.extra, budgetMs: left, widths: step.first });
+    for (const f of ["problems", "warnings", "already", "unchecked"]) r0[f].push(...r[f]);
+    r0.buildings += r.buildings;
+    r0.ms += r.ms;
+  }
+  return res;
 }
 
 /* The same as checkAgainstStandard for every size, one size at a time,

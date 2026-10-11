@@ -707,9 +707,22 @@ export function effectProblems(fx, at) {
       out.push(`${at}.${p}: An option's construction settings hold the ${K.words}. Set it in How it's built instead.`);
     }
   }
-  out.push(...strictConstructionProblems(tree, at));
-  out.push(...constructionProblems(tree, at));
+  out.push(...notOnOwnedPaths(strictConstructionProblems(tree, at).concat(constructionProblems(tree, at)), tree, at));
   return out;
+}
+
+/* A construction setting on a path a How it's built knob owns is said once
+   ("set it in How it's built"): its other problems are left out. */
+function notOnOwnedPaths(problems, tree, at) {
+  const owned = [];
+  for (const id of Object.keys(BUILT.KNOB_PATHS)) for (const p of BUILT.KNOB_PATHS[id]) {
+    if (p.split(".").reduce((o, k) => (isObj(o) ? o[k] : undefined), tree) !== undefined) owned.push(`${at}.${p}`);
+  }
+  if (!owned.length) return problems;
+  return problems.filter((x) => {
+    const path = (/^[^:\s]+/.exec(x) || [""])[0];
+    return !owned.some((o) => path === o || path.startsWith(o + ".") || path.startsWith(o + "["));
+  });
 }
 
 /* ------------------------------------------------------------------------ */
@@ -737,7 +750,7 @@ export function strictProblems(company, manufacturer) {
         : `offer.${k}.${f} is not part of a building style${didYouMean(f, OFFER_KEYS)}`);
     }
   }
-  if (isObj(company.construction)) out.push(...strictConstructionProblems(company.construction, "construction"));
+  if (isObj(company.construction)) out.push(...notOnOwnedPaths(strictConstructionProblems(company.construction, "construction"), company.construction, "construction"));
   /* How it's built: the business's own numbers, checked; a raw construction
      setting on a path a knob owns ("set it in How it's built instead") */
   for (const p of BUILT.problems(company, manufacturer)) out.push(`${p.path}: ${p.words}`);

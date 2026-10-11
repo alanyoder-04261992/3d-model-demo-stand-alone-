@@ -387,20 +387,71 @@ function lengthProblem(v, flat) {
   }
   return `${JSON.stringify(v)} is not a length: write feet (2.5), {"ft": 2.5}, {"in": 30}${flat ? ", inches out from the wall ({\"flatIn\": 4})" : ""} or a share of the width ({"w": 0.27})`;
 }
+/* A roof length as feet at width W (lengthOf, with the eave's {"flatIn"}). */
+function feetAt(v, W) {
+  if (typeof v === "number") return v;
+  if (isPlainObject(v)) {
+    if (typeof v.w === "number") return v.w * W;
+    if (typeof v.ft === "number") return v.ft;
+    if (typeof v.in === "number") return v.in / 12;
+    if (typeof v.flatIn === "number") return v.flatIn / 12;
+  }
+  return NaN;
+}
+/* feet -> "9 ft 7 1/4 in", "4 in" (to the nearest 1/8 in) */
+function feetWords(ft) {
+  const e = Math.round(Math.abs(ft) * 96), inch = Math.floor(e / 8), f = ["", "1/8", "1/4", "3/8", "1/2", "5/8", "3/4", "7/8"][e % 8];
+  const sign = ft < 0 ? "-" : "";
+  if (inch >= 12) { const feet = Math.floor(inch / 12), rest = inch % 12; return sign + (!rest && !f ? `${feet} ft` : `${feet} ft ${rest}${f ? " " + f : ""} in`); }
+  return sign + (inch ? `${inch}${f ? " " + f : ""} in` : `${f || "0"} in`);
+}
+const ROOF_WORDS = { gable: "gable roof", gambrel: "barn roof", salt: "saltbox roof", lean: "lean-to roof", slope: "single slope roof", other: "roof" };
+const KEY_WORDS = { rise: "height above the wall", lowerRise: "lower slope's rise", upperRise: "upper slope's rise", knee: "knee (where its two slopes meet)", ridge: "ridge", dormerRise: "height above the wall" };
+/* The widths the 3D designer draws a roof at (narrowest, widest). */
+const ROOF_WIDTHS = [6, 16];
+/* What a roof length must be to draw: a roof 0 to 8 ft above the wall (the
+   every-size check's limit, model/style-check.js), its knee and ridge inside
+   the walls, an eave 0 to 2 ft out. In the owner's words, after the path. */
+function sizeProblem(k, v, roofWord) {
+  const at = ROOF_WIDTHS.map((W) => ({ W, ft: feetAt(v, W) }));
+  if (at.some((a) => !Number.isFinite(a.ft))) return null;          /* said by lengthProblem */
+  if (k === "rise" || k === "lowerRise" || k === "upperRise" || k === "dormerRise") {
+    const hi = at.find((a) => a.ft > 8 + 1e-9), lo = at.find((a) => !(a.ft > 0));
+    if (hi) return `The ${roofWord}'s ${KEY_WORDS[k]} would be ${feetWords(hi.ft)} on a ${hi.W} ft wide building: 8 ft at most.`;
+    if (lo) return `The ${roofWord}'s ${KEY_WORDS[k]} must be more than 0.`;
+  }
+  if (k === "knee" || k === "ridge") {
+    const out = at.find((a) => Math.abs(a.ft) >= a.W / 2 - 1e-9 || (k === "knee" && !(a.ft > 0)));
+    if (out) return `The ${roofWord}'s ${KEY_WORDS[k]} would be ${feetWords(out.ft)} from the middle of a ${out.W} ft wide building, past its walls.`;
+  }
+  if (k === "eave") {
+    const bad = at.find((a) => a.ft < 0 || a.ft > 2 + 1e-9);
+    if (bad) return `The ${roofWord}'s eave would stand ${feetWords(bad.ft)} out from the wall: 0 to 2 ft.`;
+  }
+  return null;
+}
 export function roofValueProblems(tree, where = "construction") {
   const out = [];
   const roof = isPlainObject(tree) && isPlainObject(tree.roof) ? tree.roof : null;
   if (!roof) return out;
   const each = (v, path, fn) => { if (isRuleList(v)) v.forEach((r, i) => fn(r.value, `${path}[${i}].value`)); else fn(v, path); };
-  const len = (v, path, flat) => { if (v === undefined) return; each(v, path, (x, p) => { const why = lengthProblem(x, flat); if (why) out.push(`${p}: ${why}.`); }); };
-  len(roof.dormerRise, `${where}.roof.dormerRise`);
+  const len = (v, path, flat, k, roofWord) => {
+    if (v === undefined) return;
+    each(v, path, (x, p) => {
+      const why = lengthProblem(x, flat);
+      if (why) { out.push(`${p}: ${why}.`); return; }
+      const big = sizeProblem(k, x, roofWord);
+      if (big) out.push(`${p}: ${big}`);
+    });
+  };
+  len(roof.dormerRise, `${where}.roof.dormerRise`, false, "dormerRise", "Dormer Shed's main roof");
   const shapes = isPlainObject(roof.shapes) ? roof.shapes : {};
   for (const s of Object.keys(shapes)) {
     const sh = shapes[s];
     if (!isPlainObject(sh)) continue;
     const at = `${where}.roof.shapes.${s}`;
-    for (const k of LENGTH_KEYS) len(sh[k], `${at}.${k}`);
-    if (isPlainObject(sh.eaveOverhang)) for (const side of ["left", "right"]) len(sh.eaveOverhang[side], `${at}.eaveOverhang.${side}`, true);
+    for (const k of LENGTH_KEYS) len(sh[k], `${at}.${k}`, false, k, ROOF_WORDS[s] || "roof");
+    if (isPlainObject(sh.eaveOverhang)) for (const side of ["left", "right"]) len(sh.eaveOverhang[side], `${at}.eaveOverhang.${side}`, true, "eave", ROOF_WORDS[s] || "roof");
     for (const k of ["rakeOverhang", "endOverhang"]) if (sh[k] !== undefined) each(sh[k], `${at}.${k}`, (x, p) => {
       if (!(typeof x === "number" && x >= 0 && x <= 3)) out.push(`${p}: ${JSON.stringify(x)} should be feet past the gable end, from 0 to 3.`);
     });

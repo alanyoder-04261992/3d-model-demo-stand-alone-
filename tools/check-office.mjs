@@ -855,6 +855,26 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
     const r0 = checkChangedStyles(a, b, manufacturer, library, { cat: catB });
     const ms = performance.now() - t1;
     ok(`... the check itself takes under 50 ms when only prices change (${ms.toFixed(1)} ms)`, ms < 50 && r0.buildings === 0, String(ms));
+    /* a business-wide change reaching many styles: the size each style opens
+       on is drawn first for EVERY style, then the smallest and largest of
+       each, then the rest (review GL-8), so the time never runs out on the
+       last styles of the price list before the first are done */
+    const BC = await import("../model/built-check.js");
+    const wide = clone(cur.settings); wide.built = { roofPitch: { gable: 6 }, eaveOverhang: { gable: 6, barn: 2 }, porchDepth: 5 };
+    const catW = resolve(wide, manufacturer, library), catC = resolve(cur.settings, manufacturer, library);
+    const jobs = BC.changedStyles(cur.settings, wide, manufacturer, catW, catC);
+    const steps = BC.jobSteps(catW, jobs);
+    const firstRound = steps.slice(0, jobs.length);
+    ok(`... a business-wide change reaching ${new Set(jobs.map((j) => j.key)).size} styles draws the size each opens on first, every style before any second size`,
+      jobs.length >= 15 && firstRound.every((st, i) => st.job === i && st.sizes.length === 1 && st.first) && steps.slice(jobs.length).every((st) => !st.first),
+      JSON.stringify(steps.slice(0, jobs.length + 2)));
+    /* Check every size in the browser, a size at a time, finds what the
+       whole style at once finds */
+    const lbOwn = clone(cur.settings); lbOwn.offer.LB.built = { wallHeight: 60 };
+    const catL = resolve(lbOwn, manufacturer, library), stdL = resolve(BC.withoutOwnNumbers(lbOwn), manufacturer, library);
+    const whole = BC.summarize([BC.checkAgainstStandard(catL, stdL, "LB", {})]);
+    const stepped = BC.summarize([await BC.checkInSteps(catL, stdL, "LB", { pause: () => Promise.resolve() })]);
+    ok("... Check every size a size at a time (the page never freezes) says what the whole style at once says", whole.problems.length > 0 && JSON.stringify(whole) === JSON.stringify(stepped), JSON.stringify([whole.problems.slice(0, 2), stepped.problems.slice(0, 2)]));
   }
 
   /* a size added to a style with numbers of its own: just that size */
@@ -916,6 +936,54 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   s = clone(cur.settings); s.options.extras.find((x) => x.key === "steep-roof").styles = ["UT", "SU"];
   out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Steep roof on both again" });
   ok("... and back on both", out.changes.includes(`Steep roof (7/12) is offered on the ${utWords} and ${cur.settings.offer.SU.name || manufacturer.styles.SU.name}`), JSON.stringify(out.changes));
+
+  /* WHAT A SAVE REACHES (review GL-3, F4, F3). A new Side Utility wall and
+     eave that fit alone but not with the sample's own Steep roof (7/12) on:
+     the save draws the style with each extra that changes it switched on. */
+  const suName = cur.settings.offer.SU.name || manufacturer.styles.SU.name;
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.SU.built = { wallHeight: 85, eaveOverhang: 12 };
+  const withSteep = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("a Side Utility wall that fits alone but not under the Steep roof is refused (422)", withSteep.status === 422, `${withSteep.status} ${JSON.stringify(withSteep.data?.sizeCheck || withSteep.data?.error).slice(0, 300)}`);
+  ok("... with the size and the extra named: \"... with Steep roof (7/12): the roof edge hangs ...\"", new RegExp(`${suName} \\d+x\\d+ with Steep roof \\(7/12\\): the roof edge hangs .+ in front of the head of the 72″ Wooden Double Doors on the right side\\.`).test(withSteep.data?.error || ""), withSteep.data?.error);
+  /* an extra with numbers that newly reaches a style, though its numbers did
+     not change: a Tall door extra on the Utility Shed, then on the Lofted
+     Barn too, then the Lofted Barn stopped and sold again */
+  const lbName = cur.settings.offer.LB.name || manufacturer.styles.LB.name;
+  const tall = { key: "tall-door", name: "Tall door", input: "check", price: 90, styles: ["UT"], built: { doorHeight: 84 } };
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.options.extras = [...s.options.extras, clone(tall)];
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "a Tall door (84 in) extra on the Utility Shed" });
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.options.extras.find((x) => x.key === "tall-door").styles = ["UT", "LB"];
+  const widened = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("... offered on the Lofted Barn too, with its numbers unchanged: refused, the door does not fit its walls", widened.status === 422 && new RegExp(`${lbName} \\d+x\\d+ with Tall door: the .+ should be 84 in tall, but the wall leaves room for`).test(widened.data?.error || ""), `${widened.status} ${widened.data?.error}`);
+  /* the Side Lofted Barn listed while it is not sold, then sold again */
+  const slbName = cur.settings.offer.SLB.name || manufacturer.styles.SLB.name;
+  const slbOffer = clone(cur.settings.offer.SLB), cats = clone(cur.settings.categories);
+  s = clone(cur.settings); s.options.extras.find((x) => x.key === "tall-door").styles = ["UT", "SLB"]; delete s.offer.SLB;
+  if (Array.isArray(s.categories)) s.categories = s.categories.map((g) => [g[0], g[1].filter((k) => k !== "SLB")]).filter((g) => g[1].length);
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Tall door listing the Side Lofted Barn while it is not sold" });
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.SLB = slbOffer; s.categories = cats;
+  const resold = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("... selling the Side Lofted Barn again draws it with the Tall door on: refused", resold.status === 422 && new RegExp(`${slbName} \\d+x\\d+ with Tall door: the .+ should be 84 in tall`).test(resold.data?.error || ""), `${resold.status} ${resold.data?.error}`);
+  s.options.extras = s.options.extras.filter((x) => x.key !== "tall-door");
+  await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the Side Lofted Barn sold again, without the Tall door" });
+  /* a roof number no How it's built setting owns: limited, and drawn */
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.construction = { roof: { shapes: { salt: { rise: 40 } } } };
+  const tallSalt = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("a saltbox 40 ft above the wall in the construction settings is refused in words", tallSalt.status === 422 && /The saltbox roof's height above the wall would be 40 ft on a 6 ft wide building: 8 ft at most\./.test(tallSalt.data?.error || ""), `${tallSalt.status} ${tallSalt.data?.error}`);
+  s = clone(cur.settings); s.options.extras = [...s.options.extras, { key: "tall-barn", name: "Tall barn", input: "check", price: 1, construction: { "roof.shapes.gambrel.upperRise": 40 } }];
+  const tallBarn = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("... an extra setting the barn roof's upper slope: \"Tall barn: set this extra's barn roof height in How it's built.\"", tallBarn.status === 422 && /Tall barn: set this extra's barn roof height in How it's built\./.test(tallBarn.data?.error || ""), `${tallBarn.status} ${tallBarn.data?.error}`);
+  const csName = cur.settings.offer.CS ? (cur.settings.offer.CS.name || manufacturer.styles.CS.name) : null;
+  if (csName) {
+    s = clone(cur.settings); s.construction = { roof: { shapes: { salt: { rise: { w: 0.05 } } } } };
+    const flatSalt = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+    ok("... and a saltbox too low to draw (inside the limits) is drawn on the cottages and refused", flatSalt.status === 422 && new RegExp(`${csName} \\d+x\\d+: the roof peak is only .+ above the wall \\(1 ft at least\\)`).test(flatSalt.data?.error || ""), `${flatSalt.status} ${flatSalt.data?.error}`);
+  }
 }
 sectionDone();
 
