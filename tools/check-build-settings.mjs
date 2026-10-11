@@ -591,6 +591,16 @@ group("13. the shop standard (Alan's numbers)");
   const tall = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json"))); tall.offer.LB.built = { barnPeak: { 10: 60 } };
   ok("a 10 ft height above the standard's 12 ft is said, never quietly dropped (\"... Type a height for the 12 ft wide barn too.\")",
     BUILT.problems(tall, SM).some((p) => p.path === "offer.LB.built.barnPeak" && p.words === "Barn roof height: the 12 ft wide barn (4 ft 3 in, the standard) would be lower than the 10 ft wide barn (5 ft). Type a height for the 12 ft wide barn too."), J(BUILT.problems(tall, SM)));
+  /* the every-size check measures a barn at its trusses too: the same height
+     at every width is no "taller than", and 8 ft (the most the setting
+     takes) is no "over 8 ft" (the roof line over the deck stands a hair
+     higher on a narrower, steeper barn) */
+  {
+    const flat = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json"))); flat.offer.LB.built = { barnPeak: { 8: 48, 10: 48, 12: 48, 14: 48 } };
+    const tall = JSON.parse(JSON.stringify(readJSON("companies/demo/company.json"))); tall.offer.LB.built = { barnPeak: { 8: 96, 10: 96, 12: 96, 14: 96 } };
+    const bad = (co) => checkStyle(resolve(co, SM, LIB), "LB", { framing: false }).problems.filter((f) => f.code === "roof-widths" || (f.code === "roof" && /peak/.test(f.words)));
+    ok("a barn 4 ft tall at every width is not \"taller than\" itself, and one 8 ft tall is within the 8 ft limit", bad(flat).length === 0 && bad(tall).length === 0, J([bad(flat).map((f) => f.words), bad(tall).map((f) => f.words)]));
+  }
   /* every width sold, as drawn (review W6) */
   const effOne = BUILT.effective(catOne, "LB").find((e) => e.id === "barnPeak");
   ok("the screens list the barn height at every width sold, 14 ft too (\"... 14 ft wide: 6 ft 3 1/8 in\")", effOne.words === "8 ft wide: 3 ft 7 3/4 in, 10 ft wide: 4 ft 2 in, 12 ft wide: 4 ft 3 in, 14 ft wide: 6 ft 3 1/8 in", effOne.words);

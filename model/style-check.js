@@ -92,6 +92,7 @@ import { dormerGeom, loftZones, roofSection, envY } from "../parts/roof-frame.js
 import { porchOutlines, roomOutline, pointInPoly } from "../parts/floor-frame.js";
 import * as G from "./framing-geometry.js";
 import { pitchLimits } from "./build-settings.js";
+import { barnTrussPeakFt } from "./roof-shapes.js";
 
 export const CODES = Object.freeze(["draws", "past-wall", "overlap", "too-high", "gable-item", "eave", "door-fit", "roof", "roof-widths", "dormer", "porch", "framing", "loft"]);
 
@@ -374,7 +375,9 @@ function checkRoof(plan, add) {
       if (!(lower > upper + EPS)) add("problem", "roof", "barn-slopes", `the barn roof's upper slope (${pitchWords(upper * 12)}) is steeper than its lower slope (${pitchWords(lower * 12)}).`, undefined, upper - lower);
     }
   }
-  const rise = P[apex][1] - topY;
+  /* a barn roof's height is its trusses' peak (the roof line over the deck
+     stands about 1/2 in higher): the 8 ft most a barn height setting takes */
+  const rise = t.roof === "gambrel" && plan.construction ? barnTrussPeakFt(W, t, plan.construction) : P[apex][1] - topY;
   if (rise < LIMITS.peakMinFt - EPS) add("problem", "roof", "peak-low", `the roof peak is only ${lengthWords(rise)} above the wall (1 ft at least).`, undefined, LIMITS.peakMinFt - rise);
   else if (rise > LIMITS.peakMaxFt + EPS) add("problem", "roof", "peak-high", `the roof peak is ${lengthWords(rise)} above the wall (8 ft at most).`, undefined, rise - LIMITS.peakMaxFt);
   else if (rise < LIMITS.peakWarnFt - EPS) add("warning", "roof", "peak-low", `the roof peak is only ${lengthWords(rise)} above the wall.`, undefined, LIMITS.peakWarnFt - rise);
@@ -604,7 +607,10 @@ function checkWidths(cat, key, base, sizes, add) {
     try { fr = frameOf(Object.assign({}, base, { size: z }), cat); } catch (e) { continue; }   /* checkStyle reports it */
     let top = -Infinity;
     for (const p of fr.prof) top = Math.max(top, p[1]);
-    const rise = top - fr.topY, g = byW.get(fr.W) || { lo: Infinity, hi: -Infinity };
+    /* a barn: its trusses' peak, the height a barn roof is set by; the roof
+       line over the deck stands a hair higher on a narrower, steeper barn,
+       which is no fault */
+    const rise = fr.t.roof === "gambrel" ? barnTrussPeakFt(fr.W, fr.t, fr.construction) : top - fr.topY, g = byW.get(fr.W) || { lo: Infinity, hi: -Infinity };
     g.lo = Math.min(g.lo, rise); g.hi = Math.max(g.hi, rise);
     byW.set(fr.W, g);
   }

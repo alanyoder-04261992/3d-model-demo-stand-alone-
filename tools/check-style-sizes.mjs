@@ -178,11 +178,13 @@ const FIXTURES = [
     building: () => checkBuilding(planWith(LIBRARY, "UT", "10x16", [{ id: "x1", cat: "w23", wall: "L", pos: 0 }, { id: "x2", cat: "w23", wall: "L", pos: 1 }]), { gableItems: false, framing: false }),
     controlBuilding: () => checkBuilding(planWith(LIBRARY, "UT", "10x16", [{ id: "x1", cat: "w23", wall: "L", pos: -2 }, { id: "x2", cat: "w23", wall: "L", pos: 2 }]), { gableItems: false, framing: false }) },
   { name: "a barn with a 2 ft peak at 14 ft wide", code: "roof-widths",
-    words: /^Lofted Barn: 12 ft wide is 5 ft 4 3\/4 in tall, taller than 14 ft wide \(2 ft\)\.$/,
+    /* measured at the trusses' peak, as a barn height is set (the rises
+       here set the roof line, which stands the deck's thickness higher) */
+    words: /^Lofted Barn: 12 ft wide is 5 ft 4 3\/8 in tall, taller than 14 ft wide \(1 ft 11 1\/2 in\)\.$/,
     style: () => checkStyle(testCatalogue({ construction: { roof: { shapes: { gambrel: peakRules({ 14: 24 }) } } }, offer: { LB: ["12x24", "14x24"] } }), "LB", { framing: false }),
     control: () => checkStyle(testCatalogue({ offer: { LB: ["12x24", "14x24"] } }), "LB", { framing: false }) },
   { name: "a barn style whose 11 ft width is taller than its 12 ft width (the width hold switched off)", code: "roof-widths",
-    words: /^Lofted Barn: 11 ft wide is 4 ft 11 3\/8 in tall, taller than 12 ft wide \(4 ft 3 in\)\.$/,
+    words: /^Lofted Barn: 11 ft wide is 4 ft 11 in tall, taller than 12 ft wide \(4 ft 2 1\/2 in\)\.$/,
     style: () => checkStyle(testCatalogue({ construction: { roof: { shapes: { gambrel: peakRules({ 10: 48, 12: 51 }) } } }, offer: { LB: ["10x16", "11x16", "12x16"] } }), "LB", { framing: false }),
     control: () => checkStyle(testCatalogue({ construction: { roof: { shapes: { gambrel: peakRules({ 10: 48, 11: 49.5, 12: 51 }) } } }, offer: { LB: ["10x16", "11x16", "12x16"] } }), "LB", { framing: false }) },
   { name: "a barn roof whose upper slope is steeper than its lower slope", code: "roof",
