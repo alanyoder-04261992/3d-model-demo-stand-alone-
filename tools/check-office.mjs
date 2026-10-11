@@ -58,7 +58,7 @@ import { MemoryBlobs } from "../server/office/store.js";
 import { priceOrExplain } from "../server/office/pricing.js";
 import { rowOf } from "../server/office/customers.js";
 import { closedPage } from "../server/office/pages.js";
-import { resolve } from "../model/company.js";
+import { resolve, validate } from "../model/company.js";
 import { defaults, fromState, toState } from "../model/design.js";
 import { priceParts } from "../model/pricing.js";
 import { pkFixtures } from "../model/layout.js";
@@ -718,6 +718,49 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   const a = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
   return a.status === 200;
 })());
+
+/* THE STRICTER RULES NEVER BREAK A PRICE LIST ALREADY SAVED (model/company.js
+   strictProblems). A price list saved before them can hold a typo the old
+   rules let through: a wall height typed on a style (ignored), a construction
+   setting nobody reads, and a roof pitch rule list written by hand. It must
+   still open on every lot's designer, price quotes, take price changes and be
+   put back from History; only a save that ADDS a new typo is refused. */
+{
+  const clean = clone((await want(200, "GET", "/api/office/price-list")).settings);
+  const raw = await S.read("price-list");
+  const older = clone(raw.data.settings);
+  older.offer.UT.wallH = 8.5;
+  older.construction = { roof: { shapes: { gable: {
+    rize: { w: 0.31 },
+    rise: [{ when: { styles: ["UT"] }, value: { w: 0.25 } }, { value: { w: 0.27 } }],
+  } } } };
+  const olderVersion = raw.data.version + 1;
+  await S.put("price-list", { ...raw.data, settings: older, version: olderVersion });
+  await S.put(`price-list-history/${String(olderVersion).padStart(6, "0")}`, { version: olderVersion, savedAt: new Date(clock.t).toISOString(), savedBy: raw.data.savedBy, changes: ["(an older save)"], settings: older });
+  const pubOld = await want(200, "GET", "/api/lots/port-charlotte", undefined, { label: "a lot's designer on a price list saved before the stricter rules" });
+  ok("(a) a price list with an old typo still opens on the lot's designer (validate finds nothing)", validate(pubOld.company, manufacturer).length === 0, JSON.stringify(validate(pubOld.company, manufacturer)));
+  let catOld = null; try { catOld = (await office.parts.priceList.catalogue()).cat; } catch (e) { catOld = null; }
+  ok("(a) ... and prices quotes from it (the catalogue resolves)", !!catOld && catOld.TYPES.UT.wallH === manufacturer.styles.UT.wallH);
+  let olderNow = await want(200, "GET", "/api/office/price-list");
+  const priceOnly = clone(olderNow.settings); priceOnly.offer.LB.sizes["10x16"] += 1;
+  const savedOld = await want(200, "PUT", "/api/office/price-list", { settings: priceOnly, version: olderNow.version }, { label: "(b) a price change on a price list holding an old typo" });
+  ok("(b) ... is saved, and the old typo stays as it was", savedOld.version === olderNow.version + 1 && savedOld.settings.offer.UT.wallH === 8.5);
+  olderNow = await want(200, "GET", "/api/office/price-list");
+  const addTypo = clone(olderNow.settings); addTypo.offer.SU.sizez = { "10x12": 4000 };
+  const refusedTypo = await want(422, "PUT", "/api/office/price-list", { settings: addTypo, version: olderNow.version }, { label: "(c) a save that adds a new typo" });
+  ok("(c) ... is refused with the did-you-mean words", /Side Utility: "sizez" is not part of a building style\. Did you mean sizes\?/.test(refusedTypo.error || "") && !PATHS.test(refusedTypo.error || ""), refusedTypo.error);
+  const addPath = clone(olderNow.settings); addPath.construction.floor = { spacingInn: 12 };
+  const refusedPath = await want(422, "PUT", "/api/office/price-list", { settings: addPath, version: olderNow.version }, { label: "(c) a save that adds a construction typo" });
+  ok("(c) ... a construction typo is named too", /"spacingInn" is not a construction setting\. Did you mean spacingIn\?/.test(refusedPath.error || ""), refusedPath.error);
+  const known = clone(olderNow.settings); known.construction.interior = { benchHeightIn: 30 }; known.construction.ramp = { lengthFt: 5 };
+  await want(200, "PUT", "/api/office/price-list", { settings: known, version: olderNow.version }, { label: "(c) the bench height and ramp length settings the parts read are known settings" });
+  olderNow = await want(200, "GET", "/api/office/price-list");
+  const back = await want(200, "POST", "/api/office/price-list/restore", { version: olderVersion, current: olderNow.version }, { label: "(d) putting back an old copy that holds a typo" });
+  ok("(d) ... is allowed", back.settings.offer.UT.wallH === 8.5 && !!back.settings.construction.roof.shapes.gable.rize);
+  olderNow = await want(200, "GET", "/api/office/price-list");
+  const fixed = await want(200, "PUT", "/api/office/price-list", { settings: clean, version: olderNow.version }, { label: "taking the old typos out again" });
+  ok("taking the old typos out is always allowed", same(fixed.settings.offer, clean.offer) && same(fixed.settings.construction ?? null, clean.construction ?? null));
+}
 sectionDone();
 
 /* ======================================================================= */

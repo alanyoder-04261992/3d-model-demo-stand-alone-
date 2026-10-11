@@ -53,7 +53,7 @@
    price, or {"price": n, "name": "Basic electric"} -- the name is then shown
    to customers and printed on the quote instead of the usual words. */
 
-import { constructionProblems, mergeConstruction } from "./construction.js";
+import { constructionProblems, mergeConstruction, strictConstructionProblems, effectsToTree, didYouMean } from "./construction.js";
 import { standardItems, NAMED_RECIPES } from "./loadouts.js";
 import { dims, pSpan, wallDefs } from "./frame.js";
 
@@ -72,6 +72,11 @@ export const SCENES = ["studio", "yard", "paper"];
 const TOP_KEYS = ["id", "status", "manufacturer", "brand", "offer", "categories", "items", "options", "palettes", "defaults",
   "construction", "pricing", "notes", "leads", "embed", "look", "features", "license", "renames", "cfg"];
 const OPTION_GROUPS = ["dormers", "ramps", "elec", "misc", "rates", "extras"];
+/* What an offer entry and a manufacturer style may hold. Anything else is a
+   typo that used to be ignored without a word (offer.UT.wallH, sizez). */
+export const OFFER_KEYS = ["sizes", "name", "base"];
+export const STYLE_KEYS = ["name", "category", "roof", "wallH", "side", "dormer", "porch", "metal", "kennel", "cottage",
+  "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft", "loadout"];
 
 const DEFAULT_CREDIT = { text: "3D designer by Barnwright", url: "", show: true };
 
@@ -185,6 +190,9 @@ export function validateManufacturer(m) {
     if (s.gambrel != null && (!isObj(s.gambrel) || s.roof !== "gambrel")) err.push(`${at}.gambrel only makes sense on a gambrel roof, as {lowerRise, upperRise, knee}.`);
     if (s.loft != null && !(isObj(s.loft) && Array.isArray(s.loft.ends) && typeof s.loft.depthFt === "number")) err.push(`${at}.loft must look like {"ends": ["F", "B"], "depthFt": 4}.`);
     if (s.rakeOverhang != null && typeof s.rakeOverhang !== "number") err.push(`${at}.rakeOverhang must be a number of feet.`);
+    /* the manufacturer file lives in the repo and is checked before every
+       deploy, so a typo in it is an error, not a warning */
+    for (const f of Object.keys(s)) if (!f.startsWith("_") && STYLE_KEYS.indexOf(f) < 0) err.push(`${at}.${f} is not part of a style${didYouMean(f, STYLE_KEYS)}`);
   }
   const I = m.items;
   if (!isObj(I) || !keysOf(I).length) err.push("The manufacturer file has no items.");
@@ -209,6 +217,18 @@ export function validateManufacturer(m) {
     if (["floor", "wall", "roof"].indexOf(r && r.basis) < 0) err.push(`options.rates.${id}.basis must be floor, wall or roof.`);
   }
   err.push(...constructionProblems(m.construction || {}, "manufacturer construction"));
+  err.push(...strictConstructionProblems(m.construction || {}, "construction"));
+  /* an option's effect on how the building is built (rates.jo12: floor.spacingIn 12) */
+  for (const g of ["dormers", "ramps", "elec", "misc", "rates"]) {
+    for (const id of keysOf(O[g])) {
+      const fx = isObj(O[g][id]) ? O[g][id].construction : undefined;
+      if (fx === undefined) continue;
+      if (!isObj(fx)) { err.push(`options.${g}.${id}.construction must be {"setting.path": value}.`); continue; }
+      const tree = effectsToTree(fx);
+      err.push(...constructionProblems(tree, `options.${g}.${id}.construction`));
+      err.push(...strictConstructionProblems(tree, `options.${g}.${id}.construction`));
+    }
+  }
   return err;
 }
 
@@ -644,6 +664,34 @@ export function validate(company, manufacturer) {
   }
   if (c.cfg != null && !(Number.isInteger(c.cfg) && c.cfg >= 1)) err.push("cfg must be a whole number, 1 or more (raise it whenever prices or items change).");
   return err;
+}
+
+/* ------------------------------------------------------------------------ */
+/* Strict problems: new rules a price list may already break               */
+
+/* THE NEW, STRICTER RULES, kept apart from validate() so a price list that
+   is already saved never stops working. validate() keeps exactly its old
+   rules: it guards the lot's 3D designer (ui/load.js), quote pricing
+   (resolve) and every save. strictProblems() is never run when a price list
+   is READ; the Dealer Center's save (server/office/price-list.js check)
+   refuses only the strict problems the stored price list did not already
+   have, and putting back an old copy is always allowed.
+     - an offer entry key that is not one (offer.UT.wallH, offer.SU.sizez)
+     - a construction path the code never reads (roof.shapes.gable.rize),
+       and a roof length written so it cannot be drawn */
+export function strictProblems(company, manufacturer) {
+  const out = [];
+  if (!isObj(company) || !isObj(manufacturer)) return out;
+  for (const k of keysOf(company.offer)) {
+    const o = company.offer[k];
+    if (!isObj(o)) continue;
+    for (const f of Object.keys(o)) {
+      if (f.startsWith("_") || OFFER_KEYS.indexOf(f) >= 0) continue;
+      out.push(`offer.${k}.${f} is not part of a building style${didYouMean(f, OFFER_KEYS)}`);
+    }
+  }
+  if (isObj(company.construction)) out.push(...strictConstructionProblems(company.construction, "construction"));
+  return out;
 }
 
 /* ------------------------------------------------------------------------ */

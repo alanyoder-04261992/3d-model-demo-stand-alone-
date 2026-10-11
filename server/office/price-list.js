@@ -13,7 +13,7 @@
    the settings, and the changes in words ("Lofted Barn 10×16: $5,540 →
    $5,700"), so the owner can see and put back an earlier price list. */
 
-import { validate, validateManufacturer, resolve, SIZE_RE, ID_RE } from "../../model/company.js";
+import { validate, validateManufacturer, resolve, strictProblems, SIZE_RE, ID_RE } from "../../model/company.js";
 import { fail, OfficeError } from "./http.js";
 
 /* The parts of the settings that change what a customer can pick or pay. */
@@ -182,6 +182,18 @@ export function explainProblem(problem, manufacturer, settings = {}) {
     [/^defaults\.dormer/, () => "The dormer the designer opens on is not sold any more. Pick another one in Settings."],
     [/^defaults\.porchLength/, () => "The porch the designer opens on must be 8 or 12 ft long."],
 
+    /* the stricter rules (model/company.js strictProblems): a typo is named,
+       with the setting it was most likely meant to be */
+    [/^offer\.(\w+)\.(\S+) is not part of a building style(?:\. Did you mean (\w+)\?)?/,
+      (m) => `${styleName(m[1])}: "${m[2]}" is not part of a building style.${m[3] ? ` Did you mean ${m[3]}?` : ""}`],
+    [/^construction\S*?\.([^.\s\[\]]+) is not a construction setting(?:\. Did you mean (\w+)\?)?/,
+      (m) => `"${m[1]}" is not a construction setting.${m[2] ? ` Did you mean ${m[2]}?` : ""}`],
+    [/^construction\S*?\.([^.\s\[\]]+) is not a roof shape(?:\. Did you mean (\w+)\?)?/,
+      (m) => `"${m[1]}" is not a roof shape.${m[2] ? ` Did you mean ${m[2]}?` : ""}`],
+    [/^construction\S*?\.([^.\s\[\]]+) is not a building width/,
+      (m) => `"${m[1]}" is not a building width. Write the width in whole feet, like 10.`],
+    [/^construction\S*?\.(rise|lowerRise|upperRise|knee|ridge|dormerRise|left|right)(?:\[\d+\]\.value)?: .* is not a length/,
+      () => "One of the roof sizes in the construction settings is not a length. Write it in feet."],
     [/^construction/, () => "The construction settings could not be saved. Reload the page and try again."],
 
     [/^pricing\.show/, () => "Pick how prices show on the designer: the full price, a starting price, or no price."],
@@ -337,12 +349,19 @@ const SAVED_FIRST = "Someone else saved the price list while you were working. R
 export function createPriceList({ store, manufacturer, library, templates, now, log = console.error }) {
   const iso = () => now().toISOString();
 
-  /* -> the resolved catalogue, or a 422 listing the problems in words. */
-  function check(settings) {
+  /* -> the resolved catalogue, or a 422 listing the problems in words.
+     previous: the price list this one replaces. The stricter rules
+     (strictProblems) refuse only what previous did not already have, so an
+     older price list keeps saving price changes and an old copy can always
+     be put back. With no previous at all (a check of a draft), the strict
+     problems are not refused. */
+  function check(settings, previous) {
     if (!settings || typeof settings !== "object" || Array.isArray(settings)) fail(422, "The price list is missing. Reload the page and try again.");
     const modelProblems = [...validateManufacturer(manufacturer), ...validate(settings, manufacturer)];
+    const fresh = newStrictProblems(settings, previous);
     const words = [...new Set([
       ...modelProblems.map((p) => explainProblem(p, manufacturer, settings)),
+      ...fresh.map((p) => explainProblem(p, manufacturer, settings)),
       ...officeProblems(settings, manufacturer),
     ])];
     if (words.length) {
@@ -351,6 +370,14 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
       throw err;
     }
     return resolve(settings, manufacturer, library);
+  }
+
+  /* The strict problems settings has that previous did not (same path,
+     same words); [] when there is no previous to compare with. */
+  function newStrictProblems(settings, previous) {
+    if (previous === undefined) return [];
+    const had = new Set(previous && typeof previous === "object" ? strictProblems(previous, manufacturer) : []);
+    return strictProblems(settings, manufacturer).filter((p) => !had.has(p));
   }
 
   async function current() {
@@ -421,7 +448,7 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     delete settings.license;
     settings.notes = { finePrint: "Prices plus tax. Delivery and setup included within our area.", sizeNotes: settings.notes?.sizeNotes || {} };
     settings.cfg = 1;
-    check(settings);
+    check(settings, null);
     const record = { settings, version: 1, cfg: 1, savedAt: iso(), savedBy: { id: by.userId, name: by.name || by.email } };
     if (!(await store.create("price-list", record))) fail(409, "The business is already set up.");
     await keepHistory({ version: 1, savedAt: record.savedAt, savedBy: record.savedBy, changes: ["Set up the business with a starting price list"], settings });
@@ -430,7 +457,7 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
 
   /* Save the whole price list. The browser sends the version it started
      from; if someone else saved since, nothing is written (409). */
-  async function save(by, { settings, version }, { restoring = null } = {}) {
+  async function save(by, { settings, version }, { restoring = null, restoredFrom = undefined } = {}) {
     if (!settings || typeof settings !== "object" || Array.isArray(settings)) fail(422, "The price list is missing. Reload the page and try again.");
     const previous = await current();
     if (!previous) fail(404, "The price list has not been set up yet.");
@@ -440,7 +467,9 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     if (next.id !== old.id) fail(422, "This price list belongs to a different business. Reload the page and try again.");
     if (next.manufacturer !== old.manufacturer) fail(422, "The builder's library cannot change here.");
     next.cfg = priceFingerprint(next) === priceFingerprint(old) ? old.cfg : (old.cfg || 1) + 1;
-    check(next);
+    /* a stricter rule refuses only what is new: compared with the stored
+       price list, or, when putting an old copy back, with that copy */
+    check(next, restoredFrom !== undefined ? restoredFrom : old);
     const changes = describeChanges(old, next, manufacturer);
     if (restoring) changes.unshift(`Put back the price list saved ${restoring}`);
     if (!changes.length) return { ...previous.data, cfg: old.cfg, changes: [] };
@@ -468,7 +497,7 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     if (!Number.isSafeInteger(version) || version < 1) fail(422, "Pick a saved price list.");
     const entry = await store.get(`price-list-history/${String(version).padStart(6, "0")}`);
     if (!entry) fail(404, "That saved price list is gone.");
-    return save(by, { settings: entry.settings, version: currentVersion }, { restoring: dayWords(entry.savedAt) });
+    return save(by, { settings: entry.settings, version: currentVersion }, { restoring: dayWords(entry.savedAt), restoredFrom: entry.settings });
   }
 
   return { get, current, catalogue, setup, save, history, restore, check };

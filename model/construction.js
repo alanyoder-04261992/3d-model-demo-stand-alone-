@@ -245,6 +245,172 @@ function valueProblems(tree, where) {
   return out;
 }
 
+/* ------------------------------------------------------------------------
+   WHAT CAN BE SET: every construction setting the code reads, so a typo is
+   named instead of quietly doing nothing ("roof.shapes.gable.rize" used to
+   be kept and never read). Built from what parts/, model/ and engine/ read
+   -- the library file, plus interior.* (parts/interior.js), ramp.lengthFt
+   (parts/ramp.js) and the lesson blocks the learning pages read, which hold
+   free-form notes. tools/check-construction.mjs proves every library path
+   is here and every block the code reads is here.
+
+   A node is VALUE (one setting: a number, words, a list, a length or a rule
+   list), FREE (a lesson block: anything inside), a group {key: node}, or a
+   map whose keys are building widths ("10") or roof shapes ("gambrel",
+   "other"). */
+const VALUE = "value";
+const FREE = "free";
+const byWidth = (of) => ({ $keys: "width", of });
+const byRoof = (of, plain) => ({ $keys: "roof", of, plain: !!plain });
+export const ROOF_KEYS = ["gable", "gambrel", "salt", "lean", "slope"];
+const eaves = () => ({ left: VALUE, right: VALUE });
+export const CONSTRUCTION_SCHEMA = freezeAll({
+  site: { blocks: VALUE, perimeterFtPerBlock: VALUE, anchors: VALUE, anchorsAssumed: VALUE },
+  skids: { size: VALUE, onEdge: VALUE, treated: VALUE, table: byWidth(VALUE), bunkSpacingIn: VALUE },
+  floor: { joist: VALUE, spacingIn: VALUE, rim: VALUE, deck: { thicknessIn: VALUE, sheet: VALUE, layers: VALUE } },
+  walls: { stud: VALUE, spacingIn: VALUE, bottomPlates: VALUE, topPlates: VALUE, corner: VALUE, header: VALUE,
+    studLengthIn: { loft: VALUE, tall: VALUE } },
+  openings: {
+    doorHeightIn: byRoof(VALUE, true),
+    windowTop: byRoof({ belowWallTopIn: VALUE, levelWithDoor: VALUE, minBelowWallTopFt: VALUE }),
+  },
+  roof: {
+    framing: VALUE, spacingIn: VALUE, chord: VALUE, gussets: VALUE,
+    dormerRise: VALUE,
+    cottageEave: { backIn: VALUE, frontIn: VALUE, fasciaIn: VALUE },
+    shapes: {
+      gable: { rise: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE },
+      gambrel: { rise: VALUE, lowerRise: VALUE, upperRise: VALUE, knee: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE },
+      salt: { rise: VALUE, ridge: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE },
+      lean: { rise: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE },
+      slope: { rise: VALUE, eaveOverhang: eaves(), rakeOverhang: VALUE },
+    },
+  },
+  roofDeck: { type: VALUE, purlins: { size: VALUE, flat: VALUE, spacingIn: VALUE }, sheathingIn: VALUE },
+  loft: { joist: VALUE, spacingIn: VALUE, deck: { thicknessIn: VALUE } },
+  porch: { post: VALUE, joist: VALUE, railHeightIn: VALUE },
+  buildOrder: VALUE,
+  notes: byWidth(VALUE),
+  interior: { benchHeightIn: VALUE, shelfHeightIn: VALUE, topIn: VALUE, legMaxSpacingFt: VALUE },
+  ramp: { lengthFt: VALUE },
+  claddingStudy: FREE, utilityStudy: FREE, trussStudy: FREE, windowHeader: FREE, windowPlateLesson: FREE,
+  doorwayLesson: FREE, gableBacking: FREE, gableStudy: FREE, wallStudy: FREE, floorStudy: FREE,
+});
+function freezeAll(o) {
+  if (o && typeof o === "object" && !Object.isFrozen(o)) { Object.freeze(o); for (const k of Object.keys(o)) freezeAll(o[k]); }
+  return o;
+}
+
+/* The closest of `choices` to a mistyped `word` (case ignored, one or two
+   letters off), or null. "rize" -> "rise", "sizez" -> "sizes". */
+export function closest(word, choices) {
+  const w = String(word).toLowerCase();
+  let best = null, bestD = Infinity;
+  for (const c of choices) {
+    const d = editDistance(w, String(c).toLowerCase());
+    if (d < bestD) { best = c; bestD = d; }
+  }
+  const limit = w.length <= 4 ? 1 : 2;
+  return best != null && bestD <= limit ? best : null;
+}
+function editDistance(a, b) {
+  const m = a.length, n = b.length;
+  const d = [];
+  for (let i = 0; i <= m; i++) { d.push(new Array(n + 1).fill(0)); d[i][0] = i; }
+  for (let j = 0; j <= n; j++) d[0][j] = j;
+  for (let i = 1; i <= m; i++) {
+    for (let j = 1; j <= n; j++) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + cost);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) d[i][j] = Math.min(d[i][j], d[i - 2][j - 2] + 1);
+    }
+  }
+  return d[m][n];
+}
+/* " Did you mean rise?" or " (here it can be: a, b, c)." -- the tail of a typo's words. */
+export function didYouMean(word, choices) {
+  const c = closest(word, choices);
+  return c != null ? `. Did you mean ${c}?` : ` (here it can be: ${choices.join(", ")}).`;
+}
+
+/* Every path in a construction tree that the schema does not know, in plain
+   words, with the closest known name: "construction.roof.shapes.gable.rize
+   is not a construction setting. Did you mean rise?". These are STRICT
+   problems (model/company.js strictProblems): a save that adds one is
+   refused; a price list that already holds one still opens and draws. */
+export function constructionPathProblems(tree, where = "construction") {
+  const out = [];
+  function walk(v, s, path) {
+    if (s === VALUE || s === FREE) return;
+    if (isRuleList(v)) { v.forEach((r, i) => walk(r.value, s, `${path}[${i}].value`)); return; }
+    if (s.$keys) {
+      if (s.plain && !isPlainObject(v)) return;
+      if (!isPlainObject(v)) { out.push(`${path} must be a group of settings, one per ${s.$keys === "width" ? "building width" : "roof shape"}.`); return; }
+      for (const k of Object.keys(v)) {
+        if (k.startsWith("_")) continue;
+        if (s.$keys === "width" ? !/^\d{1,2}$/.test(k) : ROOF_KEYS.concat("other").indexOf(k) < 0) {
+          out.push(s.$keys === "width"
+            ? `${path}.${k} is not a building width: write the width in whole feet, like "10".`
+            : `${path}.${k} is not a roof shape${didYouMean(k, ROOF_KEYS.concat("other"))}`);
+          continue;
+        }
+        walk(v[k], s.of, `${path}.${k}`);
+      }
+      return;
+    }
+    if (!isPlainObject(v)) { out.push(`${path} must be a group of settings (${Object.keys(s).join(", ")}), not one value.`); return; }
+    for (const k of Object.keys(v)) {
+      if (k.startsWith("_")) continue;
+      if (!Object.prototype.hasOwnProperty.call(s, k)) {
+        out.push(`${path}.${k} is not a construction setting${didYouMean(k, Object.keys(s))}`);
+        continue;
+      }
+      walk(v[k], s[k], `${path}.${k}`);
+    }
+  }
+  walk(tree, CONSTRUCTION_SCHEMA, where);
+  return out;
+}
+
+/* A length the roof reads with lengthOf (model/roof-shapes.js): feet, {"ft"},
+   {"in"} or {"w"} (a share of the width). A bad one used to throw when the
+   building was drawn. */
+const LENGTH_KEYS = ["rise", "lowerRise", "upperRise", "knee", "ridge"];
+function lengthProblem(v) {
+  if (typeof v === "number") return Number.isFinite(v) ? null : "is not a number";
+  if (isPlainObject(v)) {
+    const ks = Object.keys(v).filter((k) => !k.startsWith("_"));
+    if (ks.length === 1 && ["ft", "in", "w"].indexOf(ks[0]) >= 0 && typeof v[ks[0]] === "number" && Number.isFinite(v[ks[0]])) return null;
+  }
+  return `${JSON.stringify(v)} is not a length: write feet (2.5), {"ft": 2.5}, {"in": 30} or a share of the width ({"w": 0.27})`;
+}
+export function roofValueProblems(tree, where = "construction") {
+  const out = [];
+  const roof = isPlainObject(tree) && isPlainObject(tree.roof) ? tree.roof : null;
+  if (!roof) return out;
+  const each = (v, path, fn) => { if (isRuleList(v)) v.forEach((r, i) => fn(r.value, `${path}[${i}].value`)); else fn(v, path); };
+  const len = (v, path) => { if (v === undefined) return; each(v, path, (x, p) => { const why = lengthProblem(x); if (why) out.push(`${p}: ${why}.`); }); };
+  len(roof.dormerRise, `${where}.roof.dormerRise`);
+  const shapes = isPlainObject(roof.shapes) ? roof.shapes : {};
+  for (const s of Object.keys(shapes)) {
+    const sh = shapes[s];
+    if (!isPlainObject(sh)) continue;
+    const at = `${where}.roof.shapes.${s}`;
+    for (const k of LENGTH_KEYS) len(sh[k], `${at}.${k}`);
+    if (isPlainObject(sh.eaveOverhang)) for (const side of ["left", "right"]) len(sh.eaveOverhang[side], `${at}.eaveOverhang.${side}`);
+    if (sh.rakeOverhang !== undefined) each(sh.rakeOverhang, `${at}.rakeOverhang`, (x, p) => {
+      if (!(typeof x === "number" && x >= 0 && x <= 3)) out.push(`${p}: ${JSON.stringify(x)} should be feet past the gable end, from 0 to 3.`);
+    });
+  }
+  return out;
+}
+
+/* The strict construction problems: unknown paths and badly written roof
+   lengths. Never checked when a price list is read (it still opens). */
+export function strictConstructionProblems(tree, where = "construction") {
+  return constructionPathProblems(tree, where).concat(roofValueProblems(tree, where));
+}
+
 /* The facts a building rule can test. d is {W, L} (the corner porch's 4 ft
    deck is part of L, as it is everywhere else in the model). A company's own
    style built like another (t.base, model/company.js) is framed exactly like
