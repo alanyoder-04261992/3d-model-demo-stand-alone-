@@ -16,6 +16,7 @@
 import { validate, validateManufacturer, resolve, strictProblems, SIZE_RE, ID_RE } from "../../model/company.js";
 import { fail, OfficeError } from "./http.js";
 import { describeChanges as builtChanges, liftRawRules } from "../../model/build-settings.js";
+import { checkChangedStyles, SAVE_BUDGET_MS } from "./built-check.js";
 
 /* The parts of the settings that change what a customer can pick or pay. */
 const PRICE_PARTS = ["offer", "categories", "items", "options", "palettes", "construction", "built"];
@@ -363,7 +364,7 @@ export function describeChanges(before, after, manufacturer) {
 
 const SAVED_FIRST = "Someone else saved the price list while you were working. Reload to see their changes, then make yours again.";
 
-export function createPriceList({ store, manufacturer, library, templates, now, log = console.error }) {
+export function createPriceList({ store, manufacturer, library, templates, now, log = console.error, sizeCheckMs = SAVE_BUDGET_MS }) {
   const iso = () => now().toISOString();
 
   /* -> the resolved catalogue, or a 422 listing the problems in words.
@@ -490,15 +491,33 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     next.cfg = priceFingerprint(next) === priceFingerprint(liftRawRules(old, manufacturer).settings) ? old.cfg : (old.cfg || 1) + 1;
     /* a stricter rule refuses only what is new: compared with the stored
        price list, or, when putting an old copy back, with that copy */
-    check(next, restoredFrom !== undefined ? restoredFrom : old);
+    const cat = check(next, restoredFrom !== undefined ? restoredFrom : old);
+    /* How it's built: every style whose numbers of the business's own
+       changed is drawn at every size (server/office/built-check.js). What
+       those numbers cause refuses the save; putting back an old copy is
+       never refused (what it finds is said instead). */
+    const sizeCheck = sizeCheckOf(old, next, cat, { refuse: !restoring });
     const changes = describeChanges(old, next, manufacturer);
     if (lifted.moved.length) changes.push(...lifted.moved);
     if (restoring) changes.unshift(`Put back the price list saved ${restoring}`);
-    if (!changes.length) return { ...previous.data, cfg: old.cfg, changes: [] };
+    if (!changes.length) return { ...previous.data, cfg: old.cfg, changes: [], sizeCheck };
     const record = { settings: next, version: previous.data.version + 1, cfg: next.cfg, savedAt: iso(), savedBy: { id: by.userId, name: by.name || by.email } };
     if (!(await store.replace("price-list", previous, record))) fail(409, SAVED_FIRST);
     await keepHistory({ version: record.version, savedAt: record.savedAt, savedBy: record.savedBy, changes, settings: next });
-    return { ...record, changes };
+    return { ...record, changes, sizeCheck };
+  }
+
+  /* -> {checked, warnings, unchecked, problems} for the screen; refuses
+     (422) when the business's own numbers cause a problem at some size. */
+  function sizeCheckOf(old, next, cat, { refuse }) {
+    const r = checkChangedStyles(liftRawRules(old, manufacturer).settings, next, manufacturer, library, { cat, budgetMs: sizeCheckMs });
+    if (refuse && r.problems.length) {
+      const words = r.problems;
+      const err = new OfficeError(422, words.slice(0, 8).join(" ") + (words.length > 8 ? ` (and ${words.length - 8} more)` : ""));
+      err.problems = words;
+      throw err;
+    }
+    return { checked: r.checked, buildings: r.buildings, problems: refuse ? [] : r.problems, warnings: r.warnings, unchecked: r.unchecked };
   }
 
   async function history() {

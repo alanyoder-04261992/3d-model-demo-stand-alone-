@@ -721,6 +721,21 @@ export function describeChanges(before, after, manufacturer) {
       out.push(`${name} ${KNOB[id].words}: ${words(b, ea, id)} → ${words(a, eb, id)}`);
     }
   }
+  /* a new wall height changes what a wall upgrade priced by the square foot
+     costs on that building (model/pricing.js areasOf): say so once */
+  const walls = keysOf(a.offer).some((k) => {
+    const x = ea[k] && ea[k].built.wallHeight, y = eb[k] && eb[k].built.wallHeight;
+    return isObj(b.offer) && own(b.offer, k) && !same(x && x.value, y && y.value);
+  });
+  if (walls) {
+    const rates = (isObj(a.options) && isObj(a.options.rates)) ? keysOf(a.options.rates) : [];
+    const mr = (M.options && M.options.rates) || {};
+    const byWall = rates.filter((id) => mr[id] && mr[id].basis === "wall").map((id) => (isObj(a.options.rates[id]) && typeof a.options.rates[id].name === "string" && a.options.rates[id].name.trim()) || mr[id].name || "");
+    const extras = isObj(a.options) && Array.isArray(a.options.extras) ? a.options.extras : [];
+    for (const x of extras) if (isObj(x) && x.input === "sqftW" && typeof x.name === "string" && x.name.trim()) byWall.push(x.name.trim());
+    const names = [...new Set(byWall.filter(Boolean))];
+    if (names.length) out.push(`Wall upgrades priced by the square foot follow the new wall height: ${joinWords(names)}`);
+  }
   return out;
 }
 

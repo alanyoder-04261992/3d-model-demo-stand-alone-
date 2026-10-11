@@ -652,7 +652,10 @@ await want(200, "POST", "/api/office/price-list/restore", { version: latestBefor
 
 /* problems in the owner's words */
 cur = await want(200, "GET", "/api/office/price-list");
-const PATHS = /(?:^|[\s("])(?:offer|items|options|brand|palettes|defaults|leads|embed|pricing|notes|categories|construction|look|features|renames|license|status|cfg|settings)(?:\.|\[)/;
+/* a settings path ("offer.LB.built.roofPitch: ...") never reaches the owner;
+   "built." followed by a letter is a How it's built path, not the end of a
+   sentence ("... how the building is built.") */
+const PATHS = /(?:^|[\s("])(?:offer|items|options|brand|palettes|defaults|leads|embed|pricing|notes|categories|construction|look|features|renames|license|status|cfg|settings)(?:\.|\[)|(?:^|[\s("])built\.[A-Za-z]/;
 const BROKEN = [
   ["a size priced at $0", (s) => { s.offer.LB.sizes["10x16"] = 0; }, /10×16 needs a price above \$0/],
   ["a size written wrong", (s) => { s.offer.LB.sizes["10x"] = 5000; }, /is not a size/],
@@ -801,6 +804,87 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   cur = await want(200, "GET", "/api/office/price-list");
   s = clone(cur.settings); delete s.offer.UT.built;
   await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "putting the standard pitch back" });
+}
+
+/* THE EVERY-SIZE CHECK ON SAVE (server/office/built-check.js): numbers of
+   the business's own are drawn at every size before the save is written.
+   What they cause refuses the save in words; what the standard building
+   has too never does; a price change draws nothing; a short time budget
+   lists what is left and still saves. */
+{
+  let cur = await want(200, "GET", "/api/office/price-list");
+  const utName = cur.settings.offer.UT.name || manufacturer.styles.UT.name;
+  let s = clone(cur.settings); s.offer.UT.built = { wallHeight: 60 };
+  const low = await call("PUT", "/api/office/price-list", { settings: s, version: cur.version });
+  ok("a 5 ft Utility Shed wall under its 76 1/2 in shop door is refused (422)", low.status === 422, `${low.status} ${low.text.slice(0, 200)}`);
+  ok("... with the door words, at the size the designer opens on and the others",
+    new RegExp(`${utName} \\d+x\\d+: the 72″ Wooden Double Doors on the front should be 76 1/2 in tall, but the wall leaves room for 55 5/8 in\\. The same at .+ more\\.`).test(low.data.error || ""), low.data.error);
+  ok("... and the roof edge too low to walk under", /the roof edge over the left side is only 4 ft 9 5\/8 in above the floor \(6 ft at least\)/.test(low.data.error || ""), low.data.error);
+  ok("... every line in the owner's words, never a settings path", Array.isArray(low.data.problems) && low.data.problems.length >= 2 && low.data.problems.every((p) => !PATHS.test(p) && !/[{}]/.test(p)), JSON.stringify(low.data.problems));
+  ok("... a gable window the standard Utility Shed has the same trouble with is not the owner's", !(low.data.problems || []).some((p) => /Gable Window/.test(p)), JSON.stringify(low.data.problems));
+  ok("... and nothing was saved", (await want(200, "GET", "/api/office/price-list")).version === cur.version);
+
+  /* a 7 ft Lofted Barn wall builds at every size: saved, checked */
+  s = clone(cur.settings); s.offer.LB.built = { wallHeight: 84 };
+  let out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "a 7 ft Lofted Barn wall" });
+  const lbSizes = Object.keys(cur.settings.offer.LB.sizes).length;
+  ok(`... is drawn at all ${lbSizes} of its sizes before it saves`, out.sizeCheck?.checked?.includes(cur.settings.offer.LB.name || manufacturer.styles.LB.name) && out.sizeCheck.buildings >= lbSizes && !out.sizeCheck.unchecked.length, JSON.stringify(out.sizeCheck));
+  ok("... History says the wall height and that the wall upgrades follow it",
+    out.changes.some((c) => /wall height: .+ → 7 ft$/.test(c)) && out.changes.some((c) => /^Wall upgrades priced by the square foot follow the new wall height: .*Moisture barrier — walls/.test(c)), JSON.stringify(out.changes));
+
+  /* a price change draws nothing */
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.LB.sizes["10x16"] += 5;
+  const t0 = performance.now();
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "a price change on a price list with its own Lofted Barn wall" });
+  const priceMs = performance.now() - t0;
+  ok(`... draws no building (the save took ${Math.round(priceMs)} ms)`, out.sizeCheck && out.sizeCheck.buildings === 0 && !out.sizeCheck.checked.length && priceMs < 250, JSON.stringify(out.sizeCheck));
+  {
+    const { checkChangedStyles } = await import("../server/office/built-check.js");
+    const a = clone(cur.settings), b = clone(cur.settings); b.offer.UT.sizes["8x12"] += 10;
+    const catB = resolve(b, manufacturer, library);
+    const t1 = performance.now();
+    const r0 = checkChangedStyles(a, b, manufacturer, library, { cat: catB });
+    const ms = performance.now() - t1;
+    ok(`... the check itself takes under 50 ms when only prices change (${ms.toFixed(1)} ms)`, ms < 50 && r0.buildings === 0, String(ms));
+  }
+
+  /* a size added to a style with numbers of its own: just that size */
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.LB.sizes["12x36"] = 9999;
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "a new size of a Lofted Barn with its own wall" });
+  ok("... only the new size is drawn", out.sizeCheck.buildings === 1, JSON.stringify(out.sizeCheck));
+
+  /* a 1 ms budget: the rest is listed, the save still goes through */
+  const hurried = makeOffice({ sizeCheckMs: 1 });
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.offer.UT.built = { wallHeight: 60 };
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { app: hurried, label: "the same 5 ft wall when there is no time to check" });
+  const utSizes = Object.keys(cur.settings.offer.UT.sizes).length;
+  ok(`... is saved and says what was not checked ("Not checked yet: ${utSizes} sizes of the ${utName}. Press Check every size.")`,
+    out.sizeCheck?.unchecked?.includes(`Not checked yet: ${utSizes} sizes of the ${utName}. Press Check every size.`), JSON.stringify(out.sizeCheck));
+
+  /* putting back a copy whose numbers no longer fit is never refused */
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); delete s.offer.UT.built; delete s.offer.LB.built; delete s.offer.LB.sizes["12x36"];
+  await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the standard walls again" });
+  cur = await want(200, "GET", "/api/office/price-list");
+  const back = await want(200, "POST", "/api/office/price-list/restore", { version: out.version, current: cur.version }, { label: "putting back the copy with the 5 ft wall" });
+  ok("... is allowed, and what does not fit is said instead", back.settings.offer.UT.built?.wallHeight === 60 && back.sizeCheck.problems.some((p) => /should be 76 1\/2 in tall/.test(p)), JSON.stringify(back.sizeCheck));
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); delete s.offer.UT.built;
+  await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "the standard Utility Shed wall again" });
+
+  /* an extra that makes roofs steeper is drawn on every style it reaches */
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings);
+  s.options.extras = [...(s.options.extras || []), { key: "steep-roof", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 12 } }];
+  out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "an extra Steep roof at 12/12" });
+  const gableNames = Object.keys(cur.settings.offer).filter((k) => manufacturer.styles[cur.settings.offer[k].base || k]?.roof === "gable").map((k) => cur.settings.offer[k].name || manufacturer.styles[cur.settings.offer[k].base || k].name);
+  ok(`... is checked on the gable styles (${gableNames.length}) and on no barn`, gableNames.every((n) => out.sizeCheck.checked.includes(n)) && !out.sizeCheck.checked.includes(cur.settings.offer.LB.name || manufacturer.styles.LB.name), JSON.stringify(out.sizeCheck.checked));
+  cur = await want(200, "GET", "/api/office/price-list");
+  s = clone(cur.settings); s.options.extras = s.options.extras.filter((x) => x.key !== "steep-roof");
+  await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "taking the Steep roof extra off" });
 }
 sectionDone();
 
@@ -1555,7 +1639,7 @@ sectionDone();
 /* ======================================================================= */
 section("16. Words: every message a person could read is plain words");
 
-const DEV_WORDS = /\b(JSON|json|Office|office|portal|Portal|admin|Admin|catalogue|catalog|config|undefined|null|NaN|tenant|ID|true|false)\b|[{}]|(?:^|[\s("])(?:offer|items|options|brand|palettes|defaults|leads|embed|pricing|notes|categories|construction|settings|cfg)(?:\.|\[)/;
+const DEV_WORDS = /\b(JSON|json|Office|office|portal|Portal|admin|Admin|catalogue|catalog|config|undefined|null|NaN|tenant|ID|true|false)\b|[{}]|(?:^|[\s("])(?:offer|items|options|brand|palettes|defaults|leads|embed|pricing|notes|categories|construction|settings|cfg)(?:\.|\[)|(?:^|[\s("])built\.[A-Za-z]/;
 const CODES = new Set([
   ...Object.keys(manufacturer.styles).filter((k) => k.length >= 2),
   ...Object.keys(manufacturer.items).filter((k) => /\d/.test(k) || ["dfr", "gfci", "ilight", "ppost", "tr", "oct"].includes(k)),

@@ -48,7 +48,8 @@ export function createOffice(deps) {
   const email = createEmail({ send: deps.sendEmail || null, siteUrl: deps.siteUrl || "" });
   const people = createPeople({ store, identityUser: deps.identityUser, ownerEmail: deps.ownerEmail, now });
   const lots = createLots({ store, now });
-  const priceList = createPriceList({ store, manufacturer: deps.manufacturer, library: deps.library, templates: deps.templates || {}, now, log });
+  const priceList = createPriceList({ store, manufacturer: deps.manufacturer, library: deps.library, templates: deps.templates || {}, now, log,
+    ...(deps.sizeCheckMs != null ? { sizeCheckMs: deps.sizeCheckMs } : {}) });
   const customers = createCustomers({ store, now, lots, priceList, log });
   const account = createAccount({ store, license: deps.license || null, lots, now, appVersion: deps.appVersion, log });
   const terms = createTerms({ store, account, now });
