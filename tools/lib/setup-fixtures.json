@@ -78,8 +78,10 @@
       "time",
       "expired",
       "action",
-      "body"
-    ]
+      "body",
+      "signup"
+    ],
+    "signupClaim": "optional, last: see beforeSignIn.claim; a pass with a signup that isn't that shape is refused for the reason signup"
   },
   "passes": {
     "status": {
@@ -724,7 +726,9 @@
       "no-price-list": "The owner hasn't finished First setup yet, so there is no price list to change.",
       "terms": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center.",
       "stopped": "The owner stopped Barnwright's setup access in Settings, Barnwright.",
-      "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright."
+      "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
+      "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
+      "signup-unknown": "Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy."
     },
     "whyTermsNotOut": "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
     "examples": [
@@ -744,7 +748,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -753,6 +757,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -781,7 +786,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -790,6 +795,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -879,7 +885,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -888,6 +894,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -993,7 +1000,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -1002,6 +1009,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -1141,7 +1149,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -1150,6 +1158,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -1262,7 +1271,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -1271,6 +1280,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -1409,7 +1419,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -1418,6 +1428,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -1513,7 +1524,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -1522,6 +1533,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2098,7 +2110,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -2107,6 +2119,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2150,7 +2163,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -2159,6 +2172,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 2,
               "savedAt": "2026-10-11T15:00:04.000Z",
@@ -2198,7 +2212,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -2207,6 +2221,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 2,
               "savedAt": "2026-10-11T15:00:04.000Z",
@@ -2255,7 +2270,7 @@
           "status": 200,
           "body": {
             "ok": true,
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -2264,6 +2279,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 3,
               "savedAt": "2026-10-11T15:00:06.000Z",
@@ -2495,7 +2511,7 @@
             "ok": false,
             "code": "pass-used",
             "error": "This pass was already used. Each request needs a new pass.",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -2504,6 +2520,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2535,7 +2552,7 @@
             "code": "closed",
             "error": "The owner stopped Barnwright's setup access in Settings, Barnwright.",
             "why": "stopped",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "closed",
@@ -2543,6 +2560,7 @@
             "prelive": "stopped",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2574,7 +2592,7 @@
             "code": "closed",
             "error": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
             "why": "live-off",
-            "v": 1,
+            "v": 2,
             "live": true,
             "liveAt": "2026-10-11T14:30:00.000Z",
             "access": "closed",
@@ -2582,6 +2600,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2613,7 +2632,7 @@
             "code": "closed",
             "error": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center.",
             "why": "terms",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "closed",
@@ -2621,6 +2640,7 @@
             "prelive": "on",
             "termsOk": false,
             "termsOut": true,
+            "agreement": null,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2652,7 +2672,7 @@
             "code": "closed",
             "error": "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
             "why": "terms",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "closed",
@@ -2660,6 +2680,7 @@
             "prelive": "on",
             "termsOk": false,
             "termsOut": false,
+            "agreement": null,
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2674,7 +2695,7 @@
       },
       {
         "name": "refused: no price list yet",
-        "given": "The owner hasn't done First setup.",
+        "given": "The owner has signed in but hasn't finished First setup (or no owner has signed in and the pass carries no sign-up agreement: see beforeSignIn).",
         "request": {
           "method": "POST",
           "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
@@ -2691,14 +2712,15 @@
             "code": "closed",
             "error": "The owner hasn't finished First setup yet, so there is no price list to change.",
             "why": "no-price-list",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "closed",
             "until": null,
             "prelive": "on",
-            "termsOk": true,
+            "termsOk": false,
             "termsOut": true,
+            "agreement": null,
             "priceList": null,
             "lastBarnwrightSave": null,
             "canUndo": false,
@@ -2724,7 +2746,7 @@
             "ok": false,
             "code": "needs-alan",
             "error": "Their 3D designer is open, so this change has to be made from your Control Room's Make the change page.",
-            "v": 1,
+            "v": 2,
             "live": true,
             "liveAt": "2026-10-10T15:00:00.000Z",
             "access": "switch",
@@ -2733,6 +2755,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2784,7 +2807,7 @@
             "ok": false,
             "code": "version",
             "error": "The price list was saved since you read it. Read it again, then check the change again.",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -2793,6 +2816,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 3,
               "savedAt": "2026-10-11T15:00:06.000Z",
@@ -2827,7 +2851,7 @@
             "ok": false,
             "code": "changed",
             "error": "The result isn't the one you checked. Check the change again.",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -2836,6 +2860,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2866,7 +2891,7 @@
             "ok": false,
             "code": "cant-undo",
             "error": "The owner saved the price list after your change, so undo would take theirs away too. The owner can put back an earlier price list in Price list, History.",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -2875,6 +2900,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 4,
               "savedAt": "2026-10-11T15:01:00.000Z",
@@ -2909,7 +2935,7 @@
             "ok": false,
             "code": "cant-undo",
             "error": "Barnwright hasn't changed this price list, so there is nothing to undo.",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -2918,6 +2944,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2952,7 +2979,7 @@
               "Edit 1: there is no building style XX in their price list.",
               "Edit 2: there is no edit called set_status."
             ],
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -2961,6 +2988,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -2994,7 +3022,7 @@
             "problems": [
               "Edit 1: While their 3D designer is open, the business phone, email and website can be changed only by the owner, or by Alan by hand in Open their price list."
             ],
-            "v": 1,
+            "v": 2,
             "live": true,
             "liveAt": "2026-10-10T15:00:00.000Z",
             "access": "switch",
@@ -3003,6 +3031,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -3033,7 +3062,7 @@
             "ok": false,
             "code": "account-off",
             "error": "Their Dealer Center can't save changes right now: its Barnwright account is off or hasn't checked in for 7 days. Reading still works.",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -3042,6 +3071,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -3072,7 +3102,7 @@
             "ok": false,
             "code": "too-many",
             "error": "Too many Barnwright requests for this Dealer Center this hour. Try again later.",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -3081,6 +3111,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -3111,7 +3142,7 @@
             "ok": false,
             "code": "too-many",
             "error": "Barnwright has saved 60 changes here today. Try again tomorrow.",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -3120,6 +3151,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -3150,7 +3182,7 @@
             "ok": false,
             "code": "no-copy",
             "error": "Couldn't keep a copy of the current price list first, so nothing was changed. Try again.",
-            "v": 1,
+            "v": 2,
             "live": false,
             "liveAt": null,
             "access": "prelive",
@@ -3159,6 +3191,7 @@
             "prelive": "on",
             "termsOk": true,
             "termsOut": true,
+            "agreement": "owner",
             "priceList": {
               "version": 1,
               "savedAt": "2026-10-11T14:00:00.000Z",
@@ -3814,7 +3847,7 @@
             "Authorization": "Bearer <the activation key>",
             "Content-Type": "application/json"
           },
-          "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"appVersion\":\"dealer-center test\",\"dealerCount\":1,\"setup\":{\"v\":1,\"live\":false,\"liveAt\":null,\"access\":\"prelive\",\"why\":null,\"until\":null,\"prelive\":\"on\",\"termsOk\":true,\"termsOut\":true},\"siteUrl\":\"https://testing.barnwrightsoftware.com\"}"
+          "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"appVersion\":\"dealer-center test\",\"dealerCount\":1,\"setup\":{\"v\":2,\"live\":false,\"liveAt\":null,\"access\":\"prelive\",\"why\":null,\"until\":null,\"prelive\":\"on\",\"termsOk\":true,\"termsOut\":true,\"agreement\":\"owner\"},\"siteUrl\":\"https://testing.barnwrightsoftware.com\"}"
         }
       },
       {
@@ -3827,7 +3860,7 @@
             "Authorization": "Bearer <the activation key>",
             "Content-Type": "application/json"
           },
-          "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"appVersion\":\"dealer-center test\",\"dealerCount\":1,\"setup\":{\"v\":1,\"live\":true,\"liveAt\":\"2026-10-10T15:00:00.000Z\",\"access\":\"switch\",\"why\":null,\"until\":\"2026-10-11T19:00:00.000Z\",\"prelive\":\"on\",\"termsOk\":true,\"termsOut\":true},\"siteUrl\":\"https://testing.barnwrightsoftware.com\"}"
+          "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"appVersion\":\"dealer-center test\",\"dealerCount\":1,\"setup\":{\"v\":2,\"live\":true,\"liveAt\":\"2026-10-10T15:00:00.000Z\",\"access\":\"switch\",\"why\":null,\"until\":\"2026-10-11T19:00:00.000Z\",\"prelive\":\"on\",\"termsOk\":true,\"termsOut\":true,\"agreement\":\"owner\"},\"siteUrl\":\"https://testing.barnwrightsoftware.com\"}"
         }
       },
       {
@@ -5838,7 +5871,2576 @@
           ]
         }
       }
-    ]
+    ],
+    "effects": {
+      "about": "An extra of the business's own can carry a construction effect (options.extras[].construction; model/company.js optionEffects). Barnwright never adds one, changes one or removes an extra that has one; the only building-shape change it can make is set_roof_pitch. Door samples are checked like edits.samples, on effectBase; visit samples are the visit's PUT price-list with effectBase whose options.extras is replaced by `extras` (and a put back that would do the same is refused alike).",
+      "extra": {
+        "key": "heavy-floor",
+        "name": "Heavy-duty floor",
+        "input": "check",
+        "price": 350,
+        "construction": {
+          "floor.spacingIn": 12
+        }
+      },
+      "effectBase": {
+        "id": "testing-sheds",
+        "status": "suspended",
+        "manufacturer": "standard",
+        "brand": {
+          "name": "Testing Sheds",
+          "short": "Testing Sheds",
+          "initials": "TS",
+          "tagline": "Portable storage buildings",
+          "phone": "941-555-0100",
+          "email": "office@testingsheds.example",
+          "website": "https://testingsheds.example",
+          "colors": {
+            "header": "#16130E",
+            "primary": "#2E2920",
+            "accent": "#C9A227"
+          },
+          "logo": "",
+          "credit": {
+            "text": "3D designer by Barnwright",
+            "url": "",
+            "show": true
+          }
+        },
+        "offer": {
+          "UT": {
+            "sizes": {
+              "8x12": 3490,
+              "10x12": 4290,
+              "10x16": 5190,
+              "12x16": 6190,
+              "12x20": 7290,
+              "12x24": 8390
+            }
+          },
+          "LB": {
+            "sizes": {
+              "8x12": 3890,
+              "10x16": 5690,
+              "10x20": 6890,
+              "12x20": 8290,
+              "12x24": 9590,
+              "14x32": 14490
+            },
+            "name": "Loft Barn"
+          },
+          "G": {
+            "sizes": {
+              "12x20": 8190,
+              "12x24": 9690,
+              "14x28": 13990
+            }
+          }
+        },
+        "categories": [
+          [
+            "Sheds",
+            [
+              "UT",
+              "LB"
+            ]
+          ],
+          [
+            "Garages",
+            [
+              "G"
+            ]
+          ]
+        ],
+        "items": {
+          "w48": 160,
+          "w72": 310,
+          "w36": 135,
+          "d36in": 510,
+          "d36lite": 560,
+          "ru6": 640,
+          "ru8": 690,
+          "w23": 210,
+          "w33": 260,
+          "tr": 160,
+          "fake": 0,
+          "g1824": 210,
+          "bench": 21,
+          "shelf": 13,
+          "outlet": 80,
+          "gfci": 0,
+          "ilight": 105,
+          "light": 95,
+          "ppost": 0
+        },
+        "options": {
+          "ramps": {
+            "r4": 260,
+            "r6": 310
+          },
+          "elec": {
+            "1": 720,
+            "2": 820
+          },
+          "misc": {
+            "shutter": 80,
+            "lite": 45,
+            "ext": 100
+          },
+          "rates": {
+            "dbl": 2.1,
+            "jo12": 0.8
+          },
+          "extras": [
+            {
+              "key": "ridge-vent",
+              "name": "Ridge vent",
+              "input": "check",
+              "price": 120
+            },
+            {
+              "key": "anchors",
+              "name": "Extra ground anchors",
+              "input": "qty",
+              "price": 45
+            },
+            {
+              "key": "heavy-floor",
+              "name": "Heavy-duty floor",
+              "input": "check",
+              "price": 350,
+              "construction": {
+                "floor.spacingIn": 12
+              }
+            }
+          ]
+        },
+        "palettes": {
+          "paint": [
+            [
+              "Cream",
+              "#EFE7D2"
+            ],
+            [
+              "Sage",
+              "#9CAF88"
+            ],
+            [
+              "Harbor Gray",
+              "#6B7B8C"
+            ],
+            [
+              "Cedar",
+              "#8B5A3C"
+            ],
+            "Barn Red",
+            "White",
+            "Charcoal"
+          ],
+          "trim": [
+            "White",
+            "Black",
+            [
+              "Forest",
+              "#2F4A3B"
+            ],
+            [
+              "Cedar",
+              "#8B5A3C"
+            ]
+          ],
+          "metal": [
+            "Galvalume",
+            "Black",
+            "Charcoal",
+            "Barn Red",
+            [
+              "Evergreen",
+              "#2E4A3A"
+            ],
+            "Burnished Slate"
+          ]
+        },
+        "defaults": {
+          "style": "LB",
+          "size": "10x20",
+          "colors": {
+            "body": "Cream",
+            "trim": "Forest",
+            "roof": "Evergreen"
+          }
+        },
+        "construction": {},
+        "pricing": {
+          "show": "price",
+          "roundTo": 5,
+          "minCharge": 5,
+          "roofAreaFactor": 1.15,
+          "rto": {
+            "factors": {
+              "36": 0.6,
+              "48": 0.53,
+              "60": 0.45
+            },
+            "showTerm": 60
+          }
+        },
+        "notes": {
+          "finePrint": "Prices plus tax. Delivery and setup included within our area.",
+          "sizeNotes": {
+            "14": "14 ft wide buildings need a permit for the road; we arrange it."
+          }
+        },
+        "leads": {
+          "mode": "none",
+          "fields": {
+            "name": "required",
+            "phone": "required",
+            "email": "optional",
+            "zip": "required",
+            "address": "optional",
+            "note": "optional"
+          },
+          "smsConsent": "Yes, you may text me about this quote. Message and data rates may apply. Reply STOP to stop.",
+          "images": false
+        },
+        "embed": {
+          "origins": []
+        },
+        "look": {
+          "trueColour": true,
+          "scene": "studio"
+        },
+        "features": {
+          "framingView": true,
+          "buildPlayback": true,
+          "floorPlan": true
+        },
+        "renames": {
+          "items": {},
+          "sizes": {},
+          "colors": {}
+        },
+        "cfg": 1
+      },
+      "door": [
+        {
+          "name": "set_extra on an extra that changes how the building is built: name and price change, its effect stays exactly",
+          "mode": "prelive",
+          "edits": [
+            {
+              "do": "set_extra",
+              "key": "heavy-floor",
+              "name": "Heavy-duty floor (12 in. joists)",
+              "charged": "check",
+              "price": 395
+            }
+          ],
+          "expect": {
+            "ok": true,
+            "changes": [
+              "The extra \"Heavy-duty floor\" is now called \"Heavy-duty floor (12 in. joists)\"",
+              "Heavy-duty floor (12 in. joists): $350 → $395"
+            ],
+            "warnings": [],
+            "contactDetailsChange": false,
+            "newCodes": {},
+            "paths": {
+              "options.extras": [
+                {
+                  "key": "ridge-vent",
+                  "name": "Ridge vent",
+                  "input": "check",
+                  "price": 120
+                },
+                {
+                  "key": "anchors",
+                  "name": "Extra ground anchors",
+                  "input": "qty",
+                  "price": 45
+                },
+                {
+                  "key": "heavy-floor",
+                  "name": "Heavy-duty floor (12 in. joists)",
+                  "input": "check",
+                  "price": 395,
+                  "construction": {
+                    "floor.spacingIn": 12
+                  }
+                }
+              ]
+            },
+            "settingsSha256": "917ef5ea9a219c3862029c54409a991a3f29f098123c1e36ee77d122e6f6411e"
+          }
+        },
+        {
+          "name": "remove_extra: an extra that changes how the building is built (the lock)",
+          "mode": "prelive",
+          "edits": [
+            {
+              "do": "remove_extra",
+              "key": "heavy-floor"
+            }
+          ],
+          "expect": {
+            "ok": false,
+            "code": "problems",
+            "problems": [
+              "The extra \"Heavy-duty floor\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
+            ]
+          }
+        },
+        {
+          "name": "set_extra can't carry a construction effect (not part of the edit)",
+          "mode": "prelive",
+          "edits": [
+            {
+              "do": "set_extra",
+              "name": "Taller walls",
+              "charged": "check",
+              "price": 600,
+              "construction": {
+                "walls.heightIn": 96
+              }
+            }
+          ],
+          "expect": {
+            "ok": false,
+            "code": "problems",
+            "problems": [
+              "Edit 1: construction isn't part of set_extra."
+            ]
+          }
+        }
+      ],
+      "visit": [
+        {
+          "name": "a new extra that changes how the building is built",
+          "extras": [
+            {
+              "key": "ridge-vent",
+              "name": "Ridge vent",
+              "input": "check",
+              "price": 120
+            },
+            {
+              "key": "anchors",
+              "name": "Extra ground anchors",
+              "input": "qty",
+              "price": 45
+            },
+            {
+              "key": "heavy-floor",
+              "name": "Heavy-duty floor",
+              "input": "check",
+              "price": 350,
+              "construction": {
+                "floor.spacingIn": 12
+              }
+            },
+            {
+              "key": "taller-walls",
+              "name": "Taller walls",
+              "input": "check",
+              "price": 600,
+              "construction": {
+                "walls.heightIn": 96
+              }
+            }
+          ],
+          "expect": {
+            "status": 422,
+            "problems": [
+              "The extra \"Taller walls\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
+            ]
+          }
+        },
+        {
+          "name": "an extra's effect changed",
+          "extras": [
+            {
+              "key": "ridge-vent",
+              "name": "Ridge vent",
+              "input": "check",
+              "price": 120
+            },
+            {
+              "key": "anchors",
+              "name": "Extra ground anchors",
+              "input": "qty",
+              "price": 45
+            },
+            {
+              "key": "heavy-floor",
+              "name": "Heavy-duty floor",
+              "input": "check",
+              "price": 350,
+              "construction": {
+                "floor.spacingIn": 16
+              }
+            }
+          ],
+          "expect": {
+            "status": 422,
+            "problems": [
+              "The extra \"Heavy-duty floor\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
+            ]
+          }
+        },
+        {
+          "name": "an extra's effect taken off (the extra stays)",
+          "extras": [
+            {
+              "key": "ridge-vent",
+              "name": "Ridge vent",
+              "input": "check",
+              "price": 120
+            },
+            {
+              "key": "anchors",
+              "name": "Extra ground anchors",
+              "input": "qty",
+              "price": 45
+            },
+            {
+              "key": "heavy-floor",
+              "name": "Heavy-duty floor",
+              "input": "check",
+              "price": 350
+            }
+          ],
+          "expect": {
+            "status": 422,
+            "problems": [
+              "The extra \"Heavy-duty floor\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
+            ]
+          }
+        },
+        {
+          "name": "an extra that has an effect removed",
+          "extras": [
+            {
+              "key": "ridge-vent",
+              "name": "Ridge vent",
+              "input": "check",
+              "price": 120
+            },
+            {
+              "key": "anchors",
+              "name": "Extra ground anchors",
+              "input": "qty",
+              "price": 45
+            }
+          ],
+          "expect": {
+            "status": 422,
+            "problems": [
+              "The extra \"Heavy-duty floor\" changes how the building is built, so only the owner can add it, remove it or change what it builds."
+            ]
+          }
+        },
+        {
+          "name": "its name, how it is charged and its price changed, the effect the same",
+          "extras": [
+            {
+              "key": "ridge-vent",
+              "name": "Ridge vent",
+              "input": "check",
+              "price": 120
+            },
+            {
+              "key": "anchors",
+              "name": "Extra ground anchors",
+              "input": "qty",
+              "price": 45
+            },
+            {
+              "key": "heavy-floor",
+              "name": "Strong floor",
+              "input": "sqftF",
+              "price": 2,
+              "construction": {
+                "floor.spacingIn": 12
+              }
+            }
+          ],
+          "expect": {
+            "status": 200
+          }
+        }
+      ]
+    }
+  },
+  "beforeSignIn": {
+    "about": [
+      "Before the owner first signs in (docs/OFFICE.md). The Control Room puts the owner's sign-up agreement and details on every setup pass for that customer, in the claim signup. The Dealer Center takes the agreement for setup access only while no owner has signed in, when it is to terms 2.2 or later that it ships or has a copy of.",
+      "The starting price list is the Every standard building template (companies/demo/company.json) set up as First setup sets up a business, from the sign-up's business name, phone and email. Read and check work on it as version 0; the first save with version 0 makes it (version 1) and then saves the edits (version 2)."
+    ],
+    "signup": {
+      "termsVersion": "2.2",
+      "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+      "signature": "Pat Owner",
+      "signedAt": "2026-10-09T15:00:00.000Z",
+      "business": "Testing Sheds",
+      "phone": "941-555-0100",
+      "email": "pat@testingsheds.example"
+    },
+    "ownerEmail": "pat@testingsheds.example",
+    "claim": {
+      "name": "signup",
+      "keys": [
+        "termsVersion",
+        "termsSha256",
+        "signature",
+        "signedAt",
+        "business",
+        "phone",
+        "email"
+      ],
+      "limits": {
+        "signature": 200,
+        "business": 80,
+        "phone": 40,
+        "email": 200,
+        "signedAt": 50
+      },
+      "versionPattern": "^\\d{1,4}(\\.\\d{1,4}){0,3}$",
+      "shaPattern": "^[0-9a-f]{64}$",
+      "signedAtNotAfterIssuedAtMs": 60000,
+      "refusedReason": "signup"
+    },
+    "counts": [
+      {
+        "name": "the version this Dealer Center ships (no copy needed)",
+        "dealerCenter": {
+          "ownerSignedIn": false,
+          "ships": "2.2",
+          "ownCopies": {}
+        },
+        "signup": {
+          "termsVersion": "2.2",
+          "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c"
+        },
+        "counts": true,
+        "why": null
+      },
+      {
+        "name": "an older 2.2 or later version, one of its own copies",
+        "dealerCenter": {
+          "ownerSignedIn": false,
+          "ships": "2.3",
+          "ownCopies": {
+            "2.2": [
+              "a75ae205cfa4fc8f4f29af5cb24f3d751b7cd941ed8f04a5e06e50e8cb09202a",
+              "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c"
+            ]
+          }
+        },
+        "signup": {
+          "termsVersion": "2.2",
+          "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c"
+        },
+        "counts": true,
+        "why": null
+      },
+      {
+        "name": "2.2, but other bytes than its own copies",
+        "dealerCenter": {
+          "ownerSignedIn": false,
+          "ships": "2.3",
+          "ownCopies": {
+            "2.2": [
+              "a75ae205cfa4fc8f4f29af5cb24f3d751b7cd941ed8f04a5e06e50e8cb09202a"
+            ]
+          }
+        },
+        "signup": {
+          "termsVersion": "2.2",
+          "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c"
+        },
+        "counts": false,
+        "why": "signup-unknown"
+      },
+      {
+        "name": "newer than the version it ships",
+        "dealerCenter": {
+          "ownerSignedIn": false,
+          "ships": "2.2",
+          "ownCopies": {}
+        },
+        "signup": {
+          "termsVersion": "2.3",
+          "termsSha256": "65709078a03ce06598a59df07bd8180338c3ed3f63756fbc1d069869d4ca78e2"
+        },
+        "counts": false,
+        "why": "signup-unknown"
+      },
+      {
+        "name": "signed up before 2.2",
+        "dealerCenter": {
+          "ownerSignedIn": false,
+          "ships": "2.2",
+          "ownCopies": {}
+        },
+        "signup": {
+          "termsVersion": "2.1",
+          "termsSha256": "8ea3e1221141b79cc5568b3119acd9c60fd1fc6839444d2fdecc0e12bc0047b6"
+        },
+        "counts": false,
+        "why": "signup-terms"
+      },
+      {
+        "name": "this Dealer Center's own terms are older than 2.2",
+        "dealerCenter": {
+          "ownerSignedIn": false,
+          "ships": "2.1",
+          "ownCopies": {}
+        },
+        "signup": {
+          "termsVersion": "2.2",
+          "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c"
+        },
+        "counts": false,
+        "why": "terms"
+      },
+      {
+        "name": "an owner has signed in (only their own agreement counts now)",
+        "dealerCenter": {
+          "ownerSignedIn": true,
+          "ships": "2.2",
+          "ownCopies": {}
+        },
+        "signup": {
+          "termsVersion": "2.2",
+          "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c"
+        },
+        "counts": false,
+        "why": null
+      }
+    ],
+    "startingPriceList": {
+      "template": "companies/demo/company.json",
+      "from": {
+        "business": "Testing Sheds",
+        "phone": "941-555-0100",
+        "email": "pat@testingsheds.example"
+      },
+      "id": "testing-sheds",
+      "status": "suspended",
+      "brand": {
+        "name": "Testing Sheds",
+        "short": "Testing Sheds",
+        "initials": "TS",
+        "phone": "941-555-0100",
+        "email": "pat@testingsheds.example",
+        "website": ""
+      },
+      "styles": 23,
+      "settingsSha256": "17c8be24b04d661b52c838edc0c6d06778d3b719d8a7cb8bfead4ee7e0ea1b23",
+      "historyLine": "Started the price list from Every standard building, at example prices",
+      "cleaned": [
+        {
+          "name": "an email in capitals, with spaces",
+          "signup": {
+            "phone": "941-555-0100",
+            "email": "  Pat@TestingSheds.Example "
+          },
+          "brand": {
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        {
+          "name": "a phone First setup would refuse is left empty",
+          "signup": {
+            "phone": "call the shop",
+            "email": "pat@testingsheds.example"
+          },
+          "brand": {
+            "phone": "",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        {
+          "name": "an email First setup would refuse is left empty",
+          "signup": {
+            "phone": "941-555-0100",
+            "email": "pat at testingsheds"
+          },
+          "brand": {
+            "phone": "941-555-0100",
+            "email": ""
+          }
+        }
+      ]
+    },
+    "record": {
+      "key": "barnwright-signup-agreement",
+      "example": {
+        "termsVersion": "2.2",
+        "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+        "signature": "Pat Owner",
+        "signedAt": "2026-10-09T15:00:00.000Z",
+        "at": "2026-10-11T15:00:00.000Z",
+        "passId": "h7ZxxlF_vb6GK01RA1yxcg"
+      }
+    },
+    "passes": {
+      "status": {
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "h7ZxxlF_vb6GK01RA1yxcg",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiaDdaeHhsRl92YjZHSzAxUkExeXhjZyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiaDdaeHhsRl92YjZHSzAxUkExeXhjZyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0.RSKtqmd8P-L6tfTKbgwU_bGwOHYe-xkc9gwHqWpxyCfsnIQAX7bSyD3wHTjXD3W7HGyEGlCGSkTbGsNdXaIwPA",
+        "body": "{\"action\":\"status\"}",
+        "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5"
+      },
+      "read": {
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "xxnqjIyZ4U2n2c2pLRN31Q",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "read",
+          "bodySha256": "789c6258a5613e9a9a93fbdd10823e033de6447d96d10ac747734c24cf753cbb",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoieHhucWpJeVo0VTJuMmMycExSTjMxUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJyZWFkIiwiYm9keVNoYTI1NiI6Ijc4OWM2MjU4YTU2MTNlOWE5YTkzZmJkZDEwODIzZTAzM2RlNjQ0N2Q5NmQxMGFjNzQ3NzM0YzI0Y2Y3NTNjYmIiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoieHhucWpJeVo0VTJuMmMycExSTjMxUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJyZWFkIiwiYm9keVNoYTI1NiI6Ijc4OWM2MjU4YTU2MTNlOWE5YTkzZmJkZDEwODIzZTAzM2RlNjQ0N2Q5NmQxMGFjNzQ3NzM0YzI0Y2Y3NTNjYmIiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.1Edlkly76I4XtpUoL9WZBXCl1sf6-jGhVneoMI3Vh7cWPn5vjH6pMMNIrxCZd1_My9kK7mETMUTZijmoG8XnMQ",
+        "body": "{\"action\":\"read\",\"part\":\"summary\"}",
+        "bodySha256": "789c6258a5613e9a9a93fbdd10823e033de6447d96d10ac747734c24cf753cbb"
+      },
+      "check": {
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "755CENPuCgqdpm6hawFd3w",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "check",
+          "bodySha256": "7c733f7c8aae59a465fd080223161ee4519146140045efb23448323140979a6c",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiNzU1Q0VOUHVDZ3FkcG02aGF3RmQzdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJjaGVjayIsImJvZHlTaGEyNTYiOiI3YzczM2Y3YzhhYWU1OWE0NjVmZDA4MDIyMzE2MWVlNDUxOTE0NjE0MDA0NWVmYjIzNDQ4MzIzMTQwOTc5YTZjIiwiaXNzdWVkQXQiOjE3OTE3MzA4MDAwMDAsImV4cGlyZXNBdCI6MTc5MTczMDkyMDAwMCwic2lnbnVwIjp7InRlcm1zVmVyc2lvbiI6IjIuMiIsInRlcm1zU2hhMjU2IjoiZDQwMTE3NTc4OTMxMTRhMjk5MmFlYzViZTQwNDY1YmY2ZTA4NTdkMDE2NDQwNTFjZmZmMDgyMWY1MjMzZmE2YyIsInNpZ25hdHVyZSI6IlBhdCBPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiNzU1Q0VOUHVDZ3FkcG02aGF3RmQzdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJjaGVjayIsImJvZHlTaGEyNTYiOiI3YzczM2Y3YzhhYWU1OWE0NjVmZDA4MDIyMzE2MWVlNDUxOTE0NjE0MDA0NWVmYjIzNDQ4MzIzMTQwOTc5YTZjIiwiaXNzdWVkQXQiOjE3OTE3MzA4MDAwMDAsImV4cGlyZXNBdCI6MTc5MTczMDkyMDAwMCwic2lnbnVwIjp7InRlcm1zVmVyc2lvbiI6IjIuMiIsInRlcm1zU2hhMjU2IjoiZDQwMTE3NTc4OTMxMTRhMjk5MmFlYzViZTQwNDY1YmY2ZTA4NTdkMDE2NDQwNTFjZmZmMDgyMWY1MjMzZmE2YyIsInNpZ25hdHVyZSI6IlBhdCBPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.cBzikmAJA2g928-7WSUx36dQqBlcZI00suhPoVYYBfj1BNet9OFzgSbXDr2kOIPoxfYjvMzGpeD6FKR3M7kEoA",
+        "body": "{\"action\":\"check\",\"version\":0,\"edits\":[{\"do\":\"set_price\",\"style\":\"LB\",\"size\":\"10x16\",\"price\":5700},{\"do\":\"stop_selling_style\",\"style\":\"DK\"}]}",
+        "bodySha256": "7c733f7c8aae59a465fd080223161ee4519146140045efb23448323140979a6c"
+      },
+      "save": {
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "ZcMmLoEQbMDvo8L-XcZhfA",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "save",
+          "bodySha256": "7dea6f9612de92ab7c4189d4f91765fb9b967b9e7ae70bfa4a8deaa569bef62e",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiWmNNbUxvRVFiTUR2bzhMLVhjWmhmQSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzYXZlIiwiYm9keVNoYTI1NiI6IjdkZWE2Zjk2MTJkZTkyYWI3YzQxODlkNGY5MTc2NWZiOWI5NjdiOWU3YWU3MGJmYTRhOGRlYWE1NjliZWY2MmUiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiWmNNbUxvRVFiTUR2bzhMLVhjWmhmQSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzYXZlIiwiYm9keVNoYTI1NiI6IjdkZWE2Zjk2MTJkZTkyYWI3YzQxODlkNGY5MTc2NWZiOWI5NjdiOWU3YWU3MGJmYTRhOGRlYWE1NjliZWY2MmUiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.OHJtnckv4uSlV1KPKcUW4DY4Qsrhw7W5NhPuCcDMdk90UvDnioe0TbHbkvWkb9RoaM8xNCW497QWqsKCAh_Jzw",
+        "body": "{\"action\":\"save\",\"version\":0,\"edits\":[{\"do\":\"set_price\",\"style\":\"LB\",\"size\":\"10x16\",\"price\":5700},{\"do\":\"stop_selling_style\",\"style\":\"DK\"}],\"settingsSha256\":\"57bbace9c60eb4ef64dd2d92dd96f2a35f83183c5e34e09bfa08ba5852f0b1e4\"}",
+        "bodySha256": "7dea6f9612de92ab7c4189d4f91765fb9b967b9e7ae70bfa4a8deaa569bef62e"
+      },
+      "session": {
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "6rPnD0uSIasjFteORtGObw",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "session",
+          "bodySha256": "ac58991cd5aaf288a286cceaf59b499f676316e2ebcdb100db43cf3540ee71b1",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiNnJQbkQwdVNJYXNqRnRlT1J0R09idyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzZXNzaW9uIiwiYm9keVNoYTI1NiI6ImFjNTg5OTFjZDVhYWYyODhhMjg2Y2NlYWY1OWI0OTlmNjc2MzE2ZTJlYmNkYjEwMGRiNDNjZjM1NDBlZTcxYjEiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiNnJQbkQwdVNJYXNqRnRlT1J0R09idyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzZXNzaW9uIiwiYm9keVNoYTI1NiI6ImFjNTg5OTFjZDVhYWYyODhhMjg2Y2NlYWY1OWI0OTlmNjc2MzE2ZTJlYmNkYjEwMGRiNDNjZjM1NDBlZTcxYjEiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.iEOsIChLmHjyuph1AJz6dYhLMiLynwaaAi2iuJVSmeHF-XYYZZoVQ9XDjJoWj5ue4B223GIMgSeA3VofptY7Tg",
+        "body": "{\"action\":\"session\"}",
+        "bodySha256": "ac58991cd5aaf288a286cceaf59b499f676316e2ebcdb100db43cf3540ee71b1"
+      }
+    },
+    "badPasses": [
+      {
+        "name": "not an object",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "UbpjcVM2kIls9I_iSUjvoQ",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": "Pat Owner agreed"
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiVWJwamNWTTJrSWxzOUlfaVNVanZvUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6IlBhdCBPd25lciBhZ3JlZWQifQ",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiVWJwamNWTTJrSWxzOUlfaVNVanZvUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6IlBhdCBPd25lciBhZ3JlZWQifQ.V06a493eS1d_U1ewTxzFno_kSDZiXTe5lTyuGG_4BDR7l5g8ZO5ZyuOa2v0j9ZQ9oaSdCxhS0knUKuXhMoKTSQ",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "null",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "mt3C2TLpVwCBF_1lHwaIVw",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": null
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoibXQzQzJUTHBWd0NCRl8xbEh3YUlWdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6bnVsbH0",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoibXQzQzJUTHBWd0NCRl8xbEh3YUlWdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6bnVsbH0.1NCru9_aX1wkPj_2JZOHXsErSpp_aiJn4M_iLLAMWVzJBKKL0hERMGqxx_k05Kc_KjsaNyBvsBNhDuqm-mQ92g",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "a key missing (email)",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "dJ9Vm3oIrcDGVspLtVje7g",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiZEo5Vm0zb0lyY0RHVnNwTHRWamU3ZyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIn19",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiZEo5Vm0zb0lyY0RHVnNwTHRWamU3ZyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIn19.wSvfr2BFQuvJlBsWWpjkeDBSCYQ6vRSjOxLb0vXAHWOqIJOhYBRbNfzzrP99lflZWuCUUjWPuV5tuJx4PiUYFA",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "a key too many (address)",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "DEeYP9TEDrcjZBJ4DU8PrQ",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example",
+            "address": "12 Main St"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiREVlWVA5VEVEcmNqWkJKNERVOFByUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUiLCJhZGRyZXNzIjoiMTIgTWFpbiBTdCJ9fQ",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiREVlWVA5VEVEcmNqWkJKNERVOFByUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUiLCJhZGRyZXNzIjoiMTIgTWFpbiBTdCJ9fQ.QiPMnH_Ie4GQTA3EHZiBkmcIWsEykP9Q-s6apQmkrx36hazEbLm537jl58GOJKw_7tdWgbt2mWC1r8LiCDXSAQ",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "termsVersion isn't a version",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "l0NI4jXSdAkgyYYW6JuglQ",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "v2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoibDBOSTRqWFNkQWtneVlZVzZKdWdsUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiJ2Mi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoibDBOSTRqWFNkQWtneVlZVzZKdWdsUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiJ2Mi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.gxnAKoMiZvMA8v_e7qwpmEv9HAD2MaoXh3CxO9h_B_Ph7K_mMcanoJrgXtAhFXxCeqfa_WRaO5CW5VBBQckEeg",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "termsSha256 in capitals",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "NIjeSZSekXX3WlTtFrfJGw",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "D4011757893114A2992AEC5BE40465BF6E0857D01644051CFFF0821F5233FA6C",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiTklqZVNaU2VrWFgzV2xUdEZyZkpHdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6IkQ0MDExNzU3ODkzMTE0QTI5OTJBRUM1QkU0MDQ2NUJGNkUwODU3RDAxNjQ0MDUxQ0ZGRjA4MjFGNTIzM0ZBNkMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiTklqZVNaU2VrWFgzV2xUdEZyZkpHdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6IkQ0MDExNzU3ODkzMTE0QTI5OTJBRUM1QkU0MDQ2NUJGNkUwODU3RDAxNjQ0MDUxQ0ZGRjA4MjFGNTIzM0ZBNkMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0.-2AGgMO_lu9TOiAk8bW38_o1PoAcjVKFtsSvRnIZI0Ma0NP56--wWF54WBoIO9dsHSH4PNv7k6i7p4oSiIwV8w",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "termsSha256 too short",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "UEuxJT7SHHRKm4_YoEusdg",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiVUV1eEpUN1NISFJLbTRfWW9FdXNkZyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6IjQwMTE3NTc4OTMxMTRhMjk5MmFlYzViZTQwNDY1YmY2ZTA4NTdkMDE2NDQwNTFjZmZmMDgyMWY1MjMzZmE2YyIsInNpZ25hdHVyZSI6IlBhdCBPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiVUV1eEpUN1NISFJLbTRfWW9FdXNkZyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6IjQwMTE3NTc4OTMxMTRhMjk5MmFlYzViZTQwNDY1YmY2ZTA4NTdkMDE2NDQwNTFjZmZmMDgyMWY1MjMzZmE2YyIsInNpZ25hdHVyZSI6IlBhdCBPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.DS58ZNamQ7izWIeWRbbQGjubnEaXadklSoYKZkrpLYMyM3OJxG0S0QZtoasjGzsWfU3J6CZzgcMBW4RVTbhElA",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "signature only spaces",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "Y0aq648X7IDPVFPSp2TNsw",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "   ",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiWTBhcTY0OFg3SURQVkZQU3AyVE5zdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiIgICAiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiWTBhcTY0OFg3SURQVkZQU3AyVE5zdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiIgICAiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0.Qb3DqDy00ZH1He9a-4Rt86MZiimRGluiKH-nzj6nFdSegKccUSf4l6R4RL6tUv5e8-gpcAR4fzzAh4gQ6Yi9Hw",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "signature with a control character",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "adu3DeiFgwve4MIQB2Ricw",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat\u0007Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiYWR1M0RlaUZnd3ZlNE1JUUIyUmljdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXRcdTAwMDdPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiYWR1M0RlaUZnd3ZlNE1JUUIyUmljdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXRcdTAwMDdPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.YBgmjavBHe1Jnp9QeXvh0wPQXGxH_fv-vkRQV55p4i4wMubKXcy9FCAnOej4fCbWs3J3zvx8zfAXEnoHeyHEyQ",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "signedAt isn't a time",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "thibeWTFEVxZgCbQgWLqzw",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "yesterday",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoidGhpYmVXVEZFVnhaZ0NiUWdXTHF6dyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6Inllc3RlcmRheSIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoidGhpYmVXVEZFVnhaZ0NiUWdXTHF6dyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6Inllc3RlcmRheSIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0.5a6MuCdyTl5qoGDzCnMqvozOF6F-l3iciMTFszTthEYMudiVfu24GNuhMTb-lrmsiD2Uwbf5fRKlrjW0k103yQ",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "signedAt more than 60 s after issuedAt",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "D9gp3PLzCOZyhSNtfuST0A",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-11T15:01:01.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiRDlncDNQTHpDT1p5aFNOdGZ1U1QwQSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMTFUMTU6MDE6MDEuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiRDlncDNQTHpDT1p5aFNOdGZ1U1QwQSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMTFUMTU6MDE6MDEuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0.rp7NLIjmWWpJyBZcr0SWAZDd7fU4oGDq3Jj3cLlz0mY9nCngCYZiLu64kdnrGYx-PRpY7Anfxmna1b9zUQWa6Q",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "business over 80 characters",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "U8mXOMPhUP_UkakgL5njDQ",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiVThtWE9NUGhVUF9Va2FrZ0w1bmpEUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiVThtWE9NUGhVUF9Va2FrZ0w1bmpEUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.rFC__syWmP9DItj5HdJzZj80krXExNFMwxL-9Vd956PQETJYlscFylCI1ByjiKYNNhHJyDRaBwdpXgF3BR4igw",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "business empty",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "99P0Nn34LQ3BMBdjWFyv1Q",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiOTlQME5uMzRMUTNCTUJkaldGeXYxUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiOTlQME5uMzRMUTNCTUJkaldGeXYxUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.lIy3Fp6Gl6dlgCZUxdnur9IYe0EnduNXMZwK1Aea5ssC8B2T0xMn351Sn2bABR_JZttE9lXRkJztFTmx2gSY8Q",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "phone over 40 characters",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "nlH0UBT0Yjva1RHy7LsOoQ",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "99999999999999999999999999999999999999999",
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoibmxIMFVCVDBZanZhMVJIeTdMc09vUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTkiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoibmxIMFVCVDBZanZhMVJIeTdMc09vUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTk5OTkiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.DTwggAXEkUJ3g_E80bvnkzlhszD5IACAhvm70_MABiCJikJ9G33qwIPLbUkB3D5dO85X9QWFLGpYTiBNUIPoMg",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "email over 200 characters",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "KA9bWYPLOHBp00rrjYEoNQ",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa@example.com"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiS0E5YldZUExPSEJwMDBycmpZRW9OUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhQGV4YW1wbGUuY29tIn19",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiS0E5YldZUExPSEJwMDBycmpZRW9OUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhYWFhQGV4YW1wbGUuY29tIn19.iAbNFXqN58fcIHF2H7j1ToynUZONKsezaefUfUj6h5L4dMSptLVXYRGrLpfQz5xmo5sEFGYqw1J_cjefuX5xwQ",
+        "body": "{\"action\":\"status\"}"
+      },
+      {
+        "name": "a number where words go (phone)",
+        "reason": "signup",
+        "action": "status",
+        "claims": {
+          "v": 1,
+          "purpose": "setup-pass",
+          "id": "ZL3aDZf2PKorPjSKiej-0Q",
+          "customerId": "cust_testing",
+          "siteId": "site-testing-1",
+          "actor": "alan@barnwright.test",
+          "via": "control-room",
+          "action": "status",
+          "bodySha256": "c725469e2b09851166cc6c037cb8c4b5d743e9c17da53d43066e6750dd6ec0b5",
+          "issuedAt": 1791730800000,
+          "expiresAt": 1791730920000,
+          "signup": {
+            "termsVersion": "2.2",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "signature": "Pat Owner",
+            "signedAt": "2026-10-09T15:00:00.000Z",
+            "business": "Testing Sheds",
+            "phone": 9415550100,
+            "email": "pat@testingsheds.example"
+          }
+        },
+        "signed": "barnwright-setup-pass/v1.eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiWkwzYURaZjJQS29yUGpTS2llai0wUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjo5NDE1NTUwMTAwLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ",
+        "pass": "eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiWkwzYURaZjJQS29yUGpTS2llai0wUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjo5NDE1NTUwMTAwLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.anwF5bc4jSjJ3Xs2UjVxg6ScQtaSkfUnKPjuCKHxZe23NTXZZ8ChgKG8wQ09-rEX82immFb5XY4lR66fgwpzlA",
+        "body": "{\"action\":\"status\"}"
+      }
+    ],
+    "door": {
+      "examples": [
+        {
+          "name": "status before a price list exists",
+          "given": "Alan tapped Make their Dealer Center; it deployed and checked in. No owner has signed in. The owner signed up on the sign-up page under terms 2.2, the terms this Dealer Center ships. The pass carries that sign-up. This is the first pass that brings it, so barnwright-signup-agreement is written now.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiaDdaeHhsRl92YjZHSzAxUkExeXhjZyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0.RSKtqmd8P-L6tfTKbgwU_bGwOHYe-xkc9gwHqWpxyCfsnIQAX7bSyD3wHTjXD3W7HGyEGlCGSkTbGsNdXaIwPA",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"status\"}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "ok": true,
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "prelive",
+              "why": null,
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": "signup",
+              "priceList": null,
+              "lastBarnwrightSave": null,
+              "canUndo": false,
+              "appVersion": "dealer-center test"
+            }
+          }
+        },
+        {
+          "name": "read summary: the starting price list, version 0",
+          "given": "As above. Nothing is written but the pass and the limits.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoieHhucWpJeVo0VTJuMmMycExSTjMxUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJyZWFkIiwiYm9keVNoYTI1NiI6Ijc4OWM2MjU4YTU2MTNlOWE5YTkzZmJkZDEwODIzZTAzM2RlNjQ0N2Q5NmQxMGFjNzQ3NzM0YzI0Y2Y3NTNjYmIiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.1Edlkly76I4XtpUoL9WZBXCl1sf6-jGhVneoMI3Vh7cWPn5vjH6pMMNIrxCZd1_My9kK7mETMUTZijmoG8XnMQ",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"read\",\"part\":\"summary\"}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "ok": true,
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "prelive",
+              "why": null,
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": "signup",
+              "priceList": null,
+              "lastBarnwrightSave": null,
+              "canUndo": false,
+              "appVersion": "dealer-center test",
+              "part": "summary",
+              "view": {
+                "business": {
+                  "name": "Testing Sheds",
+                  "short": "Testing Sheds",
+                  "tagline": "Portable storage buildings",
+                  "hasPhone": true,
+                  "hasEmail": true,
+                  "hasWebsite": false,
+                  "logo": {
+                    "present": false,
+                    "kb": 0
+                  }
+                },
+                "styles": [
+                  {
+                    "code": "UT",
+                    "name": "Utility Shed",
+                    "sizes": 14,
+                    "from": 3395
+                  },
+                  {
+                    "code": "SU",
+                    "name": "Side Utility",
+                    "sizes": 11,
+                    "from": 3490
+                  },
+                  {
+                    "code": "DS",
+                    "name": "Dormer Shed",
+                    "sizes": 11,
+                    "from": 3780
+                  },
+                  {
+                    "code": "BU",
+                    "name": "Backyard Utility",
+                    "sizes": 3,
+                    "from": 2050
+                  },
+                  {
+                    "code": "GU",
+                    "name": "Garden Utility",
+                    "sizes": 3,
+                    "from": 2100
+                  },
+                  {
+                    "code": "SB",
+                    "name": "Standard Barn",
+                    "sizes": 2,
+                    "from": 3590
+                  },
+                  {
+                    "code": "LB",
+                    "name": "Lofted Barn",
+                    "sizes": 14,
+                    "from": 3685
+                  },
+                  {
+                    "code": "SLB",
+                    "name": "Side Lofted Barn",
+                    "sizes": 9,
+                    "from": 3830
+                  },
+                  {
+                    "code": "CS",
+                    "name": "Cottage Shed",
+                    "sizes": 8,
+                    "from": 3875
+                  },
+                  {
+                    "code": "SS",
+                    "name": "Single Slope",
+                    "sizes": 9,
+                    "from": 3540
+                  },
+                  {
+                    "code": "C",
+                    "name": "Cabin",
+                    "sizes": 8,
+                    "from": 4355
+                  },
+                  {
+                    "code": "LBC",
+                    "name": "Lofted Barn Cabin",
+                    "sizes": 8,
+                    "from": 5635
+                  },
+                  {
+                    "code": "SC",
+                    "name": "Side Cabin",
+                    "sizes": 5,
+                    "from": 8500
+                  },
+                  {
+                    "code": "LSC",
+                    "name": "Loft Side Cabin",
+                    "sizes": 5,
+                    "from": 8700
+                  },
+                  {
+                    "code": "DSC",
+                    "name": "Deluxe Side Cabin",
+                    "sizes": 4,
+                    "from": 10740
+                  },
+                  {
+                    "code": "SLC",
+                    "name": "Deluxe Loft Side Cabin",
+                    "sizes": 4,
+                    "from": 10500
+                  },
+                  {
+                    "code": "G",
+                    "name": "Garage",
+                    "sizes": 9,
+                    "from": 9060
+                  },
+                  {
+                    "code": "LBG",
+                    "name": "Lofted Barn Garage",
+                    "sizes": 4,
+                    "from": 9300
+                  },
+                  {
+                    "code": "MU",
+                    "name": "Metal Utility",
+                    "sizes": 8,
+                    "from": 3730
+                  },
+                  {
+                    "code": "MLB",
+                    "name": "Metal Lofted Barn",
+                    "sizes": 8,
+                    "from": 3970
+                  },
+                  {
+                    "code": "MG",
+                    "name": "Metal Garage",
+                    "sizes": 4,
+                    "from": 8820
+                  },
+                  {
+                    "code": "MCS",
+                    "name": "Metal Cottage",
+                    "sizes": 8,
+                    "from": 3925
+                  },
+                  {
+                    "code": "DK",
+                    "name": "Dog Kennel",
+                    "sizes": 2,
+                    "from": 5890
+                  }
+                ],
+                "counts": {
+                  "styles": 23,
+                  "sizes": 161,
+                  "items": 21,
+                  "options": 18,
+                  "extras": 0
+                },
+                "colors": {
+                  "paint": 14,
+                  "trim": 8,
+                  "metal": 18
+                },
+                "show": "price",
+                "rentToOwn": true,
+                "open": false
+              },
+              "history": []
+            }
+          }
+        },
+        {
+          "name": "check at version 0",
+          "given": "As above. Nothing is written.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiNzU1Q0VOUHVDZ3FkcG02aGF3RmQzdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJjaGVjayIsImJvZHlTaGEyNTYiOiI3YzczM2Y3YzhhYWU1OWE0NjVmZDA4MDIyMzE2MWVlNDUxOTE0NjE0MDA0NWVmYjIzNDQ4MzIzMTQwOTc5YTZjIiwiaXNzdWVkQXQiOjE3OTE3MzA4MDAwMDAsImV4cGlyZXNBdCI6MTc5MTczMDkyMDAwMCwic2lnbnVwIjp7InRlcm1zVmVyc2lvbiI6IjIuMiIsInRlcm1zU2hhMjU2IjoiZDQwMTE3NTc4OTMxMTRhMjk5MmFlYzViZTQwNDY1YmY2ZTA4NTdkMDE2NDQwNTFjZmZmMDgyMWY1MjMzZmE2YyIsInNpZ25hdHVyZSI6IlBhdCBPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.cBzikmAJA2g928-7WSUx36dQqBlcZI00suhPoVYYBfj1BNet9OFzgSbXDr2kOIPoxfYjvMzGpeD6FKR3M7kEoA",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"check\",\"version\":0,\"edits\":[{\"do\":\"set_price\",\"style\":\"LB\",\"size\":\"10x16\",\"price\":5700},{\"do\":\"stop_selling_style\",\"style\":\"DK\"}]}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "ok": true,
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "prelive",
+              "why": null,
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": "signup",
+              "priceList": null,
+              "lastBarnwrightSave": null,
+              "canUndo": false,
+              "appVersion": "dealer-center test",
+              "version": 0,
+              "changes": [
+                "Stopped selling the Dog Kennel",
+                "Lofted Barn 10×16: $5,540 → $5,700",
+                "Took away the building group \"Dog Kennels\""
+              ],
+              "moreChanges": 0,
+              "warnings": [],
+              "counts": {
+                "edits": 2,
+                "changes": 3,
+                "warnings": 0
+              },
+              "contactDetailsChange": false,
+              "newCodes": {},
+              "settingsSha256": "57bbace9c60eb4ef64dd2d92dd96f2a35f83183c5e34e09bfa08ba5852f0b1e4"
+            }
+          }
+        },
+        {
+          "name": "save at version 0: the starting price list (version 1), then the edits (version 2)",
+          "given": "Right after the check, with its settingsSha256.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiWmNNbUxvRVFiTUR2bzhMLVhjWmhmQSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzYXZlIiwiYm9keVNoYTI1NiI6IjdkZWE2Zjk2MTJkZTkyYWI3YzQxODlkNGY5MTc2NWZiOWI5NjdiOWU3YWU3MGJmYTRhOGRlYWE1NjliZWY2MmUiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.OHJtnckv4uSlV1KPKcUW4DY4Qsrhw7W5NhPuCcDMdk90UvDnioe0TbHbkvWkb9RoaM8xNCW497QWqsKCAh_Jzw",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"save\",\"version\":0,\"edits\":[{\"do\":\"set_price\",\"style\":\"LB\",\"size\":\"10x16\",\"price\":5700},{\"do\":\"stop_selling_style\",\"style\":\"DK\"}],\"settingsSha256\":\"57bbace9c60eb4ef64dd2d92dd96f2a35f83183c5e34e09bfa08ba5852f0b1e4\"}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "ok": true,
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "prelive",
+              "why": null,
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": "signup",
+              "priceList": {
+                "version": 2,
+                "savedAt": "2026-10-11T15:00:30.000Z",
+                "by": "Barnwright (alan@barnwright.test)",
+                "open": false
+              },
+              "lastBarnwrightSave": {
+                "version": 2,
+                "passId": "ZcMmLoEQbMDvo8L-XcZhfA",
+                "at": "2026-10-11T15:00:30.000Z"
+              },
+              "canUndo": true,
+              "appVersion": "dealer-center test",
+              "versionBefore": 0,
+              "version": 2,
+              "changes": [
+                "Stopped selling the Dog Kennel",
+                "Lofted Barn 10×16: $5,540 → $5,700",
+                "Took away the building group \"Dog Kennels\""
+              ],
+              "newCodes": {}
+            }
+          },
+          "history": [
+            {
+              "version": 2,
+              "savedAt": "2026-10-11T15:00:30.000Z",
+              "by": "Barnwright (alan@barnwright.test)",
+              "changes": [
+                "Stopped selling the Dog Kennel",
+                "Lofted Barn 10×16: $5,540 → $5,700",
+                "Took away the building group \"Dog Kennels\""
+              ],
+              "more": 0
+            },
+            {
+              "version": 1,
+              "savedAt": "2026-10-11T15:00:30.000Z",
+              "by": "Barnwright (alan@barnwright.test)",
+              "changes": [
+                "Started the price list from Every standard building, at example prices"
+              ],
+              "more": 0
+            }
+          ],
+          "log": [
+            "Barnwright (alan@barnwright.test) changed your price list: Stopped selling the Dog Kennel; Lofted Barn 10×16: $5,540 → $5,700; Took away the building group \"Dog Kennels\".",
+            "Barnwright (alan@barnwright.test) started your price list from Every standard building, using the terms you agreed to when you signed up."
+          ]
+        },
+        {
+          "name": "check at version 0 with no edits: the starting price list alone",
+          "given": "Alan tapped Make their Dealer Center; it deployed and checked in. No owner has signed in. The owner signed up on the sign-up page under terms 2.2, the terms this Dealer Center ships. The pass carries that sign-up.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiV2ExTEEtTzJZVTFVSHVZOGdHMXVJdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJjaGVjayIsImJvZHlTaGEyNTYiOiJlYmJmMWZlYWE1MTc2NjI3ZDdkYTNhMTFiNWM0MzMxZmY4NGNkOWMzODFkZDkyNDk2YjY4OTQ1MWI0ZTgyZWNmIiwiaXNzdWVkQXQiOjE3OTE3MzA4MDAwMDAsImV4cGlyZXNBdCI6MTc5MTczMDkyMDAwMCwic2lnbnVwIjp7InRlcm1zVmVyc2lvbiI6IjIuMiIsInRlcm1zU2hhMjU2IjoiZDQwMTE3NTc4OTMxMTRhMjk5MmFlYzViZTQwNDY1YmY2ZTA4NTdkMDE2NDQwNTFjZmZmMDgyMWY1MjMzZmE2YyIsInNpZ25hdHVyZSI6IlBhdCBPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.Aho9rUFksqwko1f48yXyg2os-DDWT78IczhMWjFLHguPvTua-ejCG8V7nfJIpJ-hhJ7iSrSWQYh5IkHr_Vgm5w",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"check\",\"version\":0,\"edits\":[]}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "ok": true,
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "prelive",
+              "why": null,
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": "signup",
+              "priceList": null,
+              "lastBarnwrightSave": null,
+              "canUndo": false,
+              "appVersion": "dealer-center test",
+              "version": 0,
+              "changes": [],
+              "moreChanges": 0,
+              "warnings": [],
+              "counts": {
+                "edits": 0,
+                "changes": 0,
+                "warnings": 0
+              },
+              "contactDetailsChange": false,
+              "newCodes": {},
+              "settingsSha256": "17c8be24b04d661b52c838edc0c6d06778d3b719d8a7cb8bfead4ee7e0ea1b23"
+            }
+          }
+        },
+        {
+          "name": "save at version 0 with no edits: only the starting price list (version 1)",
+          "given": "Right after the check above.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiWUtXdzJCUkl1bzFyd1FGQUstTHRKZyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzYXZlIiwiYm9keVNoYTI1NiI6Ijk1MzQ1MTkyYmVmYzQ0NTQxNzU1NzY1MjY4YWExYTJiNjUzMTY4OGVjYWRkNDdkYTRhMDg0MjQ0NWU0ZmQyNGQiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.BnB_VfhD6Pdm7QK3_KKFFaG7oEyLvEdW_CwmhfmG73fmaaGnev6Rlnj08BKgHi3uobmXv_BQxu7-hNFCsqQk9A",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"save\",\"version\":0,\"edits\":[],\"settingsSha256\":\"17c8be24b04d661b52c838edc0c6d06778d3b719d8a7cb8bfead4ee7e0ea1b23\"}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "ok": true,
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "prelive",
+              "why": null,
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": "signup",
+              "priceList": {
+                "version": 1,
+                "savedAt": "2026-10-11T15:00:30.000Z",
+                "by": "Barnwright (alan@barnwright.test)",
+                "open": false
+              },
+              "lastBarnwrightSave": {
+                "version": 1,
+                "passId": "YKWw2BRIuo1rwQFAK-LtJg",
+                "at": "2026-10-11T15:00:30.000Z"
+              },
+              "canUndo": false,
+              "appVersion": "dealer-center test",
+              "versionBefore": 0,
+              "version": 1,
+              "changes": [],
+              "newCodes": {}
+            }
+          },
+          "log": [
+            "Barnwright (alan@barnwright.test) started your price list from Every standard building, using the terms you agreed to when you signed up."
+          ]
+        },
+        {
+          "name": "refused: undo at the starting price list",
+          "given": "After the save above (version 1 is Barnwright's starting price list).",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiUkpQRnFyUG5RVmdBZ2JxZklfU2pvUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJjaGVjayIsImJvZHlTaGEyNTYiOiI5NDMwMDlkYjNiOTUxZWYyOGU2ZDAzYTNlYjNiMDliZDE1NWZmNTJmYjllYjdlNGZkOThjYTE0ZDhlNWUxYzc0IiwiaXNzdWVkQXQiOjE3OTE3MzA4MDAwMDAsImV4cGlyZXNBdCI6MTc5MTczMDkyMDAwMCwic2lnbnVwIjp7InRlcm1zVmVyc2lvbiI6IjIuMiIsInRlcm1zU2hhMjU2IjoiZDQwMTE3NTc4OTMxMTRhMjk5MmFlYzViZTQwNDY1YmY2ZTA4NTdkMDE2NDQwNTFjZmZmMDgyMWY1MjMzZmE2YyIsInNpZ25hdHVyZSI6IlBhdCBPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.mMwZse_FGxP-6dMiC_tkzT8e2UmKkhsaHe_ZmzCwqU96-ypZ1yClt9zcPXyTaEG34g4bKFBuQn5L7SLufsY_tA",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"check\",\"version\":1,\"undo\":true}"
+          },
+          "answer": {
+            "status": 409,
+            "body": {
+              "ok": false,
+              "code": "cant-undo",
+              "error": "This is the starting price list Barnwright set up, so there is nothing before it to put back.",
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "prelive",
+              "why": null,
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": "signup",
+              "priceList": {
+                "version": 1,
+                "savedAt": "2026-10-11T15:00:30.000Z",
+                "by": "Barnwright (alan@barnwright.test)",
+                "open": false
+              },
+              "lastBarnwrightSave": {
+                "version": 1,
+                "passId": "YKWw2BRIuo1rwQFAK-LtJg",
+                "at": "2026-10-11T15:00:30.000Z"
+              },
+              "canUndo": false,
+              "appVersion": "dealer-center test"
+            }
+          }
+        },
+        {
+          "name": "refused: a version other than 0 before a price list exists",
+          "given": "Alan tapped Make their Dealer Center; it deployed and checked in. No owner has signed in. The owner signed up on the sign-up page under terms 2.2, the terms this Dealer Center ships. The pass carries that sign-up.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoieldhUEh4OEtka2h2ZDRyWWtlaGhjUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJjaGVjayIsImJvZHlTaGEyNTYiOiI5MDFkMWFiZGNkOGI0ZGFmOTk3YTFkYTIxODA5NjdjNTllZDE0OTY0ODdjMGNiMjQxNWM3Y2E1NWVhOWQ5MWQ1IiwiaXNzdWVkQXQiOjE3OTE3MzA4MDAwMDAsImV4cGlyZXNBdCI6MTc5MTczMDkyMDAwMCwic2lnbnVwIjp7InRlcm1zVmVyc2lvbiI6IjIuMiIsInRlcm1zU2hhMjU2IjoiZDQwMTE3NTc4OTMxMTRhMjk5MmFlYzViZTQwNDY1YmY2ZTA4NTdkMDE2NDQwNTFjZmZmMDgyMWY1MjMzZmE2YyIsInNpZ25hdHVyZSI6IlBhdCBPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.EouzGXmtFqwxq841jQTkZc-rbQmGKPvxerd7ZqUK2pWhLEQ4QgpiAvPbJaQ1qBHxAnOL2oRGgU4bIHQgUJZgOQ",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"check\",\"version\":1,\"edits\":[{\"do\":\"set_price\",\"style\":\"LB\",\"size\":\"10x16\",\"price\":5700},{\"do\":\"stop_selling_style\",\"style\":\"DK\"}]}"
+          },
+          "answer": {
+            "status": 409,
+            "body": {
+              "ok": false,
+              "code": "version",
+              "error": "The price list was saved since you read it. Read it again, then check the change again.",
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "prelive",
+              "why": null,
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": "signup",
+              "priceList": null,
+              "lastBarnwrightSave": null,
+              "canUndo": false,
+              "appVersion": "dealer-center test"
+            }
+          }
+        },
+        {
+          "name": "refused: version 0 once a price list exists",
+          "given": "After the version-0 save above (the price list is at version 2).",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiUk03QWJpN2ViUl9DbTRBakRLT2ZDUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJjaGVjayIsImJvZHlTaGEyNTYiOiI3YzczM2Y3YzhhYWU1OWE0NjVmZDA4MDIyMzE2MWVlNDUxOTE0NjE0MDA0NWVmYjIzNDQ4MzIzMTQwOTc5YTZjIiwiaXNzdWVkQXQiOjE3OTE3MzA4MDAwMDAsImV4cGlyZXNBdCI6MTc5MTczMDkyMDAwMCwic2lnbnVwIjp7InRlcm1zVmVyc2lvbiI6IjIuMiIsInRlcm1zU2hhMjU2IjoiZDQwMTE3NTc4OTMxMTRhMjk5MmFlYzViZTQwNDY1YmY2ZTA4NTdkMDE2NDQwNTFjZmZmMDgyMWY1MjMzZmE2YyIsInNpZ25hdHVyZSI6IlBhdCBPd25lciIsInNpZ25lZEF0IjoiMjAyNi0xMC0wOVQxNTowMDowMC4wMDBaIiwiYnVzaW5lc3MiOiJUZXN0aW5nIFNoZWRzIiwicGhvbmUiOiI5NDEtNTU1LTAxMDAiLCJlbWFpbCI6InBhdEB0ZXN0aW5nc2hlZHMuZXhhbXBsZSJ9fQ.Jy1lOtl26kIKG-9yj9JWWGAkyb_SUlAnbQsFShVYf6tYFo7qcAKGowBn79uvgW-HLZv2cqSTIOso_7kHEfs5ZQ",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"check\",\"version\":0,\"edits\":[{\"do\":\"set_price\",\"style\":\"LB\",\"size\":\"10x16\",\"price\":5700},{\"do\":\"stop_selling_style\",\"style\":\"DK\"}]}"
+          },
+          "answer": {
+            "status": 409,
+            "body": {
+              "ok": false,
+              "code": "version",
+              "error": "The price list was saved since you read it. Read it again, then check the change again.",
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "prelive",
+              "why": null,
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": "signup",
+              "priceList": {
+                "version": 2,
+                "savedAt": "2026-10-11T15:00:30.000Z",
+                "by": "Barnwright (alan@barnwright.test)",
+                "open": false
+              },
+              "lastBarnwrightSave": {
+                "version": 2,
+                "passId": "ZcMmLoEQbMDvo8L-XcZhfA",
+                "at": "2026-10-11T15:00:30.000Z"
+              },
+              "canUndo": true,
+              "appVersion": "dealer-center test"
+            }
+          }
+        },
+        {
+          "name": "refused: they signed up before terms 2.2",
+          "given": "As in status, but the owner signed up under terms 2.1.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiWlNkcGxFREFoN2ptZjVNbXdkSldWUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJyZWFkIiwiYm9keVNoYTI1NiI6Ijc4OWM2MjU4YTU2MTNlOWE5YTkzZmJkZDEwODIzZTAzM2RlNjQ0N2Q5NmQxMGFjNzQ3NzM0YzI0Y2Y3NTNjYmIiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4xIiwidGVybXNTaGEyNTYiOiI4ZWEzZTEyMjExNDFiNzljYzU1NjhiMzExOWFjZDljNjBmZDFmYzY4Mzk0NDRkMmZkZWNjMGUxMmJjMDA0N2I2Iiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.Z_EqI4oogc0041Frq4ymlSYD-dUAcGDbRWazMxHAoH4ep0RJYtPODo0MKpyH-m4qZ0TV0WT3_SfROauFq_8ivw",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"read\",\"part\":\"summary\"}"
+          },
+          "answer": {
+            "status": 403,
+            "body": {
+              "ok": false,
+              "code": "closed",
+              "error": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
+              "why": "signup-terms",
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "closed",
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": null,
+              "priceList": null,
+              "lastBarnwrightSave": null,
+              "canUndo": false,
+              "appVersion": "dealer-center test"
+            }
+          }
+        },
+        {
+          "name": "refused: they signed up under terms this Dealer Center doesn't have",
+          "given": "As in status, but the owner signed up under terms 2.3 and this Dealer Center ships 2.2 (it hasn't deployed since).",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoieEVYWlVwQy1fWGxlSXRKYnFDREQ5QSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJyZWFkIiwiYm9keVNoYTI1NiI6Ijc4OWM2MjU4YTU2MTNlOWE5YTkzZmJkZDEwODIzZTAzM2RlNjQ0N2Q5NmQxMGFjNzQ3NzM0YzI0Y2Y3NTNjYmIiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4zIiwidGVybXNTaGEyNTYiOiI2NTcwOTA3OGEwM2NlMDY1OThhNTlkZjA3YmQ4MTgwMzM4YzNlZDNmNjM3NTZmYmMxZDA2OTg2OWQ0Y2E3OGUyIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.9wqYfWjvGYeWrJn4_aCJP3nOFYvufsH0z_gyF_-bmPu6rXwUhfzM8EECotxPOYEr5abQHNklJ8LtY99my99l1A",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"read\",\"part\":\"summary\"}"
+          },
+          "answer": {
+            "status": 403,
+            "body": {
+              "ok": false,
+              "code": "closed",
+              "error": "Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy.",
+              "why": "signup-unknown",
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "closed",
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": null,
+              "priceList": null,
+              "lastBarnwrightSave": null,
+              "canUndo": false,
+              "appVersion": "dealer-center test"
+            }
+          }
+        },
+        {
+          "name": "refused: no sign-up agreement",
+          "given": "No owner has signed in, no price list, and the pass carries no signup (the customer never signed up on the sign-up page).",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiNDktUFBtVDhKQXJNd2tteS0xNzVFUSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJyZWFkIiwiYm9keVNoYTI1NiI6Ijc4OWM2MjU4YTU2MTNlOWE5YTkzZmJkZDEwODIzZTAzM2RlNjQ0N2Q5NmQxMGFjNzQ3NzM0YzI0Y2Y3NTNjYmIiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwfQ.GCZxWmaDifW5E4wKhrH4VhiN36CwD2emSVS0txCoxOujs3ebJ4xI5pWGmxOR5eLpv5QtCxpylfnYO0ge44nPwg",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"read\",\"part\":\"summary\"}"
+          },
+          "answer": {
+            "status": 403,
+            "body": {
+              "ok": false,
+              "code": "closed",
+              "error": "The owner hasn't finished First setup yet, so there is no price list to change.",
+              "why": "no-price-list",
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "closed",
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": null,
+              "priceList": null,
+              "lastBarnwrightSave": null,
+              "canUndo": false,
+              "appVersion": "dealer-center test"
+            }
+          }
+        },
+        {
+          "name": "refused: terms 2.2 aren't out here",
+          "given": "As in status, but this Dealer Center ships terms 2.1 (termsOut: false).",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiQW5Kb2xMUUZMTWJlcG1sNjJfQVcwdyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJyZWFkIiwiYm9keVNoYTI1NiI6Ijc4OWM2MjU4YTU2MTNlOWE5YTkzZmJkZDEwODIzZTAzM2RlNjQ0N2Q5NmQxMGFjNzQ3NzM0YzI0Y2Y3NTNjYmIiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.ePYgfNVQ1dAKm2N-uqWBrjlpnsctdFhQEA8SIcoXKgPtx1AIVto7Bm-E2jh_hjeNJxZ1fki5K-9kxIxL8MME8g",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"read\",\"part\":\"summary\"}"
+          },
+          "answer": {
+            "status": 403,
+            "body": {
+              "ok": false,
+              "code": "closed",
+              "error": "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
+              "why": "terms",
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "closed",
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": false,
+              "agreement": null,
+              "priceList": null,
+              "lastBarnwrightSave": null,
+              "canUndo": false,
+              "appVersion": "dealer-center test"
+            }
+          }
+        },
+        {
+          "name": "the owner has signed in but hasn't ticked yet",
+          "given": "After the version-0 save, the owner made their login and is in First setup. The sign-up agreement no longer counts.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiU0NwOXFrdXhXejFHT2dIOGZiaFFfZyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0.DXqGsooQu2LlidWQYe41gRf-NycziiLkxbrjF3wh5DTlJ_ULbQH5hoHBkMLPAPIqJGsCv5fVgs1i5y6m7APiWw",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"status\"}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "ok": true,
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "closed",
+              "why": "terms",
+              "until": null,
+              "prelive": "on",
+              "termsOk": false,
+              "termsOut": true,
+              "agreement": null,
+              "priceList": {
+                "version": 2,
+                "savedAt": "2026-10-11T15:00:30.000Z",
+                "by": "Barnwright (alan@barnwright.test)",
+                "open": false
+              },
+              "lastBarnwrightSave": {
+                "version": 2,
+                "passId": "ZcMmLoEQbMDvo8L-XcZhfA",
+                "at": "2026-10-11T15:00:30.000Z"
+              },
+              "canUndo": true,
+              "appVersion": "dealer-center test"
+            }
+          },
+          "note": "status always answers 200 with the status fields; any other action answers 403 closed with the words for terms"
+        },
+        {
+          "name": "after the owner's First setup",
+          "given": "The owner ticked the terms box in First setup and added their first lot. Access stands on their own agreement now.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoidk5aQkExLWVXRUdMSjlhMVFILWg3QSIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzdGF0dXMiLCJib2R5U2hhMjU2IjoiYzcyNTQ2OWUyYjA5ODUxMTY2Y2M2YzAzN2NiOGM0YjVkNzQzZTljMTdkYTUzZDQzMDY2ZTY3NTBkZDZlYzBiNSIsImlzc3VlZEF0IjoxNzkxNzMwODAwMDAwLCJleHBpcmVzQXQiOjE3OTE3MzA5MjAwMDAsInNpZ251cCI6eyJ0ZXJtc1ZlcnNpb24iOiIyLjIiLCJ0ZXJtc1NoYTI1NiI6ImQ0MDExNzU3ODkzMTE0YTI5OTJhZWM1YmU0MDQ2NWJmNmUwODU3ZDAxNjQ0MDUxY2ZmZjA4MjFmNTIzM2ZhNmMiLCJzaWduYXR1cmUiOiJQYXQgT3duZXIiLCJzaWduZWRBdCI6IjIwMjYtMTAtMDlUMTU6MDA6MDAuMDAwWiIsImJ1c2luZXNzIjoiVGVzdGluZyBTaGVkcyIsInBob25lIjoiOTQxLTU1NS0wMTAwIiwiZW1haWwiOiJwYXRAdGVzdGluZ3NoZWRzLmV4YW1wbGUifX0.xppVqnJUblJvNmtd2u1MEkrihTKQTE8dMZjNs_F_97jhlEa3BNRC8Celc-laWqn4TO7_VHLSW8uoHvOFGrvgzA",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"action\":\"status\"}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "ok": true,
+              "v": 2,
+              "live": false,
+              "liveAt": null,
+              "access": "prelive",
+              "why": null,
+              "until": null,
+              "prelive": "on",
+              "termsOk": true,
+              "termsOut": true,
+              "agreement": "owner",
+              "priceList": {
+                "version": 2,
+                "savedAt": "2026-10-11T15:00:30.000Z",
+                "by": "Barnwright (alan@barnwright.test)",
+                "open": false
+              },
+              "lastBarnwrightSave": {
+                "version": 2,
+                "passId": "ZcMmLoEQbMDvo8L-XcZhfA",
+                "at": "2026-10-11T15:00:30.000Z"
+              },
+              "canUndo": true,
+              "appVersion": "dealer-center test"
+            }
+          }
+        }
+      ]
+    },
+    "visit": {
+      "examples": [
+        {
+          "name": "start before a price list exists: the starting price list is made first",
+          "given": "Alan tapped Make their Dealer Center; it deployed and checked in. No owner has signed in. The owner signed up on the sign-up page under terms 2.2, the terms this Dealer Center ships. The pass carries that sign-up. Alan tapped Open their price list.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/api/office/barnwright/start",
+            "headers": {
+              "Authorization": "Bearer eyJ2IjoxLCJwdXJwb3NlIjoic2V0dXAtcGFzcyIsImlkIjoiNnJQbkQwdVNJYXNqRnRlT1J0R09idyIsImN1c3RvbWVySWQiOiJjdXN0X3Rlc3RpbmciLCJzaXRlSWQiOiJzaXRlLXRlc3RpbmctMSIsImFjdG9yIjoiYWxhbkBiYXJud3JpZ2h0LnRlc3QiLCJ2aWEiOiJjb250cm9sLXJvb20iLCJhY3Rpb24iOiJzZXNzaW9uIiwiYm9keVNoYTI1NiI6ImFjNTg5OTFjZDVhYWYyODhhMjg2Y2NlYWY1OWI0OTlmNjc2MzE2ZTJlYmNkYjEwMGRiNDNjZjM1NDBlZTcxYjEiLCJpc3N1ZWRBdCI6MTc5MTczMDgwMDAwMCwiZXhwaXJlc0F0IjoxNzkxNzMwOTIwMDAwLCJzaWdudXAiOnsidGVybXNWZXJzaW9uIjoiMi4yIiwidGVybXNTaGEyNTYiOiJkNDAxMTc1Nzg5MzExNGEyOTkyYWVjNWJlNDA0NjViZjZlMDg1N2QwMTY0NDA1MWNmZmYwODIxZjUyMzNmYTZjIiwic2lnbmF0dXJlIjoiUGF0IE93bmVyIiwic2lnbmVkQXQiOiIyMDI2LTEwLTA5VDE1OjAwOjAwLjAwMFoiLCJidXNpbmVzcyI6IlRlc3RpbmcgU2hlZHMiLCJwaG9uZSI6Ijk0MS01NTUtMDEwMCIsImVtYWlsIjoicGF0QHRlc3RpbmdzaGVkcy5leGFtcGxlIn19.iEOsIChLmHjyuph1AJz6dYhLMiLynwaaAi2iuJVSmeHF-XYYZZoVQ9XDjJoWj5ue4B223GIMgSeA3VofptY7Tg",
+              "Content-Type": "application/json",
+              "Origin": "https://testing.barnwrightsoftware.com"
+            },
+            "body": "{\"action\":\"session\"}"
+          },
+          "answer": {
+            "status": 200,
+            "headers": {
+              "Set-Cookie": "__Host-bw_setup=LiRIHD5SV_a1-kzc3p8tUvdf39mXKXHOmlE73P8A9R8; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=28800"
+            },
+            "body": {
+              "ok": true,
+              "mode": "prelive",
+              "until": null,
+              "visitEndsAt": "2026-10-11T23:00:00.000Z",
+              "business": {
+                "name": "Testing Sheds"
+              },
+              "started": true
+            }
+          },
+          "log": [
+            "Barnwright (alan@barnwright.test) opened your price list.",
+            "Barnwright (alan@barnwright.test) started your price list from Every standard building, using the terms you agreed to when you signed up."
+          ],
+          "serviceRecord": {
+            "method": "POST",
+            "url": "https://barnwright-control-room.netlify.app/api/setup-service",
+            "headers": {
+              "Authorization": "Bearer <the activation key>",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"action\":\"setup-saved\",\"version\":1,\"versionBefore\":0,\"changes\":[\"Started the price list from Every standard building, at example prices\"],\"more\":0,\"actor\":\"alan@barnwright.test\",\"undo\":false}"
+          }
+        },
+        {
+          "name": "start when the account can't save",
+          "given": "As above, but the Barnwright account is off. No price list is made and no visit starts.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/api/office/barnwright/start",
+            "headers": {
+              "Authorization": "Bearer <a session pass with the sign-up>",
+              "Content-Type": "application/json",
+              "Origin": "https://testing.barnwrightsoftware.com"
+            },
+            "body": "{\"action\":\"session\"}"
+          },
+          "answer": {
+            "status": 423,
+            "body": {
+              "ok": false,
+              "code": "account-off",
+              "error": "Their Dealer Center can't save changes right now: its Barnwright account is off or hasn't checked in for 7 days. Reading still works."
+            }
+          }
+        },
+        {
+          "name": "start with a sign-up from before terms 2.2",
+          "given": "The owner signed up under terms 2.1.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/api/office/barnwright/start",
+            "headers": {
+              "Authorization": "Bearer <a session pass whose signup says 2.1>",
+              "Content-Type": "application/json",
+              "Origin": "https://testing.barnwrightsoftware.com"
+            },
+            "body": "{\"action\":\"session\"}"
+          },
+          "answer": {
+            "status": 403,
+            "body": {
+              "ok": false,
+              "code": "closed",
+              "error": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
+              "why": "signup-terms"
+            }
+          }
+        },
+        {
+          "name": "a visit started on the sign-up agreement, after the owner first signed in",
+          "given": "During the visit above, the owner made their login (they haven't ticked yet).",
+          "request": {
+            "method": "PUT",
+            "url": "https://testing.barnwrightsoftware.com/api/office/barnwright/price-list",
+            "headers": {
+              "Cookie": "__Host-bw_setup=LiRIHD5SV_a1-kzc3p8tUvdf39mXKXHOmlE73P8A9R8",
+              "Content-Type": "application/json",
+              "Origin": "https://testing.barnwrightsoftware.com"
+            },
+            "body": "{\"settings\": <...>, \"version\": 1}"
+          },
+          "answer": {
+            "status": 401,
+            "body": {
+              "error": "Your Barnwright visit ended. The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center. Your changes are kept in this tab.",
+              "code": "visit-ended",
+              "why": "terms"
+            }
+          }
+        }
+      ]
+    },
+    "firstSetup": {
+      "words": {
+        "line": "Barnwright set up your price list. You can change anything.",
+        "steps": [
+          "Your business",
+          "Your first lot"
+        ],
+        "hello": "Two short steps. You can change all of it later.",
+        "stepsBefore": [
+          "Your business",
+          "Your price list",
+          "Your first lot"
+        ],
+        "alreadySetUp": "The business is already set up."
+      },
+      "examples": [
+        {
+          "name": "GET me at the owner's first sign-in",
+          "given": "After the version-0 save. The owner made their login with the email from their sign-up (OWNER_EMAIL) and confirmed it.",
+          "request": {
+            "method": "GET",
+            "url": "https://testing.barnwrightsoftware.com/api/office/me",
+            "headers": {
+              "Authorization": "Bearer <the owner's Identity token>"
+            }
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "user": "<the login>",
+              "person": "<the owner>",
+              "business": {
+                "id": "testing-sheds",
+                "name": "Testing Sheds",
+                "short": "Testing Sheds",
+                "initials": "TS",
+                "logo": "",
+                "colors": {
+                  "header": "#16130E",
+                  "primary": "#2E2920",
+                  "accent": "#C9A227"
+                },
+                "phone": "941-555-0100",
+                "email": "pat@testingsheds.example",
+                "website": "",
+                "open": false
+              },
+              "setupNeeded": true,
+              "lots": [],
+              "terms": {
+                "version": "2.2",
+                "date": "<the terms' date>",
+                "url": "/legal/barnwright-terms.pdf",
+                "title": "Barnwright Terms and Conditions",
+                "agreed": null
+              },
+              "setup": {
+                "mode": null,
+                "until": null
+              },
+              "...": "the other fields as always"
+            }
+          },
+          "note": "setupNeeded with a business: First setup has two steps and says the line in words.line"
+        },
+        {
+          "name": "POST setup on the price list Barnwright started",
+          "given": "As above; the owner kept the details and ticked the box.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/api/office/setup",
+            "headers": {
+              "Authorization": "Bearer <the owner's Identity token>",
+              "Origin": "https://testing.barnwrightsoftware.com",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"yourName\":\"Pat Owner\",\"businessName\":\"Testing Sheds\",\"phone\":\"941-555-0100\",\"email\":\"pat@testingsheds.example\",\"agreeTerms\":true}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "business": {
+                "id": "testing-sheds",
+                "name": "Testing Sheds",
+                "short": "Testing Sheds",
+                "initials": "TS",
+                "logo": "",
+                "colors": {
+                  "header": "#16130E",
+                  "primary": "#2E2920",
+                  "accent": "#C9A227"
+                },
+                "phone": "941-555-0100",
+                "email": "pat@testingsheds.example",
+                "website": "",
+                "open": false
+              }
+            }
+          },
+          "note": "the agreement is kept as the owner's own (barnwright-terms); nothing differs, so no new version"
+        },
+        {
+          "name": "POST setup with a new phone",
+          "given": "As above, but the owner typed 941-555-0123 for the business phone.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/api/office/setup",
+            "headers": {
+              "Authorization": "Bearer <the owner's Identity token>",
+              "Origin": "https://testing.barnwrightsoftware.com",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"yourName\":\"Pat Owner\",\"businessName\":\"Testing Sheds\",\"phone\":\"941-555-0123\",\"email\":\"pat@testingsheds.example\",\"agreeTerms\":true}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "business": {
+                "id": "testing-sheds",
+                "name": "Testing Sheds",
+                "short": "Testing Sheds",
+                "initials": "TS",
+                "logo": "",
+                "colors": {
+                  "header": "#16130E",
+                  "primary": "#2E2920",
+                  "accent": "#C9A227"
+                },
+                "phone": "941-555-0123",
+                "email": "pat@testingsheds.example",
+                "website": "",
+                "open": false
+              }
+            }
+          },
+          "note": "version 3 by the owner: History says \"Phone: 941-555-0100 → 941-555-0123\" (the owner's own History shows contact details in full)"
+        },
+        {
+          "name": "refused: no tick",
+          "given": "As above, without agreeTerms.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/api/office/setup",
+            "headers": {
+              "Authorization": "Bearer <the owner's Identity token>",
+              "Origin": "https://testing.barnwrightsoftware.com",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"yourName\":\"Pat Owner\",\"businessName\":\"Testing Sheds\",\"phone\":\"941-555-0100\",\"email\":\"pat@testingsheds.example\"}"
+          },
+          "answer": {
+            "status": 422,
+            "body": {
+              "error": "Tick the box to agree to the Barnwright Terms and Conditions."
+            }
+          }
+        },
+        {
+          "name": "refused: set up already",
+          "given": "After the POST setup above.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/api/office/setup",
+            "headers": {
+              "Authorization": "Bearer <the owner's Identity token>",
+              "Origin": "https://testing.barnwrightsoftware.com",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"yourName\":\"Pat Owner\",\"businessName\":\"Testing Sheds\",\"phone\":\"941-555-0100\",\"email\":\"pat@testingsheds.example\",\"agreeTerms\":true}"
+          },
+          "answer": {
+            "status": 409,
+            "body": {
+              "error": "The business is already set up."
+            }
+          }
+        }
+      ]
+    },
+    "checkIn": {
+      "examples": [
+        {
+          "name": "right after Make their Dealer Center, before any pass brought the sign-up",
+          "given": "The first deploy just succeeded (deploy-succeeded checks in). No owner, no price list, nothing remembered yet. The Control Room then sends one status pass carrying the sign-up.",
+          "request": {
+            "method": "POST",
+            "url": "https://barnwright-control-room.netlify.app/api/license",
+            "headers": {
+              "Authorization": "Bearer <the activation key>",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"appVersion\":\"dealer-center test\",\"dealerCount\":0,\"setup\":{\"v\":2,\"live\":false,\"liveAt\":null,\"access\":\"closed\",\"why\":\"no-price-list\",\"until\":null,\"prelive\":\"on\",\"termsOk\":false,\"termsOut\":true,\"agreement\":null},\"siteUrl\":\"https://testing.barnwrightsoftware.com\"}"
+          }
+        },
+        {
+          "name": "after the first pass brought the sign-up",
+          "given": "barnwright-signup-agreement is written; still no owner and no price list.",
+          "request": {
+            "method": "POST",
+            "url": "https://barnwright-control-room.netlify.app/api/license",
+            "headers": {
+              "Authorization": "Bearer <the activation key>",
+              "Content-Type": "application/json"
+            },
+            "body": "{\"customerId\":\"cust_testing\",\"siteId\":\"site-testing-1\",\"appVersion\":\"dealer-center test\",\"dealerCount\":0,\"setup\":{\"v\":2,\"live\":false,\"liveAt\":null,\"access\":\"prelive\",\"why\":null,\"until\":null,\"prelive\":\"on\",\"termsOk\":false,\"termsOut\":true,\"agreement\":\"signup\"},\"siteUrl\":\"https://testing.barnwrightsoftware.com\"}"
+          }
+        }
+      ]
+    },
+    "deploySucceeded": {
+      "file": "netlify/functions/deploy-succeeded.mts",
+      "event": "deploy-succeeded",
+      "about": "Netlify calls a function named for the event, signed by Netlify (it checks the signature before calling it). The body's payload is the deploy as Netlify's API describes it. Only a production deploy, with the function itself running in production, checks in (index.js deploySucceeded -> scheduledCheckIn). Always 204.",
+      "examples": [
+        {
+          "name": "a production deploy",
+          "request": {
+            "method": "POST",
+            "body": "{\"payload\":{\"id\":\"67099f00a1b2c3d4e5f60718\",\"site_id\":\"site-testing-1\",\"build_id\":\"67099f00a1b2c3d4e5f60719\",\"state\":\"ready\",\"name\":\"testing-sheds\",\"url\":\"http://testing-sheds.netlify.app\",\"ssl_url\":\"https://testing.barnwrightsoftware.com\",\"context\":\"production\",\"branch\":\"main\",\"commit_ref\":\"0123456789abcdef0123456789abcdef01234567\",\"published_at\":\"2026-10-11T15:00:00.000Z\"}}"
+          },
+          "context": {
+            "deploy": {
+              "context": "production",
+              "published": true
+            }
+          },
+          "checksIn": true,
+          "answer": {
+            "status": 204
+          }
+        },
+        {
+          "name": "a deploy preview",
+          "request": {
+            "method": "POST",
+            "body": "{\"payload\":{\"id\":\"67099f00a1b2c3d4e5f60718\",\"site_id\":\"site-testing-1\",\"build_id\":\"67099f00a1b2c3d4e5f60719\",\"state\":\"ready\",\"name\":\"testing-sheds\",\"url\":\"http://testing-sheds.netlify.app\",\"ssl_url\":\"https://testing.barnwrightsoftware.com\",\"context\":\"deploy-preview\",\"branch\":\"lane/test\",\"commit_ref\":\"0123456789abcdef0123456789abcdef01234567\",\"published_at\":\"2026-10-11T15:00:00.000Z\"}}"
+          },
+          "context": {
+            "deploy": {
+              "context": "deploy-preview",
+              "published": false
+            }
+          },
+          "checksIn": false,
+          "answer": {
+            "status": 204
+          }
+        },
+        {
+          "name": "a branch deploy",
+          "request": {
+            "method": "POST",
+            "body": "{\"payload\":{\"id\":\"67099f00a1b2c3d4e5f60718\",\"site_id\":\"site-testing-1\",\"build_id\":\"67099f00a1b2c3d4e5f60719\",\"state\":\"ready\",\"name\":\"testing-sheds\",\"url\":\"http://testing-sheds.netlify.app\",\"ssl_url\":\"https://testing.barnwrightsoftware.com\",\"context\":\"branch-deploy\",\"branch\":\"lane/test\",\"commit_ref\":\"0123456789abcdef0123456789abcdef01234567\",\"published_at\":\"2026-10-11T15:00:00.000Z\"}}"
+          },
+          "context": {
+            "deploy": {
+              "context": "branch-deploy",
+              "published": false
+            }
+          },
+          "checksIn": false,
+          "answer": {
+            "status": 204
+          }
+        },
+        {
+          "name": "a body that isn't JSON",
+          "request": {
+            "method": "POST",
+            "body": "not json"
+          },
+          "context": {
+            "deploy": {
+              "context": "production",
+              "published": true
+            }
+          },
+          "checksIn": false,
+          "answer": {
+            "status": 204
+          }
+        },
+        {
+          "name": "a production deploy event on a function not running in production",
+          "request": {
+            "method": "POST",
+            "body": "{\"payload\":{\"id\":\"67099f00a1b2c3d4e5f60718\",\"site_id\":\"site-testing-1\",\"build_id\":\"67099f00a1b2c3d4e5f60719\",\"state\":\"ready\",\"name\":\"testing-sheds\",\"url\":\"http://testing-sheds.netlify.app\",\"ssl_url\":\"https://testing.barnwrightsoftware.com\",\"context\":\"production\",\"branch\":\"main\",\"commit_ref\":\"0123456789abcdef0123456789abcdef01234567\",\"published_at\":\"2026-10-11T15:00:00.000Z\"}}"
+          },
+          "context": {
+            "deploy": {
+              "context": "deploy-preview",
+              "published": false
+            }
+          },
+          "checksIn": false,
+          "answer": {
+            "status": 204
+          }
+        }
+      ]
+    },
+    "words": {
+      "why": {
+        "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
+        "signup-unknown": "Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy."
+      },
+      "startLine": "Started the price list from Every standard building, at example prices",
+      "nothingBeforeStart": "This is the starting price list Barnwright set up, so there is nothing before it to put back.",
+      "log": {
+        "started": "Barnwright (<actor>) started your price list from Every standard building, using the terms you agreed to when you signed up."
+      },
+      "firstSetup": {
+        "line": "Barnwright set up your price list. You can change anything.",
+        "steps": [
+          "Your business",
+          "Your first lot"
+        ],
+        "hello": "Two short steps. You can change all of it later.",
+        "stepsBefore": [
+          "Your business",
+          "Your price list",
+          "Your first lot"
+        ],
+        "alreadySetUp": "The business is already set up."
+      }
+    }
   },
   "words": {
     "lock": {
@@ -5850,6 +8452,7 @@
       "leads": "Only the owner can change where quotes go.",
       "credit": "The 3D designer credit line can't be changed by Barnwright.",
       "construction": "How the buildings are built can't be changed here, except a gable roof's pitch.",
+      "extraConstruction": "The extra \"<name>\" changes how the building is built, so only the owner can add it, remove it or change what it builds.",
       "logoAddress": "The logo must be a picture uploaded in Settings, Logo, not a web address.",
       "logoBig": "The logo is too big. Use a picture of 150 KB or less.",
       "contact": "While their 3D designer is open, the business phone, email and website can be changed only by the owner, or by Alan by hand in Open their price list."
@@ -5870,8 +8473,13 @@
     "roofPitchLine": "<Style> and every building built like it: roof pitch <old pitch> → <new pitch>",
     "standardPitch": "6.5/12 (standard)",
     "nothingToUndo": "Barnwright hasn't changed this price list, so there is nothing to undo.",
+    "nothingBeforeStart": "This is the starting price list Barnwright set up, so there is nothing before it to put back.",
     "tooManySaves": "Barnwright has saved 60 changes here today. Try again tomorrow.",
-    "refusedLog": "A Barnwright change was refused: <words>.",
+    "refusedLog": {
+      "needs-alan": "Barnwright tried a change that needs Alan's OK in his Control Room first. Nothing was changed.",
+      "locked": "Barnwright tried to change something only you can change. Nothing was changed.",
+      "other": "Barnwright tried a change that couldn't be saved. Nothing was changed."
+    },
     "savedBy": [
       "the owner",
       "a manager",
@@ -5919,10 +8527,50 @@
       "stopped": "<Owner> stopped Barnwright's setup access.",
       "allowed": "<Owner> let Barnwright set up the price list again.",
       "liveOpened": "Barnwright's setup access ended when you opened your 3D designer to customers.",
-      "liveQuote": "Barnwright's setup access ended when your first quote was saved."
+      "liveQuote": "Barnwright's setup access ended when your first quote was saved.",
+      "started": "Barnwright (<actor>) started your price list from Every standard building, using the terms you agreed to when you signed up."
     },
     "forAlan": "You can change their prices",
     "forOwner": "Barnwright can change your prices",
-    "needsNewestVersion": "Their Dealer Center needs the newest version. It updates on its next deploy."
+    "needsNewestVersion": "Their Dealer Center needs the newest version. It updates on its next deploy.",
+    "startLine": "Started the price list from Every standard building, at example prices",
+    "firstSetup": {
+      "line": "Barnwright set up your price list. You can change anything.",
+      "steps": [
+        "Your business",
+        "Your first lot"
+      ],
+      "hello": "Two short steps. You can change all of it later.",
+      "stepsBefore": [
+        "Your business",
+        "Your price list",
+        "Your first lot"
+      ],
+      "alreadySetUp": "The business is already set up."
+    }
+  },
+  "status": {
+    "v": 2,
+    "order": [
+      "v",
+      "live",
+      "liveAt",
+      "access",
+      "why",
+      "until",
+      "prelive",
+      "termsOk",
+      "termsOut",
+      "agreement",
+      "priceList",
+      "lastBarnwrightSave",
+      "canUndo",
+      "appVersion"
+    ],
+    "agreement": [
+      "owner",
+      "signup",
+      null
+    ]
   }
 }

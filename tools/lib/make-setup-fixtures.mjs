@@ -17,7 +17,14 @@
      * one example request and answer for every door action and every refusal,
        for the visit routes, the owner's routes and the check-in;
      * the base price list (First setup with the small starting price list)
-       and sample edits with the change words they must give.
+       and sample edits with the change words they must give, and what the
+       lock does with an extra that changes how the building is built
+       (edits.effects);
+     * beforeSignIn: the owner's sign-up agreement carried on a pass (the
+       signup claim, good and bad), when it counts, the starting price list
+       at version 0 (read, check, save), the visit that starts it, First
+       setup on a price list that already exists, the check-in, and the
+       check-in right after a deploy (deploy-succeeded).
 
    The change words come from the Dealer Center's own describeChanges, so
    they are exactly what it writes today. Two kinds of words are new and
@@ -52,6 +59,13 @@ export const VIA = ["control-room", "claude"];
 export const PARTS = ["summary", "buildings", "doors_windows", "options", "colors", "prices_and_quotes", "library"];
 export const DOOR_MAX_BYTES = 64 * 1024;
 export const GABLE_STYLES = ["UT", "SU", "GU", "C", "SC", "DSC", "G", "MU", "MG", "DK"];
+/* the status fields' version: 2 knows sign-up agreements and version 0 ("Before the owner first signs in") */
+export const STATUS_V = 2;
+/* the pass's optional sign-up claim: exactly these keys, in this order */
+export const SIGNUP_KEYS = ["termsVersion", "termsSha256", "signature", "signedAt", "business", "phone", "email"];
+export const SIGNUP_LIMITS = { signature: 200, business: 80, phone: 40, email: 200, signedAt: 50 };
+/* the first terms a sign-up agreement can count for */
+export const SIGNUP_MIN_TERMS = "2.2";
 
 const NOW = Date.UTC(2026, 9, 11, 15, 0, 0);
 const iso = (ms) => new Date(ms).toISOString();
@@ -73,6 +87,8 @@ export const WHY = {
   terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center.",
   stopped: "The owner stopped Barnwright's setup access in Settings, Barnwright.",
   "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
+  "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
+  "signup-unknown": "Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy.",
 };
 /* why "terms" while this Dealer Center's own terms are older than 2.2 (termsOut: false): no owner can agree yet */
 export const TERMS_NOT_OUT = "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.";
@@ -96,6 +112,16 @@ export const REFUSALS = {
   error: { status: 503, error: "Something went wrong on their Dealer Center. Try again in a minute." },
 };
 const NOTHING_TO_UNDO = "Barnwright hasn't changed this price list, so there is nothing to undo.";
+const NOTHING_BEFORE_START = "This is the starting price list Barnwright set up, so there is nothing before it to put back.";
+/* Before the owner first signs in: the starting price list's history line, and First setup's words */
+const START_LINE = "Started the price list from Every standard building, at example prices";
+export const FIRST_SETUP_WORDS = {
+  line: "Barnwright set up your price list. You can change anything.",
+  steps: ["Your business", "Your first lot"],
+  hello: "Two short steps. You can change all of it later.",
+  stepsBefore: ["Your business", "Your price list", "Your first lot"],
+  alreadySetUp: "The business is already set up.",
+};
 const TOO_MANY_SAVES = "Barnwright has saved 60 changes here today. Try again tomorrow.";
 
 export const VISIT_WORDS = {
@@ -115,6 +141,7 @@ export const LOCK = {
   leads: "Only the owner can change where quotes go.",
   credit: "The 3D designer credit line can't be changed by Barnwright.",
   construction: "How the buildings are built can't be changed here, except a gable roof's pitch.",
+  extraConstruction: "The extra \"<name>\" changes how the building is built, so only the owner can add it, remove it or change what it builds.",
   logoAddress: "The logo must be a picture uploaded in Settings, Logo, not a web address.",
   logoBig: "The logo is too big. Use a picture of 150 KB or less.",
   contact: "While their 3D designer is open, the business phone, email and website can be changed only by the owner, or by Alan by hand in Open their price list.",
@@ -182,7 +209,16 @@ export const LOG_WORDS = {
   allowed: "<Owner> let Barnwright set up the price list again.",
   liveOpened: "Barnwright's setup access ended when you opened your 3D designer to customers.",
   liveQuote: "Barnwright's setup access ended when your first quote was saved.",
+  started: "Barnwright (<actor>) started your price list from Every standard building, using the terms you agreed to when you signed up.",
 };
+/* A refused Barnwright change, in the owner's log (at most once a minute, while access is open):
+   always the owner's own words, never the door's words for Alan. */
+export const REFUSED_LOG = {
+  "needs-alan": "Barnwright tried a change that needs Alan's OK in his Control Room first. Nothing was changed.",
+  locked: "Barnwright tried to change something only you can change. Nothing was changed.",
+  other: "Barnwright tried a change that couldn't be saved. Nothing was changed.",
+};
+const logStarted = `${BARNWRIGHT} started your price list from Every standard building, using the terms you agreed to when you signed up.`;
 const UNDO_LINE = "Put back the price list from before Barnwright's last change";
 const pitchLine = (style, from, to) => `${style} and every building built like it: roof pitch ${from} → ${to}`;
 const STANDARD_PITCH = "6.5/12 (standard)";
@@ -268,7 +304,45 @@ export function checkSetupPass(token, { publicKeyPem, customerId, siteId, action
   if (c.expiresAt <= now) no("expired");
   if (c.action !== action) no("action");
   if (typeof c.bodySha256 !== "string" || c.bodySha256 !== sha256(bodyBytes)) no("body");
+  if (c.signup !== undefined && !signupShapeOk(c.signup, c.issuedAt)) no("signup");
   return c;
+}
+
+/* The pass's optional sign-up claim (docs/OFFICE.md, The pass): exactly SIGNUP_KEYS, each a
+   string with no control characters, within its limits. */
+export function signupShapeOk(s, issuedAt) {
+  if (!s || typeof s !== "object" || Array.isArray(s)) return false;
+  const keys = Object.keys(s);
+  if (keys.length !== SIGNUP_KEYS.length || !SIGNUP_KEYS.every((k) => keys.includes(k))) return false;
+  if (!SIGNUP_KEYS.every((k) => typeof s[k] === "string" && !/[\u0000-\u001f\u007f]/.test(s[k]))) return false;
+  if (!/^\d{1,4}(\.\d{1,4}){0,3}$/.test(s.termsVersion) || !/^[0-9a-f]{64}$/.test(s.termsSha256)) return false;
+  if (!s.signature.trim() || s.signature.length > SIGNUP_LIMITS.signature) return false;
+  if (!s.business.trim() || s.business.length > SIGNUP_LIMITS.business) return false;
+  if (s.phone.length > SIGNUP_LIMITS.phone || s.email.length > SIGNUP_LIMITS.email) return false;
+  if (s.signedAt.length > SIGNUP_LIMITS.signedAt || !/^\d{4}-\d{2}-\d{2}T[^]*(?:Z|[+-]\d{2}:\d{2})$/.test(s.signedAt)) return false;
+  const t = Date.parse(s.signedAt);
+  return Number.isFinite(t) && t <= issuedAt + MAX_SKEW_MS;
+}
+
+/* "2.2" or later, numbers compared as numbers (server/office/terms.js versionAtLeast). */
+export function versionAtLeast(version, need) {
+  if (typeof version !== "string" || !/^\d{1,4}(\.\d{1,4}){0,3}$/.test(version)) return false;
+  const a = version.split(".").map(Number), b = String(need).split(".").map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+  return true;
+}
+
+/* Does a sign-up agreement count as the owner's agreement for setup access? (docs/OFFICE.md,
+   "Before the owner first signs in", When it counts.) ships: this Dealer Center's TERMS.version;
+   ownCopies: docs/legal/terms-sha256.json's versions. -> {counts, why}: why is the access why
+   when it doesn't count and no owner has signed in, else null. */
+export function signupCounts(signup, { ships, ownCopies = {}, ownerSignedIn = false }) {
+  if (ownerSignedIn) return { counts: false, why: null };
+  if (!signup) return { counts: false, why: null };
+  if (!versionAtLeast(ships, SIGNUP_MIN_TERMS)) return { counts: false, why: "terms" };
+  if (!versionAtLeast(signup.termsVersion, SIGNUP_MIN_TERMS)) return { counts: false, why: "signup-terms" };
+  if (signup.termsVersion === ships || (ownCopies[signup.termsVersion] || []).includes(signup.termsSha256)) return { counts: true, why: null };
+  return { counts: false, why: "signup-unknown" };
 }
 
 /* ---- the base price list: First setup with the small starting price list ------------------ */
@@ -568,6 +642,328 @@ function sampleSet(base, pl) {
   return out;
 }
 
+/* ---- the lock: an extra that changes how the building is built ------------------------------- */
+
+const EFFECT_EXTRA = { key: "heavy-floor", name: "Heavy-duty floor", input: "check", price: 350, construction: { "floor.spacingIn": 12 } };
+const extraWords = (name) => LOCK.extraConstruction.replace("<name>", name);
+
+/* The fixtures' base with one extra of the business's own that carries a construction effect
+   (model/company.js optionEffects), and what Barnwright may and may not do with it. */
+function effectSet(base, pl) {
+  const effectBase = structuredClone(base);
+  effectBase.options.extras.push(structuredClone(EFFECT_EXTRA));
+  pl.check(effectBase);
+  const door = [];
+  {
+    const after = structuredClone(effectBase);
+    const x = after.options.extras.find((e) => e.key === EFFECT_EXTRA.key);
+    Object.assign(x, { name: "Heavy-duty floor (12 in. joists)", price: 395 });
+    settle(effectBase, after);
+    pl.check(after);
+    door.push({
+      name: "set_extra on an extra that changes how the building is built: name and price change, its effect stays exactly",
+      mode: "prelive", edits: [{ do: "set_extra", key: EFFECT_EXTRA.key, name: "Heavy-duty floor (12 in. joists)", charged: "check", price: 395 }],
+      expect: {
+        ok: true, changes: describeChanges(effectBase, after, M, { contact: "new" }), warnings: [], contactDetailsChange: false, newCodes: {},
+        paths: { "options.extras": after.options.extras }, settingsSha256: sha256(JSON.stringify(after)),
+      },
+    });
+  }
+  door.push({ name: "remove_extra: an extra that changes how the building is built (the lock)", mode: "prelive",
+    edits: [{ do: "remove_extra", key: EFFECT_EXTRA.key }], expect: { ok: false, code: "problems", problems: [extraWords(EFFECT_EXTRA.name)] } });
+  door.push({ name: "set_extra can't carry a construction effect (not part of the edit)", mode: "prelive",
+    edits: [{ do: "set_extra", name: "Taller walls", charged: "check", price: 600, construction: { "walls.heightIn": 96 } }],
+    expect: { ok: false, code: "problems", problems: ["Edit 1: construction isn't part of set_extra."] } });
+
+  /* the visit sends whole settings: only options.extras differs from effectBase here */
+  const extrasOf = (fn) => { const list = structuredClone(effectBase.options.extras); fn(list); return list; };
+  const visit = [
+    { name: "a new extra that changes how the building is built", extras: extrasOf((l) => l.push({ key: "taller-walls", name: "Taller walls", input: "check", price: 600, construction: { "walls.heightIn": 96 } })),
+      expect: { status: 422, problems: [extraWords("Taller walls")] } },
+    { name: "an extra's effect changed", extras: extrasOf((l) => { l.find((e) => e.key === EFFECT_EXTRA.key).construction = { "floor.spacingIn": 16 }; }),
+      expect: { status: 422, problems: [extraWords(EFFECT_EXTRA.name)] } },
+    { name: "an extra's effect taken off (the extra stays)", extras: extrasOf((l) => { delete l.find((e) => e.key === EFFECT_EXTRA.key).construction; }),
+      expect: { status: 422, problems: [extraWords(EFFECT_EXTRA.name)] } },
+    { name: "an extra that has an effect removed", extras: extrasOf((l) => l.splice(l.findIndex((e) => e.key === EFFECT_EXTRA.key), 1)),
+      expect: { status: 422, problems: [extraWords(EFFECT_EXTRA.name)] } },
+    { name: "its name, how it is charged and its price changed, the effect the same", extras: extrasOf((l) => Object.assign(l.find((e) => e.key === EFFECT_EXTRA.key), { name: "Strong floor", input: "sqftF", price: 2 })),
+      expect: { status: 200 } },
+  ];
+  return {
+    about: "An extra of the business's own can carry a construction effect (options.extras[].construction; model/company.js optionEffects). Barnwright never adds one, changes one or removes an extra that has one; the only building-shape change it can make is set_roof_pitch. Door samples are checked like edits.samples, on effectBase; visit samples are the visit's PUT price-list with effectBase whose options.extras is replaced by `extras` (and a put back that would do the same is refused alike).",
+    extra: EFFECT_EXTRA, effectBase, door, visit,
+  };
+}
+
+/* ---- before the owner first signs in (the sign-up agreement and version 0) ------------------- */
+
+const SIGNUP = {
+  termsVersion: "2.2", termsSha256: sha256("TEST ONLY: the bytes of docs/legal/terms.json for terms 2.2"),
+  signature: "Pat Owner", signedAt: iso(NOW - 2 * 86400_000),
+  business: DEALER.business, phone: "941-555-0100", email: "pat@testingsheds.example",
+};
+const OWNER_EMAIL = SIGNUP.email;
+
+async function startingPriceList(signup) {
+  const store = wrapStore(new MemoryBlobs());
+  const pl = createPriceList({
+    store, manufacturer: M, library: LIB, now: () => new Date(iso(NOW)),
+    templates: { full: readJSON("companies/demo/company.json"), small: readJSON("companies/starter/company.json") },
+  });
+  const record = await pl.setup({ userId: "barnwright", name: BARNWRIGHT },
+    { businessName: signup.business, phone: signup.phone, email: signup.email, website: "", start: "full" });
+  return { pl, settings: record.settings };
+}
+
+async function beforeSignInSection({ passFor, bodyOf, request }) {
+  const { pl, settings: start } = await startingPriceList(SIGNUP);
+  const withSignup = (name, action, body, signup = SIGNUP, over = {}) => passFor(claimsFor(name, action, body, { ...over, signup }));
+  const at = (sec) => iso(NOW + sec * 1000);
+
+  /* the first save: Loft Barn 10x16 to $5,700, and they don't sell dog kennels */
+  const edits = [{ do: "set_price", style: "LB", size: "10x16", price: 5700 }, { do: "stop_selling_style", style: "DK" }];
+  const after = structuredClone(start);
+  after.offer.LB.sizes["10x16"] = 5700;
+  delete after.offer.DK;
+  after.categories = after.categories.filter(([, ks]) => !(ks.length === 1 && ks[0] === "DK"));
+  if (after.defaults?.style === "DK") throw new Error("the starting price list opens on the kennel");
+  settle(start, after);
+  pl.check(after);
+  const changes = describeChanges(start, after, M, { contact: "new" });
+  const startSha = sha256(JSON.stringify(start)), afterSha = sha256(JSON.stringify(after));
+
+  const bodies = {
+    status: bodyOf({ action: "status" }),
+    read: bodyOf({ action: "read", part: "summary" }),
+    check: bodyOf({ action: "check", version: 0, edits }),
+    save: bodyOf({ action: "save", version: 0, edits, settingsSha256: afterSha }),
+    checkAlone: bodyOf({ action: "check", version: 0, edits: [] }),
+    saveAlone: bodyOf({ action: "save", version: 0, edits: [], settingsSha256: startSha }),
+    session: bodyOf({ action: "session" }),
+  };
+  const passes = {};
+  for (const [name, action] of [["status", "status"], ["read", "read"], ["check", "check"], ["save", "save"], ["session", "session"]]) {
+    passes[name] = { ...withSignup("signup-" + name, action, bodies[name]), body: bodies[name], bodySha256: sha256(bodies[name]) };
+  }
+
+  /* status fields along the way */
+  const fieldsOf = (S) => ({ v: STATUS_V, ...S, appVersion: APP_VERSION });
+  const B0 = { live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: false, termsOut: true, agreement: "signup",
+    priceList: null, lastBarnwrightSave: null, canUndo: false };
+  const savePass = passes.save.claims.id;
+  const B2 = { ...B0, priceList: { version: 2, savedAt: at(30), by: BARNWRIGHT, open: false }, lastBarnwrightSave: { version: 2, passId: savePass, at: at(30) }, canUndo: true };
+  const aloneId = passId("signup-save-alone");
+  const B1 = { ...B0, priceList: { version: 1, savedAt: at(30), by: BARNWRIGHT, open: false }, lastBarnwrightSave: { version: 1, passId: aloneId, at: at(30) }, canUndo: false };
+  const closedB = (why, more = {}) => ({ ...B0, access: "closed", why, agreement: null, ...more });
+  const ok = (S, more = {}) => ({ status: 200, body: { ok: true, ...fieldsOf(S), ...more } });
+  const no = (code, S, more = {}) => ({ status: REFUSALS[code].status, body: { ok: false, code, error: more.error || REFUSALS[code].error, ...(more.extra || {}), ...fieldsOf(S) } });
+  const closed = (why, S, words = WHY[why]) => no("closed", S, { error: words, extra: { why } });
+
+  const GIVEN0 = "Alan tapped Make their Dealer Center; it deployed and checked in. No owner has signed in. The owner signed up on the sign-up page under terms 2.2, the terms this Dealer Center ships. The pass carries that sign-up.";
+  const door = [];
+  const ex = (name, given, req, answer, more = {}) => door.push({ name, given, request: req, answer, ...more });
+  ex("status before a price list exists", GIVEN0 + " This is the first pass that brings it, so barnwright-signup-agreement is written now.",
+    request(passes.status.pass, bodies.status), ok(B0));
+  ex("read summary: the starting price list, version 0", "As above. Nothing is written but the pass and the limits.",
+    request(passes.read.pass, bodies.read), ok(B0, { part: "summary", view: view(start, "summary"), history: [] }));
+  ex("check at version 0", "As above. Nothing is written.", request(passes.check.pass, bodies.check), ok(B0, {
+    version: 0, changes, moreChanges: 0, warnings: [], counts: { edits: edits.length, changes: changes.length, warnings: 0 },
+    contactDetailsChange: false, newCodes: {}, settingsSha256: afterSha,
+  }));
+  ex("save at version 0: the starting price list (version 1), then the edits (version 2)", "Right after the check, with its settingsSha256.",
+    request(passes.save.pass, bodies.save), ok(B2, { versionBefore: 0, version: 2, changes, newCodes: {} }),
+    { history: [
+      { version: 2, savedAt: at(30), by: BARNWRIGHT, changes, more: 0 },
+      { version: 1, savedAt: at(30), by: BARNWRIGHT, changes: [START_LINE], more: 0 },
+    ], log: [logChanged(changes), logStarted] });
+  const checkAlonePass = withSignup("signup-check-alone", "check", bodies.checkAlone);
+  ex("check at version 0 with no edits: the starting price list alone", GIVEN0, request(checkAlonePass.pass, bodies.checkAlone), ok(B0, {
+    version: 0, changes: [], moreChanges: 0, warnings: [], counts: { edits: 0, changes: 0, warnings: 0 }, contactDetailsChange: false, newCodes: {}, settingsSha256: startSha,
+  }));
+  const saveAlonePass = passFor({ ...claimsFor("signup-save-alone", "save", bodies.saveAlone), signup: SIGNUP });
+  ex("save at version 0 with no edits: only the starting price list (version 1)", "Right after the check above.",
+    request(saveAlonePass.pass, bodies.saveAlone), ok(B1, { versionBefore: 0, version: 1, changes: [], newCodes: {} }), { log: [logStarted] });
+  const undoV1 = bodyOf({ action: "check", version: 1, undo: true });
+  ex("refused: undo at the starting price list", "After the save above (version 1 is Barnwright's starting price list).",
+    request(withSignup("signup-undo-start", "check", undoV1).pass, undoV1), no("cant-undo", B1, { error: NOTHING_BEFORE_START }));
+  const v1Before = bodyOf({ action: "check", version: 1, edits });
+  ex("refused: a version other than 0 before a price list exists", GIVEN0,
+    request(withSignup("signup-v1-before", "check", v1Before).pass, v1Before), no("version", B0));
+  ex("refused: version 0 once a price list exists", "After the version-0 save above (the price list is at version 2).",
+    request(withSignup("signup-v0-after", "check", bodies.check).pass, bodies.check), no("version", B2));
+  const old = { ...SIGNUP, termsVersion: "2.1", termsSha256: sha256("TEST ONLY: the bytes of docs/legal/terms.json for terms 2.1") };
+  ex("refused: they signed up before terms 2.2", "As in status, but the owner signed up under terms 2.1.",
+    request(withSignup("signup-old", "read", bodies.read, old).pass, bodies.read), closed("signup-terms", closedB("signup-terms")));
+  const newer = { ...SIGNUP, termsVersion: "2.3", termsSha256: sha256("TEST ONLY: the bytes of docs/legal/terms.json for terms 2.3") };
+  ex("refused: they signed up under terms this Dealer Center doesn't have", "As in status, but the owner signed up under terms 2.3 and this Dealer Center ships 2.2 (it hasn't deployed since).",
+    request(withSignup("signup-newer", "read", bodies.read, newer).pass, bodies.read), closed("signup-unknown", closedB("signup-unknown")));
+  ex("refused: no sign-up agreement", "No owner has signed in, no price list, and the pass carries no signup (the customer never signed up on the sign-up page).",
+    request(passFor(claimsFor("signup-none", "read", bodies.read)).pass, bodies.read), closed("no-price-list", closedB("no-price-list")));
+  ex("refused: terms 2.2 aren't out here", "As in status, but this Dealer Center ships terms 2.1 (termsOut: false).",
+    request(withSignup("signup-not-out", "read", bodies.read).pass, bodies.read), closed("terms", closedB("terms", { termsOut: false }), TERMS_NOT_OUT));
+  const status2 = bodyOf({ action: "status" });
+  ex("the owner has signed in but hasn't ticked yet", "After the version-0 save, the owner made their login and is in First setup. The sign-up agreement no longer counts.",
+    request(withSignup("signup-owner-in", "status", status2).pass, status2), ok(closedB("terms", { priceList: B2.priceList, lastBarnwrightSave: B2.lastBarnwrightSave, canUndo: true })),
+    { note: "status always answers 200 with the status fields; any other action answers 403 closed with the words for terms" });
+  const status3 = bodyOf({ action: "status" });
+  ex("after the owner's First setup", "The owner ticked the terms box in First setup and added their first lot. Access stands on their own agreement now.",
+    request(withSignup("signup-after-first-setup", "status", status3).pass, status3),
+    ok({ ...B2, termsOk: true, agreement: "owner" }));
+
+  /* passes that must be refused for their signup claim */
+  const bad = [];
+  const badSignup = (name, signup, more = {}) => {
+    const c = { ...claimsFor("bad-signup-" + name, "status", bodies.status), signup };
+    bad.push({ name, reason: "signup", action: "status", ...passFor(c), body: bodies.status, ...more });
+  };
+  const without = (k) => { const s = { ...SIGNUP }; delete s[k]; return s; };
+  badSignup("not an object", "Pat Owner agreed");
+  badSignup("null", null);
+  badSignup("a key missing (email)", without("email"));
+  badSignup("a key too many (address)", { ...SIGNUP, address: "12 Main St" });
+  badSignup("termsVersion isn't a version", { ...SIGNUP, termsVersion: "v2.2" });
+  badSignup("termsSha256 in capitals", { ...SIGNUP, termsSha256: SIGNUP.termsSha256.toUpperCase() });
+  badSignup("termsSha256 too short", { ...SIGNUP, termsSha256: SIGNUP.termsSha256.slice(1) });
+  badSignup("signature only spaces", { ...SIGNUP, signature: "   " });
+  badSignup("signature with a control character", { ...SIGNUP, signature: "Pat\u0007Owner" });
+  badSignup("signedAt isn't a time", { ...SIGNUP, signedAt: "yesterday" });
+  badSignup("signedAt more than 60 s after issuedAt", { ...SIGNUP, signedAt: iso(NOW + 61_000) });
+  badSignup("business over 80 characters", { ...SIGNUP, business: "B".repeat(81) });
+  badSignup("business empty", { ...SIGNUP, business: "" });
+  badSignup("phone over 40 characters", { ...SIGNUP, phone: "9".repeat(41) });
+  badSignup("email over 200 characters", { ...SIGNUP, email: "a".repeat(190) + "@example.com" });
+  badSignup("a number where words go (phone)", { ...SIGNUP, phone: 9415550100 });
+
+  /* when a sign-up agreement counts */
+  const X = SIGNUP.termsSha256, Y = sha256("TEST ONLY: other bytes called 2.2");
+  const cases = [
+    ["the version this Dealer Center ships (no copy needed)", { ships: "2.2", ownCopies: {} }, SIGNUP],
+    ["an older 2.2 or later version, one of its own copies", { ships: "2.3", ownCopies: { "2.2": [Y, X] } }, SIGNUP],
+    ["2.2, but other bytes than its own copies", { ships: "2.3", ownCopies: { "2.2": [Y] } }, SIGNUP],
+    ["newer than the version it ships", { ships: "2.2", ownCopies: {} }, newer],
+    ["signed up before 2.2", { ships: "2.2", ownCopies: {} }, old],
+    ["this Dealer Center's own terms are older than 2.2", { ships: "2.1", ownCopies: {} }, SIGNUP],
+    ["an owner has signed in (only their own agreement counts now)", { ships: "2.2", ownCopies: {}, ownerSignedIn: true }, SIGNUP],
+  ];
+  const counts = cases.map(([name, dc, s]) => ({ name, dealerCenter: { ownerSignedIn: false, ...dc }, signup: { termsVersion: s.termsVersion, termsSha256: s.termsSha256 }, ...signupCounts(s, dc) }));
+
+  /* the visit */
+  const site = DEALER.siteUrl;
+  const cookie = "__Host-bw_setup";
+  const cookieValue = createHash("sha256").update("setup-fixture:signup-cookie").digest().toString("base64url");
+  const visitHeaders = (pass) => ({ Authorization: `Bearer ${pass}`, "Content-Type": "application/json", Origin: site });
+  const visit = [
+    { name: "start before a price list exists: the starting price list is made first", given: GIVEN0 + " Alan tapped Open their price list.",
+      request: { method: "POST", url: site + "/api/office/barnwright/start", headers: visitHeaders(passes.session.pass), body: bodies.session },
+      answer: { status: 200, headers: { "Set-Cookie": `${cookie}=${cookieValue}; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age=28800` },
+        body: { ok: true, mode: "prelive", until: null, visitEndsAt: at(8 * 3600), business: { name: start.brand.name }, started: true } },
+      log: ["Barnwright (" + ACTOR + ") opened your price list.", logStarted],
+      serviceRecord: { method: "POST", url: "https://barnwright-control-room.netlify.app/api/setup-service", headers: { Authorization: "Bearer <the activation key>", "Content-Type": "application/json" },
+        body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, action: "setup-saved", version: 1, versionBefore: 0, changes: [START_LINE], more: 0, actor: ACTOR, undo: false }) } },
+    { name: "start when the account can't save", given: "As above, but the Barnwright account is off. No price list is made and no visit starts.",
+      request: { method: "POST", url: site + "/api/office/barnwright/start", headers: visitHeaders("<a session pass with the sign-up>"), body: bodies.session },
+      answer: { status: 423, body: { ok: false, code: "account-off", error: REFUSALS["account-off"].error } } },
+    { name: "start with a sign-up from before terms 2.2", given: "The owner signed up under terms 2.1.",
+      request: { method: "POST", url: site + "/api/office/barnwright/start", headers: visitHeaders("<a session pass whose signup says 2.1>"), body: bodies.session },
+      answer: { status: 403, body: { ok: false, code: "closed", error: WHY["signup-terms"], why: "signup-terms" } } },
+    { name: "a visit started on the sign-up agreement, after the owner first signed in", given: "During the visit above, the owner made their login (they haven't ticked yet).",
+      request: { method: "PUT", url: site + "/api/office/barnwright/price-list", headers: { Cookie: `${cookie}=${cookieValue}`, "Content-Type": "application/json", Origin: site }, body: "{\"settings\": <...>, \"version\": 1}" },
+      answer: { status: 401, body: { error: VISIT_WORDS.closed.replace("<the words for why>", WHY.terms), code: "visit-ended", why: "terms" } } },
+  ];
+
+  /* the owner's first sign-in */
+  const biz = (s) => ({ id: s.id, name: s.brand.name, short: s.brand.short, initials: s.brand.initials, logo: "", colors: s.brand.colors,
+    phone: s.brand.phone, email: s.brand.email, website: s.brand.website, open: false });
+  const owner = { Authorization: "Bearer <the owner's Identity token>" };
+  const firstSetup = {
+    words: FIRST_SETUP_WORDS,
+    examples: [
+      { name: "GET me at the owner's first sign-in", given: "After the version-0 save. The owner made their login with the email from their sign-up (OWNER_EMAIL) and confirmed it.",
+        request: { method: "GET", url: site + "/api/office/me", headers: owner },
+        answer: { status: 200, body: { user: "<the login>", person: "<the owner>", business: biz(after), setupNeeded: true, lots: [],
+          terms: { version: "2.2", date: "<the terms' date>", url: "/legal/barnwright-terms.pdf", title: "Barnwright Terms and Conditions", agreed: null },
+          setup: { mode: null, until: null }, "...": "the other fields as always" } },
+        note: "setupNeeded with a business: First setup has two steps and says the line in words.line" },
+      { name: "POST setup on the price list Barnwright started", given: "As above; the owner kept the details and ticked the box.",
+        request: { method: "POST", url: site + "/api/office/setup", headers: { ...owner, Origin: site, "Content-Type": "application/json" },
+          body: bodyOf({ yourName: "Pat Owner", businessName: SIGNUP.business, phone: SIGNUP.phone, email: SIGNUP.email, agreeTerms: true }) },
+        answer: { status: 200, body: { business: biz(after) } },
+        note: "the agreement is kept as the owner's own (barnwright-terms); nothing differs, so no new version" },
+      { name: "POST setup with a new phone", given: "As above, but the owner typed 941-555-0123 for the business phone.",
+        request: { method: "POST", url: site + "/api/office/setup", headers: { ...owner, Origin: site, "Content-Type": "application/json" },
+          body: bodyOf({ yourName: "Pat Owner", businessName: SIGNUP.business, phone: "941-555-0123", email: SIGNUP.email, agreeTerms: true }) },
+        answer: { status: 200, body: { business: { ...biz(after), phone: "941-555-0123" } } },
+        note: "version 3 by the owner: History says \"Phone: 941-555-0100 → 941-555-0123\" (the owner's own History shows contact details in full)" },
+      { name: "refused: no tick", given: "As above, without agreeTerms.",
+        request: { method: "POST", url: site + "/api/office/setup", headers: { ...owner, Origin: site, "Content-Type": "application/json" },
+          body: bodyOf({ yourName: "Pat Owner", businessName: SIGNUP.business, phone: SIGNUP.phone, email: SIGNUP.email }) },
+        answer: { status: 422, body: { error: "Tick the box to agree to the Barnwright Terms and Conditions." } } },
+      { name: "refused: set up already", given: "After the POST setup above.",
+        request: { method: "POST", url: site + "/api/office/setup", headers: { ...owner, Origin: site, "Content-Type": "application/json" },
+          body: bodyOf({ yourName: "Pat Owner", businessName: SIGNUP.business, phone: SIGNUP.phone, email: SIGNUP.email, agreeTerms: true }) },
+        answer: { status: 409, body: { error: FIRST_SETUP_WORDS.alreadySetUp } } },
+    ],
+  };
+
+  /* the check-in */
+  const license = { method: "POST", url: "https://barnwright-control-room.netlify.app/api/license", headers: { Authorization: "Bearer <the activation key>", "Content-Type": "application/json" } };
+  const reportOf = (S) => ({ v: STATUS_V, live: S.live, liveAt: S.liveAt, access: S.access, why: S.why, until: S.until, prelive: S.prelive, termsOk: S.termsOk, termsOut: S.termsOut, agreement: S.agreement });
+  const checkIn = [
+    { name: "right after Make their Dealer Center, before any pass brought the sign-up", given: "The first deploy just succeeded (deploy-succeeded checks in). No owner, no price list, nothing remembered yet. The Control Room then sends one status pass carrying the sign-up.",
+      request: { ...license, body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, appVersion: APP_VERSION, dealerCount: 0, setup: reportOf(closedB("no-price-list")), siteUrl: DEALER.siteUrl }) } },
+    { name: "after the first pass brought the sign-up", given: "barnwright-signup-agreement is written; still no owner and no price list.",
+      request: { ...license, body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, appVersion: APP_VERSION, dealerCount: 0, setup: reportOf(B0), siteUrl: DEALER.siteUrl }) } },
+  ];
+
+  /* the check-in right after a deploy (netlify/functions/deploy-succeeded.mts) */
+  const deploy = (context, extra = {}) => bodyOf({ payload: { id: "67099f00a1b2c3d4e5f60718", site_id: DEALER.siteId, build_id: "67099f00a1b2c3d4e5f60719", state: "ready",
+    name: "testing-sheds", url: "http://testing-sheds.netlify.app", ssl_url: DEALER.siteUrl, context, branch: context === "production" ? "main" : "lane/test",
+    commit_ref: "0123456789abcdef0123456789abcdef01234567", published_at: iso(NOW), ...extra } });
+  const deploySucceeded = {
+    file: "netlify/functions/deploy-succeeded.mts",
+    event: "deploy-succeeded",
+    about: "Netlify calls a function named for the event, signed by Netlify (it checks the signature before calling it). The body's payload is the deploy as Netlify's API describes it. Only a production deploy, with the function itself running in production, checks in (index.js deploySucceeded -> scheduledCheckIn). Always 204.",
+    examples: [
+      { name: "a production deploy", request: { method: "POST", body: deploy("production") }, context: { deploy: { context: "production", published: true } }, checksIn: true, answer: { status: 204 } },
+      { name: "a deploy preview", request: { method: "POST", body: deploy("deploy-preview") }, context: { deploy: { context: "deploy-preview", published: false } }, checksIn: false, answer: { status: 204 } },
+      { name: "a branch deploy", request: { method: "POST", body: deploy("branch-deploy") }, context: { deploy: { context: "branch-deploy", published: false } }, checksIn: false, answer: { status: 204 } },
+      { name: "a body that isn't JSON", request: { method: "POST", body: "not json" }, context: { deploy: { context: "production", published: true } }, checksIn: false, answer: { status: 204 } },
+      { name: "a production deploy event on a function not running in production", request: { method: "POST", body: deploy("production") }, context: { deploy: { context: "deploy-preview", published: false } }, checksIn: false, answer: { status: 204 } },
+    ],
+  };
+
+  const brand = start.brand;
+  return {
+    about: [
+      "Before the owner first signs in (docs/OFFICE.md). The Control Room puts the owner's sign-up agreement and details on every setup pass for that customer, in the claim signup. The Dealer Center takes the agreement for setup access only while no owner has signed in, when it is to terms 2.2 or later that it ships or has a copy of.",
+      "The starting price list is the Every standard building template (companies/demo/company.json) set up as First setup sets up a business, from the sign-up's business name, phone and email. Read and check work on it as version 0; the first save with version 0 makes it (version 1) and then saves the edits (version 2).",
+    ],
+    signup: SIGNUP,
+    ownerEmail: OWNER_EMAIL,
+    claim: { name: "signup", keys: SIGNUP_KEYS, limits: SIGNUP_LIMITS, versionPattern: "^\\d{1,4}(\\.\\d{1,4}){0,3}$", shaPattern: "^[0-9a-f]{64}$", signedAtNotAfterIssuedAtMs: MAX_SKEW_MS, refusedReason: "signup" },
+    counts,
+    startingPriceList: {
+      template: "companies/demo/company.json", from: { business: SIGNUP.business, phone: SIGNUP.phone, email: SIGNUP.email },
+      id: start.id, status: start.status, brand: { name: brand.name, short: brand.short, initials: brand.initials, phone: brand.phone, email: brand.email, website: brand.website },
+      styles: keysOf(start.offer).length, settingsSha256: startSha, historyLine: START_LINE,
+      cleaned: [
+        { name: "an email in capitals, with spaces", signup: { phone: SIGNUP.phone, email: "  Pat@TestingSheds.Example " }, brand: { phone: SIGNUP.phone, email: "pat@testingsheds.example" } },
+        { name: "a phone First setup would refuse is left empty", signup: { phone: "call the shop", email: SIGNUP.email }, brand: { phone: "", email: SIGNUP.email } },
+        { name: "an email First setup would refuse is left empty", signup: { phone: SIGNUP.phone, email: "pat at testingsheds" }, brand: { phone: SIGNUP.phone, email: "" } },
+      ],
+    },
+    record: { key: "barnwright-signup-agreement", example: { termsVersion: SIGNUP.termsVersion, termsSha256: SIGNUP.termsSha256, signature: SIGNUP.signature, signedAt: SIGNUP.signedAt, at: iso(NOW), passId: passes.status.claims.id } },
+    passes,
+    badPasses: bad,
+    door: { examples: door },
+    visit: { examples: visit },
+    firstSetup,
+    checkIn: { examples: checkIn },
+    deploySucceeded,
+    words: { why: { "signup-terms": WHY["signup-terms"], "signup-unknown": WHY["signup-unknown"] }, startLine: START_LINE, nothingBeforeStart: NOTHING_BEFORE_START, log: { started: LOG_WORDS.started }, firstSetup: FIRST_SETUP_WORDS },
+  };
+}
+
 /* ---- the examples --------------------------------------------------------------------------- */
 
 function build(old) {
@@ -625,13 +1021,13 @@ async function make(old) {
   /* status fields at each step of the conversation */
   const at = (s) => iso(NOW + s * 1000);
   const S0 = {
-    live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: true, termsOut: true,
+    live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: true, termsOut: true, agreement: "owner",
     priceList: { version: 1, savedAt: SET_UP_AT, by: "the owner", open: false }, lastBarnwrightSave: null, canUndo: false,
   };
   const savePassId = passes.save.claims.id, undoPassId = passes.undo.claims.id;
   const S1 = { ...S0, priceList: { version: 2, savedAt: at(4), by: BARNWRIGHT, open: false }, lastBarnwrightSave: { version: 2, passId: savePassId, at: at(4) }, canUndo: true };
   const S2 = { ...S0, priceList: { version: 3, savedAt: at(6), by: BARNWRIGHT, open: false }, lastBarnwrightSave: { version: 3, passId: undoPassId, at: at(6) }, canUndo: true };
-  const fields = (S) => ({ v: 1, ...S, appVersion: APP_VERSION });
+  const fields = (S) => ({ v: STATUS_V, ...S, appVersion: APP_VERSION });
   const okAnswer = (S, more = {}) => ({ status: 200, body: { ok: true, ...fields(S), ...more } });
   const refusal = (code, S, more = {}) => {
     const r = REFUSALS[code];
@@ -689,14 +1085,14 @@ async function make(old) {
   const S_live = { ...S0, live: true, liveAt: at(-1800), access: "closed", why: "live-off", priceList: { ...S0.priceList, open: true } };
   ex("refused: open to customers and the switch is off", "The owner opened the 3D designer to customers half an hour ago.",
     request(fresh("live-off", bodies.check).pass, bodies.check), refusal("closed", S_live, { error: WHY["live-off"], extra: { why: "live-off" } }));
-  const S_terms = { ...S0, access: "closed", why: "terms", termsOk: false };
+  const S_terms = { ...S0, access: "closed", why: "terms", termsOk: false, agreement: null };
   ex("refused: the owner hasn't agreed to terms 2.2", "Terms 2.2 are out; the owner agreed to terms 2.1 only.",
     request(fresh("terms", bodies.check).pass, bodies.check), refusal("closed", S_terms, { error: WHY.terms, extra: { why: "terms" } }));
   const S_notOut = { ...S_terms, termsOut: false };
   ex("refused: terms 2.2 aren't out yet", "This Dealer Center's own terms are older than 2.2 (termsOut: false), so no owner can agree to them yet.",
     request(fresh("terms-not-out", bodies.check).pass, bodies.check), refusal("closed", S_notOut, { error: TERMS_NOT_OUT, extra: { why: "terms" } }));
-  const S_noList = { ...S0, access: "closed", why: "no-price-list", priceList: null };
-  ex("refused: no price list yet", "The owner hasn't done First setup.",
+  const S_noList = { ...S0, access: "closed", why: "no-price-list", termsOk: false, agreement: null, priceList: null };
+  ex("refused: no price list yet", "The owner has signed in but hasn't finished First setup (or no owner has signed in and the pass carries no sign-up agreement: see beforeSignIn).",
     request(fresh("no-list", readSummary).pass, readSummary),
     refusal("closed", S_noList, { error: WHY["no-price-list"], extra: { why: "no-price-list" } }));
   const S_switch = { ...S0, live: true, liveAt: at(-86400), access: "switch", why: null, until: at(4 * 3600), priceList: { ...S0.priceList, open: true } };
@@ -859,15 +1255,18 @@ async function make(old) {
     { name: "a check-in with setup", given: "As in status.",
       request: { method: "POST", url: "https://barnwright-control-room.netlify.app/api/license", headers: { Authorization: "Bearer <the activation key>", "Content-Type": "application/json" },
         body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, appVersion: APP_VERSION, dealerCount: 1,
-          setup: { v: 1, live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: true, termsOut: true }, siteUrl: DEALER.siteUrl }) } },
+          setup: { v: STATUS_V, live: false, liveAt: null, access: "prelive", why: null, until: null, prelive: "on", termsOk: true, termsOut: true, agreement: "owner" }, siteUrl: DEALER.siteUrl }) } },
     { name: "a check-in while the switch is on", given: "Open to customers since yesterday; the owner's switch is on for 4 hours.",
       request: { method: "POST", url: "https://barnwright-control-room.netlify.app/api/license", headers: { Authorization: "Bearer <the activation key>", "Content-Type": "application/json" },
         body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, appVersion: APP_VERSION, dealerCount: 1,
-          setup: { v: 1, live: true, liveAt: at(-86400), access: "switch", why: null, until: at(4 * 3600), prelive: "on", termsOk: true, termsOut: true }, siteUrl: DEALER.siteUrl }) } },
+          setup: { v: STATUS_V, live: true, liveAt: at(-86400), access: "switch", why: null, until: at(4 * 3600), prelive: "on", termsOk: true, termsOut: true, agreement: "owner" }, siteUrl: DEALER.siteUrl }) } },
     { name: "a check-in without setup", given: "setup.report() failed or took over 500 ms, or barnwright-live isn't written yet. The lease still renews.",
       request: { method: "POST", url: "https://barnwright-control-room.netlify.app/api/license", headers: { Authorization: "Bearer <the activation key>", "Content-Type": "application/json" },
         body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, appVersion: APP_VERSION, dealerCount: 1, siteUrl: DEALER.siteUrl }) } },
   ];
+
+  const effects = effectSet(base, pl);
+  const beforeSignIn = await beforeSignInSection({ passFor, bodyOf, request });
 
   return {
     _about: [
@@ -886,7 +1285,8 @@ async function make(old) {
     pass: {
       prefix: SETUP_PASS_PREFIX, lifetimeMs: PASS_MS, maxWindowMs: MAX_WINDOW_MS, maxFutureSkewMs: MAX_SKEW_MS, maxLength: MAX_PASS_LENGTH,
       actions: ACTIONS, via: VIA, claimOrder: Object.keys(claimsFor("x", "status", "{}")),
-      reasons: ["shape", "signature", "key", "claims", "business", "time", "expired", "action", "body"],
+      reasons: ["shape", "signature", "key", "claims", "business", "time", "expired", "action", "body", "signup"],
+      signupClaim: "optional, last: see beforeSignIn.claim; a pass with a signup that isn't that shape is refused for the reason signup",
     },
     passes,
     badPasses: bad,
@@ -902,17 +1302,21 @@ async function make(old) {
       base: "First setup of Testing Sheds with the small starting price list (companies/starter/company.json), version 1, closed to customers.",
       baseSettings: base,
       samples: sampleSet(base, pl),
+      effects,
     },
+    beforeSignIn,
     words: {
       lock: LOCK, warnings: WARN_TEXT, undoLine: UNDO_LINE, roofPitchLine: pitchLine("<Style>", "<old pitch>", "<new pitch>"), standardPitch: STANDARD_PITCH,
-      nothingToUndo: NOTHING_TO_UNDO, tooManySaves: TOO_MANY_SAVES, refusedLog: "A Barnwright change was refused: <words>.",
+      nothingToUndo: NOTHING_TO_UNDO, nothingBeforeStart: NOTHING_BEFORE_START, tooManySaves: TOO_MANY_SAVES, refusedLog: REFUSED_LOG,
       savedBy: ["the owner", "a manager", "Barnwright (<actor>)", "someone no longer on the team"],
       ownerSavedFirst: "Barnwright saved a change while you were working. Reload to see it, then make yours again.",
       owner: OWNER_WORDS,
       log: LOG_WORDS,
       forAlan: "You can change their prices", forOwner: "Barnwright can change your prices",
       needsNewestVersion: "Their Dealer Center needs the newest version. It updates on its next deploy.",
+      startLine: START_LINE, firstSetup: FIRST_SETUP_WORDS,
     },
+    status: { v: STATUS_V, order: ["v", "live", "liveAt", "access", "why", "until", "prelive", "termsOk", "termsOut", "agreement", "priceList", "lastBarnwrightSave", "canUndo", "appVersion"], agreement: ["owner", "signup", null] },
   };
 }
 
@@ -936,6 +1340,27 @@ function checkFile(fx) {
     const action = JSON.parse(e.request.body).action;
     try { checkSetupPass(token, opts(action, e.request.body)); } catch (err) { problems.push(`door example "${e.name}" has a pass that is refused (${err.reason})`); }
   }
+  const B = fx.beforeSignIn;
+  for (const [name, p] of Object.entries(B.passes)) {
+    try { checkSetupPass(p.pass, opts(p.claims.action, p.body)); } catch (e) { problems.push(`the good ${name} pass with a sign-up is refused (${e.reason})`); }
+    if (!signupShapeOk(p.claims.signup, p.claims.issuedAt)) problems.push(`the ${name} pass's sign-up isn't the claim's shape`);
+  }
+  for (const b of B.badPasses) {
+    try { checkSetupPass(b.pass, opts(b.action, b.body)); problems.push(`"${b.name}" (sign-up) is accepted`); }
+    catch (e) { if (e.reason !== b.reason) problems.push(`"${b.name}" (sign-up) is refused for ${e.reason}, not ${b.reason}`); }
+  }
+  for (const e of B.door.examples) {
+    const token = e.request.headers.Authorization.slice(7);
+    try { checkSetupPass(token, opts(JSON.parse(e.request.body).action, e.request.body)); } catch (err) { problems.push(`beforeSignIn door example "${e.name}" has a pass that is refused (${err.reason})`); }
+  }
+  for (const c of B.counts) {
+    const got = signupCounts(c.signup, c.dealerCenter);
+    if (got.counts !== c.counts || got.why !== c.why) problems.push(`counts "${c.name}" isn't what signupCounts says`);
+  }
+  if (!B.counts.some((c) => c.counts) || !B.counts.some((c) => c.why === "signup-terms") || !B.counts.some((c) => c.why === "signup-unknown")) problems.push("beforeSignIn.counts misses a case");
+  for (const why of ["signup-terms", "signup-unknown", "no-price-list", "terms"]) {
+    if (!B.door.examples.some((e) => e.answer.body.why === why)) problems.push(`no beforeSignIn door example for why ${why}`);
+  }
   const codes = new Set(fx.door.examples.map((e) => e.answer.body.code).filter(Boolean));
   for (const code of Object.keys(REFUSALS)) if (!codes.has(code)) problems.push(`no door example for the refusal ${code}`);
   for (const a of DOOR_ACTIONS) if (!fx.door.examples.some((e) => e.answer.status === 200 && e.request.body && JSON.parse(e.request.body).action === a)) problems.push(`no door example for ${a}`);
@@ -954,7 +1379,7 @@ async function main() {
     else if (readFileSync(OUT, "utf8") !== text) problems.unshift("tools/lib/setup-fixtures.json is not what this script makes now: run node tools/lib/make-setup-fixtures.mjs and tell the Control Room lanes");
     for (const p of problems) console.log("  FAIL " + p);
     if (problems.length) { console.log(`FAIL: ${problems.length} problem(s) with the setup access fixtures.`); process.exit(1); }
-    console.log(`PROVED: the setup access fixtures are what the script makes; ${Object.keys(fx.passes).length} good passes are kept and ${fx.badPasses.length} bad ones refused for the stated reason; ${fx.door.examples.length} door examples cover every action and every refusal; ${fx.edits.samples.length} sample edits give the Dealer Center's own change words.`);
+    console.log(`PROVED: the setup access fixtures are what the script makes; ${Object.keys(fx.passes).length} good passes are kept and ${fx.badPasses.length} bad ones refused for the stated reason; ${fx.door.examples.length} door examples cover every action and every refusal; ${fx.edits.samples.length} sample edits give the Dealer Center's own change words; before the owner first signs in, ${Object.keys(fx.beforeSignIn.passes).length} passes with a sign-up are kept, ${fx.beforeSignIn.badPasses.length} with a bad one refused, and ${fx.beforeSignIn.counts.length} agreements count or not by the rule.`);
     return;
   }
   if (problems.length) { for (const p of problems) console.log("  FAIL " + p); process.exit(1); }

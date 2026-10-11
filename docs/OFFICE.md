@@ -150,7 +150,7 @@ each other.
 
 | Key | Holds |
 |---|---|
-| `setup` | the first owner's claim `{userId, at}` |
+| `setup` | the first owner's claim `{userId, email, at}`, written at the owner's first confirmed sign-in; until it exists, no owner has signed in yet (see "Before the owner first signs in") |
 | `barnwright-terms` | `{current: {version, agreedAt, by: {userId, email, name}}, history: [...]}` — the owner's agreement to the Barnwright terms (connected businesses only) |
 | `price-list` | `{settings, version, cfg, savedAt, savedBy}` — `settings` is a company settings object (`model/company.js`); `savedBy` is `{id, name}` of the person, or `{id: "barnwright", name: "Barnwright (alan@...)", passId}` for a Barnwright save |
 | `price-list-history/<version>` | `{version, savedAt, savedBy, changes:[text], settings}` (the version padded to 6 digits in the key) |
@@ -169,7 +169,8 @@ each other.
 | `barnwright-setup` | `{prelive: "on"\|"stopped", enabled, reason, hours, grantedAt, expiresAt, approvedBy}` — the owner's change switch and setup stop (see "Barnwright setup access") |
 | `barnwright-live` | `{live: true, liveAt, how}` or `{live: false, checkedThrough}` — whether the business is live; `how` is `opened`, `quote`, `order`, `website-quote`, `found-open`, `history`, `customers` or `unsure`; once live, never changed |
 | `barnwright-setup-seen` | `{ids: {<pass id>: expiresAt}}` — setup passes already used |
-| `barnwright-sessions` | `{<SHA-256 of the cookie>: {actor, passId, startedAt, lastAt, endsAt, mode, grantedAt?, ended?}}` — Barnwright visits (at most 20; ones past their end removed on each write); `mode` and `grantedAt` say what the visit started under, `ended` that access closed since |
+| `barnwright-sessions` | `{<SHA-256 of the cookie>: {actor, passId, startedAt, lastAt, endsAt, mode, agreement, grantedAt?, ended?}}` — Barnwright visits (at most 20; ones past their end removed on each write); `mode`, `agreement` (`owner` or `signup`) and `grantedAt` say what the visit started under, `ended` that access closed since |
+| `barnwright-signup-agreement` | `{termsVersion, termsSha256, signature, signedAt, at, passId}` — the owner's agreement from the Control Room's sign-up page, as the first pass that carried one that counts brought it; written once (create-only) and never changed; never a phone, email or business name (see "Before the owner first signs in") |
 | `barnwright-setup-limits` | `{hour, requests, day, saves}` — Barnwright requests this hour and saves today |
 | `barnwright-help-problems` | `{v: 2, day, team, public, repeats, visitors: {who: n}, seen: {signature: {at, last, extra}}}` — today's shares of the problem reports used (`who` is a visitor's address hashed with the day, never the address), and each kind passed on in the last 24 hours: when it first went, when its count last went, and how many more times it happened since (connected businesses only; see "Help") |
 
@@ -221,8 +222,8 @@ Responses are `Cache-Control: private, no-store`.
 
 | Route | Who | Does |
 |---|---|---|
-| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access") |
-| `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright Terms and Conditions.") and the agreement is kept |
+| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access"); `setupNeeded` is true for the owner until First setup is done, which includes a price list Barnwright started before the owner's first sign-in (`business` is then not null, and First setup skips the starting price list: see "Before the owner first signs in") |
+| `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright Terms and Conditions.") and the agreement is kept. When Barnwright already started the price list, `start` is left out: the business details are saved into it as the owner's change (only what differs) and the agreement is kept → 200 `{business}` (see "Before the owner first signs in") |
 | `POST terms` | owner | `{agree: true}` agrees to the current Barnwright Terms and Conditions (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
 | `PUT price-list` | owner | `{settings, version}` → `{version, cfg, changes}`; 409 when someone saved first |
@@ -289,8 +290,12 @@ business, the local copy and the demo are not connected, and nothing below
 applies to them.
 
 **Checking in.** The Dealer Center checks in with the control room when
-someone opens it and its last check-in is more than six hours old, and
-every six hours on its own (`netlify/functions/barnwright-check-in.mts`).
+someone opens it and its last check-in is more than six hours old,
+every six hours on its own (`netlify/functions/barnwright-check-in.mts`),
+and right after each production deploy succeeds
+(`netlify/functions/deploy-succeeded.mts`), so a Dealer Center the Control
+Room just made shows **Connected** within a minute (see "The check-in"
+under "Barnwright setup access").
 It reports how many lots are open and the site's main address
 (`siteUrl`: Netlify's own `URL` setting, sent only when it is a plain https
 address, with no path, user or port), and gets back a pass signed by the
@@ -462,7 +467,11 @@ address with a fresh pass from the pretend control room (what **Open their
 price list** opens). `{door: {action: "status"}}` (any door request's
 body) answers `{door: {pass, body}}`: a pass made for exactly that body, to
 send to the door at `POST /.netlify/functions/barnwright-setup` on the same
-computer (add `via: "claude"` for a pass as Claude's).
+computer (add `via: "claude"` for a pass as Claude's). Add `signup: true`
+(beside `visit` or `door`) for a pass that carries the pretend owner's
+sign-up agreement to the terms this copy ships, as the Control Room sends
+for a customer who signed up; with no owner signed in yet, that is how to
+try "Before the owner first signs in" on the computer.
 `tools/check-setup-access.mjs` proves the server's rules (the door's too)
 and `tools/check-setup-screens.mjs` clicks through the owner's card, the
 preview and a visit in Chromium.
@@ -485,6 +494,11 @@ In short:
 
 * **Before the business is live**, Barnwright can change its price list and
   settings with no switch. This is how Alan sets a new business up.
+* **Before the owner first signs in**, too: as soon as Alan taps **Make
+  their Dealer Center**, Barnwright can start the price list from Alan's
+  photos (Alan by hand in the visit, or Claude through the Control Room),
+  using the terms the owner agreed to on the Control Room's sign-up page.
+  The owner finds it ready the first time they sign in.
 * **After it is live**, Barnwright can change them only while the owner's
   switch is on (Settings, Barnwright, "Run checks and change my price list
   and settings"), for 1 to 24 hours.
@@ -497,8 +511,9 @@ In short:
   anyone: the setup code is given no way to send anything.
 * The Dealer Center decides. The Control Room only asks, and only for Alan.
 * Nothing works until the owner has agreed to the Barnwright Terms and
-  Conditions 2.2 or later. Until terms 2.2 come out, every request is
-  refused with `why: "terms"`.
+  Conditions 2.2 or later: in the Dealer Center, or, until they first sign
+  in, on the Control Room's sign-up page. Until terms 2.2 come out, every
+  request is refused with `why: "terms"`.
 
 The words people read: the owner reads "Barnwright can change your
 prices"; Alan reads "You can change their prices".
@@ -512,12 +527,24 @@ the first that applies:
 
 1. Not connected to the Control Room, or some settings missing: the door
    answers 404 (`not-connected`).
-2. No price list yet (First setup not done): closed, `no-price-list`.
-3. The owner hasn't agreed to terms 2.2 or later: closed, `terms`.
+2. No price list yet, and an owner has signed in (First setup is theirs to
+   finish) or no sign-up agreement came with the pass or is remembered:
+   closed, `no-price-list`.
+3. The agreement. An owner has signed in: they must have agreed to terms
+   2.2 or later in the Dealer Center, else closed, `terms`. No owner has
+   signed in yet: the owner's sign-up agreement must count (see "Before
+   the owner first signs in"), else closed, `terms` (this Dealer Center's
+   own terms are older than 2.2), `signup-terms` (they signed up under
+   terms older than 2.2) or `signup-unknown` (they signed up under terms
+   this Dealer Center doesn't have).
 4. The owner's switch is on and not past its end: `switch`, until its end.
 5. The business is live (below): closed, `live-off`.
 6. The owner stopped setup access: closed, `stopped`.
 7. Otherwise: `prelive`, with no end (it lasts until the business is live).
+   Before a price list exists, `prelive` means Barnwright can start it.
+
+"An owner has signed in" means the first owner's claim (`setup`) exists: it
+is written at the owner's first confirmed sign-in, before First setup.
 
 What Alan and Claude read for each `why` (the door sends it as `error`):
 
@@ -525,13 +552,15 @@ What Alan and Claude read for each `why` (the door sends it as `error`):
 |---|---|
 | `no-price-list` | The owner hasn't finished First setup yet, so there is no price list to change. |
 | `terms` | The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They see the button at the top of their Dealer Center. |
+| `signup-terms` | They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center. |
+| `signup-unknown` | Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy. |
 | `stopped` | The owner stopped Barnwright's setup access in Settings, Barnwright. |
 | `live-off` | Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright. |
 
 Until this Dealer Center's own terms (`TERMS.version`) are 2.2 or later, no
-owner can agree to them, so `why: "terms"` says instead: "Barnwright's new
-terms (2.2) aren't out yet, so Barnwright can only run checks for now."
-The status fields' `termsOut` says which.
+owner can agree to them and no sign-up agreement counts, so `why: "terms"`
+says instead: "Barnwright's new terms (2.2) aren't out yet, so Barnwright
+can only run checks for now." The status fields' `termsOut` says which.
 
 Saving also needs the business's Barnwright account to allow changes (the
 lease, `account.mustWrite()`). When it doesn't, a save answers 423 and
@@ -645,7 +674,11 @@ other signed text can start with this prefix.
   "via": "control-room" | "claude",
   "action": "status" | "read" | "check" | "save" | "undo" | "session",
   "bodySha256": "<lowercase hex SHA-256 of the exact request body bytes>",
-  "issuedAt": <ms since 1970>, "expiresAt": <ms since 1970> }
+  "issuedAt": <ms since 1970>, "expiresAt": <ms since 1970>,
+  "signup": { "termsVersion": "2.2", "termsSha256": "<64 lowercase hex>",
+              "signature": "Pat Owner", "signedAt": "<ISO time>",
+              "business": "Testing Sheds", "phone": "941-555-0100",
+              "email": "pat@testingsheds.example" } }
 ```
 
 * `customerId` and `siteId` are the business's, the same as this Dealer
@@ -655,6 +688,11 @@ other signed text can start with this prefix.
 * `via` is `control-room` when Alan tapped a button on a Control Room page
   (the customer's panel, the Make the change page), and `claude` when the
   Claude connector sent the request without that tap.
+* `signup` (optional, always last) is the owner's agreement from the
+  Control Room's sign-up page, with the business name, phone and email
+  they gave there. The Control Room puts it on every setup pass for a
+  customer who signed up on that page, and leaves it out otherwise. What
+  the Dealer Center does with it is in "Before the owner first signs in".
 
 **The Dealer Center refuses a pass** (401, code `pass`) when:
 
@@ -671,7 +709,16 @@ other signed text can start with this prefix.
   which never goes back;
 * `action` isn't the request's (the door: `body.action`; a visit's start:
   `session`);
-* `bodySha256` isn't the SHA-256 of the exact body bytes.
+* `bodySha256` isn't the SHA-256 of the exact body bytes;
+* `signup` is there but isn't an object with exactly these seven keys:
+  `termsVersion` a version (1 to 4 whole numbers of 1 to 4 digits, with
+  dots: `2.2`), `termsSha256` 64 lowercase hex characters, `signature` 1
+  to 200 characters, `signedAt` an ISO time (ending in `Z` or an offset, at
+  most 50 characters) no later than 60 seconds after `issuedAt`,
+  `business` 1 to 80 characters, `phone` 0 to 40 and `email` 0 to 200
+  characters (no control characters in any of them, and `signature` and
+  `business` not only spaces). A sign-up that doesn't fit is left out by
+  the Control Room, never cut to fit.
 
 The answer never says which; the reason goes in the function log.
 `checkSetupPass()` in `tools/lib/make-setup-fixtures.mjs` is this rule
@@ -730,30 +777,41 @@ answer to a pass that got through step 6 also carries **the status
 fields**, refusals included, so the Control Room always learns the state:
 
 ```
-{ "v": 1,
+{ "v": 2,
   "live": false, "liveAt": null,
   "access": "prelive", "why": null, "until": null,
-  "prelive": "on", "termsOk": true, "termsOut": true,
+  "prelive": "on", "termsOk": true, "termsOut": true, "agreement": "owner",
   "priceList": {"version": 1, "savedAt": "<ISO time>", "by": "the owner", "open": false},
   "lastBarnwrightSave": null,
   "canUndo": false,
   "appVersion": "dealer-center <deploy>" }
 ```
 
+* `v` is 2 from "Before the owner first signs in" on: a Dealer Center
+  that says 2 takes the pass's sign-up agreement and starts a price list
+  at version 0. One that says 1 has no `agreement` and never does.
+
 * `access` is `prelive`, `switch` or `closed`; `why` is null unless
   closed; `until` is the switch's end, or null.
 * `liveAt` is an ISO time once live (null when the look back found it
   live: nobody knows when). `prelive` is `on` or `stopped`.
-* `termsOk`: the owner agreed to terms 2.2 or later. `termsOut`: this
-  Dealer Center's own terms are 2.2 or later, so the owner can agree.
-* `priceList` is null before First setup. `open` is whether customers can
-  use the 3D designer now.
+* `termsOk`: the owner agreed to terms 2.2 or later in the Dealer Center
+  (a sign-up agreement never makes it true). `termsOut`: this Dealer
+  Center's own terms are 2.2 or later, so the owner can agree.
+* `agreement` is what setup access stands on: `owner` (the owner's own
+  agreement, `termsOk`), `signup` (no owner has signed in yet and their
+  sign-up agreement counts), or null (neither).
+* `priceList` is null while there is no price list (before First setup,
+  or before Barnwright starts it). `open` is whether customers can use the
+  3D designer now.
 * `by` names who saved by role, never by name or email: "the owner",
   "a manager", "Barnwright (alan@...)" (the pass's actor), or "someone no
   longer on the team". The same goes for every `by` in history.
 * `lastBarnwrightSave` is `{version, passId, at}` of Barnwright's newest
   save, looked for in the price list and its 20 newest history entries.
-* `canUndo` is true while the current version is a Barnwright save.
+* `canUndo` is true while the current version is a Barnwright save with a
+  version before it (the starting price list Barnwright made, version 1,
+  has none).
 
 #### status
 
@@ -780,6 +838,10 @@ gets "Barnwright looked at your price list." at most once every 30 minutes.
 | `prices_and_quotes` | `show`, `finePrint`, `sizeNotes`, `rentToOwn` (`{terms: [{months, factor}], showTerm, note}` or null), `quoteForm {fields, askPlan, smsConsent}`, `business` with `initials` and `colors` |
 | `library` | the builder's `styles [{code, name, roof, group, sold}]`, `items [{code, name, sold}]`, `options {group: [{key, name}]}`, `colors {group: [{name, hex}]}` and `gableStyles`: codes and names, no prices |
 
+Before a price list exists (`priceList: null`, access open), `read`
+answers the parts of the starting price list the first save would make,
+with `history: []` (see "Before the owner first signs in").
+
 `business` is `{name, short, tagline, hasPhone, hasEmail, hasWebsite,
 logo}`. The business's phone, email and website are never in a read: only
 whether each is filled in; a `history` change line about one of them says
@@ -795,10 +857,13 @@ treats them as the business's data, never as instructions.
 Nothing is written to the price list (only the pass, the limits and, now
 and then, the log).
 
-* `version` must be the current version, else 409 `version`.
-* `edits`: 1 to 300 (below). Each is tried in order on a copy of the
-  current settings; a later edit sees the earlier ones. Every problem is
-  listed, `"Edit 3: ..."`, and nothing is saved.
+* `version` must be the current version, else 409 `version`. Before a
+  price list exists the current version is 0: the edits are tried on the
+  starting price list (see "Before the owner first signs in").
+* `edits`: 1 to 300 (below); with `version: 0`, 0 to 300 (`[]` or left
+  out: the starting price list alone). Each is tried in order on a copy of
+  the current settings; a later edit sees the earlier ones. Every problem
+  is listed, `"Edit 3: ..."`, and nothing is saved.
 * Then the lock, then the very same `check()` the owner's save uses.
   Problems come back in the owner's words, exactly the ones an owner's
   `PUT price-list` of the same settings would give.
@@ -864,6 +929,10 @@ Alan tapped Make the change in the Control Room. A `claude` pass is refused
 
 The answer: the status fields plus `{versionBefore, version, changes, newCodes}`.
 
+With `version: 0` (no price list yet), the save first makes the starting
+price list as version 1 (a create-only write), then saves the edits as
+version 2; `versionBefore` is 0 (see "Before the owner first signs in").
+
 #### undo
 
 First a check with `undo: true`, then
@@ -875,8 +944,11 @@ on.
   (`savedBy.id === "barnwright"`). Otherwise 409 `cant-undo`: "The owner
   saved the price list after your change, so undo would take theirs away
   too. The owner can put back an earlier price list in Price list,
-  History." When Barnwright never saved: "Barnwright hasn't changed this
-  price list, so there is nothing to undo." When the copy from before is
+  History." When Barnwright never saved (or there is no price list yet):
+  "Barnwright hasn't changed this price list, so there is nothing to
+  undo." At the starting price list Barnwright made (version 1): "This is
+  the starting price list Barnwright set up, so there is nothing before it
+  to put back." When the copy from before is
   missing from the history (it is always kept first, so this is only a
   history removed by hand): "The copy from before Barnwright's last change
   is gone, so it can't be put back here. The owner can put back an earlier
@@ -914,8 +986,15 @@ The answer: the status fields plus `{versionBefore, version, changes}`.
 A Dealer Center older than this answers the door's address with a plain
 404 that has no `code`: the Control Room says "Their Dealer Center needs
 the newest version. It updates on its next deploy." While access is open,
-the owner's log gets "A Barnwright change was refused: <words>." at most
-once a minute.
+a refused save, undo, or a change the lock refuses puts one line in the
+owner's log, at most once a minute, always in the owner's own words and
+never the words for Alan above:
+
+| Refused | The owner's log says |
+|---|---|
+| `needs-alan` (a Claude save while the owner's switch is on) | Barnwright tried a change that needs Alan's OK in his Control Room first. Nothing was changed. |
+| the lock (a part only the owner may change) | Barnwright tried to change something only you can change. Nothing was changed. |
+| anything else (`version`, `changed`, `cant-undo`, `problems`, `account-off`, `no-copy`) | Barnwright tried a change that couldn't be saved. Nothing was changed. |
 
 ### The edits
 
@@ -970,8 +1049,11 @@ Sizes are `"WxL"` in whole feet, width 4 to 16, length 4 to 60.
 * `set_extra {key?, name, charged, price}`: `charged` is `check`, `qty`,
   `lf`, `sqftF`, `sqftW`, `sqftR` or `pct`. With `key`, that extra changes;
   without, a new one gets a key made from its name (lower case, dashes:
-  "Gutters" is `gutters`; `-2`, `-3` when taken).
-* `remove_extra {key}`.
+  "Gutters" is `gutters`; `-2`, `-3` when taken). An extra that changes how
+  the building is built (its `construction`, see The lock) keeps that
+  effect exactly: no edit can give an extra one or change it.
+* `remove_extra {key}`. Not an extra that changes how the building is
+  built (the lock refuses it).
 * `set_colors {which, colors}`: `which` is `paint` (siding), `trim` or
   `metal` (roof). 1 to 40 colors; the list replaces the whole list, in
   order. A library name turns that swatch on; `{name, hex}` is a color of
@@ -1100,6 +1182,7 @@ Barnwright save can never be anything an owner's save couldn't be.
 | `leads.fields`, `leads.askPlan`, `leads.smsConsent` | yes | yes |
 | `look`, `features`, `renames` | no edit reaches them | yes |
 | `construction` | only the roof pitch rule | only the roof pitch rule (no screen edits the rest) |
+| an extra's construction effect (`options.extras[].construction`) | never: no new one, no change, no removing an extra that has one | never, the same |
 | `status`, `id`, `manufacturer`, `license`, `embed`, `brand.credit`, every other `leads` key (`mode`, `url`, `email`, `images`) | never | never |
 | `cfg` | worked out by the server | worked out by the server |
 
@@ -1115,6 +1198,7 @@ Each refusal is one plain sentence:
 | where quotes go (`leads` other than the three above) | Only the owner can change where quotes go. |
 | `brand.credit` | The 3D designer credit line can't be changed by Barnwright. |
 | `construction` | How the buildings are built can't be changed here, except a gable roof's pitch. |
+| an extra's construction effect | The extra "<name>" changes how the building is built, so only the owner can add it, remove it or change what it builds. |
 | a logo that is a web address | The logo must be a picture uploaded in Settings, Logo, not a web address. |
 | a logo over 150 KB | The logo is too big. Use a picture of 150 KB or less. |
 | contact details while the switch is on (door) | While their 3D designer is open, the business phone, email and website can be changed only by the owner, or by Alan by hand in Open their price list. |
@@ -1122,9 +1206,23 @@ Each refusal is one plain sentence:
 A web address would load the logo from someone else's server on every
 customer's 3D designer, so the logo must be a picture.
 
+**Building shape.** The only change to how a building is built that
+Barnwright can make is a gable roof's pitch (`set_roof_pitch`). An option
+or an extra can carry a construction effect too (`model/company.js`
+`optionEffects`): the builder's library's options carry theirs in the
+library, which no setting changes, so selling or not selling one is fine;
+an extra of the business's own carries its effect in the price list
+(`options.extras[].construction`). The lock compares every extra that has
+one, by its key: each must still be there with exactly the same effect, and
+no other extra may have one. An extra's name, how it is charged and its
+price can still change. The words name the extra: its name before the
+change, or a new extra's own name.
+
 Undo and put back carry the current values of every "never" part forward
 (`carryLocked`), so going back can't open the 3D designer, change where
-quotes go or which websites may show it.
+quotes go or which websites may show it. An undo or put back that would
+add, change or remove an extra's construction effect is refused by the lock
+like any other change.
 
 ### The visit: Alan in their Dealer Center
 
@@ -1147,10 +1245,16 @@ price list screens, the same ones the owner uses.
    `__Host-bw_setup` (32 random bytes, base64url;
    `Path=/; Secure; HttpOnly; SameSite=Strict`). Only its SHA-256 is
    stored, in `barnwright-sessions`, with what it started under (before
-   live, or the switch turned on at `grantedAt`). The owner's log gets
-   "Barnwright (alan@...) opened your price list." once (no `until`: a
+   live, or the switch turned on at `grantedAt`, and the agreement:
+   `owner`, or `signup` before the owner first signs in). The owner's log
+   gets "Barnwright (alan@...) opened your price list." once (no `until`: a
    visit's end slides, and setup access may end first). Access closed:
    403 `closed` with the words for `why`, and no cookie.
+4. Before a price list exists, a start whose pass carries a sign-up
+   agreement that counts first makes the starting price list (as a
+   version-0 save with no edits), then starts the visit; the answer adds
+   `started: true` and the price list screens open on it, ready to edit
+   (see "Before the owner first signs in").
 
 **How long.** A visit lasts while access is open, and at most 8 hours after
 its last request: every request moves its end to 8 hours later, never past
@@ -1160,14 +1264,16 @@ going live ends every visit at once (each is marked ended), and
 `access()` is checked on every request too. A visit never outlives what it
 started under: one from before live ends once the business is live, and
 one from a switch ends with that switch, so turning the switch on again
-needs a new visit (and the owner's log says so again).
+needs a new visit (and the owner's log says so again). A visit started on
+the sign-up agreement ends once an owner has signed in, even after they
+agree.
 
 **The routes** (all under `/api/office/barnwright/`, the cookie only; every
 change also needs the site's own Origin, like every `/api/office/` change):
 
 | Route | Does |
 |---|---|
-| `POST start` | the pass (action `session`) → `{ok, mode, until, visitEndsAt, business: {name}}` and the cookie |
+| `POST start` | the pass (action `session`) → `{ok, mode, until, visitEndsAt, business: {name}, started?}` and the cookie (`started: true` when it made the starting price list) |
 | `GET me` | `{barnwright: {actor, mode, until, visitEndsAt}, business}` (`business` as in `GET me`) |
 | `GET price-list` | as the owner's `GET price-list` |
 | `PUT price-list` | `{settings, version}` as the owner's, through the lock and the same `check()`; needs the lease; the history copy kept first; `savedBy` is Barnwright with the start pass's id |
@@ -1211,8 +1317,10 @@ change also needs the site's own Origin, like every `/api/office/` change):
   the control room, signed in with the activation key like the check-in,
   `{customerId, siteId, action: "setup-saved", version, versionBefore,
   changes (the first 500), more, actor, undo}` (`undo` is true for a put
-  back). The control room writes one line for each version. Best effort,
-  3 seconds at most: when it can't be reached, the save still stands.
+  back; a start that made the starting price list is `version: 1,
+  versionBefore: 0` with its one line). The control room writes one line
+  for each version. Best effort, 3 seconds at most: when it can't be
+  reached, the save still stands.
 
 ### The owner's card: Settings, Barnwright
 
@@ -1293,6 +1401,9 @@ time.
 * "Barnwright (alan@...) changed your price list: Loft Barn 10×16: $5,690 →
   $5,700; 48″ Wooden Door: $160 → $175." (the first 3 change lines, then
   ", and 4 more")
+* "Barnwright (alan@...) started your price list from Every standard
+  building, using the terms you agreed to when you signed up." (before the
+  owner first signs in)
 * "Barnwright (alan@...) put back the price list from before its last
   change."
 * "Barnwright (alan@...) opened your price list." (once a visit)
@@ -1307,13 +1418,165 @@ time.
 * "Barnwright's setup access ended when you opened your 3D designer to
   customers." / "Barnwright's setup access ended when your first quote was
   saved."
-* "A Barnwright change was refused: <words>." (while access is open, at
-  most once a minute)
+* "Barnwright tried a change that needs Alan's OK in his Control Room
+  first. Nothing was changed." / "Barnwright tried to change something only
+  you can change. Nothing was changed." / "Barnwright tried a change that
+  couldn't be saved. Nothing was changed." (a refused change while access
+  is open, at most once a minute; see Refusals)
 * and Help's own lines, as today ("Barnwright (alan@...) ran a check of
   your Dealer Center.").
 
 The Help screen gains a short answer, "Let Barnwright change your prices".
 Nothing about any of this is emailed or texted to the owner.
+
+### Before the owner first signs in
+
+Alan's choice (October 2026): start right away. As soon as Alan taps
+**Make their Dealer Center** in his Control Room, Barnwright can set up the
+business's price list from Alan's photos: Alan by hand in the visit, or
+Claude through the Control Room. The owner finds it ready the first time
+they sign in. It uses the terms the owner already agreed to on the Control
+Room's sign-up page.
+
+**The sign-up agreement.** On the sign-up page Alan texts them, the owner
+reads the terms, ticks "I agree" and types their name. The Control Room
+keeps `termsVersion`, `termsSha256` (the SHA-256 of the exact
+`docs/legal/terms.json` bytes the page showed), `signature` (the name they
+typed) and `signedAt`. Every setup pass for that customer carries them, with
+the business name, phone and email from the same sign-up, in the claim
+`signup` (see The pass).
+
+**When it counts.** The Dealer Center takes the sign-up agreement as the
+owner's agreement for setup access, and for nothing else, only when all of
+these hold:
+
+* `termsVersion` is 2.2 or later, and so are this Dealer Center's own
+  terms (`termsOut`);
+* `termsSha256` is one of this Dealer Center's own copies of that
+  version's terms bytes, or `termsVersion` is the version it ships
+  (`TERMS.version`). Its own copies are in `docs/legal/terms-sha256.json`,
+  `{"versions": {"2.2": ["<64 lowercase hex>", ...]}}`:
+  `tools/legal/make-legal-pdfs.py` adds the SHA-256 of every
+  `docs/legal/terms.json` it writes for 2.2 or later and never takes one
+  away, and `server/office/terms.js` reads it;
+* no owner has signed in yet (no `setup` record).
+
+When a sign-up agreement is there but doesn't count, access says why:
+`signup-terms` (older than 2.2), `signup-unknown` (2.2 or later, but not
+the version it ships nor one of its own copies), or `terms` while this
+Dealer Center's own terms are older than 2.2. Once an owner has signed in,
+a sign-up agreement never counts again: only the owner's own agreement in
+the Dealer Center does.
+
+It never counts as the owner's own tick. `barnwright-terms` is never
+written from it, `GET me`'s `terms.agreed` stays null and `termsOk` stays
+false, and First setup still asks the owner to tick "I have read and agree
+to the Barnwright Terms and Conditions".
+
+**Remembered once.** The first pass whose sign-up agreement counts (any
+action, `status` included) writes `barnwright-signup-agreement`
+`{termsVersion, termsSha256, signature, signedAt, at, passId}` with a
+create-only write. It is never changed. `access()` uses the pass's sign-up
+agreement when it counts, otherwise the remembered one, checked by the same
+rule each time. So the visit's later requests and the check-in's report,
+which carry no pass, see it too. A check-in can't know about the agreement
+before a pass brings it, so until then it reports `no-price-list`.
+
+**The details are for setup only.** The business name, phone and email a
+pass carries are used only to make the starting price list (below). They
+are never kept anywhere else (the remembered agreement holds none of them),
+never put in an answer, a log line or a change line, and once a price list
+exists, the details a pass carries change nothing. The phone and email are
+contact details set up before live, which is allowed (see The lock), and
+they are not warned about: they are the owner's own, from their sign-up.
+
+**The starting price list (version 0).** While there is no price list and
+access is `prelive`:
+
+* `read` answers the parts of the starting price list the first save would
+  make: the "Every standard building" template (`companies/demo/company.json`,
+  First setup's `full`), set up the way First setup sets up a business
+  (closed to customers, `status: "suspended"`), with the business name from
+  the pass's sign-up (and the short name, initials and the price list's
+  `id` worked out from it as First setup does), its phone and email as
+  First setup's own checks give them (trimmed, the email in lower case;
+  one those checks would refuse is left empty) and no website.
+  The status fields say `priceList: null`, and `history` is `[]`. Nothing
+  is written but the pass, the limits and the remembered agreement.
+* `check` takes `version: 0` and 0 to 300 edits (`[]` or left out: the
+  starting price list alone), tried on the starting price list. The rest
+  is as in check: the lock, `check()`, the change words against the
+  starting price list, the warnings and `settingsSha256`.
+* `save` takes `version: 0`, the same edits and the check's
+  `settingsSha256`. It makes the price list with a create-only write as
+  version 1, the starting price list, saved by Barnwright with this pass's
+  id and the history line "Started the price list from Every standard
+  building, at example prices", and writes `barnwright-live`
+  `{live: false, checkedThrough: 1}`. Then, when there are edits, it saves
+  them as version 2 the usual way. The answer is the status fields plus
+  `{versionBefore: 0, version, changes, newCodes}` (`version` is 1 with no
+  edits, else 2; `changes` are the edits' lines). It counts as one save. A
+  price list that appeared since the check: 409 `version`.
+* Any other version: 409 `version`. Once a price list exists, `version: 0`
+  is 409 `version` too.
+* `undo`: nothing to undo (409 `cant-undo`). At the starting price list
+  itself (version 1, made this way), undo says "This is the starting price
+  list Barnwright set up, so there is nothing before it to put back." and
+  `canUndo` is false; after version 2, undo puts version 1 back as usual.
+* The owner's log gets "Barnwright (alan@...) started your price list from
+  Every standard building, using the terms you agreed to when you signed
+  up." and, with edits, the usual changed line.
+
+There is no new door action: version 0 is how Barnwright starts a price
+list from the door. Claude's `propose_change` checks with version 0, and
+`apply_change` saves with it.
+
+**The visit.** Open their price list works before there is a price list
+too. Its start pass (action `session`) carries the sign-up agreement; when
+it counts and there is no price list, `POST /api/office/barnwright/start`
+first makes the starting price list exactly as a version-0 save with no
+edits (the same history line and log line; it needs the lease, else 423
+`account-off` with the door's words; it counts as a save), then starts the
+visit. The answer adds `started: true`, the price list screens open on the
+template ready to edit, and the start is told to the Control Room's service
+record (`version: 1`, `versionBefore: 0`, the start line). A visit started
+on the sign-up agreement (`agreement: "signup"` in `barnwright-sessions`)
+ends once an owner has signed in, even after they agree: Alan opens a new
+one.
+
+**The owner's first sign-in.** The owner makes a login with the email from
+their sign-up, as before. `GET me` says `setupNeeded: true` with `business`
+not null when the price list exists, `barnwright-signup-agreement` exists
+and the owner has never agreed to any terms in the Dealer Center (an
+existing business never has the record, so it is never sent back to First
+setup). First setup then:
+
+* has two steps, **Your business** and **Your first lot**, skips "Your
+  starting price list", and says above them: "Barnwright set up your price
+  list. You can change anything." (its welcome line reads "Two short
+  steps. You can change all of it later.");
+* still asks for the business details (filled in from the price list: the
+  business name, phone and email), the terms tick and the first lot;
+* sends `POST setup` without `start`. The agreement is kept as the owner's
+  own, and a business name, phone, email or website that differs from the
+  price list's is saved into it as the owner's change (a new version by the
+  owner, with the short name and initials worked out from a new name as
+  First setup does). The answer is 200 `{business}`. When the price list
+  wasn't started this way, or the owner has agreed already: 409 "The
+  business is already set up." as before.
+
+From then on, access stands on the owner's own agreement: `prelive` until
+the business is live, as for every business. Settings, Barnwright shows
+"Barnwright is setting up your 3D designer. ..." with **Stop Barnwright's
+setup access**, and its log starts with Barnwright's start and changes; the
+closed banner says "Barnwright is setting up your prices. Look at the
+preview, check it with Alan, then open it to customers in Settings."
+Between the owner's first sign-in and their tick, access is closed
+(`terms`, or `no-price-list` when Barnwright hadn't started a price list),
+and every visit started on the sign-up agreement ends.
+
+Live is unchanged: the owner opening the 3D designer, or the first real
+quote or order.
 
 ### The check-in
 
@@ -1321,13 +1584,15 @@ Nothing about any of this is emailed or texted to the owner.
 (`POST /api/license`):
 
 ```
-"setup": { "v": 1, "live": false, "liveAt": null, "access": "prelive",
+"setup": { "v": 2, "live": false, "liveAt": null, "access": "prelive",
            "why": null, "until": null, "prelive": "on", "termsOk": true,
-           "termsOut": true }
+           "termsOut": true, "agreement": "owner" }
 ```
 
 These are the same names and values as the status fields, so the Control
-Room reads both with one check.
+Room reads both with one check. Before the owner first signs in it uses the
+remembered sign-up agreement (`agreement: "signup"`); before any pass has
+brought one, it says `access: "closed", why: "no-price-list"`.
 
 * `setup.report()` runs in its own try, with 500 ms at most. If it fails,
   runs over, or `barnwright-live` isn't written yet, the check-in goes
@@ -1338,18 +1603,58 @@ Room reads both with one check.
   Open their price list only once a check-in or a `status` answer has
   `setup.v` of 1 or more and access open.
 
+**Right after a deploy** (`netlify/functions/deploy-succeeded.mts`, new).
+Netlify runs a function named for one of its events when that event
+happens; this one is named for `deploy-succeeded`, so it runs each time a
+deploy of the site succeeds. It is Netlify's older way of naming an event
+function (the file name), which Netlify still supports; its default export
+takes the request and Netlify's `context` like the other functions. Netlify
+signs every event it sends and checks the signature before it calls the
+function, so nobody else can run it. It has no `path` and no `schedule`.
+
+* It checks in only for a production deploy: the deploy in the body Netlify
+  sends (`{payload: {id, context, ...}}`, the deploy as Netlify's API
+  describes it) has `context: "production"`, and the function itself runs
+  in production (`context.deploy.context`, as `officeFor` reads it). A
+  deploy preview, a branch deploy, or a body it can't read does nothing: a
+  preview has its own empty storage and must never report it.
+* It runs `scheduledCheckIn()`, the same as the six-hourly check-in: the
+  check-in first (forced, so the lease renews and the Control Room learns
+  the new `appVersion` and `setup` at once), then the look back, in its own
+  try, for at most 5 seconds. Nothing else from the body is read.
+* It always answers 204. A site that isn't connected does nothing.
+* So the first deploy that **Make their Dealer Center** starts checks in
+  within a minute of finishing: the Control Room shows **Connected**,
+  fills in the address, and learns setup access's state, instead of
+  waiting up to six hours for the schedule or for someone to open the
+  Dealer Center.
+* The function is a few lines, like the others; the rule is
+  `deploySucceeded(request, deployContext)` beside `scheduledCheckIn` in
+  `server/office/index.js`. `tools/check-control-room.mjs` calls it the
+  way Netlify calls the function (a POST whose body has `payload`, and the
+  deploy's context) with a production deploy, a deploy preview, a branch
+  deploy and a body that isn't JSON, against the pretend control room: one
+  check-in for production, none for the others. It also loads the
+  function file itself and proves it has no `path` or `schedule`.
+  `netlify functions:invoke deploy-succeeded --payload ...` with
+  `netlify dev` tries it by hand.
+
 ### Records
 
 The new records are in the Data table above: `barnwright-setup`,
 `barnwright-live`, `barnwright-setup-seen`, `barnwright-sessions`,
-`barnwright-setup-limits`, and Barnwright's `savedBy` on the price list.
+`barnwright-setup-limits`, `barnwright-signup-agreement`, and Barnwright's
+`savedBy` on the price list.
 
-The door and the visit write only `price-list`, its history,
-`barnwright-live`, `barnwright-setup-seen`, `barnwright-sessions`,
-`barnwright-setup-limits` and `barnwright-help-log`. They read
-`barnwright-setup` and `barnwright-terms` but never write them: only the
-owner's routes change the switch. `customers/` and `lots/` are read only to
-work out live and to show previews; `customers/`, `people/`, `lots/`,
+The door and the visit write only `price-list` (before there is one, with
+a create-only write), its history, `barnwright-live`,
+`barnwright-setup-seen`, `barnwright-sessions`, `barnwright-setup-limits`,
+`barnwright-help-log` and, once, `barnwright-signup-agreement`. They read
+`barnwright-setup`, `barnwright-terms` and the first owner's claim `setup`
+but never write them: only the owner's routes change the switch, and only
+the owner's own sign-in and tick write the claim and their agreement.
+`customers/` and `lots/` are read only to work out live and to show
+previews; `customers/`, `people/`, `lots/`,
 `invites/`, `barnwright-terms`, `barnwright-help` and the lease stay
 exactly as they were, and nothing here sends email.
 
@@ -1366,6 +1671,13 @@ exactly as they were, and nothing here sends email.
   bodyBytes})`, and a refusing twin for incomplete settings.
 * `netlify/functions/barnwright-setup.mts` (new): the door, three lines like
   `tenant-diagnostics.mts`.
+* `netlify/functions/deploy-succeeded.mts` (new): the check-in right after
+  a production deploy (`index.js` `deploySucceeded`).
+* `server/office/terms.js` and `docs/legal/terms-sha256.json` (new, kept by
+  `tools/legal/make-legal-pdfs.py`): whether a sign-up agreement is to
+  terms this Dealer Center has; `server/office/price-list.js`: the
+  starting price list Barnwright makes, and First setup on a price list
+  that already exists.
 * `ui/office/api.js`, `ui/office/main.js` and `ui/office/visit-draft.js`
   (new): the visit's Barnwright mode, its reduced screens, the Done bar and
   the unsaved work kept in the tab (`sessionStorage`) when the visit ends;
@@ -1492,8 +1804,11 @@ Stripe save cards.
    (`OWNER_EMAIL`, the owner's email from the sign-up, and the
    `CONTROL_ROOM_*` settings in "The business's Barnwright account") and
    deploys it. If it says **One more step**, Alan turns on Identity from the
-   link it shows. Only when the Control Room has no Netlify key does it show
-   the steps by hand instead: a new Netlify project from this repository,
+   link it shows. Right after that deploy, the Dealer Center checks in, and
+   from then on Alan (in **Open their price list**) or Claude can set up
+   the price list from the photos, before the owner has ever signed in
+   (see "Before the owner first signs in"). Only when the Control Room has
+   no Netlify key does it show the steps by hand instead: a new Netlify project from this repository,
    its name and domain, Identity on, one paste of the settings (**Copy
    settings for Netlify**, then **Import from a .env file**) and a new
    deploy. When the Dealer Center first checks in, the Control Room shows
@@ -1503,6 +1818,8 @@ Stripe save cards.
    make a login with the email from their sign-up, confirm it, and follow
    the setup steps: business details with "I have read and agree to the
    Barnwright Terms and Conditions", a starting price list, the first lot.
+   When Barnwright already set up the price list, First setup says so and
+   skips the starting price list.
    They put the Dealer Center on their computer and phone like an app
    (`dealer.webmanifest`: Chrome and Edge show **Install** at the right end
    of the address bar; on an iPhone, Share, Add to Home Screen; Help has
@@ -1561,7 +1878,10 @@ existed, or before the terms changed, sees "Please read the Barnwright Terms
 and Conditions (version 2.1)." and the button "I have read and agree to the
 Barnwright Terms and Conditions" at the top of every screen until they tap
 it. Each agreement is kept with its version, time and the owner's login, and
-Settings, Barnwright, says who agreed and when. Alan's own
+Settings, Barnwright, says who agreed and when. Until the owner first signs
+in, the agreement from the sign-up page (2.2 or later) lets Barnwright set
+up their price list, and nothing else; it is never taken as their tick in
+the Dealer Center (see "Before the owner first signs in"). Alan's own
 business, the local copy and the demo are not asked. To change the terms:
 edit `tools/legal/make-legal-pdfs.py`, raise `TERMS_VERSION` and `TERMS_DATE`
 there and `TERMS.version` and `TERMS.date` in `server/office/terms.js`
@@ -1592,6 +1912,8 @@ section 19).
 | `server/office/control-room.js`, `license-core.js` | the control room's own check-in code, copied to plain JavaScript |
 | `netlify/functions/tenant-diagnostics.mts` | Barnwright's support check |
 | `netlify/functions/barnwright-check-in.mts` | checks in with the control room every six hours |
+| `netlify/functions/deploy-succeeded.mts` | checks in with the control room right after each production deploy, so a new Dealer Center shows Connected within a minute |
+| `docs/legal/terms-sha256.json` | the SHA-256 of every `docs/legal/terms.json` written for terms 2.2 or later, by version (`tools/legal/make-legal-pdfs.py` adds, never removes): which sign-up agreements this Dealer Center can take |
 | `netlify/functions/office-api.mts` | serves `/api/office/*` and `/api/lots/*` |
 | `netlify/functions/lot-designer.mts` | serves `/d/:slug/` with that lot's allowed websites |
 | `dealer.html`, `ui/office/*` | the Dealer Center's screens (`ui/office/views/`), its frame and its look |
@@ -1767,4 +2089,8 @@ ticked), your starting price list (every standard building at example
 prices, or three buildings to start small — all example prices to change),
 your first lot (showing the link it will get). Then "Your Dealer Center is
 ready." with "Check your prices" and "Add your team". The designer links
-stay closed until the owner picks "Open to customers" in Settings.
+stay closed until the owner picks "Open to customers" in Settings. When
+Barnwright set up the price list before the owner's first sign-in, First
+setup has two steps (your business, filled in from the price list, with the
+terms box; your first lot), skips the starting price list and says above
+them "Barnwright set up your price list. You can change anything."
