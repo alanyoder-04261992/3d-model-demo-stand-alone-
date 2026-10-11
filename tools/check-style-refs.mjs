@@ -20,7 +20,11 @@
    3. each picture is a JPEG 1024 px on its long side and under 100,000 bytes,
       one style's two pictures come to under 140,000 base64 characters (what
       the Control Room may send to Claude at once), the sheet fits too, and
-      nothing else is in the folder;
+      nothing else is in the folder; and every line of words is at most 400
+      characters and the about and pitch notes at most 1,500, or the Control
+      Room's strict reader refuses the whole file (control-room
+      netlify/functions/_shared/style-refs.ts WORDS_MAX and NOTE_MAX). A
+      401-character line is caught;
    4. the comparison CAN fail: one changed byte in a picture, a steeper gable
       in the library, a changed shop number, and a missing picture are each
       caught;
@@ -30,8 +34,13 @@
       in the words, and each height's words say exactly its number; and each
       style's wall height, roof pitch and barn roof heights are the same
       numbers, in the same words, as the Dealer Center's How it's built
-      shows for that style (model/build-settings.js effective). A decimal put
-      into the words is caught;
+      shows for that style (model/build-settings.js effective). A barn's
+      heights are tied each to its own width: "4 ft at 10 ft wide" never
+      passes for "4 ft 3 in at 10 ft wide", the words name no width How it's
+      built has no height for, and every number beside them (by_width and the
+      peak at drawn_at) is How it's built's to the 1/16 in. A decimal put
+      into the words, two widths' heights swapped and a height's number
+      changed are each caught;
    5. no dealer's website carries the pictures: the website build
       (npm run build) and the client package (npm run build:client) leave
       library/style-refs/ out and keep the rest of the library, and the Netlify
@@ -96,6 +105,51 @@ function readerWordsProblems(doc) {
       for (const k of Object.keys(v)) walk(v[k], path ? `${path}.${k}` : k, k);
     }
   })(doc, "", "");
+  return out;
+}
+
+/* A barn roof's heights, each tied to its own width, against How it's
+   built's Barn roof height (row.value: inches by width). The roof words list
+   "<height> at <width> ft wide" (or "<height> at 8 and 10 ft wide" when one
+   height fits several), one item after "the top, " or after ", " or " and ",
+   so "4 ft at" can never be read in "4 ft 3 in at". The words name no other
+   width, by_width's numbers and the peak at drawn_at are How it's built's to
+   the 1/16 in. -> ["what is off"] */
+const escape = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const sixteenth = (inches) => Math.round(inches * 16) / 16;
+function barnRoofProblems(s, row) {
+  const v = row && row.value;
+  if (!v || !Object.keys(v).length) return [`${s.code}: How it's built has no barn roof height`];
+  const out = [], said = s.roof.words;
+  for (const w of Object.keys(v)) {
+    const h = inchesWords(v[w]);
+    if (!new RegExp(`(, | and )${escape(h)} at (\\d+(, | and ))*${w}((, | and )\\d+)* ft wide`).test(said)) out.push(`${s.code} at ${w} ft wide: How it's built says ${h}, the words say "${said}"`);
+  }
+  const named = [...said.matchAll(/ at ((\d+(, | and ))*\d+) ft wide/g)].flatMap((m) => m[1].split(/, | and /).map((n) => String(Number(n))));
+  for (const w of named) if (!(w in v)) out.push(`${s.code}: the words name ${w} ft wide, How it's built has no height for it`);
+  for (const b of s.roof.by_width) {
+    const want = v[String(b.width_ft)];
+    if (want === undefined || sixteenth(want) !== b.peak_over_wall_in) out.push(`${s.code} by_width ${b.width_ft} ft: ${b.peak_over_wall_in} in, How it's built: ${want === undefined ? "none" : sixteenth(want) + " in"}`);
+  }
+  const at = String(Number(s.drawn_at.split("x")[0])), peak = s.roof.peak_over_wall;
+  if (v[at] === undefined || sixteenth(v[at]) !== peak.in || inchesWords(v[at]) !== peak.words) out.push(`${s.code} drawn at ${s.drawn_at}: peak ${peak.in} in (${peak.words}), How it's built at ${at} ft wide: ${v[at] === undefined ? "none" : `${sixteenth(v[at])} in (${inchesWords(v[at])})`}`);
+  return out;
+}
+
+/* What the Control Room's strict reader accepts (control-room
+   netlify/functions/_shared/style-refs.ts): every line of words at most
+   WORDS_MAX, the about and pitch notes at most NOTE_MAX. One line over and
+   the room refuses the whole file. -> ["path: length"] */
+const ROOM_WORDS_MAX = 400, ROOM_NOTE_MAX = 1500, ROOM_NOTES = new Set(["about", "pitch_note"]);
+function roomLimitProblems(doc) {
+  const out = [];
+  (function walk(v, path) {
+    if (typeof v === "string") {
+      const max = ROOM_NOTES.has(path) ? ROOM_NOTE_MAX : ROOM_WORDS_MAX;
+      if (v.length > max) out.push(`${path}: ${v.length} characters (${max} at most)`);
+    } else if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${path}[${i}]`));
+    else if (v && typeof v === "object") for (const k of Object.keys(v)) walk(v[k], path ? `${path}.${k}` : k);
+  })(doc, "");
   return out;
 }
 
@@ -180,18 +234,35 @@ if (fresh && prepared) {
       const drawn = s.roof.slopes.map((x) => pitchWords(Number(x.pitch.split("/")[0])));
       if (!s.roof.words.includes(`at ${rows.roofPitch.words}`) || drawn.some((w) => w !== rows.roofPitch.words)) off.push(`${s.code} roof: "${s.roof.words}" (drawn ${drawn.join(", ")}), How it's built: ${rows.roofPitch.words}`);
     } else if (s.roof.type === "gambrel") {
-      const v = rows.barnPeak && rows.barnPeak.value;
-      const heights = v ? Object.keys(v).map((w) => [w, inchesWords(v[w])]) : [];
-      const drawnW = String(Number(s.drawn_at.split("x")[0]));
-      if (!heights.length || heights.some(([w, h]) => !s.roof.words.includes(h) || !new RegExp(`\\b${w}( and \\d+)* ft wide`).test(s.roof.words.slice(s.roof.words.indexOf(h))))
-        || !heights.some(([w, h]) => w === drawnW && h === s.roof.peak_over_wall.words)) off.push(`${s.code} barn roof: "${s.roof.words}", peak ${s.roof.peak_over_wall.words}; How it's built: ${rows.barnPeak ? rows.barnPeak.words : "none"}`);
+      off.push(...barnRoofProblems(s, rows.barnPeak));
     } else {
       const said = s.roof.slopes.map((x) => pitchWords(Number(x.pitch.split("/")[0])));
       if (said.some((w) => !s.roof.words.includes(w))) off.push(`${s.code} roof: "${s.roof.words}" does not say ${said.join(" and ")}`);
     }
   }
-  ok(`one number for one wall: every style's wall height, roof pitch and barn roof heights are the numbers and words How it's built shows for it (the Cabin's walls 7 ft 4 13/16 in, its roof about 6 1/2/12; the Lofted Barn 4 ft at 10 ft wide)`,
+  ok(`one number for one wall: every style's wall height, roof pitch and barn roof heights are the numbers and words How it's built shows for it, each barn height tied to its own width and its numbers How it's built's to the 1/16 in (the Cabin's walls 7 ft 4 13/16 in, its roof about 6 1/2/12; the Lofted Barn 4 ft at 10 ft wide and 4 ft 3 in at 12)`,
     !off.length, off.slice(0, 6).join("; "));
+  /* the barn check CAN fail: the Lofted Barn's 10 and 12 ft heights swapped
+     in the words ("4 ft 3 in at 10 ft wide and 4 ft at 12": "4 ft" is the
+     start of "4 ft 3 in"), a by_width number that is the next width's, and
+     the peak at drawn_at 1/16 in off */
+  const lbRow = (() => { const r = effective(prepared.cat, "LB").find((x) => x.id === "barnPeak"); return r; })();
+  const lbFresh = fresh.styles.find((s) => s.code === "LB");
+  if (lbRow && lbFresh) {
+    const h10 = inchesWords(lbRow.value["10"]), h12 = inchesWords(lbRow.value["12"]);
+    const swapped = structuredClone(lbFresh);
+    swapped.roof.words = swapped.roof.words.replace(`${h10} at 10 ft wide`, "\u0000").replace(`${h12} at 12 ft wide`, `${h10} at 12 ft wide`).replace("\u0000", `${h12} at 10 ft wide`);
+    const numbers = structuredClone(lbFresh);
+    numbers.roof.by_width.find((b) => b.width_ft === 10).peak_over_wall_in = numbers.roof.by_width.find((b) => b.width_ft === 12).peak_over_wall_in;
+    const drawn = structuredClone(lbFresh);
+    drawn.roof.peak_over_wall.in += 1 / 16;
+    const sw = barnRoofProblems(swapped, lbRow), nu = barnRoofProblems(numbers, lbRow), dr = barnRoofProblems(drawn, lbRow);
+    ok(`two widths' barn heights swapped are caught: "${h12} at 10 ft wide, ${h10} at 12 ft wide" on the Lofted Barn names both widths; so is a by_width number that is the 12 ft's at 10 ft, and a peak 1/16 in off at ${lbFresh.drawn_at}`,
+      swapped.roof.words !== lbFresh.roof.words && !barnRoofProblems(lbFresh, lbRow).length
+        && sw.some((x) => /at 10 ft wide/.test(x)) && sw.some((x) => /at 12 ft wide/.test(x))
+        && nu.some((x) => /by_width 10 ft/.test(x)) && dr.some((x) => /drawn at/.test(x)),
+      JSON.stringify({ words: swapped.roof.words, swapped: sw, numbers: nu, drawn: dr }));
+  } else ok("the Lofted Barn has its barn roof heights in How it's built", false);
   /* the words check CAN fail */
   const bad = structuredClone(fresh);
   const dk = bad.styles.find((s) => s.main_door);
@@ -201,6 +272,23 @@ if (fresh && prepared) {
   const caught = readerWordsProblems(bad);
   ok("a decimal or a \"½\" in the words is caught: \"16.5 in of wall above it\", \"6.4 ft left of its middle\" and \"7 ft 9½ in\" each named",
     caught.length >= 3 && ["16.5 in", "6.4 ft", "9½"].every((w) => caught.some((c) => c.includes(w))), caught.join("; "));
+}
+
+/* ------------------------------- 3. what the Control Room's reader accepts */
+if (fresh) {
+  const long = roomLimitProblems(fresh);
+  const longest = (() => { let m = { at: "", n: 0 }; (function walk(v, p) { if (typeof v === "string") { if (!ROOM_NOTES.has(p) && v.length > m.n) m = { at: p, n: v.length }; } else if (Array.isArray(v)) v.forEach((x, i) => walk(x, `${p}[${i}]`)); else if (v && typeof v === "object") for (const k of Object.keys(v)) walk(v[k], p ? `${p}.${k}` : k); })(fresh, ""); return m; })();
+  ok(`every line of words is at most ${ROOM_WORDS_MAX} characters (the longest, ${longest.at}, is ${longest.n}) and the about and pitch notes at most ${ROOM_NOTE_MAX.toLocaleString("en-US")} (${fresh.about.length} and ${fresh.pitch_note.length}): the Control Room refuses the whole file otherwise`,
+    !long.length, long.slice(0, 6).join("; "));
+  const over = structuredClone(fresh), edge = structuredClone(fresh);
+  over.styles[0].roof.words = "x".repeat(ROOM_WORDS_MAX + 1);
+  over.pitch_note = "x".repeat(ROOM_NOTE_MAX + 1);
+  edge.styles[0].roof.words = "x".repeat(ROOM_WORDS_MAX);
+  edge.pitch_note = "x".repeat(ROOM_NOTE_MAX);
+  const caught = roomLimitProblems(over);
+  ok(`a ${ROOM_WORDS_MAX + 1}-character roof.words and a ${ROOM_NOTE_MAX + 1}-character pitch note are each caught; ${ROOM_WORDS_MAX} and ${ROOM_NOTE_MAX} pass`,
+    caught.some((x) => x.startsWith("styles[0].roof.words")) && caught.some((x) => x.startsWith("pitch_note"))
+      && !roomLimitProblems(edge).some((x) => x.startsWith("styles[0].roof.words") || x.startsWith("pitch_note")), caught.join("; "));
 }
 
 /* -------------------------------------------- 3. sizes, and nothing extra */
@@ -289,6 +377,7 @@ if (failures.length) {
 } else {
   console.log(`\nPROVED (${passed} checks): every one of the ${codes.length} library styles has its corner and end pictures and an entry in ${REFS_DIR}/${STYLES_FILE} ` +
     `that matches the library today (pitches as N/12 for each slope, wall heights, standard doors and windows, sizes; library version ${fresh ? fresh.library_version : "?"}), ` +
-    `every length and pitch in the words is said the way How it's built says it, with How it's built's own numbers, `+
+    `every length and pitch in the words is said the way How it's built says it, with How it's built's own numbers and each barn height at its own width, ` +
+    `every line fits what the Control Room's reader accepts, `+
     `every picture's sha256 matches, the sizes fit what the Control Room sends, a changed picture or pitch is caught, and no dealer's website or function carries the pictures.`);
 }

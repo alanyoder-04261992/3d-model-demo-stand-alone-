@@ -332,7 +332,7 @@ Chromium's software graphics, each on its own port.
 | `check-leads.mjs` | yes | a quote request reaches the company every way a company can ask for it, and nobody it should not |
 | `check-share.mjs` | yes | "Share my design" opens the same building; look-only links, changed prices and damaged links are handled honestly |
 | `check-embed.mjs` | yes | the designer sits safely inside a company's website: lazy loading, events, full screen, phones, who may show it |
-| `check-style-refs.mjs` | no | the style reference pictures Barnwright's Control Room reads (`library/style-refs/`): every library style has its corner and end pictures, `styles.json` matches the library today (each pitch as N/12, wall heights, doors and windows, sizes, each picture's sha256), the pictures fit what the Control Room sends, and no website build, client package or function carries them |
+| `check-style-refs.mjs` | no | the style reference pictures Barnwright's Control Room reads (`library/style-refs/`): every library style has its corner and end pictures, `styles.json` matches the library today (each pitch as N/12, wall heights, doors and windows, sizes, each picture's sha256), each barn height is How it's built's at its own width, the pictures and every line of words fit what the Control Room takes, and no website build, client package or function carries them |
 | `check-starter.mjs` | yes | a new company can be set up in one command from a spreadsheet, and shows up in the designer, the list and the headers |
 | `check-docs.mjs` | no | every file, tool, command and skill named in this README, docs/FOR-ALAN.md, docs/SELLING.md and the workflow skills exists; every part has its skill; no broken links |
 
