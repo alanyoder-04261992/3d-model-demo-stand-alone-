@@ -72,7 +72,8 @@ finished designer retains the golden geometry.
     visitor's browser locale. Identical for every US browser.
 12. **Changing size re-lays the standard doors and windows only when the
     customer has not touched them**; otherwise their items are kept and moved
-    onto the new walls, as Barnwright does.
+    onto the new walls, as Barnwright does (one exception on the shop
+    standard: the Side Utility's door follows the size, #27).
 
 ## Standalone product
 
@@ -283,19 +284,30 @@ finished designer retains the golden geometry.
     Barnwright number for number; `tools/check-shop-numbers.mjs` holds the
     shop numbers (the recorded set `test/golden-shop/shop-standard.json`).
 
-27. **A door or window the building no longer comes with is kept as a
-    swap.** Barnwright keeps a touched design's doors and windows when the
-    size changes (#12) and still counts them as standard, even where the
-    new size comes with a different door: its 10x12 Cottage comes with the
-    48″ door and its 10x16 with the 72″ double doors, so a touched 10x12
-    made 10x16 had a door the building does not come with, at $0, and the
-    Dealer Center's server refused to price it. Now the door is kept in the
-    place of the one the building comes with, as the swap the item sheet
-    would make (priced as the difference, never a credit), with one line:
-    "The 10×16 Cottage Shed comes with the 72″ Wooden Double Doors, so the
-    48″ Wooden Door is kept in their place." The same happens to a design
-    saved before the 8x12 and 10x12 Side Utility came with the 48″ door
-    ("... so the 72″ Wooden Double Doors are kept in its place as an
-    upgrade."). The designer and the server match items the same way; a
-    stale design is "no longer offered" (refresh), never "could not be
-    read" (`model/design.js normalize`, `tools/check-design.mjs` part 11).
+27. **The Side Utility's door follows the size on the shop standard.**
+    The 8x12 and 10x12 come with the 48″ Wooden Door, its other sizes with
+    the 72″ double doors (#26). A design can hold the other door of that
+    pair as the one it came with, and the server prices only what the
+    building comes with:
+    - the customer touched the doors and windows and then changed the size
+      (the size chip keeps their items, #12): the door they never swapped
+      becomes the one the new size comes with, in its place, and nothing is
+      said. A 10x16 with shutters made 10x12 is the 10x12's price plus the
+      shutters, with the 48″ door; back to 10x16, the double doors. A door
+      they swapped it for stays theirs, in the place of the new size's
+      door, priced as that swap (`ui/state.js chooseSize`);
+    - a design saved before October 11 2026 with the double doors on an
+      8x12 or 10x12 opens with the 48″ door in their place, at the price
+      the customer saw, with one line: "The 8×12 Side Utility comes with
+      the 48″ Wooden Door, so it takes the place of the 72″ Wooden Double
+      Doors." If they had swapped the doubles for another door, it is kept
+      in the 48″ door's place and priced from it ("... so the 36″ In-Swing
+      Door is kept in its place as an upgrade."; $150 more than before in
+      the sample price list; FOR-ALAN question 12 asks Alan).
+    The designer and the server match items the same way; the stale design
+    itself is "no longer offered" (refresh), never "could not be read"
+    (`model/design.js followStandardDoor`, `tools/check-design.mjs` part
+    11). Only a style with a library swap does this. Barnwright's own
+    buildings, the Cottage among them (its 10x12 comes with the 48″ door,
+    its 10x16 with the doubles), keep a touched design's door exactly as
+    Barnwright does, at Barnwright's price.

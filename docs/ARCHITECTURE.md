@@ -712,15 +712,19 @@ case (same items, same `priceParts`).
 
 **`normalize(state, frame, cat)`** holds the rules Barnwright applied while
 rendering the UI (4x8 porch under 20 ft, hidden packages/options switched off),
-so pricing never depends on whether the screen was drawn. One rule is new: a
-door or window the building no longer comes with (a design saved before the
-8x12 Side Utility came with the 48 in door; a touched design whose size
-changed, as on Barnwright's own Cottage at 10x12 and 10x16) is kept in the
-place of the one it comes with now, as the swap the item sheet would make
-(priced as the difference, never a credit), with one line of words. It is
-matched the way `server/office/pricing.js` matches, so what the designer
-prices the server prices; the stale design itself is "no longer offered"
-(409), never "could not be read" (422).
+so pricing never depends on whether the screen was drawn. One rule is new
+(`followStandardDoor`, DIFFERENCES #27): on a style with a library swap
+(the 8x12 and 10x12 Side Utility's 48 in door), an included door of the
+pair that is not the one the building comes with -- a design saved before
+the change -- becomes that door when the customer never swapped it (at no
+charge, so the price the customer saw stays), or, when they swapped it for
+another door, is kept in its place as that swap (the difference, never a
+credit); one line of words each. `ui/state.js chooseSize` makes the same
+change, without words, when a touched design changes size. It is matched
+the way `server/office/pricing.js` matches, so what the designer prices the
+server prices; the stale design itself is "no longer offered" (409), never
+"could not be read" (422). A style without a swap (every Barnwright
+building) is left exactly as Barnwright leaves it.
 
 **`makePlan(state, cat)`** = `structuredClone` + `frameOf` + deep freeze. Parts
 only ever see this frozen copy.

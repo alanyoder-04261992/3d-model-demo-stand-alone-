@@ -72,7 +72,8 @@ import { BARNWRIGHT_PAGE } from "./lib/barnwright-blocks.mjs";
 import { loadCatalogue, readJSON } from "./lib/load.mjs";
 import * as S from "../ui/state.js";
 import { esc, safeUrl } from "../ui/esc.js";
-import { defaults, setSize as modelSetSize, normalize } from "../model/design.js";
+import { defaults, setSize as modelSetSize, normalize, followStandardDoor } from "../model/design.js";
+import { barnwrightCatalogue } from "./lib/barnwright-company.mjs";
 import { frameOf } from "../model/frame.js";
 import { clampPos, resetItems } from "../model/layout.js";
 import { priceParts, money, pSizes } from "../model/pricing.js";
@@ -115,7 +116,22 @@ ok("safeUrl() keeps https, http, mailto, relative paths and data:image", safeUrl
 function itemsSig(items) { return items.map((it) => [it.cat, it.wall, +(it.pos || 0).toFixed(6), +(it.vy || 0).toFixed(6), !!it.dbl, !!it.inc, it.origCat || null, !!it.pk]); }
 
 {
-  let allStd = true, relayOk = 0, relayBad = [], keptOk = 0, keptBad = [], priceBad = [], pairs = 0, keptTried = 0;
+  let allStd = true, relayOk = 0, relayBad = [], keptOk = 0, keptBad = [], priceBad = [], pairs = 0, keptTried = 0, doorFollowed = 0, bwKept = 0, bwBad = [];
+  /* Barnwright's own buildings: a touched size change is Barnwright's setSize, item for item */
+  const BWC = barnwrightCatalogue();
+  for (const t of Object.keys(BWC.TYPES)) {
+    const s = defaults(BWC); S.chooseType(s, t, BWC); normalize(s, null, BWC);
+    for (const sz of pSizes(t, BWC)) {
+      if (sz === s.size) continue;
+      const b = copy(s), w = b.items.find((it) => typeof it.pos === "number" && !BWC.CAT[it.cat].gable);
+      if (!w) continue;
+      w.shut = !w.shut;
+      const bw = copy(b);
+      S.chooseSize(b, sz, BWC); modelSetSize(bw, sz, BWC);
+      if (J(b.items) === J(bw.items)) bwKept++; else bwBad.push(`${t} ${s.size}->${sz}`);
+    }
+  }
+  ok(`Barnwright's own buildings: a touched size change is Barnwright's setSize, item for item (${bwKept} changes)`, bwBad.length === 0 && bwKept > 100, bwBad.slice(0, 12).join(", "));
   for (const t of Object.keys(DEMO.TYPES)) {
     const s = defaults(DEMO); S.chooseType(s, t, DEMO); normalize(s, null, DEMO);
     if (!S.isStandardLayout(s, DEMO)) { allStd = false; relayBad.push(t + " starts non-standard"); }
@@ -140,13 +156,16 @@ function itemsSig(items) { return items.map((it) => [it.cat, it.wall, +(it.pos |
       keptTried++;
       const bw = copy(b);
       const r2 = S.chooseSize(b, sz, DEMO);
+      /* ... and the shop standard's own door at some sizes follows the new
+         size's (the 8x12 and 10x12 Side Utility, DIFFERENCES #27) */
       modelSetSize(bw, sz, DEMO);
+      if (followStandardDoor(bw, DEMO).length) doorFollowed++;
       if (!r2.relaid && J(b.items) === J(bw.items)) keptOk++; else keptBad.push(`${t} ${start}->${sz}`);
     }
   }
   ok("every demo style starts on its standard doors and windows", allStd, relayBad.join(", "));
   ok(`untouched: a size change lays the NEW size's standard doors and windows (all ${relayOk} style/size changes from each style's first size)`, relayBad.length === 0 && relayOk === pairs && pairs > 100, relayBad.slice(0, 12).join(", "));
-  ok(`touched: a size change keeps the customer's items, moved as Barnwright's setSize moves them (${keptOk} changes)`, keptBad.length === 0 && keptOk === keptTried && keptOk > 100, keptBad.slice(0, 12).join(", "));
+  ok(`touched: a size change keeps the customer's items, moved as Barnwright's setSize moves them, the Side Utility's door following the size's (${keptOk} changes, ${doorFollowed} of them the door)`, keptBad.length === 0 && keptOk === keptTried && keptOk > 100 && doorFollowed > 0, keptBad.slice(0, 12).join(", "));
   ok("every re-laid building still prices", priceBad.length === 0, priceBad.join(", "));
 }
 {
