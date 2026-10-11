@@ -132,7 +132,7 @@ const FIXTURES = [
     building: () => checkBuilding(planWith(LIBRARY, "UT", "8x12", [{ id: "x1", cat: "g1824", wall: "F", pos: 0, vy: -1000 }]), { gableItems: false }),
     controlBuilding: () => checkBuilding(planWith(LIBRARY, "UT", "8x12", [{ id: "x1", cat: "g1824", wall: "F", pos: 0, vy: -1000 }].slice(1)), { gableItems: false }) },
   { name: "an 18x24 gable window on a 12 ft Utility Shed at 5/12, forced past the fit rule", code: "gable-item",
-    words: /^Utility Shed 12x16: the 18×24 Gable Window, put under the peak of a gable as low as it goes, pokes 3 7\/8 in through the roof\.$/,
+    words: /^Utility Shed 12x16: even set as low as it goes, right under the peak, the 18×24 Gable Window pokes 3 7\/8 in through the roof\.$/,
     style: () => checkStyle(testCatalogue({ construction: { roof: { shapes: { gable: { rise: { w: 5 / 24 } } } } }, offer: { UT: ["12x16"] } }), "UT", { allGableItems: true, framing: false }),
     control: () => checkStyle(testCatalogue({ offer: { UT: ["12x16"] } }), "UT", { allGableItems: true, framing: false }) },
   { name: "a 12/12 roof with a 12 in eave on a 7 ft wall", code: "eave",

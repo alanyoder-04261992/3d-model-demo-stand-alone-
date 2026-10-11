@@ -165,6 +165,14 @@ try {
 
   /* ---- 3 ----------------------------------------------------------------- */
   section("3. Check every size, and the server's check on save");
+  /* a style with no numbers of its own: what the standard building has too
+     is listed, never "not yours to fix" (review W10) */
+  await openStyle(page, "SU");
+  await page.click('[data-built="SU"] .pl-built-check button');
+  await page.waitForSelector('[data-built="SU"] .pl-built-box', { timeout: 30000 });
+  const suSaid = await page.textContent('[data-built="SU"] .pl-built-result');
+  ok("Check every size on the Side Utility says everything fits and lists what the standard building has too",
+    /Everything fits: 11 buildings drawn\./.test(suSaid) && /Already so in the standard building:/.test(suSaid) && /Side Utility 8x12: the 72″ Wooden Double Doors and the 2×3 Window on the right side overlap by 2 3\/8 in\./.test(suSaid) && !/not yours to fix/.test(suSaid), suSaid.slice(0, 300));
   await typeIn(page, "built:UT:wallHeight", "60");
   ok("a bare 60 in the wall height box reads as inches: 5 ft", (await page.inputValue('[data-field="built:UT:wallHeight"]')) === "5 ft");
   await page.click('[data-built="UT"] .pl-built-check button');
@@ -216,6 +224,7 @@ try {
   const xsaved = await page.textContent(".pl-saved");
   ok("an option \"Steep roof\" at 7/12 saves, says \"Steep roof: roof pitch at least 7/12\" and was drawn on the styles it reaches",
     xsaved.includes("Steep roof: roof pitch at least 7/12") && /Every size of the Utility Shed, .*was drawn with your numbers and fits\./.test(xsaved), xsaved.slice(0, 400));
+  ok("... the styles named with \"and\" before the last (review W15)", /Every size of the Utility Shed, [^.]* and [A-Z][a-z]+(?: [A-Z][a-z]+)* was drawn/.test(xsaved), xsaved.slice(0, 400));
   await page.locator(".pl-extras .pl-extra").last().screenshot({ path: `${OUT}/option-roof-pitch-1280.png` });
   ok("no errors on the owner's screens", page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
   await page.context().close();

@@ -182,8 +182,10 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   does not fit: a door taller than the wall leaves room for, a roof edge in
   front of a door, framing that does not build. It draws one size at a
   time and gives the page back in between, so a style with many sizes never
-  freezes the page. What the same building has with the standard numbers is
-  never the owner's to fix.
+  freezes the page. What the same building has with the standard numbers,
+  no worse, never stops a save; it is listed under "Already so in the
+  standard building:" ("Side Utility 8x12: the 72″ Wooden Double Doors and
+  the 2×3 Window on the right side overlap by 2 3/8 in.").
 * **On save** the server does the same for every style whose numbers
   changed, each also with every option that changes how it is built
   switched on (a new wall with the Steep roof), and for every style a

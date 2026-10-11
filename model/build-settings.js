@@ -680,15 +680,38 @@ export function apply(settings, manufacturer) {
     const res = { traits: {}, drop: [], construction: {}, built: {} };
     for (const id of knobsFor(s)) {
       const layers = layersOf(S, M, k, id);
+      const unusable = [];
       for (const l of layers) {
         if (l.feature) { res.built[id] = { from: "style feature", feature: l.feature }; break; }
         const r = checkFor(id, l.value, s, name, keysOf(o.sizes));
-        if (r.problem) { out.warnings.push(`${name}: ${r.problem} The ${l.from === "standard" ? "library" : "next"} number is used instead.`); continue; }
+        /* the joined barn heights failing is said by the layer it came from */
+        if (r.problem) {
+          /* "Roof pitch "5\12" cannot be read: write it like 5/12." -- what was typed */
+          const K = KNOB[id], lead = `${K.Words}: `;
+          if (!l.parts) unusable.push(typeof l.value === "string" && r.problem.startsWith(lead) ? `${K.Words} "${l.value}" cannot be read: ${r.problem.slice(lead.length)}` : r.problem);
+          continue;
+        }
         mapKnob(id, r.value, s, res);
         res.built[id] = l.parts ? { value: r.value, from: l.from, parts: l.parts } : { value: r.value, from: l.from };
         break;
       }
       if (!res.built[id] && rawSets(S.construction, id, s)) res.built[id] = { from: "your construction settings" };
+      /* a number that cannot be used: say it, and the number built instead
+         and where it comes from (review W5) */
+      if (unusable.length) {
+        const b = res.built[id];
+        let used = b && b.value !== undefined ? format(id, b.value) : "";
+        if (!used && !(b && b.feature)) {
+          const v = plainValue(id, s, mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {}), keysOf(o.sizes));
+          used = v !== undefined ? format(id, v) : "";
+        }
+        const from = !b || b.from === "standard" || b.from === "library" ? "the standard"
+          : b.from === "business-wide" ? "your number for the whole business"
+            : b.from === "style feature" ? b.feature
+              : b.from === "your construction settings" ? "your construction settings"
+                : b.from.replace(/^built like /, "built like the ");
+        for (const p of unusable) out.warnings.push(`${name}: ${p} Until it is fixed in How it's built, it is built ${used ? `at ${used} (${from})` : `with ${from}`}.`);
+      }
     }
     out.styles[k] = res;
   }

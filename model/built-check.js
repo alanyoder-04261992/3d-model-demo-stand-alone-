@@ -366,7 +366,7 @@ function grouped(list, results) {
   const out = [];
   const seen = new Map();
   for (const f of list) {
-    const res = results.find((r) => r.problems.indexOf(f) >= 0 || r.warnings.indexOf(f) >= 0) || {};
+    const res = results.find((r) => r.problems.indexOf(f) >= 0 || r.warnings.indexOf(f) >= 0 || (r.already || []).indexOf(f) >= 0) || {};
     const k = (res.key || "") + "|" + ((res.extra && res.extra.key) || "") + "|" + f.id;
     const z = sizeOf(f, res.name || "");
     if (!seen.has(k)) { const g = { first: f, sizes: [] }; seen.set(k, g); out.push(g); continue; }
@@ -376,13 +376,16 @@ function grouped(list, results) {
   return out.map((g) => g.first.words + (g.sizes.length ? ` The same at ${sizeList(g.sizes)}.` : ""));
 }
 
-/* Every result in words: {problems, warnings, unchecked, already, buildings}. */
+/* Every result in words: {problems, warnings, unchecked, already (how
+   many), alreadyWords (what: the standard building has them too, no worse),
+   buildings}. */
 export function summarize(results) {
-  const problems = [], warnings = [];
+  const problems = [], warnings = [], alreadyList = [];
   let already = 0, buildings = 0;
   for (const r of results) {
     problems.push(...r.problems);
     warnings.push(...r.warnings);
+    alreadyList.push(...r.already);
     already += r.already.length;
     buildings += r.buildings;
   }
@@ -398,6 +401,7 @@ export function summarize(results) {
   return {
     problems: [...new Set(grouped(problems, results))],
     warnings: [...new Set(grouped(warnings, results))],
+    alreadyWords: [...new Set(grouped(alreadyList, results))],
     unchecked, already, buildings,
   };
 }

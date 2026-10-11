@@ -336,8 +336,9 @@ function checkGableItems(plan, add, opts) {
     const o = { it, c, r };
     const pts = glassOf(o);
     const over = pts ? glassOver(plan, pts) : -Infinity;
-    if (over > EPS) add("problem", "gable-item", id, `the ${c.n}, put under the peak of a gable as low as it goes, pokes ${lengthWords(over)} through the roof.`, { items: [id] }, over);
-    else if (r.clipped || r.u0 == null) add("warning", "gable-item", id, `the roof cuts the trim of the ${c.n}, even under the peak of a gable as low as it goes.`, { items: [id] });
+    /* said the way an owner can picture it (review W11) */
+    if (over > EPS) add("problem", "gable-item", id, `even set as low as it goes, right under the peak, the ${c.n} pokes ${lengthWords(over)} through the roof.`, { items: [id] }, over);
+    else if (r.clipped || r.u0 == null) add("warning", "gable-item", id, `even set as low as it goes, right under the peak, the ${c.n}'s trim runs into the roof.`, { items: [id] });
   }
 }
 

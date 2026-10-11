@@ -108,7 +108,10 @@ number, its words and its source.
   only the ones the stored price list did not already have; putting an old
   copy back is always allowed.
 * On read, a bad value is skipped -- the next layer wins -- and said in
-  `cat.settingsWarnings` for the owner. An extra whose `construction` effect
+  `cat.settingsWarnings` for the owner, with the number built instead and
+  where it comes from ("Utility Shed: Roof pitch "5\12" cannot be read:
+  write it like 5/12. Until it is fixed in How it's built, it is built at
+  5/12 (the standard)."). An extra whose `construction` effect
   has a problem changes nothing ("Steep roof: its construction settings
   could not be used, so it does not change how the building is built.").
 * `liftRawRules()`: the Barnwright setup connector's raw roof pitch rule

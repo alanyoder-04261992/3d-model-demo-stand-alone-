@@ -50,7 +50,7 @@ back-side dormer is the door-side one mirrored).
 | `past-wall` | a door's or window's trim runs past the corner | trim under 1 in from the corner |
 | `overlap` | two openings on one wall overlap | their casings touch or lap |
 | `too-high` | head board above a side wall's top; on an end wall into the gable trim band or above the roof line; a gable window's glass above the roof | a gable window's trim cut by the roof; a porch header band above the wall or into the gable band |
-| `gable-item` | a gable window the business sells, under the peak as low as it goes, pokes through the roof | its trim is cut by the roof |
+| `gable-item` | a gable window the business sells, set as low as it goes right under the peak, pokes through the roof ("even set as low as it goes, right under the peak, the 18×24 Gable Window pokes 3 7/8 in through the roof.") | its trim runs into the roof |
 | `eave` | the roof edge over a long wall under 6 ft from the floor, or in front of a door's head | in front of a window's head |
 | `door-fit` | the wooden shop door more than 1/2 in shorter than `openings.doorHeightIn` | |
 | `roof` | a slope that does not rise to the peak; a barn's upper slope as steep as its lower; the knee outside the walls; the peak under 1 ft or over 8 ft above the wall; a pitch outside gable 3-12 (a metal gable roof 4-12), lean-to 1 1/4-6, single slope 2-8 /12 (`pitchLimits`, the How it's built limits: what the 3D designer can frame) | the peak under 18 in |

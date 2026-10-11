@@ -332,9 +332,14 @@ function checkRow(key) {
     out);
 }
 
+/* "the Utility Shed, Side Utility and Cabin" */
+function andWords(names) {
+  return names.length < 2 ? names.join("") : `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}`;
+}
+
 function resultBox(tone, title, lines) {
   return h("div", { class: ["pl-built-box", tone] },
-    h("p", { class: "pl-built-box-title" }, icon(tone === "good" ? "check" : "alert"), h("span", {}, title)),
+    h("p", { class: "pl-built-box-title" }, icon(tone === "good" || tone === "note" ? "check" : "alert"), h("span", {}, title)),
     lines.length ? h("ul", {}, lines.map((l) => h("li", {}, l))) : null);
 }
 
@@ -343,8 +348,10 @@ function resultOf(sum, r) {
   if (sum.problems.length) out.push(resultBox("bad", "Change these numbers before you save. They do not fit at every size:", sum.problems));
   if (sum.warnings.length) out.push(resultBox("warn", "Worth a look:", sum.warnings));
   if (!sum.problems.length && !sum.warnings.length && sum.buildings) {
-    out.push(resultBox("good", `Everything fits: ${plural(sum.buildings, "building")} drawn${r && r.already.length ? `, and the ${plural(r.already.length, "thing")} the standard building has too ${r.already.length === 1 ? "is" : "are"} not yours to fix` : ""}.`, []));
+    out.push(resultBox("good", `Everything fits: ${plural(sum.buildings, "building")} drawn.`, []));
   }
+  /* what the standard building has too, no worse: said, not hidden (review W10) */
+  if (sum.alreadyWords && sum.alreadyWords.length) out.push(resultBox("note", "Already so in the standard building:", sum.alreadyWords));
   if (sum.unchecked.length) out.push(resultBox("warn", "Not checked:", sum.unchecked));
   return out;
 }
@@ -448,7 +455,7 @@ function paintNotes(box) {
   const q = S.quiet && S.quiet.version === S.saved.version ? S.quiet : null;
   const lines = q ? q.lines : [];
   clear(box,
-    warnings.length ? resultBox("warn", "The 3D designer uses the next number for these:", warnings) : null,
+    warnings.length ? resultBox("warn", "These numbers cannot be used yet, so the 3D designer builds with another:", warnings) : null,
     lines.length ? resultBox("warn", "Since the last update, your own building numbers do not fit everywhere. Change them in How it's built:", lines) : null,
     q && q.unchecked.length ? resultBox("warn", "Not checked yet. Open the style and press Check every size:", q.unchecked) : null);
 }
@@ -498,7 +505,7 @@ export function builtSaved(sizeCheck) {
   const app = S.ctx?.app;
   const out = [];
   if (sizeCheck.checked?.length && !sizeCheck.unchecked?.length && !sizeCheck.problems?.length) {
-    out.push(h("p", { class: "pl-built-saved-line" }, icon("check"), h("span", {}, `Every size of the ${sizeCheck.checked.join(", ")} was drawn with your numbers and fits.`)));
+    out.push(h("p", { class: "pl-built-saved-line" }, icon("check"), h("span", {}, `Every size of the ${andWords(sizeCheck.checked)} was drawn with your numbers and fits.`)));
   }
   if (sizeCheck.problems?.length) out.push(resultBox("warn", "These do not fit with the numbers you put back:", sizeCheck.problems));
   if (sizeCheck.warnings?.length) out.push(resultBox("warn", "Worth a look:", sizeCheck.warnings));

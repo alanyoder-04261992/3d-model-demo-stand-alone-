@@ -383,6 +383,13 @@ group("10. which number wins");
   /* a bad value falls through, with a warning for the owner */
   const bad = withBuilt((c) => { c.offer.UT.built = { roofPitch: 20 }; }, MS);
   ok("a value past the limits is skipped (the standard 5/12 is used) and said", near(pitchOf(bad, "UT"), 5) && bad.settingsWarnings.some((w) => /Roof pitch 20\/12 is steeper/.test(w)), J(bad.settingsWarnings));
+  /* ... naming the number built instead and where it comes from, never
+     "the next number" or "the library number" (review W5) */
+  ok("... \"Until it is fixed in How it's built, it is built at 5/12 (the standard).\"", bad.settingsWarnings.includes("Utility Shed: Roof pitch 20/12 is steeper than 12/12, the steepest the 3D designer draws. Until it is fixed in How it's built, it is built at 5/12 (the standard)."), J(bad.settingsWarnings));
+  const typed = withBuilt((c) => { c.offer.UT.built = { roofPitch: "5\\12" }; c.built = { eaveOverhang: { gable: 5 } }; c.offer.SU.built = { eaveOverhang: 40 }; }, MS);
+  ok("... what was typed (\"Roof pitch \"5\\12\" cannot be read: write it like 5/12.\"), and a business-wide number in its words", typed.settingsWarnings.includes("Utility Shed: Roof pitch \"5\\12\" cannot be read: write it like 5/12. Until it is fixed in How it's built, it is built at 5/12 (the standard).")
+    && typed.settingsWarnings.includes("Side Utility: Eave overhang 40 in is more than 12 in, the most the 3D designer draws. Until it is fixed in How it's built, it is built at 5 in (your number for the whole business).")
+    && !typed.settingsWarnings.some((w) => /next number|library/.test(w)), J(typed.settingsWarnings));
   /* extras: a roof pitch only ever makes a roof steeper */
   const ex = (pitch) => withBuilt((c) => { c.offer.UT.built = { roofPitch: pitch }; c.options.extras = [{ key: "steep", name: "Steep roof", input: "check", price: 300, built: { roofPitch: 7 } }]; });
   const on = (cat) => { const s = stateOf(cat, "UT", "10x16"); s.xopt = { steep: 1 }; return s; };
