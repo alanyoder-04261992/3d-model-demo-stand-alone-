@@ -76,6 +76,14 @@ Read through `model/layout.js openingRect` and `model/construction.js`:
 A company changing either moves every door or window on those buildings, and
 the wall framing (which uses the same `openingRect`) moves with them.
 
+**Gable windows that do not fit** (Oct 2026): a steeper or flatter roof
+changes which gable windows fit. `gableItemFits(c, frame)` and
+`fitsOnWall(c, wall, frame)` in `model/layout.js` keep a gable window whose
+glass would poke through the roof (even under the peak, as low as it may
+go) off that building's gable ends: the designer greys it and the server
+refuses it. A saved design holding one draws as before. See the
+`part-gable-window` skill.
+
 ## Where it came from in Barnwright
 
 `boisterous-lokum-a737e0/public/3ddesign.html` (pinned SHA-256
@@ -224,5 +232,7 @@ The primitives (`common.js`):
 * `node tools/check-golden.mjs --part <label>` -- one opening part on its own.
 * `node tools/check-model-live.mjs` -- `openingRect` against the trim
   Barnwright's live page draws, piece by piece.
+* `node tools/check-design.mjs` -- gable windows too tall for a gable are
+  not offered there, are refused by the server, and a saved one still opens.
 * `node tools/check-parts.mjs` -- a valid part with a caption and this skill.
 * `node tools/check-imports.mjs` -- loads in Node with no browser.

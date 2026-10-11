@@ -118,7 +118,7 @@ const EPS = 1e-6;
 const ON_WALL_FT = 0.05;
 /* a gable window's trim is cut 0.10 ft under the roof line (parts/openings/
    gable-window.js gableClip(..., 0.10)): glass above that line shows through */
-const GABLE_CUT_FT = 0.10;
+const GABLE_CUT_FT = LAYOUT.GABLE_CUT_FT;          /* where the drawing cuts a gable window at the roof */
 
 function now() { return (typeof performance !== "undefined" && performance.now) ? performance.now() : Date.now(); }
 

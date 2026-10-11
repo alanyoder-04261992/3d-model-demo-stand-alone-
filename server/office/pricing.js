@@ -16,7 +16,7 @@
 import { toState, fromState } from "../../model/design.js";
 import { frameOf } from "../../model/frame.js";
 import { standardItems } from "../../model/loadouts.js";
-import { pkFixtures } from "../../model/layout.js";
+import { pkFixtures, fitsOnWall } from "../../model/layout.js";
 import { priceParts } from "../../model/pricing.js";
 import { OfficeError } from "./http.js";
 
@@ -145,6 +145,9 @@ export function priceDesign(input, cat) {
 
   for (const item of state.items) {
     const c = cat.CAT[item.cat];
+    /* a gable window too tall for this gable is not offered there
+       (model/layout.js gableItemFits; the designer greys it) */
+    if (!fitsOnWall(c, item.wall, frame)) notOffered();
     if (item.pk) {
       if (item.inc || item.dbl || item.shut || item.lite || !(fixtures.get(item.cat) > 0)) unreadable();
       fixtures.set(item.cat, fixtures.get(item.cat) - 1);

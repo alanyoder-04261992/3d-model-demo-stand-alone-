@@ -47,7 +47,7 @@
      whether or not the screen was drawn. */
 
 import { frameOf } from "../model/frame.js";
-import { resetItems, clampPos, pkFixtures, freeSpot, itemById } from "../model/layout.js";
+import { resetItems, clampPos, pkFixtures, freeSpot, itemById, fitsOnWall } from "../model/layout.js";
 import { setType as modelSetType, setSize as modelSetSize, flipPorch as modelFlipPorch } from "../model/design.js";
 import { pPrice } from "../model/pricing.js";
 import { wallPt } from "../engine/wall.js";
@@ -214,6 +214,7 @@ export function setColour(state, key, hex) {
 export function addItem(state, catId, cat, yaw) {
   const fr = frame(state, cat), c = cat.CAT[catId], t = fr.t;
   if (!c) throw new Error(`"${catId}" is not an item this company sells.`);
+  if (c.gable && !fitsOnWall(c, "F", fr)) return null;          /* too tall for this gable */
   let wall = c.gable ? "F" : facingWall(yaw || 0);
   if (c.k === "post") wall = (t.porch === "C") ? ((facingWall(yaw || 0) === "F") ? "F" : "R") : ((t.porch === "R" || t.porch === "S") ? "R" : "F");
   if (t.kennel && wall === "F") wall = "B";                  /* the kennel's front is its open run */
@@ -292,6 +293,9 @@ export function setItemType(state, id, v, cat) {
   }
   if (!CAT[v]) throw new Error(`"${v}" is not an item this company sells.`);
   const fr = frame(state, cat);
+  /* a gable window too tall for this gable is not offered there (the sheet
+     greys it: "too tall for this gable") */
+  if (v !== it.cat && CAT[v].gable && !fitsOnWall(CAT[v], "FBRL".indexOf(it.wall) < 0 ? "F" : it.wall, fr)) return {};
   const was = it.cat; it.cat = v;
   const wasC = CAT[was], nowC = CAT[it.cat];
   if (nowC.free && !wasC.free) {                                /* outlet -> overhead light: lift it off the wall */
@@ -315,6 +319,7 @@ export function setItemType(state, id, v, cat) {
 export function setItemWall(state, id, wall, cat) {
   const it = itemById(state, id);
   if (!it || it.wall === wall) return null;
+  if (!fitsOnWall(cat.CAT[it.cat], wall, frame(state, cat))) return null;     /* too tall for this gable */
   it.wall = wall; it.pos = 0; it.vy = 0;
   clampPos(it, state, frame(state, cat));
   return it;

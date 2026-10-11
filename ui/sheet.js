@@ -38,7 +38,7 @@
 
 import { esc } from "./esc.js";
 import * as S from "./state.js";
-import { itemById } from "../model/layout.js";
+import { itemById, fitsOnWall } from "../model/layout.js";
 import { itemCharge, money } from "../model/pricing.js";
 import { colorName } from "../model/company.js";
 import { animYaw, wallYaw } from "../engine/camera.js";
@@ -125,6 +125,12 @@ export function createSheet(ctx) {
       else if (elecCtx && ck && ck.k === "ilt") label = "Additional overhead light" + pr(ck.p);
       else label = (ck ? ck.n : kk) + (ck ? pr(ck.p, ck.perFt) : "");
       if (elecCtx && it.pk && kk === it.cat && !(ck && ck.switch)) label = ck.n + " — in package";
+      /* a gable window too tall for this gable is not offered on a gable end
+         (model/layout.js gableItemFits); one already there stays as it is */
+      if (ck && ck.gable && !fitsOnWall(ck, "FBRL".indexOf(it.wall) < 0 ? "F" : it.wall, fr)) {
+        label += " — too tall for this gable";
+        if (kk !== it.cat) o.disabled = true;
+      }
       o.textContent = label;
       if (kk === it.cat) o.selected = true;
       selEl.appendChild(o);
@@ -147,6 +153,7 @@ export function createSheet(ctx) {
       [["F", "Front"], ["B", "Back"], ["L", "Left"], ["R", "Right"]].forEach((pair) => {
         const wb = document.createElement("button"); wb.type = "button"; wb.textContent = pair[1];
         if (it.wall === pair[0]) wb.className = "on";
+        else if (!fitsOnWall(c, pair[0], fr)) { wb.disabled = true; wb.title = "Too tall for this gable"; }
         wb.onclick = () => {
           if (it.wall === pair[0]) return;
           ctx.act("item", (s) => S.setItemWall(s, it.id, pair[0], cat), { refresh: false });

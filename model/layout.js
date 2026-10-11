@@ -25,7 +25,12 @@
    openingRect(it, plan) is the one new function: the rectangle an opening's
    trim covers on its wall, worked out from renderItem (3122-3236) and
    renderGableWin (3575-3705), so the framing, the drawing and the picking all
-   agree on where an opening is. See its own note below. */
+   agree on where an opening is. See its own note below.
+
+   gableItemFits(c, frame) (Oct 2026) says whether a gable window's glass
+   can stay under the roof anywhere in that building's gable; the designer
+   offers only the ones that fit and the server refuses a new one that does
+   not. It never moves anything already drawn. */
 
 import { y0, CASING, OCT_WIN } from "../engine/constants.js";
 import { profileYat, gableClip, gableBandY } from "./roof-shapes.js";
@@ -479,6 +484,49 @@ function gableRect(it, c, plan) {
     } else { out.u0 = drawn.x0; out.u1 = drawn.x1; }
   }
   return out;
+}
+
+/* DOES A GABLE ITEM FIT THIS BUILDING'S GABLE? (Oct 2026, BUILDFAST-SPEC
+   E.4.) Put it where the gable is tallest -- under the peak, as far over as
+   the designer lets it go -- and as low as the designer lets it go (0.14 ft
+   over the wall top, THE FLOOR WINS): it fits when its glass stays under the
+   line the drawing cuts at (GABLE_CUT_FT inside the roof). A window that
+   does not fit there fits nowhere in that gable, so the designer does not
+   offer it ("Too tall for this gable") and the server refuses a new one.
+   The faux loft window has no glass (it is trim, cut at the roof line like
+   any trim), so it always fits. `fr` is a frame (model/frame.js frameOf) or
+   a plan: it needs W, prof, t, d. A building already holding one is drawn
+   exactly as before (Barnwright's cut). */
+export const GABLE_CUT_FT = 0.10;
+export function gableItemFits(c, fr) {
+  if (!c || !c.gable || c.draw === "faux-loft") return true;
+  var P = fr.prof, apexX = P[0][0], apexY = -Infinity;
+  for (var i = 0; i < P.length; i++) if (P[i][1] > apexY + 1e-6) { apexY = P[i][1]; apexX = P[i][0]; }
+  var W = fr.W != null ? fr.W : fr.d.W, lim = Math.max(0, W / 2 - c.w / 2 - 0.6);   /* clampPos, a gable end */
+  var it = { id: "gable-fit", cat: "", wall: "B", pos: Math.max(-lim, Math.min(lim, apexX)), vy: -1000, inc: false };
+  var r = gableRect(it, c, fr);
+  return gableGlassOver(r, fr) <= 1e-6;
+}
+/* May this item go on this wall of this building? Only a gable window that
+   does not fit is kept off a gable end (F or B); high on a side wall it
+   always fits. -> true, or false ("Too tall for this gable"). */
+export function fitsOnWall(c, wall, fr) {
+  if (!c || !c.gable || (wall !== "F" && wall !== "B")) return true;
+  return gableItemFits(c, fr);
+}
+/* How far a gable-end item's glass reaches above the line the drawing cuts
+   at (feet; below it is negative). Its glass: the clear opening, or the
+   18 in octagon window inside the octagon's trim ring. */
+export function gableGlassOver(r, fr) {
+  if (!r || r.plane !== "gable" || r.draw === "faux-loft") return -Infinity;
+  var pts = [];
+  if (r.draw === "octagon") {
+    var R = OCT_WIN / 2;
+    for (var i = 0; i < 8; i++) { var a = Math.PI / 8 + i * Math.PI / 4; pts.push([r.x + Math.cos(a) * R, r.yc + Math.sin(a) * R]); }
+  } else pts = [[r.clearX.x0, r.clear.y0], [r.clearX.x1, r.clear.y0], [r.clearX.x1, r.clear.y1], [r.clearX.x0, r.clear.y1]];
+  var W = fr.W != null ? fr.W : fr.d.W, half = W / 2, over = -Infinity;
+  for (var j = 0; j < pts.length; j++) over = Math.max(over, pts[j][1] - (profileYat(fr.prof, Math.max(-half, Math.min(half, pts[j][0]))) - GABLE_CUT_FT));
+  return over;
 }
 
 function bbox(polys) {

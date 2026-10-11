@@ -41,6 +41,8 @@ import { readJSON, readManufacturer, loadCatalogue } from "./lib/load.mjs";
 import { resolve } from "../model/company.js";
 import { frameOf } from "../model/frame.js";
 import { resetItems, pkFixtures, clampPos, freeSpot } from "../model/layout.js";
+import * as LAYOUT from "../model/layout.js";
+import * as S from "../ui/state.js";
 import { priceParts } from "../model/pricing.js";
 import { defaults, fromState, toState, normalize, encode, encodeSync, decode, decodeSync, setType, flipPorch } from "../model/design.js";
 import { mulberry32 } from "../engine/seeded.js";
@@ -379,6 +381,44 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   const odd = copy(resaved); odd.porch.pLen = 21;
   let oddErr = null; try { priceDesign(odd, c8); } catch (e) { oddErr = e; }
   check(G8, oddErr && oddErr.status === 422, "a 21 ft porch was read");
+}
+
+/* ---------------------------------------------------------------- 9 gable windows that do not fit */
+{
+  /* BUILDFAST-SPEC E.4: a gable window whose glass would poke through the
+     roof even at its lowest, under the peak, is not offered on a gable end;
+     the server refuses a new one; a saved design holding one opens and is
+     drawn as before. A 12 ft Utility Shed at 5/12 (the shop's pitch). */
+  const G9 = "gable windows that do not fit are not offered";
+  const fiveTwelve = barnwrightCatalogue((c) => { c.offer.UT.built = { roofPitch: 5 }; });
+  const st = (cat, size) => { const s = defaults(cat); setType(s, "UT", cat); s.size = size; resetItems(s, frameOf(s, cat), cat); return s; };
+  const s12 = st(fiveTwelve, "12x16"), fr12 = frameOf(s12, fiveTwelve);
+  const fits = (cat, size, id) => typeof LAYOUT.gableItemFits === "function" && LAYOUT.gableItemFits(cat.CAT[id], frameOf(st(cat, size), cat));
+  check(G9, !fits(fiveTwelve, "12x16", "g1824") && fits(fiveTwelve, "12x16", "oct"), "on a 12 ft Utility Shed at 5/12 the 18x24 should not fit and the octagon should");
+  check(G9, fits(BW, "12x16", "g1824") && !fits(BW, "8x12", "g1824") && !fits(BW, "10x16", "g1824"), "at Barnwright's pitch the 18x24 fits a 12 ft Utility Shed and not an 8 or 10 ft one");
+  check(G9, fits(fiveTwelve, "12x16", "faux") || !fiveTwelve.CAT.faux, "a faux loft window (no glass) always fits");
+  /* the designer: not offered on a gable end, fine high on a side wall */
+  const sA = st(fiveTwelve, "12x16");
+  check(G9, S.addItem(sA, "g1824", fiveTwelve, 0) == null && !sA.items.some((i) => i.cat === "g1824"), "the 18x24 was added to the front gable of a 12 ft Utility Shed at 5/12");
+  const sB = st(fiveTwelve, "12x16"); const oct = S.addItem(sB, "oct", fiveTwelve, 0);
+  S.setItemType(sB, oct.id, "g1824", fiveTwelve);
+  check(G9, oct.cat === "oct", "an octagon on the gable was changed into the 18x24 that does not fit");
+  const sC = st(fiveTwelve, "12x16"); const w = S.addItem(sC, "w23", fiveTwelve, -Math.PI / 2);   /* a window on the left side */
+  S.setItemType(sC, w.id, "g1824", fiveTwelve);
+  check(G9, w.cat === "g1824" && (w.wall === "L" || w.wall === "R"), "high on a side wall the 18x24 should still be offered");
+  check(G9, S.setItemWall(sC, w.id, "F", fiveTwelve) === null && w.wall !== "F", "the 18x24 was moved from a side wall onto the gable it is too tall for");
+  /* the server: a new one is refused with today's words; the same on a side wall is priced */
+  const onGable = st(fiveTwelve, "12x16"); onGable.items.push({ id: "g9", cat: "g1824", wall: "F", pos: 0, vy: 0, inc: false, shut: false });
+  let err9 = null; try { priceDesign(fromState(onGable, fiveTwelve), fiveTwelve); } catch (e) { err9 = e; }
+  check(G9, err9 && err9.status === 409 && /no longer offered/.test(err9.message), `the server took an 18x24 on a 5/12 gable: ${err9 ? err9.status + " " + err9.message : "priced"}`);
+  let ok9 = null; try { ok9 = priceDesign(fromState(sC, fiveTwelve), fiveTwelve); } catch (e) { ok9 = e; }
+  check(G9, ok9 && ok9.price && ok9.price.total > 0, `the 18x24 high on a side wall was refused: ${ok9 && ok9.message}`);
+  /* a saved design holding one opens with nothing said and draws as before */
+  const back = toState(fromState(onGable, fiveTwelve), fiveTwelve);
+  const r0 = LAYOUT.openingRect(onGable.items[onGable.items.length - 1], Object.assign({ state: onGable }, frameOf(onGable, fiveTwelve)));
+  const kept = back.state.items.find((i) => i.cat === "g1824" && i.wall === "F");
+  const r1 = kept && LAYOUT.openingRect(kept, Object.assign({ state: back.state }, frameOf(back.state, fiveTwelve)));
+  check(G9, back.warnings.length === 0 && kept && J(r0) === J(r1), `the saved design changed on opening: ${J(back.warnings)}`);
 }
 
 /* ---------------------------------------------------------------- report */

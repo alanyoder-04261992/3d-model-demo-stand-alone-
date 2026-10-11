@@ -37,6 +37,22 @@ Where it goes:
   height less 0.92 ft, never below 0.55 of its size.
 * The 18x24's outside trim needs room of its own (0.39 ft each side, 0.29
   above, 0.27 below), so those pads are part of where it may go.
+* **Too tall for this gable** (Oct 2026, BUILDFAST-SPEC E.4):
+  `gableItemFits(c, frame)` in `model/layout.js` puts the window under the
+  peak, as low as it may go, and asks whether its glass stays under the
+  line the drawing cuts at (`GABLE_CUT_FT`, 0.10 ft inside the roof). When
+  it does not, the window is not offered on that building's gable ends
+  (`fitsOnWall`): the selection sheet greys it ("too tall for this gable"),
+  the Front and Back chips are greyed for it, `ui/state.js` refuses it, and
+  the server refuses a design holding one on a gable end (409, "no longer
+  offered"). High on a side wall it is still offered. The faux loft window
+  has no glass and always fits. A saved design holding one opens and is
+  drawn exactly as before (the cut). With the shop's 5/12 roofs the 18x24 is
+  not offered on 8, 10 and 12 ft Utility Sheds and Side Utilities (8 and
+  10 ft already poked through at Barnwright's pitch), nor the octagon on
+  6 ft buildings. The every-size check (`gable-item`) tries every gable
+  window the business sells under each gable, so one that is offered and
+  does not fit fails `node tools/check-style-sizes.mjs`.
 
 ## Stage
 
