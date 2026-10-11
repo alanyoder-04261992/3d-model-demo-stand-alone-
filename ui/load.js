@@ -146,7 +146,8 @@ export async function loadLot(slug, opts = {}) {
       slug, lotId: lot.id || slug, lotName, lotPhone: lot.phone || "",
       businessName: cat.brand.name || "", companyId: company.id, version: data.version,
       quoteUrl: preview ? null : new URL(`api/lots/${slug}/quote-requests`, base).href,
-      ...(preview ? { preview: true, closed: data.closed === "lot" ? "lot" : "business" } : {}),
+      /* previewer: who is looking, "team" or "barnwright" (the bar's words) */
+      ...(preview ? { preview: true, previewer: preview, closed: data.closed === "lot" ? "lot" : "business" } : {}),
     }),
   });
   return { company, manufacturer, library, lot, catalogue, problems: [] };

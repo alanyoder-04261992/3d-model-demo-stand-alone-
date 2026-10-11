@@ -75,6 +75,9 @@ const WORDS = {
   checksOff: "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access.",
   termsNotOut: "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
   previewLot: "Preview. Your customers can't see this lot until you open it in Lots.",
+  /* a Barnwright visit: Alan is looking, and only the owner opens it */
+  previewVisit: "Preview for Barnwright. Customers can't see this until the owner opens it in Settings.",
+  previewVisitLot: "Preview for Barnwright. Customers can't see this lot until the owner opens it in Lots.",
   visitOnly: "A Barnwright visit has only the price list and settings.",
   opening: "Opening ends Barnwright's setup access. After this, Barnwright needs your switch to change your prices.",
   change: "Run checks and change my price list and settings",
@@ -271,7 +274,7 @@ try {
       const sv = await pageIn(alanCtx);
       await sv.goto(BASE + seeIt);
       await sv.waitForSelector("#previewbar", { timeout: 30000 }).catch(() => {});
-      ok("M1: ... which shows the Preview bar, not the closed page", (await text(sv, "#previewbar")) === WORDS.preview && !/isn't open right now/.test(await sv.textContent("body")), await text(sv, "body"));
+      ok("M1: ... which shows the visit's Preview bar, not the closed page", (await text(sv, "#previewbar")) === WORDS.previewVisit && !/isn't open right now/.test(await sv.textContent("body")), await text(sv, "body"));
       await sv.close();
     }
     /* back to the standard wall, as the rest of this check expects */
@@ -316,8 +319,21 @@ try {
   const pv = await pageIn(alanCtx);
   await pv.goto(`${BASE}/d/riverside/?preview=barnwright`);
   await pv.waitForSelector("#previewbar", { timeout: 30000 }).catch(() => {});
-  ok("the visit's Look at the preview opens the closed 3D designer as a preview", (await text(pv, "#previewbar")) === WORDS.preview);
+  ok(`the visit's Look at the preview opens the closed 3D designer as a preview, with words true for Alan: "${WORDS.previewVisit}" (old: the owner's "${WORDS.preview}")`,
+    (await text(pv, "#previewbar")) === WORDS.previewVisit, await text(pv, "#previewbar"));
   await pv.close();
+  /* only one lot closed while the business is open: the visit's words point
+     to the owner's Lots (the answer is changed in the page, as the server
+     gives it for a closed lot of an open business) */
+  const pvLot = await pageIn(alanCtx);
+  await pvLot.route("**/api/office/barnwright/lots/riverside/preview", async (route) => {
+    const r = await route.fetch();
+    await route.fulfill({ response: r, json: { ...(await r.json()), closed: "lot" } });
+  });
+  await pvLot.goto(`${BASE}/d/riverside/?preview=barnwright`);
+  await pvLot.waitForSelector("#previewbar", { timeout: 30000 }).catch(() => {});
+  ok(`... and for a closed lot of an open business: "${WORDS.previewVisitLot}"`, (await text(pvLot, "#previewbar")) === WORDS.previewVisitLot, await text(pvLot, "#previewbar"));
+  await pvLot.close();
 
   section("4. A visit that ends while Alan works (F10)");
   await alan.goto(`${BASE}/dealer#/price-list`);

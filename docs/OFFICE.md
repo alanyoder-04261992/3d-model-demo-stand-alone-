@@ -732,7 +732,10 @@ team (signed in, for the lots they can see) and a Barnwright visit see a
 lot's 3D designer as a **preview**, with a bar on top: "Preview. Your
 customers can't see this until you open it in Settings." When the business
 is open and only that lot is closed, the bar says: "Preview. Your customers
-can't see this lot until you open it in Lots."
+can't see this lot until you open it in Lots." A Barnwright visit is Alan
+looking, and only the owner opens it, so the visit's bar says: "Preview for
+Barnwright. Customers can't see this until the owner opens it in Settings."
+(a closed lot: "... can't see this lot until the owner opens it in Lots.").
 
 * `GET /api/office/lots/:slug/preview` (the team) and
   `GET /api/office/barnwright/lots/:slug/preview` (the visit) answer like

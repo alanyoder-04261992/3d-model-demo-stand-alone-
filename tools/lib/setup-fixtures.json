@@ -4107,7 +4107,8 @@
       "ended": "Your Barnwright visit ended. In your Control Room tap Open their price list, then come back and tap Save.",
       "closed": "Your Barnwright visit ended. <the words for why> Your changes are kept in this tab.",
       "bar": "Working on <business> as Barnwright until <time>.",
-      "preview": "Preview. Your customers can't see this until you open it in Settings."
+      "preview": "Preview for Barnwright. Customers can't see this until the owner opens it in Settings.",
+      "previewLot": "Preview for Barnwright. Customers can't see this lot until the owner opens it in Lots."
     },
     "examples": [
       {

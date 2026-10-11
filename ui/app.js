@@ -246,11 +246,16 @@ function lotClosedMessage(closed, phone) {
 const PREVIEW_BAR = "Preview. Your customers can't see this until you open it in Settings.";
 /* only this lot is closed (the business is open): it opens in Lots */
 const PREVIEW_BAR_LOT = "Preview. Your customers can't see this lot until you open it in Lots.";
-function previewBar(closed) {
+/* a Barnwright visit: Alan is looking, and only the owner opens it */
+const PREVIEW_BAR_BARNWRIGHT = "Preview for Barnwright. Customers can't see this until the owner opens it in Settings.";
+const PREVIEW_BAR_LOT_BARNWRIGHT = "Preview for Barnwright. Customers can't see this lot until the owner opens it in Lots.";
+function previewBar(closed, previewer) {
   const bar = document.createElement("div");
   bar.id = "previewbar";
   bar.setAttribute("role", "status");
-  bar.textContent = closed === "lot" ? PREVIEW_BAR_LOT : PREVIEW_BAR;
+  bar.textContent = previewer === "barnwright"
+    ? (closed === "lot" ? PREVIEW_BAR_LOT_BARNWRIGHT : PREVIEW_BAR_BARNWRIGHT)
+    : (closed === "lot" ? PREVIEW_BAR_LOT : PREVIEW_BAR);
   bar.style.cssText = "position:sticky;top:0;z-index:50;padding:10px 16px;background:#16130E;color:#F3E7C2;font:600 15px/1.35 system-ui,sans-serif;text-align:center;border-bottom:2px solid #C9A227";
   document.body.prepend(bar);
   const card = el("quotecard");
@@ -304,7 +309,7 @@ async function boot() {
   /* 3. the company's colours and name */
   applyTheme(cat.brand.colors);
   brandHeader(cat);
-  if (cat.managed && cat.managed.preview) previewBar(cat.managed.closed);
+  if (cat.managed && cat.managed.preview) previewBar(cat.managed.closed, cat.managed.previewer);
   else if (cat.status === "suspended" && cat.managed) {
     lotClosedMessage(true, cat.brand.phone);
     return null;
