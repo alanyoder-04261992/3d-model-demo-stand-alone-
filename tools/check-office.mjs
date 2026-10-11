@@ -705,11 +705,11 @@ const BROKEN = [
   ["an extra that raises the roof through construction", (s) => { s.options.extras = [{ key: "steep", name: "Steep roof", input: "check", price: 1, construction: { "roof.shapes.gable.rise": { w: 0.35 } } }]; }, /Steep roof: set this extra's roof pitch in How it's built\./],
   /* a porch as long as the building (review GL-1, F1): words, never a save
      that runs until it is out of memory */
-  ["a side porch as long as the building", (s) => { s.offer.SC.built = { sidePorchLengths: [12, 20] }; }, /Side porch lengths: 20 ft is as long as the 10x20 .+\. Leave at least 4 ft of side wall beside the porch\./],
+  ["a side porch as long as the building", (s) => { s.offer.SC.built = { sidePorchLengths: [12, 20] }; }, /Side porch lengths: 20 ft is as long as the 10×20 .+\. Leave at least 4 ft of side wall beside the porch\./],
   /* a fault the standard building has a little of, made worse (review
      GL-4, F6): the business's, said with the standard's amount */
   ["a 3 in eave that makes the Lofted Barn Garage's door head worse", (s) => { s.offer.LBG.built = { eaveOverhang: 3 }; }, /\d+×\d+: the roof edge hangs 2 3\/8 in in front of the head of the 36″ In-Swing Door on the right side\. With the standard numbers it is 5\/8 in\./],
-  ["a size too short for the side porch", (s) => { s.offer.SC.sizes["10x8"] = 4000; }, /The 10x8 .+ is too short for its 8 ft side porch: sell it 12 ft long and up, or set a shorter side porch length\./],
+  ["a size too short for the side porch", (s) => { s.offer.SC.sizes["10x8"] = 4000; }, /The 10×8 .+ is too short for its 8 ft side porch: sell it 12 ft long and up, or set a shorter side porch length\./],
   ["an extra with a construction setting misspelled", (s) => { s.options.extras = [{ key: "joists", name: "Close joists", input: "check", price: 1, construction: { "floor.spacingInn": 12 } }]; }, /Close joists: "spacingInn" is not a construction setting\. Did you mean spacingIn\?/],
   /* which setting is wrong is named in words (review F8): never "one of its
      construction settings" or "reload the page" for a number written wrong */

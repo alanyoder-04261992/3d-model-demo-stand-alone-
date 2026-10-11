@@ -480,6 +480,10 @@ function byWidthFirst(layers) {
   return [{ value, from: values[0].from, path: values[0].path, parts }, ...layers];
 }
 
+/* A size as a person reads it: the key "10x20" written 10×20 (model/
+   style-check.js sizeWords, which reads this file, says the same). */
+const sizeWords = (z) => String(z).replace("x", "×");
+
 /* A value checked for this style: -> { value } or { problem }. */
 function checkFor(id, value, s, name, sizes) {
   const r = parse(id, value, { kind: kindOf(s), metal: !!s.metal, name });
@@ -496,8 +500,8 @@ function checkFor(id, value, s, name, sizes) {
   if (id === "sidePorchLengths") {
     const bad = porchMisfit(r.value, sizes);
     if (bad) return { problem: bad.left <= 0
-      ? `Side porch lengths: ${bad.n} ft is ${bad.left < 0 ? "longer than" : "as long as"} the ${bad.z} ${name}. Leave at least ${fmtFt(SIDE_WALL_MIN_FT)} of side wall beside the porch.`
-      : `Side porch lengths: ${bad.n} ft leaves the ${bad.z} ${name} only ${fmtFt(bad.left)} of side wall beside the porch (${fmtFt(SIDE_WALL_MIN_FT)} at least).` };
+      ? `Side porch lengths: ${bad.n} ft is ${bad.left < 0 ? "longer than" : "as long as"} the ${sizeWords(bad.z)} ${name}. Leave at least ${fmtFt(SIDE_WALL_MIN_FT)} of side wall beside the porch.`
+      : `Side porch lengths: ${bad.n} ft leaves the ${sizeWords(bad.z)} ${name} only ${fmtFt(bad.left)} of side wall beside the porch (${fmtFt(SIDE_WALL_MIN_FT)} at least).` };
   }
   return r;
 }
@@ -587,7 +591,7 @@ export function problems(settings, manufacturer) {
       if ((!win || win.from === "standard") && id === "sidePorchLengths") {
         const r = parse(id, win ? win.value : (s.sidePorch && Array.isArray(s.sidePorch.lengthsFt) ? s.sidePorch.lengthsFt : SIDE_PORCH_LENGTHS.slice()), {});
         const bad = r.value ? porchMisfit(r.value, keysOf(o.sizes)) : null;
-        if (bad) say(`offer.${k}.built.${id}`, id, k, `The ${bad.z} ${name} is too short for its ${bad.n} ft side porch: sell it ${bad.n + SIDE_WALL_MIN_FT} ft long and up, or set a shorter side porch length.`);
+        if (bad) say(`offer.${k}.built.${id}`, id, k, `The ${sizeWords(bad.z)} ${name} is too short for its ${bad.n} ft side porch: sell it ${bad.n + SIDE_WALL_MIN_FT} ft long and up, or set a shorter side porch length.`);
         continue;
       }
       if (!win || win.from === "standard") continue;
