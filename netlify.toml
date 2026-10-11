@@ -18,6 +18,12 @@
 #                     only for a business connected to Barnwright's control
 #                     room: its support check, and a check-in every six
 #                     hours (server/office/account.js)
+#   deploy-succeeded.mts
+#                     also only for a connected business: named for
+#                     Netlify's deploy-succeeded event, so it runs right
+#                     after each deploy and, for a production deploy,
+#                     checks in at once (a new Dealer Center shows
+#                     Connected in the control room within a minute)
 #   barnwright-setup.mts
 #                     also only for a connected business: Barnwright's
 #                     setup door, which the control room's server calls

@@ -418,6 +418,42 @@ export function createOffice(deps) {
     }
   }
 
+  /* the check-in every six hours (netlify/functions/barnwright-check-in.mts):
+     the lease renews FIRST; only then does Barnwright setup access look
+     back (setup-access.js liveRecord), in its own try and for at most 5
+     seconds, so nothing about setup access can slow down or stop the
+     lease renewing */
+  async function scheduledCheckIn() {
+    await account.checkIn({ force: true });
+    if (!setup.connected) return;
+    try { await withinMs(setup.liveRecord(), LOOK_BACK_MS); } catch (error) {
+      log("Barnwright setup access couldn't look back:", error?.name || "Error");
+    }
+  }
+
+  /* Right after a deploy succeeds (netlify/functions/deploy-succeeded.mts:
+     Netlify runs a function named for its deploy-succeeded event, and
+     checks its own signature on the event before it calls it). Only a
+     production deploy, with this function itself running in production
+     (deployContext is the function's context.deploy.context; none means
+     production, as officeFor reads it), checks in: the same as the
+     six-hourly check-in, so a Dealer Center the Control Room just made
+     shows Connected within a minute. A deploy preview or a branch deploy
+     has its own empty storage and never reports it. Netlify's body is
+     {payload: <the deploy>}; nothing else in it is read. Always 204. */
+  async function deploySucceeded(request, deployContext) {
+    const done = () => new Response(null, { status: 204 });
+    if ((deployContext || "production") !== "production") return done();
+    let deploy = null;
+    try { deploy = JSON.parse(await request.text())?.payload; } catch { return done(); }
+    if (!deploy || typeof deploy !== "object" || Array.isArray(deploy) || deploy.context !== "production") return done();
+    if (!account.connected) return done();
+    try { await scheduledCheckIn(); } catch (error) {
+      log("The check-in after a deploy failed:", error?.name || "Error");
+    }
+    return done();
+  }
+
   return {
     handle, publicLot: website.publicLot,
     /* for netlify/functions: the control room's support check, and the check-in every six hours */
@@ -425,18 +461,9 @@ export function createOffice(deps) {
     checkIn: account.checkIn,
     /* the scheduled check-in looks back for Barnwright setup access first, in its own try */
     setupLookBack: async () => { if (setup.connected) await setup.liveRecord(); },
-    /* the check-in every six hours (netlify/functions/barnwright-check-in.mts):
-       the lease renews FIRST; only then does Barnwright setup access look
-       back (setup-access.js liveRecord), in its own try and for at most 5
-       seconds, so nothing about setup access can slow down or stop the
-       lease renewing */
-    scheduledCheckIn: async () => {
-      await account.checkIn({ force: true });
-      if (!setup.connected) return;
-      try { await withinMs(setup.liveRecord(), LOOK_BACK_MS); } catch (error) {
-        log("Barnwright setup access couldn't look back:", error?.name || "Error");
-      }
-    },
+    /* the check-in every six hours, and right after a production deploy */
+    scheduledCheckIn,
+    deploySucceeded,
     /* Barnwright's setup door (netlify/functions/barnwright-setup.mts): the control room's server only */
     setupDoor: (request) => setup.door(request),
     parts: { store, people, lots, priceList, customers, team, website, account, help, setup },

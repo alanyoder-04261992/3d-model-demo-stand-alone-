@@ -16,9 +16,11 @@
    the help pass the Help screen asks for (helpPass): what is sent, and
    that only a well-formed answer is taken (what Help does with the pass
    is tools/check-help.mjs); and the site's address each check-in sends
-   (siteUrl): only a plain https address, never anything else. */
+   (siteUrl): only a plain https address, never anything else; and the
+   check-in right after a production deploy (deploy-succeeded.mts), run
+   the way Netlify runs it. */
 
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { resolve as resolvePath, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createOffice } from "../server/office/index.js";
@@ -416,9 +418,91 @@ section("12. The check-in tells the control room this site's address (siteUrl, f
     && [`${ADDRESS}/x`, "http://a.example", "https://a.example:443", "https://u@a.example"].every((v) => plainHttpsOrigin(v) === null));
 }
 
+section("13. Right after a production deploy, it checks in (netlify/functions/deploy-succeeded.mts)");
+{
+  /* Netlify calls a function named for its deploy-succeeded event with a
+     POST whose body is {payload: <the deploy>}; the function's own context
+     says which deploy context it runs in. Each example in the fixtures
+     (tools/lib/setup-fixtures.json, beforeSignIn.deploySucceeded) runs
+     against the pretend control room: one check-in for production, none
+     for a deploy preview, a branch deploy or a body that isn't JSON. */
+  const FXD = J("tools/lib/setup-fixtures.json").beforeSignIn.deploySucceeded;
+  const fresh = () => {
+    const c2 = { t: clock.t };
+    const room2 = fakeControlRoom({ clock: c2, dealerLimit: 2 });
+    const blobs2 = new MemoryBlobs();
+    const office2 = createOffice({
+      blobs: blobs2, identityUser: async () => null, ownerEmail: USERS.alan.email, manufacturer, library, templates,
+      now: () => new Date(c2.t), log: () => {}, appVersion: "dealer-center deploy-check",
+      license: new TenantLicenseClient({
+        controlRoomUrl: room2.origin, customerId: room2.business.id, siteId: room2.business.siteId,
+        activationKey: room2.business.key, publicKeyPem: room2.publicKeyPem,
+        store: createLeaseStore(room2.business.id, room2.business.siteId, blobs2), fetch: room2.fetch, now: () => c2.t,
+      }),
+    });
+    return { room: room2, office: office2 };
+  };
+  const checkIns = (rm) => rm.calls.filter((p) => p === "/api/license").length;
+  const wrong = [];
+  for (const ex of FXD.examples) {
+    const { room: rm, office: of } = fresh();
+    const res = typeof of.deploySucceeded === "function"
+      ? await of.deploySucceeded(new Request("https://dealer.test/.netlify/functions/deploy-succeeded", { method: ex.request.method, body: ex.request.body }), ex.context.deploy.context)
+      : null;
+    const n = checkIns(rm);
+    if (!res || res.status !== ex.answer.status || (ex.checksIn ? n !== 1 : n !== 0) || (ex.checksIn && rm.business.appVersion !== "dealer-center deploy-check")) {
+      wrong.push(`${ex.name}: ${res?.status} with ${n} check-in(s)`);
+    }
+  }
+  ok(`each of the ${FXD.examples.length} examples: 204 always, one check-in for a production deploy (the control room learns the new version at once), none for a deploy preview, a branch deploy, a body that isn't JSON or a function not running in production`,
+    wrong.length === 0, wrong.join("; "));
+  {
+    const { room: rm, office: of } = fresh();
+    const prod = FXD.examples.find((e) => e.checksIn);
+    const res = await of.deploySucceeded?.(new Request("https://dealer.test/x", { method: "POST", body: prod.request.body }), undefined);
+    ok("... a function told no deploy context is the production one, as officeFor reads it", res?.status === 204 && checkIns(rm) === 1, `${res?.status} ${checkIns(rm)}`);
+  }
+  {
+    const lone = createOffice({ blobs: new MemoryBlobs(), identityUser: async () => null, ownerEmail: USERS.alan.email, manufacturer, library, templates, now: () => new Date(clock.t), log: () => {} });
+    const prod = FXD.examples.find((e) => e.checksIn);
+    const res = await lone.deploySucceeded?.(new Request("https://dealer.test/x", { method: "POST", body: prod.request.body }), "production");
+    ok("... a site that isn't connected to Barnwright does nothing, and still answers 204", res?.status === 204);
+  }
+  {
+    /* the function file itself: named for the event, no path, no schedule, and it hands Netlify's request and context to the rule */
+    const file = resolvePath(ROOT, FXD.file);
+    const src = existsSync(file) ? readFileSync(file, "utf8") : null;
+    ok("netlify/functions/deploy-succeeded.mts is named for Netlify's deploy-succeeded event, with no path and no schedule (no config at all)",
+      src !== null && FXD.file === "netlify/functions/deploy-succeeded.mts" && FXD.event === "deploy-succeeded" && !/export\s+const\s+config/.test(src) && !/\bschedule\s*:/.test(src) && !/\bpath\s*:/.test(src));
+    const { build } = await import("esbuild");
+    let handler = null, got = null;
+    try {
+      const out = await build({
+        entryPoints: [file], bundle: true, format: "esm", platform: "node", write: false, logLevel: "silent",
+        plugins: [{ name: "office-for-test", setup(b) {
+          b.onResolve({ filter: /server\/office\/netlify\.js$/ }, () => ({ path: "office-for-test", namespace: "test" }));
+          b.onLoad({ filter: /.*/, namespace: "test" }, () => ({ contents: "export const officeFor = (context) => globalThis.__deploySucceededOffice(context);", loader: "js" }));
+        } }],
+      });
+      handler = (await import("data:text/javascript;base64," + Buffer.from(out.outputFiles[0].text).toString("base64"))).default;
+    } catch (e) { got = e.message; }
+    const { room: rm, office: of } = fresh();
+    let seenContext = null;
+    globalThis.__deploySucceededOffice = (context) => { seenContext = context; return of; };
+    const prod = FXD.examples.find((e) => e.checksIn);
+    const preview = FXD.examples.find((e) => e.context.deploy.context === "deploy-preview");
+    const r1 = handler ? await handler(new Request("https://dealer.test/.netlify/functions/deploy-succeeded", { method: "POST", body: preview.request.body }), preview.context) : null;
+    const after1 = checkIns(rm);
+    const r2 = handler ? await handler(new Request("https://dealer.test/.netlify/functions/deploy-succeeded", { method: "POST", body: prod.request.body }), prod.context) : null;
+    ok("the function file, run the way Netlify runs it (its default export with the request and Netlify's context): a deploy preview does nothing, a production deploy checks in, 204 each time",
+      r1?.status === 204 && after1 === 0 && r2?.status === 204 && checkIns(rm) === 1 && seenContext === prod.context, got || `${r1?.status} ${after1} ${r2?.status} ${checkIns(rm)}`);
+    delete globalThis.__deploySucceededOffice;
+  }
+}
+
 console.log("");
 if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} control room checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): leases signed by the control room's own code read the same way; a Dealer Center never switched on, switched off, or out of touch for 7 days stops changes and closes its 3D designer links with the lot's number while reading and downloading still work; open lots never pass the plan's number, even when opened at the same moment; taking a person off always works; the owner agrees to the Barnwright terms before the business is made, again when they change, and every agreement is kept; help from Barnwright needs the owner's switch, ends when turned off or when time is up, and answers only how the Dealer Center runs, in the shape the control room accepts; a help pass is asked for with the activation key in exactly the shape the control room expects, switched off or not, and only a well-formed pass is ever taken.`);
+console.log(`PROVED (${passed} checks): leases signed by the control room's own code read the same way; a Dealer Center never switched on, switched off, or out of touch for 7 days stops changes and closes its 3D designer links with the lot's number while reading and downloading still work; open lots never pass the plan's number, even when opened at the same moment; taking a person off always works; the owner agrees to the Barnwright terms before the business is made, again when they change, and every agreement is kept; help from Barnwright needs the owner's switch, ends when turned off or when time is up, and answers only how the Dealer Center runs, in the shape the control room accepts; a help pass is asked for with the activation key in exactly the shape the control room expects, switched off or not, and only a well-formed pass is ever taken; right after a production deploy it checks in once, and never for a deploy preview or a branch deploy.`);
