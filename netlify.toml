@@ -28,7 +28,9 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
-  included_files = ["library/**", "companies/demo/company.json", "companies/starter/company.json"]
+  # the library the functions read; never library/style-refs/ (the style
+  # reference pictures, which only Barnwright's Control Room reads, from GitHub)
+  included_files = ["library/manufacturers/**", "library/construction.json", "companies/demo/company.json", "companies/starter/company.json"]
 
 # --- the Dealer Center --------------------------------------------------------
 

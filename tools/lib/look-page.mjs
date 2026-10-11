@@ -18,7 +18,10 @@
 
    Only this repo is served, read only. Ports 8360 (the web server) and 8361
    (kept free for a second page server if one is ever needed) belong to the
-   look check. */
+   look check. openLook({ port }) serves on another port instead (the style
+   reference pictures, tools/make-style-refs.mjs, use 8362), and the
+   environment setting LOOK_PORT moves openLook()'s default, so two copies of
+   the repo can run their look checks side by side. */
 
 import { createRequire } from "node:module";
 import { spawn } from "node:child_process";
@@ -33,6 +36,11 @@ const require = createRequire(import.meta.url);
 export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "../..");
 export const PORT = 8360;
 export const SPARE_PORT = 8361;
+/* LOOK_PORT, when it is a whole number from 1024 to 65535, else PORT */
+export function lookPort(env = process.env) {
+  const p = Number(env.LOOK_PORT);
+  return Number.isInteger(p) && p >= 1024 && p <= 65535 ? p : PORT;
+}
 export const VIEWPORT = Object.freeze({ width: 1440, height: 900 });
 export const DEVICE_SCALE_FACTOR = 1;
 export const CHROMIUM_ARGS = Object.freeze(["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"]);
@@ -95,8 +103,8 @@ export function pixelsOf(dataUrl) {
   return decodePng(buf);
 }
 
-export async function openLook() {
-  const server = await startServer(PORT);
+export async function openLook({ port = lookPort() } = {}) {
+  const server = await startServer(port);
   const { chromium } = loadPlaywright();
   let browser;
   try {
@@ -140,7 +148,7 @@ export async function openLook() {
     checkedFiles.add(path);
     if (res.ok() ? !(local && local.equals(body)) : local != null) {
       notOurs.push(path);
-      errors.push(`the web server on port ${PORT} answered ${path} with something other than this copy's file (${res.status()}) -- stop whatever is serving that port and run the check again`);
+      errors.push(`the web server on port ${port} answered ${path} with something other than this copy's file (${res.status()}) -- stop whatever is serving that port and run the check again`);
     }
     return route.fulfill({ response: res, body });
   });

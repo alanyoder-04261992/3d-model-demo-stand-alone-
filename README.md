@@ -230,7 +230,9 @@ parts/              one file per real-life part of a shed; index.js is the
                     building steps; parts/openings/ holds the doors and windows
 library/            construction.json: how the sheds are really built (joists,
                     studs, trusses...); manufacturers/standard.json: the styles,
-                    doors, windows and colours of the standard line (no prices)
+                    doors, windows and colours of the standard line (no prices);
+                    style-refs/: a picture of each style and its facts, for
+                    Barnwright's Control Room (never in a build)
 companies/          one folder per company: demo (every style, example prices),
                     starter (a small made-up company), _template (what
                     new-company copies)
@@ -262,6 +264,7 @@ docs/               ARCHITECTURE.md (the contract), DIFFERENCES.md,
 | `node tools/build-headers.mjs` | writes `_headers` from the companies' settings (`--check` says whether it is up to date) |
 | `node tools/capture-golden.mjs` | records Barnwright's drawing into `test/golden/` again (only on purpose; `--check` proves it is repeatable) |
 | `node tools/extract-barnwright-catalogue.mjs` | records Barnwright's exact price and parts tables (for the checks only) |
+| `node tools/make-style-refs.mjs` | draws every library style from its front corner and straight at its front end, and writes `library/style-refs/` with `styles.json` (the facts Barnwright's Control Room shows Claude); `--port` picks another port, `--only UT,LB` redraws just those |
 
 The `acme` company and `prices.csv` above are examples: a real company gets
 its own id and spreadsheet. The `new-company` skill walks through all of it.
@@ -324,6 +327,7 @@ Chromium's software graphics, each on its own port.
 | `check-share.mjs` | yes | "Share my design" opens the same building; look-only links, changed prices and damaged links are handled honestly |
 | `check-embed.mjs` | yes | the designer sits safely inside a company's website: lazy loading, events, full screen, phones, who may show it |
 | `check-starter.mjs` | yes | a new company can be set up in one command from a spreadsheet, and shows up in the designer, the list and the headers |
+| `check-style-refs.mjs` | no | the style reference pictures Barnwright's Control Room reads (`library/style-refs/`): every library style has its corner and end pictures, `styles.json` matches the library today (each pitch as N/12, wall heights, doors and windows, sizes, each picture's sha256), the pictures fit what the Control Room sends, and no website build, client package or function carries them |
 | `check-docs.mjs` | no | every file, tool, command and skill named in this README, docs/FOR-ALAN.md, docs/SELLING.md and the workflow skills exists; every part has its skill; no broken links |
 
 ## The rules that matter most

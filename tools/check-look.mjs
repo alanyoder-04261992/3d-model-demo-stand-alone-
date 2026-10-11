@@ -47,7 +47,8 @@
    Also writes test/out/look-contact.png: our 24 pictures, a quarter size, on
    the studio backdrop -- one glance at every style.
 
-   Uses port 8360 (tools/lib/look-page.mjs). Exits non-zero on any failure. */
+   Uses port 8360, or LOOK_PORT when it is set (tools/lib/look-page.mjs).
+   Exits non-zero on any failure. */
 
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, rmSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
