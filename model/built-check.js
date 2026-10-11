@@ -191,6 +191,7 @@ function variantsFor(cat, key, extra) {
   if (!extra) return vs;
   return vs.map((v) => ({
     id: (v.id ? v.id + " " : "") + "with " + extra.key,
+    base: v.id || "",
     words: (v.words ? v.words + " and " : "with ") + extra.name,
     set: Object.assign({}, v.set, { xopt: { [extra.key]: 1 } }),
   }));
@@ -268,12 +269,16 @@ export function checkAgainstStandard(cat, std, key, opts) {
     const s = checkStyle(std, key, { sizes: [] });
     const stdStyle = new Map();
     for (const f of s.problems.concat(s.warnings)) keepWorst(stdStyle, f);
-    for (const f of styleLevel) sortFinding(f, stdStyle, out, r.problems.indexOf(f) >= 0);
+    for (const f of styleLevel) { f.at = { size: "", variant: "" }; sortFinding(f, stdStyle, out, r.problems.indexOf(f) >= 0); }
   }
   for (const row of r.results) {
     if (!row.problems.length && !row.warnings.length) continue;
     const v = byId.get(row.variant) || { set: {} };
     const stdRow = standardFindings(std, key, row.size, v.set, row.label, row.problems.some((f) => f.code === "framing"));
+    /* the building it is about, without the extra: so summarize can tell a
+       finding the extra causes from one the style has anyway */
+    const at = { size: row.size, variant: v.base !== undefined ? v.base : (row.variant || "") };
+    for (const f of row.problems.concat(row.warnings)) f.at = at;
     for (const f of row.problems) sortFinding(f, stdRow, out, true);
     for (const f of row.warnings) sortFinding(f, stdRow, out, false);
   }
@@ -376,10 +381,36 @@ function grouped(list, results) {
   return out.map((g) => g.first.words + (g.sizes.length ? ` The same at ${sizeList(g.sizes)}.` : ""));
 }
 
+/* A style is checked once as it is and once more with each extra of the
+   business's that changes how it is built switched on. A finding the
+   building has with the extra that the same building (size, porch or
+   dormer) has without it, by the same amount, is the style's, not the
+   extra's: it is said once, without the extra. An extra that changes only
+   the floor framing (Heavy-duty floor) never repeats every wall problem
+   "... and Heavy-duty floor: ..."; what an extra itself causes (a Steep
+   roof that runs into a door) is still said with its name. */
+function withoutRepeats(results) {
+  const sig = (kind, f) => [kind, f.at ? f.at.size : "?", f.at ? f.at.variant : "?", f.id, typeof f.amount === "number" ? f.amount.toFixed(4) : ""].join("|");
+  const plain = new Map();
+  for (const r of results) {
+    if (r.extra) continue;
+    const seen = plain.get(r.key) || new Set();
+    for (const kind of ["problems", "warnings", "already"]) for (const f of r[kind]) if (f.at) seen.add(sig(kind, f));
+    plain.set(r.key, seen);
+  }
+  return results.map((r) => {
+    const seen = r.extra ? plain.get(r.key) : null;
+    if (!seen || !seen.size) return r;
+    const keep = (kind) => r[kind].filter((f) => !(f.at && seen.has(sig(kind, f))));
+    return Object.assign({}, r, { problems: keep("problems"), warnings: keep("warnings"), already: keep("already") });
+  });
+}
+
 /* Every result in words: {problems, warnings, unchecked, already (how
    many), alreadyWords (what: the standard building has them too, no worse),
    buildings}. */
 export function summarize(results) {
+  results = withoutRepeats(results);
   const problems = [], warnings = [], alreadyList = [];
   let already = 0, buildings = 0;
   for (const r of results) {

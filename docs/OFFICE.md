@@ -203,7 +203,11 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   changed option reaches or now reaches (its buildings list widened, a
   style sold again) (`server/office/built-check.js`): what the new numbers
   cause refuses the save, in words, like any price list problem; a
-  price-only save draws nothing. It draws the size each style opens on
+  price-only save draws nothing. A problem the building has with an option
+  switched on that it has without it, by the same amount, is said once,
+  without the option's name (a Heavy-duty floor that changes only the floor
+  joists never repeats every wall problem); what the option itself causes is
+  said with its name ("... with Steep roof: ..."). It draws the size each style opens on
   first, for every style, then the smallest and largest, then the rest; it
   stops after about 3 seconds and lists what is left ("Not checked yet: 14
   sizes of the Lofted Barn. Press Check every size."), which never stops a
