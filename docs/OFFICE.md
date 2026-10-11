@@ -522,7 +522,7 @@ Room's own Netlify project), so it can make a business's site, and lets
 Stripe save cards.
 
 1. **The sign-up link.** At their lot, Alan adds them in the Control Room
-   (**New customer**: at least the owner's phone or email) and texts or
+   (**New customer**: as much or as little as he knows) and texts or
    emails the owner a sign-up link (**Send sign-up link**). On their phone
    the owner fills in or checks their details and their 3D designer web
    address, reads the short version of the terms (`docs/legal/terms.json`,
