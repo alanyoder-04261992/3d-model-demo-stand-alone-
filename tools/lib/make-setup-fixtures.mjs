@@ -173,6 +173,7 @@ const WARN_TEXT = {
   samePrice: "Every size of the <style> is <price>.",
   many: "This changes <n> of <total> building prices.",
   stopped: "This stops selling <n> building styles: <names>.",
+  extraChangesNothing: "<Extra> does not change the <style> (its roof is already <pitch>). A customer would pay for nothing there.",
 };
 
 /* The owner's log line for a Barnwright save: the first 3 change lines and a count. */
@@ -786,6 +787,26 @@ function effectSet(base, pl) {
   }
   door.push({ name: "remove_extra: an extra with How it's built numbers of its own (the lock)", mode: "prelive",
     edits: [{ do: "remove_extra", key: BUILT_EXTRA.key }], expect: { ok: false, code: "problems", problems: [extraWords(BUILT_EXTRA.name)] } });
+  {
+    /* a style's own pitch at least as steep as the extra's: the extra changes
+       nothing on it (its roof pitch counts only when steeper), yet it is
+       still priced, so the door says so (WARN_TEXT.extraChangesNothing) */
+    const after = structuredClone(effectBase);
+    after.offer.UT.built = { roofPitch: 8 };
+    settle(effectBase, after);
+    pl.check(after, effectBase);
+    const sc = checkChangedStyles(effectBase, after, M, LIB, { budgetMs: Infinity });
+    if (sc.problems.length) throw new Error(`the steeper Utility Shed example: the every-size check refuses it: ${sc.problems.join(" ")}`);
+    door.push({
+      name: "set_built steeper than an extra's own roof pitch on that style: the extra changes nothing there, said in the warnings",
+      mode: "prelive", edits: [{ do: "set_built", style: "UT", roofPitch: "8/12" }],
+      expect: {
+        ok: true, changes: describeChanges(effectBase, after, M, { contact: "new" }),
+        warnings: [`${BUILT_EXTRA.name} does not change the Utility Shed (its roof is already 8/12). A customer would pay for nothing there.`, ...sc.warnings, ...sc.unchecked.map((l) => l.replace(/ Press Check every size\.$/, ` ${CHECK_THE_REST}`))],
+        contactDetailsChange: false, newCodes: {}, paths: { "offer.UT.built": after.offer.UT.built }, settingsSha256: sha256(JSON.stringify(after)),
+      },
+    });
+  }
   door.push({ name: "set_extra can't carry a construction effect (not part of the edit)", mode: "prelive",
     edits: [{ do: "set_extra", name: "Taller walls", charged: "check", price: 600, construction: { "walls.heightIn": 96 } }],
     expect: { ok: false, code: "problems", problems: ["Edit 1: construction isn't part of set_extra."] } });

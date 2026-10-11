@@ -7692,6 +7692,37 @@
           }
         },
         {
+          "name": "set_built steeper than an extra's own roof pitch on that style: the extra changes nothing there, said in the warnings",
+          "mode": "prelive",
+          "edits": [
+            {
+              "do": "set_built",
+              "style": "UT",
+              "roofPitch": "8/12"
+            }
+          ],
+          "expect": {
+            "ok": true,
+            "changes": [
+              "Utility Shed roof pitch: 5/12 → 8/12"
+            ],
+            "warnings": [
+              "Steeper roof does not change the Utility Shed (its roof is already 8/12). A customer would pay for nothing there.",
+              "Utility Shed 10x12: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 10x16.",
+              "Utility Shed 10x12 with Heavy-duty floor: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 10x16.",
+              "Utility Shed 10x12 with Steeper roof: even set as low as it goes, right under the peak, the 18×24 Gable Window's trim runs into the roof. The same at 10x16."
+            ],
+            "contactDetailsChange": false,
+            "newCodes": {},
+            "paths": {
+              "offer.UT.built": {
+                "roofPitch": 8
+              }
+            },
+            "settingsSha256": "5c298c9b535dab8768a5aa95024af6596026abf9380a84c64ca1c85b99d5befe"
+          }
+        },
+        {
           "name": "set_extra can't carry a construction effect (not part of the edit)",
           "mode": "prelive",
           "edits": [
@@ -10212,7 +10243,8 @@
       "high": "<Style> <size> at <price> is over $100,000.",
       "samePrice": "Every size of the <style> is <price>.",
       "many": "This changes <n> of <total> building prices.",
-      "stopped": "This stops selling <n> building styles: <names>."
+      "stopped": "This stops selling <n> building styles: <names>.",
+      "extraChangesNothing": "<Extra> does not change the <style> (its roof is already <pitch>). A customer would pay for nothing there."
     },
     "undoLine": "Put back the price list from before Barnwright's last change",
     "roofPitchLine": "<Style> roof pitch: <old pitch> → <new pitch>",

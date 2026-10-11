@@ -62,7 +62,9 @@
           set, said in History (a new style's own number too); the every-
           size check's warnings and the sizes it had no time for in the
           check answer, what it finds that doesn't build refused in words;
-          set_roof_pitch is its short form
+          an extra of the owner's that a new pitch makes change nothing is
+          a warning; the styles of their own a library style's number
+          reaches are named; set_roof_pitch is its short form
      RL   read part library: every library style's How it's built numbers
           now and the standard's, by set_built's names, only those that
           apply, the same as the owner's own screen says
@@ -1918,13 +1920,14 @@ section("F15 item 4. The lock: an extra that changes how the building is built")
     const want = sm.expect;
     const good = want.ok
       ? x.status === 200 && JSON.stringify(x.data.changes) === JSON.stringify(want.changes) && x.data.settingsSha256 === want.settingsSha256
+        && JSON.stringify(x.data.warnings) === JSON.stringify(want.warnings)
       : x.status === 422 && x.data.code === "problems" && JSON.stringify(x.data.problems) === JSON.stringify(want.problems);
     if (!good) wrong.push(`${sm.name}: ${x.status} ${JSON.stringify(x.data).slice(0, 300)}`);
   }
-  ok(`the door: each of the ${FXE.door.length} examples (a name and price change keeps the effect; remove_extra and a construction part are refused)`, wrong.length === 0, wrong.join("\n       "));
+  ok(`the door: each of the ${FXE.door.length} examples (a name and price change keeps the effect; remove_extra and a construction part are refused; a style's own pitch that makes an extra change nothing is a warning)`, wrong.length === 0, wrong.join("\n       "));
   const pathsWrong = FXE.door.filter((sm) => sm.expect.ok).filter((sm) => {
     const res = applyEdits(FXE.effectBase, sm.edits, { manufacturer });
-    return JSON.stringify(res.settings?.options?.extras) !== JSON.stringify(sm.expect.paths["options.extras"]);
+    return JSON.stringify(res.settings?.options?.extras) !== JSON.stringify(sm.expect.paths["options.extras"] ?? FXE.effectBase.options.extras);
   });
   ok("set_extra on its own keeps the extra's construction effect exactly", pathsWrong.length === 0, pathsWrong.map((x) => x.name).join(", "));
   /* the visit sends whole settings */
@@ -2158,6 +2161,24 @@ section("SB. set_built: a building style's own numbers in How it's built, in a b
   ok("SB: what the every-size check finds refuses the change, in its own words (422 problems), nothing saved",
     low.status === 422 && low.data.code === "problems" && /^Utility Shed 12x20: the 72″ Wooden Double Doors on the front should be 80 in tall, but the wall leaves room for/.test(low.data.problems?.[0] || "")
     && (await D2.store.get("price-list")).version === 2, JSON.stringify(low.data).slice(0, 400));
+
+  /* an extra of the owner's whose roof pitch only counts when steeper: a
+     style's own pitch at least as steep makes it change nothing there, and
+     a customer would pay for it all the same (review SEC-BUILT-2) */
+  const W2 = await fixtureBusiness();
+  const steep = await W2.ownerSave((x) => { x.options.extras.push({ key: "steep-roof", name: "Steep roof", input: "check", price: 350, built: { roofPitch: 7 }, styles: ["UT"] }); });
+  const nothing = "Steep roof does not change the Utility Shed (its roof is already 8/12). A customer would pay for nothing there.";
+  const w8 = await W2.door({ action: "check", version: 2, edits: [{ do: "set_built", style: "UT", roofPitch: "8/12" }] });
+  const w6 = await W2.door({ action: "check", version: 2, edits: [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }] });
+  const w9 = await W2.door({ action: "check", version: 2, edits: [{ do: "set_roof_pitch", style: "UT", pitch: "9/12" }] });
+  ok("SB: a style's own pitch that makes the owner's Steep roof change nothing on it is a warning in the owner's own words (old code: none); a flatter one isn't; the set_roof_pitch short form too",
+    steep.status === 200 && w8.status === 200 && (w8.data.warnings || []).includes(nothing) && w8.data.counts?.warnings === w8.data.warnings.length
+    && w6.status === 200 && !(w6.data.warnings || []).some((x) => /pay for nothing/.test(x))
+    && w9.status === 200 && (w9.data.warnings || []).includes(nothing.replace("8/12", "9/12")), JSON.stringify([steep.status, w8.data.warnings, w6.data.warnings, w9.data.warnings]).slice(0, 700));
+  const already = await W2.ownerSave((x) => { x.offer.UT.built = { roofPitch: 7 }; });
+  const w8b = await W2.door({ action: "check", version: 3, edits: [{ do: "set_built", style: "UT", roofPitch: "8/12" }] });
+  ok("SB: ... once the Steep roof changed nothing there already (the owner's own 7/12), steeper still isn't said again",
+    already.status === 200 && w8b.status === 200 && !(w8b.data.warnings || []).some((x) => /pay for nothing/.test(x)), JSON.stringify([already.status, w8b.data.warnings]).slice(0, 400));
 
   /* while the owner's switch is on, the same (the lock lets a style's own numbers change in both modes) */
   const S2 = await fixtureBusiness();

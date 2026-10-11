@@ -1395,13 +1395,20 @@ are for Alan to read before he says yes. In this order:
    building prices."
 8. Three or more styles stop selling: "This stops selling 3 building
    styles: Utility Shed, Loft Barn, Garage."
-9. What the every-size check of How it's built finds that still builds,
+9. An extra of theirs with a roof pitch of its own ("Roof pitch at least")
+   that this change makes change nothing on a building it is offered on:
+   its pitch counts only when it is steeper than the style's, yet customers
+   would still pay for it. In the words the owner's How it's built screen
+   uses: "Steep roof does not change the Utility Shed (its roof is already
+   8/12). A customer would pay for nothing there." A building it already
+   changed nothing on before isn't said again.
+10. What the every-size check of How it's built finds that still builds,
    when a building style's own numbers change (`set_built`,
    `set_roof_pitch`): "Utility Shed 12x20: even set as low as it goes, right
    under the peak, the 18×24 Gable Window's trim runs into the roof. The
    same at 12x24 and 12x16." (What it finds that doesn't build refuses the
    change instead, 422 `problems`.)
-10. The sizes the every-size check had no time for (about 3 seconds):
+11. The sizes the every-size check had no time for (about 3 seconds):
    "Not checked yet: 14 sizes of the Lofted Barn. To check the rest, tap
    Open their price list and press Check every size in that building's How
    it's built."

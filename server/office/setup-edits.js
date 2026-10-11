@@ -28,7 +28,7 @@
 
 import { lockedItems, newStyleKey, placeStyle, groupsOf, sortSizes, paletteNames, nameKey } from "../../ui/office/views/price-list/model.js";
 import { LOCK_WORDS, GABLE_STYLES } from "./setup-lock.js";
-import { liftRawRules, setBuilt, parse as parseBuilt, checkStyleNumber, KNOBS, KNOB_PATHS } from "../../model/build-settings.js";
+import { liftRawRules, setBuilt, parse as parseBuilt, checkStyleNumber, extrasThatChangeNothing, KNOBS, KNOB_PATHS } from "../../model/build-settings.js";
 import { styleName, itemName, optionName, BUILT_PARTS } from "./setup-view.js";
 
 export const MAX_EDITS = 300;
@@ -784,5 +784,16 @@ export function warnings(old, next, M) {
   /* 8. three or more styles stop selling */
   const stopped = keysOf(o.offer).filter((k) => !has(n.offer, k));
   if (stopped.length >= 3) out.push(`This stops selling ${stopped.length} building styles: ${stopped.map((k) => styleName(o, k, M)).join(", ")}.`);
+  /* 9. an extra of theirs that changes how the building is built, and that
+     this change makes change nothing on a building it is offered on: its
+     roof pitch counts only when it is steeper than the style's (review
+     SEC-BUILT-2). The owner's own How it's built screen says the same. A
+     building it already changed nothing on isn't said again. */
+  const nothingOn = (s) => { try { return extrasThatChangeNothing(s, M); } catch { return []; } };
+  const before = new Map(nothingOn(o).map((x) => [String(x.key), new Set(x.styles)]));
+  for (const x of nothingOn(n)) {
+    const had = before.get(String(x.key));
+    if (x.styles.some((k) => !had || !had.has(k))) out.push(x.words);
+  }
   return out;
 }
