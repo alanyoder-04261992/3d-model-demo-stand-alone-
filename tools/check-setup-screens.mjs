@@ -78,6 +78,7 @@ const WORDS = {
   started: "Barnwright set up your price list. You can change anything.",
   helloStarted: "Two short steps. You can change all of it later.",
   startLine: "started your price list from Every standard building, using the terms you agreed to when you signed up.",
+  visitBiz: "Only the owner can change the numbers for every building. Each style's own numbers can be changed in that style, under How it's built.",
 };
 
 let pass = 0, fail = 0;
@@ -228,6 +229,19 @@ try {
   ok("only Price list and Settings", JSON.stringify(nav) === JSON.stringify(["Price list", "Settings"]), nav.join(", "));
   ok("no Customer button, no Help, no person menu, no Today", !(await alan.$(".new-customer")) && !(await alan.$(".topbar-help")) && !(await alan.$(".person")) && !(await alan.$(".termsBanner")));
   await shot(alan, "3-visit-price-list");
+  {
+    /* HB: How it's built in the visit (server/office/setup-lock.js): the numbers for every building are the owner's */
+    const biz = await alan.$("[data-flag='built:biz']");
+    const bizText = biz ? (await biz.textContent()).replace(/\s+/g, " ") : "";
+    ok("HB: the visit shows How it's built for the whole business with no boxes, and says only the owner can change it (old: boxes the lock refuses)",
+      !!biz && (await biz.$$("input, select, textarea, button")).length === 0 && bizText.includes(WORDS.visitBiz), bizText.slice(0, 300));
+    await alan.click(".pl-style[data-style='UT'] .pl-style-open");
+    const box = await alan.waitForSelector("input[data-field='built:UT:roofPitch']", { timeout: 10000 }).catch(() => null);
+    ok("HB: ... while a style's own How it's built boxes are there to change", !!box);
+    /* close it again, as section 4 opens it */
+    await alan.click(".pl-style[data-style='UT'] .pl-style-open");
+    await alan.waitForSelector("input[data-field='built:UT:roofPitch']", { state: "detached", timeout: 10000 }).catch(() => {});
+  }
   await alan.goto(`${BASE}/dealer#/settings`);
   await settle(alan);
   const vt = await alan.$$eval(".set-card .card-title", (els) => els.map((e) => e.textContent.trim()));

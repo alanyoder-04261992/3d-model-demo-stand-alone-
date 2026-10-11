@@ -17,7 +17,10 @@
      with the numbers on the screen.
    * builtCard()  at the end of the Buildings tab: "How your buildings are
      built", the same numbers for every building with one kind of roof,
-     each saying which styles it reaches and which keep their own.
+     each saying which styles it reaches and which keep their own. In a
+     Barnwright visit these are the owner's alone (server/office/
+     setup-lock.js), so the card only says them; each style's own numbers
+     can still be changed in its editor.
    * builtNotes()  at the top of the Buildings tab, a yellow note: numbers
      the 3D designer could not use, and what a quiet check of the styles
      with numbers of their own found when the price list opened (it
@@ -419,9 +422,13 @@ function nowWords(id, keys, offer) {
   return groups.length ? `Built now: ${groups.map((g) => `${g.words} on the ${BUILT.namesWords(g.names)}`).join("; ")}.` : "";
 }
 
+/* What a Barnwright visit sees in place of the business-wide boxes. */
+export const VISIT_BIZ_WORDS = "Only the owner can change the numbers for every building. Each style's own numbers can be changed in that style, under How it's built.";
+
 export function builtCard() {
   const d = S.draft;
   if (!keysOf(d.offer).length) return null;
+  if (S.ctx?.app?.barnwright) return visitCard();
   const ready = prepare(d);
   const sections = [];
   for (const [title, list] of GROUPS) {
@@ -455,6 +462,26 @@ export function builtCard() {
     h("p", { class: "pl-card-sub" }, "Numbers for every building you sell with that kind of roof. Leave a box empty for the standard. A number set on a style itself wins over these."),
     msgs("built:biz"),
     sections);
+}
+
+/* A Barnwright visit: the numbers for every building, said, never boxes
+   (the lock refuses a change to them). */
+function visitCard() {
+  const lines = [];
+  for (const [title, list] of GROUPS) {
+    for (const [id, kind] of list) {
+      const v = bizValue(id, kind);
+      if (v === undefined || v === null || v === "") continue;
+      const r = BUILT.parse(id, v, { kind: id === "doorHeight" ? undefined : kind || undefined });
+      const words = r.value !== undefined ? BUILT.format(id, r.value) : String(v);
+      const label = id === "doorHeight" ? (kind === "barn" ? "on barn roofs" : "on every other roof") : KNOB[id].words;
+      lines.push(`${title}, ${label}: ${words}`);
+    }
+  }
+  return h("section", { class: "card pl-built-card", dataset: { flag: "built:biz" } },
+    h("h2", { class: "card-title" }, "How your buildings are built"),
+    h("p", { class: "pl-card-sub", dataset: { visitBiz: "" } }, VISIT_BIZ_WORDS),
+    lines.length ? h("ul", { class: "pl-built-lines" }, lines.map((l) => h("li", {}, l))) : h("p", { class: "pl-card-sub" }, "Every building is built to the standard."));
 }
 
 /* ---- notes at the top of the tab (owner) ------------------------------------------------ */
