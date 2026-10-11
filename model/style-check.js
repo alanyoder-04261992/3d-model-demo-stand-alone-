@@ -32,8 +32,8 @@
                  size that throws is a problem, never a crash of the check
      past-wall   each door's and window's trim stays on its wall (problem:
                  past the corner; warning: under 1 in from it)
-     overlap     no two openings on one wall overlap (problem); their trim
-                 boards touching or lapping is a warning
+     overlap     no two openings on one wall overlap (problem); their side
+                 casings touching or lapping is a warning
      too-high    head trim under the top of a side wall; on an end wall under
                  the gable trim band and the roof line; a gable window's
                  glass under the roof (problem); its trim cut by the roof
