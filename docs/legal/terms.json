@@ -1,7 +1,7 @@
 {
   "title": "Barnwright Terms and Conditions",
-  "version": "2.1",
-  "date": "October 11, 2026",
+  "version": "2.2",
+  "date": "November 11, 2026",
   "pdf": "legal/barnwright-terms.pdf",
   "intro": [
     "These are the rules for using the Barnwright 3D designer. \"We\" and \"us\" mean Barnwright Software. \"You\" means the business that signs up.",
@@ -11,6 +11,10 @@
     {
       "title": "What you get",
       "text": "Your 3D designer and your Dealer Center, on your own 3D designer web address. You also get a website code to show your 3D designer on your own website. We set it up for you (sections 1 and 2)."
+    },
+    {
+      "title": "Changes we make",
+      "text": "Until you first open your 3D designer to customers, we can change your price list and settings to set it up. After that, only while your owner turns it on in Settings. Every change is listed for your owner (sections 2 and 10)."
     },
     {
       "title": "What it costs",
@@ -93,7 +97,12 @@
         },
         {
           "n": "2.3",
-          "text": "Before your customers can use it, we show you your buildings and prices. You check them and tell us they are right. You are responsible for the prices you approve.",
+          "text": "Before your customers can use it, we show you your buildings and prices. You and your team can look at your 3D designer as a preview before you open it. Your customers can't see the preview. You check your buildings and prices and tell us they are right. You are responsible for the prices you approve.",
+          "sub": false
+        },
+        {
+          "n": "2.4",
+          "text": "Setting it up for you. Until you first open your 3D designer to customers, we can change your price list and settings to set it up for you. That includes your buildings, sizes, prices, doors, windows, options, colors and logo, your business name and contact details, how your 3D designer looks and shows prices (including the line under the price), and your quote form (including the words that ask your customers if you may text them). We may use software, including AI assistants, to help make these changes. This ends for good the first time you open your 3D designer to customers or your first quote or order is saved, even if you close it again later. Your owner can stop it sooner in Settings, Barnwright. Only your owner can open your 3D designer to customers. What this never lets us do, and how your owner sees every change, is in 10.6.",
           "sub": false
         }
       ]
@@ -284,21 +293,36 @@
       ]
     },
     {
-      "heading": "10. Help from Barnwright",
+      "heading": "10. Help and changes from Barnwright",
       "items": [
         {
           "n": "10.1",
-          "text": "We can't look inside your Dealer Center unless your owner turns on Help from Barnwright in Settings, for 1 to 24 hours. It turns off by itself, and your owner can turn it off sooner.",
+          "text": "We can't look inside your Dealer Center unless your owner turns on Run checks or Run checks and change my price list and settings in Settings, Barnwright, or our setup access is on (2.4). Your owner turns either one on for 1 to 24 hours. It turns off by itself, and your owner can turn it off sooner. What your Dealer Center tells us on its own is in 8.1, 10.3 and 10.5.",
           "sub": false
         },
         {
           "n": "10.2",
-          "text": "While it is on, we can run checks on how your Dealer Center is working. Every visit is written in a log your owner can see.",
+          "text": "While either one is on, we can run checks on how your Dealer Center is working. Every visit is written in a log your owner can see.",
           "sub": false
         },
         {
           "n": "10.3",
-          "text": "For help, tap Help in your Dealer Center or email support@barnwrightsoftware.com.",
+          "text": "For help, tap Help in your Dealer Center or email support@barnwrightsoftware.com. A question sent from Help reaches us with who sent it, the screen they were on and a few facts about how your Dealer Center is working, never your customers or prices. When something on a page goes wrong, your Dealer Center tells us what went wrong, never what a customer typed.",
+          "sub": false
+        },
+        {
+          "n": "10.4",
+          "text": "After our setup access ends (2.4), we can change your price list and settings only while your owner turns on Run checks and change my price list and settings in Settings, Barnwright, for 1 to 24 hours. It turns off by itself, and your owner can turn it off sooner. A Barnwright person makes each change by hand in your Dealer Center, or approves it in our Control Room before it is saved. That is true even when we use software, including AI assistants, to prepare a change.",
+          "sub": false
+        },
+        {
+          "n": "10.5",
+          "text": "Your Dealer Center tells us whether your 3D designer is open, whether we can change your price list right now and until when, whether your owner has agreed to these terms, which version of the software it runs, and when your price list was last saved and whether your owner or we saved it. This never includes your prices.",
+          "sub": false
+        },
+        {
+          "n": "10.6",
+          "text": "Whenever we can change your price list and settings (2.4 and 10.4), every change we make is listed for your owner in Price list, History, where your owner can put back an earlier price list. Settings, Barnwright shows the latest ones. This access never lets us see or change your customers, quotes, orders or team, change your lots, change where quote requests go or which websites show your 3D designer, or open or close your 3D designer. You are still responsible for checking your price list (6.1).",
           "sub": false
         }
       ]

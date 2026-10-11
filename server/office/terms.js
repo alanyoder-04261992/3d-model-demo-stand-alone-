@@ -34,10 +34,14 @@ import TERMS_COPIES from "../../docs/legal/terms-sha256.json" with { type: "json
 
 /* Change the version and date (with TERMS_VERSION and TERMS_DATE in
    tools/legal/make-legal-pdfs.py, and run it) when the terms change: every
-   owner is asked again. */
+   owner is asked again. 2.2 is the first version that lets Barnwright change
+   a price list (sections 2.4 and 10.4): Barnwright setup access works only
+   for an owner who agreed to 2.2 or later. tools/check-docs.mjs proves the
+   version is the same everywhere, and tools/check-wording.mjs that the words
+   say what setup access does and no more. */
 export const TERMS = Object.freeze({
-  version: "2.1",
-  date: "October 11, 2026",
+  version: "2.2",
+  date: "November 11, 2026",
   url: "/legal/barnwright-terms.pdf",
   title: "Barnwright Terms and Conditions",
 });

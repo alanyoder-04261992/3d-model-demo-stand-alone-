@@ -53,6 +53,16 @@
    8. THE COUNTS: every "N recorded buildings" is test/golden's count, every
       "N finished pictures" test/golden/look's, and README's "browser?"
       column says what tools/check-all.mjs decides for each check.
+   9. THE TERMS ARE ONE VERSION EVERYWHERE, and it is 2.2 or later (the first
+      version that lets Barnwright change a price list: Barnwright setup
+      access works only for an owner who agreed to 2.2 or later). The version
+      and date the Dealer Center asks the owner to agree to
+      (server/office/terms.js) are the ones tools/legal/make-legal-pdfs.py
+      prints (TERMS_VERSION, TERMS_DATE), the sign-up page's
+      docs/legal/terms.json, the Papers page's docs/legal/papers.json, the
+      header of every PDF it made (legal/barnwright-terms.pdf and each one in
+      docs/legal/, read out of the PDF itself), and the banner sentence
+      docs/OFFICE.md quotes. A file the script didn't remake fails here.
    Printed as NOTES (they never fail the check, so another person's new check
    or a fix elsewhere cannot turn this red): a tools/check-*.mjs the README's
    table does not list yet, and a document that still calls something "not
@@ -62,8 +72,10 @@ import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { resolve, dirname, join, relative, basename, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 import { spawnSync } from "node:child_process";
+import { inflateSync } from "node:zlib";
 import { PIPELINE } from "../parts/index.js";
 import { INTERIOR_DEFAULTS } from "../parts/interior.js";
+import { TERMS } from "../server/office/terms.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BARNWRIGHT_ROOT = "/home/user/boisterous-lokum-a737e0";   /* read only, never written */
@@ -193,7 +205,7 @@ function toolSource(rel) {
 }
 function skillExists(name) { return existsSync(resolve(ROOT, ".claude/skills", name, "SKILL.md")); }
 
-const tally = { paths: 0, examples: 0, outside: 0, barnwrightAbsent: 0, tools: 0, flags: 0, npm: 0, skills: 0, links: 0, promised: new Set() };
+const tally = { paths: 0, examples: 0, outside: 0, barnwrightAbsent: 0, tools: 0, flags: 0, npm: 0, skills: 0, links: 0, termsPdfs: 0, promised: new Set() };
 
 function slug(h) {
   return h.trim().toLowerCase().replace(/[`*_]/g, "").replace(/[^\p{L}\p{N}\s-]/gu, "").replace(/\s/g, "-");
@@ -514,6 +526,87 @@ ok("tools/check-parts.mjs passes (every part valid, every skill well formed, no 
   }
 }
 
+/* ------------------------------------------------------------------ 9 */
+/* The Barnwright Terms and Conditions: one version and date everywhere, and
+   2.2 or later. The PDFs are read out of their own page streams (ReportLab
+   writes each as ASCII85 then Flate), so a PDF left over from an older run
+   of tools/legal/make-legal-pdfs.py fails too. */
+const TERMS_SETUP_ACCESS = "2.2";   /* the first version with Barnwright setup access (2.4, 10.4) */
+const versionAtLeast = (v, need) => {
+  if (typeof v !== "string" || !/^\d{1,4}(\.\d{1,4}){0,3}$/.test(v)) return false;
+  const a = v.split(".").map(Number), b = need.split(".").map(Number);
+  for (let i = 0; i < Math.max(a.length, b.length); i++) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0);
+  return true;
+};
+function ascii85(text) {
+  const s = text.replace(/\s+/g, "").replace(/^<~/, "").replace(/~>$/, "");
+  const out = [];
+  let group = [];
+  for (const ch of s) {
+    if (ch === "z" && !group.length) { out.push(0, 0, 0, 0); continue; }
+    const c = ch.charCodeAt(0) - 33;
+    if (c < 0 || c > 84) throw new Error("not ASCII85");
+    group.push(c);
+    if (group.length === 5) {
+      let n = 0;
+      for (const d of group) n = n * 85 + d;
+      out.push((n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255);
+      group = [];
+    }
+  }
+  if (group.length) {
+    const k = group.length;
+    while (group.length < 5) group.push(84);
+    let n = 0;
+    for (const d of group) n = n * 85 + d;
+    out.push(...[(n >>> 24) & 255, (n >>> 16) & 255, (n >>> 8) & 255, n & 255].slice(0, k - 1));
+  }
+  return Buffer.from(out);
+}
+/* every ASCII85 + Flate stream of a PDF, decoded, as one latin1 string */
+function pdfStreamsText(bytes) {
+  const src = bytes.toString("latin1");
+  const parts = [];
+  for (const m of src.matchAll(/\/Filter\s*\[\s*\/ASCII85Decode\s+\/FlateDecode\s*\][^]*?>>\s*stream\r?\n([^]*?)endstream/g)) {
+    try { parts.push(inflateSync(ascii85(m[1])).toString("latin1")); } catch { /* not a stream this check can read */ }
+  }
+  return parts.join("\n");
+}
+{
+  const py = existsSync(resolve(ROOT, "tools/legal/make-legal-pdfs.py")) ? read("tools/legal/make-legal-pdfs.py") : "";
+  const pyVersion = (py.match(/^TERMS_VERSION = "([^"]+)"/m) || [])[1];
+  const pyDate = (py.match(/^TERMS_DATE = "([^"]+)"/m) || [])[1];
+  const header = `Version ${TERMS.version}, ${TERMS.date}`;
+  ok(`the terms are version ${TERMS_SETUP_ACCESS} or later (Barnwright setup access needs the owner to agree to ${TERMS_SETUP_ACCESS}): server/office/terms.js says ${TERMS.version}`,
+    versionAtLeast(TERMS.version, TERMS_SETUP_ACCESS), `raise TERMS.version in server/office/terms.js and TERMS_VERSION in tools/legal/make-legal-pdfs.py together`);
+  ok(`tools/legal/make-legal-pdfs.py prints the version and date the Dealer Center asks for (${TERMS.version}, ${TERMS.date})`,
+    pyVersion === TERMS.version && pyDate === TERMS.date, `the script says ${J(pyVersion)}, ${J(pyDate)}`);
+  const terms = JSON.parse(read("docs/legal/terms.json"));
+  ok(`docs/legal/terms.json (the sign-up page's terms) is version ${TERMS.version}, ${TERMS.date}`,
+    terms.version === TERMS.version && terms.date === TERMS.date && terms.title === TERMS.title && terms.pdf === TERMS.url.slice(1),
+    `it says ${J({ version: terms.version, date: terms.date, title: terms.title, pdf: terms.pdf })}; run the script`);
+  const papers = JSON.parse(read("docs/legal/papers.json"));
+  ok(`docs/legal/papers.json (the Papers page) says "${header}"`, papers.version === header, `it says ${J(papers.version)}; run the script`);
+  const pdfs = ["legal/barnwright-terms.pdf", ...readdirSync(resolve(ROOT, "docs/legal")).filter((n) => n.endsWith(".pdf")).sort().map((n) => "docs/legal/" + n)];
+  ok("the papers list names every PDF in docs/legal/", (papers.papers || []).every((p) => pdfs.includes(p.path)) && pdfs.length >= 2, J((papers.papers || []).map((p) => p.path)));
+  /* The terms PDF prints its version under the title and at the top of
+     every page; the longer papers (made with the running header) print it
+     at the top too; the one-page papers (flyer, price sheet, welcome sheet)
+     print none. Whatever a PDF prints must be this version. */
+  for (const pdf of pdfs) {
+    const text = pdfStreamsText(readFileSync(resolve(ROOT, pdf)));
+    const found = [...new Set([...text.matchAll(/Version (\d+(?:\.\d+)*), ([A-Z][a-z]+ \d{1,2}, \d{4})/g)].map((m) => m[0]))];
+    const must = pdf === "legal/barnwright-terms.pdf";
+    if (!must && !found.length) continue;
+    tally.termsPdfs++;
+    ok(`${pdf} prints "${header}"${must ? "" : " at the top"}, and no other terms version`, found.length === 1 && found[0] === header,
+      found.length ? `it prints ${J(found)}; run python3 tools/legal/make-legal-pdfs.py` : "no version found in the PDF's pages");
+  }
+  const office = existsSync(resolve(ROOT, "docs/OFFICE.md")) ? read("docs/OFFICE.md").replace(/\s+/g, " ") : "";
+  const quoted = [...office.matchAll(/Please read the Barnwright Terms and Conditions \(version ([^)]+)\)/g)].map((m) => m[1]);
+  ok(`docs/OFFICE.md quotes the owner's banner with version ${TERMS.version}`, quoted.length > 0 && quoted.every((v) => v === TERMS.version), `it quotes ${J(quoted)}`);
+}
+
 /* ------------------------------------------------------------------ notes */
 {
   const readme = existsSync(resolve(ROOT, "README.md")) ? read("README.md") : "";
@@ -542,6 +635,7 @@ if (failures.length) {
   console.log(`  Every one of the ${partIds.size} parts and part labels in the PIPELINE has its skill, and tools/check-parts.mjs passes.`);
   console.log(`  Every number the settings still mark as an ASSUMPTION is listed for Alan in docs/FOR-ALAN.md with its current values, and every building number it states was read and compared with the files.`);
   console.log(`  The counts quoted (recorded buildings, finished pictures) are test/golden's, and README's browser column matches tools/check-all.mjs.`);
+  console.log(`  The Barnwright Terms and Conditions are version ${TERMS.version}, ${TERMS.date} (${TERMS_SETUP_ACCESS} or later, as Barnwright setup access needs) in server/office/terms.js, tools/legal/make-legal-pdfs.py, docs/legal/terms.json, docs/legal/papers.json, the ${tally.termsPdfs} PDFs that print a version, and docs/OFFICE.md.`);
   if (promised.length) console.log(`  Named as promised but not written yet: ${promised.join(", ")}.`);
   for (const n of notes) console.log("  note: " + n);
 }

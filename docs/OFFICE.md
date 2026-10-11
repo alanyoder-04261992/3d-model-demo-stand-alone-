@@ -2332,7 +2332,7 @@ and in the Dealer Center (`server/office/terms.js`). First setup can't make
 the business without the owner ticking "I have read and agree to the
 Barnwright Terms and Conditions"; an owner who set up before the box
 existed, or before the terms changed, sees "Please read the Barnwright Terms
-and Conditions (version 2.1)." and the button "I have read and agree to the
+and Conditions (version 2.2)." and the button "I have read and agree to the
 Barnwright Terms and Conditions" at the top of every screen until they tap
 it. Each agreement is kept with its version, time and the owner's login, and
 Settings, Barnwright, says who agreed and when. Until the owner first signs
