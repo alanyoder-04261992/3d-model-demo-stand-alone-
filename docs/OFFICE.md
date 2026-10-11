@@ -199,7 +199,9 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   save. Putting an older copy back is never refused;
   what no longer fits is said instead.
 * **History** says each change: "Lofted Barn wall height: 6 ft 7 1/2 in →
-  7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12",
+  7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12
+  (Utility Shed and Side Utility 5/12 → 6/12; Garden Utility, Cabin and 6
+  more about 6 1/2/12 → 6/12)" -- each style a business-wide number moved --,
   "Steep roof: roof pitch at least 7/12", and "Wall upgrades priced by the
   square foot follow the new wall height: ..." when a wall height moves
   what a per-square-foot wall upgrade costs. A change that moves what is

@@ -120,7 +120,11 @@ number, its words and its source.
   lifts in memory, `save()` for real ("Roof pitch rules moved into How it's
   built (no building changes)"); the drawn roof is identical.
 * History: `describeChanges()` -- "Lofted Barn wall height: 6 ft 7 1/2 in
-  → 7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12".
+  → 7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12
+  (Utility Shed and Side Utility 5/12 → 6/12; Garden Utility, Cabin and 6
+  more about 6 1/2/12 → 6/12)" (`groupByWords`, `namesWords`); the
+  business-wide card says "Built now: 5/12 on the Utility Shed and Side
+  Utility; about 6 1/2/12 on the ..." under each box.
   A change that moves what is drawn (`drawnOf`) raises `cfg` and open
   designers redraw; the standard's number typed on a style says "standard
   (5/12) → 5/12 of its own" and keeps `cfg`; the same number in other words

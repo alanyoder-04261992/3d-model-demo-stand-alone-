@@ -845,7 +845,7 @@ ok("the size limits are the Dealer Center's own (a 16×60 is fine)", await (asyn
   cur = await want(200, "GET", "/api/office/price-list");
   s = clone(cur.settings); s.built = { roofPitch: { gable: 6 } };
   out = await want(200, "PUT", "/api/office/price-list", { settings: s, version: cur.version }, { label: "saving a business-wide roof pitch" });
-  ok("a business-wide roof pitch says so in History and raises cfg", out.changes.includes("Business-wide roof pitch for gable roofs: standard → 6/12") && out.cfg === cur.cfg + 1, JSON.stringify(out.changes));
+  ok("a business-wide roof pitch says so in History and raises cfg", out.changes.some((c) => c.startsWith("Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed and Side Utility 5/12 → 6/12; ")) && out.cfg === cur.cfg + 1, JSON.stringify(out.changes));
   /* the connector's rule list, as it writes it */
   cur = await want(200, "GET", "/api/office/price-list");
   const raw = await S.read("price-list");

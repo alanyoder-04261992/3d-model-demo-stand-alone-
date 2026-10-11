@@ -331,6 +331,19 @@ function fmtPitch(p) {
   return Math.abs(p * 4 - q) < 1e-6 ? words : `about ${words}`;
 }
 function joinWords(list) { return list.length < 2 ? list.join("") : list.slice(0, -1).join(", ") + " and " + list[list.length - 1]; }
+/* "Utility Shed and Side Utility", "Cabin, Garage and 6 more" */
+export function namesWords(names) {
+  return names.length <= 3 ? joinWords(names) : `${names.slice(0, 2).join(", ")} and ${names.length - 2} more`;
+}
+/* [{name, words}] -> [{words, names}] in first-seen order */
+export function groupByWords(entries) {
+  const out = [];
+  for (const e of entries) {
+    const g = out.find((x) => x.words === e.words);
+    if (g) g.names.push(e.name); else out.push({ words: e.words, names: [e.name] });
+  }
+  return out;
+}
 
 export function format(id, value) {
   const K = KNOB[id];
@@ -928,16 +941,57 @@ export function describeChanges(before, after, manufacturer) {
     const r = parse(id, v, {});
     return r.value !== undefined ? format(id, r.value) : String(v);
   };
+  const ea = apply(b, M).styles, eb = apply(a, M).styles;
+  /* what a style is built with, in words: its number, or the library's */
+  const builtWords = (S, E, k, id) => {
+    const e = E[k] && E[k].built[id];
+    if (e && e.value !== undefined) return format(id, e.value);
+    const o = isObj(S.offer) ? S.offer[k] : null, t = o && (M.styles || {})[o.base != null ? o.base : k];
+    if (!t) return "";
+    const v = plainValue(id, t, mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {}), keysOf(o.sizes));
+    return v !== undefined ? format(id, v) : "";
+  };
+  const soldWidths = (S1, S2, k) => {
+    const sizes = [...new Set([...keysOf(S1.offer && S1.offer[k] && S1.offer[k].sizes), ...keysOf(S2.offer && S2.offer[k] && S2.offer[k].sizes)])];
+    return [...new Set(sizes.map((z) => +String(z).split("x")[0]).filter((w) => w > 0))].sort((x, y) => x - y);
+  };
+  /* a barn's height at width W as drawn: the trusses' peak */
+  const drawnBarnWords = (S, E, k, t, W) => {
+    const merged = mergeTwo(mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {}), (E[k] && E[k].construction) || {});
+    try { return fmtIn(barnTrussPeakFt(W, t, settledAt(merged, W, t)) * 12); } catch (e) { return null; }
+  };
+  /* the styles a business-wide number moved, before → after (review W4):
+     "standard" is not one number */
+  const moved = (id, kind) => {
+    const list = [];
+    for (const k of keysOf(a.offer)) {
+      if (!isObj(b.offer) || !own(b.offer, k) || !isObj(a.offer[k])) continue;
+      const t = (M.styles || {})[a.offer[k].base != null ? a.offer[k].base : k];
+      if (!t || knobsFor(t).indexOf(id) < 0) continue;
+      if (kind && (id === "doorHeight" ? (kindOf(t) === "barn" ? "barn" : "other") : kindOf(t)) !== kind) continue;
+      if (id === "barnPeak") {
+        /* width by width, as drawn */
+        for (const W of soldWidths(b, a, k)) {
+          const x = drawnBarnWords(b, ea, k, t, W), y = drawnBarnWords(a, eb, k, t, W);
+          if (x && y && x !== y) list.push({ name: styleName(a, M, k), words: `at ${W} ft wide ${x} → ${y}` });
+        }
+        continue;
+      }
+      const x = builtWords(b, ea, k, id), y = builtWords(a, eb, k, id);
+      if (x && y && x !== y) list.push({ name: styleName(a, M, k), words: `${x} → ${y}` });
+    }
+    const groups = groupByWords(list);
+    return groups.length ? ` (${groups.map((g) => `${namesWords(g.names)} ${g.words}`).join("; ")})` : "";
+  };
   for (const id of KNOB_IDS) {
     const K = KNOB[id];
     if (Array.isArray(K.business)) {
       for (const kind of K.business) {
         const x = isObj(bb[id]) ? bb[id][kind] : undefined, y = isObj(ab[id]) ? ab[id][kind] : undefined;
-        if (!same(x, y) && shownBiz(id, x) !== shownBiz(id, y)) out.push(`Business-wide ${K.words} for ${KIND_WORDS[kind]}: ${shownBiz(id, x)} → ${shownBiz(id, y)}`);
+        if (!same(x, y) && shownBiz(id, x) !== shownBiz(id, y)) out.push(`Business-wide ${K.words} for ${KIND_WORDS[kind]}: ${shownBiz(id, x)} → ${shownBiz(id, y)}${moved(id, kind)}`);
       }
-    } else if (!same(bb[id], ab[id]) && shownBiz(id, bb[id]) !== shownBiz(id, ab[id])) out.push(`Business-wide ${K.words}: ${shownBiz(id, bb[id])} → ${shownBiz(id, ab[id])}`);
+    } else if (!same(bb[id], ab[id]) && shownBiz(id, bb[id]) !== shownBiz(id, ab[id])) out.push(`Business-wide ${K.words}: ${shownBiz(id, bb[id])} → ${shownBiz(id, ab[id])}${moved(id, null)}`);
   }
-  const ea = apply(b, M).styles, eb = apply(a, M).styles;
   for (const k of keysOf(a.offer)) {
     if (!isObj(b.offer) || !own(b.offer, k)) continue;           /* a new style says "Started selling" */
     const ob = (isObj(b.offer[k]) && b.offer[k].built) || {}, oa = (isObj(a.offer[k]) && a.offer[k].built) || {};
@@ -959,15 +1013,9 @@ export function describeChanges(before, after, manufacturer) {
       if (id === "barnPeak" && s) {
         const usable = (S, E) => { const typed = S.offer[k].built && S.offer[k].built[id]; return typed === undefined || (E[k] && E[k].built[id] && E[k].built[id].from === "this style"); };
         if (usable(b, ea) && usable(a, eb)) {
-          const sizes = [...new Set([...keysOf(b.offer[k] && b.offer[k].sizes), ...keysOf(a.offer[k].sizes)])];
-          const ws = [...new Set(sizes.map((z) => +String(z).split("x")[0]).filter((w) => w > 0))].sort((x, y) => x - y);
-          const drawn = (S, E, W) => {
-            const merged = mergeTwo(mergeTwo(mergeTwo({ roof: DEFAULT_ROOF }, M.construction || {}), S.construction || {}), (E[k] && E[k].construction) || {});
-            try { return fmtIn(barnTrussPeakFt(W, s, settledAt(merged, W, s)) * 12); } catch (e) { return null; }
-          };
           const lines = [];
-          for (const W of ws) {
-            const x = drawn(b, ea, W), y = drawn(a, eb, W);
+          for (const W of soldWidths(b, a, k)) {
+            const x = drawnBarnWords(b, ea, k, s, W), y = drawnBarnWords(a, eb, k, s, W);
             if (x && y && x !== y) lines.push(`${name} ${KNOB[id].words} at ${W} ft wide: ${x} → ${y}`);
           }
           if (lines.length) { out.push(...lines); continue; }

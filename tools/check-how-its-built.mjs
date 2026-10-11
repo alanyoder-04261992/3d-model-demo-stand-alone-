@@ -131,6 +131,10 @@ try {
     const from = await page.$eval('[data-built="LB"] [data-field="built:LB:wallHeight"] ~ .hint .pl-built-from', (el) => el.textContent).catch(() => "");
     ok(`${width} wide: an empty box shows the number it builds with ("${wall}") and where it comes from ("${from}")`, wall === "6 ft 7 1/2 in" && from === "Standard: 6 ft 7 1/2 in", `${wall} | ${from}`);
     ok(`${width} wide: the business-wide card "How your buildings are built" is there`, !!(await page.$(".pl-built-card")) && /Reaches the/.test(await page.textContent(".pl-built-card")));
+    /* "standard" is not one number: the card says what each style is built
+       with now (review W4) */
+    const card = await page.textContent(".pl-built-card");
+    ok(`${width} wide: ... and what each style is built with now ("Built now: 5/12 on the Utility Shed and Side Utility; about 6 1/2/12 on the ...")`, /Built now: 5\/12 on the Utility Shed and Side Utility; about 6 1\/2\/12 on the /.test(card), card.slice(0, 400));
     ok(`${width} wide: no sideways scrolling`, (await sideways(page)) <= 0, String(await sideways(page)));
     const small = [...await smallTaps(page, '[data-built="LB"]'), ...await smallTaps(page, ".pl-built-card")];
     ok(`${width} wide: every box, chip and button is at least 44 px tall`, small.length === 0, small.slice(0, 5).join("; "));

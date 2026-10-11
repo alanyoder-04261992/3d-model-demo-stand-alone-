@@ -401,6 +401,22 @@ function reachWords(reach, offer) {
   return out.join(" ");
 }
 
+/* "Built now: 5/12 on the Utility Shed and Side Utility; about 6 1/2/12 on
+   the Garden Utility, Cabin and 6 more." -- "standard" is not one number
+   (review W4) */
+function nowWords(id, keys, offer) {
+  if (id === "barnPeak" || !keys.length) return "";
+  const cat = catOf(S.draft);
+  if (!cat) return "";
+  const list = [];
+  for (const k of keys) {
+    const e = BUILT.effective(cat, k).find((x) => x.id === id);
+    if (e && e.words) list.push({ name: styleName(S.M, k, offer[k]), words: e.words });
+  }
+  const groups = BUILT.groupByWords(list);
+  return groups.length ? `Built now: ${groups.map((g) => `${g.words} on the ${BUILT.namesWords(g.names)}`).join("; ")}.` : "";
+}
+
 export function builtCard() {
   const d = S.draft;
   if (!keysOf(d.offer).length) return null;
@@ -414,7 +430,7 @@ export function builtCard() {
       const K = KNOB[id];
       const field = `built:biz:${id}${kind && Array.isArray(K.business) ? ":" + kind : ""}`;
       const label = id === "doorHeight" ? (kind === "barn" ? "On barn roofs" : "On every other roof") : K.Words;
-      const caption = reachWords(reach, d.offer);
+      const caption = [reachWords(reach, d.offer), nowWords(id, reach.reaches, d.offer)].filter(Boolean).join(" ");
       const onSet = (v) => setBiz(id, kind, v);
       if (id === "barnPeak") {
         const keys = [...reach.reaches, ...reach.own];

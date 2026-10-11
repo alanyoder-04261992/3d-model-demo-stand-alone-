@@ -447,7 +447,15 @@ group("11. problems, screens and History words");
   after.offer.LB.built = { wallHeight: 84 }; after.built = { roofPitch: { gable: 6 } };
   const lines = BUILT.describeChanges(before, after, M);
   ok("History: \"Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft\"", lines.includes("Lofted Barn wall height: 6 ft 8 1/16 in → 7 ft"), J(lines));
-  ok("History: \"Business-wide roof pitch for gable roofs: standard → 6/12\"", lines.includes("Business-wide roof pitch for gable roofs: standard → 6/12"), J(lines));
+  /* ... with the styles it moved, before → after: "standard" is not one
+     number (review W4) */
+  ok("History: \"Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed, Side Utility and 8 more about 6 1/2/12 → 6/12)\"", lines.includes("Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed, Side Utility and 8 more about 6 1/2/12 → 6/12)"), J(lines));
+  {
+    const SMx = standardManufacturer(), plainCo = readJSON("companies/demo/company.json"), biz6 = copy(plainCo); biz6.built = { roofPitch: { gable: 6 } };
+    ok("History on the shop standard: \"... (Utility Shed and Side Utility 5/12 → 6/12; Garden Utility, Cabin and 6 more about 6 1/2/12 → 6/12)\"", J(BUILT.describeChanges(plainCo, biz6, SMx)) === J(["Business-wide roof pitch for gable roofs: standard → 6/12 (Utility Shed and Side Utility 5/12 → 6/12; Garden Utility, Cabin and 6 more about 6 1/2/12 → 6/12)"]), J(BUILT.describeChanges(plainCo, biz6, SMx)));
+    const biz12 = copy(plainCo); biz12.built = { barnPeak: { 12: 54 } };
+    ok("... and a business-wide barn height width by width (\"Lofted Barn and Side Lofted Barn at 12 ft wide 4 ft 3 in → 4 ft 6 in; ...\")", /^Business-wide barn roof height: standard → 12 ft wide: 4 ft 6 in \(Lofted Barn and Side Lofted Barn at 12 ft wide 4 ft 3 in → 4 ft 6 in; /.test(BUILT.describeChanges(plainCo, biz12, SMx)[0] || ""), J(BUILT.describeChanges(plainCo, biz12, SMx)));
+  }
   /* the Dealer Center's change list while a box holds words that cannot be read */
   const typo = copy(before); typo.offer.LB.built = { wallHeight: "5\\12" };
   const typoLines = BUILT.describeChanges(before, typo, M);
