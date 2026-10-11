@@ -5389,6 +5389,66 @@
         }
       },
       {
+        "name": "set_roof_pitch: a style of their own built like a gable style gets a pitch of its own",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "add_own_style",
+            "built_like": "UT",
+            "name": "Premium Utility",
+            "sizes": {
+              "10x16": 6290
+            }
+          },
+          {
+            "do": "set_roof_pitch",
+            "style": "UT1",
+            "pitch": "7/12"
+          }
+        ],
+        "expect": {
+          "ok": true,
+          "changes": [
+            "Started selling the Premium Utility (built like the Utility Shed) in 1 size",
+            "Premium Utility roof pitch: 7/12 of its own"
+          ],
+          "warnings": [],
+          "contactDetailsChange": false,
+          "newCodes": {
+            "Premium Utility": "UT1"
+          },
+          "paths": {
+            "offer.UT1": {
+              "base": "UT",
+              "name": "Premium Utility",
+              "sizes": {
+                "10x16": 6290
+              },
+              "built": {
+                "roofPitch": 7
+              }
+            },
+            "categories": [
+              [
+                "Sheds",
+                [
+                  "UT",
+                  "UT1",
+                  "LB"
+                ]
+              ],
+              [
+                "Garages",
+                [
+                  "G"
+                ]
+              ]
+            ]
+          },
+          "settingsSha256": "2edc7ff9c7c8a1f5e1e148793534dcaa160d16b500c3ccd97ef9cd486ef5d85a"
+        }
+      },
+      {
         "name": "set_built: a style's own roof pitch, eave, gable-end overhang, wall height and door height, in a builder's words",
         "mode": "prelive",
         "edits": [
@@ -6994,7 +7054,33 @@
         }
       },
       {
-        "name": "set_roof_pitch: a style of their own",
+        "name": "set_roof_pitch: a style of their own built like a barn",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "add_own_style",
+            "built_like": "LB",
+            "name": "Premium Loft Barn",
+            "sizes": {
+              "10x16": 6290
+            }
+          },
+          {
+            "do": "set_roof_pitch",
+            "style": "LB1",
+            "pitch": "6/12"
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Edit 2: Only a gable roof's pitch can be changed here. The Premium Loft Barn is built like the Loft Barn, which has a gambrel roof, so a different pitch needs a new library style."
+          ]
+        }
+      },
+      {
+        "name": "set_roof_pitch: a code they don't sell",
         "mode": "prelive",
         "edits": [
           {
@@ -7007,7 +7093,37 @@
           "ok": false,
           "code": "problems",
           "problems": [
-            "Edit 1: UT1 is a style of their own. Change the pitch of the library style it is built like."
+            "Edit 1: there is no building style UT1 in their price list."
+          ]
+        }
+      },
+      {
+        "name": "set_roof_pitch: a library style they don't sell, with a style of their own built like it",
+        "mode": "prelive",
+        "edits": [
+          {
+            "do": "add_own_style",
+            "built_like": "UT",
+            "name": "Premium Utility",
+            "sizes": {
+              "10x16": 6290
+            }
+          },
+          {
+            "do": "stop_selling_style",
+            "style": "UT"
+          },
+          {
+            "do": "set_roof_pitch",
+            "style": "UT",
+            "pitch": "6/12"
+          }
+        ],
+        "expect": {
+          "ok": false,
+          "code": "problems",
+          "problems": [
+            "Edit 3: They don't sell the Utility Shed. Sell it first (sell_style), then set its roof pitch, or set the roof pitch of their own Premium Utility (UT1), built like it."
           ]
         }
       },

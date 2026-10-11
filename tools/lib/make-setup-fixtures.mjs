@@ -578,6 +578,10 @@ function sampleSet(base, pl) {
     (s) => { s.offer.UT.built = { roofPitch: 6 }; s.offer.UT1 = { base: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }; s.categories[0][1].splice(1, 0, "UT1"); },
     { paths: ["offer.UT.built", "offer.UT1", "categories"], newCodes: { "Premium Utility": "UT1" },
       wantChanges: ["Started selling the Premium Utility (built like the Utility Shed) in 1 size", `${pitchLine("Utility Shed", STANDARD_PITCH, "6/12")}${builtLikeWords(["Premium Utility"])}`] });
+  ok("set_roof_pitch: a style of their own built like a gable style gets a pitch of its own", [{ do: "add_own_style", built_like: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }, { do: "set_roof_pitch", style: "UT1", pitch: "7/12" }],
+    (s) => { s.offer.UT1 = { base: "UT", name: "Premium Utility", sizes: { "10x16": 6290 }, built: { roofPitch: 7 } }; s.categories[0][1].splice(1, 0, "UT1"); },
+    { paths: ["offer.UT1", "categories"], newCodes: { "Premium Utility": "UT1" },
+      wantChanges: ["Started selling the Premium Utility (built like the Utility Shed) in 1 size", "Premium Utility roof pitch: 7/12 of its own"] });
   ok("set_built: a style's own roof pitch, eave, gable-end overhang, wall height and door height, in a builder's words", [{ do: "set_built", style: "UT", roofPitch: "6/12", eaveOverhang: "6 in", gableOverhang: "3 in", wallHeight: "8 ft", doorHeight: "80 in" }],
     (s) => { s.offer.UT.built = { roofPitch: 6, eaveOverhang: 6, gableEndOverhang: 3, wallHeight: 96, doorHeight: 80 }; },
     { paths: ["offer.UT.built", "construction"] });
@@ -693,8 +697,12 @@ function sampleSet(base, pl) {
     ["Edit 1: Only a gable roof's pitch can be changed here. The Loft Barn has a gambrel roof, so a different pitch needs a new library style."]);
   refused("set_roof_pitch: the Dormer Shed", [{ do: "set_roof_pitch", style: "DS", pitch: "6/12" }],
     ["Edit 1: The Dormer Shed's dormer sets its roof, so its pitch can't be changed here. A different pitch needs a new library style."]);
-  refused("set_roof_pitch: a style of their own", [{ do: "set_roof_pitch", style: "UT1", pitch: "6/12" }],
-    ["Edit 1: UT1 is a style of their own. Change the pitch of the library style it is built like."]);
+  refused("set_roof_pitch: a style of their own built like a barn", [{ do: "add_own_style", built_like: "LB", name: "Premium Loft Barn", sizes: { "10x16": 6290 } }, { do: "set_roof_pitch", style: "LB1", pitch: "6/12" }],
+    ["Edit 2: Only a gable roof's pitch can be changed here. The Premium Loft Barn is built like the Loft Barn, which has a gambrel roof, so a different pitch needs a new library style."]);
+  refused("set_roof_pitch: a code they don't sell", [{ do: "set_roof_pitch", style: "UT1", pitch: "6/12" }],
+    ["Edit 1: there is no building style UT1 in their price list."]);
+  refused("set_roof_pitch: a library style they don't sell, with a style of their own built like it", [{ do: "add_own_style", built_like: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }, { do: "stop_selling_style", style: "UT" }, { do: "set_roof_pitch", style: "UT", pitch: "6/12" }],
+    ["Edit 3: They don't sell the Utility Shed. Sell it first (sell_style), then set its roof pitch, or set the roof pitch of their own Premium Utility (UT1), built like it."]);
   refused("set_roof_pitch: out of range", [{ do: "set_roof_pitch", style: "UT", pitch: "14/12" }], ["Edit 1: Pick a pitch from 3/12 to 12/12, in whole twelfths, or standard."]);
   refused("set_roof_pitch: a style they don't sell", [{ do: "set_roof_pitch", style: "GU", pitch: "6/12" }],
     ["Edit 1: They don't sell the Garden Utility. Sell it first (sell_style), then set its roof pitch."]);

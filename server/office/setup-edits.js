@@ -339,23 +339,29 @@ const HANDLERS = {
   /* F13: one library gable style's roof pitch, as that style's own number
      in How it's built (offer.<code>.built.roofPitch, written with
      model/build-settings.js setBuilt). It reaches every style of their own
-     built like it that has no pitch of its own. "standard" takes the
+     built like it that has no pitch of its own. A style of their own built
+     like one of the gable styles takes a pitch of its own the same way. "standard" takes the
      style's own number out, so the standard building's pitch (the shop
      standard, or the library's) is used again. */
   set_roof_pitch(s, e, { M }) {
     const v = e.style;
     if (typeof v !== "string" || !CODE.test(v)) no(`there is no building style ${shown(v)}.`);
-    if (!has(M.styles, v)) {
+    /* a style of their own built like one of the gable styles: its own
+       pitch, as set_built writes it (review M3: the only way before was
+       set_built) */
+    const own = !has(M.styles, v) && isObj(s.offer?.[v]) && typeof s.offer[v].base === "string" && has(M.styles, s.offer[v].base);
+    if (!has(M.styles, v) && !own) {
       const stem = /^([A-Za-z]{1,5})\d+$/.exec(v)?.[1];
-      if (s.offer?.[v]?.base || (stem && Object.keys(M.styles || {}).some((k) => k.toLowerCase() === stem.toLowerCase()))) {
-        no(`${v} is a style of their own. Change the pitch of the library style it is built like.`);
-      }
+      if (stem && Object.keys(M.styles || {}).some((k) => k.toLowerCase() === stem.toLowerCase())) no(`there is no building style ${shown(v)} in their price list.`);
       no(`${v} is not a style in the builder's library.`);
     }
-    const lib = M.styles[v];
-    if (lib.roof !== "gable") no(`Only a gable roof's pitch can be changed here. The ${styleName(s, v, M)} has ${ROOF_WORDS[lib.roof] || "a roof that isn't a gable"}, so a different pitch needs a new library style.`);
-    if (lib.dormer) no(`The ${styleName(s, v, M)}'s dormer sets its roof, so its pitch can't be changed here. A different pitch needs a new library style.`);
-    if (!GABLE_STYLES.includes(v)) no(`The ${styleName(s, v, M)}'s roof pitch can't be changed here. A different pitch needs a new library style.`);
+    const libKey = own ? s.offer[v].base : v, lib = M.styles[libKey];
+    /* "The Premium Loft Barn is built like the Loft Barn, which has ..." */
+    const which = own ? `The ${styleName(s, v, M)} is built like the ${styleName(s, libKey, M)}, which` : `The ${styleName(s, v, M)}`;
+    if (lib.roof !== "gable") no(`Only a gable roof's pitch can be changed here. ${which} has ${ROOF_WORDS[lib.roof] || "a roof that isn't a gable"}, so a different pitch needs a new library style.`);
+    if (lib.dormer) no(own ? `${which} has a dormer that sets its roof, so its pitch can't be changed here. A different pitch needs a new library style.`
+      : `The ${styleName(s, v, M)}'s dormer sets its roof, so its pitch can't be changed here. A different pitch needs a new library style.`);
+    if (!GABLE_STYLES.includes(libKey)) no(`The ${styleName(s, v, M)}'s roof pitch can't be changed here. A different pitch needs a new library style.`);
     let twelfths = null;
     if (e.pitch !== "standard") {
       const m = typeof e.pitch === "string" ? /^(\d{1,2})\/12$/.exec(e.pitch.trim()) : null;
@@ -365,7 +371,11 @@ const HANDLERS = {
       const r = parseBuilt("roofPitch", twelfths, { kind: "gable", metal: !!lib.metal, name: lib.name });
       if (r.problem) no(r.problem);
     }
-    if (!isObj(s.offer?.[v])) no(`They don't sell the ${styleName(s, v, M)}. Sell it first (sell_style), then set its roof pitch.`);
+    if (!isObj(s.offer?.[v])) {
+      /* their own styles built like it can have a pitch of their own */
+      const theirs = keysOf(s.offer).filter((k) => isObj(s.offer[k]) && s.offer[k].base === v).map((k) => `${styleName(s, k, M)} (${k})`);
+      no(`They don't sell the ${styleName(s, v, M)}. Sell it first (sell_style), then set its roof pitch${theirs.length ? `, or set the roof pitch of their own ${theirs.join(" or ")}, built like it` : ""}.`);
+    }
     /* a price list from before How it's built: the roof pitch rule list
        this edit used to write moves into How it's built first (the same
        move every save makes); any other gable rise stays theirs */

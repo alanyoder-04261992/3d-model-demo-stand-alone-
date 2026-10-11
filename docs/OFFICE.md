@@ -1313,19 +1313,29 @@ to 12) or `"standard"`: the short form of `set_built {style, roofPitch}`,
 with stricter limits and its own words, kept as they were.
 
 * Only these library styles, all gable roofs: UT, SU, GU, C, SC, DSC, G, MU,
-  MG, DK (`gableStyles` in `read` part `library`). Others are refused:
+  MG, DK (`gableStyles` in `read` part `library`), and a style of their own
+  built like one of them, which gets a pitch of its own (`UT1` built like
+  the Utility Shed: "Premium Utility roof pitch: 5/12 → 6/12"). Others are
+  refused:
   * gambrel, saltbox, lean-to and single slope: "Only a gable roof's pitch
     can be changed here. The Loft Barn has a gambrel roof, so a different
     pitch needs a new library style.";
   * the Dormer Shed (its dormer sets its roof): "The Dormer Shed's dormer
     sets its roof, so its pitch can't be changed here. A different pitch
     needs a new library style.";
-  * a style of their own: "UT1 is a style of their own. Change the pitch of
-    the library style it is built like.";
+  * a style of their own built like another roof: "Only a gable roof's
+    pitch can be changed here. The Premium Loft Barn is built like the Loft
+    Barn, which has a gambrel roof, so a different pitch needs a new
+    library style.";
+  * a code they don't sell: "there is no building style UT1 in their price
+    list.";
   * any other pitch: "Pick a pitch from 3/12 to 12/12, in whole twelfths,
     or standard.";
   * a style they don't sell: "They don't sell the Garden Utility. Sell it
-    first (sell_style), then set its roof pitch.";
+    first (sell_style), then set its roof pitch."; when they sell a style of
+    their own built like it, the words name it too: "They don't sell the
+    Utility Shed. Sell it first (sell_style), then set its roof pitch, or
+    set the roof pitch of their own Premium Utility (UT1), built like it.";
   * a pitch How it's built doesn't allow on that roof (a metal roof is never
     flatter than 4/12), in How it's built's own words: "Roof pitch 3/12 is
     flatter than 4/12, the flattest the 3D designer can frame a metal

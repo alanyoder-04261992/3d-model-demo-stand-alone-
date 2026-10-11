@@ -995,6 +995,26 @@ section("A6 / F5 / F13. The edits, the warnings and the read parts, on their own
   ok("F13: How it's built's own limits hold (a metal roof never flatter than 4/12), and a style they don't sell is said in words",
     JSON.stringify(metal.problems) === JSON.stringify(["Edit 2: Roof pitch 3/12 is flatter than 4/12, the flattest the 3D designer can frame a metal roof."])
     && JSON.stringify(unsold.problems) === JSON.stringify(["Edit 1: They don't sell the Garden Utility. Sell it first (sell_style), then set its roof pitch."]), JSON.stringify([metal.problems, unsold.problems]));
+  /* a business that sells only its own Premium Utility (built like the
+     Utility Shed), not the Utility Shed itself: set_roof_pitch takes the
+     style of their own, and the library style's refusal names it (review
+     M3; old code: each refusal sent Claude to the other) */
+  const onlyOwn = applyEdits(base, [{ do: "add_own_style", built_like: "UT", name: "Premium Utility", sizes: { "10x16": 6290 } }, { do: "stop_selling_style", style: "UT" }], opts).settings;
+  const ownPitch = applyEdits(onlyOwn, [{ do: "set_roof_pitch", style: "UT1", pitch: "6/12" }], opts);
+  const ownBuilt = applyEdits(onlyOwn, [{ do: "set_built", style: "UT1", roofPitch: "6/12" }], opts);
+  const libPitch = applyEdits(onlyOwn, [{ do: "set_roof_pitch", style: "UT", pitch: "6/12" }], opts);
+  ok("F13: set_roof_pitch on a style of their own built like a gable style writes its own pitch, the same as set_built (old code: refused), and draws it",
+    ownPitch.problems.length === 0 && ownPitch.settings.offer.UT1.built?.roofPitch === 6 && JSON.stringify(ownPitch.settings) === JSON.stringify(ownBuilt.settings) && Math.abs(pitched(ownPitch.settings, "UT1") - 6) < 0.01
+    && JSON.stringify(describeChanges(onlyOwn, ownPitch.settings, manufacturer, { library })) === JSON.stringify([`Premium Utility roof pitch: ${std(shopUT)} → 6/12`])
+    && JSON.stringify(applyEdits(ownPitch.settings, [{ do: "set_roof_pitch", style: "UT1", pitch: "standard" }], opts).settings) === JSON.stringify(onlyOwn),
+    JSON.stringify([ownPitch.problems, ownPitch.settings?.offer?.UT1]));
+  ok("F13: ... and the library style they don't sell says to sell it first or to set the pitch of their own style built like it",
+    JSON.stringify(libPitch.problems) === JSON.stringify(["Edit 1: They don't sell the Utility Shed. Sell it first (sell_style), then set its roof pitch, or set the roof pitch of their own Premium Utility (UT1), built like it."]), JSON.stringify(libPitch.problems));
+  const barnOwn = applyEdits(base, [{ do: "add_own_style", built_like: "LB", name: "Premium Loft Barn", sizes: { "10x16": 6290 } }, { do: "set_roof_pitch", style: "LB1", pitch: "6/12" }], opts);
+  const unknownOwn = applyEdits(base, [{ do: "set_roof_pitch", style: "UT1", pitch: "6/12" }], opts);
+  ok("F13: ... a style of their own built like a barn is refused in words that name both, and a code they don't sell is said as such",
+    JSON.stringify(barnOwn.problems) === JSON.stringify(["Edit 2: Only a gable roof's pitch can be changed here. The Premium Loft Barn is built like the Loft Barn, which has a gambrel roof, so a different pitch needs a new library style."])
+    && JSON.stringify(unknownOwn.problems) === JSON.stringify(["Edit 1: there is no building style UT1 in their price list."]), JSON.stringify([barnOwn.problems, unknownOwn.problems]));
   const roofs = ["CS", "SS", "BU", "SB"].map((st) => applyEdits(base, [{ do: "set_roof_pitch", style: st, pitch: "6/12" }], opts).problems[0]);
   ok("F13: saltbox, single slope, lean-to and gambrel roofs are refused, each in words",
     JSON.stringify(roofs) === JSON.stringify(["saltbox", "single slope", "lean-to", "gambrel"].map((w, i) => `Edit 1: Only a gable roof's pitch can be changed here. The ${manufacturer.styles[["CS", "SS", "BU", "SB"][i]].name} has a ${w} roof, so a different pitch needs a new library style.`)), JSON.stringify(roofs));
