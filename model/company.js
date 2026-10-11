@@ -568,7 +568,9 @@ export function validate(company, manufacturer) {
         }
       }
       if (D.dormer != null && D.dormer !== "none" && !(isObj(O) && own(O.dormers, D.dormer))) err.push(`defaults.dormer ${q(D.dormer)} is not an offered dormer size.`);
-      if (D.porchLength != null && D.porchLength !== 8 && D.porchLength !== 12) err.push("defaults.porchLength must be 8 or 12.");
+      /* the side porch the designer opens on: whole feet, 4 to 20 (a style
+         that does not sell it opens on its longest) */
+      if (D.porchLength != null && !(Number.isInteger(D.porchLength) && D.porchLength >= 4 && D.porchLength <= 20)) err.push("defaults.porchLength must be a whole number of feet from 4 to 20.");
     }
   }
 

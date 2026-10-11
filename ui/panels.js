@@ -35,6 +35,13 @@ import { esc } from "./esc.js";
 import * as S from "./state.js";
 import { money, pPrice, pSizes, minPrice, priceParts, itemCharge, rateCharges, optxList, optxQty, optxOn, optxCharge, optxChargeIfOn, rtoTerms, rtoMonthly, RTO_NOTE } from "../model/pricing.js";
 import { colorName, sidingPalette } from "../model/company.js";
+import { porchDepthOf, sidePorchLengthsOf } from "../model/frame.js";
+
+/* feet on a chip: "4", "4' 6\"" -- the chips have always said "4 × 8" */
+function feetWords(ft) {
+  const i = Math.round(ft * 12), f = Math.floor(i / 12), r = i - f * 12;
+  return r ? `${f}′ ${r}″` : `${f}`;
+}
 
 /* where an item is, in words (Barnwright refreshLists 5084-5086; S3, the
    far wall of a middle porch, was missing and printed "undefined") */
@@ -233,8 +240,11 @@ export function createPanels(ctx) {
       pr.style.display = "block";
       const Lnow = +String(state.size).split("x")[1];
       const pc = el("porchchips"); pc.innerHTML = "";
-      [["8", "4 × 8 porch"], ["12", "4 × 12 porch"]].forEach((pp2) => {
-        const dis = (pp2[0] === "12" && Lnow < 20);
+      /* one chip per side porch length the style sells (8 and 12 standard);
+         under 20 ft long only the shortest */
+      const plens = sidePorchLengthsOf(T), pdep = porchDepthOf(T);
+      plens.map((n) => ["" + n, `${feetWords(pdep)} × ${feetWords(n)} porch`]).forEach((pp2) => {
+        const dis = (+pp2[0] !== plens[0] && Lnow < 20);
         pc.appendChild(chip(("" + state.pLen) === pp2[0], pp2[1] + small(dis ? "20 ft &amp; up" : "included"), () => ctx.act("porch", (s) => S.choosePorchLength(s, pp2[0], cat)), dis));
       });
       [["end", "Corner porch"], ["mid", "Middle porch"]].forEach((pm) => {

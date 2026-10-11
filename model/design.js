@@ -39,8 +39,9 @@
                              (a "z" in front), base64url. encodeSync / decodeSync
                              do the same without compression. */
 
-import { frameOf } from "./frame.js";
+import { frameOf, porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, porchLengthFor } from "./frame.js";
 import { resetItems, clampPos, keepOnWall, pkFixtures } from "./layout.js";
+import { standardItems } from "./loadouts.js";
 import { pPrice, pSizes, priceParts } from "./pricing.js";
 import { colorName, hexOfName, pickByName, sidingPalette } from "./company.js";
 
@@ -48,6 +49,20 @@ import { colorName, hexOfName, pickByName, sidingPalette } from "./company.js";
    an item, a wall or a size */
 function has(o, k) { return o != null && typeof o === "object" && Object.prototype.hasOwnProperty.call(o, k); }
 function isNum(v) { return typeof v === "number" && isFinite(v); }
+
+/* A side porch length as a design keeps it: whole feet from 4 to 20 (the
+   style's own lengths are 8 and 12 standard); anything else reads as 12, as
+   a link with no porch in it always has. */
+export function porchLen(v) {
+  const n = +v;
+  return Number.isInteger(n) && n >= 4 && n <= 20 ? n : 12;
+}
+/* "4 ft x 8 ft" */
+function porchWords(t, len) { return `${fmtFt(porchDepthOf(t))} x ${fmtFt(len)}`; }
+function fmtFt(ft) {
+  const i = Math.round(ft * 12), f = Math.floor(i / 12), r = i - f * 12;
+  return r ? (f ? `${f} ft ${r} in` : `${r} in`) : `${f} ft`;
+}
 
 function round(v, places) {
   if (typeof v !== "number" || !isFinite(v)) return v;
@@ -76,6 +91,9 @@ export function setType(state, t, cat) {
   state.type = t;
   if (!pPrice(t, state.size, cat)) { const zz = pSizes(t, cat); state.size = zz[Math.min(4, zz.length - 1)]; }
   const T = cat.TYPES[t];
+  /* a side porch length this style does not sell becomes its longest (with
+     the standard 8 and 12 this never happens) */
+  if (T.porch === "S") { const ls = sidePorchLengthsOf(T); if (ls.indexOf(+state.pLen) < 0) state.pLen = ls[ls.length - 1]; }
   if (T.metal && cat.COLORS.metal.map((c) => c[1]).indexOf(state.body) < 0) state.body = pickByName(cat.COLORS.metal, ["white"]);
   if (!T.metal && cat.COLORS.paint.map((c) => c[1]).indexOf(state.body) < 0) state.body = pickByName(cat.COLORS.paint, ["white"]);
   const fr = frameOf(state, cat);
@@ -118,8 +136,16 @@ export function normalize(state, frame, cat) {
   const t = fr.t;
   const changed = [];
   if (t.porch === "S") {
-    const Lnow = +String(state.size).split("x")[1];
-    if (Lnow < 20 && state.pLen !== 8) { state.pLen = 8; changed.push("The side porch is 4 x 8 on a building under 20 ft long."); }
+    /* the porch is one of the lengths the style sells; a building under 20 ft
+       long carries the shortest ("short buildings carry the 4x8 porch") */
+    const Lnow = fr.L, all = sidePorchLengthsOf(t), ok = sidePorchLengthsFor(t, Lnow);
+    if (ok.indexOf(+state.pLen) < 0) {
+      const to = porchLengthFor(t, Lnow, state.pLen);
+      state.pLen = to;
+      changed.push(Lnow < 20 && to === all[0]
+        ? `The side porch is ${porchWords(t, to)} on a building under 20 ft long.`
+        : `The side porch is now ${porchWords(t, to)}.`);
+    }
   }
   if (state.elec && state.elec.pkg > 0 && !(cat.ELECPK || []).some((e) => +e[0] === +state.elec.pkg)) {
     changed.push(`Electric package ${state.elec.pkg} is not offered, so it was switched off.`);
@@ -185,7 +211,7 @@ export function fromState(state, cat, opts) {
     },
     items: state.items.map(itemOut),
     dormer: state.dormer,
-    porch: { pLen: +state.pLen === 8 ? 8 : 12, pFlip: !!state.pFlip, pMid: !!state.pMid },
+    porch: { pLen: porchLen(state.pLen), pFlip: !!state.pFlip, pMid: !!state.pMid },
     opts: Object.keys(state.opts || {}).filter((k) => state.opts[k]),
     elec: { pkg: +((state.elec && state.elec.pkg) || 0), ext: !!(state.elec && state.elec.ext) },
     ramp: state.ramp || "none",
@@ -242,7 +268,7 @@ export function toState(design, cat) {
   s.shutC = colourBack(C.shutters, cat.COLORS.paint, cat, "shutter", warnings, "");
   if (d.dormer != null) s.dormer = String(d.dormer);
   if (d.porch) {
-    if (d.porch.pLen != null) s.pLen = +d.porch.pLen === 8 ? 8 : 12;
+    if (d.porch.pLen != null) s.pLen = porchLen(d.porch.pLen);
     s.pFlip = !!d.porch.pFlip; s.pMid = !!d.porch.pMid;
   }
   for (const k of Object.keys(s.opts)) s.opts[k] = false;
@@ -302,6 +328,25 @@ export function toState(design, cat) {
     resetItems(s, fr, cat);
     if (s.elec.pkg > 0) pkFixtures(s, fr, cat);
   }
+  /* THE SIDE PORCH IT WAS SAVED WITH IS NO LONGER SOLD (the owner changed the
+     style's porch lengths): it snaps to the nearest length sold -- the
+     shortest under 20 ft long -- and the porch walls' standard doors and
+     windows are laid out again for it, keeping the customer's own items, so
+     the design and its price agree with the building drawn. (A 12 on a
+     building under 20 ft, where 12 is sold, is the old "4x8 under 20 ft"
+     rule: normalize says it, nothing is laid again.) */
+  if (t.porch === "S" && d.porch && d.porch.pLen != null && sidePorchLengthsOf(t).indexOf(s.pLen) < 0) {
+    const to = porchLengthFor(t, fr.L, s.pLen);
+    s.pLen = to;
+    const fr2 = frameOf(s, cat);
+    const porchWalls = ["S1", "S2", "S3"];
+    const fresh = standardItems(fr2.t, fr2.d.W, fr2.d.L, { CAT: fr2.CAT, span: fr2.span, ws: fr2.ws }, s.type).filter((it) => porchWalls.indexOf(it.wall) >= 0);
+    s.items = s.items.filter((it) => !(it.inc && porchWalls.indexOf(it.wall) >= 0)).concat(fresh);
+    s.items.forEach((it, i) => { it.id = "e" + i; });
+    s.seq = s.items.length + 1;
+    s.items.forEach((it) => clampPos(it, s, fr2));
+    warnings.push(`The side porch is now ${porchWords(t, to)}; its windows were set back to the standard ones.`);
+  }
   warnings.push(...normalize(s, frameOf(s, cat), cat));
   return { state: s, warnings };
 }
@@ -330,7 +375,7 @@ function compact(design) {
   });
   if (d.dormer != null && d.dormer !== "none") o.d = d.dormer;
   const P = d.porch || {};
-  if ((P.pLen != null && +P.pLen !== 12) || P.pFlip || P.pMid) o.p = [+P.pLen === 8 ? 8 : 12, P.pFlip ? 1 : 0, P.pMid ? 1 : 0];
+  if ((P.pLen != null && porchLen(P.pLen) !== 12) || P.pFlip || P.pMid) o.p = [porchLen(P.pLen), P.pFlip ? 1 : 0, P.pMid ? 1 : 0];
   if (d.opts && d.opts.length) o.o = d.opts.slice();
   if (d.elec && (d.elec.pkg || d.elec.ext)) o.e = [+d.elec.pkg || 0, d.elec.ext ? 1 : 0];
   if (d.ramp && d.ramp !== "none") o.r = d.ramp;

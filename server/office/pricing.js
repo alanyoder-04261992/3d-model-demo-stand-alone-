@@ -65,7 +65,10 @@ function checkDesign(design, cat) {
   for (const key of ["body", "trim", "roof", "door", "shutters"]) isText(design.colors[key], 100);
 
   plainObject(design.porch, ["pLen", "pFlip", "pMid"]);
-  if (![8, 12].includes(design.porch.pLen)) unreadable();
+  /* a side porch length: whole feet, 4 to 20 (the style's own lengths, 8 and
+     12 standard, are checked when the design is read: a length no longer
+     sold is "no longer offered", never "could not be read") */
+  isNumber(design.porch.pLen, 4, 20, true);
   isBool(design.porch.pFlip);
   isBool(design.porch.pMid);
 

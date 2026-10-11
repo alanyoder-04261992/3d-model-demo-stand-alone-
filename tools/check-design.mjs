@@ -26,6 +26,12 @@
       price the company does not have (no NaN total).
    6. normalize switches off what a company does not offer (and makes a short
       side porch 4x8), and changes nothing on a Barnwright design.
+   8. Side porch lengths (How it's built): a 10 ft porch on a style selling
+      10 and 14 ft survives a link round trip; an old link with a 12 ft porch
+      opens on that style as 14 ft with one plain line; a 12 ft porch saved
+      before the owner cut the lengths to 8 ft reopens as 8 ft, its porch
+      walls laid out again, and is priced on the server, while the stale
+      design itself is "no longer offered" (409), never "could not be read".
    7. toState lays a saved building out at ITS size (size, then style, then
       size), a new visitor starts exactly where Barnwright's page starts, and a
       style change keeps the electrical package's fixtures. */
@@ -38,6 +44,7 @@ import { resetItems, pkFixtures, clampPos, freeSpot } from "../model/layout.js";
 import { priceParts } from "../model/pricing.js";
 import { defaults, fromState, toState, normalize, encode, encodeSync, decode, decodeSync, setType, flipPorch } from "../model/design.js";
 import { mulberry32 } from "../engine/seeded.js";
+import { priceDesign } from "../server/office/pricing.js";
 
 const counts = {};
 const failures = [];
@@ -322,7 +329,7 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   const catS = resolve(sp, M, LIB);
   const s4 = defaults(catS); setType(s4, "SC", catS); s4.size = "10x16"; s4.pLen = 12; resetItems(s4, frameOf(s4, catS), catS);
   const ch4 = normalize(s4, frameOf(s4, catS), catS);
-  if (check("normalize switches off what is not offered", s4.pLen === 8 && ch4.some((c) => /4 x 8/.test(c)), `a 10x16 side cabin kept a ${s4.pLen} ft porch`)) porch++;
+  if (check("normalize switches off what is not offered", s4.pLen === 8 && ch4.some((c) => c === "The side porch is 4 ft x 8 ft on a building under 20 ft long."), `a 10x16 side cabin kept a ${s4.pLen} ft porch: ${J(ch4)}`)) porch++;
   const s5 = defaults(catS); setType(s5, "SC", catS); s5.size = "10x20"; s5.pLen = 12;
   check("normalize switches off what is not offered", normalize(s5, frameOf(s5, catS), catS).length === 0 && s5.pLen === 12, "a 20 ft side cabin lost its 12 ft porch");
   counts["normalize switches off what is not offered"].note = `${untouched} Barnwright designs untouched, ${porch} short side porch made 4x8`;
@@ -340,6 +347,39 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   const s = defaults(DEMO); s.elec = { pkg: 2, ext: false }; pkFixtures(s, frameOf(s, DEMO), DEMO);
   setType(s, "UT", DEMO);
   check("toState order, the starting design, fixtures kept", s.items.filter((i) => i.pk).length === 5, `after a style change the package has ${s.items.filter((i) => i.pk).length} fixtures, not 5`);
+}
+
+/* ---------------------------------------------------------------- 8 side porch lengths */
+{
+  const G8 = "side porch lengths (How it's built)";
+  const mk = (lengths) => { const c = copy(readJSON("companies/demo/company.json")); c.offer.SC.built = { sidePorchLengths: lengths }; return resolve(c, M, LIB); };
+  const c1014 = mk([10, 14]);
+  const s = defaults(c1014); setType(s, "SC", c1014); s.size = "12x24"; s.pLen = 10; resetItems(s, frameOf(s, c1014), c1014);
+  const link = encodeSync(fromState(s, c1014));
+  const back = toState(decodeSync(link), c1014);
+  check(G8, back.state.pLen === 10 && frameOf(back.state, c1014).span.P === 10 && back.warnings.length === 0, `a 10 ft porch came back as ${back.state.pLen}: ${J(back.warnings)}`);
+  /* an old link: 12 ft, the porch lengths now 10 and 14 */
+  const s12 = defaults(DEMO); setType(s12, "SC", DEMO); s12.size = "12x24"; s12.pLen = 12; resetItems(s12, frameOf(s12, DEMO), DEMO);
+  const old = fromState(s12, DEMO); old.cfg = c1014.cfg;
+  const r = toState(old, c1014);
+  check(G8, r.state.pLen === 14 && frameOf(r.state, c1014).span.P === 14 && r.warnings.length === 1 && /^The side porch is now 4 ft x 14 ft; its windows were set back to the standard ones\.$/.test(r.warnings[0]),
+    `an old 12 ft link on a 10/14 style: ${r.state.pLen}, ${J(r.warnings)}`);
+  /* the porch-snap case: a 12x24 Side Cabin saved at 12 ft, the porch now 8 ft only */
+  const c8 = mk([8]);
+  const fixed = fromState(s12, DEMO); fixed.cfg = c8.cfg; fixed.company = c8.id;
+  const re = toState(fixed, c8);
+  check(G8, re.state.pLen === 8 && re.warnings.length === 1 && /4 ft x 8 ft/.test(re.warnings[0]), `reopened: ${re.state.pLen} ${J(re.warnings)}`);
+  const resaved = fromState(re.state, c8);
+  let priced = null, err = null;
+  try { priced = priceDesign(resaved, c8); } catch (e) { err = e; }
+  check(G8, priced && priced.design.porch.pLen === 8 && priced.price.total === priceParts(re.state, c8).total, `the re-saved design could not be priced: ${err && err.message}`);
+  let staleErr = null;
+  try { priceDesign(fixed, c8); } catch (e) { staleErr = e; }
+  check(G8, staleErr && staleErr.status === 409 && /no longer offered/.test(staleErr.message), `the stale design got ${staleErr ? staleErr.status + " " + staleErr.message : "a price"}`);
+  /* the server takes any whole length from 4 to 20 ft and nothing else */
+  const odd = copy(resaved); odd.porch.pLen = 21;
+  let oddErr = null; try { priceDesign(odd, c8); } catch (e) { oddErr = e; }
+  check(G8, oddErr && oddErr.status === 422, "a 21 ft porch was read");
 }
 
 /* ---------------------------------------------------------------- report */

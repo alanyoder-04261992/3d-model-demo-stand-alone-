@@ -187,7 +187,7 @@ export function explainProblem(problem, manufacturer, settings = {}) {
     [/^defaults\.size/, () => "The size the designer opens on is not sold any more. Pick another one in Settings."],
     [/^defaults\.colors/, () => "The colors the designer opens on are not on the color lists any more. Pick them again in Settings."],
     [/^defaults\.dormer/, () => "The dormer the designer opens on is not sold any more. Pick another one in Settings."],
-    [/^defaults\.porchLength/, () => "The porch the designer opens on must be 8 or 12 ft long."],
+    [/^defaults\.porchLength/, () => "The porch the designer opens on must be 4 to 20 ft long, in whole feet."],
 
     /* the stricter rules (model/company.js strictProblems): a typo is named,
        with the setting it was most likely meant to be */

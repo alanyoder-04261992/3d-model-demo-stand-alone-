@@ -88,7 +88,8 @@ import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
 import { BARNWRIGHT_PAGE } from "./lib/barnwright-blocks.mjs";
-import { loadCatalogue } from "./lib/load.mjs";
+import { loadCatalogue, loadCompany, readManufacturer, readJSON } from "./lib/load.mjs";
+import { resolve as resolveCompany } from "../model/company.js";
 import { paperText, footerText, titleText, porchRect, planFrame, wallChoices, floorChoices, hitAt } from "../ui/blueprint.js";
 import { defaults } from "../model/design.js";
 import * as S from "../ui/state.js";
@@ -139,6 +140,13 @@ const DEMO = loadCatalogue("demo");
   ok("... moved to the middle", J(rect("SC", "12x24", { pMid: true })) === J([2, -6, 4, 12]), J(rect("SC", "12x24", { pMid: true })));
   ok("... flipped to the back", J(rect("SC", "12x24", { pFlip: true })) === J([2, -12, 4, 12]), J(rect("SC", "12x24", { pFlip: true })));
   ok("a corner porch is its span across the width, as Barnwright (Deluxe Side Cabin 12x24, deck included)", J(rect("DSC", "12x24")) === J([-6, 2, 12, 12]), J(rect("DSC", "12x24")));
+  /* How it's built: a porch 6 ft deep is drawn 6 ft deep on the plan */
+  const deep = JSON.parse(JSON.stringify(loadCompany("demo").company));
+  deep.offer.C.built = { porchDepth: 6 }; deep.offer.SC.built = { porchDepth: 6, sidePorchLengths: [10, 14] };
+  const D6 = resolveCompany(deep, readManufacturer("standard"), readJSON("library/construction.json"));
+  const rect6 = (t, size, extra) => { const s = defaults(D6); S.chooseType(s, t, D6); S.chooseSize(s, size, D6); Object.assign(s, extra || {}); return porchRect(planFrame(s, D6)); };
+  ok("a front porch 6 ft deep is the 6 ft across the front (Cabin 10x16)", J(rect6("C", "10x16")) === J([-5, 2, 10, 6]), J(rect6("C", "10x16")));
+  ok("a side porch 6 ft deep and 14 ft long is its 6 ft by 14 ft notch (Side Cabin 12x24)", J(rect6("SC", "12x24", { pLen: 14 })) === J([0, -2, 6, 14]), J(rect6("SC", "12x24", { pLen: 14 })));
 }
 {
   const wc = wallChoices(DEMO), fc = floorChoices(DEMO);
