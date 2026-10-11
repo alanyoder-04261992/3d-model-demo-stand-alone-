@@ -1739,7 +1739,14 @@ time.
 * and Help's own lines, as today ("Barnwright (alan@...) ran a check of
   your Dealer Center.").
 
-The Help screen gains a short answer, "Let Barnwright change your prices".
+The Help screen gains a short answer, "Let Barnwright change your prices",
+once the terms let Barnwright change things (this copy ships terms 2.2 or
+later, or the owner has agreed to 2.2: the card's own rule). Before that the
+owner and the team read "Let Barnwright run checks on your Dealer Center"
+instead (Barnwright sees how the Dealer Center runs and can't change
+anything), and the card's own line says only run checks
+(`ui/office/help-answers.js` barnwrightCanChange, `ui/office/views/settings.js`
+CARD.aboutChecks).
 Nothing about any of this is emailed or texted to the owner.
 
 ### Before the owner first signs in

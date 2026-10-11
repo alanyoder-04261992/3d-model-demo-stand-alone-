@@ -60,6 +60,7 @@ const KEEP = process.argv.includes("--keep");
 const require = createRequire(import.meta.url);
 const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "/opt/node22/lib/node_modules/playwright/index.js");
 const OWNER = "owner@example.com";
+const DEALER = "dana@example.com";
 /* the second local Dealer Center, for "Before the owner first signs in" (section 9) */
 const PORT2 = PORT + 1;
 const BASE2 = `http://127.0.0.1:${PORT2}`;
@@ -74,6 +75,12 @@ const WORDS = {
   endedStopped: "Your Barnwright visit ended. The owner stopped Barnwright's setup access in Settings, Barnwright. Your changes are kept in this tab.",
   checksOff: "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access.",
   termsNotOut: "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
+  /* the card's own line (ui/office/views/settings.js CARD.about, CARD.aboutChecks) */
+  cardAbout: "Let Barnwright run checks on your Dealer Center, or change your price list and settings, for a few hours at a time.",
+  cardAboutChecks: "Let Barnwright run checks on your Dealer Center for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team, and can't change anything.",
+  /* Help's answer about the card (ui/office/help-answers.js) */
+  helpChecks: "Let Barnwright run checks on your Dealer Center",
+  helpChange: "Let Barnwright change your prices",
   previewLot: "Preview. Your customers can't see this lot until you open it in Lots.",
   /* a Barnwright visit: Alan is looking, and only the owner opens it */
   previewVisit: "Preview for Barnwright. Customers can't see this until the owner opens it in Settings.",
@@ -167,8 +174,22 @@ try {
       ok("terms 2.2 aren't out yet: one line says so, with no setup access words, no Stop and no change choice",
         card0?.includes(WORDS.termsNotOut) && !card0.includes(WORDS.beforeLive) && !card0.includes("Stop Barnwright's setup access") && !card0.includes(WORDS.change)
         && !card0.includes("Agree to the new terms") && card0.includes("Turn on"), card0);
+      ok("... and the card's own line says Barnwright can only run checks, never \"or change your price list and settings\"",
+        card0?.includes(WORDS.cardAboutChecks) && !card0.includes(WORDS.cardAbout) && !/change your price list and settings, for a few hours/.test(card0), card0);
       await o0.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
       await shot(o0, "0-owner-card-terms-not-out");
+      /* ORD-2: Help says the same to the owner and the team, on a phone */
+      await call("/api/office/team", { method: "POST", body: { email: DEALER, name: "Dana", role: "dealer", lots: ["riverside"] } });
+      for (const [who, email] of [["the owner", OWNER], ["a dealer", DEALER]]) {
+        const ch = await contextFor(email, { width: 390, height: 844, mobile: true });
+        const hp = await pageIn(ch);
+        await open(hp, "/help");
+        const answers = await text(hp, "#hp-answers");
+        ok(`terms 2.2 aren't out yet: ${who}'s Help (390 wide) says Barnwright can run checks and can't change anything, never "set up your price list" or "Run checks and change"`,
+          answers?.includes(WORDS.helpChecks) && !answers.includes(WORDS.helpChange) && !/set up your price list|Run checks and change/.test(answers), answers);
+        await shot(hp, `0-${email === OWNER ? "owner" : "dealer"}-390-help-terms-not-out`);
+        await ch.close();
+      }
     } else {
       ok("terms 2.2 are out, and First setup agreed to them: the card says Barnwright is setting up", st.termsOk === true && card0?.includes(WORDS.beforeLive), card0);
     }
@@ -190,6 +211,15 @@ try {
   ok("Settings has one card called Barnwright, and no Help from Barnwright card", titles.includes("Barnwright") && !titles.some((t) => /Help from Barnwright/.test(t)), titles.join(" | "));
   const card = await text(owner, ".set-card:has(.card-title:text-is('Barnwright'))");
   ok("before live: \"Barnwright is setting up your 3D designer...\" with Stop Barnwright's setup access", card?.includes(WORDS.beforeLive) && card.includes("Stop Barnwright's setup access"), card);
+  ok("... and with the owner agreed to terms 2.2 the card's own line says Barnwright can change the price list and settings too", card?.includes(WORDS.cardAbout) && !card.includes(WORDS.cardAboutChecks), card);
+  {
+    const ch = await contextFor(OWNER, { width: 390, height: 844, mobile: true });
+    const hp = await pageIn(ch);
+    await open(hp, "/help");
+    const answers = await text(hp, "#hp-answers");
+    ok("... and Help's answer is the one about changing prices (Let Barnwright change your prices), not the checks one", answers?.includes(WORDS.helpChange) && !answers.includes(WORDS.helpChecks), answers);
+    await ch.close();
+  }
   ok("... and Run checks still works as Help did (its own form, Turn on)", card?.includes("Run checks") && card.includes("Turn on") && !card.includes(WORDS.change), card);
   await owner.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
   await shot(owner, "1-owner-card-before-live");

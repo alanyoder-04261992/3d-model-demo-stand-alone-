@@ -183,11 +183,12 @@ group("2. side porch lengths");
   ok("a 20 ft porch is never offered on a 20 ft long building (4 ft of side wall at least): it gets the 12", frameOf(stateOf(long, "SC", "12x20", { pLen: 20 }), long).span.P === 12
     && frameOf(stateOf(long, "SC", "12x24", { pLen: 20 }), long).span.P === 20);
   const c20 = barnwrightCompany(); c20.offer.SC.built = { sidePorchLengths: [12, 20] };
-  ok("... and the price list says why: \"Side porch lengths: 20 ft is as long as the 10x20 Side Cabin.\"", BUILT.problems(c20, M).some((x) => x.path === "offer.SC.built.sidePorchLengths" && /^Side porch lengths: 20 ft is as long as the 10x20 Side Cabin\. Leave at least 4 ft of side wall beside the porch\.$/.test(x.words)), J(BUILT.problems(c20, M)));
+  ok("... and the price list says why, with the size written 10×20 like every size a person reads: \"Side porch lengths: 20 ft is as long as the 10×20 Side Cabin.\"", BUILT.problems(c20, M).some((x) => x.path === "offer.SC.built.sidePorchLengths" && /^Side porch lengths: 20 ft is as long as the 10×20 Side Cabin\. Leave at least 4 ft of side wall beside the porch\.$/.test(x.words)), J(BUILT.problems(c20, M)));
   const c18 = barnwrightCompany(); c18.built = { sidePorchLengths: [8, 18] };
-  ok("... 18 ft business-wide leaves the 10x20 only 2 ft of side wall", BUILT.problems(c18, M).some((x) => x.path === "built.sidePorchLengths" && x.words === "Side porch lengths: 18 ft leaves the 10x20 Side Cabin only 2 ft of side wall beside the porch (4 ft at least)."), J(BUILT.problems(c18, M)));
+  ok("... 18 ft business-wide leaves the 10×20 only 2 ft of side wall", BUILT.problems(c18, M).some((x) => x.path === "built.sidePorchLengths" && x.words === "Side porch lengths: 18 ft leaves the 10×20 Side Cabin only 2 ft of side wall beside the porch (4 ft at least)."), J(BUILT.problems(c18, M)));
   const c8 = barnwrightCompany(); c8.offer.SC.sizes["10x8"] = 4000;
-  ok("... and a size too short for the standard 8 ft porch is said at the porch lengths", BUILT.problems(c8, M).some((x) => x.path === "offer.SC.built.sidePorchLengths" && x.words === "The 10x8 Side Cabin is too short for its 8 ft side porch: sell it 12 ft long and up, or set a shorter side porch length."), J(BUILT.problems(c8, M)));
+  ok("... and a size too short for the standard 8 ft porch is said at the porch lengths", BUILT.problems(c8, M).some((x) => x.path === "offer.SC.built.sidePorchLengths" && x.words === "The 10×8 Side Cabin is too short for its 8 ft side porch: sell it 12 ft long and up, or set a shorter side porch length."), J(BUILT.problems(c8, M)));
+  ok("... and no side porch problem writes a size 10x20: every one says 10×20", [c20, c18, c8].every((c) => BUILT.problems(c, M).filter((x) => /side porch/i.test(x.words)).every((x) => !/\d+x\d+/.test(x.words) && /\d+×\d+/.test(x.words))), J([c20, c18, c8].map((c) => BUILT.problems(c, M).filter((x) => /side porch/i.test(x.words)))));
   ok("... the standard sizes have no such problem", !BUILT.problems(barnwrightCompany(), M).some((x) => /side porch/i.test(x.words)));
   /* the wall framing never runs away: a porch as long as the building is a
      plain problem of the every-size check */
