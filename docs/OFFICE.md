@@ -215,8 +215,9 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   first, for every style, then the smallest and largest, then the rest; it
   stops after about 3 seconds and lists what is left ("Not checked yet: 14
   sizes of the Lofted Barn. Press Check every size."), which never stops a
-  save. Putting an older copy back is never refused;
-  what no longer fits is said instead.
+  save. The owner putting an older copy back is never refused;
+  what no longer fits is said instead. (Barnwright's put back carries the
+  locked parts forward, so it is checked like a save: see "The lock".)
 * **History** says each change: "Lofted Barn wall height: 6 ft 7 1/2 in →
   7 ft", "Business-wide roof pitch for gable roofs: standard → 6/12
   (Utility Shed, Side Utility and 3 more 5/12 → 6/12; Cabin, Side Cabin and
@@ -1489,6 +1490,14 @@ it's built for the whole business stay as they are now too, while each
 building style's own numbers (its roof pitch) go back with the rest. An
 undo or put back that would add, change or remove an extra that changes
 how the building is built is refused by the lock like any other change.
+What it carries forward makes a price list nobody saved before (the copy's
+own wall height with the door height set for the whole business since), so
+it is checked like a save: what How it's built's own rules or the every-size
+check find that neither the copy as it was kept nor the price list in use
+already had refuses it, in their words ("Utility Shed 10x20: the 72″
+Wooden Double Doors on the front should be 78 in tall, but the wall leaves
+room for 76 5/8 in. ..."), and nothing is saved. What the copy already had
+goes back with it, said.
 
 ### The visit: Alan in their Dealer Center
 

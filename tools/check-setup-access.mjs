@@ -18,7 +18,8 @@
           before the change itself
      F2   the preview of a closed 3D designer, for the team and the visit
      A3   who may flip the switch: the owner only (not a manager, not a visit)
-     A4   the lock, and putting back carries the locked parts forward
+     A4   the lock, and putting back carries the locked parts forward,
+          that mix checked like a save (HB)
      D8   a copy of the price list in use is always kept first
      A9   the visit touches nothing but the price list and its own records,
           and sends nothing
@@ -2056,6 +2057,52 @@ section("HB. How it's built through Barnwright's setup access: a building style'
   ok("the door's undo to a copy without the effect extra is refused by the lock too", owner2.status === 200 && u.status === 422 && JSON.stringify(u.data.problems) === JSON.stringify([extraWords("Heavy-duty floor")]), JSON.stringify(u.data).slice(0, 400));
 }
 
+{
+  /* Putting back in the visit carries the locked parts (How it's built for
+     the whole business, the construction settings) forward from now: that
+     mix was never saved, so it is checked like a save, against the copy as
+     it was kept (review SEC-BUILT-1). */
+  const P = await fixtureBusiness();
+  const p2 = await P.ownerSave((x) => { x.offer.UT.built = { wallHeight: 81 }; });
+  const p3 = await P.ownerSave((x) => { delete x.offer.UT.built; x.built = { doorHeight: { other: 78 } }; });
+  const mixOwn = await P.ownerSave((x) => { x.offer.UT.built = { wallHeight: 81 }; });
+  const pc = cookieFrom(await P.start());
+  const kept = await P.store.get("price-list");
+  const px = await P.visit("POST", "price-list/restore", { version: 2, current: 3 }, pc);
+  const pAfter = await P.store.get("price-list");
+  ok("HB: a put back in the visit whose own 6 ft 9 in wall doesn't fit the 78 in shop doors the owner set for the whole business since is refused, in the every-size words, nothing saved (old code: saved)",
+    p2.status === 200 && p3.status === 200 && mixOwn.status === 422 && px.status === 422
+    && /^Utility Shed \d+x\d+: the 72″ Wooden Double Doors on the front should be 78 in tall, but the wall leaves room for 76 5\/8 in\./.test(px.data.problems?.[0] || "")
+    && pAfter.version === 3 && JSON.stringify(pAfter.settings) === JSON.stringify(kept.settings), JSON.stringify([p2.status, p3.status, mixOwn.status, px.status, px.data]).slice(0, 500));
+  /* the strict half: a style's own barn height joined with a business-wide one set since */
+  const Q = await fixtureBusiness();
+  const q2 = await Q.ownerSave((x) => { x.offer.LB.built = { barnPeak: { 10: 50 } }; });
+  const q3 = await Q.ownerSave((x) => { delete x.offer.LB.built; x.built = { barnPeak: { 12: 49 } }; });
+  const qc = cookieFrom(await Q.start());
+  const qx = await Q.visit("POST", "price-list/restore", { version: 2, current: 3 }, qc);
+  ok("HB: ... and one whose own 10 ft barn height would stand above the 12 ft barn height set for the whole business since is refused in How it's built's words (old code: saved)",
+    q2.status === 200 && q3.status === 200 && qx.status === 422
+    && JSON.stringify(qx.data.problems) === JSON.stringify(["Barn roof height: the 12 ft wide barn (4 ft 1 in, business-wide) would be lower than the 10 ft wide barn (4 ft 2 in). Type a height for the 12 ft wide barn too."])
+    && (await Q.store.get("price-list")).version === 3, JSON.stringify([q2.status, q3.status, qx.status, qx.data]).slice(0, 500));
+  /* what the copy itself already had stays the copy's: it goes back, said */
+  const R = await fixtureBusiness();
+  const r2 = await R.ownerSave((x) => { x.offer.UT.built = { wallHeight: 81 }; });
+  const h2 = await R.store.get("price-list-history/000002");
+  await R.store.put("price-list-history/000002", { ...h2, settings: { ...h2.settings, built: { doorHeight: { other: 78 } } } });
+  const r3 = await R.ownerSave((x) => { delete x.offer.UT.built; x.built = { doorHeight: { other: 78 } }; x.embed = { origins: ["https://testingsheds.example"] }; });
+  const rc = cookieFrom(await R.start());
+  const rx = await R.visit("POST", "price-list/restore", { version: 2, current: 3 }, rc);
+  const rAfter = await R.store.get("price-list");
+  ok("HB: ... while what the copy put back had already (kept that way) still goes back, the every-size words said, and the website list kept as now",
+    r2.status === 200 && r3.status === 200 && rx.status === 200 && rAfter.version === 4 && rAfter.settings.offer.UT.built?.wallHeight === 81
+    && JSON.stringify(rAfter.settings.embed) === JSON.stringify({ origins: ["https://testingsheds.example"] })
+    && /^Utility Shed \d+x\d+: the 72″ Wooden Double Doors on the front should be 78 in tall/.test(rx.data.sizeCheck?.problems?.[0] || ""), JSON.stringify([r2.status, r3.status, rx.status, rx.data]).slice(0, 500));
+  /* the owner's own put back takes the whole copy, its numbers for the whole business too, so it builds */
+  const ownBack = await P.call("POST", "/api/office/price-list/restore", { version: 2, current: (await P.store.get("price-list")).version }, { as: "pat" });
+  ok("HB: (the owner's own put back of that copy takes it whole, the business-wide door height too, and goes back as before)",
+    ownBack.status === 200 && ownBack.data.settings?.offer.UT.built?.wallHeight === 81 && !("built" in (ownBack.data.settings || {})) && !(ownBack.data.sizeCheck?.problems || []).length, JSON.stringify(ownBack.data).slice(0, 300));
+}
+
 section("SB. set_built: a building style's own numbers in How it's built, in a builder's words, through the door");
 {
   const opts = { manufacturer };
@@ -2195,4 +2242,4 @@ if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} setup access checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, the construction settings, How it's built for the whole business, an extra that changes how a building is built and a web address logo, and putting back carries them forward, while a building style's own How it's built numbers pass to the owner's own checks and the every-size check (set_roof_pitch writes the style's roof pitch there, and an older rule list reads as the pitch it draws); a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set; set_built writes a building style's own How it's built numbers from a builder's words, only those that apply, checked with How it's built's limits and the every-size check, whose warnings and unchecked sizes come back with the check; read part library gives every library style's numbers now and the standard's; the door takes only a one-use pass made for its exact body from the Control Room's server, reads in parts with no contact details, refuses what the owner's own save refuses, saves exactly what was checked with a copy kept first, saves for Claude only before live, and undoes only Barnwright's last change.`);
+console.log(`PROVED (${passed} checks): Barnwright can change a price list only after terms 2.2, before live or while the owner's switch is on, and stop, switch off and going live end it on the very next request; live is the first opening or the first real quote or order, written before the change, and the look back for older businesses fails closed and never runs in the check-in or GET me; the visit is a __Host- cookie from a one-use pass, on its own routes, sliding up to 8 hours, and never reaches customers, the team, Help or the owner's card; the lock refuses status, embed, where quotes go, the license, the credit, the construction settings, How it's built for the whole business, an extra that changes how a building is built and a web address logo, and putting back carries them forward, checked like a save, while a building style's own How it's built numbers pass to the owner's own checks and the every-size check (set_roof_pitch writes the style's roof pitch there, and an older rule list reads as the pitch it draws); a copy is always kept first; who saved is said by role; no clock time is stored in words; only the owner flips the one Barnwright card; a check-in whose report fails or is slow still renews the lease; the preview shows a closed 3D designer to the team only; every edit gives the fixtures' change words, warnings and exact settings, and a gable pitch draws as set; set_built writes a building style's own How it's built numbers from a builder's words, only those that apply, checked with How it's built's limits and the every-size check, whose warnings and unchecked sizes come back with the check; read part library gives every library style's numbers now and the standard's; the door takes only a one-use pass made for its exact body from the Control Room's server, reads in parts with no contact details, refuses what the owner's own save refuses, saves exactly what was checked with a copy kept first, saves for Claude only before live, and undoes only Barnwright's last change.`);

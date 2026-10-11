@@ -279,6 +279,12 @@ const fmtSize = (s) => String(s).replace("x", "×");
 const priceOf = (v) => (v && typeof v === "object" ? v.price : v);
 const keys = (o) => Object.keys(o || {}).filter((k) => !k.startsWith("_"));
 const same = (a, b) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
+/* the same value whatever order its keys were written in */
+function canon(v) {
+  if (Array.isArray(v)) return `[${v.map(canon).join(",")}]`;
+  if (v && typeof v === "object") return `{${Object.keys(v).sort().map((k) => `${JSON.stringify(k)}:${canon(v[k])}`).join(",")}}`;
+  return JSON.stringify(v ?? null);
+}
 
 /* Words customers read, said in the change line itself (the owner's
    History, and what Alan reads before he says yes to a Barnwright change):
@@ -590,10 +596,14 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
   }
 
   /* The strict problems settings has that previous did not (same path,
-     same words); [] when there is no previous to compare with. */
+     same words); [] when there is no previous to compare with. previous
+     may be a list: what any of them had is not new. */
   function newStrictProblems(settings, previous) {
     if (previous === undefined) return [];
-    const had = new Set(previous && typeof previous === "object" ? strictProblems(previous, manufacturer).map((p) => byExtraKey(previous, p)) : []);
+    const had = new Set();
+    for (const p of Array.isArray(previous) ? previous : [previous]) {
+      if (p && typeof p === "object") for (const x of strictProblems(p, manufacturer)) had.add(byExtraKey(p, x));
+    }
     return strictProblems(settings, manufacturer).filter((p) => !had.has(byExtraKey(settings, p)));
   }
 
@@ -745,8 +755,12 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
      -> [words] runs first, for Barnwright, so a refused change never runs
      the size check. lead: a first change line of its own (Barnwright's
      undo). restoredFrom: the copy being put back (the stricter rules
-     compare with it). */
-  function prepared(previous, settings, version, { restoring = null, restoredFrom = undefined, lock = null, lead = null } = {}) {
+     compare with it). mixedFrom: that copy as it was kept, when putting it
+     back carried parts of the price list in use forward (Barnwright's put
+     back, setup-lock.js carryLocked): the mix was never saved, so it is
+     checked like a save, and only what the copy itself (or the price list
+     in use, for the stricter rules) already had is let through. */
+  function prepared(previous, settings, version, { restoring = null, restoredFrom = undefined, mixedFrom = undefined, lock = null, lead = null } = {}) {
     if (!settings || typeof settings !== "object" || Array.isArray(settings)) fail(422, "The price list is missing. Reload the page and try again.");
     if (!previous) fail(404, "The price list has not been set up yet.");
     if (version !== previous.data.version) savedFirst(previous);
@@ -773,12 +787,14 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     next.cfg = customerSeesChange(liftRawRules(old, manufacturer).settings, next, manufacturer) ? (old.cfg || 1) + 1 : old.cfg;
     /* a stricter rule refuses only what is new: compared with the stored
        price list, or, when putting an old copy back, with that copy */
-    const cat = check(next, restoredFrom !== undefined ? restoredFrom : old);
+    const cat = check(next, mixedFrom !== undefined ? [mixedFrom, old] : restoredFrom !== undefined ? restoredFrom : old);
     /* How it's built: every style whose numbers of the business's own
        changed is drawn at every size (server/office/built-check.js). What
        those numbers cause refuses the save; putting back an old copy is
-       never refused (what it finds is said instead). */
-    const sizeCheck = sizeCheckOf(old, next, cat, { refuse: !restoring });
+       never refused (what it finds is said instead), unless the put back
+       carried parts forward: then what the copy didn't already cause is
+       refused (review SEC-BUILT-1). */
+    const sizeCheck = sizeCheckOf(old, next, cat, { refuse: !restoring, mixedFrom });
     const changes = describeChanges(old, next, manufacturer, { library });
     if (lifted.moved.length) changes.push(...lifted.moved);
     if (restoring) changes.unshift(`Put back the price list saved ${restoring}`);
@@ -801,9 +817,9 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
      (that copy), lock, lead, savedBy (who, when it isn't `by`:
      Barnwright), ensureHistory (keep a copy of the one in use first, or
      refuse). */
-  async function save(by, { settings, version }, { restoring = null, restoredFrom = undefined, lock = null, lead = null, savedBy = null, ensureHistory = false } = {}) {
+  async function save(by, { settings, version }, { restoring = null, restoredFrom = undefined, mixedFrom = undefined, lock = null, lead = null, savedBy = null, ensureHistory = false } = {}) {
     const previous = await current();
-    const { next, changes, sizeCheck } = prepared(previous, settings, version, { restoring, restoredFrom, lock, lead });
+    const { next, changes, sizeCheck } = prepared(previous, settings, version, { restoring, restoredFrom, mixedFrom, lock, lead });
     const old = previous.data.settings;
     if (!changes.length) return { ...previous.data, cfg: old.cfg, changes: [], sizeCheck };
     if (ensureHistory) await keepCopy(previous.data);
@@ -816,10 +832,23 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
 
   /* -> {checked, warnings, unchecked, problems} for the screen; refuses
      (422) when the business's own numbers cause a problem at some size. */
-  function sizeCheckOf(old, next, cat, { refuse }) {
-    const r = checkChangedStyles(liftRawRules(old, manufacturer).settings, next, manufacturer, library, { cat, budgetMs: sizeCheckMs });
-    if (refuse && r.problems.length) {
-      const words = r.problems;
+  function sizeCheckOf(old, next, cat, { refuse, mixedFrom = undefined }) {
+    const before = liftRawRules(old, manufacturer).settings;
+    const r = checkChangedStyles(before, next, manufacturer, library, { cat, budgetMs: sizeCheckMs });
+    /* a put back that carried parts forward: what the copy as it was kept
+       finds too is the copy's; anything else the mix caused (a copy that
+       can't be read any more causes it all) */
+    let mixWords = [];
+    if (!refuse && mixedFrom !== undefined && r.problems.length) {
+      let had = [];
+      try {
+        const kept = tidyBuilt(liftRawRules(mixedFrom, manufacturer).settings, manufacturer);
+        had = checkChangedStyles(before, kept, manufacturer, library, { budgetMs: sizeCheckMs }).problems;
+      } catch { had = []; }
+      mixWords = r.problems.filter((w) => !had.includes(w));
+    }
+    if ((refuse && r.problems.length) || mixWords.length) {
+      const words = refuse ? r.problems : mixWords;
       const err = new OfficeError(422, words.slice(0, 8).join(" ") + (words.length > 8 ? ` (and ${words.length - 8} more)` : ""));
       err.problems = words;
       throw err;
@@ -848,14 +877,19 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     if (!Number.isSafeInteger(version) || version < 1) fail(422, "Pick a saved price list.");
     const entry = await store.get(historyKey(version));
     if (!entry) fail(404, "That saved price list is gone.");
-    let settings = entry.settings;
+    let settings = entry.settings, mixedFrom;
     if (carry) {
       const now = await current();
-      if (now) settings = carry(now.data.settings, entry.settings);
+      if (now) {
+        settings = carry(now.data.settings, entry.settings);
+        /* carried something that differs from the copy: a mix never saved */
+        if (canon(settings) !== canon(tidyBuilt(liftRawRules(entry.settings, manufacturer).settings, manufacturer))) mixedFrom = entry.settings;
+      }
     }
-    /* the stricter rules compare with the copy put back (as carried), so an
-       old copy can always be put back */
-    return save(by, { settings, version: currentVersion }, { ...options, restoring: dayWords(entry.savedAt), restoredFrom: settings });
+    /* the stricter rules compare with the copy put back, so an old copy can
+       always be put back; a mix with the copy as it was kept, and the price
+       list in use (prepared) */
+    return save(by, { settings, version: currentVersion }, { ...options, restoring: dayWords(entry.savedAt), restoredFrom: settings, mixedFrom });
   }
 
   return { get, current, catalogue, setup, signupStart, startForBarnwright, takeOver, preview, save, history, restore, check };
