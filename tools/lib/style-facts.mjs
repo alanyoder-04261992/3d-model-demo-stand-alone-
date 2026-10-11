@@ -112,7 +112,7 @@ const WALLS_LEGEND = {
 export const TELLS = Object.freeze({
   UT: { tells: ["Plain A roof, both sides the same.", "Double doors in the middle of the front end.", "Painted siding, with a trim band across the gable at the top of the walls."],
     look_alikes: [["MU", "Metal siding, no trim band, and a steeper roof."], ["G", "A roll-up door on the front end."], ["GU", "Smaller: 6 ft wide, short walls and one door."]] },
-  SU: { tells: ["Plain A roof.", "Double doors in the middle of a long side, with a window each side."],
+  SU: { tells: ["Plain A roof.", "Double doors in the middle of a long side, with a window each side (the 8×12 and 10×12 have one 48 in door there instead)."],
     look_alikes: [["DS", "A dormer on the roof, and a steeper roof."], ["SLB", "A barn roof."], ["CS", "The roof's peak is off-centre."]] },
   DS: { tells: ["A dormer with windows on the roof, over the doors.", "A steeper A roof than the Side Utility.", "Doors and windows on a long side."],
     look_alikes: [["SU", "No dormer, and a flatter roof."]] },

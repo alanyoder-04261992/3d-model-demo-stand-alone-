@@ -139,7 +139,9 @@ in these traits.
   style is built the same way; then add it and its numbers to
   `SHOP_NUMBERS` in `tools/check-shop-numbers.mjs` (and to its gable window
   list `NOT_OFFERED` if a gable window no longer fits) and run that with
-  `--record`, saying why in the commit.
+  `--record`, saying why in the commit. The block may also hold
+  `standardSwaps` (section 3), the shop's own door at some sizes; it is not
+  a How it's built box.
 * A key the style entry does not know (`"wallHeight"` instead of `wallH`,
   `"porchDepth"`) is named with a did-you-mean by `validateManufacturer`, and
   a business's `offer` entry likewise ("Side Utility: "sizez" is not part of
@@ -167,6 +169,25 @@ recipes in `tools/check-companies.mjs` (section 8) are the best examples: they
 reproduce thirteen of the named Barnwright recipes exactly, at every size (the
 utility, side-door, garden, barn, single-slope, garage and kennel ones -- the
 cottage, backyard utility, dormer shed and the cabins have no data twin yet).
+
+**The shop's own door at some sizes** (`built.standardSwaps`, the shop
+standard only): when Alan's shop builds a size with another door than the
+recipe gives, and the recipe is Barnwright's (so it may not change), list
+the swap in the style's `built` block, with a `_source`:
+
+```json
+"standardSwaps": [{ "sizes": ["8x12", "10x12"], "from": "w72", "to": "w48", "_source": "Alan, Oct 11 2026: ..." }]
+```
+
+At exactly those sizes every standard `from` becomes `to`, in the same
+place, with the same id (`model/loadouts.js standardItems`); Barnwright's
+company has no built blocks, so the golden test still draws the recipe. A
+price list that does not sell `to` keeps `from` and the owner is told; a
+new save must sell it (`strictProblems`, and the Dealer Center keeps it
+sold). `validateManufacturer` refuses a size or item that is not one, and a
+`from` the style does not come with at that size. The Side Utility's 8x12
+and 10x12 have the 48 in Wooden Door this way. Prove it in
+`tools/check-shop-numbers.mjs` (part 4e) and re-record the changed sizes.
 
 Every item a style comes with must be priced by every company that sells the
 style (0 is fine): included items are charged as the difference when swapped.

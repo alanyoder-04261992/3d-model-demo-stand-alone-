@@ -86,9 +86,14 @@ golden test holds, or a style that is so by design). One line in
 `test/style-sizes-known.json`:
 
 ```json
-{ "styles": ["SU"], "sizes": ["8x12"], "code": "overlap", "id": "overlap:R:w23/w72", "maxIn": 2.4375,
-  "reason": "Barnwright's standard layout ... Kept for the golden test." }
+{ "styles": ["SU", "DS", "SLB"], "sizes": ["8x12", "10x12"], "code": "overlap", "id": "overlap:R:w23/w72", "maxIn": 2.4375,
+  "reason": "Barnwright's standard layout ... Kept for the golden test. ..." }
 ```
+
+(The shop standard's 8x12 and 10x12 Side Utility no longer have this: they
+come with the 48 in Wooden Door, Alan Oct 11 2026. "SU" stays in the line
+because the run with Barnwright's own numbers still draws the double
+doors there.)
 
 * `code` and `id` exactly as the failure printed them; `styles` are library
   codes (a business's own style is matched by the style it is built like);

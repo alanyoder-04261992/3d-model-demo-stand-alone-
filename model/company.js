@@ -227,6 +227,8 @@ export function validateManufacturer(m) {
   err.push(...strictConstructionProblems(m.construction || {}, "construction"));
   /* the shop standard's "How it's built" numbers (styles.<KEY>.built) */
   err.push(...BUILT.libraryProblems(m));
+  /* ... and its own doors at some sizes (styles.<KEY>.built.standardSwaps) */
+  err.push(...swapProblems(m));
   /* an option's effect on how the building is built (rates.jo12: floor.spacingIn 12) */
   for (const g of ["dormers", "ramps", "elec", "misc", "rates"]) {
     for (const id of keysOf(O[g])) {
@@ -261,6 +263,66 @@ function traitsOf(it) {
   if (it.switch) o.switch = true;
   return o;
 }
+
+/* THE SHOP STANDARD'S OWN DOOR AT SOME SIZES: a library style's
+   built.standardSwaps, [{"sizes": ["8x12", "10x12"], "from": "w72", "to":
+   "w48"}] (Alan, Oct 11 2026, the Side Utility: "replace 6 foot to 4
+   foot"). Library-only, never a How it's built box: a business's
+   offer.<KEY>.built cannot hold it (build-settings.js problems says "not a
+   building setting"), and Barnwright's own company has no built blocks.
+   model/loadouts.js standardItems makes the swap; resolve() below puts it
+   on the style when the price list sells "to". */
+const SWAP_KEYS = ["sizes", "from", "to"];
+function swapProblems(m) {
+  const out = [], I = m.items || {};
+  let mCAT = null;
+  for (const k of keysOf(m.styles)) {
+    const s = m.styles[k];
+    if (!isObj(s) || !isObj(s.built) || s.built.standardSwaps === undefined) continue;
+    const at = `styles.${k}.built.standardSwaps`, list = s.built.standardSwaps;
+    if (!Array.isArray(list)) { out.push(`${at} must be a list like [{"sizes": ["8x12"], "from": "w72", "to": "w48"}].`); continue; }
+    list.forEach((e, i) => {
+      const ai = `${at}[${i}]`;
+      if (!isObj(e)) { out.push(`${ai} must be {"sizes": ["8x12"], "from": "w72", "to": "w48"}.`); return; }
+      for (const f of Object.keys(e)) if (!f.startsWith("_") && SWAP_KEYS.indexOf(f) < 0) out.push(`${ai}.${f} is not part of a swap${didYouMean(f, SWAP_KEYS)}`);
+      if (!Array.isArray(e.sizes) || !e.sizes.length || !e.sizes.every((z) => typeof z === "string" && SIZE_RE.test(z))) { out.push(`${ai}.sizes must list sizes written width x length, like "8x12".`); return; }
+      if (!own(I, e.from)) { out.push(`${ai}.from ${q(e.from)} is not an item.`); return; }
+      if (!own(I, e.to)) { out.push(`${ai}.to ${q(e.to)} is not an item.`); return; }
+      if (e.from === e.to) { out.push(`${ai}: "from" and "to" are the same item.`); return; }
+      mCAT = mCAT || manufacturerCAT(m);
+      for (const z of e.sizes) {
+        let cats;
+        try { cats = loadoutCats(s, k, [z], mCAT); } catch (x) { out.push(`${ai}: the ${s.name}'s standard doors and windows at ${z} could not be worked out: ${x.message}`); continue; }
+        if (!cats.has(e.from)) out.push(`${ai}: the ${s.name} at ${z} comes without the ${I[e.from].name} (${e.from}), so there is nothing to swap.`);
+      }
+    });
+  }
+  return out;
+}
+/* The styles a price list sells that come with a swapped-in item at a size
+   they are sold in: {item: [{key, name, sizes: ["8x12", ...]}]}. A style of
+   the business's own follows the style it is built like. */
+export function standardSwapNeeds(company, manufacturer) {
+  const out = {};
+  const offer = isObj(company) && isObj(company.offer) ? company.offer : {};
+  const styles = isObj(manufacturer) && isObj(manufacturer.styles) ? manufacturer.styles : {};
+  for (const k of keysOf(offer)) {
+    const o = offer[k];
+    if (!isObj(o)) continue;
+    const base = o.base != null ? o.base : k, s = styles[base];
+    const list = isObj(s) && isObj(s.built) && Array.isArray(s.built.standardSwaps) ? s.built.standardSwaps : [];
+    const sold = keysOf(o.sizes);
+    for (const e of list) {
+      if (!isObj(e) || !Array.isArray(e.sizes) || typeof e.to !== "string") continue;
+      const sizes = e.sizes.filter((z) => sold.indexOf(z) >= 0);
+      if (!sizes.length) continue;
+      const name = o.base != null && typeof o.name === "string" && o.name.trim() ? o.name.trim() : s.name;   /* as validate() names it */
+      (out[e.to] = out[e.to] || []).push({ key: k, name, sizes });
+    }
+  }
+  return out;
+}
+const timesWords = (sizes) => { const w = sizes.map((z) => String(z).replace("x", "×")); return w.length < 2 ? w.join("") : w.slice(0, -1).join(", ") + " and " + w[w.length - 1]; };
 
 /* Every item a style's standard layout uses at any of these sizes. */
 function loadoutCats(t, key, sizes, CAT) {
@@ -752,6 +814,16 @@ export function strictProblems(company, manufacturer) {
     }
   }
   if (isObj(company.construction)) out.push(...notOnOwnedPaths(strictConstructionProblems(company.construction, "construction"), company.construction, "construction"));
+  /* a door or window the shop standard puts in at some sizes must be sold
+     (validate() leaves it out, so a stored price list that does not sell
+     it still opens: resolve() keeps the recipe's own door and tells the
+     owner) -- the same words as validate()'s, so the screens say them */
+  const swapNeeds = standardSwapNeeds(company, manufacturer);
+  for (const ic of Object.keys(swapNeeds)) {
+    if (own(company.items, ic)) continue;
+    const it = isObj(manufacturer.items) ? manufacturer.items[ic] : null;
+    out.push(`items.${ic} needs a price: the ${it ? it.name : ic} (${ic}) comes as standard on the ${swapNeeds[ic].map((x) => `${x.name} (${x.key}) at ${timesWords(x.sizes)}`).join(", ")}. 0 is fine for one that is never charged.`);
+  }
   /* How it's built: the business's own numbers, checked; a raw construction
      setting on a path a knob owns ("set it in How it's built instead") */
   for (const p of BUILT.problems(company, manufacturer)) out.push(`${p.path}: ${p.words}`);
@@ -852,6 +924,26 @@ export function resolve(company, manufacturer, library) {
     const name = isObj(v) && v.name ? v.name : it.name;
     CAT[k] = Object.assign({ k: it.kind, n: name, w: it.w, h: it.h, p: itemPrice(v) }, traitsOf(it));
   }
+  /* The shop standard's own door at some sizes (built.standardSwaps, the
+     8x12 and 10x12 Side Utility's 48 in Wooden Door): on the style when the
+     price list sells it; otherwise the recipe's own door stays and the
+     owner is told what to do. */
+  const swapWarnings = [];
+  for (const k of keysOf(c.offer)) {
+    const o = c.offer[k], s = m.styles[o.base != null ? o.base : k];
+    const list = isObj(s.built) && Array.isArray(s.built.standardSwaps) ? s.built.standardSwaps : [];
+    const sold = keysOf(o.sizes);
+    for (const e of list) {
+      if (!isObj(e) || !Array.isArray(e.sizes)) continue;
+      const sizes = e.sizes.filter((z) => sold.indexOf(z) >= 0);
+      if (!sizes.length) continue;
+      if (own(CAT, e.to)) { (TYPES[k].standardSwaps = TYPES[k].standardSwaps || []).push(stripHelp(copy(e))); continue; }
+      const toName = (m.items[e.to] || {}).name || e.to, fromName = (CAT[e.from] && CAT[e.from].n) || (m.items[e.from] || {}).name || e.from;
+      swapWarnings.push(sizes.length > 1
+        ? `${TYPES[k].name}: the ${timesWords(sizes)} come with the ${toName}. Sell it on Doors & windows ($0 is fine); until then they keep the ${fromName}.`
+        : `${TYPES[k].name}: the ${timesWords(sizes)} comes with the ${toName}. Sell it on Doors & windows ($0 is fine); until then it keeps the ${fromName}.`);
+    }
+  }
   /* The options. Each is a price, or {"price", "name"}: a name the company
      gives replaces the manufacturer's on the buttons AND on the quote; with
      no name the labels are exactly the usual ones (Barnwright's). */
@@ -898,7 +990,7 @@ export function resolve(company, manufacturer, library) {
   for (const g of [["dormers", "dormer"], ["ramps", "ramp"], ["elec", "elec"], ["misc", "misc"]]) {
     for (const id of keysOf(mO[g[0]])) if (own(O[g[0]], id) && mO[g[0]][id].construction) optionEffects[g[1] + "." + id] = stripHelp(copy(mO[g[0]][id].construction));
   }
-  const settingsWarnings = built.warnings.slice();
+  const settingsWarnings = built.warnings.concat(swapWarnings);
   const extras = (O.extras || []).map((x) => {
     const e = { key: x.key, name: x.name, input: x.input, price: x.price };
     /* offered only on these buildings (and the styles of the business's own

@@ -59,7 +59,15 @@ says it.
    their height. Barnwright's own company in the checks is the standard
    without these blocks (`tools/lib/barnwright-company.mjs`), so the golden
    test still draws Barnwright's numbers; `node tools/check-shop-numbers.mjs`
-   holds the shop numbers (`test/golden-shop/`).
+   holds the shop numbers (`test/golden-shop/`). The same block may hold one
+   thing that is not a knob, never a box and never a business's:
+   `standardSwaps`, the shop's own door at some sizes
+   (`[{"sizes": ["8x12", "10x12"], "from": "w72", "to": "w48"}]` on the Side
+   Utility, Alan Oct 11 2026: "replace 6 foot to 4 foot"). It changes the
+   standard doors and windows, not a number (`model/loadouts.js`
+   `standardItems`; the `add-a-style` skill, section 3); `libraryProblems`
+   lets it through and `validateManufacturer` checks it, and an
+   `offer.<KEY>.built.standardSwaps` is "not a building setting".
 5. The library's raw number (`library/construction.json`, the style's raw
    traits).
 

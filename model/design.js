@@ -33,7 +33,10 @@
                              depends on whether the screen was drawn: a side
                              porch is 4x8 under 20 ft, and anything the company
                              does not offer (a package, ramp, upgrade, extra,
-                             dormer size, shutters, door window) is switched off.
+                             dormer size, shutters, door window) is switched off;
+                             a door or window the building no longer comes
+                             with is kept in the place of the one it does
+                             (keptInPlace).
    encode(design) / decode(text)   the share link: short keys, defaults left
                              out, items as tuples, UTF-8, optional deflate-raw
                              (a "z" in front), base64url. encodeSync / decodeSync
@@ -191,7 +194,53 @@ export function normalize(state, frame, cat) {
   changed.push(...new Set(tooTall));
   if ((cat.MISC || {}).shutter == null) state.items.forEach((it) => { if (it.shut) { it.shut = false; changed.push("Shutters are not offered, so they were taken off."); } });
   if ((cat.MISC || {}).lite == null) state.items.forEach((it) => { if (it.lite) { it.lite = false; changed.push("A window in a wooden door is not offered, so it was taken off."); } });
+  changed.push(...keptInPlace(state, cat));
   return changed;
+}
+
+/* A DOOR OR WINDOW THE BUILDING NO LONGER COMES WITH. The 8x12 and 10x12
+   Side Utility come with the 48 in Wooden Door (Alan, Oct 11 2026); a
+   design saved before holds the 72 in double doors as the door it came
+   with. So does a design whose size changed after the customer touched the
+   doors and windows (the size chip keeps them, DIFFERENCES #12): a 10x16
+   Side Utility made 10x12, or Barnwright's own 10x12 Cottage made 10x16
+   (its door changes there too). The server prices only what the building
+   comes with (server/office/pricing.js), so the door is kept in the place
+   of the one the building comes with now -- the swap the customer could
+   have made on the item sheet, priced the same way (the difference, never
+   a credit) -- and said in one line. Matched the server's way: every
+   included item that is one the building comes with keeps it, in order;
+   only one left over takes the place of one the building comes with that
+   nothing holds, of a kind it may be swapped for (the door and window
+   lists). Anything else is left as it was. */
+function keptInPlace(state, cat) {
+  const out = [];
+  const inc = (state.items || []).filter((it) => it.inc && !it.pk && cat.CAT[it.cat]);
+  if (!inc.length) return out;
+  const fr = frameOf(state, cat);
+  let std;
+  try { std = standardItems(fr.t, fr.d.W, fr.d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws }, state.type); } catch (e) { return out; }
+  const left = new Map();
+  for (const s of std) left.set(s.cat, (left.get(s.cat) || 0) + 1);
+  const over = [];
+  for (const it of inc) {
+    const o = it.origCat || it.cat;
+    if (left.get(o) > 0) left.set(o, left.get(o) - 1); else over.push(it);
+  }
+  const L = cat.LISTS || {};
+  const swapsFor = (id) => { const k = cat.CAT[id] && cat.CAT[id].k; return k === "win" ? (L.sheetWindow || []) : (k === "door" || k === "ru") ? (L.sheetDoor || []) : []; };
+  const plural = (name) => /s$/.test(name);
+  for (const it of over) {
+    const s = std.find((x) => left.get(x.cat) > 0 && cat.CAT[x.cat] && (x.cat === it.cat || swapsFor(x.cat).indexOf(it.cat) >= 0));
+    if (!s) continue;
+    left.set(s.cat, left.get(s.cat) - 1);
+    it.origCat = s.cat;
+    const mine = cat.CAT[it.cat], theirs = cat.CAT[s.cat];
+    if (it.cat === s.cat) continue;
+    const up = (mine.p || 0) - (theirs.p || 0) > 0;
+    out.push(`The ${times(state.size)} ${fr.t.name} comes with the ${theirs.n}, so the ${mine.n} ${plural(mine.n) ? "are" : "is"} kept in ${plural(theirs.n) ? "their" : "its"} place${up ? " as an upgrade" : ""}.`);
+  }
+  return [...new Set(out)];
 }
 
 /* ------------------------------------------------------------------------ */

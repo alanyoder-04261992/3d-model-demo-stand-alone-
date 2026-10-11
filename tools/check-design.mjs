@@ -503,6 +503,63 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
   check(G10, errs.some((e) => /^options\.extras\[0\]\.styles lists "SUU", which is not a building style\. Did you mean SU\?/.test(e)), J(errs));
 }
 
+/* ---------------------------------------------------------------- 11 a door the building no longer comes with */
+{
+  /* The 8x12 and 10x12 Side Utility come with the 48 in Wooden Door (Alan,
+     Oct 11 2026: "replace 6 foot to 4 foot"); before, with the 72 in Wooden
+     Double Doors. A design saved before, or one whose size changed after the
+     customer touched the doors and windows, holds a door the building does
+     not come with. It opens with that door kept, in the place of the one the
+     building comes with, priced as the swap it is, said in one line; the
+     server prices the design the designer sends next, and only the stale
+     design itself is "no longer offered" (409), never "could not be read"
+     (422). The Cottage has done this since Barnwright: a 10x12 comes with
+     the 48 in door, a 10x14 and longer with the double doors. */
+  const G11 = "a door the building no longer comes with is kept as a swap";
+  const st = (cat, t, z) => { const s = defaults(cat); setType(s, t, cat); s.size = z; resetItems(s, frameOf(s, cat), cat); return s; };
+  const send = (design, cat) => { try { return priceDesign(design, cat); } catch (e) { return e; } };
+  const doors = (s) => s.items.filter((i) => DEMO.CAT[i.cat].draw === "shop-door").map((i) => [i.cat, i.origCat, !!i.inc]);
+  /* a Side Utility 8x12 saved with the double doors */
+  const old = st(DEMO, "SU", "8x12"); old.items[0].cat = old.items[0].origCat = "w72";
+  const saved = fromState(old, DEMO);
+  const back = toState(saved, DEMO);
+  const said = "The 8×12 Side Utility comes with the 48″ Wooden Door, so the 72″ Wooden Double Doors are kept in its place as an upgrade.";
+  check(G11, J(doors(back.state)) === J([["w72", "w48", true]]) && back.warnings.includes(said), `reopened: ${J(doors(back.state))} ${J(back.warnings)}`);
+  const parts = priceParts(back.state, DEMO), up = DEMO.CAT.w72.p - DEMO.CAT.w48.p;
+  check(G11, parts.total === DEMO.P.SU["8x12"] + up && parts.lines.some((l) => l[0] === "72″ Wooden Double Doors (upgrade)" && l[1] === up), `priced ${J(parts)}`);
+  const next = send(fromState(back.state, DEMO), DEMO);
+  check(G11, next && next.price && next.price.total === parts.total, `the design the designer sends after opening it: ${next && (next.status + " " + next.message)}`);
+  const stale = send(saved, DEMO);
+  check(G11, stale && stale.status === 409 && /no longer offered/.test(stale.message), `the stale design itself: ${stale ? stale.status + " " + stale.message : "priced"}`);
+  /* the customer touches the windows on a 10x16, then picks 10x12, and back */
+  const s = st(DEMO, "SU", "10x16"); s.items[1].shut = true;
+  S.chooseSize(s, "10x12", DEMO);
+  const said12 = normalize(s, null, DEMO);
+  check(G11, J(doors(s)) === J([["w72", "w48", true]]) && said12.includes("The 10×12 Side Utility comes with the 48″ Wooden Door, so the 72″ Wooden Double Doors are kept in its place as an upgrade."), `${J(doors(s))} ${J(said12)}`);
+  const sent12 = send(fromState(s, DEMO), DEMO);
+  check(G11, sent12 && sent12.price && sent12.price.total === priceParts(s, DEMO).total, `sent at 10x12: ${sent12 && (sent12.status + " " + sent12.message)}`);
+  const s2 = st(DEMO, "SU", "10x12"); s2.items[1].shut = true;
+  S.chooseSize(s2, "10x16", DEMO);
+  const said16 = normalize(s2, null, DEMO);
+  check(G11, J(doors(s2)) === J([["w48", "w72", true]]) && said16.includes("The 10×16 Side Utility comes with the 72″ Wooden Double Doors, so the 48″ Wooden Door is kept in their place.") && !priceParts(s2, DEMO).lines.some((l) => /Wooden/.test(l[0])),
+    `${J(doors(s2))} ${J(said16)} ${J(priceParts(s2, DEMO))}`);
+  const sent16 = send(fromState(s2, DEMO), DEMO);
+  check(G11, sent16 && sent16.price && sent16.price.total === priceParts(s2, DEMO).total, `sent at 10x16: ${sent16 && (sent16.status + " " + sent16.message)}`);
+  /* the Cottage, on Barnwright's own buildings too: a 10x12 touched, then 10x16 */
+  for (const cat of [DEMO, BW]) {
+    const c = st(cat, "CS", "10x12"); c.items[1].shut = true;
+    S.chooseSize(c, "10x16", cat);
+    const w = normalize(c, null, cat);
+    const sent = send(fromState(c, cat), cat);
+    check(G11, sent && sent.price && sent.price.total === priceParts(c, cat).total && w.some((x) => /^The 10×16 Cottage Shed comes with the 72″ Wooden Double Doors, so the 48″ Wooden Door is kept in their place\.$/.test(x)),
+      `${cat.id} Cottage 10x12 touched, then 10x16: ${sent && (sent.status + " " + sent.message)} ${J(w)}`);
+  }
+  /* a standard design, and one with a door swapped by the customer, is left alone */
+  const sw = st(DEMO, "SU", "8x12"); S.setItemType(sw, sw.items[0].id, "w72", DEMO);
+  const swBack = toState(fromState(sw, DEMO), DEMO);
+  check(G11, swBack.warnings.length === 0 && J(doors(swBack.state)) === J([["w72", "w48", true]]), `a swap the customer made: ${J(swBack.warnings)}`);
+}
+
 /* ---------------------------------------------------------------- report */
 let total = 0, bad = 0;
 console.log("Saved and shared designs:");

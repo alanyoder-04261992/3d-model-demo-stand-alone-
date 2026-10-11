@@ -140,7 +140,11 @@ And the trim round it (shared, `common.js`; full text in `part-openings`):
 3. Every number is look-defining. The door height is the one that belongs to
    a company: set it in How it's built (`doorHeight`), not the code.
 4. To offer a new wooden door size, add an item with `draw: "shop-door"` (and
-   `leaves: 2` for a pair) to the manufacturer file -- no code.
+   `leaves: 2` for a pair) to the manufacturer file -- no code. Which one a
+   building comes with is its loadout's: the shop standard's 8x12 and 10x12
+   Side Utility come with the 48 in door instead of the 72 in pair (the
+   Side Utility's `built.standardSwaps`, Alan Oct 11 2026; the `add-a-style`
+   skill), drawn by this same module.
 5. If the look must really change, re-record the golden fixtures on purpose
    (`node tools/capture-golden.mjs`, with a reason).
 

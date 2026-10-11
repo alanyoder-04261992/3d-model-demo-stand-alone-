@@ -142,6 +142,17 @@ On October 11, after the pictures, you said yes to six more styles.
   The roof line over the roof deck is about 1/2 in higher.
 * **Lofted Barn Garage:** the same barn roof heights (4 ft 3 in on the
   12 ft wide ones it is sold in), on its own walls as they were.
+* **Side Utility, 8x12 and 10x12: the 48 in Wooden Door.** We asked how
+  your shop builds these two (with the double doors, a window ran 2 3/8 in
+  into the doors) and you said "replace 6 foot to 4 foot" on October 11.
+  The 48 in door is in the middle of the door side, the two windows stay
+  where they were, and about 9 5/8 in of siding is left between the door's
+  trim and each window's. Every other Side Utility size keeps the double
+  doors, and so does Barnwright's own. Each price list must sell the 48 in
+  door ($0 is fine; the sample price list has it at $175). A design a
+  customer saved with the double doors opens with them kept, as an upgrade
+  from the 48 in door ($150 in the sample price list), and one line says
+  so.
 * **14 ft wide lofted barns keep today's height**, about 6 ft 3 in to the
   top of the trusses, as you said. Their walls are 6 ft 7 1/2 in like the
   other widths, so a 14 ft Lofted Barn stands 9/16 in lower overall than
@@ -570,8 +581,9 @@ Each one has an answer we used until you say otherwise. Answered on
 October 11: the Garage (12 and 14 ft wide), Dog Kennel, Garden Utility,
 Dormer Shed, Metal Lofted Barn and Lofted Barn Garage (yes, as in the
 pictures), the Metal Garage (no), the 14 ft lofted barns (keep today's
-height), the gable window (not offered where it does not fit) and the Steep
-roof (out of the sample price list).
+height), the gable window (not offered where it does not fit), the Steep
+roof (out of the sample price list) and the 8x12 and 10x12 Side Utility's
+door (the 48 in Wooden Door instead of the double doors).
 
 1. **The cabins and the Metal Utility** at 5/12 with a 4 in roof edge, like
    your utility roof? *For now: unchanged.*
@@ -601,6 +613,11 @@ roof (out of the sample price list).
     yes, 5/12 is your standard pitch at every width.*
 11. **Who can change How it's built.** *For now: the owner only, like
     prices; managers and dealers see the numbers.*
+12. **The 8x12 and 10x12 Side Utility's price with the 48 in door.** Should
+    those two sizes cost less now that they come with the smaller door? And
+    should a customer who saved one with the double doors before keep them
+    at no charge? *For now: the size prices are as they were, and the
+    double doors are an upgrade from the 48 in door.*
 
 ### Choices about the product
 

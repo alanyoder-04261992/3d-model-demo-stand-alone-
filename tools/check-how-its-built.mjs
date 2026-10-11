@@ -177,12 +177,20 @@ try {
   section("3. Check every size, and the server's check on save");
   /* a style with no numbers of its own: what the standard building has too
      is listed, never "not yours to fix" (review W10) */
+  await openStyle(page, "SLB");
+  await page.click('[data-built="SLB"] .pl-built-check button');
+  await page.waitForSelector('[data-built="SLB"] .pl-built-box', { timeout: 30000 });
+  const slbSaid = await page.textContent('[data-built="SLB"] .pl-built-result');
+  ok("Check every size on the Side Lofted Barn says everything fits and lists what the standard building has too",
+    /Everything fits: 9 buildings drawn\./.test(slbSaid) && /Already so in the standard building:/.test(slbSaid) && /Side Lofted Barn 8×12: the 72″ Wooden Double Doors and the 2×3 Window on the right side overlap by 2 3\/8 in\./.test(slbSaid) && !/not yours to fix/.test(slbSaid), slbSaid.slice(0, 300));
+  /* the 8x12 and 10x12 Side Utility come with the 48 in Wooden Door (Alan,
+     Oct 11 2026: "replace 6 foot to 4 foot"): no window runs into it */
   await openStyle(page, "SU");
   await page.click('[data-built="SU"] .pl-built-check button');
   await page.waitForSelector('[data-built="SU"] .pl-built-box', { timeout: 30000 });
   const suSaid = await page.textContent('[data-built="SU"] .pl-built-result');
-  ok("Check every size on the Side Utility says everything fits and lists what the standard building has too",
-    /Everything fits: 11 buildings drawn\./.test(suSaid) && /Already so in the standard building:/.test(suSaid) && /Side Utility 8×12: the 72″ Wooden Double Doors and the 2×3 Window on the right side overlap by 2 3\/8 in\./.test(suSaid) && !/not yours to fix/.test(suSaid), suSaid.slice(0, 300));
+  ok("Check every size on the Side Utility says everything fits, and no door and window overlap (the 8×12 and 10×12 have the 48″ Wooden Door)",
+    /Everything fits: 11 buildings drawn\./.test(suSaid) && !/overlap/.test(suSaid) && !/not yours to fix/.test(suSaid), suSaid.slice(0, 300));
   await typeIn(page, "built:UT:wallHeight", "60");
   ok("a bare 60 in the wall height box reads as inches: 5 ft", (await page.inputValue('[data-field="built:UT:wallHeight"]')) === "5 ft");
   await page.click('[data-built="UT"] .pl-built-check button');

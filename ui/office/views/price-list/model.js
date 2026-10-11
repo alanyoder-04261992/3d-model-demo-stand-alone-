@@ -8,7 +8,7 @@
    sent anywhere. model/company.js's validate() is the same check the server
    runs before it saves, so a draft with no problems here saves. */
 
-import { validate } from "../../../../model/company.js";
+import { validate, standardSwapNeeds } from "../../../../model/company.js";
 import { problems as builtProblems, extraProblems, describeChanges as builtChanges, describeExtraBuilt } from "../../../../model/build-settings.js";
 import { money, size as sizeWords } from "../../words.js";
 
@@ -552,6 +552,14 @@ export function lockedItems(prepared, M) {
     m = /^An electrical package places an? .+?, so items\.(\w+) needs a price/.exec(p);
     if (m) { (locks[m[1]] = locks[m[1]] || {}).elec = true; continue; }
     if (/^options\.misc\.ext/.test(p)) (locks.light = locks.light || {}).ext = true;
+  }
+  /* the shop standard's own door at some sizes (the 8x12 and 10x12 Side
+     Utility's 48 in Wooden Door): model/company.js strictProblems wants it
+     sold, so it stays sold here too */
+  const swaps = standardSwapNeeds(prepared, M);
+  for (const id of Object.keys(swaps)) {
+    const l = (locks[id] = locks[id] || {});
+    l.styles = [...new Set((l.styles || []).concat(swaps[id].map((x) => x.key).filter((k) => offered.includes(k))))];
   }
   return locks;
 }

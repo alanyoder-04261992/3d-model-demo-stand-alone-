@@ -2,9 +2,9 @@
  "format": 1,
  "about": "Pictures and shape facts for every style in the 3D designer's library, for matching a dealer's photos to a style. Made by node tools/make-style-refs.mjs and checked by node tools/check-style-refs.mjs in the 3D designer repository.",
  "pitch_note": "Every pitch, height and size here is the standard building line as the 3D designer draws it. The Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility use Alan's 5/12, the Dormer Shed's main roof his 7/12, and the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage his barn roof heights (3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide); the other styles use Barnwright's drawing. A barn roof's height is to the peak of its trusses, the way a builder measures it; every other roof's is to the top of the roof. The words say every length and pitch the way How it's built does (5/12, about 6 1/2/12, 7 ft 4 13/16 in); a barn roof is said by its height, not by the pitch of its steep part. Each slope's pitch is also given as an exact number for measuring a photo. A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.",
- "library_version": "a4a5f102583fba9b",
+ "library_version": "ba1405fe62629015",
  "library_files": {
-  "library/manufacturers/standard.json": "7322ec1f20b74c8b8d0bfaac431c77d327c37fa5bc0f6e7656ef6e6624e5d267",
+  "library/manufacturers/standard.json": "98fec193b32759aba6dda483464cbb16f1cb0a1b45676fb68d7732a260a33e80",
   "library/construction.json": "bc45a625290a988f7ee7b274352eb7f4f6a6ce7aa5b971f568837dc0fc5a1297"
  },
  "drawn_with": {
@@ -263,7 +263,35 @@
      "words": "2×3 Window, on the right long side, 6 ft 4 13/16 in right of its middle"
     }
    ],
-   "changes_with_size": [],
+   "changes_with_size": [
+    {
+     "sizes": [
+      "8x12",
+      "10x12"
+     ],
+     "doors_windows": [
+      "48″ Wooden Door on the right long side",
+      "2 x 2×3 Window on the right long side"
+     ]
+    },
+    {
+     "sizes": [
+      "8x16",
+      "10x14",
+      "10x16",
+      "10x20",
+      "12x16",
+      "12x20",
+      "12x24",
+      "12x30",
+      "12x32"
+     ],
+     "doors_windows": [
+      "72″ Wooden Double Doors on the right long side",
+      "2 x 2×3 Window on the right long side"
+     ]
+    }
+   ],
    "porch": null,
    "porch_posts": 0,
    "drawn_length_ft": null,
@@ -282,7 +310,7 @@
    },
    "tells": [
     "Plain A roof.",
-    "Double doors in the middle of a long side, with a window each side."
+    "Double doors in the middle of a long side, with a window each side (the 8×12 and 10×12 have one 48 in door there instead)."
    ],
    "look_alikes": [
     {
