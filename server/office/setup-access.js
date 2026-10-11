@@ -109,6 +109,15 @@ export const OWNER_WORDS = Object.freeze({
   say: "Say whether Barnwright can help.",
 });
 
+/* A refused Barnwright change, in the owner's log (at most once a minute,
+   while access is open): always in the owner's own words, never the door's
+   words for Alan (docs/OFFICE.md, The door, Refusals). */
+export const REFUSED_LOG = Object.freeze({
+  "needs-alan": "Barnwright tried a change that needs Alan's OK in his Control Room first. Nothing was changed.",
+  locked: "Barnwright tried to change something only you can change. Nothing was changed.",
+  other: "Barnwright tried a change that couldn't be saved. Nothing was changed.",
+});
+
 const TOO_MANY = "Too many Barnwright requests for this Dealer Center this hour. Try again later.";
 const TOO_MANY_SAVES = "Barnwright has saved 60 changes here today. Try again tomorrow.";
 const BAD_REQUEST = "The Control Room sent a request this Dealer Center can't read.";
@@ -478,11 +487,12 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
     return !used;
   }
 
-  /* A refused Barnwright change, in the owner's log while access is open, at most once a minute. */
-  async function refusedNote(words) {
+  /* A refused Barnwright change, in the owner's log while access is open,
+     at most once a minute. kind: "needs-alan", "locked" or "other". */
+  async function refusedNote(kind) {
     if (ms() - lastRefusalNote < REFUSED_NOTE_EVERY) return;
     lastRefusalNote = ms();
-    await note(`A Barnwright change was refused: ${String(words).replace(/\.$/, "")}.`);
+    await note(REFUSED_LOG[kind] || REFUSED_LOG.other);
   }
 
   /* ---- the visit ---------------------------------------------------------------------------- */
@@ -587,7 +597,7 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
         ? await priceList.restore(null, { version: data.version, current: data.current }, { lock, savedBy, ensureHistory: true, carry: carryLocked })
         : await priceList.save(null, { settings: data.settings, version: data.version }, { lock, savedBy, ensureHistory: true });
     } catch (e) {
-      if (e?.locked) await refusedNote(e.problems?.[0] || e.message);
+      if (e?.locked) await refusedNote("locked");
       throw e;
     }
     if (saved.changes?.length) {
@@ -796,7 +806,9 @@ export function createSetupAccess({ store, license, priceList, account, lots, we
       httpStatus = code === "error" ? 503 : e.status;
       const words = code === "error" ? DOOR_WORDS.error : e.message;
       body = { ok: false, code, error: words, ...(e.extra?.why ? { why: e.extra.why } : {}), ...(e.problems || e.extra?.problems ? { problems: e.problems || e.extra.problems } : {}) };
-      if (seen.open && (data.action === "save" || data.action === "undo" || e.locked) && !["too-many", "pass-used"].includes(code)) await refusedNote(words);
+      if (seen.open && (data.action === "save" || data.action === "undo" || e.locked) && !["too-many", "pass-used"].includes(code)) {
+        await refusedNote(code === "needs-alan" ? "needs-alan" : e.locked ? "locked" : "other");
+      }
     }
     let fields;
     try { fields = await status(); } catch (e) {

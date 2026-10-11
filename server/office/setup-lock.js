@@ -10,7 +10,11 @@
      * change which websites may show it (embed), the license settings,
        the credit line, or where quotes go (every `leads` key except the
        quote form's boxes, its plan question and its texting words);
-     * change how the buildings are built, except one gable roof's pitch;
+     * change how the buildings are built, except one gable roof's pitch:
+       not even through an extra of the business's own that carries a
+       construction effect (options.extras[].construction, model/company.js
+       optionEffects): no new one, no change to one, no removing an extra
+       that has one;
      * put a web address in as the logo: a logo is a picture of 150 KB or
        less, so no customer's 3D designer ever loads it from somewhere else.
 
@@ -20,7 +24,8 @@
 
    carryLocked() is for going back (put back, undo): the "never" parts keep
    their values from now, so going back can't open the 3D designer, change
-   where quotes go or which websites may show it.
+   where quotes go or which websites may show it. Going back to a price
+   list whose extras build differently is refused by the lock itself.
 
    Pure: no store, no clock. Node-safe and browser-safe. */
 
@@ -33,6 +38,8 @@ export const LOCK_WORDS = Object.freeze({
   leads: "Only the owner can change where quotes go.",
   credit: "The 3D designer credit line can't be changed by Barnwright.",
   construction: "How the buildings are built can't be changed here, except a gable roof's pitch.",
+  /* an extra of the business's own that changes how the building is built */
+  extraConstruction: (name) => `The extra "${name}" changes how the building is built, so only the owner can add it, remove it or change what it builds.`,
   logoAddress: "The logo must be a picture uploaded in Settings, Logo, not a web address.",
   logoBig: "The logo is too big. Use a picture of 150 KB or less.",
   contact: "While their 3D designer is open, the business phone, email and website can be changed only by the owner, or by Alan by hand in Open their price list.",
@@ -73,6 +80,37 @@ function pitchless(construction) {
   }
   return Object.keys(c).length ? c : null;
 }
+/* The extras that change how the building is built, by key: an extra's
+   construction effect counts when it is there at all (model/company.js
+   reads it with `if (x.construction)`). */
+const hasEffect = (x) => isObj(x) && !!x.construction;
+function extrasByKey(s) {
+  const out = new Map();
+  for (const x of Array.isArray(s?.options?.extras) ? s.options.extras : []) if (isObj(x) && !out.has(x.key)) out.set(x.key, x);
+  return out;
+}
+const extraName = (x) => (typeof x?.name === "string" && x.name.trim() ? x.name.trim() : "with no name");
+
+/* -> the names of the extras whose construction effect `next` adds,
+   changes or takes away (with the extra itself or on its own): each extra
+   that had one must still be there with exactly the same effect, and no
+   other extra may have one. The name is the one before the change, or a
+   new extra's own. */
+export function extraEffectChanges(old, next) {
+  const before = extrasByKey(old), after = extrasByKey(next);
+  const names = [];
+  for (const [key, x] of before) {
+    if (!hasEffect(x)) continue;
+    const now = after.get(key);
+    if (!now || !same(x.construction, now.construction)) names.push(extraName(x));
+  }
+  for (const [key, x] of after) {
+    if (!hasEffect(x) || hasEffect(before.get(key))) continue;
+    names.push(extraName(x));
+  }
+  return [...new Set(names)];
+}
+
 const riseOf = (construction) => (isObj(construction?.roof?.shapes?.gable) ? construction.roof.shapes.gable.rise : undefined);
 
 /* A rise Barnwright may write: one rule per library gable style, N/12 for N
@@ -119,6 +157,7 @@ export function lockProblems(old, next, { door = false, mode = "prelive", standa
     || (!same(riseOf(o.construction), riseOf(n.construction)) && !pitchRuleOk(riseOf(n.construction), standardRise))) {
     out.push(LOCK_WORDS.construction);
   }
+  for (const name of extraEffectChanges(o, n)) out.push(LOCK_WORDS.extraConstruction(name));
   const logo = nb.logo ?? "";
   if (logo !== (ob.logo ?? "") && logo !== "") {
     if (typeof logo !== "string" || !LOGO_RE.test(logo)) out.push(LOCK_WORDS.logoAddress);

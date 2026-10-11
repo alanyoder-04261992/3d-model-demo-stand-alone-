@@ -41,6 +41,11 @@
           kept first, within the limits; F3 while the owner's switch is on,
           only Alan's own tap in the Control Room saves
      A8   undo: the price list from before Barnwright's last change
+     F15  item 3: a refused change is said in the owner's log in the
+          owner's own words, never the door's words for Alan; item 4: the
+          lock refuses adding, changing or taking away an extra's
+          construction effect (door, visit, undo and put back), so
+          set_roof_pitch stays the only building-shape change
    (A13, nothing but netlify.js imports control-room.js, is in
    tools/check-imports.mjs; A14, the screens, in tools/check-setup-screens.mjs.) */
 
@@ -53,6 +58,7 @@ import { MemoryBlobs, wrapStore } from "../server/office/store.js";
 import { TenantLicenseClient, createLeaseStore, SETUP_PASS_PREFIX, misconfiguredLicense } from "../server/office/control-room.js";
 import { lockProblems, carryLocked, LOCK_WORDS } from "../server/office/setup-lock.js";
 import { WHY, VISIT_WORDS, OWNER_WORDS, DOOR_WORDS, termsAtLeast, termsOut, whyWords, TERMS_NOT_OUT } from "../server/office/setup-access.js";
+import * as setupAccessModule from "../server/office/setup-access.js";
 import { TERMS } from "../server/office/terms.js";
 import { BARNWRIGHT_SAVED_FIRST, NO_COPY, describeChanges, createPriceList, priceFingerprint } from "../server/office/price-list.js";
 import { applyEdits, warnings, contactKinds, UNDO_LINE } from "../server/office/setup-edits.js";
@@ -69,6 +75,9 @@ const J = (p) => JSON.parse(readFileSync(resolvePath(ROOT, p), "utf8"));
 const manufacturer = J("library/manufacturers/standard.json"), library = J("library/construction.json");
 const templates = { full: J("companies/demo/company.json"), small: J("companies/starter/company.json") };
 const FX = J("tools/lib/setup-fixtures.json");
+/* the owner's log for a refused change: the contract's own words (setup-access.js REFUSED_LOG says the same, checked below) */
+const REFUSED_LOG = FX.words.refusedLog;
+const extraWords = (name) => FX.words.lock.extraConstruction.replace("<name>", name);
 
 let passed = 0;
 const failed = [];
@@ -370,8 +379,8 @@ section("A4. The lock: what Barnwright may never change");
   }
   ok(`each is refused with its one plain sentence, and nothing is saved (${tries.length} tried)`, wrong.length === 0 && (await A.store.get("price-list")).version === pl.version, wrong.join("; "));
   const log = await A.log();
-  ok("the owner's log: \"A Barnwright change was refused: <words>.\", once a minute at most",
-    log.filter((e) => /^A Barnwright change was refused: /.test(e.words)).length === 1 && log[0].words === `A Barnwright change was refused: ${LOCK_WORDS.status.replace(/\.$/, "")}.`, log[0]?.words);
+  ok("the owner's log, in the owner's own words: \"Barnwright tried to change something only you can change. Nothing was changed.\", once a minute at most",
+    log.filter((e) => Object.values(REFUSED_LOG).includes(e.words)).length === 1 && log[0].words === REFUSED_LOG.locked, log[0]?.words);
   const small = structuredClone(base);
   small.brand.logo = "data:image/png;base64," + "iVBORw0KGgo".padEnd(4000, "A");
   r = await A.visit("PUT", "price-list", { settings: small, version: pl.version }, cookie);
@@ -918,12 +927,13 @@ function withDoor(b) {
 }
 
 /* A business being set up whose price list is the fixtures' base (First
-   setup with the small starting price list), owner agreed to terms 2.2. */
-async function fixtureBusiness() {
+   setup with the small starting price list), owner agreed to terms 2.2.
+   base: another price list to start from (edits.effects.effectBase). */
+async function fixtureBusiness(base = FX.edits.baseSettings) {
   const F = withDoor(business());
   await F.setUp(); await F.agree("2.2");
   const pl = await F.store.get("price-list");
-  const settings = structuredClone(FX.edits.baseSettings);
+  const settings = structuredClone(base);
   await F.store.put("price-list", { ...pl, settings, version: 1, cfg: settings.cfg });
   await F.store.put("price-list-history/000001", { version: 1, savedAt: pl.savedAt, savedBy: pl.savedBy, changes: ["Set up the business with a starting price list"], settings });
   return F;
@@ -1164,7 +1174,8 @@ const F = await fixtureBusiness();
   ok("a check on a version that moved: 409 version, with the status fields", r.status === 409 && r.data.code === "version" && r.data.error === DOOR_WORDS.version && r.data.priceList.version === 2, JSON.stringify(r.data));
   r = await F.door({ action: "save", version: 2, edits: [{ do: "set_item", item: "w48", price: 180 }], settingsSha256: "0".repeat(64) });
   ok("a save whose result isn't the one checked: 409 changed, nothing saved", r.status === 409 && r.data.code === "changed" && r.data.error === DOOR_WORDS.changed && (await F.store.get("price-list")).version === 2, JSON.stringify(r.data));
-  ok("... and the owner's log says a change was refused", (await F.log())[0].words === `A Barnwright change was refused: ${DOOR_WORDS.changed}`, (await F.log())[0].words);
+  ok("... and the owner's log says a change was refused, in the owner's own words (never the door's words for Alan)",
+    (await F.log())[0].words === REFUSED_LOG.other && !(await F.log()).some((e) => e.words.includes(DOOR_WORDS.changed)), (await F.log())[0].words);
   /* D8: the copy of the price list in use is kept first */
   await F.store.remove("price-list-history/000002");
   const e2 = [{ do: "set_item", item: "w48", price: 180 }];
@@ -1219,6 +1230,14 @@ const F = await fixtureBusiness();
   const viaClaude = await S.door({ action: "save", version: v, edits: e6, settingsSha256: c6.data.settingsSha256 }, { via: "claude" });
   ok("switch on: Claude may check (200), but a save from Claude is refused: 403 needs-alan", c6.status === 200 && viaClaude.status === 403 && viaClaude.data.code === "needs-alan"
     && viaClaude.data.error === DOOR_WORDS.needsAlan && viaClaude.data.access === "switch" && (await S.store.get("price-list")).version === v, JSON.stringify(viaClaude.data));
+  {
+    /* item 3: the owner reads their own words, never the words the door gives Alan */
+    const log = await S.log();
+    ok("... and the owner's log says so in the owner's words: \"Barnwright tried a change that needs Alan's OK in his Control Room first. Nothing was changed.\"",
+      log[0]?.words === REFUSED_LOG["needs-alan"], log[0]?.words);
+    ok("... never the words for Alan (\"your Control Room's Make the change page\")",
+      !log.some((e) => Object.values(DOOR_WORDS).includes(e.words) || /your Control Room|Make the change page|A Barnwright change was refused/.test(e.words)), JSON.stringify(log.map((e) => e.words)));
+  }
   const viaRoom = await S.door({ action: "save", version: v, edits: e6, settingsSha256: c6.data.settingsSha256 });
   ok("... the same save from the Control Room's Make the change page goes through", viaRoom.status === 200 && viaRoom.data.version === v + 1, JSON.stringify(viaRoom.data));
   await S.call("POST", "/api/office/barnwright-help", { on: false }, { as: "pat" });
@@ -1469,6 +1488,87 @@ section("A10 / E2E-1. A visit's save is told to the Control Room's service recor
   x = await V.visit("PUT", "price-list", { settings: pl.settings, version: pl.version }, c);
   ok("a save that changes nothing tells nothing", x.status === 200 && V.room.calls.filter((p) => p === "/api/setup-service").length === door, JSON.stringify(x.data).slice(0, 200));
   ok("an unconnected copy's misconfigured license refuses to tell anything", await misconfiguredLicense().forwardSetupService({ version: 2, versionBefore: 1 }).then(() => false, () => true));
+}
+
+section("F15 item 4. The lock: an extra that changes how the building is built");
+{
+  /* the fixtures' extra of the business's own that carries a construction
+     effect (model/company.js optionEffects): Barnwright never adds one,
+     changes one, or removes an extra that has one */
+  const FXE = FX.edits.effects;
+  const E = await fixtureBusiness(FXE.effectBase);
+  const words = extraWords;
+  ok("the lock's words and the owner's log words are the contract's", typeof LOCK_WORDS.extraConstruction === "function" && LOCK_WORDS.extraConstruction("Heavy-duty floor") === words("Heavy-duty floor")
+    && JSON.stringify(setupAccessModule.REFUSED_LOG) === JSON.stringify(FX.words.refusedLog), String(LOCK_WORDS.extraConstruction));
+  const wrong = [];
+  for (const sm of FXE.door) {
+    const x = await E.door({ action: "check", version: 1, edits: sm.edits });
+    const want = sm.expect;
+    const good = want.ok
+      ? x.status === 200 && JSON.stringify(x.data.changes) === JSON.stringify(want.changes) && x.data.settingsSha256 === want.settingsSha256
+      : x.status === 422 && x.data.code === "problems" && JSON.stringify(x.data.problems) === JSON.stringify(want.problems);
+    if (!good) wrong.push(`${sm.name}: ${x.status} ${JSON.stringify(x.data).slice(0, 300)}`);
+  }
+  ok(`the door: each of the ${FXE.door.length} examples (a name and price change keeps the effect; remove_extra and a construction part are refused)`, wrong.length === 0, wrong.join("\n       "));
+  const pathsWrong = FXE.door.filter((sm) => sm.expect.ok).filter((sm) => {
+    const res = applyEdits(FXE.effectBase, sm.edits, { manufacturer, standardRise: STD_RISE });
+    return JSON.stringify(res.settings?.options?.extras) !== JSON.stringify(sm.expect.paths["options.extras"]);
+  });
+  ok("set_extra on its own keeps the extra's construction effect exactly", pathsWrong.length === 0, pathsWrong.map((x) => x.name).join(", "));
+  /* the visit sends whole settings */
+  const cookie = cookieFrom(await E.start());
+  const vwrong = [];
+  for (const sm of FXE.visit) {
+    const pl = (await E.visit("GET", "price-list", undefined, cookie)).data;
+    const settings = structuredClone(pl.settings);
+    settings.options.extras = structuredClone(sm.extras);
+    const x = await E.visit("PUT", "price-list", { settings, version: pl.version }, cookie);
+    const good = sm.expect.status === 200 ? x.status === 200 : x.status === 422 && JSON.stringify(x.data.problems) === JSON.stringify(sm.expect.problems);
+    if (!good) vwrong.push(`${sm.name}: ${x.status} ${JSON.stringify(x.data).slice(0, 300)}`);
+  }
+  ok(`the visit: each of the ${FXE.visit.length} examples (a new effect, a changed one, one taken off, the extra removed: refused; name, charge and price: saved)`, vwrong.length === 0, vwrong.join("\n       "));
+  const log = await E.log();
+  ok("... and a refusal says so in the owner's log, in the owner's own words", log.some((e) => e.words === REFUSED_LOG.locked), JSON.stringify(log.map((e) => e.words)));
+  /* the lock on its own: set_roof_pitch stays the only building-shape change */
+  const s0 = FXE.effectBase;
+  const variants = [
+    ["the effect's value changed", (s) => { s.options.extras.find((x) => x.key === "heavy-floor").construction["floor.spacingIn"] = 24; }, ["Heavy-duty floor"]],
+    ["an effect added to an extra that had none", (s) => { s.options.extras.find((x) => x.key === "ridge-vent").construction = { "roof.ventIn": 4 }; }, ["Ridge vent"]],
+    ["the extra with the effect renamed and its effect removed", (s) => { const x = s.options.extras.find((y) => y.key === "heavy-floor"); x.name = "Floor"; delete x.construction; }, ["Heavy-duty floor"]],
+    ["the effect moved to another key", (s) => { const x = s.options.extras.find((y) => y.key === "heavy-floor"); x.key = "floor-2"; }, ["Heavy-duty floor"]],
+  ];
+  const lwrong = [];
+  for (const [what, change, names] of variants) {
+    const n = structuredClone(s0);
+    change(n);
+    const got = lockProblems(s0, n, { standardRise: STD_RISE });
+    if (JSON.stringify(got) !== JSON.stringify(names.map(words))) lwrong.push(`${what}: ${JSON.stringify(got)}`);
+  }
+  const reordered = structuredClone(s0);
+  reordered.options.extras.reverse();
+  reordered.options.extras.find((x) => x.key === "heavy-floor").construction = { ...s0.options.extras.find((x) => x.key === "heavy-floor").construction };
+  if (lockProblems(s0, reordered, { standardRise: STD_RISE }).length) lwrong.push("the same extras in another order are refused");
+  ok("lockProblems: every way of adding, changing or taking away an extra's effect is refused with its name; the same extras in another order are not", lwrong.length === 0, lwrong.join("; "));
+  const pitch = applyEdits(s0, [{ do: "set_roof_pitch", style: "UT", pitch: "5/12" }], { manufacturer, standardRise: STD_RISE });
+  ok("... while a gable roof's pitch (set_roof_pitch) still passes the lock with the effect extra there", pitch.problems.length === 0 && lockProblems(s0, pitch.settings, { door: true, standardRise: STD_RISE }).length === 0);
+}
+{
+  /* putting back can't take an effect away either: the owner added the extra after the version Barnwright puts back */
+  const G = withDoor(business());
+  await G.setUp(); await G.agree("2.2");
+  const added = await G.ownerSave((s) => { s.options.extras = [...(s.options.extras || []), { key: "heavy-floor", name: "Heavy-duty floor", input: "check", price: 350, construction: { "floor.spacingIn": 12 } }]; });
+  ok("(the owner adds an extra that changes how the building is built: the owner may)", added.status === 200, JSON.stringify(added.data).slice(0, 300));
+  const c = cookieFrom(await G.start());
+  const x = await G.visit("POST", "price-list/restore", { version: 1, current: 2 }, c);
+  ok("a put back in the visit to before the owner added it is refused by the lock, naming the extra", x.status === 422 && JSON.stringify(x.data.problems) === JSON.stringify([extraWords("Heavy-duty floor")])
+    && (await G.store.get("price-list")).version === 2, JSON.stringify(x.data));
+  const owner2 = await G.ownerSave((s) => { s.items.w48 = 170; });
+  const p = await G.door({ action: "check", version: 3, edits: [{ do: "set_item", item: "w48", price: 175 }] });
+  await G.door({ action: "save", version: 3, edits: [{ do: "set_item", item: "w48", price: 175 }], settingsSha256: p.data.settingsSha256 });
+  const st = await G.store.get("price-list");
+  await G.store.put("price-list-history/000003", { ...(await G.store.get("price-list-history/000003")), settings: { ...(await G.store.get("price-list-history/000003")).settings, options: { ...st.settings.options, extras: st.settings.options.extras.filter((e) => e.key !== "heavy-floor") } } });
+  const u = await G.door({ action: "check", version: 4, undo: true });
+  ok("the door's undo to a copy without the effect extra is refused by the lock too", owner2.status === 200 && u.status === 422 && JSON.stringify(u.data.problems) === JSON.stringify([extraWords("Heavy-duty floor")]), JSON.stringify(u.data).slice(0, 400));
 }
 
 console.log("");
