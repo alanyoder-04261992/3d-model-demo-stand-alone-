@@ -64,7 +64,7 @@ if OUT: os.makedirs(OUT, exist_ok=True)
 
 TERMS_TITLE = "Barnwright Terms and Conditions"
 TERMS_VERSION = "2.2"               # server/office/terms.js TERMS.version says the same
-TERMS_DATE = "November 11, 2026"    # the day 2.2 starts: at least 30 days after Alan sends the notice himself (section 19)
+TERMS_DATE = "October 12, 2026"     # the day 2.2 started (Alan, Oct 12 2026: "merge terms 2.2", starting that day)
 VERSION = f"Version {TERMS_VERSION}, {TERMS_DATE}"   # at the top of every paper, and in papers.json
 DOMAIN = "barnwrightsoftware.com"   # every business's web address is <their name>.barnwrightsoftware.com
 MONTHLY_FEE = 250                   # a month from the start date, for any number of lots; it includes the first lot. No setup fee
@@ -230,9 +230,12 @@ def section_band(text):
 # 1.4, 2.1 and the short version), and the website code is named.
 # Version 2.2 (Alan, Oct 2026: "I get access to change thing from control room
 # until it goes live and then in the owner setting they can turn switch on to
-# give me access"): Barnwright setup access, held until Alan approves the words
-# and has sent the 30-day notice himself (section 19). 2.3 the preview before
-# opening; 2.4 setup access until the 3D designer is first open or the first
+# give me access"): Barnwright setup access. Alan approved the words and on
+# Oct 12 2026 said "merge terms 2.2", starting that day, once setup access, the
+# Control Room's Claude connector and its Make the change page were live
+# (designer PR 41, Control Room PR 19). docs/FOR-ALAN.md has what was decided
+# about the 30-day notice (section 19). 2.3 the preview before opening; 2.4
+# setup access until the 3D designer is first open or the first
 # quote or order is saved; section 10 the owner's one Barnwright card (Run
 # checks, or Run checks and change my price list and settings), 10.4 a
 # Barnwright person makes or approves each change after that, 10.5 what the

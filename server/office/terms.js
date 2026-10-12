@@ -41,7 +41,7 @@ import TERMS_COPIES from "../../docs/legal/terms-sha256.json" with { type: "json
    say what setup access does and no more. */
 export const TERMS = Object.freeze({
   version: "2.2",
-  date: "November 11, 2026",
+  date: "October 12, 2026",
   url: "/legal/barnwright-terms.pdf",
   title: "Barnwright Terms and Conditions",
 });
