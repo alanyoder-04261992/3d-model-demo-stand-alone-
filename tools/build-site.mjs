@@ -30,6 +30,7 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, copyFileSync, rmSync } from "node:fs";
 import { resolve, dirname, relative, extname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 import { build } from "esbuild";
 import { buildHeaders, readCompanies, inlineScriptHashes } from "./build-headers.mjs";
 import { includeLearningPreview, includeDealerDemo } from "./site-profiles.mjs";
@@ -53,9 +54,13 @@ function copy(path) {
 }
 // The style reference pictures and facts (tools/make-style-refs.mjs): about
 // 1.8 MB that Barnwright's Control Room reads from GitHub for setting a dealer
-// up. No page of the designer or the Dealer Center loads them, so no website
-// and no client package carries them (tools/check-style-refs.mjs).
+// up. Only the front-corner picture of each style ships (library/style-refs/
+// <CODE>.jpg): the Dealer Center's Your buildings shows it until the owner's
+// browser has drawn the business's own picture, and keeps it when the
+// browser can't draw. The end pictures, the sheet and styles.json stay out
+// (tools/check-style-refs.mjs).
 const NOT_SHIPPED = new Set(["library/style-refs"]);
+const SHIPPED_REF = /^[A-Z0-9]{1,8}\.jpg$/;
 function tree(path) {
   for (const entry of readdirSync(resolve(root, path), { withFileTypes: true })) {
     const child = `${path}/${entry.name}`;
@@ -97,6 +102,7 @@ for (const name of ["styles", "views", "blueprint", "quote", "share", "embed-mod
 if (!existsSync(resolve(root, "ui/office/closed.css"))) throw new Error("ui/office/closed.css is missing: a closed lot's link needs it");
 for (const file of readdirSync(resolve(root, "ui/office")).filter(f => f.endsWith(".css")).sort()) copy(`ui/office/${file}`);
 tree("fonts"); tree("library"); tree("legal");
+for (const f of readdirSync(resolve(root, "library/style-refs")).filter((f) => SHIPPED_REF.test(f)).sort()) copy(`library/style-refs/${f}`);
 const { companies, problems } = await readCompanies();
 if (problems.length) throw new Error(problems.join("\n"));
 const selected = companies.filter(c => learning || !c.id.startsWith("learning-"));
@@ -111,9 +117,18 @@ if (learning) {
 // __DEALER_DEMO__ says whether this build offers the "try it" demo: Alan's
 // learning preview and his demo site do. A client build leaves the demo out
 // completely (no demo file, and no "leave both boxes empty" sign-in).
+// Your buildings' drawing code (ui/office/pictures.js: the 3D engine): its
+// own file in every build, loaded only when a picture is missing, so the
+// main file stays small. Its hash goes into the main file as
+// __PICTURES_ID__: a picture the owner's browser keeps is drawn again only
+// when this code changed.
+await build({ entryPoints: [resolve(root, "ui/office/pictures.js")], outfile: resolve(out, "ui/office/pictures.js"),
+  bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, sourcemap: false,
+  legalComments: "none", logLevel: "warning" });
+const picturesId = createHash("sha256").update(readFileSync(resolve(out, "ui/office/pictures.js"))).digest("hex").slice(0, 16);
 await build({ entryPoints: [resolve(root, "ui/office/main.js")], outfile: resolve(out, "ui/office/main.js"),
   bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, sourcemap: false,
-  legalComments: "none", logLevel: "warning", define: { __DEALER_DEMO__: JSON.stringify(demo) } });
+  legalComments: "none", logLevel: "warning", define: { __DEALER_DEMO__: JSON.stringify(demo), __PICTURES_ID__: JSON.stringify(picturesId) } });
 // The "try it" demo (/dealer?demo): its own file, loaded only by the demo. It
 // carries a copy of the Dealer Center's server code and runs it in the page
 // on made-up data; it holds no secrets (those live only in Netlify's settings).
