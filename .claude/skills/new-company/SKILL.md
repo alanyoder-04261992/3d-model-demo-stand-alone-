@@ -14,9 +14,14 @@ saves a card on the Control Room's sign-up page (there is no paper form),
 Alan photographs their buildings, price list and options, and the Control
 Room's Make their Dealer Center makes the Netlify site (Identity on, the
 owner's email as `OWNER_EMAIL`, the `CONTROL_ROOM_*` settings); by hand
-that is one paste of the settings. The owner ticks "I have read and agree to
-the Barnwright Terms and Conditions" in first setup, then sets everything up
-on screen: the price list (sizes, styles, prices, options, colors), the lots (each gets
+that is one paste of the settings. The owner's first sign-in opens Today
+right away (no setup screens): their price list (Barnwright's when Alan set
+it up first, else "Every standard building" at example prices, closed to
+customers) and first lot are made from their sign-up, the sign-up's "I
+agree" counts (otherwise the line at the top asks for "I have read and
+agree to the Barnwright Terms and Conditions"), and a Getting started card
+lists the rest. Then everything is set up on screen: the price list (sizes,
+styles, prices, options, colors), the lots (each gets
 `/d/<lot>/` and its own `data-lot` website code) and the team. No settings
 file is written by hand for these businesses; the price list is the same
 validated settings object a `companies/<id>/company.json` file holds. Dealers
@@ -40,7 +45,7 @@ construction lists come from `library/`). Where each answer goes:
 
 | Section | Goes to |
 |---|---|
-| 1. Business, web address | first setup and Settings (`brand`); the Netlify domain and the control room's Application URL |
+| 1. Business, web address | the sign-up page (the owner's first sign-in makes the business from it) and Settings (`brand`); the Netlify domain and the control room's Application URL |
 | 2. Look | Settings: logo, colors (`brand.colors`), tagline |
 | 3. Lots | Lots: name, address, phone, email, hours, website (`embedOrigins`) |
 | 4. Team | Team: owner, manager or dealer, and their lots |

@@ -322,9 +322,19 @@ site. One shed business runs everything from it:
      your Control Room shows the steps to do by hand in Netlify, with one
      paste for all the settings.
   4. **The owner's computer.** The owner makes their login at their
-     address with /dealer on the end, and ticks "I have read and agree to
-     the Barnwright Terms and Conditions". Put the Dealer Center on their
-     computer and their phone like an app: on the computer, click
+     address with /dealer on the end and signs in. There are no setup
+     screens: Today opens right away with their business, their price
+     list (yours, when you already set it up, or every standard building
+     at example prices, closed to customers until they open it) and their
+     first lot, named after the business. A **Getting started** list on
+     Today shows what is left: check the prices, the logo and colors, the
+     other lots, the team, look at the preview, open to customers. Each
+     one ticks itself when it's done. The terms they agreed to on the
+     sign-up page count; only when that agreement is missing or older than
+     their Dealer Center's terms does a line at the top ask them to tap
+     **I have read and agree to the Barnwright Terms and Conditions**
+     (until the 2.2 terms are out, it always asks). Put the Dealer Center
+     on their computer and their phone like an app: on the computer, click
      **Install** at the right end of the address bar in Chrome or Edge; on
      an iPhone, **Share**, then **Add to Home Screen**. It gets its own
      black and gold icon. Then type their prices from your photos, add

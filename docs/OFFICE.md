@@ -364,7 +364,9 @@ each other.
 | Key | Holds |
 |---|---|
 | `setup` | the first owner's claim `{userId, email, at}`, written at the owner's first confirmed sign-in; until it exists, no owner has signed in yet (see "Before the owner first signs in") |
-| `barnwright-terms` | `{current: {version, agreedAt, by: {userId, email, name}}, history: [...]}` — the owner's agreement to the Barnwright terms (connected businesses only) |
+| `barnwright-terms` | `{current: {version, agreedAt, by: {userId, email, name}, from?}, history: [...]}` — the owner's agreement to the Barnwright terms (connected businesses only); `from: "signup"` for the agreement from their sign-up page, kept as theirs at their first sign-in (see "The owner's first sign-in") |
+| `first-start` | `{at, priceList: "made"\|"kept", barnwright, lot, startVersion}` — the owner's start ran (see "The owner's first sign-in"): whether it made the price list or kept the one there (`barnwright`: version 1 was Barnwright's), the first lot it made (or null) and the price list's version then; written once (create-only) |
+| `getting-started` | `{hidden?, preview?, prices?}` — the Getting started card on Today: when the owner hid it, tapped Look at the preview, and first saved the price list after the start |
 | `price-list` | `{settings, version, cfg, savedAt, savedBy}` — `settings` is a company settings object (`model/company.js`); `savedBy` is `{id, name}` of the person, or `{id: "barnwright", name: "Barnwright (alan@...)", passId}` for a Barnwright save |
 | `price-list-history/<version>` | `{version, savedAt, savedBy, changes:[text], settings}` (the version padded to 6 digits in the key) |
 | `lots/<slug>` | `{slug, name, address, city, state, zip, phone, email, hours, website, embedOrigins[], active, createdAt, updatedAt}` |
@@ -385,6 +387,7 @@ each other.
 | `barnwright-setup-seen` | `{ids: {<pass id>: expiresAt}}` — setup passes already used |
 | `barnwright-sessions` | `{<SHA-256 of the cookie>: {actor, passId, startedAt, lastAt, endsAt, mode, agreement, grantedAt?, ended?}}` — Barnwright visits (at most 20; ones past their end removed on each write); `mode`, `agreement` (`owner` or `signup`) and `grantedAt` say what the visit started under, `ended` that access closed since |
 | `barnwright-signup-agreement` | `{termsVersion, termsSha256, signature, signedAt, at, passId}` — the owner's agreement from the Control Room's sign-up page, as the first pass that carried one that counts brought it; written once (create-only) and never changed; never a phone, email or business name (see "Before the owner first signs in") |
+| `barnwright-signup-details` | `{business, phone, email, at, passId}` — the business name, phone and email from the owner's sign-up page, as the first pass that carried a sign-up while there was no price list brought them (whether or not the agreement counted, whether or not the owner had signed in); written once (create-only) and never changed; the owner's start makes the business from them; never in an answer, a log line or a change line |
 | `barnwright-setup-limits` | `{hour, requests, day, saves}` — Barnwright requests this hour and saves today |
 | `barnwright-help-problems` | `{v: 2, day, team, public, repeats, visitors: {who: n}, seen: {signature: {at, last, extra}}}` — today's shares of the problem reports used (`who` is a visitor's address hashed with the day, never the address), and each kind passed on in the last 24 hours: when it first went, when its count last went, and how many more times it happened since (connected businesses only; see "Help") |
 
@@ -440,11 +443,13 @@ asked answers 503 `{code: "sign-in-down"}`, never 401.
 
 | Route | Who | Does |
 |---|---|---|
-| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup, and for a login that isn't on the team (`person` null) it leaves out `phone`, `email` and `website`; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access"); `session` is `{keep, endsAt}` for a sign-in on the cookie (null for one from before it); `setupNeeded` is true for the owner until First setup is done, which includes a price list Barnwright started before the owner's first sign-in (`business` is then not null, and First setup skips the starting price list: see "Before the owner first signs in") |
+| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup, and for a login that isn't on the team (`person` null) it leaves out `phone`, `email` and `website`; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access"); `session` is `{keep, endsAt}` for a sign-in on the cookie (null for one from before it); `startNeeded` is true for the owner while the owner's start hasn't run and the business has no price list or no lot (the page then sends `POST start` and opens Today); `gettingStarted` is the owner's Getting started card, `{name, barnwright, steps: [{id, done}], lotLimit, openLots}`, null for everyone else, before the start (unless there is no price list: then `{name: true, steps: []}`, the business name first), once hidden and once every step is done (see "The owner's first sign-in") |
 | `POST session` | anyone | `{refreshToken, keep, why?}`: a fresh sign-in from Identity (the page's own password sign-in, or an email link) becomes the sign-in cookie: the refresh token is swapped at Identity at once, only a confirmed email counts, `keep` gives the cookie its 30 days (and two); `why: "reset"` (a page from before this) ends the person's other sign-ins, and when that can't be done nothing is signed in (503) → 201 `{ok, keep, endsAt}` and the cookie; 403 `{code: "not-on-team", email}` "You're not on the team here yet. Ask the owner to add … to the team, then sign in again." for a login with no person record, no invite and no first-owner claim (no cookie, no record); 401 "That sign-in ran out. Sign in again." for a spent or made-up token; 503 when Identity can't be asked |
 | `POST sign-out` | anyone | `{}` ends this device's sign-in. `{everywhere: true, why?: "password"}` ends every Dealer Center sign-in of the person -- the one whose token is in the `Authorization` header (a reset link's), else the one this device's record names, else a sign-in from before the cookie -- then asks Identity to drop every refresh token of theirs → 200 `{ok, everywhere: true, identity: true \| false}` (false: the Dealer Center sign-ins ended, Identity didn't answer), with the sign-in cookie and Identity's old `nf_jwt` and `nf_refresh` cleared; 503 with this device still signed in when the records couldn't be changed, or Identity was needed to find the person and can't be asked |
-| `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright Terms and Conditions.") and the agreement is kept. When Barnwright already started the price list, `start` is left out: the business details are saved into it as the owner's change (only what differs) and the agreement is kept → 200 `{business}` (see "Before the owner first signs in") |
-| `POST terms` | owner | `{agree: true}` agrees to the current Barnwright Terms and Conditions (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too |
+| `POST start` | first owner | the owner's start, at their first sign-in (`first-start.js`; see "The owner's first sign-in"): `{}`, or `{businessName}` from the Getting started card → 200 `{business, start: {priceList: "made"\|"kept", lot, terms: "signup"\|null}}`; keeps a price list that is there, else makes "Every standard building" (closed to customers) from the typed name or the sign-up's details; keeps the sign-up agreement as the owner's when it counts; makes the first lot when there is none. Safe to send twice (then, or for a business with its price list and a lot, nothing changes). 422 "Type your business name." when there is no name to start from (nothing written); 423 before the lease |
+| `POST getting-started` | owner | `{hide: true}` (Hide this list) or `{preview: true}` (Look at the preview was tapped) → `{gettingStarted}`; works while changes are stopped too |
+| `POST setup` | first owner | the sample business (`server/office/sample.js`) and the checks only, never a new owner: `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright Terms and Conditions.") and the agreement is kept; 409 "The business is already set up." when there is a price list |
+| `POST terms` | owner | `{agree: true}` agrees to the current Barnwright Terms and Conditions (the line at the top: no agreement from the sign-up page, an older one, or the terms changed); works while changes are stopped too |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
 | `PUT price-list` | owner | `{settings, version}` → `{version, cfg, changes}`; 409 when someone saved first |
 | `GET price-list/history` | owner, manager | `{entries: [{version, savedAt, savedBy, changes}]}` |
@@ -750,9 +755,9 @@ the first that applies:
 
 1. Not connected to the Control Room, or some settings missing: the door
    answers 404 (`not-connected`).
-2. No price list yet, and an owner has signed in (First setup is theirs to
-   finish) or no sign-up agreement came with the pass or is remembered:
-   closed, `no-price-list`.
+2. No price list yet, and an owner has signed in (their Dealer Center makes
+   it at their first sign-in) or no sign-up agreement came with the pass or
+   is remembered: closed, `no-price-list`.
 3. The agreement. An owner has signed in: they must have agreed to terms
    2.2 or later in the Dealer Center, else closed, `terms`. No owner has
    signed in yet: the owner's sign-up agreement must count (see "Before
@@ -767,24 +772,26 @@ the first that applies:
    Before a price list exists, `prelive` means Barnwright can start it.
 
 "An owner has signed in" means the first owner's claim (`setup`) exists: it
-is written at the owner's first confirmed sign-in, before First setup.
+is written at the owner's first confirmed sign-in, just before their start.
 
 What Alan and Claude read for each `why` (the door sends it as `error`):
 
 | why | words |
 |---|---|
-| `no-price-list` | The owner hasn't finished First setup yet, so there is no price list to change. |
-| `terms` | The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center. |
+| `no-price-list` | Their Dealer Center has no price list yet. It is made when the owner first signs in. |
+| `terms` | The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap I have read and agree at the top of their Dealer Center. |
 | `signup-terms` | They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center. |
 | `signup-unknown` | Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy. |
 | `stopped` | The owner stopped Barnwright's setup access in Settings, Barnwright. |
 | `live-off` | Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright. |
 
-An owner who has just signed in is in First setup, where the terms are a
-box to tick, even when Barnwright already started their price list; the
-button at the top of the Dealer Center comes only after First setup. So the
-words for `terms` name both places, and so does the visit that ends when
-the owner first signs in (the Control Room says the same, `OWNER_TERMS`).
+An owner who has just signed in lands on Today. When the agreement from
+their sign-up page is kept as theirs (see "The owner's first sign-in"),
+access stands on it at once; otherwise they agree with the line at the top
+of every screen, "I have read and agree to the Barnwright Terms and
+Conditions". So the words for `terms` name that line, and so does the visit
+that ends when the owner first signs in (the Control Room says the same,
+`OWNER_TERMS`).
 
 Until this Dealer Center's own terms (`TERMS.version`) are 2.2 or later, no
 owner can agree to them and no sign-up agreement counts, so `why: "terms"`
@@ -821,8 +828,9 @@ Dealer Center looks back. Live if the 3D designer is open now, or any
 `price-list-history/` entry isn't `suspended`, or any `customers/` record
 has a quote or an order. More than 500 history entries or 500 customers to
 look through, or any read that fails: live (`how: "unsure"`). Nothing
-found: `{live: false, checkedThrough: <current version>}`. First setup
-writes `{live: false, checkedThrough: 1}` straight away. What the look back
+found: `{live: false, checkedThrough: <current version>}`. A price list
+made new (the owner's start, `POST setup`, Barnwright's start) writes
+`{live: false, checkedThrough: 1}` straight away. What the look back
 finds is written quietly, with `liveAt: null`: nobody knows when it went
 live.
 
@@ -1033,8 +1041,8 @@ fields**, refusals included, so the Control Room always learns the state:
 * `agreement` is what setup access stands on: `owner` (the owner's own
   agreement, `termsOk`), `signup` (no owner has signed in yet and their
   sign-up agreement counts), or null (neither).
-* `priceList` is null while there is no price list (before First setup,
-  or before Barnwright starts it). `open` is whether customers can use the
+* `priceList` is null while there is no price list (before the owner's
+  first sign-in makes it, or before Barnwright starts it). `open` is whether customers can use the
   3D designer now.
 * `by` names who saved by role, never by name or email: "the owner",
   "a manager", "Barnwright (alan@...)" (the pass's actor), or "someone no
@@ -1494,7 +1502,7 @@ with stricter limits and its own words, kept as they were.
 
 **Examples.** `edits.samples` in the fixtures has every edit with the
 change words it must give, the settings it must leave, and the refusals.
-The base is First setup with the small starting price list.
+The base is a business set up with the small starting price list.
 
 ### Warnings
 
@@ -1872,7 +1880,8 @@ Alan's choice (October 2026): start right away. As soon as Alan taps
 business's price list from Alan's photos: Alan by hand in the visit, or
 Claude through the Control Room. The owner finds it ready the first time
 they sign in. It uses the terms the owner already agreed to on the Control
-Room's sign-up page.
+Room's sign-up page. The owner's own first sign-in then needs no setup
+screens at all (see "The owner's first sign-in" below).
 
 **The sign-up agreement.** On the sign-up page Alan texts them, the owner
 reads the terms, ticks "I agree" and types their name. The Control Room
@@ -1905,10 +1914,10 @@ Dealer Center's own terms are older than 2.2. Once an owner has signed in,
 a sign-up agreement never counts again: only the owner's own agreement in
 the Dealer Center does.
 
-It never counts as the owner's own tick. `barnwright-terms` is never
-written from it, `GET me`'s `terms.agreed` stays null and `termsOk` stays
-false, and First setup still asks the owner to tick "I have read and agree
-to the Barnwright Terms and Conditions".
+Before the owner signs in, it counts for setup access only: `barnwright-terms`
+is never written from a pass, and `termsOk` stays false. At the owner's
+first sign-in, their start keeps it as their own agreement, by the same
+rule (see "The owner's first sign-in").
 
 **Remembered once.** The first pass whose sign-up agreement counts (any
 action, `status` included) writes `barnwright-signup-agreement`
@@ -1920,10 +1929,15 @@ which carry no pass, see it too. A check-in can't know about the agreement
 before a pass brings it, so until then it reports `no-price-list`.
 
 **The details are for setup only.** The business name, phone and email a
-pass carries are used only to make the starting price list (below). They
-are never kept anywhere else (the remembered agreement holds none of them),
-never put in an answer, a log line or a change line, and once a price list
-exists, the details a pass carries change nothing. The phone and email are
+pass carries are used only to make the starting price list: Barnwright's
+(below), or the owner's own at their first sign-in. The first pass that
+carries a sign-up while there is no price list writes them once, with a
+create-only write, in `barnwright-signup-details` `{business, phone, email,
+at, passId}` -- whether or not the agreement counts, and whether or not
+the owner has signed in (an owner can sign in before the pass that brings
+them comes). They are never kept anywhere else (the remembered agreement
+holds none of them), never put in an answer, a log line or a change line,
+and once a price list exists, the details a pass carries change nothing. The phone and email are
 contact details set up before live, which is allowed (see The lock), and
 they are not warned about: they are the owner's own, from their sign-up.
 
@@ -1932,12 +1946,12 @@ access is `prelive`:
 
 * `read` answers the parts of the starting price list the first save would
   make: the "Every standard building" template (`companies/demo/company.json`,
-  First setup's `full`), set up the way First setup sets up a business
-  (closed to customers, `status: "suspended"`), with the business name from
-  the pass's sign-up (and the short name, initials and the price list's
-  `id` worked out from it as First setup does), its phone and email as
-  First setup's own checks give them (trimmed, the email in lower case;
-  one those checks would refuse is left empty) and no website.
+  `full`), set up the way every new business starts (closed to customers,
+  `status: "suspended"`), with the business name from the pass's sign-up
+  (and the short name, initials and the price list's `id` worked out from
+  it), its phone and email as the business's own checks give them
+  (trimmed, the email in lower case; one those checks would refuse is left
+  empty) and no website.
   The status fields say `priceList: null`, and `history` is `[]`. Nothing
   is written but the pass, the limits and the remembered agreement.
 * `check` takes `version: 0` and 0 to 300 edits (`[]` or left out: the
@@ -1985,42 +1999,109 @@ on the sign-up agreement (`agreement: "signup"` in `barnwright-sessions`)
 ends once an owner has signed in, even after they agree: Alan opens a new
 one.
 
-**The owner's first sign-in.** The owner makes a login with the email from
-their sign-up, as before. `GET me` says `setupNeeded: true` with `business`
-not null when the price list exists, `barnwright-signup-agreement` exists
-and the owner has never agreed to any terms in the Dealer Center (an
-existing business never has the record, so it is never sent back to First
-setup). Until then the business phone and email are the ones the owner
-typed on the sign-up page (the email is their login), and anyone can make
-a login, so `GET me` gives a login that isn't on the team the business
-without its phone, email and website. First setup then:
-
-* has two steps, **Your business** and **Your first lot**, skips "Your
-  starting price list", and says above them: "Barnwright set up your price
-  list. You can change anything." (its welcome line reads "Two short
-  steps. You can change all of it later.");
-* still asks for the business details (filled in from the price list: the
-  business name, phone and email), the terms tick and the first lot;
-* sends `POST setup` without `start`. The agreement is kept as the owner's
-  own, and a business name, phone, email or website that differs from the
-  price list's is saved into it as the owner's change (a new version by the
-  owner, with the short name and initials worked out from a new name as
-  First setup does). The answer is 200 `{business}`. When the price list
-  wasn't started this way, or the owner has agreed already: 409 "The
-  business is already set up." as before.
-
-From then on, access stands on the owner's own agreement: `prelive` until
-the business is live, as for every business. Settings, Barnwright shows
-"Barnwright is setting up your 3D designer. ..." with **Stop Barnwright's
-setup access**, and its log starts with Barnwright's start and changes; the
-closed banner says "Barnwright is setting up your prices. Look at the
-preview, check it with Alan, then open it to customers in Settings."
-Between the owner's first sign-in and their tick, access is closed
+**The owner's first sign-in.** See the next section: their Dealer Center
+keeps Barnwright's price list exactly as it is, makes their first lot and
+keeps the sign-up agreement as theirs. From then on, access stands on the
+owner's own agreement: `prelive` until the business is live, as for every
+business. Settings, Barnwright shows "Barnwright is setting up your 3D
+designer. ..." with **Stop Barnwright's setup access**, and its log starts
+with Barnwright's start and changes; the closed banner says "Barnwright is
+setting up your prices. Look at the preview, check it with Alan, then open
+it to customers in Settings." Between the owner's claim and their start (a
+moment, or longer when the start can't run, below), access is closed
 (`terms`, or `no-price-list` when Barnwright hadn't started a price list),
 and every visit started on the sign-up agreement ends.
 
 Live is unchanged: the owner opening the 3D designer, or the first real
 quote or order.
+
+### The owner's first sign-in
+
+Alan's choice (October 12, 2026): "When a new customer owner first log in
+does it still do this because I think it's point less should just open to
+home page right away". There are no setup screens. The first owner signs
+in and Today opens at once (`server/office/first-start.js`,
+`ui/office/views/getting-started.js`).
+
+**The start.** `GET me` says `startNeeded: true` for the owner while the
+start hasn't run and the business has no price list or no lot. The page
+then sends `POST start` (it says "Getting your Dealer Center ready…"
+meanwhile), asks `GET me` again and opens Today; an old `#/setup` link
+opens Today too. The start is safe to send twice and from two tabs at once;
+once it ran (`first-start`), or for a business that has its price list and
+a lot, it changes nothing. In order:
+
+1. **Their business and price list.** A price list that is there already
+   (Barnwright set it up before the owner signed in, or another tab just
+   made it) is kept exactly as it is: no save, no new version. Otherwise
+   "Every standard building" at example prices, closed to customers, made
+   with a create-only write as version 1 by the owner (History: "Started
+   the price list from Every standard building, at example prices"), from
+   the business name typed on the Getting started card or the one in
+   `barnwright-signup-details`, with that sign-up's phone and email as the
+   business's own checks give them. Its 3D designer stays closed to
+   customers until the owner opens it. With no name from either (not
+   connected to Barnwright, a customer added by hand, a business name too
+   long for a pass, or the status pass hasn't come): 422 "Type your
+   business name." and nothing is written; Today's card asks for it.
+2. **The terms.** When `barnwright-terms` holds no agreement at all and the
+   remembered sign-up agreement (`barnwright-signup-agreement`) counts by
+   the rule above (as if no owner had signed in), it is kept as the
+   owner's own: `{version: <the version they signed>, agreedAt: <when they
+   signed>, by: {userId, email, name: <the name they typed>}, from:
+   "signup"}`. Otherwise nothing is written, and "I have read and agree to
+   the Barnwright Terms and Conditions" at the top of every screen asks
+   them, as it does for every owner whose agreement is missing or older
+   than this Dealer Center's terms. Until this Dealer Center ships terms
+   2.2, no sign-up agreement counts, so every new owner sees that line.
+3. **Their first lot**, only when the business has no lot at all: named
+   after the business (they can rename it on Lots), its link name made from
+   that name, with the business phone and email. It takes its place in the
+   plan first (`barnwright-lot-slots`); a plan with no open lot left, or an
+   account that is off, makes no lot, and the card says to add one on
+   Lots. The link name is given, so two starts at once can't make two lots.
+   Only the first lot, the one the plan includes; the others are added on
+   Lots as always (the card says how many the plan includes). The town
+   isn't in the lot's name: the sign-up the Control Room passes on carries
+   no town.
+4. `first-start` is written (create-only).
+5. An owner with no name gets the one they typed on the sign-up page.
+
+The start needs the lease like every change: before the Dealer Center is
+switched on, it answers 423 and nothing is made; `startNeeded` stays true
+and the page sends it again at the next sign-in. The answer is `{business,
+start: {priceList: "made"|"kept", lot, terms: "signup"|null}}`.
+
+**Getting started.** On Today, above everything, the owner (never a manager
+or a dealer) sees the Getting started card in black and gold until every
+step is done or they tap **Hide this list** (kept in `getting-started`, so
+it stays hidden). With no business yet it asks for the **Business name**
+and **Start** (`POST start {businessName}`) and nothing else. Then it says
+"Your Dealer Center is ready. Your 3D designer stays closed to customers
+until you open it." and lists, each a link to the screen that does it and
+ticked by itself once done (the server works the ticks out, `GET me`
+`gettingStarted.steps`):
+
+* **Check your prices** (Price list): ticked by the owner's first price list
+  save after the start, or by opening to customers. It says "Every price is
+  an example. Turn off what you don't sell and type your own.", or, when
+  Barnwright set up the price list, "Barnwright set up your price list.
+  Check it, and change anything."
+* **Add your logo and colors** (Settings): ticked by a logo, or colors
+  other than the starting black and gold.
+* **Add your first lot** (Lots), when the start made none; or **Add your
+  other lots** (Lots) when the plan includes more than one ("Your plan
+  includes 3 open lots. 1 is open now."), ticked once they are all open.
+* **Add your team** (Team): ticked once anyone else is on the team or
+  invited.
+* **Look at the preview**: opens the first lot's 3D designer as a preview
+  in a new tab (`POST getting-started {preview: true}` ticks it).
+* **Open to customers** (Settings): ticked once the 3D designer is open.
+
+The top of the card says how many are done ("2 of 6 done"). It fits a phone
+(390 wide) with full-size taps. `npm run office -- --empty` is a new
+business as its owner's first sign-in finds it (sign in as
+owner@example.com: not connected, so Today asks for the business name).
 
 ### The check-in
 
@@ -2120,8 +2201,8 @@ exactly as they were, and nothing here sends email.
 * `server/office/terms.js` and `docs/legal/terms-sha256.json` (new, kept by
   `tools/legal/make-legal-pdfs.py`): whether a sign-up agreement is to
   terms this Dealer Center has; `server/office/price-list.js`: the
-  starting price list Barnwright makes, and First setup on a price list
-  that already exists.
+  starting price list Barnwright makes; `server/office/first-start.js`:
+  the owner's first sign-in on a price list that already exists.
 * `ui/office/api.js`, `ui/office/main.js` and `ui/office/visit-draft.js`
   (new): the visit's Barnwright mode, its reduced screens, the Done bar and
   the unsaved work kept in the tab (`sessionStorage`) when the visit ends;
@@ -2272,11 +2353,12 @@ Stripe save cards.
    **Connected** and fills in its address from the check-in ("Checking
    in").
 4. **The owner's computer.** On the owner's computer they open `/dealer`,
-   make a login with the email from their sign-up, confirm it, and follow
-   the setup steps: business details with "I have read and agree to the
-   Barnwright Terms and Conditions", a starting price list, the first lot.
-   When Barnwright already set up the price list, First setup says so and
-   skips the starting price list.
+   make a login with the email from their sign-up, confirm it, and sign in.
+   Today opens right away: their business, their price list (Barnwright's
+   when Alan already set it up, else "Every standard building" at example
+   prices, closed to customers) and their first lot are there, and the
+   Getting started card lists what is left (see "The owner's first
+   sign-in").
    They put the Dealer Center on their computer and phone like an app
    (`dealer.webmanifest`: Chrome and Edge show **Install** at the right end
    of the address bar; on an iPhone, Share, Add to Home Screen; Help has
@@ -2328,17 +2410,18 @@ Conditions** (`legal/barnwright-terms.pdf`, published on every business's
 site by `tools/build-site.mjs`) in two places: on the sign-up page Alan
 texts the owner (it shows the short version and the full terms from
 `docs/legal/terms.json`; the owner ticks "I agree" and types their name),
-and in the Dealer Center (`server/office/terms.js`). First setup can't make
-the business without the owner ticking "I have read and agree to the
-Barnwright Terms and Conditions"; an owner who set up before the box
-existed, or before the terms changed, sees "Please read the Barnwright Terms
-and Conditions (version 2.1)." and the button "I have read and agree to the
-Barnwright Terms and Conditions" at the top of every screen until they tap
-it. Each agreement is kept with its version, time and the owner's login, and
-Settings, Barnwright, says who agreed and when. Until the owner first signs
-in, the agreement from the sign-up page (2.2 or later) lets Barnwright set
-up their price list, and nothing else; it is never taken as their tick in
-the Dealer Center (see "Before the owner first signs in"). Alan's own
+and in the Dealer Center (`server/office/terms.js`). At the owner's first
+sign-in, the agreement from their sign-up page (2.2 or later, terms this
+Dealer Center has) is kept as theirs (see "The owner's first sign-in").
+An owner with no agreement here, an older one, or after the terms changed,
+sees "Please read the Barnwright Terms and Conditions (version 2.1)." and
+the button "I have read and agree to the Barnwright Terms and Conditions"
+at the top of every screen, from their very first sign-in, until they tap
+it. Each agreement is kept with its version, time and the owner's login,
+and Settings, Barnwright, says who agreed and when ("... on their sign-up
+page on ..." for the one from the sign-up page). Before the owner first
+signs in, the agreement from the sign-up page also lets Barnwright set up
+their price list (see "Before the owner first signs in"). Alan's own
 business, the local copy and the demo are not asked. To change the terms:
 edit `tools/legal/make-legal-pdfs.py`, raise `TERMS_VERSION` and `TERMS_DATE`
 there and `TERMS.version` and `TERMS.date` in `server/office/terms.js`
@@ -2561,17 +2644,12 @@ sees "You're not on the team yet" with Check again). The person menu has
 **Sign out** and **Sign out on every device**, and says until when (day and
 time) a kept sign-in lasts; its last 24 hours a note on top says so too.
 
-**First setup** (`#/setup`, the first owner, once; the menu is hidden
-until it's done) — three steps: your business (your name, business name,
-phone, email, and for a business Barnwright sells to "I have read and agree
-to the Barnwright Terms and Conditions", with a link to the PDF; Next says
-"Tick the box to agree to the Barnwright Terms and Conditions." until it is
-ticked), your starting price list (every standard building at example
-prices, or three buildings to start small — all example prices to change),
-your first lot (showing the link it will get). Then "Your Dealer Center is
-ready." with "Check your prices" and "Add your team". The designer links
-stay closed until the owner picks "Open to customers" in Settings. When
-Barnwright set up the price list before the owner's first sign-in, First
-setup has two steps (your business, filled in from the price list, with the
-terms box; your first lot), skips the starting price list and says above
-them "Barnwright set up your price list. You can change anything."
+**The owner's first sign-in** opens **Today** right away: there are no
+setup screens (an old `#/setup` link opens Today). The price list and the
+first lot are made, or Barnwright's price list is kept (see "The owner's
+first sign-in"). Today shows the owner the **Getting started** card: the
+business name first when there is none, then Check your prices, Add your
+logo and colors, Add your other lots, Add your team, Look at the preview
+and Open to customers, each a link that ticks itself once done, and
+**Hide this list**. The designer links stay closed until the owner picks
+"Open to customers" in Settings.
