@@ -405,6 +405,15 @@ Dealer Center guide](OFFICE.md).) From then on:
   Barnwright Terms and Conditions** at the top of their Dealer Center;
   once they tap it, you can change their prices. Until then only the
   checks work for them.
+  * **No 30-day notice went out for 2.2.** Section 19 of the terms says
+    customers hear about new terms 30 days before they start. You decided
+    none was needed, because your one customer then was your own test
+    business, **Testing** (testing.barnwrightsoftware.com). **Created by
+    Design** (Port Charlotte) also signed up in your Control Room that
+    day, a few minutes before you decided. If it is a real dealer and not
+    you, it is owed the notice: email them the new terms, or get their OK
+    in writing to start sooner. For the next new terms, tell every customer
+    30 days ahead.
   * **Before they open to customers,** you may set up their price list and
     settings (Barnwright setup access). In your control room, **Open their
     price list** opens their Dealer Center as Barnwright for up to 8 hours,

@@ -790,8 +790,9 @@ the owner first signs in (the Control Room says the same, `OWNER_TERMS`).
 
 While a Dealer Center's own terms (`TERMS.version`) are older than 2.2 (one
 that hasn't been updated since October 12, 2026), no owner can agree to
-them and no sign-up agreement counts, so `why: "terms"` says instead: "Barnwright's new terms (2.2) aren't out yet, so Barnwright
-can only run checks for now." The status fields' `termsOut` says which.
+them and no sign-up agreement counts, so `why: "terms"` says instead:
+"Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run
+checks for now." The status fields' `termsOut` says which.
 
 Saving also needs the business's Barnwright account to allow changes (the
 lease, `account.mustWrite()`). When it doesn't, a save answers 423 and
@@ -2347,7 +2348,9 @@ edit `tools/legal/make-legal-pdfs.py`, raise `TERMS_VERSION` and `TERMS_DATE`
 there and `TERMS.version` and `TERMS.date` in `server/office/terms.js`
 together, run the script (it writes the PDF, `docs/legal/terms.json` and the
 papers list), and tell every customer about the new terms 30 days ahead (terms
-section 19). Version 2.2 started on October 12, 2026, the day Alan chose.
+section 19). Version 2.2 started on October 12, 2026, the day Alan chose,
+with no notice, because his one customer then was his own test business,
+Testing (see "No 30-day notice went out for 2.2" in `docs/FOR-ALAN.md`).
 
 ## Files
 
