@@ -12,7 +12,7 @@ import {
   greeting, money, plural, todayKey, addDays, daysBetween, dayWords, followUpWords,
 } from "../words.js";
 import { followUpBadge, callButton, statusPill, buildingWords, thisMonth, dayKeyOf, sourceWords } from "./crm-kit.js";
-import { gettingStartedCard } from "./getting-started.js";
+import { gettingStartedCard, GETTING_STARTED_WORDS } from "./getting-started.js";
 
 const SHOW = 12;   /* rows per section before "Show all" */
 
@@ -45,11 +45,16 @@ export async function render(ctx) {
   const summary = [];
   if (due.length) summary.push(plural(due.length, "follow-up") + " due" + (late ? ` (${late} late)` : ""));
   if (fresh.length) summary.push(plural(fresh.length, "new customer") + " waiting");
+  /* a new business: the Getting started card below says what to do, so
+     never "all caught up" above it (and nothing above the business name) */
+  const gs = gettingStartedCard(ctx);
+  const line = summary.length ? summary.join(", ") + "." : !gs ? "You're all caught up. Nice work."
+    : app.me.gettingStarted.name ? null : GETTING_STARTED_WORDS.left;
   const head = h("header", { class: "page-head crm-today-head" },
     h("div", { class: "page-titles" },
       h("p", { class: "crm-eyebrow" }, [dateWords, lotWords].filter(Boolean).join(" · ")),
       h("h1", {}, greeting(app.person?.name)),
-      h("p", {}, summary.length ? summary.join(", ") + "." : "You're all caught up. Nice work.")),
+      line ? h("p", {}, line) : null),
   );
 
   /* ---- follow-ups ---- */
@@ -107,7 +112,7 @@ export async function render(ctx) {
           h("th", { class: "right num" }, money(stats.sales)))))));
   }
 
-  const started = gettingStartedCard(ctx);
+  const started = gs;
   /* no business yet (no name to start from): only the card, which asks for it */
   if (!app.business && started) return h("div", { class: "crm-today" }, head, started);
   if (!rows.length) {

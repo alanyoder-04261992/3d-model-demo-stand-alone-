@@ -143,7 +143,7 @@ export const ANSWERS = Object.freeze([
     title: "The 3D designer link says it isn't open",
     lines: [
       "Customers see “Our 3D designer isn't open right now” and a number to call when:",
-      "The 3D designer is closed for every lot. The owner opens it in **Settings**, under **3D designer**: pick **Open to customers** and tap **Save settings**. A new Dealer Center starts closed, so you can get your prices ready first: the **Getting started** list on **Today** goes through it step by step.",
+      "The 3D designer is closed for every lot. The owner opens it in **Settings**, under **3D designer**: pick **Open to customers** and tap **Save settings**. A new Dealer Center starts closed, so you can get your prices ready first: the owner's **Getting started** list on **Today** goes through it step by step.",
       "That lot is closed. The owner taps **Open lot** on **Lots**.",
       "Changes are stopped on your Barnwright account. The note at the top of every screen says why, and the links open again once that's fixed.",
     ],

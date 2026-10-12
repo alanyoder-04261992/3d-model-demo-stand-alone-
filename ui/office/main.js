@@ -282,8 +282,8 @@ function termsBanner() {
 }
 
 /* Barnwright setup access, for the owner (server/office/setup-access.js;
-   me.setup is {mode, until, live}): while their switch is on, a line that
-   says until when, with Turn off. */
+   me.setup is {mode, until, live, barnwright}): while their switch is on, a
+   line that says until when, with Turn off. */
 const PRELIVE_WORDS = "Barnwright is setting up your prices. Look at the preview, check it with Alan, then open it to customers in Settings.";
 function switchBanner() {
   const s = app.me?.setup;
@@ -356,6 +356,10 @@ function signedOutHere(data) {
   return SIGNED_OUT_KEEP.tap;
 }
 
+/* The screen on show (render sets it): Today with the owner's Getting
+   started card says what the closed banner would, so the banner waits. */
+let shownView = null;
+const CLOSED_WORDS = "Your 3D designer links are closed to customers. Check your prices, then open them in Settings.";
 function closedBanner() {
   if (app.demo) return demoBanner();
   if (app.barnwright) return visitBar();
@@ -366,11 +370,26 @@ function closedBanner() {
   const setup = switchBanner();
   if (setup) return setup;
   if (!app.business || app.business.open || !app.isOwner) return null;
+  if (shownView === "today" && app.me?.gettingStarted && !app.me.gettingStarted.name) return null;
   const lot = app.openLots()[0] || app.lots[0];
-  return h("div", { class: "banner warn" }, icon("alert"),
-    h("span", {}, app.me?.setup?.mode === "prelive" ? PRELIVE_WORDS : "Your 3D designer links are closed to customers. Check your prices, then open them in Settings."),
-    lot ? linkButton("Look at the preview", app.previewUrl(lot.slug), { small: true, newTab: true, icon: "cube" }) : null,
-    h("a", { href: "#/settings", class: "btn btn-small btn-primary" }, "Open for customers"));
+  /* "Barnwright is setting up your prices" only when Barnwright did */
+  const words = app.me?.setup?.mode === "prelive" && app.me.setup.barnwright ? PRELIVE_WORDS : CLOSED_WORDS;
+  const preview = lot ? linkButton("Look at the preview", app.previewUrl(lot.slug), { small: true, newTab: true, icon: "cube" }) : null;
+  /* it ticks Look at the preview on the Getting started card too */
+  if (preview) preview.addEventListener("click", () => previewSeen());
+  return h("div", { class: "banner warn" }, icon("alert"), h("span", {}, words), preview,
+    h("a", { href: "#/settings", class: "btn btn-small btn-primary" }, "Open to customers"));
+}
+
+/* Look at the preview was tapped outside the card: the card's step ticks
+   (on the server; the card shows it the next time Today is drawn). */
+async function previewSeen() {
+  const gs = app.me?.gettingStarted;
+  if (!app.isOwner || !gs?.steps?.some((x) => x.id === "preview" && !x.done)) return;
+  try {
+    const out = await post("getting-started", { preview: true });
+    if (app.me) app.me.gettingStarted = out.gettingStarted;
+  } catch { /* the tick waits for the next tap */ }
 }
 
 /* ---- a Barnwright visit --------------------------------------------------------------- */
@@ -457,6 +476,13 @@ async function startBarnwright(pass) {
 
 /* ---- showing a screen ----------------------------------------------------------- */
 
+/* Price list and Settings before there is a business (views above) */
+export const NO_BUSINESS = Object.freeze({
+  title: "No price list yet",
+  owner: "Your price list and settings are made from your business name. Type it on Today, then come back here.",
+  team: "The owner hasn't set up the business yet. The price list and settings show here once they do.",
+});
+
 let renderSeq = 0;
 async function render() {
   if (!main) return;   /* still on the sign-in screen: nothing to show yet */
@@ -482,10 +508,20 @@ async function render() {
   }
   const seq = ++renderSeq;
   app.leaveGuard = null;
+  shownView = viewName;
   clear(main, closedBanner(), loading());
   if (app.barnwright && !VISIT_VIEWS.includes(viewName)) {
     if (path === "/") { go("/price-list"); return; }
     viewName = null;
+  }
+  /* no business yet (no name to start from): the price list and settings
+     are made from the business name, typed on Today first */
+  if (!app.business && !app.barnwright && (viewName === "price-list" || viewName === "settings")) {
+    clear(main, closedBanner(), app.isOwner
+      ? emptyState(NO_BUSINESS.title, NO_BUSINESS.owner, h("a", { href: "#/", class: "btn btn-primary" }, "Go to Today"))
+      : emptyState(NO_BUSINESS.title, NO_BUSINESS.team, h("a", { href: "#/", class: "btn btn-primary" }, "Go to Today")));
+    document.title = `${viewName === "settings" ? "Settings" : "Price list"} · Dealer Center`;
+    return;
   }
   if (!viewName) {
     clear(main, closedBanner(), app.barnwright
@@ -689,7 +725,12 @@ async function start() {
        are made now, then Today opens (anything still missing, like the
        business name, is on its Getting started card) */
     clear(root, h("div", { class: "boot" }, loading("Getting your Dealer Center ready…")));
-    try { await post("start", {}); } catch { /* Today's Getting started card says what is missing */ }
+    /* Today's Getting started card says what is missing: the business name
+       (it asks for it), or what went wrong, with Try again */
+    app.startError = null;
+    try { await post("start", {}); } catch (e) {
+      if (e?.data?.code !== "name") app.startError = e?.message || "Something went wrong on our end. Try again in a minute.";
+    }
     try { me = await app.loadMe(); } catch { /* the first answer still stands */ }
     if (currentPath().path !== "/") { history.replaceState(null, "", "#/"); lastHash = "#/"; }
   }

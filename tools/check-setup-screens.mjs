@@ -71,6 +71,8 @@ let server2 = null;
 
 const WORDS = {
   prelive: "Barnwright is setting up your prices. Look at the preview, check it with Alan, then open it to customers in Settings.",
+  /* the closed banner when Barnwright hasn't set up the price list (ui/office/main.js CLOSED_WORDS) */
+  closed: "Your 3D designer links are closed to customers. Check your prices, then open them in Settings.",
   beforeLive: "Barnwright is setting up your 3D designer. Until you open it to customers, they can change your price list and settings for you. Every change is listed here and in Price list, History.",
   preview: "Preview. Your customers can't see this until you open it in Settings.",
   ended: "Your Barnwright visit ended. In your Control Room tap Open their price list, then come back and tap Save.",
@@ -205,10 +207,11 @@ try {
   const ownerCtx = await contextFor(OWNER);
   const owner = await pageIn(ownerCtx);
   await open(owner, "/");
-  ok("the closed banner says Barnwright is setting up their prices", (await text(owner, "#main .banner.warn"))?.includes(WORDS.prelive), await text(owner, "#main .banner"));
-  ok("... with Look at the preview and Open for customers",
+  ok("the closed banner: Barnwright hasn't changed this price list (the owner set it up), so it never says Barnwright is setting up their prices",
+    (await text(owner, "#main .banner.warn"))?.startsWith(WORDS.closed) && !(await text(owner, "#main .banner.warn")).includes(WORDS.prelive), await text(owner, "#main .banner"));
+  ok("... with Look at the preview and Open to customers",
     (await owner.$$eval("#main .banner.warn a", (els) => els.map((a) => [a.textContent.trim(), a.getAttribute("href"), a.target]))).some(([t, href, target]) => t === "Look at the preview" && href === "/d/riverside/?preview=1" && target === "_blank")
-    && !!(await owner.$("#main .banner.warn a[href='#/settings']")));
+    && (await text(owner, "#main .banner.warn a[href='#/settings']")) === "Open to customers");
   await shot(owner, "1-owner-banner-before-live");
   await open(owner, "/settings");
   const titles = await owner.$$eval(".set-card .card-title", (els) => els.map((e) => e.textContent.trim()));
@@ -461,6 +464,9 @@ try {
     /This link ran out\. Tap Open their price list again\./.test((await text(expired, ".bw-card")) || "") && !(await expired.$(".person-pick")), await text(expired, "body"));
 
   section("6. Open to customers asks first (D2)");
+  await open(owner, "/");
+  ok("now that Barnwright saved their price list, the owner's closed banner says Barnwright is setting up their prices", (await text(owner, "#main .banner.warn"))?.includes(WORDS.prelive), await text(owner, "#main .banner"));
+  await shot(owner, "6-owner-banner-after-barnwright");
   await open(owner, "/settings");
   await owner.check("input[type=radio][value=active]");
   await owner.click(".set-bar .btn-accent");
@@ -618,4 +624,4 @@ if (fail) {
   console.log(`FAIL: ${fail} of ${pass + fail} setup access screen checks failed:\n  ${failures.join("\n  ")}`);
   process.exit(1);
 }
-console.log(`PROVED (${pass} checks): before live the owner's banner and one Barnwright card say Barnwright is setting up their prices, with a preview of the closed 3D designer that customers can't open; Alan's visit clears the pass from the address, gets a __Host- cookie, and shows only Price list and Settings without Open or Closed; a visit that ends keeps the draft in the tab and the next visit saves it; Done ends it; opening asks first; after live the card offers Run checks or Run checks and change, and the owner's banner says until when with Turn off; it all fits a phone. Pictures: test/out/setup-screens/.`);
+console.log(`PROVED (${pass} checks): before live the one Barnwright card says Barnwright is setting up, and the owner's closed banner says Barnwright is setting up their prices only once Barnwright changed them (its button Open to customers), with a preview of the closed 3D designer that customers can't open; Alan's visit clears the pass from the address, gets a __Host- cookie, and shows only Price list and Settings without Open or Closed; a visit that ends keeps the draft in the tab and the next visit saves it; Done ends it; opening asks first; after live the card offers Run checks or Run checks and change, and the owner's banner says until when with Turn off; it all fits a phone. Pictures: test/out/setup-screens/.`);

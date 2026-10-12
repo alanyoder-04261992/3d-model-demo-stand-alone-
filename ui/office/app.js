@@ -22,6 +22,9 @@ export const app = {
   /* the screen someone was on when they opened Help ("#/price-list"; main.js
      keeps it, views/help.js sends it with a question) */
   helpFrom: null,
+  /* the owner's start (POST start, main.js) failed for another reason than
+     a missing business name: its words, for the Getting started card */
+  startError: null,
 
   get person() { return this.me?.person || null; },
   get business() { return this.me?.business || null; },

@@ -6,7 +6,7 @@
    Run: node tools/check-getting-started.mjs [--keep]
    check-all: browser
 
-   It starts three local Dealer Centers (tools/office-local.mjs --empty, a
+   It starts four local Dealer Centers (tools/office-local.mjs --empty, a
    new business nobody has signed in to), opens Chromium at 1280 and 390
    wide, and proves:
 
@@ -19,14 +19,23 @@
         Getting started card is black and gold, fits a phone with no
         sideways scrolling and full-size taps, and each step links to the
         right screen (Look at the preview opens the preview in a new tab
-        and ticks itself); opening to customers ticks Open to customers;
-        Hide this list hides it, and it stays hidden after a reload; a
-        manager never sees the card;
+        and ticks itself); no closed banner above the card on Today, and
+        on the price list the closed banner never says Barnwright is
+        setting up prices the owner's own start made (its button: Open to
+        customers); opening to customers ticks Open to customers; Hide this
+        list hides it, and it stays hidden after a reload; a manager never
+        sees the card;
      B. not connected (Alan's own kind of Dealer Center): Today asks for
-        the business name first; Start makes the business, its price list
-        and first lot, and the card shows its steps;
+        the business name first (no "all caught up" line), and Price list
+        and Settings say to type it on Today with Go to Today; Start makes
+        the business, its price list and first lot, and the card shows its
+        steps; the closed banner's Look at the preview on Lots ticks the
+        card's step;
      C. connected, but no pass brought a sign-up: Today asks for the
-        business name, and the "I have read and agree" line is on top.
+        business name, and the "I have read and agree" line is on top;
+     D. the account is switched off: the start fails for another reason
+        than the name, and the card says why with Try again, and asks for
+        no business name.
 
    Pictures go to test/out/getting-started/. --keep leaves the servers running. */
 
@@ -50,9 +59,18 @@ const WORDS = {
   title: "Getting started",
   ready: "Your Dealer Center is ready. Your 3D designer stays closed to customers until you open it.",
   name: "Type your business name to start. Your price list and your first lot are made from it.",
-  prices: "Every price is an example. Turn off what you don't sell and type your own.",
+  prices: "Every price is an example. Switch off the buildings you don't sell and type your own prices.",
   hide: "Hide this list",
   agree: "I have read and agree to the Barnwright Terms and Conditions",
+  left: "Here is what is left to set up.",
+  caughtUp: "You're all caught up. Nice work.",
+  /* the closed banner (ui/office/main.js CLOSED_WORDS, PRELIVE_WORDS) */
+  closed: "Your 3D designer links are closed to customers. Check your prices, then open them in Settings.",
+  prelive: "Barnwright is setting up your prices.",
+  /* Price list and Settings before there is a business (main.js NO_BUSINESS) */
+  noBusiness: "No price list yet",
+  noBusinessOwner: "Your price list and settings are made from your business name. Type it on Today, then come back here.",
+  failed: "Your Dealer Center couldn't get ready",
 };
 
 let pass = 0, fail = 0;
@@ -137,6 +155,9 @@ try {
     ok("... with the Getting started card at the top, saying the Dealer Center is ready and the 3D designer stays closed",
       card?.startsWith(WORDS.title) && card.includes(WORDS.ready) && card.includes(WORDS.hide), card);
     ok("... no \"I have read and agree\" line on top: the agreement from their sign-up page is theirs", !(await owner.$(".banner.terms")));
+    ok("... and no closed-to-customers banner above the card either (the card says it, with Look at the preview and Open to customers)", !(await owner.$("#main > .banner.warn")), await text(owner, "#main > .banner"));
+    const headLine = await text(owner, ".crm-today-head .page-titles > p:not(.crm-eyebrow)");
+    ok("... and the line under the greeting says what the card is for, never \"You're all caught up\"", headLine === WORDS.left, headLine);
     ok("... the business from their sign-up at the top (Testing Sheds)", (await text(owner, ".topbar .brand-words strong")) === "Testing Sheds", await text(owner, ".topbar .brand-words"));
     const me = (await A.call("/api/office/me")).data;
     const pl = (await A.call("/api/office/price-list")).data;
@@ -167,6 +188,10 @@ try {
     await owner.click(".gs-step[data-step='prices'] a");
     await owner.waitForFunction(() => location.hash === "#/price-list", null, { timeout: 10000 }).catch(() => {});
     ok("tapping Check your prices opens the price list", /#\/price-list$/.test(owner.url()), owner.url());
+    await settle(owner);
+    const plBanner = await text(owner, "#main > .banner.warn");
+    ok("... where the closed banner shows: the price list is the owner's own start's, so it never says Barnwright is setting up their prices; its button is Open to customers",
+      plBanner?.startsWith(WORDS.closed) && !plBanner.includes(WORDS.prelive) && (await text(owner, "#main > .banner.warn a[href='#/settings']")) === "Open to customers", plBanner);
     await owner.goBack();
     await settle(owner);
     await owner.click(".gs-step[data-step='team'] a");
@@ -228,7 +253,20 @@ try {
       /#\/$/.test(owner.url()) && !!(await owner.$(".crm-today")) && card?.includes(WORDS.name) && !!(await owner.$(".gs-card input[autocomplete=organization]")), `${owner.url()} | ${card}`);
     ok("... no business yet, nothing made, and no terms line (not connected)", (await text(owner, ".topbar .brand-words strong")) === "Dealer Center" && !(await owner.$(".banner.terms"))
       && (await B.call("/api/office/me")).data?.business === null);
+    ok("... and no line under the greeting (never \"You're all caught up\" above the business name)", !(await owner.$(".crm-today-head .page-titles > p:not(.crm-eyebrow)")), await text(owner, ".crm-today-head .page-titles"));
     await shot(owner, "b-business-name-1280");
+    /* Price list and Settings before there is a business: a way back to Today, never a page that didn't load */
+    for (const where of ["price-list", "settings"]) {
+      await owner.goto(`${B.base}/dealer#/${where}`);
+      await settle(owner);
+      const said = await text(owner, "#main");
+      ok(`... ${where === "price-list" ? "Price list" : "Settings"} before the business name says to type it on Today, with Go to Today (never "This page didn't load")`,
+        said?.includes(WORDS.noBusiness) && said.includes(WORDS.noBusinessOwner) && !said.includes("didn't load") && (await text(owner, "#main a[href='#/']")) === "Go to Today", said);
+      if (where === "price-list") await shot(owner, "b-price-list-before-name-1280");
+    }
+    await owner.goto(`${B.base}/dealer#/`);
+    await settle(owner);
+    await owner.waitForSelector(".gs-card.gs-name", { timeout: 20000 }).catch(() => {});
     const phone = await pageFor(B.base, OWNER, { width: 390, height: 844, mobile: true });
     await phone.goto(`${B.base}/dealer`);
     await settle(phone);
@@ -247,6 +285,22 @@ try {
       me.business?.name === "River Bend Sheds" && me.business.open === false && me.lots.length === 1 && me.lots[0].slug === "river-bend-sheds"
       && (await steps(owner)).length === 5 && (await text(owner, ".topbar .brand-words strong")) === "River Bend Sheds", JSON.stringify([me.business, me.lots]));
     await shot(owner, "b-after-start-1280");
+    /* the closed banner on another screen: its Look at the preview ticks the card's step too */
+    await owner.goto(`${B.base}/dealer#/lots`);
+    await settle(owner);
+    const banner = await text(owner, "#main > .banner.warn");
+    const [bPreview] = await Promise.all([
+      owner.context().waitForEvent("page", { timeout: 15000 }).catch(() => null),
+      owner.click("#main > .banner.warn a[target=_blank]", { timeout: 10000 }).catch(() => null),
+    ]);
+    await owner.waitForTimeout(800);
+    await bPreview?.close();
+    await owner.goto(`${B.base}/dealer#/`);
+    await settle(owner);
+    await owner.waitForSelector(".gs-card .gs-step", { timeout: 20000 }).catch(() => {});
+    ok("the closed banner on Lots (its button Open to customers): tapping its Look at the preview opens the preview and ticks Look at the preview on the card",
+      banner?.startsWith(WORDS.closed) && banner.includes("Open to customers") && !banner.includes("Open for customers") && !!bPreview
+      && (await steps(owner)).find((x) => x.id === "preview")?.done === true, `${banner} | ${JSON.stringify(await steps(owner))}`);
     const errs = [owner, phone].flatMap((p) => p.errors);
     ok("no errors on these pages", errs.length === 0, errs.join(" | "));
   }
@@ -266,8 +320,36 @@ try {
     await owner.click(".banner.terms button");
     await owner.waitForSelector(".banner.terms", { state: "detached", timeout: 10000 }).catch(() => {});
     ok("... tapping it keeps the agreement, and the line goes", !(await owner.$(".banner.terms")) && (await C.call("/api/office/me")).data?.terms?.agreed?.version === "2.2");
+    /* another tab starts the business first; then this tab's Start: the toast says what is there */
+    const other = await C.call("/api/office/start", { method: "POST", body: { businessName: "Other Tab Sheds" } });
+    await owner.fill(".gs-card input[autocomplete=organization]", "This Tab Sheds");
+    await owner.click(".gs-start");
+    await owner.waitForFunction(() => [...document.querySelectorAll(".toast")].some((t) => /Your price list/.test(t.textContent)), null, { timeout: 15000 }).catch(() => {});
+    const toastWords = await owner.$$eval(".toast", (els) => els.map((e) => e.textContent.replace(/\s+/g, " ").trim()).join(" | ")).catch(() => "");
+    ok("another tab started the business first (its lot made): this tab's Start says the price list and the first lot are ready, never \"Add your first lot\"",
+      other.status === 200 && other.data?.start?.lot === "other-tab-sheds" && toastWords.includes("Your price list and your first lot are ready.") && !toastWords.includes("Add your first lot"), toastWords);
     const errs = owner.errors;
     ok("no errors on this page", errs.length === 0, errs.join(" | "));
+  }
+
+  /* ======================================================================== */
+  section("D. The start fails for another reason than the name (the account is switched off)");
+  {
+    const D = await startServer(PORT + 3, "test/out/getting-started-data-d", ["--control-room-off", "--terms-version", "2.2"]);
+    const owner = await pageFor(D.base, OWNER, { width: 390, height: 844, mobile: true });
+    await owner.goto(`${D.base}/dealer`);
+    await settle(owner);
+    await owner.waitForSelector(".gs-card", { timeout: 20000 }).catch(() => {});
+    const card = await text(owner, ".gs-card");
+    ok("the card says why it couldn't get ready (the server's own words), with Try again, and never asks for a business name the name isn't missing for",
+      card?.startsWith(WORDS.failed) && !card.includes(WORDS.name) && !(await owner.$(".gs-card input")) && !!(await owner.$(".gs-card button")) && (await text(owner, ".gs-card button")) === "Try again", card);
+    const f = await fits(owner);
+    ok("... it fits a phone with full-size taps", f.wide <= 0 && !f.small.length && !f.out.length, JSON.stringify(f));
+    await shot(owner, "d-start-failed-390");
+    await owner.click(".gs-card button", { timeout: 10000 }).catch(() => null);
+    await owner.waitForTimeout(1500);
+    ok("... Try again while it is still switched off says so again (still no name box)", (await text(owner, ".gs-card"))?.startsWith(WORDS.failed) && !(await owner.$(".gs-card input")), await text(owner, ".gs-card"));
+    ok("no errors on this page", owner.errors.length === 0, owner.errors.join(" | "));
   }
 } catch (e) {
   fail++;
@@ -276,7 +358,7 @@ try {
 } finally {
   await browser.close();
   if (!KEEP) for (const s of servers) s.kill();
-  else console.log(`\n  The local Dealer Centers are still running at http://127.0.0.1:${PORT}/dealer, ${PORT + 1} and ${PORT + 2} (stop them with Ctrl+C).`);
+  else console.log(`\n  The local Dealer Centers are still running at http://127.0.0.1:${PORT}/dealer, ${PORT + 1}, ${PORT + 2} and ${PORT + 3} (stop them with Ctrl+C).`);
 }
 
 console.log("");
@@ -284,4 +366,4 @@ if (fail) {
   console.log(`FAIL: ${fail} of ${pass + fail} Getting started checks failed:\n  ${failures.join("\n  ")}`);
   process.exit(1);
 }
-console.log(`PROVED (${pass} checks): a new owner's first sign-in opens Today right away, with no setup screens: their business, price list (closed to customers) and one lot named after it are made from the sign-up the Control Room passed on, their sign-up agreement counts (no terms line on top), and the black and gold Getting started card fits 1280 and 390 wide, links every step to its screen, ticks the preview and Open to customers by itself, and stays hidden once hidden; a manager never sees it; with no sign-up to start from, Today asks for the business name first (and, connected, the terms line asks on top). Pictures: test/out/getting-started/.`);
+console.log(`PROVED (${pass} checks): a new owner's first sign-in opens Today right away, with no setup screens: their business, price list (closed to customers) and one lot named after it are made from the sign-up the Control Room passed on, their sign-up agreement counts (no terms line on top), and the black and gold Getting started card fits 1280 and 390 wide, links every step to its screen, ticks the preview and Open to customers by itself, and stays hidden once hidden; a manager never sees it; with no sign-up to start from, Today asks for the business name first (Price list and Settings point there, and connected, the terms line asks on top); Today shows no closed banner above the card, and the banner elsewhere ticks the preview too and never says Barnwright set up prices it didn't; a start that fails for another reason says why, with Try again. Pictures: test/out/getting-started/.`);

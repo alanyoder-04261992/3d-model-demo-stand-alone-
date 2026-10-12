@@ -12,9 +12,11 @@
 
    A Dealer Center with no business name to start from (not connected to
    Barnwright, or no details from the sign-up page) asks for it first:
-   Business name, Start (POST start), and the rest follows. */
+   Business name, Start (POST start), and the rest follows. When the start
+   failed for another reason (the account is switched off, say), the card
+   says why, with Try again, and asks for no name. */
 
-import { h, clear, icon, field, form, toast } from "../dom.js";
+import { h, clear, icon, field, form, toast, button } from "../dom.js";
 import { post } from "../api.js";
 
 /* the words of each step (server/office/first-start.js gives the ids) */
@@ -32,12 +34,16 @@ export const GETTING_STARTED_WORDS = Object.freeze({
   ready: "Your Dealer Center is ready. Your 3D designer stays closed to customers until you open it.",
   name: "Type your business name to start. Your price list and your first lot are made from it.",
   nameHint: "Customers see it at the top of your 3D designer and on their quotes.",
-  prices: "Every price is an example. Turn off what you don't sell and type your own.",
+  prices: "Every price is an example. Switch off the buildings you don't sell and type your own prices.",
   pricesBarnwright: "Barnwright set up your price list. Check it, and change anything.",
   hide: "Hide this list",
   hidden: "The Getting started list is hidden.",
   started: "Your price list and your first lot are ready.",
   startedNoLot: "Your price list is ready. Add your first lot on Lots.",
+  failed: "Your Dealer Center couldn't get ready",
+  tryAgain: "Try again",
+  /* the line under Today's greeting while the card shows its steps */
+  left: "Here is what is left to set up.",
 });
 
 const lotsWords = (limit, open) => `Your plan includes ${limit} open lots. ${open} ${open === 1 ? "is" : "are"} open now.`;
@@ -59,8 +65,40 @@ function head(words, count = null) {
     count);
 }
 
+/* After the start: the price list, the lot picker and the toast. The lot
+   is whatever the business has now (another tab may have made it). */
+async function started(ctx) {
+  const { app } = ctx;
+  app.startError = null;
+  await app.loadMe();
+  window.dispatchEvent(new Event("dealer:brand"));
+  window.dispatchEvent(new Event("dealer:lots"));
+  toast(app.lots.length ? GETTING_STARTED_WORDS.started : GETTING_STARTED_WORDS.startedNoLot, { ms: 6000 });
+  ctx.refresh();
+}
+
 function draw(box, ctx, gs) {
   const { app } = ctx;
+  if (gs.name && app.startError) {
+    /* the start failed for another reason than the name: say why, and try again */
+    box.classList.add("gs-name");
+    const again = button(GETTING_STARTED_WORDS.tryAgain, async () => {
+      again.disabled = true;
+      try {
+        await post("start", {});
+        await started(ctx);
+      } catch (e) {
+        again.disabled = false;
+        app.startError = e?.data?.code === "name" ? null : e.message;
+        draw(box, ctx, gs);
+      }
+    }, { kind: "primary" });
+    clear(box, h("header", { class: "gs-top" },
+      h("span", { class: "gs-mark", "aria-hidden": "true" }, icon("alert")),
+      h("div", { class: "gs-titles" }, h("h2", { id: "gs-title" }, GETTING_STARTED_WORDS.failed), h("p", { class: "gs-error" }, app.startError))),
+    h("footer", { class: "gs-foot" }, again));
+    return;
+  }
   if (gs.name) {
     box.classList.add("gs-name");
     const name = field("Business name", { required: true, maxLength: 80, autocomplete: "organization", hint: GETTING_STARTED_WORDS.nameHint });
@@ -71,12 +109,8 @@ function draw(box, ctx, gs) {
       ], async () => {
         const typed = name.input.value.trim();
         if (!typed) throw new Error("Type your business name.");
-        const out = await post("start", { businessName: typed });
-        await app.loadMe();
-        window.dispatchEvent(new Event("dealer:brand"));
-        window.dispatchEvent(new Event("dealer:lots"));
-        toast(out.start?.lot ? GETTING_STARTED_WORDS.started : GETTING_STARTED_WORDS.startedNoLot, { ms: 6000 });
-        ctx.refresh();
+        await post("start", { businessName: typed });
+        await started(ctx);
       }, { class: "gs-form" }));
     return;
   }
