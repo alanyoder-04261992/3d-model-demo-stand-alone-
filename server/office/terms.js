@@ -34,10 +34,14 @@ import TERMS_COPIES from "../../docs/legal/terms-sha256.json" with { type: "json
 
 /* Change the version and date (with TERMS_VERSION and TERMS_DATE in
    tools/legal/make-legal-pdfs.py, and run it) when the terms change: every
-   owner is asked again. */
+   owner is asked again. 2.2 is the first version that lets Barnwright change
+   a price list (sections 2.4 and 10.4): Barnwright setup access works only
+   for an owner who agreed to 2.2 or later. tools/check-docs.mjs proves the
+   version is the same everywhere, and tools/check-wording.mjs that the words
+   say what setup access does and no more. */
 export const TERMS = Object.freeze({
-  version: "2.1",
-  date: "October 11, 2026",
+  version: "2.2",
+  date: "October 12, 2026",
   url: "/legal/barnwright-terms.pdf",
   title: "Barnwright Terms and Conditions",
 });
@@ -97,20 +101,23 @@ export function signupCounts(signup, { ships = TERMS.version, ownCopies = termsC
 }
 
 /* terms: what this copy ships (TERMS; the checks and the local copy may
-   pretend to ship newer terms before they are out). */
+   pretend to ship newer or older terms). */
 export function createTerms({ store, account, now, terms: shipped = TERMS }) {
   const TERMS = shipped;
   const asks = () => !!account?.connected;
 
   /* What the screens show: null when nobody is asked. agreed is this
-     version's agreement, or null when the owner still has to agree. */
+     version's agreement, or null when the owner still has to agree; older
+     is the owner's agreement to older terms while they still have to agree
+     to these ({version, agreedAt, by}), else null. */
   async function status() {
     if (!asks()) return null;
     const doc = await store.get(RECORD);
     const current = doc?.current || null;
+    const agreed = current && versionAtLeast(current.version, TERMS.version) ? current : null;
     return {
       version: TERMS.version, date: TERMS.date, url: TERMS.url, title: TERMS.title,
-      agreed: current && versionAtLeast(current.version, TERMS.version) ? current : null,
+      agreed, older: current && !agreed ? current : null,
     };
   }
 

@@ -15,11 +15,34 @@
    comments and regular expressions, then every string literal (and the
    plain parts of template literals) that has a space in it or starts with
    a capital letter is read as words. Code-like
-   strings (paths, CSS classes, keys) have no spaces and are skipped. */
+   strings (paths, CSS classes, keys) have no spaces and are skipped.
+
+   THE TERMS. Every owner reads and agrees to the Barnwright Terms and
+   Conditions (docs/legal/terms.json, the sign-up page's copy, made with the
+   PDF by tools/legal/make-legal-pdfs.py). Their words are held to the same
+   list, and to what Barnwright setup access really does, so they never
+   promise more than the code enforces (SPEC-FIXES F14):
+     * they are the version the Dealer Center asks for, 2.2 or later;
+     * 2.3 shows the owner the preview before opening (F2);
+     * 2.4 says setup access lasts until the 3D designer is first open or
+       the first quote or order is saved, the owner can stop it, and only
+       the owner opens the 3D designer (D1, D2, F1) -- and it never says a
+       person approves each change, because before the 3D designer is open
+       a change can be saved after the Claude app's Allow, which can be
+       skipped (F3);
+     * 10.4 names the owner's one choice, "Run checks and change my price
+       list and settings", for 1 to 24 hours, and a Barnwright person making
+       each change by hand or approving it in the Control Room first (F3,
+       F11, F14); 10.6 names what setup access never touches (D7);
+     * nothing says "Help from Barnwright", the card that became Barnwright
+       (F11); and once the Dealer Center has setup access
+       (server/office/setup-access.js), the owner's screens show both
+       choices the terms name. */
 
 import { readFileSync, readdirSync, statSync, existsSync } from "node:fs";
 import { resolve, dirname, join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
+import { TERMS } from "../server/office/terms.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -183,9 +206,68 @@ if (existsSync(quote)) {
   }
 }
 
+/* the Barnwright Terms and Conditions (see THE TERMS above) */
+const TERMS_SETUP_ACCESS = "2.2";
+const notes = [];
+let termsFacts = 0;
+{
+  const rel = "docs/legal/terms.json";
+  const t = JSON.parse(readFileSync(resolve(ROOT, rel), "utf8"));
+  const lines = [...t.intro.map((x, i) => ({ where: `intro ${i + 1}`, text: x })),
+    ...t.summary.flatMap((s) => [{ where: `short version "${s.title}"`, text: s.title }, { where: `short version "${s.title}"`, text: s.text }]),
+    ...t.sections.flatMap((s) => [{ where: s.heading, text: s.heading }, ...s.items.map((it) => ({ where: it.n || s.heading, text: it.text }))])];
+  for (const { where, text } of lines) {
+    checked++;
+    for (const [re, instead] of BANNED) {
+      const hit = re.exec(text);
+      if (hit) problems.push(`${rel} ${where}: "${hit[0]}" in "${text.trim().slice(0, 90)}" -- ${instead}`);
+    }
+    if (/Help from Barnwright/.test(text)) problems.push(`${rel} ${where}: says "Help from Barnwright" -- the owner's card is called Barnwright now, with Run checks and Run checks and change my price list and settings`);
+  }
+  const at = (v) => v.split(".").map(Number);
+  const atLeast = (v, need) => { const a = at(v), b = at(need); for (let i = 0; i < Math.max(a.length, b.length); i++) if ((a[i] || 0) !== (b[i] || 0)) return (a[i] || 0) > (b[i] || 0); return true; };
+  const fact = (what, cond) => { termsFacts++; if (!cond) problems.push(`${rel}: ${what}`); };
+  fact(`is version ${TERMS.version}, the version the Dealer Center asks the owner to agree to (server/office/terms.js), and that is ${TERMS_SETUP_ACCESS} or later (it says ${t.version})`,
+    /^\d+(\.\d+)*$/.test(t.version) && t.version === TERMS.version && atLeast(t.version, TERMS_SETUP_ACCESS));
+  const item = (n) => t.sections.flatMap((s) => s.items).find((it) => it.n === n)?.text || "";
+  const says = (n, ...words) => { const x = item(n).replace(/\s+/g, " "); return words.every((w) => x.includes(w)); };
+  fact("2.3 lets the owner and team look at the 3D designer as a preview before it opens, which customers can't see",
+    says("2.3", "preview before you open it", "Your customers can't see the preview"));
+  fact("2.4 says Barnwright can change the price list and settings only until the 3D designer is first open to customers or the first quote or order is saved, even if it is closed again",
+    says("2.4", "Until you first open your 3D designer to customers, we can change your price list and settings", "first quote or order is saved", "even if you close it again later"));
+  fact("2.4 says the owner can stop it in Settings, Barnwright, and only the owner opens the 3D designer to customers",
+    says("2.4", "Your owner can stop it sooner in Settings, Barnwright", "Only your owner can open your 3D designer to customers"));
+  fact("2.4 says setup can start as soon as the Dealer Center is made, before the owner first signs in, on the terms agreed on the sign-up page, from the business name, phone and email given there (docs/OFFICE.md, \"Before the owner first signs in\")",
+    says("2.4", "This can start as soon as we make your Dealer Center, before your owner first signs in", "the terms you agree to on your sign-up page allow it", "business name, phone and email you give us there"));
+  fact("the short version's \"Changes we make\" says it can start before the owner first signs in",
+    (t.summary.find((x) => x.title === "Changes we make")?.text || "").includes("starting before you first sign in"));
+  fact("2.4 never promises that a person approves each change before the 3D designer is open (the Claude app's Allow can be skipped, so nothing enforces it)",
+    !!item("2.4") && !/approv/i.test(item("2.4")));
+  fact("10.4 says after setup access ends Barnwright changes things only while the owner turns on Run checks and change my price list and settings, for 1 to 24 hours",
+    says("10.4", "After our setup access ends", "only while your owner turns on Run checks and change my price list and settings in Settings, Barnwright, for 1 to 24 hours"));
+  fact("10.4 says a Barnwright person makes each change by hand or approves it in the Control Room before it is saved, even when software prepares it",
+    says("10.4", "A Barnwright person makes each change by hand in your Dealer Center, or approves it in our Control Room before it is saved", "AI assistants"));
+  fact("10.5 says what the Dealer Center tells Barnwright, and that it never includes prices",
+    says("10.5", "Your Dealer Center tells us whether your 3D designer is open", "This never includes your prices"));
+  fact("10.6 says every change is listed for the owner, and setup access never reaches customers, quotes, orders, the team, lots, where quote requests go, which websites show the 3D designer, or opening and closing it",
+    says("10.6", "every change we make is listed for your owner", "never lets us see or change your customers, quotes, orders or team", "change your lots", "where quote requests go", "which websites show your 3D designer", "open or close your 3D designer"));
+  /* the owner's screens show the choices the terms name -- once the Dealer
+     Center has setup access (lane A's server/office/setup-access.js) */
+  const choices = ["Run checks and change my price list and settings", "Run checks"];
+  const named = choices.filter((c) => lines.some((l) => l.text.includes(c)));
+  if (existsSync(resolve(ROOT, "server/office/setup-access.js"))) {
+    const screens = walk(resolve(ROOT, "ui/office")).map((f) => readFileSync(f, "utf8")).join("\n");
+    for (const c of named) fact(`names "${c}", which the owner's Settings, Barnwright card shows (ui/office/)`, screens.includes(`"${c}"`) || screens.includes(`'${c}'`) || screens.includes("`" + c + "`"));
+  } else {
+    notes.push(`the terms name ${named.map((c) => `"${c}"`).join(" and ")}; this Dealer Center has no setup access yet (server/office/setup-access.js), so the owner's card wasn't compared. Merge setup access before these terms.`);
+  }
+}
+
 for (const p of problems) console.log("  FAIL " + p);
+for (const n of notes) console.log("  note: " + n);
 if (problems.length) {
-  console.log(`FAIL: ${problems.length} place(s) use words the Dealer Center doesn't use (docs/OFFICE.md, "The words we use").`);
+  console.log(`FAIL: ${problems.length} place(s) use words the Dealer Center doesn't use (docs/OFFICE.md, "The words we use"), or the terms don't say what Barnwright setup access really does (tools/legal/make-legal-pdfs.py).`);
   process.exit(1);
 }
-console.log(`PROVED: ${checked} sentences on the Dealer Center's screens, its server answers and emails, and the lot designer's quote messages use none of the ${BANNED.length} old words (portal, workspace, admin, catalogue, submission, embed, origin, suspended...).`);
+console.log(`PROVED: ${checked} sentences on the Dealer Center's screens, its server answers and emails, the lot designer's quote messages and the Barnwright Terms and Conditions use none of the ${BANNED.length} old words (portal, workspace, admin, catalogue, submission, embed, origin, suspended...).`);
+console.log(`  The terms are version ${TERMS.version} (${TERMS_SETUP_ACCESS} or later) and say the ${termsFacts - 1} things Barnwright setup access really does, and no more: the preview before opening, setup access from before the owner first signs in (on the sign-up page's agreement) only until first open or the first quote or order, the owner's stop and the owner alone opening, no promise of a person approving each change before opening, the owner's Run checks and change my price list and settings for 1 to 24 hours after, a Barnwright person making or approving each change then, what the Dealer Center tells Barnwright, and what setup access never touches.`);

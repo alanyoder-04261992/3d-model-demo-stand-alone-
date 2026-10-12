@@ -30,8 +30,8 @@
      appVersion     optional: what this copy reports to the control room
      termsVersion   optional, for the checks and the local copy only: the
                     Barnwright terms version this copy pretends to ship
-                    (TERMS.version when left out), to try terms that
-                    aren't out yet
+                    (TERMS.version when left out), to try terms newer
+                    or older than the ones it ships
      help           optional: Barnwright's Sales Inbox for the Help screen,
                     {url, fetch?, timeoutMs?, budgetMs?, allowLocal?}
                     (help.js; budgetMs: all of one request's calls). Used
@@ -260,7 +260,15 @@ export function createOffice(deps) {
     must(who.person.role === "owner", `Only the owner can agree to the ${TERMS.title}.`);
     const data = await readBody(req);
     if (data.agree !== true) fail(422, AGREE_FIRST);
-    return json({ terms: await terms.agree(who.person) });
+    const before = (await terms.status())?.agreed || null;
+    const after = await terms.agree(who.person);
+    /* A new agreement can open Barnwright's setup access: Alan's Control
+       Room knows within seconds, as with the owner's switch (best effort,
+       3 seconds; the next check-in tells it otherwise) */
+    if (!before && after?.agreed) {
+      try { await withinMs(account.checkIn({ force: true }), 3000); } catch { /* the next check-in tells it */ }
+    }
+    return json({ terms: after });
   });
 
   route("GET", /^\/api\/office\/price-list$/, async (req) => {

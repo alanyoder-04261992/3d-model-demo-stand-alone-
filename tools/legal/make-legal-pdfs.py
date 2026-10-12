@@ -64,8 +64,8 @@ OUT = sys.argv[1] if len(sys.argv) > 1 else None
 if OUT: os.makedirs(OUT, exist_ok=True)
 
 TERMS_TITLE = "Barnwright Terms and Conditions"
-TERMS_VERSION = "2.1"               # server/office/terms.js TERMS.version says the same
-TERMS_DATE = "October 11, 2026"
+TERMS_VERSION = "2.2"               # server/office/terms.js TERMS.version says the same
+TERMS_DATE = "October 12, 2026"     # the day 2.2 started (Alan, Oct 12 2026: "merge terms 2.2", starting that day)
 VERSION = f"Version {TERMS_VERSION}, {TERMS_DATE}"   # at the top of every paper, and in papers.json
 DOMAIN = "barnwrightsoftware.com"   # every business's web address is <their name>.barnwrightsoftware.com
 MONTHLY_FEE = 250                   # a month from the start date, for any number of lots; it includes the first lot. No setup fee
@@ -229,6 +229,22 @@ def section_band(text):
 # something else maybe 3d configurator web address and webhook to put in
 # our own website"): "web address" became "3D designer web address" (1.1(c),
 # 1.4, 2.1 and the short version), and the website code is named.
+# Version 2.2 (Alan, Oct 2026: "I get access to change thing from control room
+# until it goes live and then in the owner setting they can turn switch on to
+# give me access"): Barnwright setup access. Alan approved the words and on
+# Oct 12 2026 said "merge terms 2.2", starting that day, once setup access, the
+# Control Room's Claude connector and its Make the change page were live
+# (designer PR 41, Control Room PR 19). docs/FOR-ALAN.md has what was decided
+# about the 30-day notice (section 19). 2.3 the preview before opening; 2.4
+# setup access until the 3D designer is first open or the first
+# quote or order is saved; section 10 the owner's one Barnwright card (Run
+# checks, or Run checks and change my price list and settings), 10.4 a
+# Barnwright person makes or approves each change after that, 10.5 what the
+# Dealer Center tells us, 10.6 what setup access never does; the short version
+# gains "Changes we make". 2.4 and "Changes we make" also say it can start
+# before the owner first signs in, on the terms agreed on the sign-up page
+# (Alan, Oct 2026: "Start right away"). The words promise only what the code enforces:
+# tools/check-wording.mjs reads them against the screens.
 
 TERMS_INTRO = [
     "These are the rules for using the Barnwright 3D designer. \"We\" and \"us\" mean Barnwright Software. \"You\" means the business that signs up.",
@@ -248,7 +264,8 @@ TERMS = [
     ("2. Getting set up", [
         ("2.1", "We set up your 3D designer for you at no charge: your buildings, sizes, prices, options, colors, logo, lots and 3D designer web address."),
         ("2.2", "To do that we need your price list, photos of your buildings, and your options and colors. Please get them to us correct and on time."),
-        ("2.3", "Before your customers can use it, we show you your buildings and prices. You check them and tell us they are right. You are responsible for the prices you approve."),
+        ("2.3", "Before your customers can use it, we show you your buildings and prices. You and your team can look at your 3D designer as a <b>preview</b> before you open it. Your customers can't see the preview. You check your buildings and prices and tell us they are right. You are responsible for the prices you approve."),
+        ("2.4", "<b>Setting it up for you.</b> Until you first open your 3D designer to customers, we can change your price list and settings to set it up for you. This can start as soon as we make your Dealer Center, before your owner first signs in: the terms you agree to on your sign-up page allow it, and we start from the business name, phone and email you give us there. That includes your buildings, sizes, prices, doors, windows, options, colors and logo, your business name and contact details, how your 3D designer looks and shows prices (including the line under the price), and your quote form (including the words that ask your customers if you may text them). We may use software, including AI assistants, to help make these changes. This ends for good the first time you open your 3D designer to customers or your first quote or order is saved, even if you close it again later. Your owner can stop it sooner in <b>Settings</b>, <b>Barnwright</b>. Only your owner can open your 3D designer to customers. What this never lets us do, and how your owner sees every change, is in 10.6."),
     ]),
     ("3. What it costs", [
         ("3.1", "There is no setup fee."),
@@ -294,10 +311,13 @@ TERMS = [
         ("9.5", "When this agreement ends, we keep your information for 30 days so you can download it. After that we may delete it. Backup copies are deleted as the backups are replaced."),
         ("9.6", "We keep your information safe with reasonable security. If someone gets into it without permission, we tell you right away and help you with what the law requires."),
     ]),
-    ("10. Help from Barnwright", [
-        ("10.1", "We can't look inside your Dealer Center unless your owner turns on <b>Help from Barnwright</b> in Settings, for 1 to 24 hours. It turns off by itself, and your owner can turn it off sooner."),
-        ("10.2", "While it is on, we can run checks on how your Dealer Center is working. Every visit is written in a log your owner can see."),
-        ("10.3", "For help, tap <b>Help</b> in your Dealer Center or email support@" + DOMAIN + "."),
+    ("10. Help and changes from Barnwright", [
+        ("10.1", "We can't look inside your Dealer Center unless your owner turns on <b>Run checks</b> or <b>Run checks and change my price list and settings</b> in <b>Settings</b>, <b>Barnwright</b>, or our setup access is on (2.4). Your owner turns either one on for 1 to 24 hours. It turns off by itself, and your owner can turn it off sooner. What your Dealer Center tells us on its own is in 8.1, 10.3 and 10.5."),
+        ("10.2", "While either one is on, we can run checks on how your Dealer Center is working. Every visit is written in a log your owner can see."),
+        ("10.3", "For help, tap <b>Help</b> in your Dealer Center or email support@" + DOMAIN + ". A question sent from Help reaches us with who sent it, the screen they were on and a few facts about how your Dealer Center is working, never your customers or prices. When something on a page goes wrong, your Dealer Center tells us what went wrong, never what a customer typed."),
+        ("10.4", "After our setup access ends (2.4), we can change your price list and settings only while your owner turns on <b>Run checks and change my price list and settings</b> in <b>Settings</b>, <b>Barnwright</b>, for 1 to 24 hours. It turns off by itself, and your owner can turn it off sooner. A Barnwright person makes each change by hand in your Dealer Center, or approves it in our Control Room before it is saved. That is true even when we use software, including AI assistants, to prepare a change."),
+        ("10.5", "Your Dealer Center tells us whether your 3D designer is open, whether we can change your price list right now and until when, whether your owner has agreed to these terms, which version of the software it runs, and when your price list was last saved and whether your owner or we saved it. This never includes your prices."),
+        ("10.6", "Whenever we can change your price list and settings (2.4 and 10.4), every change we make is listed for your owner in <b>Price list</b>, <b>History</b>, where your owner can put back an earlier price list. <b>Settings</b>, <b>Barnwright</b> shows the latest ones. This access never lets us see or change your customers, quotes, orders or team, change your lots, change where quote requests go or which websites show your 3D designer, or open or close your 3D designer. You are still responsible for checking your price list (6.1)."),
     ]),
     ("11. Please don't", [
         ("(a)", "copy, sell, rent or share the software;", "sub"),
@@ -357,6 +377,7 @@ TERMS = [
 # and a sign-up page that can't break a long address would run off a phone.
 TERMS_SUMMARY = [
     ("What you get", "Your 3D designer and your Dealer Center, on your own 3D designer web address. You also get a website code to show your 3D designer on your own website. We set it up for you (sections 1 and 2)."),
+    ("Changes we make", "Until you first open your 3D designer to customers, we can change your price list and settings to set it up, starting before you first sign in. After that, only while your owner turns it on in Settings. Every change is listed for your owner (sections 2 and 10)."),
     ("What it costs", "No setup fee. You save a card when you sign up; nothing is charged that day except one-time fees for any extra lots. The monthly fee is charged to your card from the day your 3D designer is ready, and it includes your first lot (section 3)."),
     ("Stopping", "Month to month. Either of us can stop with 30 days' notice by email (section 4)."),
     ("Your prices", "You check your price list and you are responsible for your prices, your buildings and your rent-to-own contracts. The 3D pictures are not construction drawings (section 6)."),

@@ -11,10 +11,11 @@
                                         pretend Sales Inbox for the Help
                                         screen; add --control-room-off to
                                         start with the account switched off
-         npm run office -- --terms-version 2.2 as if this copy shipped those
-                                        Barnwright terms (to try terms that
-                                        aren't out yet, such as setting up
-                                        before the owner first signs in)
+         npm run office -- --terms-version 2.3 as if this copy shipped those
+                                        Barnwright terms (to try terms newer
+                                        or older than the 2.2 it ships, such
+                                        as 2.1, where setup access can't
+                                        start)
          npm run office -- --identity   the live site's sign-in instead of
                                         "pick who you are": an email and a
                                         password against a pretend Netlify
@@ -157,7 +158,7 @@ const deps = {
    its answers and the email to write to.
    Barnwright setup access, on this computer only: POST /__local/barnwright
    with {terms: "2.2"} records the owner's agreement to a terms version
-   (terms 2.2 aren't out yet, and nothing works before them), and with
+   (nothing works before the owner agrees to 2.2 or later), and with
    {visit: true} answers {url}: the link Alan's Control Room would open,
    /dealer#barnwright=<a one-use pass from the pretend control room>; with
    {door: {action: "status"}} (any door request) answers {door: {pass,
@@ -167,8 +168,7 @@ const deps = {
    pretend owner's sign-up agreement to the terms this copy ships (with the
    business name, phone and email they gave), as the Control Room sends for
    a customer who signed up on its sign-up page: with no owner signed in
-   yet, that is how to try "Before the owner first signs in" here (with
-   --terms-version 2.2 while terms 2.2 aren't out). */
+   yet, that is how to try "Before the owner first signs in" here. */
 const roomClock = { get t() { return (clock.at || new Date()).getTime(); } };
 const room = CONTROL_ROOM ? fakeControlRoom({ clock: roomClock, dealerLimit: 3 }) : null;
 const helpInbox = room ? fakeHelpInbox({ clock: roomClock, publicKeyPem: room.publicKeyPem }) : null;
