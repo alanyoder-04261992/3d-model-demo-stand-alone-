@@ -708,9 +708,13 @@ read siblings from the live `state.items` (clamping order matters).
 **`design`** — the saved/shared form: `{ v:1, company, cfg, type, size,
 colors by NAME, items with Barnwright's field names (defaults left out), dormer,
 porch, opts, elec, ramp, xopt, priced?: {total, at} }`.
-`toState(design, cat)` applies size → type → size (Barnwright `applyDesign`)
+`toState(design, cat, opts)` applies size → type → size (Barnwright `applyDesign`)
 and restores colours by name; anything that no longer exists (renamed or
-dropped item, size no longer sold) is reported, never silently dropped.
+dropped item, size no longer sold) is reported, never silently dropped. An
+included door of a library swap that the price list no longer sells is read
+as the door the size comes with, like a rename. `opts.asSaved` (a look-only
+link, `&view=1`: an order or quote sheet, See it in 3D) keeps the doors as
+saved and sold; `ui/app.js` drops it at the first change.
 `fromState(state, cat)` is its inverse. Round trip is checked for every golden
 case (same items, same `priceParts`).
 
@@ -724,8 +728,10 @@ pair that is not the one the building comes with -- a design saved before
 the change -- becomes that door when the customer never swapped it (at no
 charge, so the price the customer saw stays), or, when they swapped it for
 another door, is kept in its place as that swap (the difference, never a
-credit); one line of words each. `ui/state.js chooseSize` makes the same
-change, without words, when a touched design changes size. It is matched
+credit, and the line says how much more than before); one line of words
+each. `ui/state.js chooseSize` makes the same change, without words, when a
+touched design changes size; a door that becomes wider (the double doors
+back) settles its wall again, as the size change does. It is matched
 the way `server/office/pricing.js` matches, so what the designer prices the
 server prices; the stale design itself is "no longer offered" (409), never
 "could not be read" (422). A style without a swap (every Barnwright

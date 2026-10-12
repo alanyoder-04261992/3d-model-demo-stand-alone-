@@ -40,8 +40,10 @@ Yoder Storage Barns site lights them (true colour), and nothing else moved.
    height). Not the Metal Garage or Metal Utility; every other style keeps
    Barnwright's numbers until Alan says yes. The 8x12 and 10x12 Side
    Utility, Dormer Shed and Side Lofted Barn come with the 48 in Wooden Door,
-   not the 72 in double doors ("replace 6 foot to 4 foot"; the other two
-   Oct 12 2026, "yes"; prices as they were; Barnwright's keep the doubles).
+   not the 72 in double doors (the Side Utility: Alan, Oct 11 2026, "replace
+   6 foot to 4 foot"; the Dormer Shed and Side Lofted Barn: Oct 12 2026,
+   "yes"; the prices stay as they were; Barnwright's own keep the double
+   doors).
    No sample price list has a Steep roof; an owner can make one ("Roof pitch
    at least").
    `node tools/check-shop-numbers.mjs` holds the shop numbers (the recorded

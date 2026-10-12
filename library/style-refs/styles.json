@@ -2,9 +2,9 @@
  "format": 1,
  "about": "Pictures and shape facts for every style in the 3D designer's library, for matching a dealer's photos to a style. Made by node tools/make-style-refs.mjs and checked by node tools/check-style-refs.mjs in the 3D designer repository.",
  "pitch_note": "Every pitch, height and size here is the standard building line as the 3D designer draws it. The Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility use Alan's 5/12, the Dormer Shed's main roof his 7/12, and the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage his barn roof heights (3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide); the other styles use Barnwright's drawing. A barn roof's height is to the peak of its trusses, the way a builder measures it; every other roof's is to the top of the roof. The words say every length and pitch the way How it's built does (5/12, about 6 1/2/12, 7 ft 4 13/16 in); a barn roof is said by its height, not by the pitch of its steep part. Each slope's pitch is also given as an exact number for measuring a photo. A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.",
- "library_version": "bf1479724e0d5492",
+ "library_version": "ae437bc34f8661e7",
  "library_files": {
-  "library/manufacturers/standard.json": "245b6d89ad8e783eb3c8c20602351a7180c264350699cc57a2de05f3cbbadd87",
+  "library/manufacturers/standard.json": "4c2fb64d5d98064ded542be401e5dec808c9deb0a286faeffbd9470ceb49f5a1",
   "library/construction.json": "bc45a625290a988f7ee7b274352eb7f4f6a6ce7aa5b971f568837dc0fc5a1297"
  },
  "drawn_with": {

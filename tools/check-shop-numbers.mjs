@@ -387,7 +387,8 @@ console.log(`4b. A gable window too tall for the gable is not offered there: ${g
 /* e. the 48 in Wooden Door at 8x12 and 10x12: the Side Utility (Alan, Oct
       11 2026, asked how he builds them: "replace 6 foot to 4 foot"), and
       the Dormer Shed and Side Lofted Barn, which have the same door side
-      (Alan, Oct 12 2026, FOR-ALAN question 13: "yes") */
+      (Alan, Oct 12 2026, asked whether they should get the 48 in door
+      too: "yes") */
 const DOOR48 = { SU: ["8x12", "10x12"], DS: ["8x12", "10x12"], SLB: ["8x12", "10x12"] };
 const has48 = (key, z) => (DOOR48[key] || []).includes(z);
 const NAME48 = { SU: "Side Utility", DS: "Dormer Shed", SLB: "Side Lofted Barn" };

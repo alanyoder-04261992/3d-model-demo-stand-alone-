@@ -195,7 +195,9 @@ still come with it (`validate`). A design holding the other door of the
 pair -- saved before the swap, or a touched design whose size changed --
 gets the door its size comes with when the customer never swapped it
 (`model/design.js followStandardDoor`, `ui/state.js chooseSize`;
-DIFFERENCES #27). `validateManufacturer` refuses a size or item that is
+DIFFERENCES #27); a wider door settles its wall again, a `from` the price
+list no longer sells is read as `to`, and a look-only link (an order or
+quote) keeps the door it was saved with (`toState(..., { asSaved })`). `validateManufacturer` refuses a size or item that is
 not one, and a `from` the style does not come with at that size. The 8x12
 and 10x12 Side Utility (Alan, Oct 11 2026), Dormer Shed and Side Lofted
 Barn (Oct 12 2026) have the 48 in Wooden Door this way, each with its own

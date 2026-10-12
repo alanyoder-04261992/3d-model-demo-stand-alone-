@@ -217,7 +217,7 @@ finished designer retains the golden geometry.
     | Dormer Shed | main roof | about 7 1/4/12 (7.2/12) | 7/12 (eave, walls and dormer as they were) | utility-framing skill: Alan's steep pitch |
     | Lofted Barn, Side Lofted Barn, Metal Lofted Barn | wall | 6 ft 8 1/16 in (80.04 in) | 6 ft 7 1/2 in | 75 in studs + three 1 1/2 in plates (derived) |
     | Lofted Barn, Side Lofted Barn, Metal Lofted Barn, Lofted Barn Garage | barn roof height at 8, 10, 12 ft wide, to the top of the trusses | 3 ft 6 3/4 in, 4 ft 5 9/16 in, 5 ft 4 5/16 in (the Metal Lofted Barn 3 ft 5 5/8 in, 4 ft 4 7/16 in, 5 ft 3 3/16 in; the Lofted Barn Garage is sold 12 ft wide only) | 3 ft 7 3/4 in, 4 ft, 4 ft 3 in (the Lofted Barn Garage on its own 6 ft 10 13/16 in walls) | shed-measurements skill: loft truss peaks |
-    | Side Utility, Dormer Shed, Side Lofted Barn 8x12, 10x12 | standard door | 72″ Wooden Double Doors, a 2x3 window 2 3/8 in into them (the designer pushes the doubles 5 1/4 in left of the middle and the left window 5/8 in further out to make room) | the 48″ Wooden Door in the middle of the door side, where the recipe puts the doubles; the two windows 4.4 ft either side of the middle (the left one 5/8 in closer than before, so both sides match), about 9 5/8 in of siding between the door's side trim and each window's | Alan, Oct 11 2026, the Side Utility: "replace 6 foot to 4 foot"; Oct 12 2026, the Dormer Shed and Side Lofted Barn: "yes" (FOR-ALAN question 13) |
+    | Side Utility, Dormer Shed, Side Lofted Barn 8x12, 10x12 | standard door | 72″ Wooden Double Doors, a 2x3 window 2 3/8 in into them (the designer pushes the doubles 5 1/4 in left of the middle and the left window 5/8 in further out to make room) | the 48″ Wooden Door in the middle of the door side, where the recipe puts the doubles; the two windows 4.4 ft either side of the middle (the left one 5/8 in closer than before, so both sides match), about 9 5/8 in of siding between the door's side trim and each window's | Alan, Oct 11 2026, the Side Utility: "replace 6 foot to 4 foot"; Oct 12 2026, asked whether the Dormer Shed and Side Lofted Barn should get the 48 in door too: "yes" |
 
     What "match" means and does not: the peak heights and wall heights match
     his shop. A barn roof's height is measured where he measured it, from
@@ -269,7 +269,8 @@ finished designer retains the golden geometry.
     72″ double doors (Alan, Oct 11 2026, asked how his shop builds them:
     "replace 6 foot to 4 foot"), and so do the 8x12 and 10x12 Dormer Shed
     and Side Lofted Barn, which have the same door side and the same
-    2 3/8 in (Alan, Oct 12 2026, FOR-ALAN question 13: "yes"). It is each
+    2 3/8 in (Alan, Oct 12 2026, asked whether they should get the 48 in
+    door too: "yes"). It is each
     style's `built.standardSwaps` in the library (no How it's built box):
     the door the recipe puts in the middle of the door side becomes the 48″
     door, and the two 2x3 windows stay 4.4 ft either side of the middle, so
@@ -277,12 +278,15 @@ finished designer retains the golden geometry.
     dormers; the dormer stays where it was). Every other size of the three
     and Barnwright's own Side Utility, Dormer Shed and Side Lofted Barn keep
     the doubles. The door comes with the building at no extra charge, and
-    the prices are as they were (Alan, Oct 12 2026, question 12: "no", the
-    8x12 and 10x12 do not cost less). A price list must still list the 48″
-    door ($0 is fine; the Dealer Center keeps it sold, names the sizes, and
-    shows the problem before Save); one stored without it keeps the doubles
-    and the owner is told, one line for each style, under a heading about a
-    door. Where the 48″ door is sold, the double doors are needed only by
+    the prices are as they were (Alan, Oct 12 2026: "no" to a lower price
+    for the 8x12 and 10x12 Side Utility; the other two keep theirs too). A
+    price list must still list the 48″ door ($0 is fine; the Dealer Center
+    keeps it sold, names the sizes once for the styles that share them,
+    and shows the problem before Save); one stored without it keeps the
+    doubles and the owner is told, one line for each style, under a heading
+    about a door. Only a style and size that newly needs the 48″ door is a
+    new problem: taking a style or size off, or renaming one, saves as
+    before. Where the 48″ door is sold, the double doors are needed only by
     the sizes that still come with them. A design that holds the other door
     of the pair: #27.
 
@@ -301,21 +305,30 @@ finished designer retains the golden geometry.
       (the size chip keeps their items, #12): the door they never swapped
       becomes the one the new size comes with, in its place, and nothing is
       said. A 10x16 with shutters made 10x12 is the 10x12's price plus the
-      shutters, with the 48″ door; back to 10x16, the double doors. A door
-      they swapped it for stays theirs, in the place of the new size's
-      door, priced as that swap (`ui/state.js chooseSize`);
-    - a design saved with the double doors on an 8x12 or 10x12 (a Side
-      Utility before October 11 2026, a Dormer Shed or Side Lofted Barn
-      before October 12) opens with the 48″ door in their place, not moved
-      to the middle, at the price the customer saw, with one line: "The
-      8×12 Side Utility comes with the 48″ Wooden Door, so it takes the
-      place of the 72″ Wooden Double Doors." ("The 8×12 Dormer Shed ...",
-      "The 10×12 Side Lofted Barn ..." the same way). If they had swapped
-      the doubles for another door, it is kept in the 48″ door's place and
-      priced from it ("... so the 36″ In-Swing Door is kept in its place as
-      an upgrade."; $150 more than before in the sample price list). FOR-ALAN
-      question 12, answered Oct 12 2026: "no", the size prices stay as
-      they are; saved designs open as described here.
+      shutters, with the 48″ door; back to 10x16, the double doors, and
+      their wall is settled again so the windows stand clear of them, where
+      they would be with the double doors all along. A door they swapped it
+      for stays theirs, in the place of the new size's door, priced as that
+      swap (`ui/state.js chooseSize`, `model/design.js followStandardDoor`);
+    - a design saved with the double doors on an 8x12 or 10x12, before
+      this change reached the dealer's 3D designer, opens to change with
+      the 48″ door in their place, not moved to the middle, at the price
+      the customer saw, with one line: "The 8×12 Side Utility comes with
+      the 48″ Wooden Door, so it takes the place of the 72″ Wooden Double
+      Doors." ("The 8×12 Dormer Shed ...", "The 10×12 Side Lofted Barn ..."
+      the same way). If they had swapped the doubles for another door, it
+      is kept in the 48″ door's place and priced from it, and the line
+      says how much more: "... so the 36″ In-Swing Door is kept in its
+      place and costs $150.00 more than before." (no amount where a company
+      shows no prices). Whether that is right is still asked (FOR-ALAN
+      question 12). On a price list that no longer sells the double doors
+      at that size, the same: the 48″ door, never no door (`toState`);
+    - only looked at (a look-only link, `&view=1`: an order or quote
+      sheet's picture, See it in 3D, a quote's link), the design is drawn
+      as it was saved and sold, with the double doors, and nothing is said;
+      Change this design (or any change) lets the door follow the size and
+      says so (`toState(design, cat, { asSaved: true })`, `ui/app.js
+      followToday`). An order or quote sheet lists what was sold.
     The designer and the server match items the same way; the stale design
     itself is "no longer offered" (refresh), never "could not be read"
     (`model/design.js followStandardDoor`, `tools/check-design.mjs` part

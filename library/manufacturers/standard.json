@@ -60,7 +60,7 @@
         "standardSwaps": [
           {
             "sizes": ["8x12", "10x12"], "from": "w72", "to": "w48",
-            "_source": "Alan, Oct 12 2026, FOR-ALAN question 13 (the 8x12 and 10x12 Dormer Shed have the Side Utility's door side, where Barnwright's layout pushes a 2x3 window 2 3/8 in into the 72 in double doors; should they get the 48 in door too?): \"yes\". The 48 in Wooden Door goes where the double doors were, in the middle of the door side, between the same two windows; the dormer above is unchanged. The prices stay as they were with the double doors. Barnwright's own Dormer Shed keeps the double doors (barnwright:DS)."
+            "_source": "Alan, Oct 12 2026, asked whether the 8x12 and 10x12 Dormer Shed should get the 48 in door too (they have the Side Utility's door side, where Barnwright's layout pushes a 2x3 window 2 3/8 in into the 72 in double doors): \"yes\". The 48 in Wooden Door goes where the double doors were, in the middle of the door side, between the same two windows; the dormer above is unchanged. The prices stay as they were with the double doors. Barnwright's own Dormer Shed keeps the double doors (barnwright:DS)."
           }
         ]
       }
@@ -125,7 +125,7 @@
         "standardSwaps": [
           {
             "sizes": ["8x12", "10x12"], "from": "w72", "to": "w48",
-            "_source": "Alan, Oct 12 2026, FOR-ALAN question 13 (the 8x12 and 10x12 Side Lofted Barn have the Side Utility's door side, where Barnwright's layout pushes a 2x3 window 2 3/8 in into the 72 in double doors; should they get the 48 in door too?): \"yes\". The 48 in Wooden Door goes where the double doors were, in the middle of the door side, between the same two windows. The prices stay as they were with the double doors. Barnwright's own Side Lofted Barn keeps the double doors (barnwright:SLB)."
+            "_source": "Alan, Oct 12 2026, asked whether the 8x12 and 10x12 Side Lofted Barn should get the 48 in door too (they have the Side Utility's door side, where Barnwright's layout pushes a 2x3 window 2 3/8 in into the 72 in double doors): \"yes\". The 48 in Wooden Door goes where the double doors were, in the middle of the door side, between the same two windows. The prices stay as they were with the double doors. Barnwright's own Side Lofted Barn keeps the double doors (barnwright:SLB)."
           }
         ]
       }
