@@ -60,7 +60,7 @@ instructed.
 
 ```sh
 node tools/check-all.mjs
-node tools/check-all.mjs --only loadout-twins,layout-recipe,layout-check,layout-server,layout-return,standard-layout,picture-key,building-pictures,your-buildings,layout-mode
+node tools/check-all.mjs --only loadout-twins,layout-recipe,layout-check,layout-server,layout-return,standard-layout,picture-key,building-pictures,picture-cache,your-buildings,layout-mode,layout-demo,layout-conflict
 npm run build:client
 npm run office -- --demo
 ```
@@ -88,6 +88,20 @@ and `layout-sheet-` pictures at all three widths and both themes, and
 `layout-demo-saved-390.png`. Check logs are in `test/out/checks/`.
 Public fallback pictures and their recorded metadata are in
 `ui/office/building-pictures/`.
+
+Selected review captures are committed here:
+
+- [Desktop building cards](review/buildings-1280-light.png)
+- [Phone building cards](review/buildings-390-light.png)
+- [Phone Edit in dark mode](review/edit-390-dark.png)
+- [Phone porch selection above the save bar](review/layout-sheet-390-light.png)
+- [Phone reset choices with the 100 px app header](review/reset-layout-390-dark.png)
+
+Completed focused checks: Your Buildings **144**, Dealer Center **73**,
+layout server **60**, layout return **27**, public demo flow **15**,
+conflict recovery **14**, browser picture cache **15**, and Help **168**.
+The builder twins match **295** size and porch cases. The golden geometry
+check matches **521,769 triangles across 148 buildings**.
 
 The final full-suite counts, baseline comparison and any remaining reference
 check failures will be recorded here after the final run. This record does
