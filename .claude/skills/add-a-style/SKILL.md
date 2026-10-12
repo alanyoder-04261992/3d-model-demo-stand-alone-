@@ -185,17 +185,28 @@ company has no built blocks, so the golden test still draws the recipe. A
 price list that does not sell `to` keeps `from` and the owner is told
 (`swapWarnings`, under its own heading on the Buildings tab); a new save
 must sell it (`strictProblems`; the Dealer Center shows the problem before
-Save, keeps it sold and names the sizes: "Comes with the 8×12 and 10×12
-Side Utility"). Where `to` is sold, `from` is needed only by the sizes that
+Save, keeps it sold and names the sizes once for the styles that share
+them: "Comes with the Side Utility, Dormer Shed and Side Lofted Barn at
+8×12 and 10×12"; the door it swaps out, "... Side Lofted Barn, except the
+8×12 and 10×12"). Only a style and size that newly needs `to` is a new
+problem (`newSwapNeeds`): taking a style or size off, or renaming one, is
+never refused. Where `to` is sold, `from` is needed only by the sizes that
 still come with it (`validate`). A design holding the other door of the
 pair -- saved before the swap, or a touched design whose size changed --
 gets the door its size comes with when the customer never swapped it
 (`model/design.js followStandardDoor`, `ui/state.js chooseSize`;
-DIFFERENCES #27). `validateManufacturer` refuses a size or item that is
-not one, and a `from` the style does not come with at that size. The Side
-Utility's 8x12 and 10x12 have the 48 in Wooden Door this way. Prove it in
-`tools/check-shop-numbers.mjs` (part 4e) and `tools/check-design.mjs`
-(part 11), and re-record the changed sizes.
+DIFFERENCES #27); a wider door settles its wall again, a `from` the price
+list no longer sells is read as `to`, and a look-only link (an order or
+quote) keeps the door it was saved with (`toState(..., { asSaved })`). `validateManufacturer` refuses a size or item that is
+not one, and a `from` the style does not come with at that size. The 8x12
+and 10x12 Side Utility (Alan, Oct 11 2026), Dormer Shed and Side Lofted
+Barn (Oct 12 2026) have the 48 in Wooden Door this way, each with its own
+entry; no code names a style. Prove it in `tools/check-shop-numbers.mjs`
+(part 4e, its `DOOR48` table), `tools/check-companies.mjs` (the same
+table), `tools/check-design.mjs` (part 11) and the how-its-built browser
+check, re-record the changed sizes, and redraw the style refs
+(`node tools/make-style-refs.mjs --only <codes>`): the style then
+"changes with size".
 
 Every item a style comes with must be priced by every company that sells the
 style (0 is fine): included items are charged as the difference when swapped.

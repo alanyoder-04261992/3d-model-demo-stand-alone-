@@ -63,7 +63,8 @@ says it.
    thing that is not a knob, never a box and never a business's:
    `standardSwaps`, the shop's own door at some sizes
    (`[{"sizes": ["8x12", "10x12"], "from": "w72", "to": "w48"}]` on the Side
-   Utility, Alan Oct 11 2026: "replace 6 foot to 4 foot"). It changes the
+   Utility, Alan Oct 11 2026: "replace 6 foot to 4 foot"; on the Dormer Shed
+   and Side Lofted Barn too, Oct 12 2026: "yes"). It changes the
    standard doors and windows, not a number (`model/loadouts.js`
    `standardItems`; the `add-a-style` skill, section 3); `libraryProblems`
    lets it through and `validateManufacturer` checks it, and an

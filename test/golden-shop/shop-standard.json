@@ -302,8 +302,8 @@
      "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
      "doorIn": 76.5,
-     "triangles": 1936,
-     "hash": "9abf43b3bb26fefedd4f2d37580b3439c5d9e3fe7280fda8feaba1f734b85643"
+     "triangles": 1863,
+     "hash": "64bbda55d735d7a31edd5f1f6151c96978674b2a5c6b477f4088b3929a230f40"
     },
     "8x16": {
      "wallIn": 93,
@@ -324,8 +324,8 @@
      "eaveRightIn": 4.353,
      "gableEndIn": 5.4,
      "doorIn": 76.5,
-     "triangles": 2000,
-     "hash": "1053632412a5163e9f00c95e785141921ec1c93f2f870a7266c1ef03c21d091d"
+     "triangles": 1927,
+     "hash": "a9f6f238674adf9694ba5e8f34262e53b51acf91912de80c25b03c7e4b624a98"
     },
     "10x14": {
      "wallIn": 93,
@@ -680,8 +680,8 @@
      "eaveRightIn": 1.734,
      "gableEndIn": 1.2,
      "doorIn": 71.5,
-     "triangles": 2964,
-     "hash": "24ada8e5191c9274cb0844342287a4f2bbdeb914da9a4a1f0d74a956ab3d8fee"
+     "triangles": 2891,
+     "hash": "14980442ed4f5e1cf434fe97ce44ce7a7f11ef538a68a5997dfb4bdba8db2beb"
     },
     "8x16": {
      "wallIn": 79.5,
@@ -702,8 +702,8 @@
      "eaveRightIn": 1.943,
      "gableEndIn": 1.2,
      "doorIn": 71.5,
-     "triangles": 3028,
-     "hash": "96a24fe3d4bbb8f23dd0be21759d90399323a8ca5b4653e68c39a0eb577bc214"
+     "triangles": 2955,
+     "hash": "a3ab518729b8f4041f20bf4d3a252d68d8e9311722a94d57166ef47fa79e1f70"
     },
     "10x16": {
      "wallIn": 79.5,
