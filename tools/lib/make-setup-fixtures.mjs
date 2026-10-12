@@ -16,15 +16,16 @@
        with the reason;
      * one example request and answer for every door action and every refusal,
        for the visit routes, the owner's routes and the check-in;
-     * the base price list (First setup with the small starting price list)
+     * the base price list (a business set up with the small starting price list)
        and sample edits with the change words they must give, and what the
        lock does with an extra that changes how the building is built
        (edits.effects);
      * beforeSignIn: the owner's sign-up agreement carried on a pass (the
        signup claim, good and bad), when it counts, the starting price list
-       at version 0 (read, check, save), the visit that starts it, First
-       setup on a price list that already exists, the check-in, and the
-       check-in right after a deploy (deploy-succeeded).
+       at version 0 (read, check, save), the visit that starts it, the
+       owner's first sign-in (their start, POST start) on a price list that
+       already exists, the check-in, and the check-in right after a deploy
+       (deploy-succeeded).
 
    The change words come from the Dealer Center's own describeChanges, so
    they are exactly what it writes today (the roof pitch line too: a style's
@@ -45,6 +46,7 @@ import { format as formatBuilt, libraryNumbers, KNOBS } from "../../model/build-
 import { checkChangedStyles } from "../../server/office/built-check.js";
 import { MemoryBlobs, wrapStore } from "../../server/office/store.js";
 import { canonicalLease, LEASE_DURATION_MS } from "../../server/office/license-core.js";
+import { slugFrom } from "../../server/office/lots.js";
 
 const OUT = resolve(ROOT, "tools/lib/setup-fixtures.json");
 
@@ -85,8 +87,8 @@ const listWords = (a) => (a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") 
 
 export const WHY = {
   "not-connected": "This Dealer Center isn't connected to Barnwright.",
-  "no-price-list": "The owner hasn't finished First setup yet, so there is no price list to change.",
-  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center.",
+  "no-price-list": "Their Dealer Center has no price list yet. It makes one when the owner signs in, from the business name on their sign-up page. If that name didn't come through, Today asks the owner to type it.",
+  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap the I have read and agree button at the top of their Dealer Center.",
   stopped: "The owner stopped Barnwright's setup access in Settings, Barnwright.",
   "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
   "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
@@ -115,13 +117,13 @@ export const REFUSALS = {
 };
 const NOTHING_TO_UNDO = "Barnwright hasn't changed this price list, so there is nothing to undo.";
 const NOTHING_BEFORE_START = "This is the starting price list Barnwright set up, so there is nothing before it to put back.";
-/* Before the owner first signs in: the starting price list's history line, and First setup's words */
+/* Before the owner first signs in: the starting price list's history line, and the words of the
+   owner's first sign-in (server/office/first-start.js, ui/office/views/getting-started.js) */
 const START_LINE = "Started the price list from Every standard building, at example prices";
-export const FIRST_SETUP_WORDS = {
-  line: "Barnwright set up your price list. You can change anything.",
-  steps: ["Your business", "Your first lot"],
-  hello: "Two short steps. You can change all of it later.",
-  stepsBefore: ["Your business", "Your price list", "Your first lot"],
+export const FIRST_START_WORDS = {
+  name: "Type your business name.",
+  card: "Getting started",
+  barnwright: "Barnwright set up your price list. Check it, and change anything.",
   alreadySetUp: "The business is already set up.",
 };
 const TOO_MANY_SAVES = "Barnwright has saved 60 changes here today. Try again tomorrow.";
@@ -360,7 +362,7 @@ export function signupCounts(signup, { ships, ownCopies = {}, ownerSignedIn = fa
   return { counts: false, why: "signup-unknown" };
 }
 
-/* ---- the base price list: First setup with the small starting price list ------------------ */
+/* ---- the base price list: a business set up with the small starting price list ------------------ */
 
 const M = readJSON("library/manufacturers/standard.json");
 const LIB = readJSON("library/construction.json");
@@ -955,11 +957,11 @@ async function beforeSignInSection({ passFor, bodyOf, request }) {
   ex("refused: terms 2.2 aren't out here", "As in status, but this Dealer Center ships terms 2.1 (termsOut: false).",
     request(withSignup("signup-not-out", "read", bodies.read).pass, bodies.read), closed("terms", closedB("terms", { termsOut: false }), TERMS_NOT_OUT));
   const status2 = bodyOf({ action: "status" });
-  ex("the owner has signed in but hasn't ticked yet", "After the version-0 save, the owner made their login and is in First setup. The sign-up agreement no longer counts.",
+  ex("the owner has signed in, before their Dealer Center's start", "After the version-0 save, the owner made their login; the start their Dealer Center runs at that first sign-in (POST start) hasn't finished yet. The sign-up agreement on the pass no longer counts.",
     request(withSignup("signup-owner-in", "status", status2).pass, status2), ok(closedB("terms", { priceList: B2.priceList, lastBarnwrightSave: B2.lastBarnwrightSave, canUndo: true })),
     { note: "status always answers 200 with the status fields; any other action answers 403 closed with the words for terms" });
   const status3 = bodyOf({ action: "status" });
-  ex("after the owner's First setup", "The owner ticked the terms box in First setup and added their first lot. Access stands on their own agreement now.",
+  ex("after the owner's first sign-in", "Their Dealer Center ran the owner's start at their first sign-in: it kept Barnwright's price list as it was, made their first lot, and kept the sign-up agreement as the owner's own (barnwright-terms, from: \"signup\"). Access stands on that agreement now.",
     request(withSignup("signup-after-first-setup", "status", status3).pass, status3),
     ok({ ...B2, termsOk: true, agreement: "owner" }));
 
@@ -1024,37 +1026,53 @@ async function beforeSignInSection({ passFor, bodyOf, request }) {
       answer: { status: 401, body: { error: VISIT_WORDS.closed.replace("<the words for why>", WHY.terms), code: "visit-ended", why: "terms" } } },
   ];
 
-  /* the owner's first sign-in */
+  /* the owner's first sign-in: no setup screens (server/office/first-start.js) */
   const biz = (s) => ({ id: s.id, name: s.brand.name, short: s.brand.short, initials: s.brand.initials, logo: "", colors: s.brand.colors,
     phone: s.brand.phone, email: s.brand.email, website: s.brand.website, open: false });
   const owner = { Authorization: "Bearer <the owner's Identity token>" };
-  const firstSetup = {
-    words: FIRST_SETUP_WORDS,
+  const post = (body) => ({ method: "POST", url: site + "/api/office/start", headers: { ...owner, Origin: site, "Content-Type": "application/json" }, body });
+  const lotSlug = slugFrom(SIGNUP.business);
+  const ownerTerms = { version: SIGNUP.termsVersion, agreedAt: SIGNUP.signedAt, by: { userId: "<the owner's login id>", email: OWNER_EMAIL, name: SIGNUP.signature }, from: "signup",
+    termsSha256: SIGNUP.termsSha256, passId: passes.status.claims.id };
+  const firstStart = {
+    words: FIRST_START_WORDS,
+    about: "The owner's first sign-in opens Today right away, with no setup screens. GET me says startNeeded; the page sends POST start at once (safe to send twice, and from two tabs at once), then opens Today with the Getting started card. The start keeps a price list that is there (Barnwright's, exactly as it is) or makes Every standard building from the sign-up's business name, phone and email (barnwright-signup-details); keeps the sign-up agreement as the owner's own when it counts and its termsSha256 is one of this Dealer Center's own copies of that version (docs/legal/terms-sha256.json; barnwright-terms, from: \"signup\", with the termsSha256 and the passId that brought it; otherwise the line at the top of the Dealer Center asks); makes the first lot, named after the business, when there is none; writes first-start; and removes barnwright-signup-details. Only for a new business: no price list yet, or one a start made (version 1 Barnwright's, or the start line) that the owner never took on; a business set up the old way (POST setup, the old setup screens) never needs it, even with no lot.",
     examples: [
-      { name: "GET me at the owner's first sign-in", given: "After the version-0 save. The owner made their login with the email from their sign-up (OWNER_EMAIL) and confirmed it.",
+      { name: "GET me at the owner's first sign-in", given: "After the version-0 save. The owner made their login with the email from their sign-up (OWNER_EMAIL) and confirmed it. The page hasn't sent POST start yet.",
         request: { method: "GET", url: site + "/api/office/me", headers: owner },
-        answer: { status: 200, body: { user: "<the login>", person: "<the owner>", business: biz(after), setupNeeded: true, lots: [],
-          terms: { version: "2.2", date: "<the terms' date>", url: "/legal/barnwright-terms.pdf", title: "Barnwright Terms and Conditions", agreed: null },
+        answer: { status: 200, body: { user: "<the login>", person: "<the owner>", business: biz(after), startNeeded: true, gettingStarted: null, lots: [],
+          terms: { version: "2.2", date: "<the terms' date>", url: "/legal/barnwright-terms.pdf", title: "Barnwright Terms and Conditions", agreed: null, older: null },
           setup: { mode: null, until: null }, "...": "the other fields as always" } },
-        note: "setupNeeded with a business: First setup has two steps and says the line in words.line" },
-      { name: "POST setup on the price list Barnwright started", given: "As above; the owner kept the details and ticked the box.",
-        request: { method: "POST", url: site + "/api/office/setup", headers: { ...owner, Origin: site, "Content-Type": "application/json" },
-          body: bodyOf({ yourName: "Pat Owner", businessName: SIGNUP.business, phone: SIGNUP.phone, email: SIGNUP.email, agreeTerms: true }) },
-        answer: { status: 200, body: { business: biz(after) } },
-        note: "the agreement is kept as the owner's own (barnwright-terms); nothing differs, so no new version" },
-      { name: "POST setup with a new phone", given: "As above, but the owner typed 941-555-0123 for the business phone.",
-        request: { method: "POST", url: site + "/api/office/setup", headers: { ...owner, Origin: site, "Content-Type": "application/json" },
-          body: bodyOf({ yourName: "Pat Owner", businessName: SIGNUP.business, phone: "941-555-0123", email: SIGNUP.email, agreeTerms: true }) },
-        answer: { status: 200, body: { business: { ...biz(after), phone: "941-555-0123" } } },
-        note: "version 3 by the owner: History says \"Phone: 941-555-0100 → 941-555-0123\" (the owner's own History shows contact details in full)" },
-      { name: "refused: no tick", given: "As above, without agreeTerms.",
-        request: { method: "POST", url: site + "/api/office/setup", headers: { ...owner, Origin: site, "Content-Type": "application/json" },
-          body: bodyOf({ yourName: "Pat Owner", businessName: SIGNUP.business, phone: SIGNUP.phone, email: SIGNUP.email }) },
-        answer: { status: 422, body: { error: "Tick the box to agree to the Barnwright Terms and Conditions." } } },
-      { name: "refused: set up already", given: "After the POST setup above.",
-        request: { method: "POST", url: site + "/api/office/setup", headers: { ...owner, Origin: site, "Content-Type": "application/json" },
-          body: bodyOf({ yourName: "Pat Owner", businessName: SIGNUP.business, phone: SIGNUP.phone, email: SIGNUP.email, agreeTerms: true }) },
-        answer: { status: 409, body: { error: FIRST_SETUP_WORDS.alreadySetUp } } },
+        note: "startNeeded: the page sends POST start at once, then opens Today" },
+      { name: "POST start on the price list Barnwright started", given: "Right after the GET me above.",
+        request: post("{}"),
+        answer: { status: 200, body: { business: biz(after), start: { priceList: "kept", lot: lotSlug, terms: "signup" } } },
+        priceListVersion: 2, terms: ownerTerms,
+        lot: { slug: lotSlug, name: SIGNUP.business, phone: SIGNUP.phone, email: SIGNUP.email },
+        note: "Barnwright's price list is kept exactly as it is (still version 2, nothing saved); the first lot is named after the business; the sign-up agreement is kept as the owner's own (barnwright-terms current, as in terms)" },
+      { name: "GET me after the start", given: "Right after the POST start above.",
+        request: { method: "GET", url: site + "/api/office/me", headers: owner },
+        answer: { status: 200, body: { business: biz(after), startNeeded: false, lots: ["<the lot above>"],
+          terms: { version: "2.2", date: "<the terms' date>", url: "/legal/barnwright-terms.pdf", title: "Barnwright Terms and Conditions", agreed: ownerTerms, older: null },
+          gettingStarted: { name: false, barnwright: true, steps: "<{id, done} for prices, look, lots (when the plan has more than one), team, preview, open>", lotLimit: "<the plan's>", openLots: 1 },
+          "...": "the other fields as always" } },
+        note: "the Getting started card: Check your prices says Barnwright set up the price list (words.barnwright)" },
+      { name: "POST start again", given: "After the POST start above (another tab, or the next sign-in).",
+        request: post("{}"),
+        answer: { status: 200, body: { business: biz(after), start: { priceList: "kept", lot: null, terms: null } } },
+        note: "nothing changes" },
+      { name: "POST start, a sign-up to a terms text this Dealer Center doesn't have", given: "As the POST start above, but the termsSha256 the sign-up carried is none of this Dealer Center's own copies of that version (the version alone let Barnwright start the price list).",
+        request: post("{}"),
+        answer: { status: 200, body: { business: biz(after), start: { priceList: "kept", lot: lotSlug, terms: null } } },
+        note: "the agreement isn't kept as the owner's own: barnwright-terms stays empty, and the line at the top of the Dealer Center asks" },
+      { name: "refused: no business name", given: "No pass brought a sign-up (the customer never signed up on the sign-up page, or the business name was too long for a pass) and there is no price list.",
+        request: post("{}"),
+        answer: { status: 422, body: { code: "name", error: FIRST_START_WORDS.name } },
+        note: "Today's Getting started card asks for the business name and sends it as {\"businessName\": \"...\"}" },
+      { name: "refused: not switched on yet", given: "The owner signed in before Make their Dealer Center finished: no lease yet.",
+        request: post("{}"),
+        answer: { status: 423, body: { error: "Your Dealer Center isn't switched on yet, so changes can't be saved. Contact Barnwright to finish setting it up." } },
+        note: "nothing is made; GET me still says startNeeded, and the page sends POST start again at the next sign-in" },
     ],
   };
 
@@ -1064,7 +1082,7 @@ async function beforeSignInSection({ passFor, bodyOf, request }) {
   const checkIn = [
     { name: "right after Make their Dealer Center, before any pass brought the sign-up", given: "The first deploy just succeeded (deploy-succeeded checks in). No owner, no price list, nothing remembered yet. The Control Room then sends one status pass carrying the sign-up.",
       request: { ...license, body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, appVersion: APP_VERSION, dealerCount: 0, setup: reportOf(closedB("no-price-list")), siteUrl: DEALER.siteUrl }) } },
-    { name: "after the first pass brought the sign-up", given: "barnwright-signup-agreement is written; still no owner and no price list.",
+    { name: "after the first pass brought the sign-up", given: "barnwright-signup-agreement and barnwright-signup-details are written; still no owner and no price list.",
       request: { ...license, body: bodyOf({ customerId: DEALER.customerId, siteId: DEALER.siteId, appVersion: APP_VERSION, dealerCount: 0, setup: reportOf(B0), siteUrl: DEALER.siteUrl }) } },
   ];
 
@@ -1089,7 +1107,9 @@ async function beforeSignInSection({ passFor, bodyOf, request }) {
   return {
     about: [
       "Before the owner first signs in (docs/OFFICE.md). The Control Room puts the owner's sign-up agreement and details on every setup pass for that customer, in the claim signup. The Dealer Center takes the agreement for setup access only while no owner has signed in, when it is to terms 2.2 or later that it ships or has a copy of.",
-      "The starting price list is the Every standard building template (companies/demo/company.json) set up as First setup sets up a business, from the sign-up's business name, phone and email. Read and check work on it as version 0; the first save with version 0 makes it (version 1) and then saves the edits (version 2).",
+      "The starting price list is the Every standard building template (companies/demo/company.json) set up the way every new business starts, from the sign-up's business name, phone and email. Read and check work on it as version 0; the first save with version 0 makes it (version 1) and then saves the edits (version 2).",
+      "The business name, phone and email a pass carries are remembered once, while there is no price list (barnwright-signup-details), whether or not the agreement counts and whether or not the owner has signed in: the owner's start makes their price list from them when Barnwright hasn't, and removes them. They are never in an answer, a log line or a change line.",
+      "The sign-up agreement is remembered once (barnwright-signup-agreement) from the first pass whose agreement counts: before the owner signs in, or after it while their start hasn't run yet (no first-start), by the same rule. After the owner signed in it never changes access; their start keeps it as theirs when its termsSha256 is one of this Dealer Center's own copies.",
     ],
     signup: SIGNUP,
     ownerEmail: OWNER_EMAIL,
@@ -1101,19 +1121,20 @@ async function beforeSignInSection({ passFor, bodyOf, request }) {
       styles: keysOf(start.offer).length, settingsSha256: startSha, historyLine: START_LINE,
       cleaned: [
         { name: "an email in capitals, with spaces", signup: { phone: SIGNUP.phone, email: "  Pat@TestingSheds.Example " }, brand: { phone: SIGNUP.phone, email: "pat@testingsheds.example" } },
-        { name: "a phone First setup would refuse is left empty", signup: { phone: "call the shop", email: SIGNUP.email }, brand: { phone: "", email: SIGNUP.email } },
-        { name: "an email First setup would refuse is left empty", signup: { phone: SIGNUP.phone, email: "pat at testingsheds" }, brand: { phone: SIGNUP.phone, email: "" } },
+        { name: "a phone the business's own checks would refuse is left empty", signup: { phone: "call the shop", email: SIGNUP.email }, brand: { phone: "", email: SIGNUP.email } },
+        { name: "an email the business's own checks would refuse is left empty", signup: { phone: SIGNUP.phone, email: "pat at testingsheds" }, brand: { phone: SIGNUP.phone, email: "" } },
       ],
     },
     record: { key: "barnwright-signup-agreement", example: { termsVersion: SIGNUP.termsVersion, termsSha256: SIGNUP.termsSha256, signature: SIGNUP.signature, signedAt: SIGNUP.signedAt, at: iso(NOW), passId: passes.status.claims.id } },
+    detailsRecord: { key: "barnwright-signup-details", example: { business: SIGNUP.business, phone: SIGNUP.phone, email: SIGNUP.email, at: iso(NOW), passId: passes.status.claims.id } },
     passes,
     badPasses: bad,
     door: { examples: door },
     visit: { examples: visit },
-    firstSetup,
+    firstStart,
     checkIn: { examples: checkIn },
     deploySucceeded,
-    words: { why: { "signup-terms": WHY["signup-terms"], "signup-unknown": WHY["signup-unknown"] }, startLine: START_LINE, nothingBeforeStart: NOTHING_BEFORE_START, log: { started: LOG_WORDS.started }, firstSetup: FIRST_SETUP_WORDS },
+    words: { why: { "signup-terms": WHY["signup-terms"], "signup-unknown": WHY["signup-unknown"] }, startLine: START_LINE, nothingBeforeStart: NOTHING_BEFORE_START, log: { started: LOG_WORDS.started }, firstStart: FIRST_START_WORDS },
   };
 }
 
@@ -1192,7 +1213,7 @@ async function make(old) {
   const ex = (name, given, req, answer, more = {}) => examples.push({ name, given, request: req, answer, ...more });
 
   /* the conversation: read, check, save, check an undo, undo */
-  ex("status", "Testing Sheds is being set up: First setup done, terms 2.2 agreed, never opened to customers.",
+  ex("status", "Testing Sheds is being set up: its price list and lot made, terms 2.2 agreed, never opened to customers.",
     request(passes.status.pass, bodies.status), okAnswer(S0));
   for (const part of PARTS) {
     const body = part === "buildings" ? bodies.read : bodyOf({ action: "read", part });
@@ -1245,7 +1266,7 @@ async function make(old) {
   ex("refused: terms 2.2 aren't out yet", "This Dealer Center's own terms are older than 2.2 (termsOut: false), so no owner can agree to them yet.",
     request(fresh("terms-not-out", bodies.check).pass, bodies.check), refusal("closed", S_notOut, { error: TERMS_NOT_OUT, extra: { why: "terms" } }));
   const S_noList = { ...S0, access: "closed", why: "no-price-list", termsOk: false, agreement: null, priceList: null };
-  ex("refused: no price list yet", "The owner has signed in but hasn't finished First setup (or no owner has signed in and the pass carries no sign-up agreement: see beforeSignIn).",
+  ex("refused: no price list yet", "The owner has signed in but their Dealer Center hasn't made the price list yet (or no owner has signed in and the pass carries no sign-up agreement: see beforeSignIn).",
     request(fresh("no-list", readSummary).pass, readSummary),
     refusal("closed", S_noList, { error: WHY["no-price-list"], extra: { why: "no-price-list" } }));
   const S_switch = { ...S0, live: true, liveAt: at(-86400), access: "switch", why: null, until: at(4 * 3600), priceList: { ...S0.priceList, open: true } };
@@ -1452,7 +1473,7 @@ async function make(old) {
     owner: { examples: owner },
     checkIn: { examples: checkIn },
     edits: {
-      base: "First setup of Testing Sheds with the small starting price list (companies/starter/company.json), version 1, closed to customers.",
+      base: "Testing Sheds set up with the small starting price list (companies/starter/company.json), version 1, closed to customers.",
       baseSettings: base,
       samples: sampleSet(base, pl),
       effects,
@@ -1467,7 +1488,7 @@ async function make(old) {
       log: LOG_WORDS,
       forAlan: "You can change their prices", forOwner: "Barnwright can change your prices",
       needsNewestVersion: "Their Dealer Center needs the newest version. It updates on its next deploy.",
-      startLine: START_LINE, firstSetup: FIRST_SETUP_WORDS,
+      startLine: START_LINE, firstStart: FIRST_START_WORDS,
     },
     status: { v: STATUS_V, order: ["v", "live", "liveAt", "access", "why", "until", "prelive", "termsOk", "termsOut", "agreement", "priceList", "lastBarnwrightSave", "canUndo", "appVersion"], agreement: ["owner", "signup", null] },
   };

@@ -3,10 +3,14 @@
 
    Start-up: handle a link from a Netlify email -> finish a Sign out the
    server never confirmed -> ask the server who this is -> sign-in screen
-   (saying why the last sign-in ended), "not on the team yet", first setup,
-   or the Dealer Center itself. A sign-in from before the Dealer Center had
-   its own cookie moves onto the cookie (until the browser closes); one
-   left in a browser that was closed is cleared, never used.
+   (saying why the last sign-in ended), "not on the team yet", or the
+   Dealer Center itself. The first owner's first sign-in opens Today right
+   away: the page asks the server to start the business first (POST start:
+   the price list and the first lot, server/office/first-start.js), and
+   Today shows the Getting started card. An old #/setup link opens Today.
+   A sign-in from before the Dealer Center had its own cookie moves onto
+   the cookie (until the browser closes); one left in a browser that was
+   closed is cleared, never used.
 
    Sign out (and Sign out on every device) asks a screen with unsaved
    changes first, and lands on a clean sign-in card at /dealer (Sign out on
@@ -85,7 +89,6 @@ const ROUTES = [
   [/^\/team$/, "team"],
   [/^\/settings$/, "settings"],
   [/^\/help$/, "help"],
-  [/^\/setup$/, "setup"],
 ];
 
 /* Each screen's code, loaded when first needed. */
@@ -103,7 +106,6 @@ const VIEWS = {
   team: () => import("./views/team.js"),
   settings: () => import("./views/settings.js"),
   help: () => import("./views/help.js"),
-  setup: () => import("./views/setup.js"),
 };
 
 export function go(path) {
@@ -128,7 +130,7 @@ function applyBrand(business) {
 }
 
 /* The business's name over "Dealer Center" (just "Dealer Center" before
-   the business has a name, during first setup). */
+   the business has a name). */
 function brandWords(business) {
   const name = business?.short || business?.name;
   return h("span", { class: "brand-words" }, h("strong", {}, name || "Dealer Center"), name ? h("span", {}, "Dealer Center") : null);
@@ -254,12 +256,13 @@ function accountBanner() {
 }
 
 /* The owner of a business Barnwright sells to agrees to the Barnwright Terms
-   and Conditions: asked here when they set up before the box existed, or the
-   terms changed (server/office/terms.js). The button says what they agree
-   to, the same words as first setup. Nobody else is asked. */
+   and Conditions: asked here when the agreement from their sign-up page
+   isn't kept (missing, or to older terms), or the terms changed
+   (server/office/terms.js), from their very first sign-in. The button says
+   what they agree to. Nobody else is asked. */
 function termsBanner() {
   const t = app.me?.terms;
-  if (!t || t.agreed || !app.isOwner || !app.business) return null;
+  if (!t || t.agreed || !app.isOwner) return null;
   const btn = button(`I have read and agree to the ${t.title}`, async () => {
     btn.disabled = true;
     try {
@@ -279,8 +282,8 @@ function termsBanner() {
 }
 
 /* Barnwright setup access, for the owner (server/office/setup-access.js;
-   me.setup is {mode, until, live}): while their switch is on, a line that
-   says until when, with Turn off. */
+   me.setup is {mode, until, live, barnwright}): while their switch is on, a
+   line that says until when, with Turn off. */
 const PRELIVE_WORDS = "Barnwright is setting up your prices. Look at the preview, check it with Alan, then open it to customers in Settings.";
 function switchBanner() {
   const s = app.me?.setup;
@@ -353,23 +356,40 @@ function signedOutHere(data) {
   return SIGNED_OUT_KEEP.tap;
 }
 
+/* The screen on show (render sets it): Today with the owner's Getting
+   started card says what the closed banner would, so the banner waits. */
+let shownView = null;
+const CLOSED_WORDS = "Your 3D designer links are closed to customers. Check your prices, then open them in Settings.";
 function closedBanner() {
   if (app.demo) return demoBanner();
   if (app.barnwright) return visitBar();
   const account = accountBanner();
   if (account) return account;
-  /* First setup asks for the tick itself, and says the rest */
-  if (app.me?.setupNeeded) return null;
   const terms = termsBanner();
   if (terms) return terms;
   const setup = switchBanner();
   if (setup) return setup;
   if (!app.business || app.business.open || !app.isOwner) return null;
+  if (shownView === "today" && app.me?.gettingStarted && !app.me.gettingStarted.name) return null;
   const lot = app.openLots()[0] || app.lots[0];
-  return h("div", { class: "banner warn" }, icon("alert"),
-    h("span", {}, app.me?.setup?.mode === "prelive" ? PRELIVE_WORDS : "Your 3D designer links are closed to customers. Check your prices, then open them in Settings."),
-    lot ? linkButton("Look at the preview", app.previewUrl(lot.slug), { small: true, newTab: true, icon: "cube" }) : null,
-    h("a", { href: "#/settings", class: "btn btn-small btn-primary" }, "Open for customers"));
+  /* "Barnwright is setting up your prices" only when Barnwright did */
+  const words = app.me?.setup?.mode === "prelive" && app.me.setup.barnwright ? PRELIVE_WORDS : CLOSED_WORDS;
+  const preview = lot ? linkButton("Look at the preview", app.previewUrl(lot.slug), { small: true, newTab: true, icon: "cube" }) : null;
+  /* it ticks Look at the preview on the Getting started card too */
+  if (preview) preview.addEventListener("click", () => previewSeen());
+  return h("div", { class: "banner warn" }, icon("alert"), h("span", {}, words), preview,
+    h("a", { href: "#/settings", class: "btn btn-small btn-primary" }, "Open to customers"));
+}
+
+/* Look at the preview was tapped outside the card: the card's step ticks
+   (on the server; the card shows it the next time Today is drawn). */
+async function previewSeen() {
+  const gs = app.me?.gettingStarted;
+  if (!app.isOwner || !gs?.steps?.some((x) => x.id === "preview" && !x.done)) return;
+  try {
+    const out = await post("getting-started", { preview: true });
+    if (app.me) app.me.gettingStarted = out.gettingStarted;
+  } catch { /* the tick waits for the next tap */ }
 }
 
 /* ---- a Barnwright visit --------------------------------------------------------------- */
@@ -456,10 +476,23 @@ async function startBarnwright(pass) {
 
 /* ---- showing a screen ----------------------------------------------------------- */
 
+/* Price list and Settings before there is a business (views above) */
+export const NO_BUSINESS = Object.freeze({
+  title: "No price list yet",
+  owner: "Your price list and settings are made from your business name. Type it on Today, then come back here.",
+  team: "The owner hasn't set up the business yet. The price list and settings show here once they do.",
+});
+
 let renderSeq = 0;
 async function render() {
   if (!main) return;   /* still on the sign-in screen: nothing to show yet */
   const { path, query } = currentPath();
+  /* First setup is gone: an old #/setup link (a bookmark) opens Today */
+  if (path === "/setup") {
+    history.replaceState(null, "", "#/");
+    lastHash = "#/";
+    return render();
+  }
   let match = null, viewName = null;
   for (const [re, name] of ROUTES) {
     const m = re.exec(path);
@@ -475,10 +508,20 @@ async function render() {
   }
   const seq = ++renderSeq;
   app.leaveGuard = null;
+  shownView = viewName;
   clear(main, closedBanner(), loading());
   if (app.barnwright && !VISIT_VIEWS.includes(viewName)) {
     if (path === "/") { go("/price-list"); return; }
     viewName = null;
+  }
+  /* no business yet (no name to start from): the price list and settings
+     are made from the business name, typed on Today first */
+  if (!app.business && !app.barnwright && (viewName === "price-list" || viewName === "settings")) {
+    clear(main, closedBanner(), app.isOwner
+      ? emptyState(NO_BUSINESS.title, NO_BUSINESS.owner, h("a", { href: "#/", class: "btn btn-primary" }, "Go to Today"))
+      : emptyState(NO_BUSINESS.title, NO_BUSINESS.team, h("a", { href: "#/", class: "btn btn-primary" }, "Go to Today")));
+    document.title = `${viewName === "settings" ? "Settings" : "Price list"} · Dealer Center`;
+    return;
   }
   if (!viewName) {
     clear(main, closedBanner(), app.barnwright
@@ -677,10 +720,19 @@ async function start() {
     });
   }
   if (!me.person) return notOnTeam(root, { email: me.user.email, signOut: () => signOutHere() });
-  if (me.setupNeeded) {
-    frameUp();
-    if (currentPath().path !== "/setup") { history.replaceState(null, "", "#/setup"); lastHash = "#/setup"; }
-    return render();
+  if (me.startNeeded) {
+    /* the first owner's first sign-in: the price list and the first lot
+       are made now, then Today opens (anything still missing, like the
+       business name, is on its Getting started card) */
+    clear(root, h("div", { class: "boot" }, loading("Getting your Dealer Center ready…")));
+    /* Today's Getting started card says what is missing: the business name
+       (it asks for it), or what went wrong, with Try again */
+    app.startError = null;
+    try { await post("start", {}); } catch (e) {
+      if (e?.data?.code !== "name") app.startError = e?.message || "Something went wrong on our end. Try again in a minute.";
+    }
+    try { me = await app.loadMe(); } catch { /* the first answer still stands */ }
+    if (currentPath().path !== "/") { history.replaceState(null, "", "#/"); lastHash = "#/"; }
   }
   frameUp();
   if (note || warning) toast(note || warning, { error: !!warning });

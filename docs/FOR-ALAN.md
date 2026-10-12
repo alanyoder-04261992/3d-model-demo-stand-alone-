@@ -343,21 +343,33 @@ site. One shed business runs everything from it:
      your Control Room shows the steps to do by hand in Netlify, with one
      paste for all the settings.
   4. **Their price list with Claude.** In the Claude app, type
-     **/dealersetup** and their business name. Until Barnwright's new terms
-     (2.2) are out, Claude reads your photos and makes a plan, and you and
-     the owner type it into their **Price list**.
+     **/dealersetup** and their business name. Claude reads your photos and
+     shows you one plan; it changes nothing until you say go, and each
+     batch asks you to tap **Allow once**. When they signed up under the
+     terms 2.2, this works right away, even before the owner first signs
+     in.
   5. **The owner's computer.** The owner makes their login at their
      address with /dealer on the end. On their own computer they tick
-     **Keep me signed in on this device for 30 days**, and in First setup
-     they tick "I have read and agree to the Barnwright Terms and
-     Conditions". Put the Dealer Center on their computer and their phone
+     **Keep me signed in on this device for 30 days**. There are no setup
+     screens: Today opens right away with their business, their price
+     list (yours or Claude's, when you already set it up, or every
+     standard building at example prices, closed to customers until they
+     open it) and their first lot, named after the business. A **Getting
+     started** list on Today shows what is left: check the prices, the
+     logo and colors, the other lots, the team, look at the preview, open
+     to customers. Each one ticks itself when it's done. The **I agree**
+     they gave on the sign-up page counts when it was to the terms 2.2 or
+     later; when it is missing or to older terms, a line at the top asks
+     them to tap **I have read and agree to the Barnwright Terms and
+     Conditions**. Put the Dealer Center on their computer and their phone
      like an app: on the computer, click **Install** at the right end of
      the address bar in Chrome or Edge; on an iPhone, **Share**, then
-     **Add to Home Screen**. It gets its own black and gold icon. Then type
-     their prices from Claude's plan, add their other lots and their team,
-     show them **Settings**, **Barnwright** (for now Barnwright can only
-     run checks there), and give them the one-page Welcome Sheet
-     (`docs/legal/Barnwright-Welcome-Sheet.pdf`).
+     **Add to Home Screen**. It gets its own black and gold icon. Then
+     check their prices with them against your photos, add their other
+     lots and their team, show them **Settings**, **Barnwright** (until
+     they open to customers, Barnwright can set up their price list, and
+     **Stop Barnwright's setup access** stops it), and give them the
+     one-page Welcome Sheet (`docs/legal/Barnwright-Welcome-Sheet.pdf`).
   6. **Start.** When everything works, tap **Start monthly fee**, then
      **Start and charge the card**. Their card is charged that day and the
      same day every month.
@@ -428,13 +440,13 @@ Dealer Center guide](OFFICE.md).) From then on:
   everything you may do there. Setting up and changing things work once
   their owner agrees to the Barnwright terms 2.2. Terms 2.2 start on
   October 12, 2026: on the evening of October 11 you chose to start them
-  then, not on November 11. A new owner agrees on the sign-up page and
-  again in First setup. An owner who agreed to the older terms (2.1)
-  ticks the box in First setup, or taps **I have read and agree to the
+  then, not on November 11. A new owner agrees on the sign-up page: when
+  that was to the terms 2.2 or later, it counts as their **I agree** the
+  first time they sign in, and nothing more is asked. An owner who agreed
+  only to the older terms (2.1) taps **I have read and agree to the
   Barnwright Terms and Conditions** at the top of their Dealer Center.
-  Once they do, you can change their prices. Your Control Room hears
-  about the button within a few seconds; after First setup, tap **Check
-  again** on their customer page. Until then only the checks work for
+  Once they do, you can change their prices, and your Control Room hears
+  about it within a few seconds. Until then only the checks work for
   them.
   * **No 30-day notice went out for 2.2.** Section 19 of the terms says
     customers hear about new terms 30 days before they start. No customer
@@ -442,7 +454,7 @@ Dealer Center guide](OFFICE.md).) From then on:
     (testing.barnwrightsoftware.com). **Created by Design** (Port
     Charlotte), which also signed up in your Control Room that evening,
     is you too, not a customer: you said the customers in your Control
-    Room are "actually just me", and you opened its First setup yourself.
+    Room are "actually just me", and you set up its Dealer Center yourself.
     For the next new terms, tell every customer 30 days ahead.
   * **Before they open to customers,** you may set up their price list and
     settings (Barnwright setup access). In your control room, **Open their

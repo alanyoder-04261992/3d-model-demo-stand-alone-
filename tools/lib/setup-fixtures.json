@@ -723,8 +723,8 @@
     },
     "why": {
       "not-connected": "This Dealer Center isn't connected to Barnwright.",
-      "no-price-list": "The owner hasn't finished First setup yet, so there is no price list to change.",
-      "terms": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center.",
+      "no-price-list": "Their Dealer Center has no price list yet. It makes one when the owner signs in, from the business name on their sign-up page. If that name didn't come through, Today asks the owner to type it.",
+      "terms": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap the I have read and agree button at the top of their Dealer Center.",
       "stopped": "The owner stopped Barnwright's setup access in Settings, Barnwright.",
       "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
       "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
@@ -734,7 +734,7 @@
     "examples": [
       {
         "name": "status",
-        "given": "Testing Sheds is being set up: First setup done, terms 2.2 agreed, never opened to customers.",
+        "given": "Testing Sheds is being set up: its price list and lot made, terms 2.2 agreed, never opened to customers.",
         "request": {
           "method": "POST",
           "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
@@ -3502,7 +3502,7 @@
           "body": {
             "ok": false,
             "code": "closed",
-            "error": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center.",
+            "error": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap the I have read and agree button at the top of their Dealer Center.",
             "why": "terms",
             "v": 2,
             "live": false,
@@ -3567,7 +3567,7 @@
       },
       {
         "name": "refused: no price list yet",
-        "given": "The owner has signed in but hasn't finished First setup (or no owner has signed in and the pass carries no sign-up agreement: see beforeSignIn).",
+        "given": "The owner has signed in but their Dealer Center hasn't made the price list yet (or no owner has signed in and the pass carries no sign-up agreement: see beforeSignIn).",
         "request": {
           "method": "POST",
           "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
@@ -3582,7 +3582,7 @@
           "body": {
             "ok": false,
             "code": "closed",
-            "error": "The owner hasn't finished First setup yet, so there is no price list to change.",
+            "error": "Their Dealer Center has no price list yet. It makes one when the owner signs in, from the business name on their sign-up page. If that name didn't come through, Today asks the owner to type it.",
             "why": "no-price-list",
             "v": 2,
             "live": false,
@@ -4752,7 +4752,7 @@
     ]
   },
   "edits": {
-    "base": "First setup of Testing Sheds with the small starting price list (companies/starter/company.json), version 1, closed to customers.",
+    "base": "Testing Sheds set up with the small starting price list (companies/starter/company.json), version 1, closed to customers.",
     "baseSettings": {
       "id": "testing-sheds",
       "status": "suspended",
@@ -8264,7 +8264,9 @@
   "beforeSignIn": {
     "about": [
       "Before the owner first signs in (docs/OFFICE.md). The Control Room puts the owner's sign-up agreement and details on every setup pass for that customer, in the claim signup. The Dealer Center takes the agreement for setup access only while no owner has signed in, when it is to terms 2.2 or later that it ships or has a copy of.",
-      "The starting price list is the Every standard building template (companies/demo/company.json) set up as First setup sets up a business, from the sign-up's business name, phone and email. Read and check work on it as version 0; the first save with version 0 makes it (version 1) and then saves the edits (version 2)."
+      "The starting price list is the Every standard building template (companies/demo/company.json) set up the way every new business starts, from the sign-up's business name, phone and email. Read and check work on it as version 0; the first save with version 0 makes it (version 1) and then saves the edits (version 2).",
+      "The business name, phone and email a pass carries are remembered once, while there is no price list (barnwright-signup-details), whether or not the agreement counts and whether or not the owner has signed in: the owner's start makes their price list from them when Barnwright hasn't, and removes them. They are never in an answer, a log line or a change line.",
+      "The sign-up agreement is remembered once (barnwright-signup-agreement) from the first pass whose agreement counts: before the owner signs in, or after it while their start hasn't run yet (no first-start), by the same rule. After the owner signed in it never changes access; their start keeps it as theirs when its termsSha256 is one of this Dealer Center's own copies."
     ],
     "signup": {
       "termsVersion": "2.2",
@@ -8441,7 +8443,7 @@
           }
         },
         {
-          "name": "a phone First setup would refuse is left empty",
+          "name": "a phone the business's own checks would refuse is left empty",
           "signup": {
             "phone": "call the shop",
             "email": "pat@testingsheds.example"
@@ -8452,7 +8454,7 @@
           }
         },
         {
-          "name": "an email First setup would refuse is left empty",
+          "name": "an email the business's own checks would refuse is left empty",
           "signup": {
             "phone": "941-555-0100",
             "email": "pat at testingsheds"
@@ -8471,6 +8473,16 @@
         "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
         "signature": "Pat Owner",
         "signedAt": "2026-10-09T15:00:00.000Z",
+        "at": "2026-10-11T15:00:00.000Z",
+        "passId": "h7ZxxlF_vb6GK01RA1yxcg"
+      }
+    },
+    "detailsRecord": {
+      "key": "barnwright-signup-details",
+      "example": {
+        "business": "Testing Sheds",
+        "phone": "941-555-0100",
+        "email": "pat@testingsheds.example",
         "at": "2026-10-11T15:00:00.000Z",
         "passId": "h7ZxxlF_vb6GK01RA1yxcg"
       }
@@ -9751,7 +9763,7 @@
             "body": {
               "ok": false,
               "code": "closed",
-              "error": "The owner hasn't finished First setup yet, so there is no price list to change.",
+              "error": "Their Dealer Center has no price list yet. It makes one when the owner signs in, from the business name on their sign-up page. If that name didn't come through, Today asks the owner to type it.",
               "why": "no-price-list",
               "v": 2,
               "live": false,
@@ -9805,8 +9817,8 @@
           }
         },
         {
-          "name": "the owner has signed in but hasn't ticked yet",
-          "given": "After the version-0 save, the owner made their login and is in First setup. The sign-up agreement no longer counts.",
+          "name": "the owner has signed in, before their Dealer Center's start",
+          "given": "After the version-0 save, the owner made their login; the start their Dealer Center runs at that first sign-in (POST start) hasn't finished yet. The sign-up agreement on the pass no longer counts.",
           "request": {
             "method": "POST",
             "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
@@ -9848,8 +9860,8 @@
           "note": "status always answers 200 with the status fields; any other action answers 403 closed with the words for terms"
         },
         {
-          "name": "after the owner's First setup",
-          "given": "The owner ticked the terms box in First setup and added their first lot. Access stands on their own agreement now.",
+          "name": "after the owner's first sign-in",
+          "given": "Their Dealer Center ran the owner's start at their first sign-in: it kept Barnwright's price list as it was, made their first lot, and kept the sign-up agreement as the owner's own (barnwright-terms, from: \"signup\"). Access stands on that agreement now.",
           "request": {
             "method": "POST",
             "url": "https://testing.barnwrightsoftware.com/.netlify/functions/barnwright-setup",
@@ -9997,7 +10009,7 @@
           "answer": {
             "status": 401,
             "body": {
-              "error": "Your Barnwright visit ended. The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center. Your changes are kept in this tab.",
+              "error": "Your Barnwright visit ended. The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap the I have read and agree button at the top of their Dealer Center. Your changes are kept in this tab.",
               "code": "visit-ended",
               "why": "terms"
             }
@@ -10005,25 +10017,18 @@
         }
       ]
     },
-    "firstSetup": {
+    "firstStart": {
       "words": {
-        "line": "Barnwright set up your price list. You can change anything.",
-        "steps": [
-          "Your business",
-          "Your first lot"
-        ],
-        "hello": "Two short steps. You can change all of it later.",
-        "stepsBefore": [
-          "Your business",
-          "Your price list",
-          "Your first lot"
-        ],
+        "name": "Type your business name.",
+        "card": "Getting started",
+        "barnwright": "Barnwright set up your price list. Check it, and change anything.",
         "alreadySetUp": "The business is already set up."
       },
+      "about": "The owner's first sign-in opens Today right away, with no setup screens. GET me says startNeeded; the page sends POST start at once (safe to send twice, and from two tabs at once), then opens Today with the Getting started card. The start keeps a price list that is there (Barnwright's, exactly as it is) or makes Every standard building from the sign-up's business name, phone and email (barnwright-signup-details); keeps the sign-up agreement as the owner's own when it counts and its termsSha256 is one of this Dealer Center's own copies of that version (docs/legal/terms-sha256.json; barnwright-terms, from: \"signup\", with the termsSha256 and the passId that brought it; otherwise the line at the top of the Dealer Center asks); makes the first lot, named after the business, when there is none; writes first-start; and removes barnwright-signup-details. Only for a new business: no price list yet, or one a start made (version 1 Barnwright's, or the start line) that the owner never took on; a business set up the old way (POST setup, the old setup screens) never needs it, even with no lot.",
       "examples": [
         {
           "name": "GET me at the owner's first sign-in",
-          "given": "After the version-0 save. The owner made their login with the email from their sign-up (OWNER_EMAIL) and confirmed it.",
+          "given": "After the version-0 save. The owner made their login with the email from their sign-up (OWNER_EMAIL) and confirmed it. The page hasn't sent POST start yet.",
           "request": {
             "method": "GET",
             "url": "https://testing.barnwrightsoftware.com/api/office/me",
@@ -10052,14 +10057,16 @@
                 "website": "",
                 "open": false
               },
-              "setupNeeded": true,
+              "startNeeded": true,
+              "gettingStarted": null,
               "lots": [],
               "terms": {
                 "version": "2.2",
                 "date": "<the terms' date>",
                 "url": "/legal/barnwright-terms.pdf",
                 "title": "Barnwright Terms and Conditions",
-                "agreed": null
+                "agreed": null,
+                "older": null
               },
               "setup": {
                 "mode": null,
@@ -10068,20 +10075,20 @@
               "...": "the other fields as always"
             }
           },
-          "note": "setupNeeded with a business: First setup has two steps and says the line in words.line"
+          "note": "startNeeded: the page sends POST start at once, then opens Today"
         },
         {
-          "name": "POST setup on the price list Barnwright started",
-          "given": "As above; the owner kept the details and ticked the box.",
+          "name": "POST start on the price list Barnwright started",
+          "given": "Right after the GET me above.",
           "request": {
             "method": "POST",
-            "url": "https://testing.barnwrightsoftware.com/api/office/setup",
+            "url": "https://testing.barnwrightsoftware.com/api/office/start",
             "headers": {
               "Authorization": "Bearer <the owner's Identity token>",
               "Origin": "https://testing.barnwrightsoftware.com",
               "Content-Type": "application/json"
             },
-            "body": "{\"yourName\":\"Pat Owner\",\"businessName\":\"Testing Sheds\",\"phone\":\"941-555-0100\",\"email\":\"pat@testingsheds.example\",\"agreeTerms\":true}"
+            "body": "{}"
           },
           "answer": {
             "status": 200,
@@ -10101,23 +10108,44 @@
                 "email": "pat@testingsheds.example",
                 "website": "",
                 "open": false
+              },
+              "start": {
+                "priceList": "kept",
+                "lot": "testing-sheds",
+                "terms": "signup"
               }
             }
           },
-          "note": "the agreement is kept as the owner's own (barnwright-terms); nothing differs, so no new version"
+          "priceListVersion": 2,
+          "terms": {
+            "version": "2.2",
+            "agreedAt": "2026-10-09T15:00:00.000Z",
+            "by": {
+              "userId": "<the owner's login id>",
+              "email": "pat@testingsheds.example",
+              "name": "Pat Owner"
+            },
+            "from": "signup",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "passId": "h7ZxxlF_vb6GK01RA1yxcg"
+          },
+          "lot": {
+            "slug": "testing-sheds",
+            "name": "Testing Sheds",
+            "phone": "941-555-0100",
+            "email": "pat@testingsheds.example"
+          },
+          "note": "Barnwright's price list is kept exactly as it is (still version 2, nothing saved); the first lot is named after the business; the sign-up agreement is kept as the owner's own (barnwright-terms current, as in terms)"
         },
         {
-          "name": "POST setup with a new phone",
-          "given": "As above, but the owner typed 941-555-0123 for the business phone.",
+          "name": "GET me after the start",
+          "given": "Right after the POST start above.",
           "request": {
-            "method": "POST",
-            "url": "https://testing.barnwrightsoftware.com/api/office/setup",
+            "method": "GET",
+            "url": "https://testing.barnwrightsoftware.com/api/office/me",
             "headers": {
-              "Authorization": "Bearer <the owner's Identity token>",
-              "Origin": "https://testing.barnwrightsoftware.com",
-              "Content-Type": "application/json"
-            },
-            "body": "{\"yourName\":\"Pat Owner\",\"businessName\":\"Testing Sheds\",\"phone\":\"941-555-0123\",\"email\":\"pat@testingsheds.example\",\"agreeTerms\":true}"
+              "Authorization": "Bearer <the owner's Identity token>"
+            }
           },
           "answer": {
             "status": 200,
@@ -10133,54 +10161,170 @@
                   "primary": "#2E2920",
                   "accent": "#C9A227"
                 },
-                "phone": "941-555-0123",
+                "phone": "941-555-0100",
                 "email": "pat@testingsheds.example",
                 "website": "",
                 "open": false
-              }
+              },
+              "startNeeded": false,
+              "lots": [
+                "<the lot above>"
+              ],
+              "terms": {
+                "version": "2.2",
+                "date": "<the terms' date>",
+                "url": "/legal/barnwright-terms.pdf",
+                "title": "Barnwright Terms and Conditions",
+                "agreed": {
+                  "version": "2.2",
+                  "agreedAt": "2026-10-09T15:00:00.000Z",
+                  "by": {
+                    "userId": "<the owner's login id>",
+                    "email": "pat@testingsheds.example",
+                    "name": "Pat Owner"
+                  },
+                  "from": "signup",
+                  "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+                  "passId": "h7ZxxlF_vb6GK01RA1yxcg"
+                },
+                "older": null
+              },
+              "gettingStarted": {
+                "name": false,
+                "barnwright": true,
+                "steps": "<{id, done} for prices, look, lots (when the plan has more than one), team, preview, open>",
+                "lotLimit": "<the plan's>",
+                "openLots": 1
+              },
+              "...": "the other fields as always"
             }
           },
-          "note": "version 3 by the owner: History says \"Phone: 941-555-0100 → 941-555-0123\" (the owner's own History shows contact details in full)"
+          "note": "the Getting started card: Check your prices says Barnwright set up the price list (words.barnwright)"
         },
         {
-          "name": "refused: no tick",
-          "given": "As above, without agreeTerms.",
+          "name": "POST start again",
+          "given": "After the POST start above (another tab, or the next sign-in).",
           "request": {
             "method": "POST",
-            "url": "https://testing.barnwrightsoftware.com/api/office/setup",
+            "url": "https://testing.barnwrightsoftware.com/api/office/start",
             "headers": {
               "Authorization": "Bearer <the owner's Identity token>",
               "Origin": "https://testing.barnwrightsoftware.com",
               "Content-Type": "application/json"
             },
-            "body": "{\"yourName\":\"Pat Owner\",\"businessName\":\"Testing Sheds\",\"phone\":\"941-555-0100\",\"email\":\"pat@testingsheds.example\"}"
+            "body": "{}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "business": {
+                "id": "testing-sheds",
+                "name": "Testing Sheds",
+                "short": "Testing Sheds",
+                "initials": "TS",
+                "logo": "",
+                "colors": {
+                  "header": "#16130E",
+                  "primary": "#2E2920",
+                  "accent": "#C9A227"
+                },
+                "phone": "941-555-0100",
+                "email": "pat@testingsheds.example",
+                "website": "",
+                "open": false
+              },
+              "start": {
+                "priceList": "kept",
+                "lot": null,
+                "terms": null
+              }
+            }
+          },
+          "note": "nothing changes"
+        },
+        {
+          "name": "POST start, a sign-up to a terms text this Dealer Center doesn't have",
+          "given": "As the POST start above, but the termsSha256 the sign-up carried is none of this Dealer Center's own copies of that version (the version alone let Barnwright start the price list).",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/api/office/start",
+            "headers": {
+              "Authorization": "Bearer <the owner's Identity token>",
+              "Origin": "https://testing.barnwrightsoftware.com",
+              "Content-Type": "application/json"
+            },
+            "body": "{}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "business": {
+                "id": "testing-sheds",
+                "name": "Testing Sheds",
+                "short": "Testing Sheds",
+                "initials": "TS",
+                "logo": "",
+                "colors": {
+                  "header": "#16130E",
+                  "primary": "#2E2920",
+                  "accent": "#C9A227"
+                },
+                "phone": "941-555-0100",
+                "email": "pat@testingsheds.example",
+                "website": "",
+                "open": false
+              },
+              "start": {
+                "priceList": "kept",
+                "lot": "testing-sheds",
+                "terms": null
+              }
+            }
+          },
+          "note": "the agreement isn't kept as the owner's own: barnwright-terms stays empty, and the line at the top of the Dealer Center asks"
+        },
+        {
+          "name": "refused: no business name",
+          "given": "No pass brought a sign-up (the customer never signed up on the sign-up page, or the business name was too long for a pass) and there is no price list.",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/api/office/start",
+            "headers": {
+              "Authorization": "Bearer <the owner's Identity token>",
+              "Origin": "https://testing.barnwrightsoftware.com",
+              "Content-Type": "application/json"
+            },
+            "body": "{}"
           },
           "answer": {
             "status": 422,
             "body": {
-              "error": "Tick the box to agree to the Barnwright Terms and Conditions."
+              "code": "name",
+              "error": "Type your business name."
             }
-          }
+          },
+          "note": "Today's Getting started card asks for the business name and sends it as {\"businessName\": \"...\"}"
         },
         {
-          "name": "refused: set up already",
-          "given": "After the POST setup above.",
+          "name": "refused: not switched on yet",
+          "given": "The owner signed in before Make their Dealer Center finished: no lease yet.",
           "request": {
             "method": "POST",
-            "url": "https://testing.barnwrightsoftware.com/api/office/setup",
+            "url": "https://testing.barnwrightsoftware.com/api/office/start",
             "headers": {
               "Authorization": "Bearer <the owner's Identity token>",
               "Origin": "https://testing.barnwrightsoftware.com",
               "Content-Type": "application/json"
             },
-            "body": "{\"yourName\":\"Pat Owner\",\"businessName\":\"Testing Sheds\",\"phone\":\"941-555-0100\",\"email\":\"pat@testingsheds.example\",\"agreeTerms\":true}"
+            "body": "{}"
           },
           "answer": {
-            "status": 409,
+            "status": 423,
             "body": {
-              "error": "The business is already set up."
+              "error": "Your Dealer Center isn't switched on yet, so changes can't be saved. Contact Barnwright to finish setting it up."
             }
-          }
+          },
+          "note": "nothing is made; GET me still says startNeeded, and the page sends POST start again at the next sign-in"
         }
       ]
     },
@@ -10201,7 +10345,7 @@
         },
         {
           "name": "after the first pass brought the sign-up",
-          "given": "barnwright-signup-agreement is written; still no owner and no price list.",
+          "given": "barnwright-signup-agreement and barnwright-signup-details are written; still no owner and no price list.",
           "request": {
             "method": "POST",
             "url": "https://barnwright-control-room.netlify.app/api/license",
@@ -10316,18 +10460,10 @@
       "log": {
         "started": "Barnwright (<actor>) started your price list from Every standard building, using the terms you agreed to when you signed up."
       },
-      "firstSetup": {
-        "line": "Barnwright set up your price list. You can change anything.",
-        "steps": [
-          "Your business",
-          "Your first lot"
-        ],
-        "hello": "Two short steps. You can change all of it later.",
-        "stepsBefore": [
-          "Your business",
-          "Your price list",
-          "Your first lot"
-        ],
+      "firstStart": {
+        "name": "Type your business name.",
+        "card": "Getting started",
+        "barnwright": "Barnwright set up your price list. Check it, and change anything.",
         "alreadySetUp": "The business is already set up."
       }
     }
@@ -10427,18 +10563,10 @@
     "forOwner": "Barnwright can change your prices",
     "needsNewestVersion": "Their Dealer Center needs the newest version. It updates on its next deploy.",
     "startLine": "Started the price list from Every standard building, at example prices",
-    "firstSetup": {
-      "line": "Barnwright set up your price list. You can change anything.",
-      "steps": [
-        "Your business",
-        "Your first lot"
-      ],
-      "hello": "Two short steps. You can change all of it later.",
-      "stepsBefore": [
-        "Your business",
-        "Your price list",
-        "Your first lot"
-      ],
+    "firstStart": {
+      "name": "Type your business name.",
+      "card": "Getting started",
+      "barnwright": "Barnwright set up your price list. Check it, and change anything.",
       "alreadySetUp": "The business is already set up."
     }
   },
