@@ -560,22 +560,26 @@ ok(`each Dealer Center shows 10 to 15 answers (connected ${answersFor(true).leng
     ["another-lot", "stopped", "barnwright"].every((id) => ids(true).includes(id) && !ids(false).includes(id))
     && !ids(false, null).includes("barnwright-checks") && ids(true, null).includes("barnwright-checks")
     && ids(false).includes("another-lot-own") && !ids(true).includes("another-lot-own"), JSON.stringify([ids(true), ids(false)]));
-  /* ORD-2: while this copy ships terms older than 2.2 (and the owner hasn't
-     agreed to 2.2), the Barnwright card offers Run checks only and says
-     Barnwright can only run checks; the answer says the same to the owner,
-     the managers and the dealers. From 2.2 (or the owner's agreement to it,
-     the card's own rule) the answer about changing prices shows. */
+  /* ORD-2: on a Dealer Center copy that ships terms older than 2.2 (and the
+     owner hasn't agreed to 2.2), the Barnwright card offers Run checks only
+     and says Barnwright can only run checks; the answer says the same to
+     the owner, the managers and the dealers. From 2.2 (or the owner's
+     agreement to it, the card's own rule) the answer about changing prices
+     shows. This copy ships 2.2 (since October 12, 2026). */
   const meOf = async (email) => (await call("GET", "/api/office/me", undefined, { as: email })).data;
   const [ownerMe, dealerMe] = [await meOf(EMAIL.owner), await meOf(EMAIL.mike)];
   const shown = (terms) => answersFor(true, terms).map((a) => `${a.title} ${a.lines.join(" ")}`).join(" ");
   const promises = (text) => /set up your price list|Run checks and change|change your price list|change your prices/i.test(text);
-  const before = [null, { version: "2.1", agreed: null }, { version: "2.1", agreed: { version: "2.1" } }, ownerMe.terms, dealerMe.terms];
-  ok(`connected on terms ${TERMS.version} (what this copy ships): the owner's and a dealer's Help promise nothing the card can't do, no "set up your price list" and no "Run checks and change", and say Barnwright can only run checks`,
-    !versionAtLeast(TERMS.version, "2.2") ? ownerMe.terms?.version === TERMS.version && dealerMe.terms?.version === TERMS.version
-      && before.every((t) => !promises(shown(t)) && answersFor(true, t).some((a) => a.id === "barnwright-checks" && /can't change anything/.test(a.lines.join(" ")) && a.lines.join(" ").includes("**Turn on**")))
-      && before.every((t) => !findAnswers("barnwright", true, t).some((a) => promises(`${a.title} ${a.lines.join(" ")}`)))
-      : promises(shown(ownerMe.terms)),
+  const changeAnswer = (terms) => answersFor(true, terms).find((a) => a.id === "barnwright");
+  ok(`connected on terms ${TERMS.version} (what this copy ships, ${TERMS.date}): the owner's and a dealer's Help show Let Barnwright change your prices, even before the owner taps I agree, and not the run-checks-only answer`,
+    versionAtLeast(TERMS.version, "2.2") && ownerMe.terms?.version === TERMS.version && dealerMe.terms?.version === TERMS.version
+      && [ownerMe.terms, dealerMe.terms].every((t) => promises(shown(t)) && changeAnswer(t)?.title === "Let Barnwright change your prices" && !ids(true, t).includes("barnwright-checks")),
     JSON.stringify({ owner: ownerMe.terms, dealer: dealerMe.terms, shown: answersFor(true, ownerMe.terms).filter((a) => /barnwright/.test(a.id)).map((a) => a.title) }));
+  const before = [null, { version: "2.1", agreed: null }, { version: "2.1", agreed: { version: "2.1" } }];
+  ok("on a Dealer Center copy that ships terms older than 2.2 (the owner hasn't agreed to 2.2), Help promises nothing the card can't do, no \"set up your price list\" and no \"Run checks and change\", and says Barnwright can only run checks",
+    before.every((t) => !promises(shown(t)) && answersFor(true, t).some((a) => a.id === "barnwright-checks" && /can't change anything/.test(a.lines.join(" ")) && a.lines.join(" ").includes("**Turn on**")))
+      && before.every((t) => !findAnswers("barnwright", true, t).some((a) => promises(`${a.title} ${a.lines.join(" ")}`))),
+    JSON.stringify(before.map((t) => ids(true, t))));
   const after = [T22, { version: "2.10", agreed: null }, { version: "2.1", agreed: { version: "2.2" } }];
   ok("with terms 2.2 (or the owner's agreement to 2.2, as on the card) the full answer shows: Let Barnwright change your prices, with setup access and Run checks and change my price list and settings",
     after.every((t) => { const a = answersFor(true, t).find((x) => x.id === "barnwright"); return !!a && a.title === "Let Barnwright change your prices" && /set up your price list/.test(a.lines.join(" ")) && /Run checks and change my price list and settings/.test(a.lines.join(" ")) && !ids(true, t).includes("barnwright-checks"); }),

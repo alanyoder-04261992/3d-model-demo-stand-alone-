@@ -10,7 +10,9 @@
    (tools/lib/fake-control-room.mjs, which signs setup passes like the real
    one), with a clock this check moves:
 
-     A2   access: before terms 2.2 nothing; before live, yes; once live,
+     A2   access: before the owner agrees to terms 2.2 nothing (and on a
+          copy that ships older terms, words that say they aren't out);
+          before live, yes; once live,
           only with the switch; the look back for businesses set up before
           this shipped, failing closed; stop and the switch take effect at
           the very next request
@@ -226,8 +228,8 @@ await A.me("pat");
   ok("... a visit can't start (403, the words for no-price-list)", r.status === 403 && r.data.code === "closed" && r.data.why === "no-price-list" && r.data.error === WHY["no-price-list"] && !cookieFrom(r), JSON.stringify(r.data));
 }
 await A.setUp();
-/* First setup agrees to this copy's own terms (2.1 today, 2.2 once they are
-   out): the cases below need an owner who agreed to 2.1 only, whatever
+/* First setup agrees to this copy's own terms (2.2 since October 12,
+   2026): the cases below need an owner who agreed to 2.1 only, whatever
    TERMS.version is */
 await A.agree("2.1");
 ok("First setup writes the live record at once: not live, checked through version 1",
@@ -237,8 +239,19 @@ ok("First setup writes the live record at once: not live, checked through versio
   ok(`agreed to terms ${(await A.store.get("barnwright-terms"))?.current?.version} only: closed, terms`, v.mode === null && v.why === "terms" && v.termsOk === false, JSON.stringify(v));
   const r = await A.start();
   ok("... a visit is refused with the terms words, and no cookie", r.status === 403 && r.data.why === "terms" && r.data.error === whyWords("terms") && !cookieFrom(r), JSON.stringify(r.data));
-  ok("W2: the terms words: while this copy's own terms are older than 2.2 they say the new terms aren't out yet, never to tap a button that isn't there",
-    termsOut() === termsAtLeast(TERMS.version) && whyWords("terms") === (termsOut() ? WHY.terms : TERMS_NOT_OUT) && (termsOut() || !/button|tap/i.test(whyWords("terms"))), whyWords("terms"));
+  ok(`W2: terms 2.2 are out (this copy ships ${TERMS.version}, ${TERMS.date}), so the terms words name both places the owner agrees: the box in First setup and the button at the top of their Dealer Center`,
+    termsAtLeast(TERMS.version) && termsOut() === true && whyWords("terms") === WHY.terms && r.data.error === WHY.terms
+    && /First setup/.test(WHY.terms) && /button at the top of their Dealer Center/.test(WHY.terms) && whyWords("terms") !== TERMS_NOT_OUT, whyWords("terms"));
+}
+{
+  /* a Dealer Center copy whose own terms are older than 2.2 (one not
+     updated since October 12, 2026): no owner can agree there yet */
+  const O = business({ termsVersion: "2.1" });
+  await O.setUp();
+  const v = await O.access();
+  const r = await O.start();
+  ok("W2: a Dealer Center copy whose own terms are older than 2.2 still says the new terms aren't out yet, never to tap a button that isn't there",
+    v.mode === null && v.why === "terms" && r.status === 403 && r.data.why === "terms" && r.data.error === TERMS_NOT_OUT && !/button|tap/i.test(r.data.error) && !cookieFrom(r), JSON.stringify(r.data));
 }
 ok("terms: 2.2 or later counts, as numbers (2.10 is later than 2.9)",
   termsAtLeast("2.2") && termsAtLeast("2.10") && termsAtLeast("3") && !termsAtLeast("2.1") && !termsAtLeast("2.1.9") && !termsAtLeast("") && !termsAtLeast(null) && !termsAtLeast("2.2-beta"));
@@ -720,7 +733,7 @@ section("F1 / A2. Live: the first opening, written before the save");
   const T = business();
   await T.setUp(); await T.agree("2.1");
   r = await T.owner({ on: true, level: "change", reason: "New prices", hours: 4 });
-  ok("change before terms 2.2: refused in plain words, nothing turned on", r.status === 422 && r.data.error === OWNER_WORDS.termsFirstRefusal && (await T.store.get("barnwright-setup")) === null, JSON.stringify(r.data));
+  ok("change before the owner agrees to terms 2.2: refused in plain words, nothing turned on", r.status === 422 && r.data.error === OWNER_WORDS.termsFirstRefusal && (await T.store.get("barnwright-setup")) === null, JSON.stringify(r.data));
 }
 
 section("F1. Live: the first real quote or order");
@@ -1138,8 +1151,8 @@ const D = await fixtureBusiness();
   const T = withDoor(business());
   await T.setUp(); await T.agree("2.1");
   const read = await T.door({ action: "read", part: "summary" });
-  ok("before terms 2.2: status still answers, read is refused (403 closed, terms), with the status fields",
-    (await T.door({ action: "status" })).data.why === "terms" && read.status === 403 && read.data.code === "closed" && read.data.why === "terms" && read.data.error === whyWords("terms") && read.data.termsOk === false && read.data.termsOut === termsOut(), JSON.stringify(read.data));
+  ok("before the owner agrees to terms 2.2: status still answers, read is refused (403 closed, terms, the words that name First setup and the button), with the status fields (termsOk false, termsOut true)",
+    (await T.door({ action: "status" })).data.why === "terms" && read.status === 403 && read.data.code === "closed" && read.data.why === "terms" && read.data.error === WHY.terms && read.data.termsOk === false && read.data.termsOut === true, JSON.stringify(read.data));
   const again = await T.door({ action: "read", part: "summary" }, { pass: read.pass });
   ok("... a pass refused for another reason is still spent (410)", again.status === 410 && again.data.code === "pass-used");
   const U = withDoor(business({ connected: false }));
@@ -1697,9 +1710,9 @@ section("F15. The sign-up agreement on the pass, and when it counts");
   const copies = J("docs/legal/terms-sha256.json");
   const paper = readFileSync(resolvePath(ROOT, "docs/legal/terms.json"));
   const shipsNew = termsAtLeast(TERMS.version);
-  ok("docs/legal/terms-sha256.json is {versions: {version: [64 hex, ...]}}, every version 2.2 or later, and it holds this copy's own terms.json when its terms are 2.2 or later",
+  ok(`docs/legal/terms-sha256.json is {versions: {version: [64 hex, ...]}}, every version 2.2 or later, and it holds this copy's own terms.json (terms ${TERMS.version} are out, so a sign-up under them counts)`,
     asJson(Object.keys(copies)) === asJson(["versions"]) && Object.entries(copies.versions).every(([v, list]) => termsAtLeast(v) && Array.isArray(list) && list.length && list.every((x) => /^[0-9a-f]{64}$/.test(x)))
-    && (!shipsNew || (copies.versions[TERMS.version] || []).includes(sha256(paper))) && asJson(termsModule.termsCopies?.()) === asJson(copies.versions), asJson(copies));
+    && shipsNew && (copies.versions[TERMS.version] || []).includes(sha256(paper)) && asJson(termsModule.termsCopies?.()) === asJson(copies.versions), asJson(copies));
 }
 
 section("F15. The starting price list (version 0)");
