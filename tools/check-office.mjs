@@ -23,7 +23,15 @@
        checked, a second account with the owner's email, owner roles on a
        person's own profile -- none of them get in; OWNER_EMAIL claims the
        business once, and changing it later makes nobody owner.
-    2. First setup: only the owner, only once; the designer starts closed.
+    2. A business made in one go (POST setup, the sample business): only
+       the owner, only once; the designer starts closed.
+   2b. The owner's first sign-in opens Today right away (POST start): the
+       business name typed on the Getting started card (422 without one),
+       "Every standard building" closed to customers and one lot named
+       after the business; a second start changes nothing; two at once make
+       one price list and one lot; the card's steps tick by themselves and
+       Hide this list keeps; managers and dealers can't; the sample
+       business never needs a start and never shows the card.
     3. Lots: link names, websites cleaned to the site itself, closing.
     4. Team: invites (emailed only when asked and email is on), the first
        sign-in claims the invite, re-adding updates, the last owner stays,
@@ -256,7 +264,8 @@ await want(403, "GET", "/api/office/price-list");
 as("u-alan");
 me = await want(200, "GET", "/api/office/me");
 ok("the first confirmed OWNER_EMAIL login becomes the owner", me.person?.role === "owner");
-ok("... before setup the business is null and setup is needed", me.business === null && me.setupNeeded === true);
+ok("... before anything the business is null, the owner's start is needed, and Getting started asks for the business name",
+  me.business === null && me.startNeeded === true && me.gettingStarted?.name === true, JSON.stringify([me.startNeeded, me.gettingStarted]));
 ok("... the claim names that login", (await S.get("setup"))?.userId === "u-alan");
 ok("... me never answers with Identity roles", !("roles" in (me.user || {})));
 
@@ -284,7 +293,7 @@ await want(403, "POST", "/api/office/lots", { name: "Profile Lot" });
 sectionDone();
 
 /* ======================================================================= */
-section("2. First setup: only the owner, only once, and closed to customers until opened");
+section("2. A business made in one go (POST setup): only the owner, only once, and closed to customers until opened");
 
 as("u-alan");
 await want(404, "GET", "/api/office/price-list");
@@ -308,13 +317,22 @@ ok("... quote requests come to the Dealer Center (leads mode none)", pl.settings
 const firstHistory = await want(200, "GET", "/api/office/price-list/history");
 ok("setup is the first history entry, in words", firstHistory.entries.length === 1 && /starting price list/.test(firstHistory.entries[0].changes[0]));
 me = await want(200, "GET", "/api/office/me");
-ok("after setup me has the business and needs no setup", me.business?.name === "Yoder Storage Barns" && me.setupNeeded === false);
+ok("after setup me has the business; set up this way (the old setup screens' way), it never needs the owner's start, even with no lot yet, and has no Getting started card",
+  me.business?.name === "Yoder Storage Barns" && me.startNeeded === false && me.gettingStarted === null, JSON.stringify([me.startNeeded, me.gettingStarted]));
 ok("... and the owner's name from setup", me.person.name === "Alan Yoder");
+{
+  const snapOld = JSON.stringify([await S.get("price-list"), await S.keys("lots/"), await S.get("first-start")]);
+  const r0 = await call("POST", "/api/office/start", {});
+  ok("... and a POST start changes nothing: no lot made, no first-start written (nothing changed without asking)",
+    r0.status === 200 && r0.data.start?.lot === null && JSON.stringify([await S.get("price-list"), await S.keys("lots/"), await S.get("first-start")]) === snapOld, r0.text);
+}
 
 const portCharlotte = await want(201, "POST", "/api/office/lots", {
   name: "Port Charlotte", address: "4250 Tamiami Trail", city: "Port Charlotte", state: "FL", zip: "33952",
   phone: "(941) 555-0140", email: "portcharlotte@yoderbarns.example", hours: "Mon–Fri 9–5\nSat 9–2", embedOrigins: ["yoderbarns.example"],
 });
+me = await want(200, "GET", "/api/office/me");
+ok("with its price list and a lot, the business needs no start and shows no Getting started card", me.startNeeded === false && me.gettingStarted === null, JSON.stringify([me.startNeeded, me.gettingStarted]));
 as(null);
 await want(404, "GET", "/api/lots/port-charlotte", undefined, { label: "a lot's designer before the business is open" });
 await want(404, "POST", "/api/lots/port-charlotte/quote-requests", { design: {}, contact: { name: "A" }, idempotencyKey: freshKey() }, { label: "a quote request before the business is open" });
@@ -328,6 +346,121 @@ as(null);
 const pub = await want(200, "GET", "/api/lots/port-charlotte");
 ok("once open, the lot's designer gets the price list and the lot", pub.company?.id === "yoder-storage-barns" && pub.lot?.slug === "port-charlotte" && pub.version === 2);
 ok("... and nothing private (who saved, who made the lot)", !("savedBy" in pub) && !("createdBy" in pub.lot) && !JSON.stringify(pub).includes("u-alan"));
+sectionDone();
+
+/* ======================================================================= */
+section("2b. The owner's first sign-in opens Today right away: no setup screens");
+{
+  /* a business of its own: nobody has signed in, not connected to Barnwright */
+  const NEW_OWNER = "pat@cedar.example";
+  identity("u-cedar", NEW_OWNER, { name: "" });
+  identity("u-cedar-mgr", "sam@cedar.example", { name: "Sam" });
+  const fresh = () => createOffice({
+    blobs: new MemoryBlobs(), identityUser: async (request) => {
+      const id = request?.headers.get("x-test-as") || signedIn;
+      return id && IDENTITY[id] ? clone(IDENTITY[id]) : null;
+    },
+    ownerEmail: NEW_OWNER, manufacturer, library, templates, now: () => new Date(clock.t), siteUrl: SITE, signIn: "netlify", log: () => {},
+  });
+  const N = fresh();
+  const NS = N.parts.store;
+  as("u-cedar");
+  let m = await want(200, "GET", "/api/office/me", undefined, { app: N });
+  ok("the first owner's first sign-in: no business yet, startNeeded, and the Getting started card asks for the business name first",
+    m.person?.role === "owner" && m.business === null && m.startNeeded === true && m.gettingStarted?.name === true && same(m.gettingStarted.steps, []) && m.terms === null, JSON.stringify([m.startNeeded, m.gettingStarted, m.terms]));
+  ok("... GET me writes nothing but the owner's claim (no price list, no lot)", !(await NS.get("price-list")) && !(await NS.keys("lots/")).length && !(await NS.get("first-start")));
+  let r2 = await call("POST", "/api/office/start", {}, { app: N });
+  ok("not connected and no business name to start from: 422 \"Type your business name.\" and nothing is written",
+    r2.status === 422 && r2.data.error === "Type your business name." && !(await NS.get("price-list")) && !(await NS.keys("lots/")).length && !(await NS.get("first-start")), r2.text);
+  r2 = await call("POST", "/api/office/start", { businessName: "C".repeat(81) }, { app: N });
+  ok("... a business name over 80 characters: 422 in plain words, nothing written", r2.status === 422 && /Business name is too long/.test(r2.data.error) && !(await NS.get("price-list")), r2.text);
+  r2 = await call("POST", "/api/office/start", { businessName: "Cedar Ridge Sheds" }, { app: N });
+  ok("with the name typed on the card: 200, the business, the price list made and the first lot", r2.status === 200 && r2.data.business?.name === "Cedar Ridge Sheds" && r2.data.business.open === false
+    && same(r2.data.start, { priceList: "made", lot: "cedar-ridge-sheds", terms: null }), r2.text);
+  const plN = await NS.get("price-list");
+  ok("... the price list: Every standard building at example prices, version 1, closed to customers, saved by the owner",
+    plN?.version === 1 && plN.settings.status === "suspended" && plN.savedBy.id === "u-cedar" && plN.settings.brand.name === "Cedar Ridge Sheds" && plN.settings.id === "cedar-ridge-sheds"
+    && same(Object.keys(plN.settings.offer).sort(), Object.keys(templates.full.offer).filter((k) => !k.startsWith("_")).sort()), JSON.stringify(plN?.savedBy));
+  ok("... its History starts \"Started the price list from Every standard building, at example prices\"",
+    same((await NS.get("price-list-history/000001"))?.changes, ["Started the price list from Every standard building, at example prices"]));
+  const lotsN = await NS.all("lots/");
+  ok("... one lot, named after the business, open (the 3D designer itself stays closed)", lotsN.length === 1 && lotsN[0].name === "Cedar Ridge Sheds" && lotsN[0].slug === "cedar-ridge-sheds" && lotsN[0].active !== false, JSON.stringify(lotsN));
+  ok("... first-start says the price list was made here", (await NS.get("first-start"))?.priceList === "made" && (await NS.get("first-start")).lot === "cedar-ridge-sheds");
+  as(null);
+  await want(404, "GET", "/api/lots/cedar-ridge-sheds", undefined, { app: N, label: "a customer at the new lot's 3D designer: closed (404)" });
+  as("u-cedar");
+  m = await want(200, "GET", "/api/office/me", undefined, { app: N });
+  const ids = (m.gettingStarted?.steps || []).map((x) => x.id);
+  ok("GET me after the start: no start needed, the lot, and Getting started with its steps, none done yet",
+    m.startNeeded === false && same(m.lots.map((l) => l.slug), ["cedar-ridge-sheds"]) && m.gettingStarted?.name === false
+    && same(ids, ["prices", "look", "team", "preview", "open"]) && m.gettingStarted.steps.every((x) => !x.done), JSON.stringify(m.gettingStarted));
+  const snap = JSON.stringify([await NS.get("price-list"), await NS.all("lots/"), await NS.get("first-start")]);
+  r2 = await call("POST", "/api/office/start", { businessName: "Another Name" }, { app: N });
+  ok("a second start changes nothing (200, the same business; no new price list, lot or name)",
+    r2.status === 200 && r2.data.business?.name === "Cedar Ridge Sheds" && JSON.stringify([await NS.get("price-list"), await NS.all("lots/"), await NS.get("first-start")]) === snap, r2.text);
+
+  /* the steps tick by themselves */
+  const stepDone = async (id) => (await want(200, "GET", "/api/office/me", undefined, { app: N })).gettingStarted?.steps.find((x) => x.id === id)?.done;
+  let plC = await want(200, "GET", "/api/office/price-list", undefined, { app: N });
+  const prices = clone(plC.settings);
+  prices.offer.UT.sizes[Object.keys(prices.offer.UT.sizes)[0]] += 100;
+  await want(200, "PUT", "/api/office/price-list", { settings: prices, version: plC.version }, { app: N });
+  ok("Check your prices ticks once the owner saves the price list", (await stepDone("prices")) === true && (await stepDone("look")) === false);
+  plC = await want(200, "GET", "/api/office/price-list", undefined, { app: N });
+  await want(200, "PUT", "/api/office/price-list", { settings: { ...plC.settings, brand: { ...plC.settings.brand, colors: { ...plC.settings.brand.colors, accent: "#1F5FA8" } } }, version: plC.version }, { app: N });
+  ok("Your logo and colors ticks once the colors change", (await stepDone("look")) === true);
+  await want(201, "POST", "/api/office/team", { email: "sam@cedar.example", name: "Sam", role: "manager", lots: [] }, { app: N });
+  ok("Your team ticks once someone is added", (await stepDone("team")) === true);
+  r2 = await call("POST", "/api/office/getting-started", { preview: true }, { app: N });
+  ok("Look at the preview ticks when it is tapped (POST getting-started {preview: true})", r2.status === 200 && r2.data.gettingStarted?.steps.find((x) => x.id === "preview")?.done === true, r2.text);
+  await want(422, "POST", "/api/office/getting-started", {}, { app: N });
+  as("u-cedar-mgr");
+  m = await want(200, "GET", "/api/office/me", undefined, { app: N });
+  ok("a manager: no start needed and no Getting started card", m.person?.role === "manager" && m.startNeeded === false && m.gettingStarted === null, JSON.stringify([m.startNeeded, m.gettingStarted]));
+  await want(403, "POST", "/api/office/start", {}, { app: N, label: "a manager: POST start" });
+  await want(403, "POST", "/api/office/getting-started", { hide: true }, { app: N, label: "a manager: POST getting-started" });
+  as("u-cedar");
+  plC = await want(200, "GET", "/api/office/price-list", undefined, { app: N });
+  await want(200, "PUT", "/api/office/price-list", { settings: { ...plC.settings, status: "active" }, version: plC.version }, { app: N });
+  m = await want(200, "GET", "/api/office/me", undefined, { app: N });
+  ok("Open to customers was the last step: once every step is done the card goes (gettingStarted null)", m.gettingStarted === null, JSON.stringify(m.gettingStarted));
+
+  /* Hide this list */
+  const H = fresh();
+  as("u-cedar");
+  await want(200, "GET", "/api/office/me", undefined, { app: H });
+  await want(200, "POST", "/api/office/start", { businessName: "Hide Barns" }, { app: H });
+  ok("(another new business: the card shows)", !!(await want(200, "GET", "/api/office/me", undefined, { app: H })).gettingStarted);
+  r2 = await call("POST", "/api/office/getting-started", { hide: true }, { app: H });
+  ok("Hide this list: the card is gone, and stays gone", r2.status === 200 && r2.data.gettingStarted === null && (await want(200, "GET", "/api/office/me", undefined, { app: H })).gettingStarted === null, r2.text);
+
+  /* two first sign-ins at the same moment (two tabs) */
+  const T = fresh();
+  as("u-cedar");
+  await want(200, "GET", "/api/office/me", undefined, { app: T });
+  const both = await Promise.all([1, 2].map(() => call("POST", "/api/office/start", { businessName: "Twin Tabs Barns" }, { app: T })));
+  const TS = T.parts.store;
+  ok("two starts at the same moment: both 200, one price list (version 1), one lot", both.every((x) => x.status === 200) && (await TS.get("price-list"))?.version === 1
+    && (await TS.keys("price-list-history/")).length === 1 && (await TS.keys("lots/")).length === 1, JSON.stringify(both.map((x) => [x.status, x.data.start])) + " " + JSON.stringify(await TS.keys("lots/")));
+
+  /* a business name longer than a lot name can be (a Barnwright save
+     doesn't stop at 80 characters; only the screen's box does) */
+  const L = fresh();
+  const LS = L.parts.store;
+  const longName = "Southwest Florida Portable Storage Buildings, Garages, Cabins and Carports Company LLC";
+  const longSettings = L.parts.priceList.signupStart({ business: "Long Name Barns", phone: "941-555-0100", email: "pat@cedar.example" });
+  longSettings.brand.name = longName;
+  await L.parts.priceList.startForBarnwright(longSettings, { id: "barnwright", name: "Barnwright (alan@barnwright.example)" });
+  as("u-cedar");
+  m = await want(200, "GET", "/api/office/me", undefined, { app: L });
+  r2 = await call("POST", "/api/office/start", {}, { app: L });
+  const longLots = await LS.all("lots/");
+  ok(`a business name of ${longName.length} characters (Barnwright's price list): the start still makes the first lot, its name cut to 80 characters, and runs once (first-start)`,
+    longName.length > 80 && m.startNeeded === true && r2.status === 200 && longLots.length === 1 && longLots[0].name === longName.slice(0, 80).trim() && r2.data.start?.lot === longLots[0].slug && !!(await LS.get("first-start")),
+    r2.text + " " + JSON.stringify(longLots.map((l) => l.name)));
+  m = await want(200, "GET", "/api/office/me", undefined, { app: L });
+  ok("... and the Getting started card shows (no start needed again)", m.startNeeded === false && !!m.gettingStarted && m.gettingStarted.name === false, JSON.stringify([m.startNeeded, m.gettingStarted]));
+}
 sectionDone();
 
 /* ======================================================================= */
@@ -521,11 +654,21 @@ const MATRIX = [
   ["GET", "/api/office/customers", undefined, [200, 200, 200]],
   ["GET", "/api/office/customers.csv", undefined, [200, 200, 403]],
   ["POST", "/api/office/setup", { businessName: "Again" }, [409, 403, 403]],
+  ["POST", "/api/office/start", {}, [200, 403, 403]],
+  ["POST", "/api/office/getting-started", { preview: true }, [200, 403, 403]],
 ];
 for (const [index, role, id] of [[2, "dealer", "u-mike"], [1, "manager", "u-sarah"], [0, "owner", "u-alan"]]) {
   for (const [method, path, body, statuses] of MATRIX) {
     await want(statuses[index], method, path, body, { who: id, label: `${role}: ${method} ${path}` });
   }
+}
+as("u-alan");
+me = await want(200, "GET", "/api/office/me");
+ok("the business set up in one go never needs the owner's start: POST start changed nothing (no first-start), and there is no Getting started card",
+  me.startNeeded === false && me.gettingStarted === null && !(await S.get("first-start")) && (await S.keys("lots/")).length === 5, JSON.stringify([me.startNeeded, me.gettingStarted]));
+for (const [role, id] of [["manager", "u-sarah"], ["dealer", "u-mike"]]) {
+  const m = await want(200, "GET", "/api/office/me", undefined, { who: id, label: `${role}: GET me` });
+  ok(`a ${role} never gets the owner's start or the Getting started card`, m.startNeeded === false && m.gettingStarted === null);
 }
 as("u-mike");
 ok("a dealer's lot list is only their lots", same((await want(200, "GET", "/api/office/lots")).lots.map((l) => l.slug), ["port-charlotte"]));

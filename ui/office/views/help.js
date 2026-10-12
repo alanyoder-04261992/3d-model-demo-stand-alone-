@@ -29,7 +29,7 @@ import { recentProblems, screenOf } from "../../problems.js";
 const SCREENS = [
   [/^#\/?$/, "Today"], [/^#\/customers\/:id/, "a customer's page"], [/^#\/customers/, "Customers"], [/^#\/orders/, "Orders"],
   [/^#\/price-list/, "Price list"], [/^#\/lots/, "Lots"], [/^#\/team/, "Team"], [/^#\/settings/, "Settings"],
-  [/^#\/help/, "Help"], [/^#\/setup/, "first setup"],
+  [/^#\/help/, "Help"],
 ];
 const screenName = (page) => SCREENS.find(([re]) => re.test(page))?.[1] || "Help";
 

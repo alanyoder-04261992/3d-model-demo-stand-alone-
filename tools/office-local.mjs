@@ -2,8 +2,10 @@
 
    Run:  npm run office                 (or node tools/office-local.mjs)
          npm run office -- --reset      start the sample data again
-         npm run office -- --empty      no sample data: try the first setup
-                                        (sign in as owner@example.com)
+         npm run office -- --empty      no sample data: a new business, as
+                                        its owner's first sign-in finds it
+                                        (sign in as owner@example.com: Today
+                                        asks for the business name first)
          npm run office -- --port 8390  another port
          npm run office -- --control-room      as a business connected to a
                                         pretend Barnwright control room (3
@@ -144,6 +146,10 @@ const deps = {
   signIn: IDENTITY ? "netlify" : "local",
   log: (...a) => console.error(...a),
   ...(TERMS_VERSION ? { termsVersion: TERMS_VERSION } : {}),
+  /* pretending to ship other terms: this copy's own terms text
+     (docs/legal/terms.json) counts as that version's, so the pretend
+     owner's sign-up agreement below is to a text it has */
+  ...(TERMS_VERSION ? { termsCopies: { [TERMS_VERSION]: [createHash("sha256").update(readFileSync(resolve(ROOT, "docs/legal/terms.json"))).digest("hex")] } } : {}),
 };
 /* --control-room: a pretend Barnwright control room in this process
    (tools/lib/fake-control-room.mjs). POST /__local/control-room with
@@ -390,7 +396,7 @@ server.listen(PORT, "127.0.0.1", () => {
   console.log(`The Dealer Center is running: http://127.0.0.1:${PORT}/dealer`);
   console.log(`A lot's 3D designer:          http://127.0.0.1:${PORT}/d/riverside/`);
   console.log(IDENTITY ? `Sign in with an email of the sample team (${SAMPLE_PEOPLE[0].email} is the owner${EMPTY ? `; ${OWNER_EMAIL} sets up the business` : ""}) and the password ${SAMPLE_PASSWORD}. Press Ctrl+C to stop.`
-    : EMPTY ? `No sample data. Sign in as ${OWNER_EMAIL} to set up the business.` : "Sign in as anyone on the sample team. Press Ctrl+C to stop.");
+    : EMPTY ? `No sample data. Sign in as ${OWNER_EMAIL}: Today opens and asks for the business name.` : "Sign in as anyone on the sample team. Press Ctrl+C to stop.");
 });
 
 for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { bundler.dispose(); demoBundler.dispose(); server.close(); process.exit(0); });

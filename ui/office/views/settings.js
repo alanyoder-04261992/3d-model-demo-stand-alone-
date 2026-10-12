@@ -858,8 +858,8 @@ function barnwrightCard() {
   /* who agreed to the Barnwright Terms and Conditions, and when */
   const t = page.ctx.app.me?.terms;
   const termsLine = t ? h("p", { class: "help-terms" }, icon("note"), h("span", {},
-    t.agreed ? `${t.agreed.by.name || t.agreed.by.email} agreed to the ${t.title} (version ${t.agreed.version}) on ${when(t.agreed.agreedAt)}. `
-      : t.older ? `${t.older.by?.name || t.older.by?.email || "The owner"} agreed to version ${t.older.version} on ${when(t.older.agreedAt)}. Agree to version ${t.version} at the top of the page. `
+    t.agreed ? `${t.agreed.by.name || t.agreed.by.email} agreed to the ${t.title} (version ${t.agreed.version}) ${t.agreed.from === "signup" ? "on their sign-up page " : ""}on ${when(t.agreed.agreedAt)}. `
+      : t.older ? `${t.older.by?.name || t.older.by?.email || "The owner"} agreed to version ${t.older.version} ${t.older.from === "signup" ? "on their sign-up page " : ""}on ${when(t.older.agreedAt)}. Agree to version ${t.version} at the top of the page. `
       : `Nobody has agreed to the ${t.title} (version ${t.version}) yet. `,
     h("a", { href: t.url, target: "_blank", rel: "noopener" }, "Read the terms"))) : null;
   /* the card's own line says only what the terms let Barnwright do */

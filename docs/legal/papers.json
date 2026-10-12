@@ -24,7 +24,7 @@
       "id": "terms",
       "title": "Terms and Conditions",
       "for": "customer",
-      "about": "What every owner agrees to on their sign-up page. They also tick I agree in their Dealer Center the first time they sign in.",
+      "about": "What every owner agrees to on their sign-up page. Their Dealer Center asks again at the top only when that agreement is missing or the terms change.",
       "path": "legal/barnwright-terms.pdf",
       "download": "Barnwright Terms and Conditions.pdf",
       "pages": 5

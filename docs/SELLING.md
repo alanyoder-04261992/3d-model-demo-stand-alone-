@@ -45,11 +45,12 @@ There is no paper form:
    the Control Room and starts it. Without the key, the Control Room shows
    the steps by hand: a Netlify project from this repository, Identity on,
    and one paste of all its settings.
-4. **The owner's computer.** The owner makes their login at `/dealer`,
-   ticks "I have read and agree to the Barnwright Terms and Conditions" in
-   first setup and puts the Dealer Center on their computer and phone;
-   their prices go in from the photos, then their other lots and their
-   team. Alan gives them the one-page Welcome Sheet
+4. **The owner's computer.** The owner makes their login at `/dealer` and
+   signs in: Today opens right away with their business, price list and
+   first lot, and its Getting started list shows what is left (the terms
+   they agreed to on the sign-up page count; otherwise a line at the top
+   asks). They put the Dealer Center on their computer and phone; their
+   prices go in from the photos, then their other lots and their team. Alan gives them the one-page Welcome Sheet
    (`docs/legal/Barnwright-Welcome-Sheet.pdf`).
 5. **Start.** When everything works, Alan starts the monthly fee with one
    tap (Start and charge the card): the card saved at sign-up is charged

@@ -9,9 +9,9 @@ ticks "I agree" and types their name.
 
   legal/barnwright-terms.pdf                 the Barnwright Terms and Conditions.
                                              Published on every business's site
-                                             (tools/build-site.mjs): the Dealer
-                                             Center's "I agree" box links to it
-                                             (server/office/terms.js)
+                                             (tools/build-site.mjs): the line at
+                                             the top of the Dealer Center links
+                                             to it (server/office/terms.js)
   docs/legal/terms.json                      the same terms as plain text, with
                                              the short version: the Control
                                              Room's sign-up page reads it (from
@@ -525,7 +525,8 @@ CLAUDE_STEP = [
     "each building, size and price, and the photo it came from. Check it against the photos and tell Claude what is wrong.",
     "It changes nothing until you say go. Then for each batch it asks you to <b>Allow</b>: tap <b>Allow once</b>, never <b>Always allow</b>.",
     "When: right away if they signed up under the Barnwright Terms and Conditions 2.2 or later, even before the owner signs in. "
-    "If they signed up before 2.2, once the owner agrees to the new terms: they tick the box in First setup, or tap the button at the top of their Dealer Center.",
+    "If they signed up before 2.2, once the owner agrees to the new terms: when they first sign in, they tap <b>I have read and agree to the Barnwright Terms and Conditions</b> "
+    "at the top of their Dealer Center.",
     "Check it: tap <b>Open their price list</b> on the customer. The owner checks it in their Dealer Center with <b>Look at the preview</b>.",
     "After the owner opens it to customers, Claude can only change their prices while the owner has <b>Run checks and change my price list "
     "and settings</b> turned on, and each change waits for you to tap <b>Make the change</b>.",
@@ -589,11 +590,13 @@ PARTS = [
             "They tap <b>Make your login</b> and type their name, the email from their sign-up and a password. On the owner's own computer, "
             "tick <b>Keep me signed in on this device for 30 days</b>. Leave it off on a computer other people use. Then they tap <b>Make my login</b>.",
             "On this same computer, they open the email that comes and tap the link in it. That signs them in.",
-            until22("First setup: their business, a tick in <b>I have read and agree to the Barnwright Terms and Conditions</b>, "
-                    "then <b>Every standard building</b> or <b>Start small</b>, then their first lot and <b>Finish setup</b>.",
-                    "First setup: their business, a tick in <b>I have read and agree to the Barnwright Terms and Conditions</b>, "
-                    "then <b>Every standard building</b> or <b>Start small</b>, then their first lot and <b>Finish setup</b>. "
-                    "If you or Claude already started their price list, First setup says \"Barnwright set up your price list. You can change anything.\" and skips that choice."),
+            until22("<b>Today</b> opens right away. Their business, their price list (every standard building at example prices, closed to customers) "
+                    "and their first lot, named after the business, are ready. The <b>Getting started</b> list shows what is left to do.",
+                    "<b>Today</b> opens right away. Their business, their price list (the one you or Claude set up, or every standard building at example prices, "
+                    "closed to customers) and their first lot, named after the business, are ready. The <b>Getting started</b> list shows what is left to do."),
+            until22("A line at the top asks them to agree to the new terms: they tap <b>I have read and agree to the Barnwright Terms and Conditions</b>.",
+                    "Their <b>I agree</b> on the sign-up page counts when it was to the terms 2.2 or later. If they signed up before 2.2, a line at the top asks: "
+                    "they tap <b>I have read and agree to the Barnwright Terms and Conditions</b>."),
         ]),
         ("Keep it on their computer and their phone", [
             "<b>Computer</b> (Chrome or Edge): click the <b>Install</b> button at the right end of the address bar, then <b>Install</b>. The Dealer Center gets its own icon on their desktop.",
@@ -1153,7 +1156,7 @@ def price_pdf(path):
 WELCOME_TITLE = "Welcome to your Barnwright 3D designer"
 WELCOME_SUBTITLE = "Everything you need to get started, on one page"
 WELCOME = [
-    ("Your Dealer Center", "Open <b>https://(your 3D designer web address)/dealer</b> and sign in with your email and password. Your 3D designer web address: ____________________." + DOMAIN
+    ("Your Dealer Center", "Open <b>https://(your 3D designer web address)/dealer</b> and sign in with your email and password. <b>Getting started</b> on <b>Today</b> shows what is left to do. Your 3D designer web address: ____________________." + DOMAIN
      + "<br/>Tick <b>Keep me signed in on this device for 30 days</b> only on your own computer and phone. Lost your password? Tap <b>Forgot your password?</b> "
      "To sign out everywhere, tap your name (your initials on a phone), then <b>Sign out on every device</b>."),
     ("Keep it on your computer and phone", "In Chrome or Edge, click <b>Install</b> at the right end of the address bar. On your phone: <b>Share</b>, <b>Add to Home Screen</b>, "
@@ -1247,7 +1250,7 @@ if len(sys.argv) == 1:
          "Give it to the owner when you set up their computer: signing in and staying signed in, putting it on their computer and phone, prices, lots, team, their website, Barnwright and help.",
          "docs/legal/Barnwright-Welcome-Sheet.pdf", "Barnwright Welcome Sheet.pdf"),
         ("terms", "Terms and Conditions", "customer", "Terms and Conditions",
-         "What every owner agrees to on their sign-up page. They also tick I agree in their Dealer Center the first time they sign in.",
+         "What every owner agrees to on their sign-up page. Their Dealer Center asks again at the top only when that agreement is missing or the terms change.",
          "legal/barnwright-terms.pdf", "Barnwright Terms and Conditions.pdf"),
         ("flyer", "Flyer", "customer", "Flyer",
          "Hand it out or email it to shed companies. It shows the 3D designer, what they get and the price, with your email and web page.",
