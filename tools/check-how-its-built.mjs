@@ -203,6 +203,8 @@ try {
     ok(`Check every size on the ${name} says everything fits, and no door and window overlap (the 8×12 and 10×12 have the 48″ Wooden Door)`,
       new RegExp(`Everything fits: ${count} buildings drawn\\.`).test(said) && !/overlap/.test(said) && !/not yours to fix/.test(said), said.slice(0, 300));
   }
+  /* Each building now has its own Edit page; the loop ended on SLB. */
+  await openStyle(page, "UT");
   await typeIn(page, "built:UT:wallHeight", "60");
   ok("a bare 60 in the wall height box reads as inches: 5 ft", (await page.inputValue('[data-field="built:UT:wallHeight"]')) === "5 ft");
   await page.click('[data-built="UT"] .pl-built-check button');

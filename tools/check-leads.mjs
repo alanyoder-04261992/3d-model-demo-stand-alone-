@@ -178,9 +178,22 @@ function listen(page) {
   page.on("pageerror", (e) => noise.push({ type: "pageerror", text: String(e) }));
   return noise;
 }
-async function openDesigner(ctx, id, extraQuery) {
+async function openDesigner(ctx, id, extraQuery, { holdClock = false } = {}) {
   const page = await ctx.newPage();
   const noise = listen(page);
+  if (holdClock) await page.addInitScript(() => {
+    /* The first form's rapid-submit case must stay inside three seconds
+       even when software graphics makes the screen checks take longer.
+       Hold monotonic time before the form records its opening time, then
+       restore the browser's clock before all the ordinary form cases. */
+    const previous = Object.getOwnPropertyDescriptor(performance, "now");
+    Object.defineProperty(performance, "now", { configurable: true, value: () => 0 });
+    window.__restoreLeadClock = () => {
+      if (previous) Object.defineProperty(performance, "now", previous);
+      else delete performance.now;
+      delete window.__restoreLeadClock;
+    };
+  });
   await page.goto(BASE + "/?company=" + id + (extraQuery || ""), { waitUntil: "load" });
   await page.waitForFunction(() => window.shedUI && window.shedUI.ready, null, { timeout: 90000 });
   const readyAt = Date.now();
@@ -232,7 +245,7 @@ try {
   section("1-3. The form service: the boxes, the robots, a real post");
   {
     const ctx = await newContext(browser);
-    const { page, noise, readyAt } = await openDesigner(ctx, "leadform");
+    const { page, noise, readyAt } = await openDesigner(ctx, "leadform", "", { holdClock: true });
     const form = await page.evaluate(() => {
       const m = document.getElementById("quote-mount");
       const names = Array.from(m.querySelectorAll(".qin")).map((e) => e.name);
@@ -274,11 +287,14 @@ try {
     ok("the robots' box is on the page but no person can see it (and its name is not one AutoFill knows)", form.hp && !form.hp.visible && form.hp.auto === "off" && !/company|name|email|phone/i.test(form.hp.name), J(form.hp));
 
     /* 2a. too fast: all filled in and sent at once */
+    ok("the form keeps its real three-second minimum while the rapid-submit clock is held", await page.evaluate(() => window.shedUI.quote.minMs === 3000 && performance.now() === 0));
+    fake.reset();
     await fillBasics(page);
     await page.click("#quote-mount .qsend");
     const fast = await waitLast(page);
     const fastWords = await page.textContent("#quote-mount .qresult");
-    ok("a request sent within 3 seconds of the form appearing is dropped, with a plain 'just a moment' message", fast.status === "dropped" && fast.why === "too-fast" && /Just a moment/.test(fastWords), J({ fast, fastWords }));
+    ok("a request sent within 3 seconds of the form appearing is dropped, with a plain 'just a moment' message", fast.status === "dropped" && fast.why === "too-fast" && /Just a moment/.test(fastWords) && fake.records.length === 0, J({ fast, fastWords, arrived: fake.records.length }));
+    await page.evaluate(() => window.__restoreLeadClock());
 
     /* 1b. required boxes */
     await page.fill('#quote-mount [name="name"]', "");

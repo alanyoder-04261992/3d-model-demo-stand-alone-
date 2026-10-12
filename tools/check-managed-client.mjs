@@ -29,7 +29,8 @@
    * the customer build ships the Barnwright terms (legal/barnwright-terms.pdf,
      which the owner's "I agree" links to), and
    * the customer build ships index.html, dealer.html, the Dealer Center's
-     one bundled script and its stylesheets (closed.css too), its app
+     main bundle, its separate lazy picture bundle and public standard
+     pictures, its stylesheets (closed.css too), its app
      manifest (dealer.webmanifest) and every icon it and dealer.html name,
      with the Dealer Center's security policy in _headers, and nothing from
      server/, tools/, docs, lessons, skills, or any source map. */
@@ -378,7 +379,7 @@ try {
   });
 
   if (process.argv.includes("--skip-build")) console.log("SKIPPED: customer build checks (--skip-build).");
-  else await check("the customer build ships the designer and the Dealer Center (one bundled script, its stylesheets, its security policy), never the \"try it\" demo, and nothing private", async () => {
+  else await check("the customer build ships the designer and the Dealer Center (main and lazy picture bundles, public pictures, stylesheets and security policy), never the \"try it\" demo, and nothing private", async () => {
     for (const path of ["dealer.html", "ui/office/main.js", "ui/office/closed.css"]) assert.ok(existsSync(resolve(ROOT, path)), "Required build input missing: " + path);
     for (const old of ["portal.html", "ui/portal.js", "ui/portal.css"]) assert.ok(!existsSync(resolve(ROOT, old)), "The old dealer software is still here: " + old);
     const result = spawnSync(process.execPath, ["tools/build-site.mjs", "--client"], { cwd: ROOT, encoding: "utf8", timeout: 120000,
@@ -408,11 +409,20 @@ try {
     const forbidden = files.filter(file => /(^|\/)(\.agents|\.claude|\.office-local|docs|tools|test|server|netlify|node_modules|images)(\/|$)|(^|\/)learning-[^/]+|^ui\/(learn[^/]*|parts-gallery|part-details|setup)\.|(^|\/)portal\.|\.(md|tsx|ts|mts|toml|map)$/i.test(file));
     assert.deepEqual(forbidden, []);
     assert.deepEqual(files.filter(file => file.endsWith(".html")).sort(), ["404.html", "dealer.html", "index.html"]);
-    assert.deepEqual(files.filter(file => file.startsWith("ui/office/") && file.endsWith(".js")).sort(), ["ui/office/main.js"],
-      "the Dealer Center ships as one bundled script; the \"try it\" demo is only for Alan's learning preview (tools/check-dealer-demo.mjs)");
+    assert.deepEqual(files.filter(file => file.startsWith("ui/office/") && file.endsWith(".js")).sort(), ["ui/office/main.js", "ui/office/pictures.js"],
+      "the Dealer Center ships its main bundle and the separate lazy picture renderer; the \"try it\" demo stays out (tools/check-dealer-demo.mjs)");
+    const publicPictures = "ui/office/building-pictures/";
+    const pictureFiles = [...Object.keys(manufacturer.styles).filter(key => !key.startsWith("_")).map(key => publicPictures + key + ".jpg"), publicPictures + "pictures.json"].sort();
+    assert.deepEqual(files.filter(file => file.startsWith(publicPictures)).sort(), pictureFiles,
+      "public fallback pictures contain only every standard building's corner JPEG and the drawing record");
+    assert.ok(!files.some(file => file.startsWith("library/style-refs/")), "the Control Room's reference photos, end views, sheet and facts stay internal");
     const mainJs = await readFile(resolve(out, "ui/office/main.js"), "utf8");
-    assert.ok(!/MemoryBlobs|website-requests\//.test(mainJs), "the Dealer Center's script does not carry the demo's copy of the server");
-    assert.ok(!/Leave both boxes empty|\/ui\/office\/demo\.js|__DEALER_DEMO__/.test(mainJs), "a client build has no way into the demo");
+    const picturesJs = await readFile(resolve(out, "ui/office/pictures.js"), "utf8");
+    assert.ok(!mainJs.includes("WEBGL_lose_context") && picturesJs.includes("WEBGL_lose_context"), "the drawing engine stays in the separate picture bundle");
+    for (const source of [mainJs, picturesJs]) {
+      assert.ok(!/MemoryBlobs|website-requests\//.test(source), "the Dealer Center's bundles do not carry the demo's copy of the server");
+      assert.ok(!/Leave both boxes empty|\/ui\/office\/demo\.js|__DEALER_DEMO__/.test(source), "a client build has no way into the demo");
+    }
     for (const file of files.filter(file => file.endsWith(".js"))) {
       const source = await readFile(resolve(out, file), "utf8");
       assert.ok(!/sourceMappingURL/.test(source), "no source map in " + file);

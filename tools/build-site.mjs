@@ -1,7 +1,8 @@
 /* BUILDS THE WEBSITE (npm run build -> dist/, npm run build:client ->
    dist-client/). Only what is listed here ships: the 3D designer (index.html,
    embed.js and the browser files ui/app.js reaches), the Dealer Center
-   (dealer.html, its screens bundled into one file, ui/office/main.js, and
+   (dealer.html, its screens bundled into ui/office/main.js, a separate
+   lazy picture renderer with public fallback pictures, and
    its stylesheets, including ui/office/closed.css for a closed lot's link,
    and its app manifest, dealer.webmanifest, with the icons it names),
    the fonts, the builder's library, the example companies and legal/ (the

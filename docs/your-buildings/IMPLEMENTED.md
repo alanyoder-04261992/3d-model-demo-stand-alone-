@@ -27,7 +27,7 @@ record; this file describes what was implemented.
   porch posts can be moved, added and removed. **Save as standard** checks
   every sold size and every allowed side-porch length and place, using the
   same fit rules customers use. Doors that fit only larger sizes can carry
-  that size rule. Windows that do not fit are left off in the stated sizes;
+  that size rule. Added or moved windows that do not fit are left off in the stated sizes;
   posts are held on their porch edge, and overlapping posts are reported.
   The Edit page lists the layout's rules and sizes where items are left off.
 - Phone sheets, confirmation choices and save buttons have room above the
@@ -71,7 +71,8 @@ opening a browser. It covers malformed and expired drafts, business and
 person binding, preserved prices and stopped buildings, layout-only rebasing
 and unrelated or late revisions.
 
-Reference and browser locations can be supplied for another machine:
+The new checks and adapted reference checks accept these location overrides.
+Some legacy browser checks still use their recorded Playwright location:
 
 | Setting | Location it supplies |
 |---|---|

@@ -30,7 +30,7 @@ import { BARNWRIGHT_PAGE } from "./barnwright-blocks.mjs";
 
 const require = createRequire(import.meta.url);
 
-export const BARNWRIGHT_PUBLIC = "/home/user/boisterous-lokum-a737e0/public";
+export const BARNWRIGHT_PUBLIC = process.env.BARNWRIGHT_PUBLIC || "/home/user/boisterous-lokum-a737e0/public";
 export const BARNWRIGHT_FILE = BARNWRIGHT_PUBLIC + "/3ddesign.html";
 export const DEFAULT_PORT = 8302;
 
@@ -38,7 +38,7 @@ export const DEFAULT_PORT = 8302;
 export const CHROMIUM_ARGS = ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"];
 
 export function loadPlaywright() {
-  return require("/opt/node22/lib/node_modules/playwright/index.js");
+  return require(process.env.PLAYWRIGHT_MODULE || "/opt/node22/lib/node_modules/playwright/index.js");
 }
 
 /* The SHA-256 of Barnwright's designer file as it is on disk right now. */
@@ -92,7 +92,7 @@ export async function openBarnwright(opts = {}) {
   const viewport = opts.viewport || { width: 1440, height: 900 };
   const server = await serveFolder(BARNWRIGHT_PUBLIC, port, "3ddesign.html");
   const { chromium } = loadPlaywright();
-  const browser = await chromium.launch({ args: CHROMIUM_ARGS });
+  const browser = await chromium.launch({ ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : {}), args: CHROMIUM_ARGS });
   const context = await browser.newContext({ viewport, reducedMotion: "reduce", deviceScaleFactor: 1 });
   const page = await context.newPage();
   const errors = [];

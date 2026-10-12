@@ -330,18 +330,41 @@ export async function install(api) {
     if (isPost && overlap(item)) el("layout-limit").textContent = "It's standing on another porch post. Move it along, or tap Remove.";
   }
 
-  function revealSheet(item) {
+  let allowReflowReveal = true, revealQueued = false;
+  function queueSheetReveal() {
+    if (revealQueued) return;
+    revealQueued = true;
     requestAnimationFrame(() => {
+      revealQueued = false;
+      const item = picked();
+      if (!item || !el("sheet").classList.contains("open")) return;
       const title = el("sheet").querySelector(".srow").getBoundingClientRect(), buttons = el("sheet").querySelector(".sbtns").getBoundingClientRect();
       const safeTop = 100, safeBottom = foot.getBoundingClientRect().top - 12;
       let by = buttons.bottom > safeBottom ? buttons.bottom - safeBottom : title.top < safeTop ? title.top - safeTop : 0;
-      const target = ghosts.querySelector(`[data-item="${item.id}"]`)?.getBoundingClientRect();
       /* The action buttons must be reachable even when the screen cannot
          also hold the picture. Compact phone captions keep both in view
          on normal walls; never undo the scroll needed by the buttons. */
       if (Math.abs(by) > 1) window.scrollBy({ top: by, behavior: "instant" });
     });
   }
+  function revealSheet() { allowReflowReveal = true; queueSheetReveal(); }
+  function revealAfterReflow() {
+    if (!allowReflowReveal || !document.body.classList.contains("layout-mode") || /INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName || "")) return;
+    if (picked()) queueSheetReveal();
+  }
+  /* A late font or stylesheet can move the entire sheet after the first
+     selection frame. Re-check real layout changes, while respecting a
+     person's own scrolling away from the picked item. */
+  if (typeof ResizeObserver === "function") {
+    const observer = new ResizeObserver(revealAfterReflow);
+    for (const node of [heading, viewChoices, api.stage, caption, foot, el("sheet").querySelector(".srow"), moves, el("sheet").querySelector(".sbtns")]) observer.observe(node);
+  }
+  css.addEventListener("load", revealAfterReflow);
+  document.fonts?.ready.then(revealAfterReflow);
+  document.fonts?.addEventListener("loadingdone", revealAfterReflow);
+  window.addEventListener("wheel", (event) => { if (!api.stage.contains(event.target)) allowReflowReveal = false; }, { passive: true });
+  window.addEventListener("touchmove", (event) => { if (!api.stage.contains(event.target)) allowReflowReveal = false; }, { passive: true });
+  window.addEventListener("keydown", (event) => { if (["PageUp", "PageDown", "Home", "End"].includes(event.key)) allowReflowReveal = false; });
 
   /* Screen targets are placed from the same world coordinates as the part,
      while ordinary walls use the renderer's existing item hit quads. */
