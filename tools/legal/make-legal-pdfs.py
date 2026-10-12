@@ -9,9 +9,9 @@ ticks "I agree" and types their name.
 
   legal/barnwright-terms.pdf                 the Barnwright Terms and Conditions.
                                              Published on every business's site
-                                             (tools/build-site.mjs): the Dealer
-                                             Center's "I agree" box links to it
-                                             (server/office/terms.js)
+                                             (tools/build-site.mjs): the line at
+                                             the top of the Dealer Center links
+                                             to it (server/office/terms.js)
   docs/legal/terms.json                      the same terms as plain text, with
                                              the short version: the Control
                                              Room's sign-up page reads it (from
@@ -490,7 +490,7 @@ PARTS = [
         ("The owner's login", [
             "On the owner's computer, open <b>https://(their 3D designer web address)/dealer</b>, for example https://cedar-ridge-sheds." + DOMAIN + "/dealer.",
             "They tap <b>Make your login</b>, type the email from their sign-up and a password, then open the email that comes and tap the link in it.",
-            "They sign in. Today opens right away: their business, their price list (the one you set up, or every standard building at example prices, closed to customers) and their first lot, named after the business, are ready, and the <b>Getting started</b> list shows what is left. If a line at the top asks, they tap <b>I have read and agree to the Barnwright Terms and Conditions</b>.",
+            "They sign in. <b>Today</b> opens right away. Their business, price list (the one you set up, or every standard building at example prices, closed to customers) and first lot, named after the business, are ready. The <b>Getting started</b> list shows what is left. If a line at the top asks, they tap <b>I have read and agree to the Barnwright Terms and Conditions</b>.",
         ]),
         ("Keep it on their computer and their phone", [
             "<b>Computer</b> (Chrome or Edge): click the <b>Install</b> button at the right end of the address bar, then <b>Install</b>. The Dealer Center gets its own icon on their desktop.",
@@ -1034,7 +1034,7 @@ def price_pdf(path):
 WELCOME_TITLE = "Welcome to your Barnwright 3D designer"
 WELCOME_SUBTITLE = "Everything you need to get started, on one page"
 WELCOME = [
-    ("Your Dealer Center", "Open <b>https://(your 3D designer web address)/dealer</b> and sign in with your email and password. <b>Getting started</b> on Today shows what is left to do. Your 3D designer web address: ____________________." + DOMAIN),
+    ("Your Dealer Center", "Open <b>https://(your 3D designer web address)/dealer</b> and sign in with your email and password. <b>Getting started</b> on <b>Today</b> shows what is left to do. Your 3D designer web address: ____________________." + DOMAIN),
     ("Keep it on your computer", "In Chrome or Edge, click <b>Install</b> at the right end of the address bar. On your phone: <b>Share</b>, <b>Add to Home Screen</b>."),
     ("Your prices", "<b>Price list</b>: your styles, sizes, doors, windows and options. Change a price and every lot has it at once."),
     ("Your lots", "<b>Lots</b>, <b>Add a lot</b>. Each lot has its own 3D designer link and its own customer list."),
