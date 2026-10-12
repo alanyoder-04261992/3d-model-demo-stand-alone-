@@ -47,13 +47,15 @@ let page = null;   /* this screen's state while it is showing */
 /* The owner's Barnwright card (docs/OFFICE.md, "The owner's card"). */
 const CARD = {
   about: "Let Barnwright run checks on your Dealer Center, or change your price list and settings, for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team.",
-  /* terms 2.2 aren't out yet: Barnwright can only run checks */
+  /* on a Dealer Center that ships terms older than 2.2 (not updated since
+     October 12, 2026): Barnwright can only run checks */
   aboutChecks: "Let Barnwright run checks on your Dealer Center for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team, and can't change anything.",
   beforeLive: "Barnwright is setting up your 3D designer. Until you open it to customers, they can change your price list and settings for you. Every change is listed here and in Price list, History.",
   stopped: "Stopped. Barnwright can't change your price list or settings.",
   off: "Off. Barnwright can't run checks or change your price list or settings.",
   termsFirst: "Agree to the new terms at the top of the page first.",
-  /* terms 2.2 aren't out yet (this Dealer Center's own terms are older): nothing to agree to */
+  /* this Dealer Center's own terms are older than 2.2 (not updated since
+     October 12, 2026): nothing to agree to */
   termsNotOut: "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
   /* Turn off, before live: checks stop, setup access goes on */
   checksOff: "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access.",
@@ -795,8 +797,8 @@ function barnwrightCard() {
         h("ul", { class: "help-log" }, help.log.map((e) => h("li", {}, h("time", { dateTime: e.at }, when(e.at)), logWords(e)))))
       : null;
     const parts = [];
-    /* terms 2.2 aren't out yet (so no owner has agreed to them): no setup
-       access words, no change choice */
+    /* this copy ships terms older than 2.2 (so no owner has agreed to them):
+       no setup access words, no change choice */
     const notOut = termsNotOut(setup);
     if (notOut) parts.push(h("div", { class: "help-state bw-terms-not-out" }, icon("note"), h("span", {}, CARD.termsNotOut)));
     /* before the business is live: Barnwright is setting it up */

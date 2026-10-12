@@ -397,9 +397,14 @@ Dealer Center guide](OFFICE.md).) From then on:
   "3 of 3 open lots in your Barnwright plan" and turns off **Add a lot**
   when they're at the limit.
 * **Barnwright in their Settings:** one card, **Barnwright**, holds
-  everything you may do there. Setting up and changing things start
-  working once their owner agrees to the Barnwright terms 2.2 (the papers
-  still carry 2.1 today, so until then only the checks work).
+  everything you may do there. Setting up and changing things work once
+  their owner agrees to the Barnwright terms 2.2. Terms 2.2 started on
+  October 12, 2026: you decided that day to start them at once. A new
+  owner agrees on the sign-up page and again in First setup. An owner who
+  agreed to the older terms (2.1) sees **I have read and agree to the
+  Barnwright Terms and Conditions** at the top of their Dealer Center;
+  once they tap it, you can change their prices. Until then only the
+  checks work for them.
   * **Before they open to customers,** you may set up their price list and
     settings (Barnwright setup access). In your control room, **Open their
     price list** opens their Dealer Center as Barnwright for up to 8 hours,
@@ -707,7 +712,7 @@ proved; the full list is in [the README](../README.md).
   on live payments there is still to do.
 * The control room's own screens and messages still say "HQ" (for example
   "enable support in HQ Setup"). For a Dealer Center company that switch is
-  **Help from Barnwright** in their Settings.
+  **Run checks** on the **Barnwright** card in their Settings.
 * **Claude's drafts in your Sales Inbox** start when you add the Claude key
   (step 4 in the Sales Inbox's own instructions: a key named `Sales Inbox
   Help` from platform.claude.com, put in Netlify as `ANTHROPIC_API_KEY`).

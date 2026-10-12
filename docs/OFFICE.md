@@ -691,10 +691,11 @@ computer (add `via: "claude"` for a pass as Claude's). Add `signup: true`
 (beside `visit` or `door`) for a pass that carries the pretend owner's
 sign-up agreement to the terms this copy ships, as the Control Room sends
 for a customer who signed up; with no owner signed in yet, that is how to
-try "Before the owner first signs in" on the computer. While terms 2.2
-aren't out, start the local copy with `--terms-version 2.2` so it acts as
-if it shipped them (the checks do the same with the `termsVersion`
-option of `createOffice`).
+try "Before the owner first signs in" on the computer. This copy ships
+terms 2.2 (since October 12, 2026). To try terms newer or older than the
+ones it ships, start the local copy with `--terms-version 2.3` (or
+`2.1`) so it acts as if it shipped them (the checks do the same with the
+`termsVersion` option of `createOffice`).
 `tools/check-setup-access.mjs` proves the server's rules (the door's too)
 and `tools/check-setup-screens.mjs` clicks through the owner's card, the
 preview and a visit in Chromium.
@@ -735,8 +736,9 @@ In short:
 * The Dealer Center decides. The Control Room only asks, and only for Alan.
 * Nothing works until the owner has agreed to the Barnwright Terms and
   Conditions 2.2 or later: in the Dealer Center, or, until they first sign
-  in, on the Control Room's sign-up page. Until terms 2.2 come out, every
-  request is refused with `why: "terms"`.
+  in, on the Control Room's sign-up page. Terms 2.2 started October 12,
+  2026. A Dealer Center that still ships older terms refuses every
+  request with `why: "terms"`.
 
 The words people read: the owner reads "Barnwright can change your
 prices"; Alan reads "You can change their prices".
@@ -786,9 +788,9 @@ button at the top of the Dealer Center comes only after First setup. So the
 words for `terms` name both places, and so does the visit that ends when
 the owner first signs in (the Control Room says the same, `OWNER_TERMS`).
 
-Until this Dealer Center's own terms (`TERMS.version`) are 2.2 or later, no
-owner can agree to them and no sign-up agreement counts, so `why: "terms"`
-says instead: "Barnwright's new terms (2.2) aren't out yet, so Barnwright
+While a Dealer Center's own terms (`TERMS.version`) are older than 2.2 (one
+that hasn't been updated since October 12, 2026), no owner can agree to
+them and no sign-up agreement counts, so `why: "terms"` says instead: "Barnwright's new terms (2.2) aren't out yet, so Barnwright
 can only run checks for now." The status fields' `termsOut` says which.
 
 Saving also needs the business's Barnwright account to allow changes (the
@@ -1770,8 +1772,9 @@ Dealer Center and never depends on the Control Room being up.
   now].
 * Before the owner has agreed to terms 2.2: the change choice says "Agree
   to the new terms at the top of the page first."
-* Before terms 2.2 are out (`setup.termsOut` false: this Dealer Center's
-  own terms are older), the card shows none of the setup access words and
+* On a Dealer Center that still ships terms older than 2.2
+  (`setup.termsOut` false: one not updated since October 12, 2026), the
+  card shows none of the setup access words and
   no change choice, only "Barnwright's new terms (2.2) aren't out yet, so
   Barnwright can only run checks for now." and Run checks.
 * Turn off, before live: checks go off and setup access goes on, so the
@@ -2344,7 +2347,7 @@ edit `tools/legal/make-legal-pdfs.py`, raise `TERMS_VERSION` and `TERMS_DATE`
 there and `TERMS.version` and `TERMS.date` in `server/office/terms.js`
 together, run the script (it writes the PDF, `docs/legal/terms.json` and the
 papers list), and tell every customer about the new terms 30 days ahead (terms
-section 19).
+section 19). Version 2.2 started on October 12, 2026, the day Alan chose.
 
 ## Files
 

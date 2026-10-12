@@ -30,8 +30,8 @@
      appVersion     optional: what this copy reports to the control room
      termsVersion   optional, for the checks and the local copy only: the
                     Barnwright terms version this copy pretends to ship
-                    (TERMS.version when left out), to try terms that
-                    aren't out yet
+                    (TERMS.version when left out), to try terms newer
+                    or older than the ones it ships
      help           optional: Barnwright's Sales Inbox for the Help screen,
                     {url, fetch?, timeoutMs?, budgetMs?, allowLocal?}
                     (help.js; budgetMs: all of one request's calls). Used

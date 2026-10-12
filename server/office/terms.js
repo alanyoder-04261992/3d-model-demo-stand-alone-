@@ -101,7 +101,7 @@ export function signupCounts(signup, { ships = TERMS.version, ownCopies = termsC
 }
 
 /* terms: what this copy ships (TERMS; the checks and the local copy may
-   pretend to ship newer terms before they are out). */
+   pretend to ship newer or older terms). */
 export function createTerms({ store, account, now, terms: shipped = TERMS }) {
   const TERMS = shipped;
   const asks = () => !!account?.connected;
