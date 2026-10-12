@@ -43,7 +43,8 @@ export async function openPictureHarness() {
     if (!file.startsWith(ROOT + "/")) { res.writeHead(403).end(); return; }
     try {
       const type = { ".js": "text/javascript", ".json": "application/json", ".jpg": "image/jpeg", ".css": "text/css" }[extname(file)] || "application/octet-stream";
-      res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-store" }).end(readFileSync(file));
+      const bytes = readFileSync(file);
+      res.writeHead(200, { "Content-Type": type, "Cache-Control": "no-store" }).end(bytes);
     } catch { res.writeHead(404).end(); }
   });
   await new Promise((done, fail) => { server.once("error", fail); server.listen(0, "127.0.0.1", done); });

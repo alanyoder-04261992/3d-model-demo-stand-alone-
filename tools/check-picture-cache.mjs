@@ -100,6 +100,7 @@ try {
   }));
 
   await page.evaluate(() => window.addPicture("SU"));
+  await page.locator('[data-style="SU"]').scrollIntoViewIfNeeded();
   await waitDrawn('[data-style="SU"] img');
   await page.waitForFunction(() => new Promise((done) => {
     const request = indexedDB.open("dealer-center-pictures", 1);
@@ -122,6 +123,7 @@ try {
   await page.evaluate(() => document.querySelector("[data-picture-renderer] canvas").getContext("webgl").getExtension("WEBGL_lose_context").loseContext());
   await page.waitForTimeout(100);
   await page.evaluate(() => window.addPicture("DS"));
+  await page.locator('[data-style="DS"]').scrollIntoViewIfNeeded();
   await waitDrawn('[data-style="DS"] img');
   ok("a lost graphics context is replaced and the next picture draws", await page.evaluate(() => window.pics.stats.renderersStarted === 2 && document.querySelectorAll("[data-picture-renderer]").length === 1));
   await page.evaluate(() => window.pics.release());
@@ -138,7 +140,10 @@ try {
   ok("blocked browser storage falls back to memory without drawing twice", await privatePage.evaluate(() => window.pics.stats.drawn === 1 && window.pics.stats.fromStore === 0 && !document.querySelector("[data-picture-renderer]")));
   await blocked.close();
   ok("the queue and cache raise no page errors", !errors.length, errors.join("; "));
-} catch (error) { ok("the browser picture checks complete", false, error.stack || error.message); }
+} catch (error) {
+  try { console.error("Picture queue diagnostics:", JSON.stringify(await page.evaluate(() => ({ stats: window.pics?.stats, hidden: document.hidden, dialog: !!document.querySelector("dialog[open]"), images: [...document.querySelectorAll("img")].map(img => ({ state: img.dataset.picture, src: img.getAttribute("src")?.slice(0, 100), top: img.getBoundingClientRect().top, bottom: img.getBoundingClientRect().bottom, viewport: innerHeight })), renderers: document.querySelectorAll("[data-picture-renderer]").length })), null, 2)); } catch { /* retain the original failure */ }
+  ok("the browser picture checks complete", false, error.stack || error.message);
+}
 finally { await harness.close(); }
 if (failures.length) { console.log(`FAIL: ${failures.length} picture cache check(s) failed: ${failures.join("; ")}`); process.exitCode = 1; }
 else console.log(`PROVED: ${passed} browser picture checks passed: visible work first, tab pause, memory and persistent cache, cancellation, context recovery and release.`);
