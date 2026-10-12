@@ -556,7 +556,7 @@ PARTS = [
         ("The owner's login", [
             "On the owner's computer, open <b>https://(their 3D designer web address)/dealer</b>, for example https://cedar-ridge-sheds." + DOMAIN + "/dealer. "
             "<b>Open their Dealer Center sign-in</b> on the customer opens it too.",
-            "They tap <b>Make your login</b>, type the email from their sign-up and a password, and tap <b>Make my login</b>. Then they open the email that comes and tap the link in it.",
+            "They tap <b>Make your login</b>, type their name, the email from their sign-up and a password, and tap <b>Make my login</b>. Then they open the email that comes and tap the link in it.",
             "Tick <b>Keep me signed in on this device for 30 days</b> only on the owner's own computer and phone. Leave it off on a computer other people use.",
             until22("They sign in. First setup: their business, a tick in <b>I have read and agree to the Barnwright Terms and Conditions</b>, "
                     "then <b>Every standard building</b> or <b>Start small</b>, then their first lot and <b>Finish setup</b>.",
