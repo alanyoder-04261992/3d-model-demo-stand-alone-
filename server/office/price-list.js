@@ -536,7 +536,7 @@ const historyKey = (version) => `price-list-history/${String(version).padStart(6
    starting price list Barnwright makes from the owner's sign-up. */
 export const START_LINE = "Started the price list from Every standard building, at example prices";
 
-/* The short name and initials First setup works out from a business name. */
+/* The short name and initials worked out from a business name. */
 function brandNames(businessName) {
   const words = businessName.split(/\s+/).filter(Boolean);
   return {
@@ -665,9 +665,9 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     }
   }
 
-  /* The settings First setup starts a business on: one of the example
-     files, closed to customers, with the business's name, phone, email and
-     website. Nothing is written. */
+  /* The settings a business starts on: one of the example files, closed to
+     customers, with the business's name, phone, email and website. Nothing
+     is written. */
   function startingSettings({ businessName, phone, email, website, start }) {
     const template = templates[start === "small" ? "small" : "full"];
     if (!template) fail(422, "Pick a starting price list.");
@@ -698,7 +698,9 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     return settings;
   }
 
-  /* First setup: a starting price list from one of the example files. */
+  /* A starting price list from one of the example files, made create-only
+     as version 1 by the owner: the owner's start (index.js, "Every standard
+     building") and POST setup (the sample business and the checks). */
   async function setup(by, { businessName, phone, email, website, start }) {
     if (await current()) fail(409, "The business is already set up.");
     const settings = startingSettings({ businessName, phone, email, website, start });
@@ -709,12 +711,13 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
   }
 
   /* Before the owner first signs in (docs/OFFICE.md): the starting price
-     list Barnwright makes from the owner's sign-up, the "Every standard
-     building" template set up the way First setup sets up a business, with
-     the business name, phone and email they gave on the sign-up page. The
-     phone and email are what First setup's own checks give (trimmed, the
-     email in lower case); one those checks would refuse is left empty.
-     Never a website. Nothing is written. */
+     list made from the owner's sign-up, the "Every standard building"
+     template set up the way setup() sets up a business, with the business
+     name, phone and email they gave on the sign-up page. The phone and
+     email are what the business's own checks give (trimmed, the email in
+     lower case); one those checks would refuse is left empty. Never a
+     website. Nothing is written. Barnwright's start uses it, and so does
+     the owner's start (index.js) with the remembered sign-up. */
   function signupStart(signup) {
     const or = (fn) => { try { return fn(); } catch { return ""; } };
     return startingSettings({
@@ -727,29 +730,13 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
 
   /* ... and making it: version 1, saved by Barnwright (savedBy), with a
      create-only write. -> the record, or null when a price list exists
-     already. */
+     already. startForOwner is the same, saved by the owner (their start,
+     index.js). */
   async function startForBarnwright(settings, savedBy) {
     const record = { settings, version: 1, cfg: settings.cfg, savedAt: iso(), savedBy };
     if (!(await store.create("price-list", record))) return null;
     await keepHistory({ version: 1, savedAt: record.savedAt, savedBy, changes: [START_LINE], settings });
     return record;
-  }
-
-  /* The owner's First setup on a price list Barnwright started: the
-     business name, phone, email and website that differ from the price
-     list's are saved into it as the owner's change (a new name brings its
-     short name and initials, as First setup works them out). -> the
-     record saved, or the one in use when nothing differs. */
-  async function takeOver(by, { businessName, phone, email, website }) {
-    const record = await current();
-    if (!record) fail(404, "The price list has not been set up yet.");
-    const settings = structuredClone(record.data.settings);
-    const brand = { ...(settings.brand || {}) };
-    if (brand.name !== businessName) Object.assign(brand, { name: businessName, ...brandNames(businessName) });
-    for (const [k, v] of [["phone", phone], ["email", email], ["website", website]]) if ((brand[k] || "") !== v) brand[k] = v;
-    settings.brand = brand;
-    if (JSON.stringify(settings) === JSON.stringify(record.data.settings)) return record.data;
-    return save(by, { settings, version: record.data.version });
   }
 
   /* The save worked out without writing anything: the settings it would
@@ -897,5 +884,7 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     return save(by, { settings, version: currentVersion }, { ...options, restoring: dayWords(entry.savedAt), restoredFrom: settings, mixedFrom });
   }
 
-  return { get, current, catalogue, setup, signupStart, startForBarnwright, takeOver, preview, save, history, restore, check };
+  const startForOwner = (by, settings) => startForBarnwright(settings, { id: by.userId, name: by.name || by.email });
+
+  return { get, current, catalogue, setup, signupStart, startForBarnwright, startForOwner, preview, save, history, restore, check };
 }

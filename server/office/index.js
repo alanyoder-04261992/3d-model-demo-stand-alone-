@@ -16,7 +16,8 @@
      ownerEmail     the OWNER_EMAIL setting (the first owner)
      manufacturer   library/manufacturers/standard.json
      library        library/construction.json
-     templates      {full, small}: starting price lists for first setup
+     templates      {full, small}: the starting price lists ("Every standard
+                    building" is full; small is for POST setup)
      now            () -> Date
      sendEmail      optional async ({to, subject, text, html}) -> true
      siteUrl        "https://the-site" for links inside emails
@@ -53,6 +54,7 @@ import { createTerms, TERMS, AGREE_FIRST } from "./terms.js";
 import { createHelp } from "./help.js";
 import { createSetupAccess } from "./setup-access.js";
 import { createSessions } from "./session.js";
+import { createFirstStart } from "./first-start.js";
 
 /* the scheduled check-in's look back for Barnwright setup access, at most */
 const LOOK_BACK_MS = 5000;
@@ -110,13 +112,14 @@ export function createOffice(deps) {
     library: deps.library || null,
     terms: shipped,
   });
+  /* the owner's first sign-in: no setup screens (first-start.js) */
+  const firstStart = createFirstStart({ store, priceList, lots, account, terms, setup, now, log });
   const signIn = deps.signIn || "netlify";
 
   /* contact: false leaves out the business phone, email and website, for a
-     login that isn't on the team. Before the owner first signs in they are
-     the ones the owner typed on the Control Room's sign-up page (the owner's
-     email is their login), and anyone can make a login, so they go only to
-     the team (the owner fills them in First setup from here). */
+     login that isn't on the team. They can be the ones the owner typed on
+     the Control Room's sign-up page (the owner's email is their login), and
+     anyone can make a login, so they go only to the team. */
   function business(record, { contact = true } = {}) {
     if (!record) return null;
     const s = record.settings;
@@ -126,16 +129,6 @@ export function createOffice(deps) {
       ...(contact ? { phone: s.brand.phone || "", email: s.brand.email || "", website: s.brand.website || "" } : {}),
       open: s.status !== "suspended",
     };
-  }
-
-  /* A price list Barnwright started before the owner first signed in, on
-     the owner's sign-up agreement, which the owner hasn't taken on yet in
-     First setup (they have never agreed to any terms here). An existing
-     business never has the sign-up record, so it is never sent back to
-     First setup. */
-  async function startedForOwner(record) {
-    if (!record || !setup.connected) return false;
-    return !!(await store.get("barnwright-signup-agreement")) && (await terms.neverAgreed());
   }
 
   async function me(req) {
@@ -149,7 +142,8 @@ export function createOffice(deps) {
     if (who.person) await account.checkIn();
     const current = await priceList.current();
     const record = current?.data || null;
-    const visible = who.person ? (await lots.all()).filter((l) => can.seeLot(who.person, l.slug)) : [];
+    const allLots = who.person ? await lots.all() : [];
+    const visible = allLots.filter((l) => can.seeLot(who.person, l.slug));
     /* everybody's names, so screens can say who is working a customer */
     const teamNames = who.person ? (await store.all("people/")).map((p) => ({
       userId: p.userId, name: p.name || "", email: p.email, role: p.role, lots: p.lots || [], active: p.active !== false,
@@ -158,7 +152,10 @@ export function createOffice(deps) {
       user: who.user,
       person: who.person ? publicPerson(who.person) : null,
       business: business(record, { contact: !!who.person }),
-      setupNeeded: !!(who.person && who.person.role === "owner" && (!record || (await startedForOwner(record)))),
+      /* the owner's start (POST start) hasn't run yet: the page runs it, then opens Today */
+      startNeeded: who.person ? await firstStart.needed(who.person, record, allLots.length) : false,
+      /* the owner's Getting started card on Today: null for everybody else, and once done or hidden */
+      gettingStarted: who.person ? await firstStart.gettingStarted(who.person, record, allLots) : null,
       lots: visible,
       team: teamNames,
       emailOn: email.on,
@@ -215,30 +212,35 @@ export function createOffice(deps) {
   });
   route("POST", /^\/api\/office\/sign-out$/, async (req) => (sessions ? sessions.end(req) : json({ ok: true })));
 
+  /* The owner's first sign-in (first-start.js): the page sends this when
+     GET me says startNeeded, and the Getting started card sends it with the
+     business name when there was none. Safe to send twice. */
+  route("POST", /^\/api\/office\/start$/, async (req) => {
+    const who = await writer(req);
+    must(who.person.role === "owner", "Only the owner can do that.");
+    const out = await firstStart.start(who.person, await readBody(req));
+    return json({ business: business(out.record), start: out.start });
+  });
+  /* The Getting started card: {hide: true}, or {preview: true} when Look
+     at the preview was tapped. A switched-off account can still hide it. */
+  route("POST", /^\/api\/office\/getting-started$/, async (req) => {
+    const who = await people.member(req);
+    must(who.person.role === "owner", "Only the owner can do that.");
+    await firstStart.change(await readBody(req));
+    const current = await priceList.current();
+    return json({ gettingStarted: await firstStart.gettingStarted(who.person, current?.data || null, await lots.all()) });
+  });
+
+  /* A business made in one go, for the sample business (server/office/
+     sample.js: npm run office, the "try it" demo) and the checks: the
+     starting price list, the owner's name and their agreement. A new owner
+     never sees this: their start is POST start. */
   route("POST", /^\/api\/office\/setup$/, async (req) => {
     const who = await writer(req);
     must(who.person.role === "owner", "Only the owner can set up the business.");
     const data = await readBody(req);
     terms.mustHaveAgreed(data);
     const yourName = text(data.yourName, 80, "Your name");
-    const current = await priceList.current();
-    if (current && (await startedForOwner(current.data))) {
-      /* First setup on the price list Barnwright started before the owner
-         first signed in: the details that differ are saved into it as the
-         owner's change, and the agreement is kept as the owner's own */
-      const details = {
-        businessName: text(data.businessName, 80, "Business name", { required: true }),
-        phone: phone(data.phone, "Business phone"),
-        email: emailField(data.email, "Business email"),
-        website: websiteAddress(data.website),
-      };
-      if (yourName) await store.change(`people/${who.person.userId}`, (p) => { if (p) p.name = yourName; });
-      const owner = { ...who.person, name: yourName || who.person.name };
-      const record = await priceList.takeOver(owner, details);
-      if (terms.asks()) await terms.agree(owner);
-      await setup.started();
-      return json({ business: business(record) }, 200);
-    }
     if (yourName) await store.change(`people/${who.person.userId}`, (p) => { if (p) p.name = yourName; });
     const record = await priceList.setup({ ...who.person, name: yourName || who.person.name }, {
       businessName: text(data.businessName, 80, "Business name", { required: true }),
@@ -273,6 +275,8 @@ export function createOffice(deps) {
     const data = await readBody(req);
     const lotCount = (await lots.all()).filter((l) => l.active !== false).length;
     const saved = await priceList.save(who.person, { settings: data.settings, version: data.version });
+    /* the owner checked their prices: Getting started ticks it */
+    await firstStart.tick("prices");
     return json({ ...saved, lotCount });
   });
   route("GET", /^\/api\/office\/price-list\/history$/, async (req) => {

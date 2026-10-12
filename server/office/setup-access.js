@@ -72,6 +72,11 @@ const TERMS_RECORD = "barnwright-terms";
    counts brought it (create-only, never changed; never a phone, email or
    business name) */
 const SIGNUP_RECORD = "barnwright-signup-agreement";
+/* the business name, phone and email from the owner's sign-up, as the
+   first pass that carried a sign-up while there was no price list brought
+   them (create-only, never changed): the owner's start makes the business
+   from them (index.js). Never in an answer, a log line or a change line. */
+const DETAILS_RECORD = "barnwright-signup-details";
 /* the first owner's claim, written at the owner's first confirmed sign-in
    (people.js): until it exists, no owner has signed in */
 const OWNER_CLAIM = "setup";
@@ -91,12 +96,10 @@ const REFUSED_NOTE_EVERY = 60_000;
 /* What Alan and Claude read for each reason access is closed. */
 export const WHY = Object.freeze({
   "not-connected": "This Dealer Center isn't connected to Barnwright.",
-  "no-price-list": "The owner hasn't finished First setup yet, so there is no price list to change.",
-  /* both places the owner agrees: the box in First setup (where an owner
-     who just signed in is, with no button on top, even when Barnwright
-     already started their price list), or the button at the top of their
-     Dealer Center after it (the Control Room's OWNER_TERMS, word for word) */
-  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tick the box in First setup, or tap the button at the top of their Dealer Center.",
+  "no-price-list": "Their Dealer Center has no price list yet. It is made when the owner first signs in.",
+  /* where the owner agrees: the line at the top of their Dealer Center
+     (the Control Room's OWNER_TERMS, word for word) */
+  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap I have read and agree at the top of their Dealer Center.",
   "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
   "signup-unknown": "Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy.",
   stopped: "The owner stopped Barnwright's setup access in Settings, Barnwright.",
@@ -272,7 +275,8 @@ export function createSetupAccess({
     }
   }
 
-  /* First setup: not live, nothing to look back through. */
+  /* A price list just made (the owner's start, POST setup, Barnwright's
+     start): not live, nothing to look back through. */
   async function started() {
     try {
       await store.change(LIVE, (doc) => (doc ? KEEP : { live: false, checkedThrough: 1 }));
@@ -385,15 +389,37 @@ export function createSetupAccess({
   }
   const access = (signup = null) => view({ scan: true, signup });
 
-  /* The first pass whose sign-up agreement counts writes it, once (create-only). */
+  /* The first pass whose sign-up agreement counts writes it, once
+     (create-only). And the first pass that carries a sign-up while there is
+     no price list writes its business name, phone and email, once
+     (create-only), whether or not the agreement counts and whether or not
+     the owner has signed in: the owner's start makes the business from
+     them, and an owner can sign in before the pass that brings them. */
   async function rememberSignup(v, claims) {
-    if (!v?.signupFromPass || !claims?.signup) return;
+    if (!claims?.signup) return;
     const s = claims.signup;
-    try {
-      await store.create(SIGNUP_RECORD, { termsVersion: s.termsVersion, termsSha256: s.termsSha256, signature: s.signature, signedAt: s.signedAt, at: iso(), passId: claims.id });
-    } catch (e) {
-      log("The owner's sign-up agreement couldn't be remembered:", e?.name || "Error");
+    if (v?.signupFromPass) {
+      try {
+        await store.create(SIGNUP_RECORD, { termsVersion: s.termsVersion, termsSha256: s.termsSha256, signature: s.signature, signedAt: s.signedAt, at: iso(), passId: claims.id });
+      } catch (e) {
+        log("The owner's sign-up agreement couldn't be remembered:", e?.name || "Error");
+      }
     }
+    if (v && !v.record) {
+      try {
+        await store.create(DETAILS_RECORD, { business: s.business, phone: s.phone, email: s.email, at: iso(), passId: claims.id });
+      } catch (e) {
+        log("The owner's sign-up details couldn't be remembered:", e?.name || "Error");
+      }
+    }
+  }
+
+  /* For the owner's start (index.js): what the passes brought from the
+     owner's sign-up, as remembered. -> {details, agreement}, each the record
+     or null. */
+  async function remembered() {
+    if (!connected) return { details: null, agreement: null };
+    return { details: await store.get(DETAILS_RECORD), agreement: await store.get(SIGNUP_RECORD) };
   }
 
   /* Who saved, by role, never by name or email (F8). */
@@ -770,8 +796,9 @@ export function createSetupAccess({
 
   /* Before a price list exists (docs/OFFICE.md, "Before the owner first
      signs in"): the starting price list the pass's sign-up details make,
-     at version 0. Those details are used for nothing else and kept
-     nowhere. A pass that carries none can't start one. */
+     at version 0. Besides this, those details are only remembered for the
+     owner's start (rememberSignup). A pass that carries none can't start
+     one. */
   function startingFor(claims) {
     if (!claims?.signup) throw refusal(403, "closed", WHY["no-price-list"], { why: "no-price-list" });
     return priceList.signupStart(claims.signup);
@@ -999,7 +1026,7 @@ export function createSetupAccess({
   }
 
   return {
-    connected, access, view, status, report, mine, liveRecord, markLive, started, termsOk, door,
+    connected, access, view, status, report, mine, liveRecord, markLive, started, termsOk, door, remembered,
     owner: { get: ownerGet, set: ownerSet },
     visit: { start, from, keep, save, end, lots: lotList, preview: (slug) => website.previewLot(slug) },
   };

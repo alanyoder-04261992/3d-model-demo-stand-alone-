@@ -106,7 +106,11 @@ room.down = true;
 let m = await me();
 ok("the screens are told: not switched on yet", m.account?.canWrite === false && m.account.reason === "unactivated", JSON.stringify(m.account));
 let r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small" });
-ok("first setup is refused with plain words (423)", r.status === 423 && /isn't switched on yet/.test(r.data.error), JSON.stringify(r));
+ok("a business made in one go (POST setup) is refused with plain words (423)", r.status === 423 && /isn't switched on yet/.test(r.data.error), JSON.stringify(r));
+r = await call("POST", "/api/office/start", { businessName: "Yoder Storage Barns" });
+ok("the owner's start (POST start, their first sign-in) is refused the same way (423), and makes nothing", r.status === 423 && /isn't switched on yet/.test(r.data.error)
+  && !(await office.parts.store.get("price-list")) && !(await office.parts.store.get("first-start")) && (await office.parts.lots.all()).length === 0, JSON.stringify(r));
+ok("... so it is still needed: GET me says startNeeded, and the page asks again at the next sign-in", (await me()).startNeeded === true);
 
 section("3. Switched on: it checks in, and setup works");
 room.down = false;
@@ -126,9 +130,9 @@ ok("the owner is asked to agree to the Barnwright Terms and Conditions (version 
     && pdf.includes(`/Title (${TERMS.title})`), JSON.stringify({ title: paper.title, version: paper.version, date: paper.date, pdf: paper.pdf }));
 }
 r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small" });
-ok("first setup without ticking \"I agree\" is refused in plain words, and no business is made", r.status === 422 && r.data.error === "Tick the box to agree to the Barnwright Terms and Conditions." && !(await office.parts.store.get("price-list")), JSON.stringify(r));
+ok("POST setup without ticking \"I agree\" is refused in plain words, and no business is made", r.status === 422 && r.data.error === "Tick the box to agree to the Barnwright Terms and Conditions." && !(await office.parts.store.get("price-list")), JSON.stringify(r));
 r = await call("POST", "/api/office/setup", { businessName: "Yoder Storage Barns", phone: "(941) 555-0100", start: "small", agreeTerms: true });
-ok("first setup works", r.status === 201, JSON.stringify(r.data));
+ok("POST setup works", r.status === 201, JSON.stringify(r.data));
 m = await me();
 ok(`the agreement is kept: version ${TERMS.version}, when, and who (the owner's login)`, m.terms.agreed?.version === TERMS.version && m.terms.agreed.by.email === USERS.alan.email && m.terms.agreed.agreedAt === new Date(clock.t).toISOString(), JSON.stringify(m.terms));
 {
@@ -151,6 +155,38 @@ await call("PUT", "/api/office/price-list", { settings: { ...pl.settings, status
 const calls0 = room.calls.length;
 await me();
 ok("it does not check in again on every page (only after six hours)", room.calls.length === calls0);
+
+section("3b. The owner's first sign-in once switched on: the start works, and asks for the terms at the top");
+{
+  /* a business of its own, connected, switched on, nobody signed in yet, no sign-up details (added by hand) */
+  const clock2 = { t: clock.t };
+  const room2 = fakeControlRoom({ clock: clock2, dealerLimit: 2 });
+  const blobs2 = new MemoryBlobs();
+  const office2 = createOffice({
+    blobs: blobs2, identityUser: async () => USERS.alan, ownerEmail: USERS.alan.email,
+    manufacturer, library, templates, now: () => new Date(clock2.t), log: () => {}, appVersion: "dealer-center check",
+    license: new TenantLicenseClient({
+      controlRoomUrl: room2.origin, customerId: room2.business.id, siteId: room2.business.siteId,
+      activationKey: room2.business.key, publicKeyPem: room2.publicKeyPem,
+      store: createLeaseStore(room2.business.id, room2.business.siteId, blobs2), fetch: room2.fetch, now: () => clock2.t,
+    }),
+  });
+  const call2 = async (method, path, body) => {
+    const res = await office2.handle(new Request("https://dealer.test" + path, { method, headers: { "content-type": "application/json", origin: "https://dealer.test" }, body: body ? JSON.stringify(body) : undefined }), { clientIp: "203.0.113.9" });
+    return { status: res.status, data: await res.json() };
+  };
+  let m2 = (await call2("GET", "/api/office/me")).data;
+  ok("(another business, switched on, its owner's first sign-in: startNeeded, no business, the terms to agree to)", m2.startNeeded === true && m2.business === null && m2.account?.canWrite === true && m2.terms?.agreed === null, JSON.stringify([m2.startNeeded, m2.account, m2.terms]));
+  let r2 = await call2("POST", "/api/office/start", {});
+  ok("no details from a sign-up page: 422 \"Type your business name.\"", r2.status === 422 && r2.data.error === "Type your business name.", JSON.stringify(r2));
+  r2 = await call2("POST", "/api/office/start", { businessName: "Gulf Coast Sheds" });
+  ok("with the name: 200, the price list made and the first lot, which takes one of the plan's places", r2.status === 200 && r2.data.start?.priceList === "made" && r2.data.start.lot === "gulf-coast-sheds"
+    && Object.keys((await office2.parts.store.get("barnwright-lot-slots"))?.open || {}).length === 1, JSON.stringify(r2.data));
+  m2 = (await call2("GET", "/api/office/me")).data;
+  ok("no agreement from a sign-up page: nothing is agreed for the owner, so the line at the top asks (terms.agreed null)", m2.startNeeded === false && m2.terms?.agreed === null && !(await office2.parts.store.get("barnwright-terms")), JSON.stringify(m2.terms));
+  r2 = await call2("POST", "/api/office/terms", { agree: true });
+  ok("... and I have read and agree keeps it", r2.status === 200 && r2.data.terms?.agreed?.version === TERMS.version, JSON.stringify(r2.data));
+}
 
 section("4. The plan's number of open lots (2 here)");
 r = await call("POST", "/api/office/lots", { name: "Port Charlotte", phone: "(941) 555-0140" });
@@ -505,4 +541,4 @@ if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} control room checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${passed} checks): leases signed by the control room's own code read the same way; a Dealer Center never switched on, switched off, or out of touch for 7 days stops changes and closes its 3D designer links with the lot's number while reading and downloading still work; open lots never pass the plan's number, even when opened at the same moment; taking a person off always works; the owner agrees to the Barnwright terms before the business is made, again when they change, and every agreement is kept; help from Barnwright needs the owner's switch, ends when turned off or when time is up, and answers only how the Dealer Center runs, in the shape the control room accepts; a help pass is asked for with the activation key in exactly the shape the control room expects, switched off or not, and only a well-formed pass is ever taken; right after a production deploy it checks in once, and never for a deploy preview or a branch deploy.`);
+console.log(`PROVED (${passed} checks): leases signed by the control room's own code read the same way; a Dealer Center never switched on, switched off, or out of touch for 7 days stops changes and closes its 3D designer links with the lot's number while reading and downloading still work; open lots never pass the plan's number, even when opened at the same moment; taking a person off always works; a new owner's first sign-in makes their price list and first lot only once the account is switched on, and the owner agrees to the Barnwright terms at the top, again when they change, and every agreement is kept; help from Barnwright needs the owner's switch, ends when turned off or when time is up, and answers only how the Dealer Center runs, in the shape the control room accepts; a help pass is asked for with the activation key in exactly the shape the control room expects, switched off or not, and only a well-formed pass is ever taken; right after a production deploy it checks in once, and never for a deploy preview or a branch deploy.`);

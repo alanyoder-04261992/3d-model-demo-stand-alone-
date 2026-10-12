@@ -221,16 +221,16 @@ const A = business();
 await A.me("pat");
 {
   const none = await A.access();
-  ok("before First setup: closed, no price list", none.mode === null && none.why === "no-price-list", JSON.stringify(none));
+  ok("before the business is made: closed, no price list", none.mode === null && none.why === "no-price-list", JSON.stringify(none));
   const r = await A.start();
   ok("... a visit can't start (403, the words for no-price-list)", r.status === 403 && r.data.code === "closed" && r.data.why === "no-price-list" && r.data.error === WHY["no-price-list"] && !cookieFrom(r), JSON.stringify(r.data));
 }
 await A.setUp();
-/* First setup agrees to this copy's own terms (2.1 today, 2.2 once they are
+/* POST setup agrees to this copy's own terms (2.1 today, 2.2 once they are
    out): the cases below need an owner who agreed to 2.1 only, whatever
    TERMS.version is */
 await A.agree("2.1");
-ok("First setup writes the live record at once: not live, checked through version 1",
+ok("a business made writes the live record at once: not live, checked through version 1",
   JSON.stringify(await A.store.get("barnwright-live")) === JSON.stringify({ live: false, checkedThrough: 1 }), JSON.stringify(await A.store.get("barnwright-live")));
 {
   const v = await A.access();
@@ -1707,14 +1707,14 @@ section("F15. The starting price list (version 0)");
   const pl = createPriceList({ store: wrapStore(new MemoryBlobs()), manufacturer, library, templates, now: () => new Date(FX.now), log: () => {} });
   const want = BS.startingPriceList;
   const start = typeof pl.signupStart === "function" ? pl.signupStart(BS.signup) : null;
-  ok("Every standard building, set up the way First setup does from the sign-up's business name, phone and email: its SHA-256, id, closed to customers, its brand, no website",
+  ok("Every standard building, set up the way every new business starts, from the sign-up's business name, phone and email: its SHA-256, id, closed to customers, its brand, no website",
     !!start && sha256(JSON.stringify(start)) === want.settingsSha256 && start.id === want.id && start.status === want.status && Object.keys(start.offer).length === want.styles
     && Object.entries(want.brand).every(([k, v]) => start.brand[k] === v), start ? asJson(start.brand) : "no signupStart");
   const cleaned = want.cleaned.filter((c) => {
     const s2 = pl.signupStart?.({ ...BS.signup, ...c.signup });
     return !s2 || s2.brand.phone !== c.brand.phone || s2.brand.email !== c.brand.email;
   });
-  ok("its phone and email are what First setup's own checks give (an email in lower case and trimmed; one those checks would refuse is left empty)", !!start && cleaned.length === 0, cleaned.map((c) => c.name).join("; "));
+  ok("its phone and email are what the business's own checks give (an email in lower case and trimmed; one those checks would refuse is left empty)", !!start && cleaned.length === 0, cleaned.map((c) => c.name).join("; "));
 }
 
 section("F15. The door before the owner first signs in");
@@ -1726,6 +1726,8 @@ section("F15. The door before the owner first signs in");
   ok("status before a price list exists: prelive on the sign-up agreement, priceList null (the fixtures' answer, word for word)", sameAnswer(x, doorEx("status before a price list exists")), asJson(x.data));
   ok("... and the agreement is remembered once, in barnwright-signup-agreement: never a phone, an email or a business name",
     asJson(await S1.store.get("barnwright-signup-agreement")) === asJson(BS.record.example), asJson(await S1.store.get("barnwright-signup-agreement")));
+  ok("... and the sign-up's business name, phone and email once, in barnwright-signup-details (the fixtures' record), for the owner's start",
+    !!BS.detailsRecord && asJson(await S1.store.get("barnwright-signup-details")) === asJson(BS.detailsRecord.example), asJson(await S1.store.get("barnwright-signup-details")));
   ok("... the next check-in says prelive with agreement signup (the fixtures' check-in)", asJson(JSON.parse(await S1.checkInBody())) === asJson(JSON.parse(BS.checkIn.examples[1].request.body)), S1.sentLicense.at(-1));
   ok("... and it is never the owner's own tick: no barnwright-terms, no owner, no price list", (await S1.store.get("barnwright-terms")) === null && (await S1.store.get("setup")) === null && (await S1.store.get("price-list")) === null);
   const logBefore = (await S1.log()).length;
@@ -1775,43 +1777,91 @@ section("F15. The door before the owner first signs in");
   const answers = JSON.stringify([...(await S1.log()).map((e) => e.words), h1?.changes, h2?.changes, x.data]);
   ok("the sign-up's phone and email are in no door answer, log line or change line", ![BS.signup.phone, BS.signup.email].some((t) => answers.includes(t)), answers.slice(0, 200));
 
-  section("F15. The owner's first sign-in");
-  const fs = (n) => BS.firstSetup.examples.find((e) => e.name === n);
+  section("F15. The owner's first sign-in: Today right away, Barnwright's price list kept");
+  const fs = (n) => BS.firstStart?.examples.find((e) => e.name === n);
+  const hist1 = asJson(await S1.store.get("price-list-history/000001")), hist2 = asJson(await S1.store.get("price-list-history/000002"));
+  const plBefore = asJson(await S1.store.get("price-list"));
   S1.who = "signup";
   const m = await S1.me("signup");
-  const wantMe = fxBody(fs("GET me at the owner's first sign-in"));
-  ok("GET me: setupNeeded with the business Barnwright set up (filled in from the price list), the terms to tick, agreed null",
-    m.setupNeeded === true && asJson(m.business) === asJson(wantMe.business) && m.terms?.version === wantMe.terms.version && m.terms.agreed === null && m.setup?.mode === null && m.setup?.until === null, asJson([m.setupNeeded, m.business, m.terms, m.setup]));
-  x = await S1.replay(doorEx("the owner has signed in but hasn't ticked yet").request);
-  ok("the owner has signed in but hasn't ticked yet: the sign-up agreement no longer counts, closed terms (the fixtures' answer)", sameAnswer(x, doorEx("the owner has signed in but hasn't ticked yet")), asJson(x.data).slice(0, 400));
-  const noTick = fs("refused: no tick");
-  let r2 = await S1.call("POST", "/api/office/setup", JSON.parse(noTick.request.body), { as: "signup" });
-  ok("POST setup without the tick: 422, \"Tick the box...\" (the sign-up agreement is never the owner's tick)", r2.status === noTick.answer.status && r2.data.error === noTick.answer.body.error, asJson(r2));
-  const same = fs("POST setup on the price list Barnwright started");
-  r2 = await S1.call("POST", "/api/office/setup", JSON.parse(same.request.body), { as: "signup" });
-  ok("POST setup with the tick, details unchanged: 200 {business}, no new version (the fixtures' answer)", r2.status === 200 && asJson(r2.data) === asJson(same.answer.body) && (await S1.store.get("price-list")).version === 2, asJson(r2));
+  const wantMe = fxBody(fs("GET me at the owner's first sign-in") || { answer: { body: {} } });
+  ok("GET me at the owner's first sign-in: startNeeded, the business Barnwright set up, no lot yet, no card yet, the terms not yet theirs here (the fixtures' answer)",
+    m.startNeeded === true && m.gettingStarted === null && asJson(m.business) === asJson(wantMe.business) && asJson(m.lots) === "[]" && m.terms?.agreed === null && m.setup?.mode === null, asJson([m.startNeeded, m.business, m.terms, m.setup]));
+  x = await S1.replay(doorEx("the owner has signed in, before their Dealer Center's start").request);
+  ok("the owner has signed in, before their Dealer Center's start: the sign-up agreement on the pass no longer counts, closed terms (the fixtures' answer)", sameAnswer(x, doorEx("the owner has signed in, before their Dealer Center's start")), asJson(x.data).slice(0, 400));
+  const startEx = fs("POST start on the price list Barnwright started");
+  let r2 = await S1.call("POST", "/api/office/start", {}, { as: "signup" });
+  ok("POST start: 200 {business, start: {priceList: kept, lot, terms: signup}} (the fixtures' answer)", r2.status === 200 && !!startEx && asJson(r2.data) === asJson(startEx.answer.body), asJson(r2));
+  ok("... Barnwright's price list is kept exactly as it was: the same record, version 2, the same History, nothing saved",
+    asJson(await S1.store.get("price-list")) === plBefore && asJson(await S1.store.get("price-list-history/000001")) === hist1 && asJson(await S1.store.get("price-list-history/000002")) === hist2
+    && (await S1.store.keys("price-list-history/")).length === 2);
+  const lotS1 = await S1.store.all("lots/");
+  ok("... the first lot is made, named after the business, with the business phone and email (the fixtures' lot)",
+    lotS1.length === 1 && !!startEx && Object.entries(startEx.lot).every(([k, v]) => lotS1[0][k] === v), asJson(lotS1));
   const agreed = await S1.store.get("barnwright-terms");
-  ok("... the agreement is kept as the owner's own: the version this copy ships, by their login", agreed?.current?.version === "2.2" && agreed.current.by.email === BS.ownerEmail, asJson(agreed));
-  x = await S1.replay(doorEx("after the owner's First setup").request);
-  ok("after the owner's First setup: prelive on the owner's own agreement (the fixtures' answer)", sameAnswer(x, doorEx("after the owner's First setup")), asJson(x.data).slice(0, 400));
-  r2 = await S1.call("POST", "/api/office/setup", JSON.parse(fs("refused: set up already").request.body), { as: "signup" });
-  ok("POST setup again: 409 \"The business is already set up.\"", r2.status === 409 && r2.data.error === fs("refused: set up already").answer.body.error, asJson(r2));
-  ok("... and GET me no longer asks for First setup", (await S1.me("signup")).setupNeeded === false);
+  ok("... the sign-up agreement is kept as the owner's own: version 2.2, when they signed, the name they typed, from the sign-up page (the fixtures' terms)",
+    !!startEx && asJson({ ...agreed?.current, by: { ...agreed?.current?.by, userId: "<the owner's login id>" } }) === asJson(startEx.terms) && agreed.current.by.userId === USERS.signup.id, asJson(agreed));
+  ok("... and the owner's empty name is the one they typed on the sign-up page", (await S1.store.get(`people/${USERS.signup.id}`))?.name === BS.signup.signature);
+  const m2 = await S1.me("signup");
+  ok("GET me after the start: no start needed, the lot, the terms agreed (no line at the top), and Getting started saying Barnwright set up the price list",
+    m2.startNeeded === false && m2.lots.length === 1 && m2.terms?.agreed?.from === "signup" && m2.terms.agreed.version === "2.2" && m2.gettingStarted?.barnwright === true
+    && m2.gettingStarted.steps.some((st) => st.id === "prices" && !st.done), asJson([m2.startNeeded, m2.terms, m2.gettingStarted]));
+  x = await S1.replay(doorEx("after the owner's first sign-in").request);
+  ok("after the owner's first sign-in: prelive on the owner's own agreement (the fixtures' answer)", sameAnswer(x, doorEx("after the owner's first sign-in")), asJson(x.data).slice(0, 400));
+  const snap = asJson([await S1.store.get("price-list"), await S1.store.all("lots/"), await S1.store.get("barnwright-terms"), await S1.store.get("first-start")]);
+  r2 = await S1.call("POST", "/api/office/start", {}, { as: "signup" });
+  ok("POST start again: nothing changes (the fixtures' answer)", r2.status === 200 && asJson(r2.data) === asJson(fs("POST start again")?.answer.body)
+    && asJson([await S1.store.get("price-list"), await S1.store.all("lots/"), await S1.store.get("barnwright-terms"), await S1.store.get("first-start")]) === snap, asJson(r2));
   r2 = await S1.call("GET", "/api/office/barnwright-help", undefined, { as: "signup" });
   ok("the owner's Barnwright card: setting up, with Stop (prelive), and its log starts with Barnwright's start and change",
     r2.status === 200 && r2.data.setup?.mode === "prelive" && r2.data.setup.prelive === "on" && r2.data.help.log.some((e) => e.words === saveEx.log[1]) && r2.data.help.log.some((e) => e.words === saveEx.log[0]), asJson(r2.data).slice(0, 500));
+  const said = asJson([r2.data, (await S1.me("signup")).gettingStarted, x.data]);
+  ok("barnwright-signup-details itself is in no answer (only the business the owner's own price list holds)", !said.includes("barnwright-signup-details") && !said.includes(BS.detailsRecord.example.passId));
 }
 {
-  /* the owner changes the business phone in First setup: the owner's change, version 3 */
-  const S2 = await signupBusiness();
-  await S2.replay(doorEx("status before a price list exists").request);
-  await S2.replay(doorEx("save at version 0: the starting price list (version 1), then the edits (version 2)").request);
-  const ex = BS.firstSetup.examples.find((e) => e.name === "POST setup with a new phone");
-  await S2.me("signup");
-  const r2 = await S2.call("POST", "/api/office/setup", JSON.parse(ex.request.body), { as: "signup" });
-  const pl3 = await S2.store.get("price-list"), h3 = await S2.store.get("price-list-history/000003");
-  ok("POST setup with a new phone: 200 {business} with it, version 3 saved by the owner, the owner's History says it in full",
-    r2.status === 200 && asJson(r2.data) === asJson(ex.answer.body) && pl3.version === 3 && pl3.savedBy.id === USERS.signup.id && asJson(h3?.changes) === asJson(["Phone: 941-555-0100 → 941-555-0123"]), asJson([r2.data, h3?.changes]));
+  /* the owner signs in before any pass brought the sign-up (Make their
+     Dealer Center hadn't finished when they made their login) */
+  const E = await signupBusiness();
+  E.who = "signup";
+  const m0 = await E.me("signup");
+  let r2 = await E.call("POST", "/api/office/start", {}, { as: "signup" });
+  ok("the owner signs in before any pass brought their sign-up: startNeeded, and the start asks for the business name (422, nothing made)",
+    m0.startNeeded === true && r2.status === 422 && r2.data.error === "Type your business name." && !(await E.store.get("price-list")) && !(await E.store.get("first-start")), asJson(r2));
+  await E.replay(doorEx("status before a price list exists").request);
+  ok("... the status pass that comes after the owner's claim still brings the business name, phone and email (barnwright-signup-details), but not the agreement",
+    (await E.store.get("barnwright-signup-details"))?.business === BS.signup.business && !(await E.store.get("barnwright-signup-agreement")));
+  r2 = await E.call("POST", "/api/office/start", {}, { as: "signup" });
+  const plE = await E.store.get("price-list");
+  ok("... so the next start makes Every standard building from them (saved by the owner, version 1, closed) and the first lot",
+    r2.status === 200 && r2.data.start?.priceList === "made" && plE?.version === 1 && plE.savedBy.id === USERS.signup.id && plE.settings.status === "suspended"
+    && plE.settings.brand.name === BS.signup.business && plE.settings.brand.phone === BS.signup.phone && plE.settings.brand.email === BS.signup.email
+    && sha256(JSON.stringify(plE.settings)) === BS.startingPriceList.settingsSha256 && (await E.store.keys("lots/")).length === 1, asJson(r2.data));
+  ok("... with no agreement remembered, nothing is agreed for them: the line at the top asks (terms.agreed null), access closed on terms",
+    (await E.store.get("barnwright-terms")) === null && (await E.me("signup")).terms?.agreed === null && (await E.access()).why === "terms");
+}
+{
+  /* a sign-up under terms 2.1: the details make the price list, the agreement is never kept */
+  const O = await signupBusiness();
+  const old = doorEx("refused: they signed up before terms 2.2");
+  await O.replay(old.request);
+  ok("a pass whose sign-up doesn't count (they signed up under 2.1) still brings the details, never the agreement",
+    (await O.store.get("barnwright-signup-details"))?.business === BS.signup.business && !(await O.store.get("barnwright-signup-agreement")));
+  O.who = "signup";
+  await O.me("signup");
+  const r2 = await O.call("POST", "/api/office/start", {}, { as: "signup" });
+  ok("... the owner's start makes their price list from them and writes no terms (a sign-up under 2.1 is never kept as an agreement)",
+    r2.status === 200 && r2.data.start?.priceList === "made" && r2.data.start.terms === null && (await O.store.get("barnwright-terms")) === null, asJson(r2.data));
+}
+{
+  /* the details are never written once a price list exists, nor by a pass with no sign-up */
+  const P = await signupBusiness();
+  await P.replay(doorEx("refused: no sign-up agreement").request);
+  ok("a pass with no sign-up writes no details", !(await P.store.get("barnwright-signup-details")));
+  P.who = "signup";
+  await P.me("signup");
+  await P.call("POST", "/api/office/start", { businessName: "Typed Barns" }, { as: "signup" });
+  await P.replay(doorEx("status before a price list exists").request);
+  ok("... and once a price list exists, a pass with a sign-up writes none either (the owner's typed name stays)",
+    !(await P.store.get("barnwright-signup-details")) && (await P.store.get("price-list"))?.settings.brand.name === "Typed Barns");
 }
 {
   /* the starting price list alone, and undo at it */
@@ -1877,18 +1927,18 @@ section("F15. The visit that starts the price list");
   put = await V.visit("PUT", "price-list", { settings: s1, version: 2 }, cookie);
   ok("the owner makes their login: the visit started on the sign-up agreement ends (401 visit-ended, the words for terms)",
     put.status === afterIn.answer.status && Object.keys(afterIn.answer.body).length === Object.keys(put.data).length && Object.entries(afterIn.answer.body).every(([k, v]) => put.data[k] === v), asJson(put.data));
-  /* F15-R3: the owner who just made their login is in First setup, with the
-     terms box and no button on top (closedBanner leaves the terms banner
-     out while setupNeeded): the words say both places, never only the button */
-  const firstSetupNow = (await V.me("signup")).setupNeeded === true;
-  ok("F15-R3: ... the owner is in First setup (no button on top yet), and the words say to tick the box in First setup, or tap the button after it: never only \"They see the button at the top\"",
-    firstSetupNow && /They tick the box in First setup, or tap the button at the top of their Dealer Center\./.test(put.data.error || "") && !/They see the button at the top/.test(put.data.error || "")
-    && WHY.terms === FX.door.why.terms && /tick the box in First setup/.test(WHY.terms), asJson([firstSetupNow, put.data.error]));
-  await V.call("POST", "/api/office/setup", { yourName: "Pat Owner", businessName: BS.signup.business, phone: BS.signup.phone, email: BS.signup.email, agreeTerms: true }, { as: "signup" });
+  /* F15-R3, now: the owner who just made their login lands on Today, where
+     the terms are the line at the top (when the agreement from the sign-up
+     page isn't kept): the words say to tap I have read and agree there */
+  ok("F15-R3: ... the words for terms say to tap I have read and agree at the top of their Dealer Center, the contract's words",
+    /They tap I have read and agree at the top of their Dealer Center\./.test(put.data.error || "") && !/First setup/.test(put.data.error || "")
+    && WHY.terms === FX.door.why.terms && !/First setup/.test(WHY.terms + WHY["no-price-list"]), asJson(put.data.error));
+  await V.call("POST", "/api/office/start", {}, { as: "signup" });
   const sessKey = Object.keys(await V.store.get("barnwright-sessions") || {});
   await V.store.put("barnwright-sessions", { [sha256(cookie.split("=")[1])]: { ...sess, endsAt: new Date(V.clock.t + 3600_000).toISOString() } });
   put = await V.visit("GET", "me", undefined, cookie);
-  ok("... and even after the owner agrees, that visit stays ended (Alan opens a new one)", put.status === 401 && put.data.code === "visit-ended" && put.data.error === VISIT_WORDS.ended, asJson([put.data, sessKey]));
+  ok("... and even after the owner's start keeps their sign-up agreement as theirs, that visit stays ended (Alan opens a new one)", put.status === 401 && put.data.code === "visit-ended" && put.data.error === VISIT_WORDS.ended
+    && (await V.store.get("barnwright-terms"))?.current?.from === "signup", asJson([put.data, sessKey]));
   const again = await V.start(V.pass());
   ok("... a new visit (no sign-up needed now) starts on the owner's own agreement", again.status === 200 && Object.values((await V.store.get("barnwright-sessions")) || {}).some((x) => x.agreement === "owner"), asJson(again.data));
 }

@@ -1,26 +1,28 @@
 /* THE BARNWRIGHT TERMS: the owner of a business Barnwright sells to agrees
-   to them in the Dealer Center (Alan, Oct 2026: "Add the I agree box").
+   to them (Alan, Oct 2026: "Add the I agree box").
 
    The terms are a PDF on every business's own site (legal/, published by
    tools/build-site.mjs; made by tools/legal/make-legal-pdfs.py, which also
    writes docs/legal/terms.json for the sign-up page Alan texts to a new
-   owner). The owner agrees on that sign-up page, and again here: "I have
-   read and agree to the Barnwright Terms and Conditions" in first setup,
-   before the business is made; an owner who set up before the box existed,
-   or before a newer version, is asked at the top of every screen until they
-   agree. Each agreement is kept: which version, when, and
-   who (their login email and name), in one record:
+   owner). The owner agrees on that sign-up page: they tick "I agree" and
+   type their name. That agreement is kept here as theirs the first time
+   they sign in (agreeFromSignup below, from the owner's start in
+   index.js), when it counts (signupCounts). When it doesn't (missing, or
+   to terms older than this Dealer Center's), and whenever the terms
+   change, the owner is asked at the top of every screen, "I have read and
+   agree to the Barnwright Terms and Conditions", until they agree. Each
+   agreement is kept: which version, when, and who (their login email and
+   name; from: "signup" for the one from the sign-up page), in one record:
 
-     barnwright-terms   { current: {version, agreedAt, by}, history: [...] }
+     barnwright-terms   { current: {version, agreedAt, by, from?}, history: [...] }
 
    Only a business connected to Barnwright's control room is asked (Alan's
    own business, the local copy and the demo are not: there is nobody to
-   agree with). status() is null then, and setup asks nothing.
+   agree with). status() is null then, and nothing is asked.
 
    Before the owner first signs in, the agreement they gave on the Control
-   Room's sign-up page can let Barnwright start their price list
-   (signupCounts below, setup-access.js), but it is never kept here as
-   theirs: First setup still asks them to tick the box.
+   Room's sign-up page can also let Barnwright start their price list
+   (signupCounts below, setup-access.js).
 
    Node-safe and browser-safe. */
 
@@ -42,8 +44,8 @@ export const TERMS = Object.freeze({
   title: "Barnwright Terms and Conditions",
 });
 
-/* What an owner who hasn't ticked the box is told (first setup on the
-   screen says the same, with the title status() sends). */
+/* What an owner who sends "I agree" without agreeing is told (POST terms,
+   and POST setup for the sample business and the checks). */
 export const AGREE_FIRST = `Tick the box to agree to the ${TERMS.title}.`;
 
 const RECORD = "barnwright-terms";
@@ -66,8 +68,8 @@ export function versionAtLeast(version, need) {
 
    On the Control Room's sign-up page the owner reads the terms, ticks "I
    agree" and types their name. Until they first sign in here, that
-   agreement lets Barnwright start their price list, and nothing else: it
-   is never their own tick in the Dealer Center (barnwright-terms). */
+   agreement lets Barnwright start their price list. When they first sign
+   in, it becomes their agreement here (agreeFromSignup), by the same rule. */
 
 /* the first terms a sign-up agreement can count for */
 export const SIGNUP_MIN_TERMS = "2.2";
@@ -98,7 +100,7 @@ export function signupCounts(signup, { ships = TERMS.version, ownCopies = termsC
 
 /* terms: what this copy ships (TERMS; the checks and the local copy may
    pretend to ship newer terms before they are out). */
-export function createTerms({ store, account, now, terms: shipped = TERMS }) {
+export function createTerms({ store, account, now, terms: shipped = TERMS, copies = termsCopies() }) {
   const TERMS = shipped;
   const asks = () => !!account?.connected;
 
@@ -130,17 +132,38 @@ export function createTerms({ store, account, now, terms: shipped = TERMS }) {
     return status();
   }
 
-  /* first setup: when the owner is asked, they must have ticked the box */
+  /* POST setup (the sample business and the checks): when the owner is
+     asked, they must have ticked the box */
   function mustHaveAgreed(data) {
     if (asks() && data?.agreeTerms !== true) fail(422, AGREE_FIRST);
   }
 
-  /* The owner has never agreed to any terms in the Dealer Center (no
-     agreement kept, now or ever). */
-  async function neverAgreed() {
-    const doc = await store.get(RECORD);
-    return !doc?.current && !(doc?.history || []).length;
+  /* The owner's start (index.js, their first sign-in): the agreement they
+     gave on the sign-up page (signup: the remembered
+     barnwright-signup-agreement) is kept as theirs, as they gave it -- the
+     version they signed, when, and the name they typed -- with from:
+     "signup", when it counts by the same rule as before any owner signed
+     in, and only while no agreement is kept here at all. An agreement to
+     older terms than this copy ships is kept too, and the line at the top
+     asks for the newer ones. -> the entry kept, or null. */
+  async function agreeFromSignup(person, signup) {
+    if (!asks() || !signup || typeof signup !== "object") return null;
+    if (!signupCounts(signup, { ships: TERMS.version, ownCopies: copies }).counts) return null;
+    const entry = {
+      version: signup.termsVersion,
+      agreedAt: signup.signedAt,
+      by: { userId: person.userId, email: person.email, name: String(signup.signature || person.name || "") },
+      from: "signup",
+    };
+    let kept = false;
+    await store.change(RECORD, (doc) => {
+      kept = false;
+      if (doc?.current) return KEEP;
+      kept = true;
+      return { current: entry, history: [entry, ...(doc?.history || [])].slice(0, HISTORY) };
+    });
+    return kept ? entry : null;
   }
 
-  return { asks, status, agree, mustHaveAgreed, neverAgreed, version: TERMS.version };
+  return { asks, status, agree, mustHaveAgreed, agreeFromSignup, version: TERMS.version };
 }
