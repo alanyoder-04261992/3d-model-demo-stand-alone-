@@ -572,7 +572,7 @@ PARTS = [
         ("Their prices and options, from your photos", [
             until22("<b>Price list</b>: type in Claude's plan with the owner. Turn off the styles they don't sell and type their price for each size, door, window and option, using your <b>Price list</b> and <b>Options and colors</b> photos.",
                     "<b>Price list</b>: check what Claude set up with the owner. Anything not set up yet: turn off the styles they don't sell and type their price for each size, door, window and option, using your <b>Price list</b> and <b>Options and colors</b> photos."),
-            "<b>Doors &amp; windows</b>: the 8×12 and 10×12 Side Utility come with the 48 in Wooden Door, so it needs a price ($0 is fine). The Dealer Center says so before <b>Save</b>.",
+            "<b>Doors &amp; windows</b>: the 8×12 and 10×12 Side Utility, Dormer Shed and Side Lofted Barn come with the 48 in Wooden Door, so it needs a price ($0 is fine). The Dealer Center says so before <b>Save</b>.",
             "Ten standard styles are already built with your shop numbers. A style they build differently, like a steeper roof or taller walls: <b>Buildings</b>, tap the style, change its numbers under <b>How it's built</b>, then tap <b>Check every size</b>.",
             "<b>Settings</b>: their logo, their colors and the line under the price.",
         ]),
