@@ -8,7 +8,7 @@
    sent anywhere. model/company.js's validate() is the same check the server
    runs before it saves, so a draft with no problems here saves. */
 
-import { validate, standardSwapNeeds, swapNeedProblems } from "../../../../model/company.js";
+import { validate, standardSwapNeeds, newSwapNeeds, sizedStyleWords, andWords } from "../../../../model/company.js";
 import { problems as builtProblems, extraProblems, describeChanges as builtChanges, describeExtraBuilt } from "../../../../model/build-settings.js";
 import { money, size as sizeWords } from "../../words.js";
 
@@ -537,17 +537,44 @@ export function problemsOf(prepared, M, saved) {
 }
 
 /* The buildings a locked item comes with, as the Doors & windows row says
-   them: "8×12 and 10×12 Side Utility" for a door the shop standard swaps in
-   at those sizes, "Side Utility (not the 8×12 or 10×12)" for the door it
-   swaps out, else the style's name. offer: the draft's (or saved) offer. */
-export function lockStyleNames(lock, M, offer) {
-  const either = (sizes, joint) => { const w = sizes.map(sizeWords); return w.length < 2 ? w.join("") : `${w.slice(0, -1).join(", ")} ${joint} ${w[w.length - 1]}`; };
-  return (lock?.styles || []).map((k) => {
+   them: {plain: the styles that always come with it, by name; groups: the
+   styles that come with it at some sizes, the sizes said once for the
+   styles that share them} -- "Side Utility, Dormer Shed and Side Lofted
+   Barn at 8×12 and 10×12" for a door the shop standard swaps in, "Side
+   Utility, Dormer Shed and Side Lofted Barn, except the 8×12 and 10×12"
+   for the door it swaps out (review DOORS-7). offer: the draft's (or
+   saved) offer. */
+export function lockStyleGroups(lock, M, offer) {
+  const plain = [], sized = [], except = [];
+  for (const k of lock?.styles || []) {
     const name = styleName(M, k, offer?.[k]);
-    if (lock.sizes?.[k]?.length) return `${either(lock.sizes[k], "and")} ${name}`;
-    if (lock.except?.[k]?.length) return `${name} (not the ${either(lock.except[k], "or")})`;
-    return name;
-  });
+    if (lock.sizes?.[k]?.length) sized.push({ key: k, name, sizes: lock.sizes[k] });
+    else if (lock.except?.[k]?.length) except.push({ key: k, name, sizes: lock.except[k] });
+    else plain.push(name);
+  }
+  const groups = [];
+  if (sized.length) groups.push(sizedStyleWords(sized));
+  if (except.length) groups.push(sizedStyleWords(except, { except: true }));
+  return { plain, groups };
+}
+/* the same, as one list: every plain name, then each group */
+export function lockStyleNames(lock, M, offer) {
+  const { plain, groups } = lockStyleGroups(lock, M, offer);
+  return plain.concat(groups);
+}
+/* The words on a locked item's row: "Comes with the Cottage Shed, and the
+   Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12. $0 is
+   fine." (views/price-list/doors.js lockWords; a long list of plain names
+   says the first two "and 8 more") */
+export function lockRowWords(lock, M, offer, max = 2) {
+  const { plain, groups } = lockStyleGroups(lock, M, offer);
+  const names = plain.length <= max + 1 ? andWords(plain) : `${plain.slice(0, max).join(", ")} and ${plain.length - max} more`;
+  const parts = [names, ...groups].filter(Boolean);
+  const why = [];
+  if (parts.length) why.push(`Comes with the ${parts.length < 2 ? parts[0] : parts.slice(0, -1).join(", the ") + ", and the " + parts[parts.length - 1]}.`);
+  if (lock?.elec) why.push("Your electrical packages put it in.");
+  if (lock?.ext) why.push("Your exterior light option puts it up.");
+  return `${why.join(" ")} $0 is fine.`;
 }
 
 /* The shop standard's own door at some sizes (the 48 in Wooden Door of the
@@ -557,8 +584,13 @@ export function lockStyleNames(lock, M, offer) {
    compared with the saved price list), so it shows before Save, on the
    door's own row. */
 export function swapProblemsOf(prepared, M, saved) {
-  const had = new Set(saved ? swapNeedProblems(saved, M) : []);
-  return swapNeedProblems(prepared, M).filter((p) => !had.has(p)).map((p) => explain(p, prepared, M));
+  /* new only where the draft needs it for a style and size the saved price
+     list did not (model/company.js newSwapNeeds, the server's rule): taking
+     a style or size off, or renaming one, is never new (review DOORS-2) */
+  return newSwapNeeds(prepared, saved || [], M).map((x) => ({
+    words: `It comes with the ${sizedStyleWords(x.list.map((y) => ({ ...y, name: styleName(M, y.key, prepared?.offer?.[y.key]) })))}, so it must be sold. Check Sell this ($0 is fine).`,
+    tab: "doors", where: `item:${x.item}`, field: `item:${x.item}`,
+  }));
 }
 
 /* Doors, windows and fixtures that cannot be switched off: standard on a

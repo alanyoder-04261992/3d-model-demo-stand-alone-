@@ -358,8 +358,8 @@ try {
     await p.goto(`${BASE}/dealer#/price-list/doors`, { waitUntil: "load" });
     await p.waitForSelector('.pl-row[data-item="w48"]', { timeout: 30000 });
     const row = await p.textContent('.pl-row[data-item="w48"]');
-    ok("on Doors & windows, the 48″ Wooden Door's row says why it must be sold while it is not sold yet: \"Comes with the 8×12 and 10×12 Side Utility, 8×12 and 10×12 Dormer Shed and 8×12 and 10×12 Side Lofted Barn. $0 is fine.\"",
-      row.includes("Comes with the 8×12 and 10×12 Side Utility, 8×12 and 10×12 Dormer Shed and 8×12 and 10×12 Side Lofted Barn. $0 is fine.") && !/Always sold/.test(row), row.slice(0, 300));
+    ok("on Doors & windows, the 48″ Wooden Door's row says why it must be sold while it is not sold yet, the sizes said once: \"Comes with the Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12. $0 is fine.\"",
+      row.includes("Comes with the Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12. $0 is fine.") && !/Always sold/.test(row), row.slice(0, 300));
     const row72 = await p.textContent('.pl-row[data-item="w72"]');
     ok("... and until it is sold, the double doors' row says they still come with every size of the three (\"Comes with the Side Utility, Dormer Shed and Side Lofted Barn. $0 is fine.\")",
       row72.includes("Comes with the Side Utility, Dormer Shed and Side Lofted Barn. $0 is fine."), row72.slice(0, 300));

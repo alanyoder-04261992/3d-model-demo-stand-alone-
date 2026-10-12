@@ -24,7 +24,7 @@
    BEFORE the price list is replaced. Only the owner can make that save, so
    one that then fails still counts as live, which is the safe way round. */
 
-import { validate, validateManufacturer, resolve, strictProblems, SIZE_RE, ID_RE } from "../../model/company.js";
+import { validate, validateManufacturer, resolve, strictProblems, swapNeedProblems, newSwapNeedProblems, SIZE_RE, ID_RE } from "../../model/company.js";
 import { fail, OfficeError, text, phone as phoneField, email as emailField } from "./http.js";
 import { describeChanges as builtChanges, describeExtraBuilt, liftRawRules, tidyBuilt } from "../../model/build-settings.js";
 import { drawnOf } from "../../model/built-check.js";
@@ -195,8 +195,11 @@ export function explainProblem(problem, manufacturer, settings = {}) {
     [/^offer\.(\w+)\.sizes\[(.+?)\]: the price must be/, (m) => `${styleName(m[1])} ${sizeWords(m[2])}: the price must be a dollar amount.`],
 
     [/^items is missing/, () => "Price the doors and windows you sell."],
+    /* a door a building comes with that is not sold: the styles joined
+       "A, B and C" (a swapped-in door's sentence already is, its sizes said
+       once), then what to do (review DOORS-7) */
     [/^items\.(\w+) needs a price: the (.+?) \([A-Za-z0-9_-]+\) comes as standard on the (.+?)\. 0 is fine/,
-      (m) => `The ${m[2]} comes with the ${withoutCodes(m[3])}, so it needs a price ($0 is fine).`],
+      (m) => `The ${m[2]} comes with the ${swapNeedProblems(S, M).includes(problem) ? withoutCodes(m[3]) : withoutCodes(m[3]).replace(/, ([^,]+)$/, " and $1")}. Sell it on Doors & windows ($0 is fine).`],
     [/^items\.(\w+): there is no item/, () => "One of the doors or windows is not in the builder's library. Reload the page and try again."],
     [/^items\.(\w+) has no price/, (m) => `The ${itemName(m[1])} needs a price ($0 is fine).`],
     [/^items\.(\w+): the price must be/, (m) => `The ${itemName(m[1])} price must be a dollar amount, $0 or more.`],
@@ -602,14 +605,19 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
 
   /* The strict problems settings has that previous did not (same path,
      same words); [] when there is no previous to compare with. previous
-     may be a list: what any of them had is not new. */
+     may be a list: what any of them had is not new. A door a building
+     comes with at some sizes (the 48 in Wooden Door) is compared by style
+     and size, not by its sentence, so taking a style or size off, or
+     renaming a style of their own, is never a new problem (review
+     DOORS-2). */
   function newStrictProblems(settings, previous) {
     if (previous === undefined) return [];
     const had = new Set();
-    for (const p of Array.isArray(previous) ? previous : [previous]) {
-      if (p && typeof p === "object") for (const x of strictProblems(p, manufacturer)) had.add(byExtraKey(p, x));
-    }
-    return strictProblems(settings, manufacturer).filter((p) => !had.has(byExtraKey(settings, p)));
+    const before = (Array.isArray(previous) ? previous : [previous]).filter((p) => p && typeof p === "object");
+    for (const p of before) for (const x of strictProblems(p, manufacturer)) had.add(byExtraKey(p, x));
+    const swaps = new Set(swapNeedProblems(settings, manufacturer));
+    const freshSwaps = new Set(newSwapNeedProblems(settings, before, manufacturer));
+    return strictProblems(settings, manufacturer).filter((p) => (swaps.has(p) ? freshSwaps.has(p) : !had.has(byExtraKey(settings, p))));
   }
 
   async function current() {

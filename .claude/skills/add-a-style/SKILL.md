@@ -185,9 +185,12 @@ company has no built blocks, so the golden test still draws the recipe. A
 price list that does not sell `to` keeps `from` and the owner is told
 (`swapWarnings`, under its own heading on the Buildings tab); a new save
 must sell it (`strictProblems`; the Dealer Center shows the problem before
-Save, keeps it sold and names the sizes: "Comes with the 8×12 and 10×12
-Side Utility, 8×12 and 10×12 Dormer Shed and 8×12 and 10×12 Side Lofted
-Barn"). Where `to` is sold, `from` is needed only by the sizes that
+Save, keeps it sold and names the sizes once for the styles that share
+them: "Comes with the Side Utility, Dormer Shed and Side Lofted Barn at
+8×12 and 10×12"; the door it swaps out, "... Side Lofted Barn, except the
+8×12 and 10×12"). Only a style and size that newly needs `to` is a new
+problem (`newSwapNeeds`): taking a style or size off, or renaming one, is
+never refused. Where `to` is sold, `from` is needed only by the sizes that
 still come with it (`validate`). A design holding the other door of the
 pair -- saved before the swap, or a touched design whose size changed --
 gets the door its size comes with when the customer never swapped it
