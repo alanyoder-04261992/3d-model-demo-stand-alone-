@@ -117,6 +117,7 @@ function itemsSig(items) { return items.map((it) => [it.cat, it.wall, +(it.pos |
 
 {
   let allStd = true, relayOk = 0, relayBad = [], keptOk = 0, keptBad = [], priceBad = [], pairs = 0, keptTried = 0, doorFollowed = 0, bwKept = 0, bwBad = [];
+  const followedOn = new Set();
   /* Barnwright's own buildings: a touched size change is Barnwright's setSize, item for item */
   const BWC = barnwrightCatalogue();
   for (const t of Object.keys(BWC.TYPES)) {
@@ -157,15 +158,16 @@ function itemsSig(items) { return items.map((it) => [it.cat, it.wall, +(it.pos |
       const bw = copy(b);
       const r2 = S.chooseSize(b, sz, DEMO);
       /* ... and the shop standard's own door at some sizes follows the new
-         size's (the 8x12 and 10x12 Side Utility, DIFFERENCES #27) */
+         size's (the 8x12 and 10x12 Side Utility, Dormer Shed and Side
+         Lofted Barn, DIFFERENCES #27) */
       modelSetSize(bw, sz, DEMO);
-      if (followStandardDoor(bw, DEMO).length) doorFollowed++;
+      if (followStandardDoor(bw, DEMO).length) { doorFollowed++; followedOn.add(t); }
       if (!r2.relaid && J(b.items) === J(bw.items)) keptOk++; else keptBad.push(`${t} ${start}->${sz}`);
     }
   }
   ok("every demo style starts on its standard doors and windows", allStd, relayBad.join(", "));
   ok(`untouched: a size change lays the NEW size's standard doors and windows (all ${relayOk} style/size changes from each style's first size)`, relayBad.length === 0 && relayOk === pairs && pairs > 100, relayBad.slice(0, 12).join(", "));
-  ok(`touched: a size change keeps the customer's items, moved as Barnwright's setSize moves them, the Side Utility's door following the size's (${keptOk} changes, ${doorFollowed} of them the door)`, keptBad.length === 0 && keptOk === keptTried && keptOk > 100 && doorFollowed > 0, keptBad.slice(0, 12).join(", "));
+  ok(`touched: a size change keeps the customer's items, moved as Barnwright's setSize moves them, the door of the Side Utility, Dormer Shed and Side Lofted Barn following the size's (${keptOk} changes, ${doorFollowed} of them the door)`, keptBad.length === 0 && keptOk === keptTried && keptOk > 100 && doorFollowed > 0 && JSON.stringify([...followedOn].sort()) === JSON.stringify(["DS", "SLB", "SU"]), `${keptBad.slice(0, 12).join(", ")} door followed on ${[...followedOn].join(", ")}`);
   ok("every re-laid building still prices", priceBad.length === 0, priceBad.join(", "));
 }
 {
