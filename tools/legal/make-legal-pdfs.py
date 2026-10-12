@@ -21,7 +21,8 @@ ticks "I agree" and types their name.
                                              their lot to their first quote
   docs/legal/Barnwright-Welcome-Sheet.pdf    one page for the owner: signing in,
                                              their computer and phone, prices,
-                                             lots, team, website and help
+                                             lots, team, website, Barnwright
+                                             and help
   docs/legal/Barnwright-Setup-Questions.pdf  only when Alan can't visit: what a
                                              new company answers so its 3D
                                              designer, lots, prices and
@@ -1113,21 +1114,32 @@ def price_pdf(path):
 # ================================================================ 5. WELCOME SHEET (for the owner)
 # One page Alan gives the owner when he sets up their computer (Alan, Oct 7
 # 2026: "sign up the owner and help him set up on his computer and other
-# lots"): signing in, their computer and phone, prices, lots, team, their
-# website and help. Big type, black on white with gold marks, so it reads
-# well printed.
+# lots"): signing in and staying signed in, their computer and phone, prices
+# and How it's built, lots and quotes, team, their website, Barnwright, and
+# help and their card. Big type, black on white with gold marks, so it reads
+# well printed. One page: sheet() stops the build if it runs over. The
+# Barnwright item says what is true for TERMS_VERSION (until22, above).
 WELCOME_TITLE = "Welcome to your Barnwright 3D designer"
 WELCOME_SUBTITLE = "Everything you need to get started, on one page"
 WELCOME = [
-    ("Your Dealer Center", "Open <b>https://(your 3D designer web address)/dealer</b> and sign in with your email and password. Your 3D designer web address: ____________________." + DOMAIN),
-    ("Keep it on your computer", "In Chrome or Edge, click <b>Install</b> at the right end of the address bar. On your phone: <b>Share</b>, <b>Add to Home Screen</b>."),
-    ("Your prices", "<b>Price list</b>: your styles, sizes, doors, windows and options. Change a price and every lot has it at once."),
-    ("Your lots", "<b>Lots</b>, <b>Add a lot</b>. Each lot has its own 3D designer link and its own customer list."),
+    ("Your Dealer Center", "Open <b>https://(your 3D designer web address)/dealer</b> and sign in with your email and password. Your 3D designer web address: ____________________." + DOMAIN
+     + "<br/>Tick <b>Keep me signed in on this device for 30 days</b> only on your own computer and phone. Lost your password? Tap <b>Forgot your password?</b> "
+     "To sign out everywhere, tap your name, then <b>Sign out on every device</b>."),
+    ("Keep it on your computer and phone", "In Chrome or Edge, click <b>Install</b> at the right end of the address bar. On your phone: <b>Share</b>, <b>Add to Home Screen</b>, "
+     "then sign in there too, with the same tick."),
+    ("Your prices", "<b>Price list</b>: your styles, sizes, doors, windows and options. Change a price and every lot has it at once. "
+     "Build a style differently? Change <b>How it's built</b> and tap <b>Check every size</b>."),
+    ("Your lots and quotes", "<b>Lots</b>, <b>Add a lot</b>. Each lot has its own 3D designer link and its own customer list. "
+     "Every quote a customer sends shows up in <b>Customers</b> as New, on the lot it came from."),
     ("Your team", "<b>Team</b>, <b>Add a person</b>: your managers and dealers. Each one makes their own login with the email you add."),
     ("Your website", "<b>Lots</b>, pick a lot, <b>Put the designer on your website</b>, <b>Copy website code</b>, and send it to whoever runs your website."),
-    ("New quotes", "Every quote a customer sends shows up in <b>Customers</b> as New, on the lot it came from."),
-    ("Your card", "Your monthly fee is charged to the card you saved when you signed up. To use a different card, ask Alan for a new card link."),
-    ("Help", "Tap <b>Help</b> in your Dealer Center, or email <b>support@" + DOMAIN + "</b>."),
+    ("Barnwright", until22(
+        "<b>Settings</b>, <b>Barnwright</b>: when Alan needs to check something, say what in <b>What should Barnwright do?</b>, pick <b>For how long</b>, tap <b>Turn on</b>. "
+        "For now Barnwright can only run checks. It never sees your customers, quotes, orders or team.",
+        "<b>Settings</b>, <b>Barnwright</b>: until you open your 3D designer to customers, Barnwright can set up your price list; <b>Stop Barnwright's setup access</b> stops it. "
+        "After that, Barnwright changes your prices only while <b>Run checks and change my price list and settings</b> is on. <b>Turn off now</b> ends it sooner.")),
+    ("Help and your card", "Tap <b>Help</b> in your Dealer Center, or email <b>support@" + DOMAIN + "</b>. "
+     "Your monthly fee is charged to the card you saved when you signed up. For a different card, ask Alan for a new card link."),
 ]
 
 
@@ -1137,14 +1149,14 @@ def welcome_pdf(path):
     big_sub = ParagraphStyle("w_sub", parent=subtitle, fontSize=12.5, leading=16.5, spaceAfter=10)
     num = ParagraphStyle("w_num", fontName="Helvetica-Bold", fontSize=12.5, leading=16, alignment=TA_CENTER, textColor=BLACK)
     head = ParagraphStyle("w_head", fontName="Helvetica-Bold", fontSize=13, leading=16, textColor=BLACK)
-    words = ParagraphStyle("w_words", parent=body, fontSize=11.5, leading=15.6, leftIndent=40, spaceAfter=0)
+    words = ParagraphStyle("w_words", parent=body, fontSize=11.5, leading=15.2, leftIndent=40, spaceAfter=0)
     s = [Paragraph(WELCOME_TITLE, big_title), Paragraph(WELCOME_SUBTITLE, big_sub), GoldRule()]
     for i, (topic, text) in enumerate(WELCOME, 1):
         top = Table([[Paragraph(str(i), num), Paragraph(topic, head)]], colWidths=[28, FW - 28], hAlign="LEFT")
         top.setStyle(TableStyle([("BACKGROUND", (0, 0), (0, 0), GOLD), ("VALIGN", (0, 0), (-1, -1), "MIDDLE"),
                                  ("LEFTPADDING", (0, 0), (0, 0), 0), ("RIGHTPADDING", (0, 0), (0, 0), 0), ("LEFTPADDING", (1, 0), (1, 0), 12),
                                  ("TOPPADDING", (0, 0), (-1, -1), 4), ("BOTTOMPADDING", (0, 0), (-1, -1), 4)]))
-        s.append(KeepTogether([Spacer(1, 11), top, Spacer(1, 5), Paragraph(text, words)]))
+        s.append(KeepTogether([Spacer(1, 6), top, Spacer(1, 3), Paragraph(text, words)]))
     sheet(path, s, "Welcome Sheet", WELCOME_TITLE, foot=("Barnwright Software", SUPPORT, DOMAIN))
 
 
@@ -1201,7 +1213,7 @@ if len(sys.argv) == 1:
          "Your steps, from saying hello at their lot to their first quote: connecting Claude once, the sign-up link, their website and the photos, their Dealer Center, their price list with Claude, their computer, their other lots and the monthly fee.",
          "docs/legal/Barnwright-Adding-a-New-Customer.pdf", "Barnwright Adding a New Customer.pdf"),
         ("welcome-sheet", "Welcome Sheet", "customer", "Welcome Sheet",
-         "Give it to the owner when you set up their computer: signing in, putting it on their computer and phone, prices, lots, team, their website and help.",
+         "Give it to the owner when you set up their computer: signing in and staying signed in, putting it on their computer and phone, prices, lots, team, their website, Barnwright and help.",
          "docs/legal/Barnwright-Welcome-Sheet.pdf", "Barnwright Welcome Sheet.pdf"),
         ("terms", "Terms and Conditions", "customer", "Terms and Conditions",
          "What every owner agrees to on their sign-up page. They also tick I agree in their Dealer Center the first time they sign in.",
