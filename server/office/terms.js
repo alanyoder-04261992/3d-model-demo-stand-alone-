@@ -14,7 +14,7 @@
    agreement is kept: which version, when, and who (their login email and
    name; from: "signup" for the one from the sign-up page), in one record:
 
-     barnwright-terms   { current: {version, agreedAt, by, from?}, history: [...] }
+     barnwright-terms   { current: {version, agreedAt, by, from?, termsSha256?, passId?}, history: [...] }
 
    Only a business connected to Barnwright's control room is asked (Alan's
    own business, the local copy and the demo are not: there is nobody to
@@ -103,6 +103,11 @@ export function signupCounts(signup, { ships = TERMS.version, ownCopies = termsC
 export function createTerms({ store, account, now, terms: shipped = TERMS, copies = termsCopies() }) {
   const TERMS = shipped;
   const asks = () => !!account?.connected;
+  /* the sign-up's terms text is one of this copy's own, by version and SHA-256 */
+  const hasCopy = (signup) => {
+    const own = Object.prototype.hasOwnProperty.call(copies || {}, signup.termsVersion) ? copies[signup.termsVersion] : null;
+    return Array.isArray(own) && typeof signup.termsSha256 === "string" && own.includes(signup.termsSha256);
+  };
 
   /* What the screens show: null when nobody is asked. agreed is this
      version's agreement, or null when the owner still has to agree. */
@@ -141,19 +146,26 @@ export function createTerms({ store, account, now, terms: shipped = TERMS, copie
   /* The owner's start (index.js, their first sign-in): the agreement they
      gave on the sign-up page (signup: the remembered
      barnwright-signup-agreement) is kept as theirs, as they gave it -- the
-     version they signed, when, and the name they typed -- with from:
+     version they signed, when, the name they typed, the SHA-256 of the
+     terms text they read and the pass that brought it -- with from:
      "signup", when it counts by the same rule as before any owner signed
-     in, and only while no agreement is kept here at all. An agreement to
-     older terms than this copy ships is kept too, and the line at the top
-     asks for the newer ones. -> the entry kept, or null. */
+     in AND that text is one of this Dealer Center's own copies of that
+     version (terms-sha256.json), byte for byte: an agreement to a text it
+     doesn't have is never kept as theirs, and the line at the top asks.
+     Only while no agreement is kept here at all. An agreement to older
+     terms than this copy ships is kept too, and the line at the top asks
+     for the newer ones. -> the entry kept, or null. */
   async function agreeFromSignup(person, signup) {
     if (!asks() || !signup || typeof signup !== "object") return null;
     if (!signupCounts(signup, { ships: TERMS.version, ownCopies: copies }).counts) return null;
+    if (!hasCopy(signup)) return null;
     const entry = {
       version: signup.termsVersion,
       agreedAt: signup.signedAt,
       by: { userId: person.userId, email: person.email, name: String(signup.signature || person.name || "") },
       from: "signup",
+      termsSha256: signup.termsSha256,
+      passId: typeof signup.passId === "string" ? signup.passId : null,
     };
     let kept = false;
     await store.change(RECORD, (doc) => {

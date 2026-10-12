@@ -317,8 +317,15 @@ ok("... quote requests come to the Dealer Center (leads mode none)", pl.settings
 const firstHistory = await want(200, "GET", "/api/office/price-list/history");
 ok("setup is the first history entry, in words", firstHistory.entries.length === 1 && /starting price list/.test(firstHistory.entries[0].changes[0]));
 me = await want(200, "GET", "/api/office/me");
-ok("after setup me has the business; with no lot yet the owner's start is still needed (it would make the first lot)", me.business?.name === "Yoder Storage Barns" && me.startNeeded === true, JSON.stringify(me.startNeeded));
+ok("after setup me has the business; set up this way (the old setup screens' way), it never needs the owner's start, even with no lot yet, and has no Getting started card",
+  me.business?.name === "Yoder Storage Barns" && me.startNeeded === false && me.gettingStarted === null, JSON.stringify([me.startNeeded, me.gettingStarted]));
 ok("... and the owner's name from setup", me.person.name === "Alan Yoder");
+{
+  const snapOld = JSON.stringify([await S.get("price-list"), await S.keys("lots/"), await S.get("first-start")]);
+  const r0 = await call("POST", "/api/office/start", {});
+  ok("... and a POST start changes nothing: no lot made, no first-start written (nothing changed without asking)",
+    r0.status === 200 && r0.data.start?.lot === null && JSON.stringify([await S.get("price-list"), await S.keys("lots/"), await S.get("first-start")]) === snapOld, r0.text);
+}
 
 const portCharlotte = await want(201, "POST", "/api/office/lots", {
   name: "Port Charlotte", address: "4250 Tamiami Trail", city: "Port Charlotte", state: "FL", zip: "33952",
@@ -435,6 +442,24 @@ section("2b. The owner's first sign-in opens Today right away: no setup screens"
   const TS = T.parts.store;
   ok("two starts at the same moment: both 200, one price list (version 1), one lot", both.every((x) => x.status === 200) && (await TS.get("price-list"))?.version === 1
     && (await TS.keys("price-list-history/")).length === 1 && (await TS.keys("lots/")).length === 1, JSON.stringify(both.map((x) => [x.status, x.data.start])) + " " + JSON.stringify(await TS.keys("lots/")));
+
+  /* a business name longer than a lot name can be (a Barnwright save
+     doesn't stop at 80 characters; only the screen's box does) */
+  const L = fresh();
+  const LS = L.parts.store;
+  const longName = "Southwest Florida Portable Storage Buildings, Garages, Cabins and Carports Company LLC";
+  const longSettings = L.parts.priceList.signupStart({ business: "Long Name Barns", phone: "941-555-0100", email: "pat@cedar.example" });
+  longSettings.brand.name = longName;
+  await L.parts.priceList.startForBarnwright(longSettings, { id: "barnwright", name: "Barnwright (alan@barnwright.example)" });
+  as("u-cedar");
+  m = await want(200, "GET", "/api/office/me", undefined, { app: L });
+  r2 = await call("POST", "/api/office/start", {}, { app: L });
+  const longLots = await LS.all("lots/");
+  ok(`a business name of ${longName.length} characters (Barnwright's price list): the start still makes the first lot, its name cut to 80 characters, and runs once (first-start)`,
+    longName.length > 80 && m.startNeeded === true && r2.status === 200 && longLots.length === 1 && longLots[0].name === longName.slice(0, 80).trim() && r2.data.start?.lot === longLots[0].slug && !!(await LS.get("first-start")),
+    r2.text + " " + JSON.stringify(longLots.map((l) => l.name)));
+  m = await want(200, "GET", "/api/office/me", undefined, { app: L });
+  ok("... and the Getting started card shows (no start needed again)", m.startNeeded === false && !!m.gettingStarted && m.gettingStarted.name === false, JSON.stringify([m.startNeeded, m.gettingStarted]));
 }
 sectionDone();
 

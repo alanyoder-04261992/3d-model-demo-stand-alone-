@@ -723,8 +723,8 @@
     },
     "why": {
       "not-connected": "This Dealer Center isn't connected to Barnwright.",
-      "no-price-list": "Their Dealer Center has no price list yet. It is made when the owner first signs in.",
-      "terms": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap I have read and agree at the top of their Dealer Center.",
+      "no-price-list": "Their Dealer Center has no price list yet. It makes one when the owner signs in, from the business name on their sign-up page. If that name didn't come through, Today asks the owner to type it.",
+      "terms": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap the I have read and agree button at the top of their Dealer Center.",
       "stopped": "The owner stopped Barnwright's setup access in Settings, Barnwright.",
       "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
       "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
@@ -3502,7 +3502,7 @@
           "body": {
             "ok": false,
             "code": "closed",
-            "error": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap I have read and agree at the top of their Dealer Center.",
+            "error": "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap the I have read and agree button at the top of their Dealer Center.",
             "why": "terms",
             "v": 2,
             "live": false,
@@ -3582,7 +3582,7 @@
           "body": {
             "ok": false,
             "code": "closed",
-            "error": "Their Dealer Center has no price list yet. It is made when the owner first signs in.",
+            "error": "Their Dealer Center has no price list yet. It makes one when the owner signs in, from the business name on their sign-up page. If that name didn't come through, Today asks the owner to type it.",
             "why": "no-price-list",
             "v": 2,
             "live": false,
@@ -8265,7 +8265,8 @@
     "about": [
       "Before the owner first signs in (docs/OFFICE.md). The Control Room puts the owner's sign-up agreement and details on every setup pass for that customer, in the claim signup. The Dealer Center takes the agreement for setup access only while no owner has signed in, when it is to terms 2.2 or later that it ships or has a copy of.",
       "The starting price list is the Every standard building template (companies/demo/company.json) set up the way every new business starts, from the sign-up's business name, phone and email. Read and check work on it as version 0; the first save with version 0 makes it (version 1) and then saves the edits (version 2).",
-      "The business name, phone and email a pass carries are remembered once, while there is no price list (barnwright-signup-details), whether or not the agreement counts and whether or not the owner has signed in: the owner's start makes their price list from them when Barnwright hasn't. They are never in an answer, a log line or a change line."
+      "The business name, phone and email a pass carries are remembered once, while there is no price list (barnwright-signup-details), whether or not the agreement counts and whether or not the owner has signed in: the owner's start makes their price list from them when Barnwright hasn't, and removes them. They are never in an answer, a log line or a change line.",
+      "The sign-up agreement is remembered once (barnwright-signup-agreement) from the first pass whose agreement counts: before the owner signs in, or after it while their start hasn't run yet (no first-start), by the same rule. After the owner signed in it never changes access; their start keeps it as theirs when its termsSha256 is one of this Dealer Center's own copies."
     ],
     "signup": {
       "termsVersion": "2.2",
@@ -9762,7 +9763,7 @@
             "body": {
               "ok": false,
               "code": "closed",
-              "error": "Their Dealer Center has no price list yet. It is made when the owner first signs in.",
+              "error": "Their Dealer Center has no price list yet. It makes one when the owner signs in, from the business name on their sign-up page. If that name didn't come through, Today asks the owner to type it.",
               "why": "no-price-list",
               "v": 2,
               "live": false,
@@ -10008,7 +10009,7 @@
           "answer": {
             "status": 401,
             "body": {
-              "error": "Your Barnwright visit ended. The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap I have read and agree at the top of their Dealer Center. Your changes are kept in this tab.",
+              "error": "Your Barnwright visit ended. The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap the I have read and agree button at the top of their Dealer Center. Your changes are kept in this tab.",
               "code": "visit-ended",
               "why": "terms"
             }
@@ -10023,7 +10024,7 @@
         "barnwright": "Barnwright set up your price list. Check it, and change anything.",
         "alreadySetUp": "The business is already set up."
       },
-      "about": "The owner's first sign-in opens Today right away, with no setup screens. GET me says startNeeded; the page sends POST start at once (safe to send twice, and from two tabs at once), then opens Today with the Getting started card. The start keeps a price list that is there (Barnwright's, exactly as it is) or makes Every standard building from the sign-up's business name, phone and email (barnwright-signup-details); keeps the sign-up agreement as the owner's own when it counts (barnwright-terms, from: \"signup\"; otherwise the line at the top of the Dealer Center asks); makes the first lot, named after the business, when there is none; and writes first-start.",
+      "about": "The owner's first sign-in opens Today right away, with no setup screens. GET me says startNeeded; the page sends POST start at once (safe to send twice, and from two tabs at once), then opens Today with the Getting started card. The start keeps a price list that is there (Barnwright's, exactly as it is) or makes Every standard building from the sign-up's business name, phone and email (barnwright-signup-details); keeps the sign-up agreement as the owner's own when it counts and its termsSha256 is one of this Dealer Center's own copies of that version (docs/legal/terms-sha256.json; barnwright-terms, from: \"signup\", with the termsSha256 and the passId that brought it; otherwise the line at the top of the Dealer Center asks); makes the first lot, named after the business, when there is none; writes first-start; and removes barnwright-signup-details. Only for a new business: no price list yet, or one a start made (version 1 Barnwright's, or the start line) that the owner never took on; a business set up the old way (POST setup, the old setup screens) never needs it, even with no lot.",
       "examples": [
         {
           "name": "GET me at the owner's first sign-in",
@@ -10123,7 +10124,9 @@
               "email": "pat@testingsheds.example",
               "name": "Pat Owner"
             },
-            "from": "signup"
+            "from": "signup",
+            "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+            "passId": "h7ZxxlF_vb6GK01RA1yxcg"
           },
           "lot": {
             "slug": "testing-sheds",
@@ -10179,7 +10182,9 @@
                     "email": "pat@testingsheds.example",
                     "name": "Pat Owner"
                   },
-                  "from": "signup"
+                  "from": "signup",
+                  "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
+                  "passId": "h7ZxxlF_vb6GK01RA1yxcg"
                 }
               },
               "gettingStarted": {
@@ -10234,6 +10239,47 @@
             }
           },
           "note": "nothing changes"
+        },
+        {
+          "name": "POST start, a sign-up to a terms text this Dealer Center doesn't have",
+          "given": "As the POST start above, but the termsSha256 the sign-up carried is none of this Dealer Center's own copies of that version (the version alone let Barnwright start the price list).",
+          "request": {
+            "method": "POST",
+            "url": "https://testing.barnwrightsoftware.com/api/office/start",
+            "headers": {
+              "Authorization": "Bearer <the owner's Identity token>",
+              "Origin": "https://testing.barnwrightsoftware.com",
+              "Content-Type": "application/json"
+            },
+            "body": "{}"
+          },
+          "answer": {
+            "status": 200,
+            "body": {
+              "business": {
+                "id": "testing-sheds",
+                "name": "Testing Sheds",
+                "short": "Testing Sheds",
+                "initials": "TS",
+                "logo": "",
+                "colors": {
+                  "header": "#16130E",
+                  "primary": "#2E2920",
+                  "accent": "#C9A227"
+                },
+                "phone": "941-555-0100",
+                "email": "pat@testingsheds.example",
+                "website": "",
+                "open": false
+              },
+              "start": {
+                "priceList": "kept",
+                "lot": "testing-sheds",
+                "terms": null
+              }
+            }
+          },
+          "note": "the agreement isn't kept as the owner's own: barnwright-terms stays empty, and the line at the top of the Dealer Center asks"
         },
         {
           "name": "refused: no business name",

@@ -87,8 +87,8 @@ const listWords = (a) => (a.length < 2 ? a.join("") : a.slice(0, -1).join(", ") 
 
 export const WHY = {
   "not-connected": "This Dealer Center isn't connected to Barnwright.",
-  "no-price-list": "Their Dealer Center has no price list yet. It is made when the owner first signs in.",
-  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap I have read and agree at the top of their Dealer Center.",
+  "no-price-list": "Their Dealer Center has no price list yet. It makes one when the owner signs in, from the business name on their sign-up page. If that name didn't come through, Today asks the owner to type it.",
+  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap the I have read and agree button at the top of their Dealer Center.",
   stopped: "The owner stopped Barnwright's setup access in Settings, Barnwright.",
   "live-off": "Their 3D designer is open to customers, so you need the owner's switch. Ask the owner to turn on Run checks and change my price list and settings in Settings, Barnwright.",
   "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
@@ -1032,10 +1032,11 @@ async function beforeSignInSection({ passFor, bodyOf, request }) {
   const owner = { Authorization: "Bearer <the owner's Identity token>" };
   const post = (body) => ({ method: "POST", url: site + "/api/office/start", headers: { ...owner, Origin: site, "Content-Type": "application/json" }, body });
   const lotSlug = slugFrom(SIGNUP.business);
-  const ownerTerms = { version: SIGNUP.termsVersion, agreedAt: SIGNUP.signedAt, by: { userId: "<the owner's login id>", email: OWNER_EMAIL, name: SIGNUP.signature }, from: "signup" };
+  const ownerTerms = { version: SIGNUP.termsVersion, agreedAt: SIGNUP.signedAt, by: { userId: "<the owner's login id>", email: OWNER_EMAIL, name: SIGNUP.signature }, from: "signup",
+    termsSha256: SIGNUP.termsSha256, passId: passes.status.claims.id };
   const firstStart = {
     words: FIRST_START_WORDS,
-    about: "The owner's first sign-in opens Today right away, with no setup screens. GET me says startNeeded; the page sends POST start at once (safe to send twice, and from two tabs at once), then opens Today with the Getting started card. The start keeps a price list that is there (Barnwright's, exactly as it is) or makes Every standard building from the sign-up's business name, phone and email (barnwright-signup-details); keeps the sign-up agreement as the owner's own when it counts (barnwright-terms, from: \"signup\"; otherwise the line at the top of the Dealer Center asks); makes the first lot, named after the business, when there is none; and writes first-start.",
+    about: "The owner's first sign-in opens Today right away, with no setup screens. GET me says startNeeded; the page sends POST start at once (safe to send twice, and from two tabs at once), then opens Today with the Getting started card. The start keeps a price list that is there (Barnwright's, exactly as it is) or makes Every standard building from the sign-up's business name, phone and email (barnwright-signup-details); keeps the sign-up agreement as the owner's own when it counts and its termsSha256 is one of this Dealer Center's own copies of that version (docs/legal/terms-sha256.json; barnwright-terms, from: \"signup\", with the termsSha256 and the passId that brought it; otherwise the line at the top of the Dealer Center asks); makes the first lot, named after the business, when there is none; writes first-start; and removes barnwright-signup-details. Only for a new business: no price list yet, or one a start made (version 1 Barnwright's, or the start line) that the owner never took on; a business set up the old way (POST setup, the old setup screens) never needs it, even with no lot.",
     examples: [
       { name: "GET me at the owner's first sign-in", given: "After the version-0 save. The owner made their login with the email from their sign-up (OWNER_EMAIL) and confirmed it. The page hasn't sent POST start yet.",
         request: { method: "GET", url: site + "/api/office/me", headers: owner },
@@ -1060,6 +1061,10 @@ async function beforeSignInSection({ passFor, bodyOf, request }) {
         request: post("{}"),
         answer: { status: 200, body: { business: biz(after), start: { priceList: "kept", lot: null, terms: null } } },
         note: "nothing changes" },
+      { name: "POST start, a sign-up to a terms text this Dealer Center doesn't have", given: "As the POST start above, but the termsSha256 the sign-up carried is none of this Dealer Center's own copies of that version (the version alone let Barnwright start the price list).",
+        request: post("{}"),
+        answer: { status: 200, body: { business: biz(after), start: { priceList: "kept", lot: lotSlug, terms: null } } },
+        note: "the agreement isn't kept as the owner's own: barnwright-terms stays empty, and the line at the top of the Dealer Center asks" },
       { name: "refused: no business name", given: "No pass brought a sign-up (the customer never signed up on the sign-up page, or the business name was too long for a pass) and there is no price list.",
         request: post("{}"),
         answer: { status: 422, body: { code: "name", error: FIRST_START_WORDS.name } },
@@ -1103,7 +1108,8 @@ async function beforeSignInSection({ passFor, bodyOf, request }) {
     about: [
       "Before the owner first signs in (docs/OFFICE.md). The Control Room puts the owner's sign-up agreement and details on every setup pass for that customer, in the claim signup. The Dealer Center takes the agreement for setup access only while no owner has signed in, when it is to terms 2.2 or later that it ships or has a copy of.",
       "The starting price list is the Every standard building template (companies/demo/company.json) set up the way every new business starts, from the sign-up's business name, phone and email. Read and check work on it as version 0; the first save with version 0 makes it (version 1) and then saves the edits (version 2).",
-      "The business name, phone and email a pass carries are remembered once, while there is no price list (barnwright-signup-details), whether or not the agreement counts and whether or not the owner has signed in: the owner's start makes their price list from them when Barnwright hasn't. They are never in an answer, a log line or a change line.",
+      "The business name, phone and email a pass carries are remembered once, while there is no price list (barnwright-signup-details), whether or not the agreement counts and whether or not the owner has signed in: the owner's start makes their price list from them when Barnwright hasn't, and removes them. They are never in an answer, a log line or a change line.",
+      "The sign-up agreement is remembered once (barnwright-signup-agreement) from the first pass whose agreement counts: before the owner signs in, or after it while their start hasn't run yet (no first-start), by the same rule. After the owner signed in it never changes access; their start keeps it as theirs when its termsSha256 is one of this Dealer Center's own copies.",
     ],
     signup: SIGNUP,
     ownerEmail: OWNER_EMAIL,

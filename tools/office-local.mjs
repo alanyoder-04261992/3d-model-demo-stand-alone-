@@ -145,6 +145,10 @@ const deps = {
   signIn: IDENTITY ? "netlify" : "local",
   log: (...a) => console.error(...a),
   ...(TERMS_VERSION ? { termsVersion: TERMS_VERSION } : {}),
+  /* pretending to ship other terms: this copy's own terms text
+     (docs/legal/terms.json) counts as that version's, so the pretend
+     owner's sign-up agreement below is to a text it has */
+  ...(TERMS_VERSION ? { termsCopies: { [TERMS_VERSION]: [createHash("sha256").update(readFileSync(resolve(ROOT, "docs/legal/terms.json"))).digest("hex")] } } : {}),
 };
 /* --control-room: a pretend Barnwright control room in this process
    (tools/lib/fake-control-room.mjs). POST /__local/control-room with

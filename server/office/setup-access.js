@@ -77,6 +77,8 @@ const SIGNUP_RECORD = "barnwright-signup-agreement";
    them (create-only, never changed): the owner's start makes the business
    from them (index.js). Never in an answer, a log line or a change line. */
 const DETAILS_RECORD = "barnwright-signup-details";
+/* the owner's start ran (first-start.js FIRST_START) */
+const FIRST_START = "first-start";
 /* the first owner's claim, written at the owner's first confirmed sign-in
    (people.js): until it exists, no owner has signed in */
 const OWNER_CLAIM = "setup";
@@ -96,10 +98,12 @@ const REFUSED_NOTE_EVERY = 60_000;
 /* What Alan and Claude read for each reason access is closed. */
 export const WHY = Object.freeze({
   "not-connected": "This Dealer Center isn't connected to Barnwright.",
-  "no-price-list": "Their Dealer Center has no price list yet. It is made when the owner first signs in.",
+  /* before the owner signs in with no sign-up brought yet, or after they
+     signed in with no business name to start from (Today asks for it) */
+  "no-price-list": "Their Dealer Center has no price list yet. It makes one when the owner signs in, from the business name on their sign-up page. If that name didn't come through, Today asks the owner to type it.",
   /* where the owner agrees: the line at the top of their Dealer Center
      (the Control Room's OWNER_TERMS, word for word) */
-  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap I have read and agree at the top of their Dealer Center.",
+  terms: "The owner hasn't agreed to the Barnwright Terms and Conditions 2.2 yet. They tap the I have read and agree button at the top of their Dealer Center.",
   "signup-terms": "They signed up before the Barnwright Terms and Conditions 2.2, so you can't start their price list yet. They agree to the new terms when they first sign in to their Dealer Center.",
   "signup-unknown": "Their Dealer Center doesn't have the terms they signed up under yet, so you can't start their price list. It gets the newest terms with its next deploy.",
   stopped: "The owner stopped Barnwright's setup access in Settings, Barnwright.",
@@ -390,15 +394,22 @@ export function createSetupAccess({
   const access = (signup = null) => view({ scan: true, signup });
 
   /* The first pass whose sign-up agreement counts writes it, once
-     (create-only). And the first pass that carries a sign-up while there is
-     no price list writes its business name, phone and email, once
+     (create-only); so does one that comes after the owner signed in, while
+     their start hasn't run yet (no first-start) and it counts by the same
+     rule as before they signed in: their start then keeps it as theirs
+     (terms.js agreeFromSignup), as it would have if the pass had come first.
+     It never changes access once an owner has signed in (signupAgreement
+     isn't asked then). And the first pass that carries a sign-up while there
+     is no price list writes its business name, phone and email, once
      (create-only), whether or not the agreement counts and whether or not
      the owner has signed in: the owner's start makes the business from
      them, and an owner can sign in before the pass that brings them. */
   async function rememberSignup(v, claims) {
     if (!claims?.signup) return;
     const s = claims.signup;
-    if (v?.signupFromPass) {
+    const late = !!v?.ownerIn && !(await store.get(FIRST_START))
+      && signupCounts(s, { ships: terms.version, ownCopies: copies }).counts;
+    if (v?.signupFromPass || late) {
       try {
         await store.create(SIGNUP_RECORD, { termsVersion: s.termsVersion, termsSha256: s.termsSha256, signature: s.signature, signedAt: s.signedAt, at: iso(), passId: claims.id });
       } catch (e) {
@@ -486,7 +497,10 @@ export function createSetupAccess({
   async function mine(pl) {
     const v = await view({ scan: false, pl });
     if (!v) return null;
-    return { mode: v.mode, until: v.until, live: v.live };
+    /* barnwright: Barnwright set up this price list (the start kept Barnwright's,
+       or Barnwright saved the one in use), so the page can say so */
+    const barnwright = v.record?.data?.savedBy?.id === "barnwright" || (await store.get(FIRST_START))?.barnwright === true;
+    return { mode: v.mode, until: v.until, live: v.live, barnwright };
   }
 
   /* ---- the owner's card (Settings, Barnwright) -------------------------------------------- */

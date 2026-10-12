@@ -8,8 +8,10 @@
    (`gettingStarted` below). docs/OFFICE.md, "The owner's first sign-in".
 
    start(person, data): safe to run twice, and at the same moment in two
-   tabs. Once it has run (first-start), or for a business that already has
-   its price list and a lot, it does nothing. Otherwise, in order:
+   tabs. Once it has run (first-start), or for a business that isn't new
+   (it already has its price list and a lot, or was set up the old way,
+   POST setup or the old setup screens: fresh below), it does nothing.
+   Otherwise, in order:
      1. The price list. One that is there already (Barnwright set it up
         before the owner signed in, or another tab just made it) is kept
         exactly as it is. Otherwise "Every standard building" at example
@@ -23,15 +25,16 @@
         theirs when it counts (terms.js agreeFromSignup); otherwise nothing,
         and the line at the top of the Dealer Center asks.
      3. The first lot, only when the business has no lot at all: named
-        after the business, its link name made from that name (given
-        explicitly, so two starts at once can't make two lots: the second
-        gets 409), with the business phone and email. It takes the plan's
-        place first (account.holdLot); a plan with no lot left, or an
-        account that is off, makes no lot (423), and the card points to
-        Lots.
+        after the business (cut to a lot name's 80 characters), its link
+        name made from that name (given explicitly, so two starts at once
+        can't make two lots: the second gets 409), with the business phone
+        and email. It takes the plan's place first (account.holdLot); a
+        plan with no lot left, an account that is off (423) or a refused
+        field (422) makes no lot, and the card points to Lots.
      4. first-start {at, priceList: "made" | "kept", barnwright, lot,
         startVersion}, create-only: from then on GET me's startNeeded is
-        false and the card shows.
+        false and the card shows. The sign-up details record is removed:
+        it was only for this.
      5. The owner's name, when it is empty, from the name they typed on the
         sign-up page.
 
@@ -40,9 +43,14 @@
 import { fail, text, OfficeError, phone as phoneField, email as emailField } from "./http.js";
 import { KEEP } from "./store.js";
 import { slugFrom } from "./lots.js";
+import { START_LINE } from "./price-list.js";
 
 export const FIRST_START = "first-start";
 export const GETTING_STARTED = "getting-started";
+const HISTORY_1 = "price-list-history/000001";
+const TERMS_RECORD = "barnwright-terms";
+/* setup-access.js DETAILS_RECORD: removed once the start ran */
+const DETAILS_RECORD = "barnwright-signup-details";
 /* the starting colors (price-list.js startingSettings): changing them, or a
    logo, ticks "Your logo and colors" */
 const START_COLORS = { header: "#16130E", primary: "#2E2920", accent: "#C9A227" };
@@ -58,22 +66,42 @@ export function createFirstStart({ store, priceList, lots, account, terms, setup
   const iso = () => now().toISOString();
   const or = (fn) => { try { return fn(); } catch { return ""; } };
 
-  /* Does the owner's start still have to run? (GET me's startNeeded):
-     never ran, and the business has no price list or no lot yet. */
+  /* Does the owner's start still have to run? (GET me's startNeeded): it
+     never ran, and the business is a new one (fresh). */
   async function needed(person, record, lotCount) {
     if (person?.role !== "owner") return false;
-    if (record && lotCount > 0) return false;
-    return !(await store.get(FIRST_START));
+    if (await store.get(FIRST_START)) return false;
+    return fresh(record, lotCount);
+  }
+
+  /* A new business the start is for: no price list yet; or no lot yet and
+     a price list a start made (its version 1 is Barnwright's, or says
+     START_LINE: Barnwright's start before the owner signed in, or the
+     owner's own start in another tab) that the owner never took on here
+     (no agreement of theirs here but the one from their sign-up page).
+     A business set up the old way (POST setup, the old setup screens, which
+     the owner may have left before adding a lot) is never changed without
+     asking: no lot, no plan place, no card. record: the price list (data). */
+  async function fresh(record, lotCount) {
+    if (!record) return true;
+    if (lotCount > 0) return false;
+    const v1 = await store.get(HISTORY_1);
+    const by = (v1 || (record.version === 1 ? record : null))?.savedBy;
+    const started = by?.id === "barnwright" || (Array.isArray(v1?.changes) && v1.changes[0] === START_LINE);
+    if (!started) return false;
+    const agreed = (await store.get(TERMS_RECORD))?.current;
+    return !agreed || agreed.from === "signup";
   }
 
   async function start(person, data = {}) {
     const typed = data.businessName != null && data.businessName !== ""
       ? text(data.businessName, 80, "Business name", { required: true }) : "";
-    /* ran already, or a business that has its price list and a lot (made
-       before this, or POST setup): nothing to do, and nothing is written */
+    /* ran already, or a business that isn't new (it has its price list and
+       a lot, or was set up the old way: fresh): nothing to do, and nothing
+       is written */
     const done = await store.get(FIRST_START);
     const before = await priceList.current();
-    if (done || (before && (await lots.all()).length)) {
+    if (done || (before && !(await fresh(before.data, (await lots.all()).length)))) {
       return { record: before?.data || null, start: { priceList: "kept", lot: null, terms: null } };
     }
     const { details, agreement } = setup?.remembered ? await setup.remembered() : { details: null, agreement: null };
@@ -101,34 +129,45 @@ export function createFirstStart({ store, priceList, lots, account, terms, setup
       }
     }
 
-    /* 3. the first lot */
+    /* 3. the first lot (a name over a lot name's 80 characters, which a
+       Barnwright save can give the business, is cut to fit) */
     let lot = null;
     if (!(await lots.all()).length) {
-      const fromName = slugFrom(brand.name || "");
+      const lotName = String(brand.name || "").slice(0, 80).trim();
+      const fromName = slugFrom(lotName);
       const slug = SLUG_RE.test(fromName) ? fromName : "lot";
       let hold = null;
       try {
         hold = await account.holdLot();
         const created = await lots.create(person, {
-          name: brand.name, slug,
+          name: lotName, slug,
           phone: or(() => phoneField(brand.phone || "")), email: or(() => emailField(brand.email || "")),
         });
         await account.keepLot(hold, created.slug);
         lot = created.slug;
       } catch (error) {
         if (hold) await account.freeLot(hold);
-        if (!(error instanceof OfficeError && (error.status === 409 || error.status === 423))) throw error;
+        /* another tab made it (409), a refused field (422), or no plan
+           place or the account is off (423): no lot, and the card says
+           Add your first lot; anything else is tried again next time */
+        if (!(error instanceof OfficeError && (error.status === 409 || error.status === 422 || error.status === 423))) throw error;
       }
     }
 
     /* 4. done, once */
     let barnwright = false;
     if (!made) {
-      try { barnwright = (await store.get("price-list-history/000001"))?.savedBy?.id === "barnwright"; } catch { barnwright = false; }
+      try { barnwright = (await store.get(HISTORY_1))?.savedBy?.id === "barnwright"; } catch { barnwright = false; }
     }
     await store.create(FIRST_START, {
       at: iso(), priceList: made ? "made" : "kept", barnwright, lot, startVersion: current.data.version,
     });
+    /* the sign-up's business name, phone and email were only for this */
+    if (details) {
+      try { await store.remove(DETAILS_RECORD); } catch (e) {
+        log("The owner's sign-up details couldn't be removed:", e?.name || "Error");
+      }
+    }
 
     /* 5. the owner's name from the sign-up page */
     if (!person.name && agreement?.signature) {
@@ -162,7 +201,8 @@ export function createFirstStart({ store, priceList, lots, account, terms, setup
     const steps = [
       { id: "prices", done: !!kept.prices || open },
       { id: "look", done: !!s.brand?.logo || Object.entries(START_COLORS).some(([k, v]) => String(colors[k] || "").toUpperCase() !== v) },
-      ...(!lotList.length ? [{ id: "lot", done: false }] : limit > 1 ? [{ id: "lots", done: openLots >= limit }] : []),
+      /* "other lots": one more lot open is enough (the plan's other places can wait) */
+      ...(!lotList.length ? [{ id: "lot", done: false }] : limit > 1 ? [{ id: "lots", done: openLots >= 2 }] : []),
       { id: "team", done: people > 1 || invited > 0 },
       ...(lotList.length ? [{ id: "preview", done: !!kept.preview || open }] : []),
       { id: "open", done: open },

@@ -33,6 +33,11 @@
                     Barnwright terms version this copy pretends to ship
                     (TERMS.version when left out), to try terms that
                     aren't out yet
+     termsCopies    optional, for the checks and the local copy only:
+                    pretend copies of terms texts, {"2.2": [sha256, ...]},
+                    added to docs/legal/terms-sha256.json's (an owner's
+                    sign-up agreement is kept as theirs only to a text this
+                    copy has, terms.js agreeFromSignup)
      help           optional: Barnwright's Sales Inbox for the Help screen,
                     {url, fetch?, timeoutMs?, budgetMs?, allowLocal?}
                     (help.js; budgetMs: all of one request's calls). Used
@@ -50,7 +55,7 @@ import { createCustomers } from "./customers.js";
 import { createWebsite } from "./website.js";
 import { createEmail } from "./email.js";
 import { createAccount, withinMs } from "./account.js";
-import { createTerms, TERMS, AGREE_FIRST } from "./terms.js";
+import { createTerms, TERMS, AGREE_FIRST, termsCopies } from "./terms.js";
 import { createHelp } from "./help.js";
 import { createSetupAccess } from "./setup-access.js";
 import { createSessions } from "./session.js";
@@ -90,7 +95,8 @@ export function createOffice(deps) {
   const account = createAccount({ store, license: deps.license || null, lots, now, appVersion: deps.appVersion, log, setupReport: () => setup.report() });
   /* the terms this copy ships (deps.termsVersion only in the checks and the local copy) */
   const shipped = deps.termsVersion ? Object.freeze({ ...TERMS, version: String(deps.termsVersion) }) : TERMS;
-  const terms = createTerms({ store, account, now, terms: shipped });
+  const terms = createTerms({ store, account, now, terms: shipped,
+    ...(deps.termsCopies ? { copies: { ...termsCopies(), ...deps.termsCopies } } : {}) });
   const help = createHelp({
     store, license: deps.license || null, inbox: deps.help || null, account, lots, priceList,
     emailOn: email.on, appVersion: deps.appVersion || "dealer-center", now, log,
