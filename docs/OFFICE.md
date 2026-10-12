@@ -440,11 +440,11 @@ asked answers 503 `{code: "sign-in-down"}`, never 401.
 
 | Route | Who | Does |
 |---|---|---|
-| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup, and for a login that isn't on the team (`person` null) it leaves out `phone`, `email` and `website`; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed}`, `agreed` null until the owner agrees to this version; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access"); `session` is `{keep, endsAt}` for a sign-in on the cookie (null for one from before it); `setupNeeded` is true for the owner until First setup is done, which includes a price list Barnwright started before the owner's first sign-in (`business` is then not null, and First setup skips the starting price list: see "Before the owner first signs in") |
+| `GET me` | anyone | `{person, business, lots, signIn, account, terms, help}`; `person` is null until the person has access; `business` is null before setup, and for a login that isn't on the team (`person` null) it leaves out `phone`, `email` and `website`; `account` and `terms` are null unless the business is connected to Barnwright's control room (see "The business's Barnwright account"); `terms` is `{version, date, url, title, agreed, older}`, `agreed` null until the owner agrees to this version, `older` the owner's agreement to older terms while they still have to agree to these (Settings, Barnwright then says, for example, "Pat Owner agreed to version 2.1 on Oct 11 at 9:23 PM. Agree to version 2.2 at the top of the page."), else null; `help` is `{connected, canAsk}` (null until the person has access), so the Help screen draws its Ask box at once; `setup` is `{mode, until}` for the owner and null for everyone else (see "Barnwright setup access"); `session` is `{keep, endsAt}` for a sign-in on the cookie (null for one from before it); `setupNeeded` is true for the owner until First setup is done, which includes a price list Barnwright started before the owner's first sign-in (`business` is then not null, and First setup skips the starting price list: see "Before the owner first signs in") |
 | `POST session` | anyone | `{refreshToken, keep, why?}`: a fresh sign-in from Identity (the page's own password sign-in, or an email link) becomes the sign-in cookie: the refresh token is swapped at Identity at once, only a confirmed email counts, `keep` gives the cookie its 30 days (and two); `why: "reset"` (a page from before this) ends the person's other sign-ins, and when that can't be done nothing is signed in (503) → 201 `{ok, keep, endsAt}` and the cookie; 403 `{code: "not-on-team", email}` "You're not on the team here yet. Ask the owner to add … to the team, then sign in again." for a login with no person record, no invite and no first-owner claim (no cookie, no record); 401 "That sign-in ran out. Sign in again." for a spent or made-up token; 503 when Identity can't be asked |
 | `POST sign-out` | anyone | `{}` ends this device's sign-in. `{everywhere: true, why?: "password"}` ends every Dealer Center sign-in of the person -- the one whose token is in the `Authorization` header (a reset link's), else the one this device's record names, else a sign-in from before the cookie -- then asks Identity to drop every refresh token of theirs → 200 `{ok, everywhere: true, identity: true \| false}` (false: the Dealer Center sign-ins ended, Identity didn't answer), with the sign-in cookie and Identity's old `nf_jwt` and `nf_refresh` cleared; 503 with this device still signed in when the records couldn't be changed, or Identity was needed to find the person and can't be asked |
 | `POST setup` | first owner | `{businessName, phone, email, website, start: "full"\|"small", agreeTerms}` creates the price list (closed to customers until the owner opens it); a connected business needs `agreeTerms: true` ("Tick the box to agree to the Barnwright Terms and Conditions.") and the agreement is kept. When Barnwright already started the price list, `start` is left out: the business details are saved into it as the owner's change (only what differs) and the agreement is kept → 200 `{business}` (see "Before the owner first signs in") |
-| `POST terms` | owner | `{agree: true}` agrees to the current Barnwright Terms and Conditions (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too |
+| `POST terms` | owner | `{agree: true}` agrees to the current Barnwright Terms and Conditions (an owner who set up before the box existed, or after the terms changed); works while changes are stopped too. A new agreement checks in with Barnwright's control room at once (best effort, 3 seconds), so Alan's Control Room knows within seconds that setup access may have opened |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
 | `PUT price-list` | owner | `{settings, version}` → `{version, cfg, changes}`; 409 when someone saved first |
 | `GET price-list/history` | owner, manager | `{entries: [{version, savedAt, savedBy, changes}]}` |
@@ -691,10 +691,11 @@ computer (add `via: "claude"` for a pass as Claude's). Add `signup: true`
 (beside `visit` or `door`) for a pass that carries the pretend owner's
 sign-up agreement to the terms this copy ships, as the Control Room sends
 for a customer who signed up; with no owner signed in yet, that is how to
-try "Before the owner first signs in" on the computer. While terms 2.2
-aren't out, start the local copy with `--terms-version 2.2` so it acts as
-if it shipped them (the checks do the same with the `termsVersion`
-option of `createOffice`).
+try "Before the owner first signs in" on the computer. This copy ships
+terms 2.2 (since October 12, 2026). To try terms newer or older than the
+ones it ships, start the local copy with `--terms-version 2.3` (or
+`2.1`) so it acts as if it shipped them (the checks do the same with the
+`termsVersion` option of `createOffice`).
 `tools/check-setup-access.mjs` proves the server's rules (the door's too)
 and `tools/check-setup-screens.mjs` clicks through the owner's card, the
 preview and a visit in Chromium.
@@ -735,8 +736,9 @@ In short:
 * The Dealer Center decides. The Control Room only asks, and only for Alan.
 * Nothing works until the owner has agreed to the Barnwright Terms and
   Conditions 2.2 or later: in the Dealer Center, or, until they first sign
-  in, on the Control Room's sign-up page. Until terms 2.2 come out, every
-  request is refused with `why: "terms"`.
+  in, on the Control Room's sign-up page. Terms 2.2 started October 12,
+  2026. A Dealer Center that still ships older terms refuses every
+  request with `why: "terms"`.
 
 The words people read: the owner reads "Barnwright can change your
 prices"; Alan reads "You can change their prices".
@@ -786,10 +788,11 @@ button at the top of the Dealer Center comes only after First setup. So the
 words for `terms` name both places, and so does the visit that ends when
 the owner first signs in (the Control Room says the same, `OWNER_TERMS`).
 
-Until this Dealer Center's own terms (`TERMS.version`) are 2.2 or later, no
-owner can agree to them and no sign-up agreement counts, so `why: "terms"`
-says instead: "Barnwright's new terms (2.2) aren't out yet, so Barnwright
-can only run checks for now." The status fields' `termsOut` says which.
+While a Dealer Center's own terms (`TERMS.version`) are older than 2.2 (one
+that hasn't been updated since terms 2.2 went in), no owner can agree to
+them and no sign-up agreement counts, so `why: "terms"` says instead:
+"Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run
+checks for now." The status fields' `termsOut` says which.
 
 Saving also needs the business's Barnwright account to allow changes (the
 lease, `account.mustWrite()`). When it doesn't, a save answers 423 and
@@ -1768,10 +1771,18 @@ Dealer Center and never depends on the Control Room being up.
   reason (needed), [Turn on]. While on: "Barnwright can change your price
   list and settings until 3:00 PM." (or "can run checks until") [Turn off
   now].
-* Before the owner has agreed to terms 2.2: the change choice says "Agree
-  to the new terms at the top of the page first."
-* Before terms 2.2 are out (`setup.termsOut` false: this Dealer Center's
-  own terms are older), the card shows none of the setup access words and
+* Before the owner has agreed to terms 2.2 (an owner who agreed to 2.1
+  only): before live the card says only "Agree to the new terms at the top
+  of the page first." (no "Barnwright is setting up" and no Stop, since
+  Barnwright can't change anything yet), and after live the change choice
+  says the same. The line under the card says, for example, "Pat Owner
+  agreed to version 2.1 on Oct 11 at 9:23 PM. Agree to version 2.2 at the
+  top of the page."
+* Opening to customers in Settings reads the card again, so it offers the
+  owner's switch at once, without reloading the page.
+* On a Dealer Center that still ships terms older than 2.2
+  (`setup.termsOut` false: one not updated since terms 2.2 went in), the
+  card shows none of the setup access words and
   no change choice, only "Barnwright's new terms (2.2) aren't out yet, so
   Barnwright can only run checks for now." and Run checks.
 * Turn off, before live: checks go off and setup access goes on, so the
@@ -2332,7 +2343,7 @@ and in the Dealer Center (`server/office/terms.js`). First setup can't make
 the business without the owner ticking "I have read and agree to the
 Barnwright Terms and Conditions"; an owner who set up before the box
 existed, or before the terms changed, sees "Please read the Barnwright Terms
-and Conditions (version 2.1)." and the button "I have read and agree to the
+and Conditions (version 2.2)." and the button "I have read and agree to the
 Barnwright Terms and Conditions" at the top of every screen until they tap
 it. Each agreement is kept with its version, time and the owner's login, and
 Settings, Barnwright, says who agreed and when. Until the owner first signs
@@ -2344,7 +2355,11 @@ edit `tools/legal/make-legal-pdfs.py`, raise `TERMS_VERSION` and `TERMS_DATE`
 there and `TERMS.version` and `TERMS.date` in `server/office/terms.js`
 together, run the script (it writes the PDF, `docs/legal/terms.json` and the
 papers list), and tell every customer about the new terms 30 days ahead (terms
-section 19).
+section 19). Version 2.2 started on October 12, 2026 (Alan chose that day
+on the evening of October 11), with no notice: his only customer was his
+own test business, Testing, and Created by Design, which signed up that
+evening too, is Alan himself (see "No 30-day notice went out for 2.2" in
+`docs/FOR-ALAN.md`).
 
 ## Files
 
