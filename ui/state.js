@@ -172,7 +172,9 @@ export function chooseSize(state, sz, cat) {
     /* the shop standard's own door at some sizes (the 48 in Wooden Door of
        the 8x12 and 10x12 Side Utility, Dormer Shed and Side Lofted Barn): a
        door of the pair the customer never swapped becomes the one the new
-       size comes with, in its place */
+       size comes with, in its place; the wider double doors settle their
+       wall again, so the windows stand where they would with the double
+       doors all along (review DOORS-1) */
     followStandardDoor(state, cat);
     return { relaid: false };
   }

@@ -47,6 +47,8 @@ import { priceParts, optxList } from "../model/pricing.js";
 import { defaults, fromState, toState, normalize, encode, encodeSync, decode, decodeSync, setType, flipPorch } from "../model/design.js";
 import { mulberry32 } from "../engine/seeded.js";
 import { priceDesign } from "../server/office/pricing.js";
+import { makePlan } from "../model/plan.js";
+import { checkBuilding } from "../model/style-check.js";
 
 const counts = {};
 const failures = [];
@@ -524,6 +526,13 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
      Barnwright's own Side Utility, Dormer Shed and Side Lofted Barn keep
      their doors exactly as Barnwright does, at Barnwright's price. */
   const G11 = "the shop standard's own door at some sizes";
+  /* the demo price list on the library without its door swaps: the
+     buildings had the double doors at every size */
+  const DEMO_DOUBLES = (() => {
+    const demo = readJSON("companies/demo/company.json"), m = JSON.parse(JSON.stringify(readManufacturer(demo.manufacturer)));
+    for (const k of Object.keys(m.styles)) if (m.styles[k].built) delete m.styles[k].built.standardSwaps;
+    return resolve(demo, m, readJSON("library/construction.json"));
+  })();
   const st = (cat, t, z) => { const s = defaults(cat); setType(s, t, cat); s.size = z; resetItems(s, frameOf(s, cat), cat); return s; };
   const send = (design, cat) => { try { return priceDesign(design, cat); } catch (e) { return e; } };
   const doors = (s, cat) => s.items.filter((i) => ["door", "ru"].includes((cat || DEMO).CAT[i.cat].k)).map((i) => [i.cat, i.origCat, !!i.inc]);
@@ -583,6 +592,31 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
     check(G11, J(doors(s3)) === J([["d36in", "w48", true]]) && said3.length === 0 && sent3 && sent3.price && sent3.price.total === priceParts(st(DEMO, k, "10x12"), DEMO).total + up,
       `${name}: a steel door in place of the doubles, 10x16 then 10x12: ${J(doors(s3))} ${J(said3)} ${sent3 && (sent3.status + " " + sent3.message)}`);
   }
+  /* the double doors come back wider than the 48 in door they take the
+     place of: the wall is settled again with them, the way the size change
+     settles it, so no window runs into them (review DOORS-1: they ran 3 in
+     into the right window), and every door and window stands where
+     Barnwright's setSize puts it when the building had the double doors all
+     along */
+  const overlaps = (s, cat) => checkBuilding(makePlan(s, cat || DEMO), { framing: false, gableItems: false }).problems.filter((f) => f.code === "overlap").map((f) => f.words);
+  const at = (s) => s.items.filter((i) => !i.pk).map((i) => [i.cat, i.wall, Math.round(i.pos * 1000) / 1000]);
+  let settled = 0;
+  for (const [k, name] of STYLES48) {
+    for (const path of [["10x12", "10x14"], ["10x12", "10x16"], ["8x12", "8x16"], ["10x14", "10x12", "10x14"], ["10x12", "10x14", "10x12"], ["8x12", "10x12", "10x16"]]) {
+      if (!path.every((z) => DEMO.P[k][z])) continue;
+      const s = st(DEMO, k, path[0]); s.items[1].shut = true;
+      for (const z of path.slice(1)) S.chooseSize(s, z, DEMO);
+      /* the same customer on a price list whose building had the double doors at every size */
+      const was = st(DEMO_DOUBLES, k, path[0]); was.items[1].shut = true;
+      for (const z of path.slice(1)) S.chooseSize(was, z, DEMO_DOUBLES);
+      const last = path[path.length - 1], o = overlaps(s);
+      const doubles = !["8x12", "10x12"].includes(last);
+      check(G11, o.length === 0 && doors(s)[0][0] === (doubles ? "w72" : "w48") && (!doubles || J(at(s)) === J(at(was))),
+        `${name} ${path.join(" -> ")} with shutters on a window: ${J(o)} ${J(at(s))}${doubles ? " (with the double doors all along: " + J(at(was)) + ")" : ""}`);
+      settled++;
+    }
+  }
+  counts[G11].note = `${settled} size changes after a window was changed, no door or window running into another`;
   /* the Cottage, and Barnwright's own Side Utility, Dormer Shed and Side Lofted Barn: as Barnwright, door kept, nothing said, no upgrade */
   for (const cat of [DEMO, BW]) {
     for (const [a, b] of [["10x16", "10x12"], ["10x12", "10x16"]]) {

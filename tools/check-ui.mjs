@@ -77,6 +77,8 @@ import { barnwrightCatalogue } from "./lib/barnwright-company.mjs";
 import { frameOf } from "../model/frame.js";
 import { clampPos, resetItems } from "../model/layout.js";
 import { priceParts, money, pSizes } from "../model/pricing.js";
+import { makePlan } from "../model/plan.js";
+import { checkBuilding } from "../model/style-check.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BW_PUBLIC = "/home/user/boisterous-lokum-a737e0/public";
@@ -117,6 +119,7 @@ function itemsSig(items) { return items.map((it) => [it.cat, it.wall, +(it.pos |
 
 {
   let allStd = true, relayOk = 0, relayBad = [], keptOk = 0, keptBad = [], priceBad = [], pairs = 0, keptTried = 0, doorFollowed = 0, bwKept = 0, bwBad = [];
+  const crowded = [];
   const followedOn = new Set();
   /* Barnwright's own buildings: a touched size change is Barnwright's setSize, item for item */
   const BWC = barnwrightCatalogue();
@@ -137,6 +140,16 @@ function itemsSig(items) { return items.map((it) => [it.cat, it.wall, +(it.pos |
     const s = defaults(DEMO); S.chooseType(s, t, DEMO); normalize(s, null, DEMO);
     if (!S.isStandardLayout(s, DEMO)) { allStd = false; relayBad.push(t + " starts non-standard"); }
     const start = s.size;
+    /* the touched changes start from the first size and, on a style whose
+       door follows the size (DIFFERENCES #27), from each size that comes
+       with the 48 in door too, so the door follows both ways */
+    const starts = [s];
+    for (const e of DEMO.TYPES[t].standardSwaps || []) {
+      for (const z of e.sizes) {
+        if (z === start || !pSizes(t, DEMO).includes(z) || starts.some((x) => x.size === z)) continue;
+        const at = copy(s); S.chooseSize(at, z, DEMO); normalize(at, null, DEMO); starts.push(at);
+      }
+    }
     for (const sz of pSizes(t, DEMO)) {
       if (sz === start) continue;
       pairs++;
@@ -148,8 +161,10 @@ function itemsSig(items) { return items.map((it) => [it.cat, it.wall, +(it.pos |
       else relayBad.push(`${t} ${start}->${sz}`);
       const pp = priceParts(a, DEMO);
       if (!(pp.total > 0) || pp.total !== priceParts(copy(a), DEMO).total) priceBad.push(`${t} ${sz}`);
+      for (const from of starts) {
+      if (from.size === sz) continue;
       /* touched (the first item nudged 0.3 ft): Barnwright's setSize, item for item */
-      const b = copy(s);
+      const b = copy(from);
       const wallItem = b.items.find((it) => typeof it.pos === "number" && !DEMO.CAT[it.cat].gable);
       if (!wallItem) continue;
       wallItem.pos += 0.3; clampPos(wallItem, b, frameOf(b, DEMO));
@@ -161,13 +176,20 @@ function itemsSig(items) { return items.map((it) => [it.cat, it.wall, +(it.pos |
          size's (the 8x12 and 10x12 Side Utility, Dormer Shed and Side
          Lofted Barn, DIFFERENCES #27) */
       modelSetSize(bw, sz, DEMO);
-      if (followStandardDoor(bw, DEMO).length) { doorFollowed++; followedOn.add(t); }
-      if (!r2.relaid && J(b.items) === J(bw.items)) keptOk++; else keptBad.push(`${t} ${start}->${sz}`);
+      if (followStandardDoor(bw, DEMO).length) {
+        doorFollowed++; followedOn.add(t);
+        /* ... and the door that followed runs into nothing (review DOORS-1) */
+        const o = checkBuilding(makePlan(b, DEMO), { framing: false, gableItems: false }).problems.filter((f) => f.code === "overlap");
+        if (o.length) crowded.push(`${t} ${from.size}->${sz}: ${o.map((f) => f.words).join(" ")}`);
+      }
+      if (!r2.relaid && J(b.items) === J(bw.items)) keptOk++; else keptBad.push(`${t} ${from.size}->${sz}`);
+      }
     }
   }
   ok("every demo style starts on its standard doors and windows", allStd, relayBad.join(", "));
   ok(`untouched: a size change lays the NEW size's standard doors and windows (all ${relayOk} style/size changes from each style's first size)`, relayBad.length === 0 && relayOk === pairs && pairs > 100, relayBad.slice(0, 12).join(", "));
-  ok(`touched: a size change keeps the customer's items, moved as Barnwright's setSize moves them, the door of the Side Utility, Dormer Shed and Side Lofted Barn following the size's (${keptOk} changes, ${doorFollowed} of them the door)`, keptBad.length === 0 && keptOk === keptTried && keptOk > 100 && doorFollowed > 0 && JSON.stringify([...followedOn].sort()) === JSON.stringify(["DS", "SLB", "SU"]), `${keptBad.slice(0, 12).join(", ")} door followed on ${[...followedOn].join(", ")}`);
+  ok(`touched: a size change keeps the customer's items, moved as Barnwright's setSize moves them, the door of the Side Utility, Dormer Shed and Side Lofted Barn following the size's both ways (${keptOk} changes, ${doorFollowed} of them the door)`, keptBad.length === 0 && keptOk === keptTried && keptOk > 100 && doorFollowed > 0 && JSON.stringify([...followedOn].sort()) === JSON.stringify(["DS", "SLB", "SU"]), `${keptBad.slice(0, 12).join(", ")} door followed on ${[...followedOn].join(", ")}`);
+  ok(`touched: where the door followed the new size (${doorFollowed} changes), no door or window runs into another`, doorFollowed > 0 && crowded.length === 0, crowded.slice(0, 6).join(" / "));
   ok("every re-laid building still prices", priceBad.length === 0, priceBad.join(", "));
 }
 {

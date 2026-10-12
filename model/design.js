@@ -212,7 +212,8 @@ export function normalize(state, frame, cat) {
    - a door of the pair the customer never swapped (it is still the door it
      came as) becomes the door this size comes with, with the same id, wall
      and place, then kept inside the wall: the building's own door, at no
-     charge, so the price does not go up;
+     charge, so the price does not go up. When it is the wider one (the
+     double doors), its wall is settled again so nothing runs into it;
    - a door the customer swapped it for is kept, now in the place of the
      door this size comes with, priced as that swap (the difference, never
      a credit).
@@ -260,6 +261,14 @@ export function followStandardDoor(state, cat) {
     left.set(to, left.get(to) - 1);
     out.push({ it, was, to, swapped: it.cat !== to });
   }
+  /* The door it became is wider (the double doors back in the place of the
+     48 in door, a touched 10x12 made 10x16): the wall is settled again with
+     it, item by item in order, the way the size change settles every wall
+     (setSize), so no window runs into it and every item stands where it
+     would with the double doors all along (review DOORS-1). A narrower door
+     moves nothing else. */
+  const wider = new Set(out.filter((x) => !x.swapped && fr.CAT[x.to].w > fr.CAT[x.was].w).map((x) => x.it.wall));
+  if (wider.size) state.items.forEach((o) => { if (wider.has(o.wall)) clampPos(o, state, fr); });
   return out;
 }
 
