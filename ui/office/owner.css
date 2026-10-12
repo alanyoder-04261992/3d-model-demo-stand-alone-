@@ -896,7 +896,7 @@ body.set-bar-on .toasts { bottom: 96px; }
 }
 .dialog-x { min-width: 44px; min-height: 44px; }
 .pl-own-building-dialog { max-height: calc(100dvh - var(--pl-obscured-bottom, 0px) - 132px); }
-.pl-own-building-dialog .check { min-height: 44px; align-items: center; }
+.pl-tab .check, .pl-own-building-dialog .check { min-height: 44px; align-items: center; }
 @media (max-width: 760px) {
   .dialog.pl-own-building-dialog { margin-bottom: calc(var(--pl-obscured-bottom, 58px) + 12px); }
   .pl-own-building-dialog .actions > .btn { flex: 1 1 100%; }
