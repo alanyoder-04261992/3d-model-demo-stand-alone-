@@ -15,7 +15,8 @@
    picture is drawn again only when its key changed.
 
    The queue draws one picture at a time, the ones on screen first, giving
-   the page back between pictures. It waits while the tab is hidden, is
+   the page back between pictures. It waits while the tab is hidden or a
+   dialog is open, is
    dropped when the screen changes (forget()), starts a new renderer when
    the browser took the graphics away, and release() gives the graphics
    back when the owner leaves the price list.
@@ -158,6 +159,19 @@ function watch(img) {
 
 const onPage = (job) => job.imgs.some((x) => x.img.isConnected);
 const visible = (job) => job.imgs.some((x) => x.img.isConnected && shown.has(x.img));
+const watchedDialogs = new WeakSet();
+function paused() {
+  if (document.hidden) return true;
+  const dialog = document.querySelector("dialog[open]");
+  if (!dialog) return false;
+  if (!watchedDialogs.has(dialog)) {
+    watchedDialogs.add(dialog);
+    /* The shared dialog helper removes the dialog immediately after close;
+       listen on it too, so its queued native close still resumes pictures. */
+    dialog.addEventListener("close", () => { watchedDialogs.delete(dialog); run(); }, { once: true });
+  }
+  return true;
+}
 
 async function loadEngine(turn) {
   if (engine && !engine.lost) return engine;
@@ -193,7 +207,7 @@ async function run() {
         return job.imgs.length > 0;
       });
       if (!jobs.length) break;
-      if (document.hidden) break;
+      if (paused()) break;
       const job = jobs.find(visible);
       if (!job) break;
       jobs.splice(jobs.indexOf(job), 1);
@@ -202,11 +216,13 @@ async function run() {
       if (!url) {
         const blob = await stored(job.key);
         if (turn !== generation || !onPage(job)) continue;
+        if (paused()) { jobs.unshift(job); break; }
         if (blob) { url = URL.createObjectURL(blob); mem.set(job.key, url); stats.fromStore++; }
       }
       if (!url) {
         let e = await loadEngine(turn);
         if (turn !== generation || !onPage(job)) continue;
+        if (paused()) { jobs.unshift(job); break; }
         if (!e || e.off) { jobs = []; break; }
         try {
           const S = SIZES[job.size] || CARD_PICTURE;
@@ -256,5 +272,6 @@ export function release() {
 /* For the checks: what the queue has done. */
 if (typeof window !== "undefined") {
   document.addEventListener("visibilitychange", () => { if (!document.hidden) run(); });
+  document.addEventListener("close", run, true);
   window.__dcPictures = { stats, PICTURES_ID };
 }

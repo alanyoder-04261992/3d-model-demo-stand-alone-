@@ -2,7 +2,7 @@
    Run: node tools/check-picture-cache.mjs
    check-all: browser
    Uses the actual renderer on a small local harness. Proves on-screen work
-   starts first, hidden tabs pause, cancel releases the renderer, context loss
+   starts first, hidden tabs and native dialogs pause, cancel releases the renderer, context loss
    recovers, IndexedDB survives a reload, and blocked storage uses memory. */
 import { openPictureHarness, standardPicturesCatalogue } from "./lib/building-pictures.mjs";
 
@@ -43,8 +43,16 @@ try {
   });
   await page.waitForTimeout(150);
   ok("a hidden tab starts no renderer", await page.evaluate(() => !window.pics.stats.engineLoaded));
-  await page.evaluate(() => { window.picturesHidden = false; document.dispatchEvent(new Event("visibilitychange")); });
+  await page.evaluate(() => {
+    const dialog = document.createElement("dialog"); dialog.textContent = "Name your building";
+    document.body.appendChild(dialog); dialog.showModal(); window.pictureDialog = dialog;
+    window.picturesHidden = false; document.dispatchEvent(new Event("visibilitychange"));
+  });
+  await page.waitForTimeout(150);
+  ok("a native dialog pauses queued pictures before loading a renderer", await page.evaluate(() => !window.pics.stats.engineLoaded && window.pics.stats.drawn === 0));
+  await page.evaluate(() => { window.pictureDialog.close(); window.pictureDialog.remove(); });
   await waitDrawn();
+  ok("closing and removing the native dialog resumes the picture queue", await page.evaluate(() => window.pics.stats.drawn === 1));
   ok("visible pictures start one renderer", await page.evaluate(() => window.pics.stats.drawn === 1 && window.pics.stats.renderersStarted === 1 && document.querySelectorAll("[data-picture-renderer]").length === 1));
   ok("an asynchronously mounted view keeps its queued picture", await page.evaluate(() => document.querySelector('[data-style="UT"] img').dataset.picture === "drawn"));
   await page.evaluate(() => {
