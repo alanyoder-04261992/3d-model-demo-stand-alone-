@@ -956,8 +956,11 @@ export function resolve(company, manufacturer, library) {
       if (!isObj(e) || !Array.isArray(e.sizes)) continue;
       const sizes = e.sizes.filter((z) => sold.indexOf(z) >= 0);
       if (!sizes.length) continue;
-      if (own(CAT, e.to)) { (TYPES[k].standardSwaps = TYPES[k].standardSwaps || []).push(stripHelp(copy(e))); continue; }
       const toName = (m.items[e.to] || {}).name || e.to, fromName = (CAT[e.from] && CAT[e.from].n) || (m.items[e.from] || {}).name || e.from;
+      /* fromName: a design that holds the door it swaps out, where the price
+         list no longer sells that door, still says which door it was
+         (model/design.js toState) */
+      if (own(CAT, e.to)) { (TYPES[k].standardSwaps = TYPES[k].standardSwaps || []).push(Object.assign(stripHelp(copy(e)), { fromName })); continue; }
       swapWarnings.push(sizes.length > 1
         ? `${TYPES[k].name}: the ${timesWords(sizes)} come with the ${toName}. Sell it on Doors & windows ($0 is fine); until then they keep the ${fromName}.`
         : `${TYPES[k].name}: the ${timesWords(sizes)} comes with the ${toName}. Sell it on Doors & windows ($0 is fine); until then it keeps the ${fromName}.`);

@@ -617,6 +617,31 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
     }
   }
   counts[G11].note = `${settled} size changes after a window was changed, no door or window running into another`;
+  /* a price list that sells the style only at 8x12 and 10x12, with the 48 in
+     door and without the double doors (the Dealer Center lets the owner stop
+     selling them there): a design saved with the double doors opens with the
+     48 in door in their place, never with no door at all, and one whose
+     customer swapped them keeps that door, priced from the 48 in door
+     (review DOORS-5); the server prices what the designer sends */
+  for (const [k, name] of STYLES48) {
+    const only = readJSON("companies/demo/company.json");
+    only.offer = { [k]: { sizes: { "8x12": 3780, "10x12": 4500 } } }; only.categories = [["Utility & Storage", [k]]];
+    only.defaults = { style: k, size: "8x12", colors: only.defaults.colors }; delete only.items.w72;
+    const ONLY = resolve(only, readManufacturer(only.manufacturer), readJSON("library/construction.json"));
+    for (const z of ["8x12", "10x12"]) {
+      const old = st(DEMO_DOUBLES, k, z);
+      const back = toState(fromState(old, DEMO_DOUBLES), ONLY);
+      const oldSw = st(DEMO_DOUBLES, k, z); oldSw.items[0].cat = "d36in"; oldSw.items[0].origCat = "w72";
+      const backSw = toState(fromState(oldSw, DEMO_DOUBLES), ONLY);
+      const said = `The ${times(z)} ${name} comes with the 48″ Wooden Door, so it takes the place of the 72″ Wooden Double Doors.`;
+      const sent = send(fromState(back.state, ONLY), ONLY), sentSw = send(fromState(backSw.state, ONLY), ONLY);
+      check(G11, J(doors(back.state, ONLY)) === J([["w48", "w48", true]]) && back.state.items[0].wall === old.items[0].wall && Math.abs(back.state.items[0].pos - old.items[0].pos) < 1e-3
+        && back.warnings.includes(said) && !back.warnings.some((w) => /no longer offers/.test(w))
+        && J(doors(backSw.state, ONLY)) === J([["d36in", "w48", true]]) && !backSw.warnings.some((w) => /no longer offers/.test(w))
+        && sent && sent.price && sent.price.total === priceParts(back.state, ONLY).total && sentSw && sentSw.price && sentSw.price.total === priceParts(backSw.state, ONLY).total,
+        `${name} ${z} saved with the double doors, opened on a price list that no longer sells them: ${J(doors(back.state, ONLY))} ${J(back.warnings)}; swapped for the steel door: ${J(doors(backSw.state, ONLY))} ${J(backSw.warnings)}; server ${sent && (sent.status + " " + sent.message)} / ${sentSw && (sentSw.status + " " + sentSw.message)}`);
+    }
+  }
   /* the Cottage, and Barnwright's own Side Utility, Dormer Shed and Side Lofted Barn: as Barnwright, door kept, nothing said, no upgrade */
   for (const cat of [DEMO, BW]) {
     for (const [a, b] of [["10x16", "10x12"], ["10x12", "10x16"]]) {

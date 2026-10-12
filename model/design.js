@@ -398,11 +398,33 @@ export function toState(design, cat) {
   if (d.ramp != null) s.ramp = d.ramp;
 
   const fr = frameOf(s, cat);
+  /* A DOOR THE BUILDING CAME WITH THAT THIS PRICE LIST NO LONGER SELLS, where
+     the style now comes with the other door of its pair at this size (the
+     owner sells the 8x12 and 10x12 Dormer Shed with the 48 in Wooden Door
+     and stopped selling the double doors): it is read as the door the size
+     comes with, in its place, the way a rename is, and said in one line;
+     never left off, so the building keeps a door (review DOORS-5). A door the
+     customer swapped it for is kept, priced from the new one. */
+  const swapTo = {};
+  for (const e of (Array.isArray(t.standardSwaps) ? t.standardSwaps : [])) {
+    if (e && Array.isArray(e.sizes) && e.sizes.indexOf(s.size) >= 0 && !has(cat.CAT, e.from) && has(cat.CAT, e.to)) swapTo[e.from] = e;
+  }
+  const swapWords = (e, mine) => {
+    const to = cat.CAT[e.to], plural = (n) => /s$/.test(n);
+    return mine
+      ? `The ${times(s.size)} ${t.name} comes with the ${to.n}, so the ${mine.n} ${plural(mine.n) ? "are" : "is"} kept in ${plural(to.n) ? "their" : "its"} place.`
+      : `The ${times(s.size)} ${t.name} comes with the ${to.n}, so ${plural(to.n) ? "they take" : "it takes"} the place of the ${e.fromName || e.from}.`;
+  };
   if (Array.isArray(d.items)) {
     const kept = [];
     d.items.forEach((x) => {
       if (!x || typeof x !== "object") { warnings.push("One item in the design could not be read and was left off."); asSaved = false; return; }
-      const catId = (has(ren.items, x.cat) && ren.items[x.cat]) || x.cat;
+      let catId = (has(ren.items, x.cat) && ren.items[x.cat]) || x.cat;
+      if (x.inc && !has(cat.CAT, catId) && has(swapTo, catId)) {
+        const e = swapTo[catId];
+        warnings.push(swapWords(e));
+        catId = e.to;
+      }
       if (catId !== x.cat) asSaved = false;
       if (!has(cat.CAT, catId)) { warnings.push(`The design had a "${x.cat}" item, which this company no longer offers; it was left off.`); asSaved = false; return; }
       const wall = x.wall || "F";
@@ -417,7 +439,11 @@ export function toState(design, cat) {
       if (isNum(x.pos)) it.pos = x.pos; if (isNum(x.vy) && x.vy) it.vy = x.vy;
       if (isNum(x.px)) it.px = x.px; if (isNum(x.pz)) it.pz = x.pz;
       if (isNum(x.ln) && x.ln) it.ln = x.ln;
-      const orig = x.origCat != null ? ((has(ren.items, x.origCat) && ren.items[x.origCat]) || x.origCat) : (x.inc ? catId : null);
+      let orig = x.origCat != null ? ((has(ren.items, x.origCat) && ren.items[x.origCat]) || x.origCat) : (x.inc ? catId : null);
+      if (orig != null && x.inc && !has(cat.CAT, orig) && has(swapTo, orig)) {
+        if (catId !== swapTo[orig].to) warnings.push(swapWords(swapTo[orig], c));
+        orig = swapTo[orig].to; asSaved = false;
+      }
       if (orig != null) {
         if (has(cat.CAT, orig)) it.origCat = orig;
         else warnings.push(`The ${c.n} started as a "${x.origCat}", which this company no longer offers; it is priced as it stands.`);
