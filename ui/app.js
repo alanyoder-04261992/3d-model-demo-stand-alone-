@@ -78,7 +78,12 @@
                            Customer builds always use frames: false.
      setReadOnly(bool)     a look-only page (a shared link): nothing can be
                            selected, dragged or added; body.viewonly hides the
-                           cards (ui/styles.css).
+                           cards (ui/styles.css). Turning it off ends asSaved.
+     asSaved / followToday()   a look-only link (&view=1) draws the design as
+                           it was saved, with the door it was sold with (an
+                           order or quote, DIFFERENCES #27); followToday()
+                           lets the door follow the size like any design and
+                           returns the lines that say what changed.
      showAddPop(px, py, spot, choices) / hideAddPop() / addAt(itemCode, spot)
                            the "Add here" menu (the floor plan uses it too):
                            px, py in CSS pixels in the stage; spot {wall, u}
@@ -116,6 +121,7 @@ import "./problems-start.js";
 import { loadCompany, loadLot } from "./load.js";
 import { esc, safeUrl, telHref } from "./esc.js";
 import { defaults, normalize, toState, fromState, decode } from "../model/design.js";
+import { viewAsked as lookOnlyAddress } from "./share.js";
 import { makePlan } from "../model/plan.js";
 import { frameOf } from "../model/frame.js";
 import { itemById } from "../model/layout.js";
@@ -321,17 +327,23 @@ async function boot() {
     return null;
   }
 
-  /* 4. the design */
+  /* 4. the design. A look-only link (#d=...&view=1, or ?view=1: an order or
+     quote sheet's picture, See it in 3D, a quote's link) draws the design
+     as it was saved, with the door it was sold with; once it is opened to
+     change (setReadOnly(false), any change) the door follows the size like
+     any design (model/design.js normalize, review DOORS-3). */
   let state = defaults(cat);
   let startDesign = null, startWarnings = [], startError = null;
+  let asSaved = false;
   if (/[#&]d=/.test(location.hash || "")) {
     try {
       startDesign = await decode(location.hash);
-      const t = toState(startDesign, cat);
+      asSaved = lookOnlyAddress(location.href);
+      const t = toState(startDesign, cat, { asSaved });
       state = t.state; startWarnings = t.warnings;
-    } catch (e) { startError = e.message; state = defaults(cat); }
+    } catch (e) { startError = e.message; state = defaults(cat); asSaved = false; }
   }
-  normalize(state, null, cat);
+  normalize(state, null, cat, { asSaved });
 
   /* 5. the renderer */
   const canvas = el("c3d"), stage = el("stage");
@@ -352,7 +364,7 @@ async function boot() {
 
   const ctx = {
     cat: cat, get state() { return state; }, canvas: canvas, stage: stage, renderer: renderer, cam: renderer.cam,
-    embedded: embedded, mode: "out", readOnly: false, plan: null, result: null,
+    embedded: embedded, mode: "out", readOnly: false, asSaved: asSaved, plan: null, result: null,
     frame() { return frameOf(state, cat); },
     rebuild: rebuild, refreshUI: refreshUI, refreshLists: () => panels.refreshLists(), select: select, act: act, emit: emit,
     goInside(reason) { callInside({ want: "in", reason: reason || "" }); },
@@ -408,9 +420,11 @@ async function boot() {
   function act(reason, fn, opts) {
     opts = opts || {};
     const out = fn ? fn(state) : undefined;
+    /* a change is never only looking: the door follows the size from now on */
+    if (!ctx.readOnly) ctx.asSaved = false;
     /* what the rules changed, in words (a gable window too tall once the
        Steep roof is off comes off): the cards say it where it happened */
-    ctx.said = { reason: reason || "", lines: normalize(state, null, cat) };
+    ctx.said = { reason: reason || "", lines: normalize(state, null, cat, { asSaved: ctx.asSaved }) };
     if (state.sel && !itemById(state, state.sel)) state.sel = null;
     if (opts.refresh !== false) {
       refreshUI();
@@ -451,7 +465,7 @@ async function boot() {
     getState: () => state,
     setState(fn, opts) { opts = opts || {}; return act(opts.reason || "api", fn, { refresh: opts.refresh !== false }); },
     rebuild: rebuild,
-    refresh() { normalize(state, null, cat); refreshUI(); if (state.sel) sheet.sync(); },
+    refresh() { normalize(state, null, cat, { asSaved: ctx.asSaved }); refreshUI(); if (state.sel) sheet.sync(); },
     getCatalogue: () => cat,
     getPlan: () => ctx.plan,
     getResult: () => ctx.result,
@@ -461,6 +475,7 @@ async function boot() {
     applyDesign(design) {
       const t = toState(design, cat);
       state = t.state;
+      ctx.asSaved = false;
       normalize(state, null, cat);
       state.sel = null; el("sheet").classList.remove("open"); sheet.forgetFaced();
       refreshUI();
@@ -479,9 +494,21 @@ async function boot() {
       document.body.classList.toggle("viewonly", ctx.readOnly);
       if (ctx.readOnly && state.sel) sheet.select(null);
       interaction.hideAddPop();
+      if (!ctx.readOnly) api.followToday();
       return ctx.readOnly;
     },
     get readOnly() { return ctx.readOnly; },
+    /* a look-only design is drawn as it was saved (asSaved): followToday()
+       ends that, so the door follows the size like any design, and returns
+       what changed in words (one line for the door) */
+    get asSaved() { return ctx.asSaved; },
+    followToday() {
+      if (!ctx.asSaved) return [];
+      ctx.asSaved = false;
+      const lines = normalize(state, null, cat);
+      if (lines.length) { refreshUI(); emit("change", { reason: "design", state: state }); }
+      return lines;
+    },
     showAddPop: (px, py, spot, choices) => interaction.showAddPop(px, py, spot, choices),
     hideAddPop: () => interaction.hideAddPop(),
     addAt: (itemCode, spot) => interaction.addAt(itemCode, spot || {}),

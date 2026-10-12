@@ -27,7 +27,10 @@
          or text the company, to share it on, and "Change this design" (which
          turns the normal designer back on). This is what the quote form
          (ui/quote.js) sends the company, so the person reading a quote sees
-         the building, not a list of codes.
+         the building, not a list of codes. The building is drawn as it was
+         saved, with the door it was sold with (an order or quote sheet's
+         picture and See it in 3D, review DOORS-3); "Change this design"
+         lets the door follow the size like any design and says so.
        - A LINK NEVER CARRIES A PRICE ANYONE SHOULD TRUST (docs/DIFFERENCES.md
          #14). The link remembers what the design cost the day it was made
          (the customer's own day, not London's); when today's price is
@@ -426,8 +429,21 @@ export function install(api) {
       offChange();
       card.remove();
       if (hint) hint.textContent = hintWas;
+      /* the look-only page drew the building as it was saved, with the door
+         it was sold with; opened to change, the door follows the size like
+         any design (ui/app.js followToday), and the card says what changed */
+      const lines = typeof api.followToday === "function" ? api.followToday() : [];
       api.setReadOnly(false);
       info.view = false;
+      if (lines.length) {
+        info.warnings.push(...lines);
+        info.notice = lines.join(" ");
+        const told = cardAtTop("shnotice",
+          "<h3>About this design link</h3>" +
+          '<div class="shwarn"><b>Since this design was made:</b><ul>' + lines.map((w) => "<li>" + esc(w) + "</li>").join("") + "</ul></div>" +
+          '<div class="sharerow"><button type="button" class="copybtn shok">OK</button></div>', "status");
+        told.querySelector(".shok").addEventListener("click", () => told.remove());
+      }
       /* a reload now keeps the designer open for changes */
       try {
         const u = new URL(location.href);

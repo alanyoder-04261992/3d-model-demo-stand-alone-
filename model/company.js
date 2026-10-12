@@ -267,7 +267,8 @@ function traitsOf(it) {
 /* THE SHOP STANDARD'S OWN DOOR AT SOME SIZES: a library style's
    built.standardSwaps, [{"sizes": ["8x12", "10x12"], "from": "w72", "to":
    "w48"}] (Alan, Oct 11 2026, the Side Utility: "replace 6 foot to 4
-   foot"). Library-only, never a How it's built box: a business's
+   foot"; Oct 12 2026, the Dormer Shed and Side Lofted Barn: "yes").
+   Library-only, never a How it's built box: a business's
    offer.<KEY>.built cannot hold it (build-settings.js problems says "not a
    building setting"), and Barnwright's own company has no built blocks.
    model/loadouts.js standardItems makes the swap; resolve() below puts it
@@ -322,7 +323,28 @@ export function standardSwapNeeds(company, manufacturer) {
   }
   return out;
 }
-const timesWords = (sizes) => { const w = sizes.map((z) => String(z).replace("x", "×")); return w.length < 2 ? w.join("") : w.slice(0, -1).join(", ") + " and " + w[w.length - 1]; };
+/* "A", "A and B", "A, B and C" */
+export function andWords(list) { const w = list.map(String); return w.length < 2 ? w.join("") : w.slice(0, -1).join(", ") + " and " + w[w.length - 1]; }
+/* sizes the way a person reads them: "8×12 and 10×12" */
+export function timesWords(sizes) { return andWords(sizes.map((z) => String(z).replace("x", "×"))); }
+/* The styles an item comes with at some sizes, the sizes said once for the
+   styles that share them (review DOORS-7): [{name, sizes}] ->
+   "Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12", or
+   "Side Utility at 8×12 and 10×12, and the Side Lofted Barn at 10×12".
+   except: the sizes it does NOT come with ("Side Utility, except the 8×12
+   and 10×12"); codes: each name with its code, as model/company.js speaks
+   ("Side Utility (SU)"). The caller puts "the" in front. */
+export function sizedStyleWords(list, { except = false, codes = false } = {}) {
+  const groups = [];
+  for (const x of list) {
+    const key = x.sizes.join(",");
+    let g = groups.find((y) => y.key === key);
+    if (!g) groups.push(g = { key, sizes: x.sizes, names: [] });
+    g.names.push(codes ? `${x.name} (${x.key})` : x.name);
+  }
+  const words = groups.map((g) => except ? `${andWords(g.names)}, except the ${timesWords(g.sizes)}` : `${andWords(g.names)} at ${timesWords(g.sizes)}`);
+  return words.length < 2 ? words.join("") : words.slice(0, -1).join(", the ") + ", and the " + words[words.length - 1];
+}
 /* The style as a price list draws it: its library swaps whose "to" item
    the price list sells (resolve() puts exactly those on the style), so the
    door it swaps out is needed only at the sizes that still come with it. */
@@ -335,15 +357,38 @@ function withSoldSwaps(t, items) {
    words (strictProblems; the Dealer Center shows the same sentence before
    a save): ["items.w48 needs a price: ... at 8×12 and 10×12. 0 is fine ..."] */
 export function swapNeedProblems(company, manufacturer) {
+  return swapNeedsUnsold(company, manufacturer).map((x) => x.problem);
+}
+/* [{item, list, problem}] for each swapped-in item the price list needs and
+   does not sell */
+function swapNeedsUnsold(company, manufacturer) {
   const out = [];
   if (!isObj(company)) return out;
   const swapNeeds = standardSwapNeeds(company, manufacturer);
   for (const ic of Object.keys(swapNeeds)) {
     if (own(company.items, ic)) continue;
     const it = isObj(manufacturer) && isObj(manufacturer.items) ? manufacturer.items[ic] : null;
-    out.push(`items.${ic} needs a price: the ${it ? it.name : ic} (${ic}) comes as standard on the ${swapNeeds[ic].map((x) => `${x.name} (${x.key}) at ${timesWords(x.sizes)}`).join(", ")}. 0 is fine for one that is never charged.`);
+    out.push({ item: ic, list: swapNeeds[ic],
+      problem: `items.${ic} needs a price: the ${it ? it.name : ic} (${ic}) comes as standard on the ${sizedStyleWords(swapNeeds[ic], { codes: true })}. 0 is fine for one that is never charged.` });
   }
   return out;
+}
+/* The swapNeedProblems of a draft that a stored price list did not already
+   have, compared by item, style and size, never by the words (review
+   DOORS-2): taking a style or a size off, or renaming a style of the
+   owner's own, changes the sentence but adds no need, so it is not new.
+   previous: one stored price list or a list of them (none: every one is
+   new). -> [{item, list, problem}] */
+export function newSwapNeeds(company, previous, manufacturer) {
+  const had = new Set();
+  for (const p of Array.isArray(previous) ? previous : previous == null ? [] : [previous]) {
+    if (!isObj(p)) continue;
+    for (const x of swapNeedsUnsold(p, manufacturer)) for (const y of x.list) for (const z of y.sizes) had.add(`${x.item}|${y.key}|${z}`);
+  }
+  return swapNeedsUnsold(company, manufacturer).filter((x) => x.list.some((y) => y.sizes.some((z) => !had.has(`${x.item}|${y.key}|${z}`))));
+}
+export function newSwapNeedProblems(company, previous, manufacturer) {
+  return newSwapNeeds(company, previous, manufacturer).map((x) => x.problem);
 }
 
 /* Every item a style's standard layout uses at any of these sizes. */
@@ -942,7 +987,8 @@ export function resolve(company, manufacturer, library) {
     CAT[k] = Object.assign({ k: it.kind, n: name, w: it.w, h: it.h, p: itemPrice(v) }, traitsOf(it));
   }
   /* The shop standard's own door at some sizes (built.standardSwaps, the
-     8x12 and 10x12 Side Utility's 48 in Wooden Door): on the style when the
+     48 in Wooden Door of the 8x12 and 10x12 Side Utility, Dormer Shed and
+     Side Lofted Barn): on the style when the
      price list sells it; otherwise the recipe's own door stays and the
      owner is told what to do. */
   const swapWarnings = [];
@@ -954,8 +1000,11 @@ export function resolve(company, manufacturer, library) {
       if (!isObj(e) || !Array.isArray(e.sizes)) continue;
       const sizes = e.sizes.filter((z) => sold.indexOf(z) >= 0);
       if (!sizes.length) continue;
-      if (own(CAT, e.to)) { (TYPES[k].standardSwaps = TYPES[k].standardSwaps || []).push(stripHelp(copy(e))); continue; }
       const toName = (m.items[e.to] || {}).name || e.to, fromName = (CAT[e.from] && CAT[e.from].n) || (m.items[e.from] || {}).name || e.from;
+      /* fromName: a design that holds the door it swaps out, where the price
+         list no longer sells that door, still says which door it was
+         (model/design.js toState) */
+      if (own(CAT, e.to)) { (TYPES[k].standardSwaps = TYPES[k].standardSwaps || []).push(Object.assign(stripHelp(copy(e)), { fromName })); continue; }
       swapWarnings.push(sizes.length > 1
         ? `${TYPES[k].name}: the ${timesWords(sizes)} come with the ${toName}. Sell it on Doors & windows ($0 is fine); until then they keep the ${fromName}.`
         : `${TYPES[k].name}: the ${timesWords(sizes)} comes with the ${toName}. Sell it on Doors & windows ($0 is fine); until then it keeps the ${fromName}.`);

@@ -43,10 +43,12 @@ import { frameOf } from "../model/frame.js";
 import { resetItems, pkFixtures, clampPos, freeSpot } from "../model/layout.js";
 import * as LAYOUT from "../model/layout.js";
 import * as S from "../ui/state.js";
-import { priceParts, optxList } from "../model/pricing.js";
+import { priceParts, optxList, money } from "../model/pricing.js";
 import { defaults, fromState, toState, normalize, encode, encodeSync, decode, decodeSync, setType, flipPorch } from "../model/design.js";
 import { mulberry32 } from "../engine/seeded.js";
 import { priceDesign } from "../server/office/pricing.js";
+import { makePlan } from "../model/plan.js";
+import { checkBuilding } from "../model/style-check.js";
 
 const counts = {};
 const failures = [];
@@ -506,9 +508,10 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
 /* ---------------------------------------------------------------- 11 the shop standard's own door at some sizes */
 {
   /* The 8x12 and 10x12 Side Utility come with the 48 in Wooden Door (Alan,
-     Oct 11 2026: "replace 6 foot to 4 foot"); its other sizes, and every
-     Side Utility before, with the 72 in Wooden Double Doors. A design can
-     hold the other door of that pair as the one it came with:
+     Oct 11 2026: "replace 6 foot to 4 foot"), and so do the 8x12 and 10x12
+     Dormer Shed and Side Lofted Barn (Oct 12 2026, "yes"); their other
+     sizes, and each of them before, with the 72 in Wooden Double Doors.
+     A design can hold the other door of that pair as the one it came with:
      - saved before the change: the doubles the customer never swapped
        become the 48 in door, in their place, at the price the customer
        saw, said in one line; a door the customer swapped them for is kept
@@ -520,59 +523,144 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
      The server prices the design the designer sends next; only the stale
      design itself is "no longer offered" (409). Nothing else changes: the
      Cottage (its own door changes with size on Barnwright's recipe) and
-     Barnwright's own Side Utility keep their doors exactly as Barnwright
-     does, at Barnwright's price. */
+     Barnwright's own Side Utility, Dormer Shed and Side Lofted Barn keep
+     their doors exactly as Barnwright does, at Barnwright's price. */
   const G11 = "the shop standard's own door at some sizes";
+  /* the demo price list on the library without its door swaps: the
+     buildings had the double doors at every size */
+  const DEMO_DOUBLES = (() => {
+    const demo = readJSON("companies/demo/company.json"), m = JSON.parse(JSON.stringify(readManufacturer(demo.manufacturer)));
+    for (const k of Object.keys(m.styles)) if (m.styles[k].built) delete m.styles[k].built.standardSwaps;
+    return resolve(demo, m, readJSON("library/construction.json"));
+  })();
   const st = (cat, t, z) => { const s = defaults(cat); setType(s, t, cat); s.size = z; resetItems(s, frameOf(s, cat), cat); return s; };
   const send = (design, cat) => { try { return priceDesign(design, cat); } catch (e) { return e; } };
   const doors = (s, cat) => s.items.filter((i) => ["door", "ru"].includes((cat || DEMO).CAT[i.cat].k)).map((i) => [i.cat, i.origCat, !!i.inc]);
   const extras = (s, cat) => priceParts(s, cat).total - cat.P[s.type][s.size];
-  /* a Side Utility 8x12 saved with the double doors, untouched, and one
-     whose customer swapped them for the 36 in steel door */
-  const old = st(DEMO, "SU", "8x12"); old.items[0].cat = old.items[0].origCat = "w72";
-  const savedPrice = priceParts(old, DEMO).total;
-  const saved = fromState(old, DEMO);
-  const back = toState(saved, DEMO);
-  const said = "The 8×12 Side Utility comes with the 48″ Wooden Door, so it takes the place of the 72″ Wooden Double Doors.";
-  const oldSw = st(DEMO, "SU", "8x12"); oldSw.items[0].cat = "d36in"; oldSw.items[0].origCat = "w72";
-  const backSw = toState(fromState(oldSw, DEMO), DEMO);
+  /* a Side Utility, Dormer Shed or Side Lofted Barn 8x12 or 10x12 saved
+     with the double doors, untouched, and one whose customer swapped them
+     for the 36 in steel door (the Dormer Shed opens with its dormer, so its
+     price is more than the size's) */
+  const STYLES48 = [["SU", "Side Utility"], ["DS", "Dormer Shed"], ["SLB", "Side Lofted Barn"]];
   const up = Math.max(0, DEMO.CAT.d36in.p - DEMO.CAT.w48.p);
-  check(G11, J(doors(back.state)) === J([["w48", "w48", true]]) && back.state.items[0].wall === old.items[0].wall && Math.abs(back.state.items[0].pos - old.items[0].pos) < 1e-3
-    && back.warnings.includes(said) && priceParts(back.state, DEMO).total === savedPrice && savedPrice === DEMO.P.SU["8x12"]
-    && J(doors(backSw.state)) === J([["d36in", "w48", true]]) && backSw.warnings.includes("The 8×12 Side Utility comes with the 48″ Wooden Door, so the 36″ In-Swing Door is kept in its place as an upgrade.")
-    && priceParts(backSw.state, DEMO).total === DEMO.P.SU["8x12"] + up,
-    `a saved 8x12 with the doubles reopened: ${J(doors(back.state))} ${J(back.warnings)} ${priceParts(back.state, DEMO).total} (saved at ${savedPrice}); swapped for the steel door: ${J(doors(backSw.state))} ${J(backSw.warnings)} ${priceParts(backSw.state, DEMO).total}`);
-  const next = send(fromState(back.state, DEMO), DEMO), nextSw = send(fromState(backSw.state, DEMO), DEMO);
-  check(G11, next && next.price && next.price.total === savedPrice && nextSw && nextSw.price && nextSw.price.total === priceParts(backSw.state, DEMO).total,
-    `the designs the designer sends after opening them: ${next && (next.status + " " + next.message)} / ${nextSw && (nextSw.status + " " + nextSw.message)}`);
-  const stale = send(saved, DEMO);
-  check(G11, stale && stale.status === 409 && /no longer offered/.test(stale.message), `the stale design itself: ${stale ? stale.status + " " + stale.message : "priced"}`);
+  /* a door swapped for the double doors is priced from the 48 in door now:
+     the line says how much more than the customer saw (review DOORS-4) */
+  const rise = up - Math.max(0, DEMO.CAT.d36in.p - DEMO.CAT.w72.p);
+  const times = (z) => z.replace("x", "×");
+  for (const [k, name] of STYLES48) for (const z of ["8x12", "10x12"]) {
+    const old = st(DEMO, k, z); old.items[0].cat = old.items[0].origCat = "w72";
+    const savedPrice = priceParts(old, DEMO).total;
+    const saved = fromState(old, DEMO);
+    const back = toState(saved, DEMO);
+    const said = `The ${times(z)} ${name} comes with the 48″ Wooden Door, so it takes the place of the 72″ Wooden Double Doors.`;
+    const oldSw = st(DEMO, k, z); oldSw.items[0].cat = "d36in"; oldSw.items[0].origCat = "w72";
+    const backSw = toState(fromState(oldSw, DEMO), DEMO);
+    check(G11, J(doors(back.state)) === J([["w48", "w48", true]]) && back.state.items[0].wall === old.items[0].wall && Math.abs(back.state.items[0].pos - old.items[0].pos) < 1e-3
+      && back.warnings.includes(said) && priceParts(back.state, DEMO).total === savedPrice && (k !== "SU" || savedPrice === DEMO.P.SU[z])
+      && J(doors(backSw.state)) === J([["d36in", "w48", true]]) && backSw.warnings.includes(`The ${times(z)} ${name} comes with the 48″ Wooden Door, so the 36″ In-Swing Door is kept in its place and costs ${money(rise)} more than before.`)
+      && priceParts(backSw.state, DEMO).total === savedPrice + up,
+      `a saved ${name} ${z} with the doubles reopened: ${J(doors(back.state))} ${J(back.warnings)} ${priceParts(back.state, DEMO).total} (saved at ${savedPrice}); swapped for the steel door: ${J(doors(backSw.state))} ${J(backSw.warnings)} ${priceParts(backSw.state, DEMO).total}`);
+    const next = send(fromState(back.state, DEMO), DEMO), nextSw = send(fromState(backSw.state, DEMO), DEMO);
+    check(G11, next && next.price && next.price.total === savedPrice && nextSw && nextSw.price && nextSw.price.total === priceParts(backSw.state, DEMO).total,
+      `${name} ${z}: the designs the designer sends after opening them: ${next && (next.status + " " + next.message)} / ${nextSw && (nextSw.status + " " + nextSw.message)}`);
+    /* only looked at (a look-only link: an order or quote sheet's picture,
+       See it in 3D): drawn as saved and sold, with the double doors, at the
+       same price, nothing said (review DOORS-3) */
+    const look = toState(saved, DEMO, { asSaved: true });
+    check(G11, J(doors(look.state)) === J([["w72", "w72", true]]) && look.warnings.length === 0 && priceParts(look.state, DEMO).total === savedPrice
+      && J(look.state.items.map((i) => [i.cat, i.wall, i.pos])) === J(back.state.items.map((i) => [i.cat === "w48" ? "w72" : i.cat, i.wall, i.pos])),
+      `${name} ${z} only looked at: ${J(doors(look.state))} ${J(look.warnings)} ${priceParts(look.state, DEMO).total} (sold at ${savedPrice})`);
+    const stale = send(saved, DEMO);
+    check(G11, stale && stale.status === 409 && /no longer offered/.test(stale.message), `${name} ${z}: the stale design itself: ${stale ? stale.status + " " + stale.message : "priced"}`);
+  }
+  {
+    const hide = readJSON("companies/demo/company.json"); hide.pricing = Object.assign({}, hide.pricing, { show: "none" });
+    const HIDE = resolve(hide, readManufacturer(hide.manufacturer), readJSON("library/construction.json"));
+    const o = st(HIDE, "DS", "8x12"); o.items[0].cat = "d36in"; o.items[0].origCat = "w72";
+    const b = toState(fromState(o, HIDE), HIDE);
+    check(G11, rise > 0 && b.warnings.includes("The 8×12 Dormer Shed comes with the 48″ Wooden Door, so the 36″ In-Swing Door is kept in its place and costs more than before.") && !b.warnings.some((w) => /\$/.test(w)),
+      `a company that shows no prices: ${J(b.warnings)}`);
+  }
   /* the customer touches a window on a 10x16, then picks 10x12, and the
      other way: the door follows the size's, nothing is said, the price is
-     the building's plus the shutters */
-  const s = st(DEMO, "SU", "10x16"); s.items[1].shut = true;
-  const shut16 = extras(s, DEMO);
-  S.chooseSize(s, "10x12", DEMO);
-  const said12 = normalize(s, null, DEMO);
-  check(G11, J(doors(s)) === J([["w48", "w48", true]]) && said12.length === 0 && priceParts(s, DEMO).total === DEMO.P.SU["10x12"] + shut16 && shut16 > 0,
-    `10x16 touched, then 10x12: ${J(doors(s))} ${J(said12)} ${J(priceParts(s, DEMO))}`);
-  const sent12 = send(fromState(s, DEMO), DEMO);
-  check(G11, sent12 && sent12.price && sent12.price.total === DEMO.P.SU["10x12"] + shut16, `sent at 10x12: ${sent12 && (sent12.status + " " + sent12.message)}`);
-  const s2 = st(DEMO, "SU", "10x12"); s2.items[1].shut = true;
-  S.chooseSize(s2, "10x16", DEMO);
-  const said16 = normalize(s2, null, DEMO);
-  check(G11, J(doors(s2)) === J([["w72", "w72", true]]) && said16.length === 0 && priceParts(s2, DEMO).total === DEMO.P.SU["10x16"] + shut16,
-    `10x12 touched, then 10x16: ${J(doors(s2))} ${J(said16)} ${J(priceParts(s2, DEMO))}`);
-  const sent16 = send(fromState(s2, DEMO), DEMO);
-  check(G11, sent16 && sent16.price && sent16.price.total === DEMO.P.SU["10x16"] + shut16, `sent at 10x16: ${sent16 && (sent16.status + " " + sent16.message)}`);
-  /* a door the customer swapped the doubles for stays theirs when the size changes */
-  const s3 = st(DEMO, "SU", "10x16"); S.setItemType(s3, s3.items[0].id, "d36in", DEMO);
-  S.chooseSize(s3, "10x12", DEMO);
-  const said3 = normalize(s3, null, DEMO);
-  const sent3 = send(fromState(s3, DEMO), DEMO);
-  check(G11, J(doors(s3)) === J([["d36in", "w48", true]]) && said3.length === 0 && sent3 && sent3.price && sent3.price.total === DEMO.P.SU["10x12"] + up,
-    `a steel door in place of the doubles, 10x16 then 10x12: ${J(doors(s3))} ${J(said3)} ${sent3 && (sent3.status + " " + sent3.message)}`);
-  /* the Cottage and Barnwright's own Side Utility: as Barnwright, door kept, nothing said, no upgrade */
+     the building's at that size plus the shutters (the Dormer Shed's
+     dormer too), and the server agrees */
+  const withShutter = (k, z) => { const f = st(DEMO, k, z); f.items[1].shut = true; return priceParts(f, DEMO).total; };
+  for (const [k, name] of STYLES48) {
+    const s = st(DEMO, k, "10x16"); s.items[1].shut = true;
+    const shut16 = extras(s, DEMO);
+    S.chooseSize(s, "10x12", DEMO);
+    const said12 = normalize(s, null, DEMO);
+    check(G11, J(doors(s)) === J([["w48", "w48", true]]) && said12.length === 0 && priceParts(s, DEMO).total === withShutter(k, "10x12") && shut16 > 0 && (k !== "SU" || priceParts(s, DEMO).total === DEMO.P.SU["10x12"] + shut16),
+      `${name} 10x16 touched, then 10x12: ${J(doors(s))} ${J(said12)} ${J(priceParts(s, DEMO))}`);
+    const sent12 = send(fromState(s, DEMO), DEMO);
+    check(G11, sent12 && sent12.price && sent12.price.total === withShutter(k, "10x12"), `${name} sent at 10x12: ${sent12 && (sent12.status + " " + sent12.message)}`);
+    const s2 = st(DEMO, k, "10x12"); s2.items[1].shut = true;
+    S.chooseSize(s2, "10x16", DEMO);
+    const said16 = normalize(s2, null, DEMO);
+    check(G11, J(doors(s2)) === J([["w72", "w72", true]]) && said16.length === 0 && priceParts(s2, DEMO).total === withShutter(k, "10x16"),
+      `${name} 10x12 touched, then 10x16: ${J(doors(s2))} ${J(said16)} ${J(priceParts(s2, DEMO))}`);
+    const sent16 = send(fromState(s2, DEMO), DEMO);
+    check(G11, sent16 && sent16.price && sent16.price.total === withShutter(k, "10x16"), `${name} sent at 10x16: ${sent16 && (sent16.status + " " + sent16.message)}`);
+    /* a door the customer swapped the doubles for stays theirs when the size changes */
+    const s3 = st(DEMO, k, "10x16"); S.setItemType(s3, s3.items[0].id, "d36in", DEMO);
+    S.chooseSize(s3, "10x12", DEMO);
+    const said3 = normalize(s3, null, DEMO);
+    const sent3 = send(fromState(s3, DEMO), DEMO);
+    check(G11, J(doors(s3)) === J([["d36in", "w48", true]]) && said3.length === 0 && sent3 && sent3.price && sent3.price.total === priceParts(st(DEMO, k, "10x12"), DEMO).total + up,
+      `${name}: a steel door in place of the doubles, 10x16 then 10x12: ${J(doors(s3))} ${J(said3)} ${sent3 && (sent3.status + " " + sent3.message)}`);
+  }
+  /* the double doors come back wider than the 48 in door they take the
+     place of: the wall is settled again with them, the way the size change
+     settles it, so no window runs into them (review DOORS-1: they ran 3 in
+     into the right window), and every door and window stands where
+     Barnwright's setSize puts it when the building had the double doors all
+     along */
+  const overlaps = (s, cat) => checkBuilding(makePlan(s, cat || DEMO), { framing: false, gableItems: false }).problems.filter((f) => f.code === "overlap").map((f) => f.words);
+  const at = (s) => s.items.filter((i) => !i.pk).map((i) => [i.cat, i.wall, Math.round(i.pos * 1000) / 1000]);
+  let settled = 0;
+  for (const [k, name] of STYLES48) {
+    for (const path of [["10x12", "10x14"], ["10x12", "10x16"], ["8x12", "8x16"], ["10x14", "10x12", "10x14"], ["10x12", "10x14", "10x12"], ["8x12", "10x12", "10x16"]]) {
+      if (!path.every((z) => DEMO.P[k][z])) continue;
+      const s = st(DEMO, k, path[0]); s.items[1].shut = true;
+      for (const z of path.slice(1)) S.chooseSize(s, z, DEMO);
+      /* the same customer on a price list whose building had the double doors at every size */
+      const was = st(DEMO_DOUBLES, k, path[0]); was.items[1].shut = true;
+      for (const z of path.slice(1)) S.chooseSize(was, z, DEMO_DOUBLES);
+      const last = path[path.length - 1], o = overlaps(s);
+      const doubles = !["8x12", "10x12"].includes(last);
+      check(G11, o.length === 0 && doors(s)[0][0] === (doubles ? "w72" : "w48") && (!doubles || J(at(s)) === J(at(was))),
+        `${name} ${path.join(" -> ")} with shutters on a window: ${J(o)} ${J(at(s))}${doubles ? " (with the double doors all along: " + J(at(was)) + ")" : ""}`);
+      settled++;
+    }
+  }
+  counts[G11].note = `${settled} size changes after a window was changed, no door or window running into another`;
+  /* a price list that sells the style only at 8x12 and 10x12, with the 48 in
+     door and without the double doors (the Dealer Center lets the owner stop
+     selling them there): a design saved with the double doors opens with the
+     48 in door in their place, never with no door at all, and one whose
+     customer swapped them keeps that door, priced from the 48 in door
+     (review DOORS-5); the server prices what the designer sends */
+  for (const [k, name] of STYLES48) {
+    const only = readJSON("companies/demo/company.json");
+    only.offer = { [k]: { sizes: { "8x12": 3780, "10x12": 4500 } } }; only.categories = [["Utility & Storage", [k]]];
+    only.defaults = { style: k, size: "8x12", colors: only.defaults.colors }; delete only.items.w72;
+    const ONLY = resolve(only, readManufacturer(only.manufacturer), readJSON("library/construction.json"));
+    for (const z of ["8x12", "10x12"]) {
+      const old = st(DEMO_DOUBLES, k, z);
+      const back = toState(fromState(old, DEMO_DOUBLES), ONLY);
+      const oldSw = st(DEMO_DOUBLES, k, z); oldSw.items[0].cat = "d36in"; oldSw.items[0].origCat = "w72";
+      const backSw = toState(fromState(oldSw, DEMO_DOUBLES), ONLY);
+      const said = `The ${times(z)} ${name} comes with the 48″ Wooden Door, so it takes the place of the 72″ Wooden Double Doors.`;
+      const sent = send(fromState(back.state, ONLY), ONLY), sentSw = send(fromState(backSw.state, ONLY), ONLY);
+      check(G11, J(doors(back.state, ONLY)) === J([["w48", "w48", true]]) && back.state.items[0].wall === old.items[0].wall && Math.abs(back.state.items[0].pos - old.items[0].pos) < 1e-3
+        && back.warnings.includes(said) && !back.warnings.some((w) => /no longer offers/.test(w))
+        && J(doors(backSw.state, ONLY)) === J([["d36in", "w48", true]]) && !backSw.warnings.some((w) => /no longer offers/.test(w))
+        && sent && sent.price && sent.price.total === priceParts(back.state, ONLY).total && sentSw && sentSw.price && sentSw.price.total === priceParts(backSw.state, ONLY).total,
+        `${name} ${z} saved with the double doors, opened on a price list that no longer sells them: ${J(doors(back.state, ONLY))} ${J(back.warnings)}; swapped for the steel door: ${J(doors(backSw.state, ONLY))} ${J(backSw.warnings)}; server ${sent && (sent.status + " " + sent.message)} / ${sentSw && (sentSw.status + " " + sentSw.message)}`);
+    }
+  }
+  /* the Cottage, and Barnwright's own Side Utility, Dormer Shed and Side Lofted Barn: as Barnwright, door kept, nothing said, no upgrade */
   for (const cat of [DEMO, BW]) {
     for (const [a, b] of [["10x16", "10x12"], ["10x12", "10x16"]]) {
       const c = st(cat, "CS", a); c.items[1].shut = true;
@@ -583,9 +671,11 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
         `${cat.id} Cottage ${a} touched, then ${b}: ${J(doors(c, cat))} (was ${J(was)}) ${J(w)} ${priceParts(c, cat).total} (Barnwright: ${cat.P.CS[b] + plus})`);
     }
   }
-  const bw = st(BW, "SU", "8x12");
-  const bwBack = toState(fromState(bw, BW), BW);
-  check(G11, J(doors(bwBack.state, BW)) === J([["w72", "w72", true]]) && bwBack.warnings.length === 0, `Barnwright's own 8x12 Side Utility: ${J(doors(bwBack.state, BW))} ${J(bwBack.warnings)}`);
+  for (const [k, name] of STYLES48) for (const z of ["8x12", "10x12"]) {
+    const bw = st(BW, k, z);
+    const bwBack = toState(fromState(bw, BW), BW);
+    check(G11, J(doors(bwBack.state, BW)) === J([["w72", "w72", true]]) && bwBack.warnings.length === 0, `Barnwright's own ${z} ${name}: ${J(doors(bwBack.state, BW))} ${J(bwBack.warnings)}`);
+  }
   /* a swap the customer made on today's 8x12 is left alone */
   const sw = st(DEMO, "SU", "8x12"); S.setItemType(sw, sw.items[0].id, "w72", DEMO);
   const swBack = toState(fromState(sw, DEMO), DEMO);

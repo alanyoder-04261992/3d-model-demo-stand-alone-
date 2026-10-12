@@ -6,16 +6,16 @@
       "id": "adding-a-new-customer",
       "title": "Adding a New Customer",
       "for": "you",
-      "about": "Your steps, from saying hello at their lot to their first quote: the sign-up link, the photos, their Dealer Center, their computer, their other lots and the monthly fee.",
+      "about": "Your steps, from saying hello at their lot to their first quote: connecting Claude once, the sign-up link, their website and the photos, their Dealer Center, their price list with Claude, their computer, their other lots and the monthly fee.",
       "path": "docs/legal/Barnwright-Adding-a-New-Customer.pdf",
       "download": "Barnwright Adding a New Customer.pdf",
-      "pages": 3
+      "pages": 5
     },
     {
       "id": "welcome-sheet",
       "title": "Welcome Sheet",
       "for": "customer",
-      "about": "Give it to the owner when you set up their computer: signing in, putting it on their computer and phone, prices, lots, team, their website and help.",
+      "about": "Give it to the owner when you set up their computer: signing in and staying signed in, putting it on their computer and phone, prices, lots, team, their website, Barnwright and help.",
       "path": "docs/legal/Barnwright-Welcome-Sheet.pdf",
       "download": "Barnwright Welcome Sheet.pdf",
       "pages": 1

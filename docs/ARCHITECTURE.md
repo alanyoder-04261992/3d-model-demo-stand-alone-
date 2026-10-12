@@ -597,7 +597,7 @@ makes, shared by every dealer of that builder, **no prices**:
 | `porchDepthFt` | the 4 ft porch fixed in `frame.js` and the parts | a porch's depth in feet (4) |
 | `sidePorch: {lengthsFt}` | the 8 or 12 ft side porch | the side porch lengths sold, whole feet (`[8, 12]`; the shortest under 20 ft long; never one that leaves under 4 ft of side wall) |
 | `dormerSide` | the dormer always on the door side | `"door"` (default) or `"back"` (every triangle mirrored) |
-| `built` | (new) | the shop standard's How it's built numbers for this style; and, library only (never a box), `standardSwaps`: the shop's own door at some sizes, `[{"sizes": ["8x12", "10x12"], "from": "w72", "to": "w48"}]` on the Side Utility (Alan, Oct 11 2026) |
+| `built` | (new) | the shop standard's How it's built numbers for this style; and, library only (never a box), `standardSwaps`: the shop's own door at some sizes, `[{"sizes": ["8x12", "10x12"], "from": "w72", "to": "w48"}]` on the Side Utility (Alan, Oct 11 2026), the Dormer Shed and the Side Lofted Barn (Oct 12 2026) |
 
 A key a style entry does not know is named with a did-you-mean
 (`validateManufacturer`; for a business's `offer` entry, a strict problem).
@@ -615,8 +615,9 @@ parser (no `eval`). Then the shop standard's own swaps (`standardItems`,
 style's `built.standardSwaps` when the price list sells the item): at those
 sizes each standard `from` item becomes `to`, in the same place, with the
 same id. The 8x12 and 10x12 Side Utility come with the 48 in Wooden Door
-there ("replace 6 foot to 4 foot"); Barnwright's company has no built
-blocks, so its recipe is untouched. A price list that does not sell `to`
+there ("replace 6 foot to 4 foot"), and so do the 8x12 and 10x12 Dormer
+Shed and Side Lofted Barn (Oct 12 2026, "yes"); Barnwright's company has no
+built blocks, so its recipe is untouched. A price list that does not sell `to`
 keeps `from` and says so in the catalogue's `swapWarnings` (the owner's
 Buildings tab shows them under their own heading); `strictProblems` (and the
 Dealer Center's lock and draft problems, `swapNeedProblems`) keep `to` sold
@@ -707,9 +708,13 @@ read siblings from the live `state.items` (clamping order matters).
 **`design`** — the saved/shared form: `{ v:1, company, cfg, type, size,
 colors by NAME, items with Barnwright's field names (defaults left out), dormer,
 porch, opts, elec, ramp, xopt, priced?: {total, at} }`.
-`toState(design, cat)` applies size → type → size (Barnwright `applyDesign`)
+`toState(design, cat, opts)` applies size → type → size (Barnwright `applyDesign`)
 and restores colours by name; anything that no longer exists (renamed or
-dropped item, size no longer sold) is reported, never silently dropped.
+dropped item, size no longer sold) is reported, never silently dropped. An
+included door of a library swap that the price list no longer sells is read
+as the door the size comes with, like a rename. `opts.asSaved` (a look-only
+link, `&view=1`: an order or quote sheet, See it in 3D) keeps the doors as
+saved and sold; `ui/app.js` drops it at the first change.
 `fromState(state, cat)` is its inverse. Round trip is checked for every golden
 case (same items, same `priceParts`).
 
@@ -717,13 +722,16 @@ case (same items, same `priceParts`).
 rendering the UI (4x8 porch under 20 ft, hidden packages/options switched off),
 so pricing never depends on whether the screen was drawn. One rule is new
 (`followStandardDoor`, DIFFERENCES #27): on a style with a library swap
-(the 8x12 and 10x12 Side Utility's 48 in door), an included door of the
+(the 48 in door of the 8x12 and 10x12 Side Utility, Dormer Shed and Side
+Lofted Barn), an included door of the
 pair that is not the one the building comes with -- a design saved before
 the change -- becomes that door when the customer never swapped it (at no
 charge, so the price the customer saw stays), or, when they swapped it for
 another door, is kept in its place as that swap (the difference, never a
-credit); one line of words each. `ui/state.js chooseSize` makes the same
-change, without words, when a touched design changes size. It is matched
+credit, and the line says how much more than before); one line of words
+each. `ui/state.js chooseSize` makes the same change, without words, when a
+touched design changes size; a door that becomes wider (the double doors
+back) settles its wall again, as the size change does. It is matched
 the way `server/office/pricing.js` matches, so what the designer prices the
 server prices; the stale design itself is "no longer offered" (409), never
 "could not be read" (422). A style without a swap (every Barnwright

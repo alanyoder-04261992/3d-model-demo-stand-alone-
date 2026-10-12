@@ -7,7 +7,7 @@
     "palettes: colours as [name, hex]. 'metal' is both the roof colours for every building and the siding colours for metal styles, exactly as in Barnwright.",
     "options: which dormers, ramps, electrical packages, odds and ends and per-square-foot upgrades exist, what they are called, and what they change in the construction. No prices.",
     "built: the shop standard's How it's built numbers (model/build-settings.js): Alan's own shop numbers where he confirmed them (Oct 2026, \"yes match\": the Utility Shed, Side Utility, Lofted Barn and Side Lofted Barn; Oct 11 2026, yes to the proposal pictures: the Garage, Dog Kennel, Garden Utility, Dormer Shed, Metal Lofted Barn and Lofted Barn Garage), each with its _source. Every Dealer Center business gets them unless it sets its own. Barnwright's own numbers stay in the raw traits and library/construction.json; Barnwright's company is this file without the built blocks (tools/lib/barnwright-company.mjs), so the golden test still compares with Barnwright's drawing.",
-    "built.standardSwaps (the shop standard only, never a How it's built box): at the sizes listed (width x length), every standard 'from' door or window the loadout puts in becomes 'to', in the same place (model/loadouts.js standardItems). Alan, Oct 11 2026: the 8x12 and 10x12 Side Utility come with the 48 in Wooden Door, not the 72 in double doors. A price list that does not sell 'to' keeps 'from' and the owner is told (model/company.js resolve).",
+    "built.standardSwaps (the shop standard only, never a How it's built box): at the sizes listed (width x length), every standard 'from' door or window the loadout puts in becomes 'to', in the same place (model/loadouts.js standardItems). Alan, Oct 11 2026: the 8x12 and 10x12 Side Utility come with the 48 in Wooden Door, not the 72 in double doors; Oct 12 2026: the 8x12 and 10x12 Dormer Shed and Side Lofted Barn too. A price list that does not sell 'to' keeps 'from' and the owner is told (model/company.js resolve).",
     "Numbers and names here were read live from Barnwright's page (test/golden/barnwright-catalogue.json)."
   ],
   "id": "standard",
@@ -56,7 +56,13 @@
       "loadout": "barnwright:DS",
       "built": {
         "roofPitch": 7,
-        "_source": "Alan's shop numbers (Oct 11 2026, yes to the proposal pictures): the main roof at 7/12, his steep A-frame pitch (.agents/skills/utility-framing/SKILL.md), so the dormer keeps its room (at 5/12 it would have none). The eave, walls and dormer stay as they were. Barnwright's own numbers stay in the raw traits and library/construction.json."
+        "_source": "Alan's shop numbers (Oct 11 2026, yes to the proposal pictures): the main roof at 7/12, his steep A-frame pitch (.agents/skills/utility-framing/SKILL.md), so the dormer keeps its room (at 5/12 it would have none). The eave, walls and dormer stay as they were. Barnwright's own numbers stay in the raw traits and library/construction.json.",
+        "standardSwaps": [
+          {
+            "sizes": ["8x12", "10x12"], "from": "w72", "to": "w48",
+            "_source": "Alan, Oct 12 2026, asked whether the 8x12 and 10x12 Dormer Shed should get the 48 in door too (they have the Side Utility's door side, where Barnwright's layout pushes a 2x3 window 2 3/8 in into the 72 in double doors): \"yes\". The 48 in Wooden Door goes where the double doors were, in the middle of the door side, between the same two windows; the dormer above is unchanged. The prices stay as they were with the double doors. Barnwright's own Dormer Shed keeps the double doors (barnwright:DS)."
+          }
+        ]
       }
     },
     "BU": {
@@ -115,7 +121,13 @@
       "built": {
         "wallHeight": 79.5,
         "barnPeak": { "8": 43.75, "10": 48, "12": 51 },
-        "_source": "Alan's shop numbers (Oct 2026, \"yes match\"): barn roof peak above the top of the upper plate 43 3/4 in (8 ft wide), 48 in (10 ft), 51 in (12 ft) (confirmed, .agents/skills/shed-measurements/SKILL.md, loft truss size rules); wall 79 1/2 in = 75 in studs (confirmed) + three 1 1/2 in plates (DERIVED). Other widths keep the library shape, held between these (model/roof-shapes.js). Barnwright's own numbers stay in the raw traits and library/construction.json."
+        "_source": "Alan's shop numbers (Oct 2026, \"yes match\"): barn roof peak above the top of the upper plate 43 3/4 in (8 ft wide), 48 in (10 ft), 51 in (12 ft) (confirmed, .agents/skills/shed-measurements/SKILL.md, loft truss size rules); wall 79 1/2 in = 75 in studs (confirmed) + three 1 1/2 in plates (DERIVED). Other widths keep the library shape, held between these (model/roof-shapes.js). Barnwright's own numbers stay in the raw traits and library/construction.json.",
+        "standardSwaps": [
+          {
+            "sizes": ["8x12", "10x12"], "from": "w72", "to": "w48",
+            "_source": "Alan, Oct 12 2026, asked whether the 8x12 and 10x12 Side Lofted Barn should get the 48 in door too (they have the Side Utility's door side, where Barnwright's layout pushes a 2x3 window 2 3/8 in into the 72 in double doors): \"yes\". The 48 in Wooden Door goes where the double doors were, in the middle of the door side, between the same two windows. The prices stay as they were with the double doors. Barnwright's own Side Lofted Barn keeps the double doors (barnwright:SLB)."
+          }
+        ]
       }
     },
     "CS": {

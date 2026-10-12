@@ -666,7 +666,7 @@ const BROKEN = [
   ["a price over $1,000,000", (s) => { s.offer.LB.sizes["10x16"] = 1000001; }, /costs more than \$1,000,000/],
   ["a door over $1,000,000", (s) => { s.items.w48 = 2000000; }, /48″ Wooden Door costs more than \$1,000,000/],
   ["a door priced below $0", (s) => { s.items.w48 = -1; }, /48″ Wooden Door price must be a dollar amount/],
-  ["a standard door with no price", (s) => { delete s.items.w48; }, /comes with the .*so it needs a price/],
+  ["a standard door with no price", (s) => { delete s.items.w48; }, /comes with the .*\. Sell it on Doors & windows \(\$0 is fine\)\./],
   ["nothing sold", (s) => { s.offer = {}; s.categories = []; }, /Sell at least one building style/],
   ["a setting nobody knows", (s) => { s.colour = "red"; }, /could not be saved/],
   ["a business email that is not one", (s) => { s.brand.email = "nope"; }, /business email/],
