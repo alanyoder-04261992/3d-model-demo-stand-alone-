@@ -346,8 +346,8 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
   async function addQuote(who, id, data) {
     onlyKeys(data, ["design", "note"], "The quote");
     const c0 = await load(who, id);
-    const { cat } = await priceList.catalogue();
-    const priced = priceOrExplain(data.design, cat, logError);
+    const { cat, includedCat } = await priceList.catalogue({ cfg: data.design?.cfg, company: data.design?.company });
+    const priced = priceOrExplain(data.design, cat, logError, { includedCat });
     const note = text(data.note, 1000, "Note", { multiline: true });
     if (c0.quotes.length >= MAX_QUOTES) fail(422, "This customer has too many quotes. Add a new customer for new buildings.");
     const number = await nextNumber("quote-number");

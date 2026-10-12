@@ -235,8 +235,13 @@ at once.
 ## Building styles
 
 The builder's library (`library/manufacturers/standard.json`) holds every
-building the 3D designer can draw (23 styles). The owner turns styles on and
-off, renames them, adds and removes sizes, and sets every price.
+building the 3D designer can draw (23 styles). **Your buildings** on the
+Buildings tab shows a picture card for each building the business sells,
+with its name, number of sizes, from price and **Edit**. The owner opens
+**Edit** to rename it, add or remove sizes and set prices and building
+numbers. **Stop selling** is at the bottom; **Sell it again** brings its
+sizes, prices and numbers back until Save. **Add a building** opens the
+standard-building gallery: **Add it** or **Make my own from it**.
 
 The owner can also **add a style of their own**, built like one of the
 library's: for example "Premium Lofted Barn", shaped like the Lofted Barn,
@@ -250,9 +255,27 @@ it is an `offer` entry with a `base`:
 }
 ```
 
-It is drawn exactly like its base (same roof, walls, standard doors and
-windows, construction). A building with a different shape (a new roof, wall
-height or door layout) is a new library style: use the `add-a-style` skill.
+It starts shaped and built like its base. Its Edit page can give it its
+own building numbers and standard layout. A different roof shape needs a
+new library style: use the `add-a-style` skill.
+
+Pictures are drawn in the owner's browser from the draft price list, in its
+opening colors and building numbers. A standard picture shows first while
+the browser draws. Managers and dealers keep the price sheet.
+
+**Set the standard layout** on the Edit page opens the business's 3D
+designer. The owner can move, add or remove doors, windows and porch posts,
+then **Save as standard**. Every size and allowed side-porch place is
+checked first. Items in the standard layout come with the building, and
+every lot starts customers from it. Saved designs, quotes and orders keep
+their own items and prices. A Barnwright visit can set the layout with the
+same checks, and History says Barnwright made the change. Returning to
+Edit keeps other unsaved price changes when the newer save changed only
+standard layouts.
+
+The pages are `#/price-list` and `#/price-list/buildings` (the list),
+`#/price-list/building/<key>` (Edit), `#/price-list/add-building` (the
+gallery) and `#/price-list/how-its-built` (numbers for all buildings).
 
 Sizes are whole feet, width 4–16 and length 4–60 in the Dealer Center. Widths with
 proven drawings and skid tables are 6, 8, 10, 12 and 14.
@@ -262,7 +285,7 @@ proven drawings and skid tables are 6, 8, 10, 12 and 14.
 Each business can build a style its own way without a new version of the
 3D designer: taller walls, another roof pitch, a deeper porch. The owner
 types the numbers the way a shed builder says them ("5/12", "7 ft 9 1/2 in",
-"76 1/2 in") in the Buildings tab, and they are saved in the price list like
+"76 1/2 in") on each building's Edit page, and they are saved in the price list like
 a price (`model/build-settings.js`, the `how-its-built` skill):
 
 * **On a style** (the style's own "How it's built" boxes): roof pitch or
@@ -275,8 +298,8 @@ a price (`model/build-settings.js`, the `how-its-built` skill):
   2 1/8 in") and at each width under it. A style of
   the business's own follows the style it is built like, unless it has a
   number of its own.
-* **For the whole business** ("How your buildings are built", at the end
-  of the Buildings tab): the same numbers for every building with one kind
+* **For the whole business** (**How all your buildings are built**, its
+  own page linked from Your buildings): the same numbers for every building with one kind
   of roof, each saying which styles it reaches, which have their own, and
   which keep a feature of their own ("The Garden Utility keeps its flush
   gable end").
@@ -452,6 +475,8 @@ asked answers 503 `{code: "sign-in-down"}`, never 401.
 | `POST terms` | owner | `{agree: true}` agrees to the current Barnwright Terms and Conditions (the line at the top: no agreement from the sign-up page, an older one, or the terms changed); works while changes are stopped too. A new agreement checks in with Barnwright's control room at once (best effort, 3 seconds), so Alan's Control Room knows within seconds that setup access may have opened |
 | `GET price-list` | everyone with access | `{settings, version, cfg, savedAt, savedBy}` |
 | `PUT price-list` | owner | `{settings, version}` → `{version, cfg, changes}`; 409 when someone saved first |
+| `GET layout-mode?style=K` | owner | `{style, name, sizes, layout, own, version, companyId, colors, openingSize, catalogue, lotSlug}` for setting one building's standard layout; a builder's layout is opened as editable data without changing the saved price list; 403 for a manager or dealer, 404 when the building is not sold |
+| `POST price-list/layout` | owner | `{style, layout, version}` saves only this building's standard layout through the same every-size check, History and version check as the whole price list; `layout: null` goes back to the builder's layout; answers the saved record with `changes`, `sizeCheck` and `lotCount`; the business's account must allow changes |
 | `GET price-list/history` | owner, manager | `{entries: [{version, savedAt, savedBy, changes}]}` |
 | `POST price-list/restore` | owner | `{version, current}` puts an earlier copy back as a new save |
 | `GET lots` | everyone | their lots (all lots for owner/manager) |
@@ -1318,6 +1343,11 @@ Sizes are `"WxL"` in whole feet, width 4 to 16, length 4 to 60.
   a building style's own numbers in How it's built, see How it's built.
 * `set_roof_pitch {style, pitch}`: the short form of `set_built {style,
   roofPitch}`, with its own stricter limits, see Roof pitch.
+* `set_standard_layout {style, layout}`: the doors, windows and porch posts
+  that come with a building, as a data recipe. Every size and side-porch
+  place is checked before saving, with the same words the owner sees.
+  `layout: null` goes back to the builder's layout. The same lock, checked
+  save, History and version rules hold.
 
 **Doors, windows and options**
 
@@ -1586,6 +1616,7 @@ Barnwright save can never be anything an owner's save couldn't be.
 | `leads.fields`, `leads.askPlan`, `leads.smsConsent` | yes | yes |
 | `look`, `features`, `renames` | no edit reaches them | yes |
 | a building style's own How it's built numbers (`offer.<code>.built`) | yes, through `set_built` (and its short form `set_roof_pitch`), before live and while the switch is on | yes, every number its screen has |
+| a building's standard layout (`offer.<code>.layout`) | yes, through `set_standard_layout`, with the owner's same every-size check | yes, through Set the standard layout, with the same check and History |
 | How it's built for the whole business (`built`) | never | never |
 | `construction` | never | never (no screen edits it) |
 | which library style a style of their own is built like (`offer.<code>.base`, its shape) | never (a new style of their own names its own, `add_own_style`) | never (the same); History says the owner's: "Premium Utility: now built like the Lofted Barn (was the Utility Shed)" |
@@ -1711,6 +1742,8 @@ change also needs the site's own Origin, like every `/api/office/` change):
 | `GET me` | `{barnwright: {actor, mode, until, visitEndsAt}, business}` (`business` as in `GET me`) |
 | `GET price-list` | as the owner's `GET price-list` |
 | `PUT price-list` | `{settings, version}` as the owner's, through the lock and the same `check()`; needs the lease; the history copy kept first; `savedBy` is Barnwright with the start pass's id |
+| `GET layout-mode?style=K` | as the owner's, with the visit's cookie and setup access checked again on every request |
+| `POST price-list/layout` | `{style, layout, version}` as the owner's, through the visit's locked save; the history copy is kept first and `savedBy` is Barnwright; stopping setup access stops the next layout save |
 | `GET price-list/history` | as the owner's |
 | `POST price-list/restore` | `{version, current}` as the owner's Put this back, the "never" parts carried forward |
 | `GET lots` | `{lots: [{slug, name, active}]}`, for the previews |

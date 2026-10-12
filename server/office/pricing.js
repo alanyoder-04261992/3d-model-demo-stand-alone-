@@ -5,8 +5,11 @@
    (model/design.js toState) sees it, because that reader is kind to old
    saved links and would quietly turn a bad value into a different building.
    Then the "this came with the building" and "part of the electrical
-   package" marks are checked against what the building really comes with,
-   and the price is worked out by the same priceParts the designer uses.
+   package" marks are checked against what the building really comes with
+   at its sold sizes and porch choices. An older design may also use the
+   included counts from its original price list, provided by the server's
+   own History copy. The price is worked out by the same priceParts the
+   designer uses.
 
    A design made under an earlier price list (its cfg is lower) is priced at
    today's prices when everything in it is still sold, so a customer who
@@ -14,8 +17,8 @@
    price meanwhile. */
 
 import { toState, fromState } from "../../model/design.js";
-import { frameOf } from "../../model/frame.js";
-import { standardItems } from "../../model/loadouts.js";
+import { frameOf, dims, pSpan, wallDefs } from "../../model/frame.js";
+import { standardItems, layoutVariants } from "../../model/loadouts.js";
 import { pkFixtures, fitsOnWall } from "../../model/layout.js";
 import { priceParts } from "../../model/pricing.js";
 import { extraOfferedOn } from "../../model/company.js";
@@ -35,6 +38,30 @@ function unreadable() { throw new DesignProblem(UNREADABLE); }
 function notOffered() { throw new DesignProblem(NOT_OFFERED, 409); }
 
 const own = (o, k) => o != null && Object.prototype.hasOwnProperty.call(o, k);
+
+/* A customer can move an included item and then choose a shorter size or
+   porch. Those items keep their included marks, even when that smaller
+   standard layout has fewer. Allow only the highest count the business
+   actually includes on a sold size and porch; forged extras are still
+   refused. A resolved price list is immutable, so count it once. */
+const includedCache = new WeakMap();
+function mostIncluded(cat, type) {
+  let byStyle = includedCache.get(cat);
+  if (!byStyle) includedCache.set(cat, byStyle = new Map());
+  if (byStyle.has(type)) return byStyle.get(type);
+  const maximum = new Map(), t = cat.TYPES[type];
+  for (const size of Object.keys(cat.P[type])) {
+    const d = dims(size, t);
+    for (const variant of layoutVariants(t, size)) {
+      const span = pSpan(variant, d, t), ws = wallDefs(t, d, span, null);
+      const counts = new Map();
+      for (const item of standardItems(t, d.W, d.L, { CAT: cat.CAT, span, ws }, type)) counts.set(item.cat, (counts.get(item.cat) || 0) + 1);
+      for (const [key, n] of counts) maximum.set(key, Math.max(maximum.get(key) || 0, n));
+    }
+  }
+  byStyle.set(type, maximum);
+  return maximum;
+}
 
 function plainObject(value, keys) {
   if (!value || typeof value !== "object" || Array.isArray(value)) unreadable();
@@ -124,7 +151,7 @@ function checkDesign(design, cat) {
 
 /* -> {design (as the Office stores it), price: {base, lines, total}, repriced}.
    repriced is true when the design was made under an earlier price list. */
-export function priceDesign(input, cat) {
+export function priceDesign(input, cat, { includedCat = null } = {}) {
   checkDesign(input, cat);
   const repriced = input.cfg !== cat.cfg;
   const design = repriced ? { ...input, cfg: cat.cfg } : input;
@@ -133,10 +160,23 @@ export function priceDesign(input, cat) {
   if (warnings.length) notOffered();
 
   const frame = frameOf(state, cat);
-  const comesWith = new Map();
-  for (const item of standardItems(frame.t, frame.d.W, frame.d.L, { CAT: frame.CAT, span: frame.span, ws: frame.ws }, state.type)) {
-    comesWith.set(item.cat, (comesWith.get(item.cat) || 0) + 1);
+  const required = new Map();
+  for (const item of state.items.filter((i) => i.inc && !i.pk)) {
+    const original = item.origCat || item.cat;
+    required.set(original, (required.get(original) || 0) + 1);
   }
+  const fitsAllowance = (allowed) => [...required].every(([key, n]) => n <= (allowed.get(key) || 0));
+  let allowance = mostIncluded(cat, state.type);
+  /* Only an authoritative history copy from the price-list service can
+     allow the items an older design came with. Never infer an allowance
+     from browser positions, counts, or an unrecognised cfg. The entire
+     included set must belong to one price list: merging their counts
+     would give away both the old door and its new replacement. */
+  if (!fitsAllowance(allowance) && includedCat?.id === cat.id && includedCat.cfg === input.cfg && input.cfg < cat.cfg && includedCat.TYPES[state.type]) {
+    allowance = mostIncluded(includedCat, state.type);
+  }
+  if (!fitsAllowance(allowance)) unreadable();
+  const comesWith = new Map(allowance);
 
   const packageOnly = structuredClone(state);
   packageOnly.items = packageOnly.items.filter((item) => !item.pk);
@@ -179,9 +219,9 @@ export function priceDesign(input, cat) {
 /* priceDesign for the routes: a DesignProblem keeps its words; anything
    else (a design the drawing code cannot lay out) is logged and told as
    "could not be read". */
-export function priceOrExplain(design, cat, log = console.error) {
+export function priceOrExplain(design, cat, log = console.error, context = {}) {
   try {
-    return priceDesign(design, cat);
+    return priceDesign(design, cat, context);
   } catch (e) {
     if (e instanceof DesignProblem) throw new OfficeError(e.status, e.message);
     log("A design could not be priced:", e);

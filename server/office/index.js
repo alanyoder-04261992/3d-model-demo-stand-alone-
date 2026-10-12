@@ -46,7 +46,7 @@
 
    The routes are listed in docs/OFFICE.md. */
 
-import { fail, json, errorAnswer, readBody, requireSameSite, text, email as emailField, phone } from "./http.js";
+import { fail, json, errorAnswer, readBody, requireSameSite, text, email as emailField, phone, onlyKeys } from "./http.js";
 import { wrapStore } from "./store.js";
 import { createPeople, createTeam, publicPerson, can, must } from "./people.js";
 import { createPriceList } from "./price-list.js";
@@ -293,6 +293,21 @@ export function createOffice(deps) {
     await firstStart.tick("prices");
     return json({ ...saved, lotCount });
   });
+  route("GET", /^\/api\/office\/layout-mode$/, async (req) => {
+    const who = await people.member(req);
+    must(can.changePrices(who.person), "Only the owner sets the standard layout.");
+    return json(await priceList.layoutMode(new URL(req.url).searchParams.get("style"), await lots.all()));
+  });
+  route("POST", /^\/api\/office\/price-list\/layout$/, async (req) => {
+    const who = await writer(req);
+    must(can.changePrices(who.person), "Only the owner sets the standard layout.");
+    const data = await readBody(req);
+    onlyKeys(data, ["style", "layout", "version"], "The standard layout");
+    const settings = await priceList.layoutSettings(data);
+    const saved = await priceList.save(who.person, { settings, version: data.version });
+    const lotCount = (await lots.all()).filter((l) => l.active !== false).length;
+    return json({ ...saved, lotCount });
+  });
   route("GET", /^\/api\/office\/price-list\/history$/, async (req) => {
     const who = await people.member(req);
     must(can.seeTeam(who.person), "Only the owner or a manager can see the price list history.");
@@ -410,6 +425,16 @@ export function createOffice(deps) {
     business: business(s.view.record?.data || null),
   })));
   route("GET", /^\/api\/office\/barnwright\/price-list$/, visit(async () => priceList.get()));
+  route("GET", /^\/api\/office\/barnwright\/layout-mode$/, visit(async (req) =>
+    priceList.layoutMode(new URL(req.url).searchParams.get("style"), (await setup.visit.lots()).lots)));
+  route("POST", /^\/api\/office\/barnwright\/price-list\/layout$/, visit(async (req, s) => {
+    const data = await readBody(req);
+    onlyKeys(data, ["style", "layout", "version"], "The standard layout");
+    const settings = await priceList.layoutSettings(data);
+    const saved = await setup.visit.save(s, { settings, version: data.version });
+    const lotCount = (await lots.all()).filter((l) => l.active !== false).length;
+    return { ...saved, lotCount };
+  }));
   route("PUT", /^\/api\/office\/barnwright\/price-list$/, visit(async (req, s) => {
     const data = await readBody(req);
     const lotCount = (await lots.all()).filter((l) => l.active !== false).length;

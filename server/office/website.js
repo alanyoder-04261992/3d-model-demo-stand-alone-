@@ -161,8 +161,8 @@ export function createWebsite({ store, now, lots, priceList, customers, account 
     try {
       await limit(`limits/${slug}/${hash(clientIp).slice(0, 32)}`, 20, 600000);
       await limit(`limits/${slug}/all`, 300, 3600000);
-      const { cat } = await priceList.catalogue();
-      const priced = priceOrExplain(data.design, cat, log);
+      const { cat, includedCat } = await priceList.catalogue({ cfg: data.design?.cfg, company: data.design?.company });
+      const priced = priceOrExplain(data.design, cat, log, { includedCat });
       const contact = contactOf(data.contact, settings);
       saved = await customers.addWebsiteQuote(slug, contact, priced, cat);
       saved.repriced = priced.repriced;
