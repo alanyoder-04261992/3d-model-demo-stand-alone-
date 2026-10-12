@@ -456,7 +456,7 @@ GUIDE_INTRO = [
 TERMS_OUT_22 = tuple(int(n) for n in TERMS_VERSION.split(".")) >= (2, 2)
 CLAUDE_STEP = [
     "After their Dealer Center shows <b>Connected</b>: in the Claude app, type <b>/dealersetup</b> and their business name. "
-    "Claude reads your visit photos and shows you one plan. It changes nothing until you say go, and you tap <b>Allow</b> for each change. "
+    "Claude reads your visit photos and shows you one plan. It changes nothing until you say go. Then for each batch it asks you to <b>Allow</b>: tap <b>Allow</b> once, never <b>Always allow</b>. "
     "First time? Add Claude to your Control Room once: <b>Papers</b>, <b>Connect Claude</b>.",
     "When: right away if they signed up under the Barnwright Terms and Conditions 2.2 or later, even before the owner signs in. "
     "If they signed up before 2.2, once the owner signs in and agrees to the new terms in First setup. "
