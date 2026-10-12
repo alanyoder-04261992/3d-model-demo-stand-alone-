@@ -4,7 +4,7 @@
    picture(key, {size, cat, base, name}) -> an <img> for a card ("card",
    400×300) or the Edit page ("page", 640×480):
      * at once the standard picture of the style it is built like
-       (/library/style-refs/<CODE>.jpg, alt "The standard <name>"),
+       (/ui/office/building-pictures/<CODE>.jpg, alt "The standard <name>"),
        data-picture="standard"; a library with no such picture shows the
        shed tile instead (data-picture="none");
      * then the business's own picture, drawn in this browser by
@@ -38,8 +38,9 @@ const SIZES = { card: CARD_PICTURE, page: PAGE_PICTURE };
 const mem = new Map();          /* key -> blob: address */
 let jobs = [];                  /* {key, cat, style, size, imgs} waiting */
 let running = false, engine = null, engineFailed = false, observer = null;
+let generation = 0;
 const shown = new WeakSet();    /* imgs on screen or near it */
-export const stats = { drawn: 0, fromStore: 0, failed: 0, engineLoaded: false };
+export const stats = { drawn: 0, fromStore: 0, failed: 0, engineLoaded: false, renderersStarted: 0 };
 
 const dprNow = () => Math.min(2, Math.max(1, window.devicePixelRatio || 1));
 export function recipeOf(size) {
@@ -59,7 +60,11 @@ function openDb() {
     try {
       const req = indexedDB.open(DB, 1);
       req.onupgradeneeded = () => { try { req.result.createObjectStore(STORE, { keyPath: "key" }).createIndex("at", "at"); } catch { /* there already */ } };
-      req.onsuccess = () => done(req.result);
+      req.onsuccess = () => {
+        const db = req.result;
+        db.onversionchange = () => { db.close(); dbp = null; };
+        done(db);
+      };
       req.onerror = () => done(null);
       req.onblocked = () => done(null);
     } catch { done(null); }
@@ -85,25 +90,27 @@ async function store(key, blob) {
     const os = tx.objectStore(STORE);
     os.put({ key, blob, at: Date.now() });
     const count = os.count();
-    count.onsuccess = () => {
+    count.onsuccess = () => { try {
       let extra = count.result - KEEP;
       if (extra <= 0) return;
       const cur = os.index("at").openCursor();
-      cur.onsuccess = () => { const c = cur.result; if (c && extra-- > 0) { c.delete(); c.continue(); } };
-    };
+      cur.onsuccess = () => { try { const c = cur.result; if (c && extra-- > 0) { c.delete(); c.continue(); } } catch { /* storage blocked */ } };
+    } catch { /* storage blocked */ } };
+    tx.onerror = () => {};
   } catch { /* storage full or blocked: the tab keeps it */ }
 }
 
 /* ---- one picture ------------------------------------------------------- */
 
 function standardSrc(M, base) {
-  return M?.id === "standard" && M.styles?.[base] ? `/library/style-refs/${encodeURIComponent(base)}.jpg` : null;
+  return M?.id === "standard" && M.styles?.[base] ? `/ui/office/building-pictures/${encodeURIComponent(base)}.jpg` : null;
 }
 
 function show(img, url, name) {
   img.src = url;
   img.dataset.picture = "drawn";
   img.alt = `${name} as your 3D designer shows it`;
+  img.parentElement?.classList.remove("none");
 }
 
 /* An <img> for the style. cat: the catalogue the picture is drawn from
@@ -117,20 +124,25 @@ export function picture(style, { size = "card", cat = null, M = null, base = sty
   const key = cat ? keyFor(cat, style, size) : null;
   if (key) img.dataset.pictureKey = key;
   const box = h("span", { class: ["pl-pic", size === "page" && "big"], dataset: { style } }, img,
-    std ? null : h("span", { class: "pl-pic-none", "aria-hidden": "true" }, icon("lots")));
+    h("span", { class: "pl-pic-none", "aria-hidden": "true" }, icon("lots")));
+  if (!std) box.classList.add("none");
+  img.addEventListener("error", () => {
+    if (img.dataset.picture !== "standard") return;
+    img.removeAttribute("src"); img.dataset.picture = "none"; img.alt = ""; box.classList.add("none");
+  });
   if (!key) return box;
   if (mem.has(key)) { show(img, mem.get(key), name); return box; }
-  img.addEventListener("error", () => { if (img.dataset.picture === "standard") { img.removeAttribute("src"); img.dataset.picture = "none"; box.classList.add("none"); } });
-  ask({ key, cat, style, size, img, name });
+  ask({ key, cat, style, size, recipe: recipeOf(size), img, name });
   return box;
 }
 
 function ask(j) {
   let job = jobs.find((x) => x.key === j.key);
-  if (!job) { job = { key: j.key, cat: j.cat, style: j.style, size: j.size, imgs: [] }; jobs.push(job); }
-  job.imgs.push({ img: j.img, name: j.name });
+  if (!job) { job = { key: j.key, cat: j.cat, style: j.style, size: j.size, recipe: j.recipe, imgs: [] }; jobs.push(job); }
+  job.imgs.push({ img: j.img, name: j.name, mounted: false });
   watch(j.img);
-  queueMicrotask(run);
+  if (typeof IntersectionObserver === "undefined") requestAnimationFrame(run);
+  else queueMicrotask(run);
 }
 
 function watch(img) {
@@ -147,17 +159,19 @@ function watch(img) {
 const onPage = (job) => job.imgs.some((x) => x.img.isConnected);
 const visible = (job) => job.imgs.some((x) => x.img.isConnected && shown.has(x.img));
 
-async function loadEngine() {
+async function loadEngine(turn) {
   if (engine && !engine.lost) return engine;
   if (engineFailed) return null;
   try {
     if (engine?.lost) { engine.close(); engine = null; }
-    const mod = await import(/* @vite-ignore */ ENGINE_FILE);
+    const mod = await import(/* @vite-ignore */ `${ENGINE_FILE}?v=${PICTURES_ID}`);
+    if (turn !== generation) return null;
     stats.engineLoaded = true;
     engine = mod.startPictures();
+    stats.renderersStarted++;
     return engine;
   } catch {
-    engineFailed = true;
+    if (turn === generation) engineFailed = true;
     return null;
   }
 }
@@ -167,33 +181,56 @@ async function run() {
   running = true;
   try {
     for (;;) {
-      jobs = jobs.filter(onPage);
+      /* Tabs are built before an awaited view is attached to the page. The
+         first microtask must keep those pictures: their observer starts the
+         queue when the view is mounted. Only discard a picture that was on
+         the page and has since been removed. forget() drops canceled views. */
+      jobs = jobs.filter((job) => {
+        job.imgs = job.imgs.filter((target) => {
+          if (target.img.isConnected) { target.mounted = true; return true; }
+          return !target.mounted;
+        });
+        return job.imgs.length > 0;
+      });
       if (!jobs.length) break;
-      if (document.hidden) { await new Promise((r) => document.addEventListener("visibilitychange", r, { once: true })); continue; }
+      if (document.hidden) break;
       const job = jobs.find(visible);
       if (!job) break;
       jobs.splice(jobs.indexOf(job), 1);
+      const turn = generation;
       let url = mem.get(job.key);
       if (!url) {
         const blob = await stored(job.key);
+        if (turn !== generation || !onPage(job)) continue;
         if (blob) { url = URL.createObjectURL(blob); mem.set(job.key, url); stats.fromStore++; }
       }
       if (!url) {
-        const e = await loadEngine();
+        let e = await loadEngine(turn);
+        if (turn !== generation || !onPage(job)) continue;
         if (!e || e.off) { jobs = []; break; }
         try {
           const S = SIZES[job.size] || CARD_PICTURE;
-          const blob = await e.draw(job.cat, job.style, { w: S.w, h: S.h, dpr: dprNow() });
+          const recipe = job.recipe;
+          let blob;
+          try { blob = await e.draw(job.cat, job.style, { w: S.w, h: S.h, dpr: recipe.dpr }); }
+          catch (error) {
+            if (!e.lost || turn !== generation) throw error;
+            e = await loadEngine(turn);
+            if (!e || turn !== generation) continue;
+            blob = await e.draw(job.cat, job.style, { w: S.w, h: S.h, dpr: recipe.dpr });
+          }
+          if (turn !== generation) continue;
           url = URL.createObjectURL(blob);
           mem.set(job.key, url);
           stats.drawn++;
-          store(job.key, blob);
+          void store(job.key, blob);
         } catch {
           stats.failed++;
-          if (e.off) { jobs = []; break; }
+          if (e.off) { e.close(); engine = null; engineFailed = true; jobs = []; break; }
         }
       }
-      if (url) for (const { img, name } of job.imgs) if (img.isConnected) show(img, url, name);
+      if (url && turn === generation) for (const { img, name } of job.imgs) if (img.isConnected) show(img, url, name);
+      for (const { img } of job.imgs) observer?.unobserve(img);
       await frame();
     }
   } finally {
@@ -203,16 +240,21 @@ async function run() {
 
 /* The screen changed: drop what is waiting (pictures already drawn stay). */
 export function forget() {
+  generation++;
   jobs = [];
-}
-
-/* Leaving the price list: give the graphics back. */
-export function release() {
-  jobs = [];
-  if (engine) { try { engine.close(); } catch { /* gone */ } engine = null; }
   observer?.disconnect();
   observer = null;
 }
 
+/* Leaving the price list: give the graphics back. */
+export function release() {
+  forget();
+  if (engine) { try { engine.close(); } catch { /* gone */ } engine = null; }
+  engineFailed = false;
+}
+
 /* For the checks: what the queue has done. */
-if (typeof window !== "undefined") window.__dcPictures = { stats, PICTURES_ID };
+if (typeof window !== "undefined") {
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) run(); });
+  window.__dcPictures = { stats, PICTURES_ID };
+}

@@ -52,15 +52,9 @@ function copy(path) {
   mkdirSync(dirname(dest), { recursive: true });
   copyFileSync(source, dest); copied.add(path);
 }
-// The style reference pictures and facts (tools/make-style-refs.mjs): about
-// 1.8 MB that Barnwright's Control Room reads from GitHub for setting a dealer
-// up. Only the front-corner picture of each style ships (library/style-refs/
-// <CODE>.jpg): the Dealer Center's Your buildings shows it until the owner's
-// browser has drawn the business's own picture, and keeps it when the
-// browser can't draw. The end pictures, the sheet and styles.json stay out
-// (tools/check-style-refs.mjs).
+// Barnwright's Control Room reads these setup references from GitHub. Dealer
+// sites use the separate, public fallback pictures below, never this folder.
 const NOT_SHIPPED = new Set(["library/style-refs"]);
-const SHIPPED_REF = /^[A-Z0-9]{1,8}\.jpg$/;
 function tree(path) {
   for (const entry of readdirSync(resolve(root, path), { withFileTypes: true })) {
     const child = `${path}/${entry.name}`;
@@ -97,12 +91,13 @@ moduleGraph("ui/app.js");
 // app.js intentionally lazy-loads these by name after the first model render.
 for (const name of ["views", "blueprint", "quote", "share", "embed-mode"]) moduleGraph(`ui/${name}.js`);
 for (const name of ["styles", "views", "blueprint", "quote", "share", "embed-mode"]) copy(`ui/${name}.css`);
+copy("ui/layout-mode.css");
 // The Dealer Center's stylesheets (its script is bundled below), and
 // closed.css, the page a closed lot's designer link shows.
 if (!existsSync(resolve(root, "ui/office/closed.css"))) throw new Error("ui/office/closed.css is missing: a closed lot's link needs it");
 for (const file of readdirSync(resolve(root, "ui/office")).filter(f => f.endsWith(".css")).sort()) copy(`ui/office/${file}`);
 tree("fonts"); tree("library"); tree("legal");
-for (const f of readdirSync(resolve(root, "library/style-refs")).filter((f) => SHIPPED_REF.test(f)).sort()) copy(`library/style-refs/${f}`);
+tree("ui/office/building-pictures");
 const { companies, problems } = await readCompanies();
 if (problems.length) throw new Error(problems.join("\n"));
 const selected = companies.filter(c => learning || !c.id.startsWith("learning-"));

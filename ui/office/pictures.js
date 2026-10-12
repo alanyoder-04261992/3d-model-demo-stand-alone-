@@ -25,30 +25,41 @@ import { makePlan } from "../../model/plan.js";
 import { pictureState, PICTURE_CAMERA, PICTURE_BACKDROP } from "../../model/picture-key.js";
 
 export function startPictures() {
-  const cv = document.createElement("canvas");
-  cv.width = 2; cv.height = 2;
-  cv.setAttribute("aria-hidden", "true");
-  cv.style.cssText = "position:fixed;left:-10000px;top:0;width:2px;height:2px;pointer-events:none;opacity:0";
-  document.body.appendChild(cv);
-  const looks = new Map();
-  let renderer = null;
+  const host = document.createElement("div");
+  host.setAttribute("aria-hidden", "true");
+  host.dataset.pictureRenderer = "";
+  host.style.cssText = "position:fixed;left:-10000px;top:0;width:2px;height:2px;pointer-events:none;opacity:0";
+  document.body.appendChild(host);
+  let cv = null, renderer = null, currentLook = null, closed = false;
   const api = { off: false, lost: false };
-  cv.addEventListener("webglcontextlost", (e) => { e.preventDefault(); api.lost = true; });
+
+  function dropRenderer() {
+    try { renderer?.stopLoop(); renderer?.gl?.getExtension("WEBGL_lose_context")?.loseContext(); } catch { /* already gone */ }
+    renderer = null;
+    cv = null;
+    host.replaceChildren();
+  }
 
   function rendererFor(cat) {
     const trueColour = !!(cat.look && cat.look.trueColour);
     const key = trueColour ? "true" : "warm";
-    if (renderer && looks.get("current") === key) return renderer;
+    if (renderer && currentLook === key) return renderer;
+    dropRenderer();
+    cv = document.createElement("canvas");
+    cv.width = 2; cv.height = 2;
+    cv.addEventListener("webglcontextlost", (e) => { e.preventDefault(); if (!closed && e.target === cv) api.lost = true; });
+    host.appendChild(cv);
     renderer = createRenderer(cv, { trueColour, scene: "studio", note: " " });
     renderer.test.freezeWatchdog = true;
     renderer.cam.autoSpin = false;
     renderer.cam.interacted = true;
-    looks.set("current", key);
+    currentLook = key;
     if (renderer.off) api.off = true;
     return renderer;
   }
 
   api.draw = async function draw(cat, key, { w, h, dpr = 1 }) {
+    if (closed) throw new Error("The pictures have been closed.");
     if (api.lost) throw new Error("The browser took the graphics away. Start again.");
     const r = rendererFor(cat);
     if (r.off) { api.off = true; throw new Error("This browser has no WebGL."); }
@@ -58,13 +69,13 @@ export function startPictures() {
     r.setScene("studio");
     r.setStages(stageTableFor("finished"));
     const pic = snapshotCanvas(r, { result, size, dpr, cam: { yaw: PICTURE_CAMERA.yaw, pitch: PICTURE_CAMERA.pitch }, background: PICTURE_BACKDROP, restore: false });
-    return await new Promise((done, fail) => pic.toBlob((b) => (b ? done(b) : fail(new Error("The picture could not be made."))), "image/jpeg", 0.85));
+    return await new Promise((done, fail) => pic.toBlob((b) => (!closed && !api.lost && b ? done(b) : fail(new Error("The picture could not be made."))), "image/jpeg", 0.85));
   };
 
   api.close = function close() {
-    try { renderer?.gl?.getExtension("WEBGL_lose_context")?.loseContext(); } catch { /* already gone */ }
-    renderer = null;
-    cv.remove();
+    closed = true;
+    dropRenderer();
+    host.remove();
   };
   return api;
 }

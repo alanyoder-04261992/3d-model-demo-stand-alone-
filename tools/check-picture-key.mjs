@@ -69,6 +69,7 @@ const rows = [
   ["Utility Shed roof 8/12", (s) => { s.offer.UT.built = { ...(s.offer.UT.built || {}), roofPitch: 8 }; }, true, false],
   ["business-wide gable roof 6/12", (s) => { s.built = { ...(s.built || {}), roofPitch: { gable: 6 } }; }, true, false],
   [`opens on ${red} siding`, (s) => { s.defaults = { ...s.defaults, colors: { ...s.defaults.colors, body: red } }; }, true, true],
+  ["changes to warm light", (s) => { s.look = { ...(s.look || {}), trueColour: false }; }, true, true],
 ];
 for (const [name, change, utChanges, lbChanges] of rows) {
   const s = structuredClone(S0);
@@ -102,6 +103,33 @@ if (ownKey) ok("a style of the business's own has a key of its own", ownKey !== 
 let threw = null;
 try { PK.pictureKey(cat, "ZZ", RECIPE, ENGINE); } catch (e) { threw = e.message; }
 ok("a style the price list doesn't sell is said in words", /isn't|not a building style/.test(threw || ""), threw);
+
+/* The screen's memo must follow the same picture inputs before the key is
+   calculated. A stale catalogue would make the correct hash hide a change. */
+const { S } = await import("../ui/office/views/price-list/state.js");
+const { catOf } = await import("../ui/office/views/price-list/built.js");
+S.M = M; S.L = L; S.saved = { version: "picture-key-check", settings: S0 };
+const drawing = catOf(S0);
+const changedPrice = structuredClone(S0);
+changedPrice.offer.UT.sizes["10x20"] += 100;
+ok("typing a price reuses the screen's drawing catalogue", catOf(changedPrice) === drawing);
+const changedColor = structuredClone(S0);
+changedColor.defaults.colors.body = red;
+const colorCat = catOf(changedColor);
+ok("opening color changes reach the screen's drawing catalogue", !!colorCat && PK.pictureKey(colorCat, "UT", RECIPE, ENGINE) !== PK.pictureKey(drawing, "UT", RECIPE, ENGINE));
+const changedLight = structuredClone(S0);
+changedLight.look = { ...(changedLight.look || {}), trueColour: false };
+const lightCat = catOf(changedLight);
+ok("the business's lighting changes reach the screen's drawing catalogue and cache key", !!lightCat && lightCat.look.trueColour === false && PK.pictureKey(lightCat, "UT", RECIPE, ENGINE) !== PK.pictureKey(drawing, "UT", RECIPE, ENGINE));
+const missingPrice = structuredClone(S0);
+missingPrice.offer.UT.sizes["10x18"] = "";
+const before = JSON.stringify(missingPrice);
+const newSizeCat = catOf(missingPrice);
+ok("a new size gets a picture before its price is typed, and the draft price stays untouched", newSizeCat?.P?.UT?.["10x18"] === 1 && JSON.stringify(missingPrice) === before);
+const changedLayout = structuredClone(S0);
+changedLayout.offer.UT.layout = [{ cat: "w48", wall: "F", at: "center" }];
+const layoutCat = catOf(changedLayout);
+ok("a saved standard layout reaches the screen's drawing catalogue", !!layoutCat && PK.pictureKey(layoutCat, "UT", RECIPE, ENGINE) !== PK.pictureKey(drawing, "UT", RECIPE, ENGINE));
 
 console.log("");
 if (fail) {
