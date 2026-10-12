@@ -282,7 +282,12 @@ async function openPage(ctx, query, o) {
   const noise = [];
   page.on("console", (m) => { const t = m.type(); if (t === "error" || t === "warning") noise.push({ type: t, text: m.text(), url: (m.location() || {}).url }); });
   page.on("pageerror", (e) => noise.push({ type: "pageerror", text: String(e) }));
-  if (o.fixedTime !== undefined) await page.clock.setFixedTime(o.fixedTime);
+  if (o.fixedTime !== undefined) await page.addInitScript((time) => {
+    /* Only the ten-second opening deadline is controlled. Leave native
+       requestAnimationFrame, performance.now and timers untouched. */
+    window.__openingTurnTime = time;
+    Date.now = () => window.__openingTurnTime;
+  }, o.fixedTime);
   await page.goto(BASE + "/" + (query || ""), { waitUntil: "load" });
   if (o.noWait) return { page, noise };
   await page.waitForFunction(() => window.shedUI && window.shedUI.ready, null, { timeout: 90000 });
@@ -734,20 +739,34 @@ try {
       for (let n = 0; n < frames; n++) await new Promise(resolve => requestAnimationFrame(resolve));
       return { before, yaw: camera.yaw, spin: camera.autoSpin };
     }, frames);
+    const showAnimationStage = async (page) => {
+      await page.bringToFront();
+      const fixture = await page.evaluate(() => {
+        const stage = document.getElementById("stage");
+        stage?.scrollIntoView({ block: "center" });
+        const rect = stage?.getBoundingClientRect();
+        return { url: location.href, body: document.body.textContent.slice(0, 400), hasStage: !!stage,
+          ready: !!window.shedUI?.ready, hasCamera: !!window.shedUI?.camera, hidden: document.hidden,
+          visible: !!rect && rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < innerHeight };
+      });
+      if (!fixture.hasStage || !fixture.ready || !fixture.hasCamera || fixture.hidden || !fixture.visible)
+        throw new Error("The animation fixture cannot be seen: " + J(fixture));
+      return fixture;
+    };
     const c1 = await newContext(browser, { motion: true });
     const { page: p1 } = await openPage(c1, "?company=demo", { fixedTime: openingTime });
-    await p1.bringToFront(); await p1.locator("#stage").scrollIntoViewIfNeeded();
+    const fixture1 = await showAnimationStage(p1);
     const turning = await cameraAfterFrames(p1);
-    ok("a visitor sees the building turn by itself", Math.abs(turning.yaw - turning.before) > 0.01 && turning.spin === true, J(turning));
-    await p1.clock.setFixedTime(openingTime + 10001);
+    ok("a visitor sees the building turn by itself", Math.abs(turning.yaw - turning.before) > 0.01 && turning.spin === true, J({ turning, fixture: fixture1 }));
+    await p1.evaluate(time => { window.__openingTurnTime = time; }, openingTime + 10001);
     const finished = await cameraAfterFrames(p1, 2);
     ok("the automatic opening turn stops after ten seconds", finished.spin === false && finished.yaw === finished.before, J(finished));
     await c1.close();
     const c2 = await newContext(browser);
     const { page: p2 } = await openPage(c2, "?company=demo", { fixedTime: openingTime });
-    await p2.bringToFront(); await p2.locator("#stage").scrollIntoViewIfNeeded();
+    const fixture2 = await showAnimationStage(p2);
     const still = await cameraAfterFrames(p2);
-    ok("a visitor who prefers reduced motion does not", still.yaw === still.before && still.spin === false, J(still));
+    ok("a visitor who prefers reduced motion does not", still.yaw === still.before && still.spin === false, J({ still, fixture: fixture2 }));
     await c2.close();
   }
 

@@ -100,10 +100,43 @@ Selected review captures are committed here:
 
 Completed focused checks: Your Buildings **144**, Dealer Center **73**,
 layout server **60**, layout return **27**, public demo flow **15**,
-conflict recovery **14**, browser picture cache **15**, and Help **168**.
+conflict recovery **14**, layout editor **45**, How it's built **78**,
+sign-in screens **112**, quote requests **83**, browser picture cache **15**,
+and Help **168**.
 The builder twins match **295** size and porch cases. The golden geometry
-check matches **521,769 triangles across 148 buildings**.
+check matches **521,769 triangles across 148 buildings**. The live reference
+model matches all **24,111 comparisons**, and all **24 finished pictures**
+match the recorded pixels.
 
-The final full-suite counts, baseline comparison and any remaining reference
-check failures will be recorded here after the final run. This record does
-not claim that the full suite passed.
+All **68 check programs** were covered by the full run and successful
+targeted reruns, with no remaining check failures. The first aggregate run
+covered 65 programs and reported 55 passes and 10 failures. The three checks
+added during review (layout return, demo and conflict recovery) passed
+separately. Targeted reruns resolved all ten initial failures:
+
+- Dealer Center and engine smoke passed after the install-profile fixture,
+  Help expectation and fixture favicon were corrected.
+- Gallery passed on its uninterrupted rerun; the first run was paused by the
+  runner and timed out during teardown.
+- How it's built and customer packaging now check the single-building Edit
+  pages and separate picture bundle while preserving their old assertions.
+- The layout editor passed all six width/theme combinations after the
+  selected sheet was made to stay visible following page reflow.
+- Quote checks use a controlled rapid-submit clock and a local mail-handler
+  fixture, retaining the real minimum, clicked mail link and response checks.
+- Sign-in screens passed after the older test server's port was released.
+- Designer sections 9 and 14 passed with a Date-only animation fixture and
+  the pinned reference folder; the other sections passed in the full run.
+- Golden labels matched for 141 buildings in the first run; the seven load
+  timeouts each passed when rerun individually, with no drawing or label
+  differences. No baseline exception is needed.
+
+`npm run build:client` also passed. The site profiles still keep the sample
+demo and internal learning/reference material out of customer builds.
+
+The deployed PR preview passed **14 desktop and phone checks**: all 23
+building cards, Edit, the actual standard-layout designer, a three-inch move,
+every-size drawings, save and return with the layout still present. No
+script, stylesheet or picture was missing; no real account API call or page
+error occurred. The preview-only Netlify drawer was hidden in the browser
+fixture so it could not intercept the app's save buttons.
