@@ -18,7 +18,7 @@
                              (one deliberate difference: an electrical
                              package's fixtures are laid AFTER the new style's
                              standard doors, so they survive a style change)
-   toState(design, cat)      -> {state, warnings}. Applies size, then style,
+   toState(design, cat, opts) -> {state, warnings}. Applies size, then style,
                              then size, like Barnwright's applyDesign, and
                              restores colours by name. Anything that no longer
                              exists (a size no longer sold, an item or colour
@@ -28,8 +28,10 @@
                              style and size, every item stays exactly where it
                              was saved (only kept on its wall); otherwise every
                              item is re-clamped in order, as Barnwright does.
+                             opts.asSaved: a design only looked at keeps the
+                             door it was saved with (normalize below).
    fromState(state, cat)     -> design (its inverse)
-   normalize(state, frame, cat)  Barnwright's render-time rules, so pricing never
+   normalize(state, frame, cat, opts)  Barnwright's render-time rules, so pricing never
                              depends on whether the screen was drawn: a side
                              porch is 4x8 under 20 ft, and anything the company
                              does not offer (a package, ramp, upgrade, extra,
@@ -38,7 +40,8 @@
                              48 in Wooden Door of the 8x12 and 10x12 Side
                              Utility, Dormer Shed and Side Lofted Barn)
                              that is not the one the building comes with
-                             follows it (followStandardDoor).
+                             follows it (followStandardDoor), except with
+                             opts.asSaved (a design only looked at).
    encode(design) / decode(text)   the share link: short keys, defaults left
                              out, items as tuples, UTF-8, optional deflate-raw
                              (a "z" in front), base64url. encodeSync / decodeSync
@@ -138,7 +141,7 @@ export function flipPorch(state, cat) {
 
 /* ------------------------------------------------------------------------ */
 
-export function normalize(state, frame, cat) {
+export function normalize(state, frame, cat, opts) {
   const fr = frame || frameOf(state, cat);
   const t = fr.t;
   const changed = [];
@@ -196,7 +199,10 @@ export function normalize(state, frame, cat) {
   changed.push(...new Set(tooTall));
   if ((cat.MISC || {}).shutter == null) state.items.forEach((it) => { if (it.shut) { it.shut = false; changed.push("Shutters are not offered, so they were taken off."); } });
   if ((cat.MISC || {}).lite == null) state.items.forEach((it) => { if (it.lite) { it.lite = false; changed.push("A window in a wooden door is not offered, so it was taken off."); } });
-  changed.push(...doorWords(state, cat));
+  /* a design only looked at (a look-only link: an order or quote sheet's
+     picture, See it in 3D) keeps the door it was saved and sold with
+     (opts.asSaved, review DOORS-3); one opened to change follows the size */
+  if (!(opts && opts.asSaved)) changed.push(...doorWords(state, cat));
   return changed;
 }
 
@@ -368,7 +374,7 @@ function colourBack(name, list, cat, what, warnings, fallback) {
   return fallback;
 }
 
-export function toState(design, cat) {
+export function toState(design, cat, opts) {
   const warnings = [];
   const d = design || {};
   const s = defaults(cat);
@@ -503,7 +509,7 @@ export function toState(design, cat) {
     s.items.forEach((it) => clampPos(it, s, fr2));
     warnings.push(`The side porch is now ${porchWords(t, to)}; its windows were set back to the standard ones.`);
   }
-  warnings.push(...normalize(s, frameOf(s, cat), cat));
+  warnings.push(...normalize(s, frameOf(s, cat), cat, opts));
   return { state: s, warnings };
 }
 

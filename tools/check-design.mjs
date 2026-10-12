@@ -563,6 +563,13 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
     const next = send(fromState(back.state, DEMO), DEMO), nextSw = send(fromState(backSw.state, DEMO), DEMO);
     check(G11, next && next.price && next.price.total === savedPrice && nextSw && nextSw.price && nextSw.price.total === priceParts(backSw.state, DEMO).total,
       `${name} ${z}: the designs the designer sends after opening them: ${next && (next.status + " " + next.message)} / ${nextSw && (nextSw.status + " " + nextSw.message)}`);
+    /* only looked at (a look-only link: an order or quote sheet's picture,
+       See it in 3D): drawn as saved and sold, with the double doors, at the
+       same price, nothing said (review DOORS-3) */
+    const look = toState(saved, DEMO, { asSaved: true });
+    check(G11, J(doors(look.state)) === J([["w72", "w72", true]]) && look.warnings.length === 0 && priceParts(look.state, DEMO).total === savedPrice
+      && J(look.state.items.map((i) => [i.cat, i.wall, i.pos])) === J(back.state.items.map((i) => [i.cat === "w48" ? "w72" : i.cat, i.wall, i.pos])),
+      `${name} ${z} only looked at: ${J(doors(look.state))} ${J(look.warnings)} ${priceParts(look.state, DEMO).total} (sold at ${savedPrice})`);
     const stale = send(saved, DEMO);
     check(G11, stale && stale.status === 409 && /no longer offered/.test(stale.message), `${name} ${z}: the stale design itself: ${stale ? stale.status + " " + stale.message : "priced"}`);
   }

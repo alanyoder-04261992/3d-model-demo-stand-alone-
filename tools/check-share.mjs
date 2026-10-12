@@ -47,6 +47,11 @@
   11. A company that shows no prices: its links carry no price inside them,
       and its look-only page shows no dollar figure. A company's phone
       number and fine print, even with HTML in them, show as typed.
+  12. An order or quote made before the 48 in door (a Dormer Shed 8x12
+      saved with the double doors): its look-only link, which the order
+      sheet's picture and See it in 3D use, draws the double doors it was
+      sold with at the price it was sold at; "Change this design", or the
+      link opened to change, puts the 48 in door in their place and says so.
    Pictures: test/out/share-*.png. */
 
 import { spawn } from "node:child_process";
@@ -54,8 +59,12 @@ import { mkdirSync, readFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
-import { encode, encodeSync, decode } from "../model/design.js";
-import { money } from "../model/pricing.js";
+import { encode, encodeSync, decode, defaults, setType, fromState } from "../model/design.js";
+import { money, priceParts } from "../model/pricing.js";
+import { resolve as resolveCompany } from "../model/company.js";
+import { frameOf } from "../model/frame.js";
+import { resetItems } from "../model/layout.js";
+import { readJSON, readManufacturer } from "./lib/load.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = resolve(ROOT, "test/out");
@@ -438,6 +447,37 @@ try {
     const t = await v.page.evaluate(() => ({ card: (document.querySelector(".vcard.shview") || {}).textContent || "", plate: document.getElementById("plateprice").textContent, ro: window.shedUI.readOnly }));
     ok("its look-only page shows no dollar figure anywhere on the card", t.ro && t.card && !/\$/.test(t.card) && !/priced at/.test(t.card), J(t));
     ok("no console errors", realNoise(noise).length === 0 && realNoise(v.noise).length === 0, J(realNoise(noise).concat(realNoise(v.noise))));
+    await ctx.close();
+  }
+
+  /* ------------------------------------------------------------ 12 */
+  section("12. An order or quote made before the 48 in door: drawn as it was sold");
+  {
+    /* a Dormer Shed 8x12 saved on this company's price list when the
+       building came with the 72 in double doors (the library without its
+       door swaps), the way an order or quote keeps it */
+    const m = JSON.parse(JSON.stringify(readManufacturer(COS.sharetest.manufacturer)));
+    for (const k of Object.keys(m.styles)) if (m.styles[k].built) delete m.styles[k].built.standardSwaps;
+    const BEFORE = resolveCompany(COS.sharetest, m, readJSON("library/construction.json"));
+    const was = defaults(BEFORE); setType(was, "DS", BEFORE); was.size = "8x12"; resetItems(was, frameOf(was, BEFORE), BEFORE);
+    const sold = priceParts(was, BEFORE).total;
+    const body = await encode(fromState(was, BEFORE, { priced: true, at: "2026-10-01" }));
+    const look = (page) => page.evaluate(() => ({ items: window.shedUI.getDesign().items.filter((i) => i.inc).map((i) => i.cat), warnings: window.shedUI.share.warnings,
+      total: window.shedUI.price().total, ro: window.shedUI.readOnly, asSaved: window.shedUI.asSaved, note: (document.querySelector(".vcard.shnotice") || {}).textContent || "" }));
+    const said = "The 8×12 Dormer Shed comes with the 48″ Wooden Door, so it takes the place of the 72″ Wooden Double Doors.";
+    const ctx = await newContext(browser);
+    const v = await open(ctx, BASE + "/?company=sharetest#d=" + body + "&view=1");
+    const V = await look(v.page);
+    ok("look-only, as the order sheet's picture and See it in 3D open it: the 72″ Wooden Double Doors it was sold with, nothing said about the door, at the price it was sold at (" + money(sold) + ")",
+      V.ro && V.asSaved && V.items[0] === "w72" && !V.warnings.some((w) => /48″/.test(w)) && V.total === sold, J(V));
+    await v.page.click(".vcard.shview .shchange");
+    await sleep(300);
+    const C = await look(v.page);
+    ok("'Change this design': the 48″ Wooden Door takes their place at the same price, and a card says so", !C.ro && !C.asSaved && C.items[0] === "w48" && C.note.indexOf(said) >= 0 && C.total === sold, J(C));
+    const e = await open(ctx, BASE + "/?company=sharetest#d=" + body);
+    const E = await look(e.page);
+    ok("opened to change straight away (no view=1): the 48″ Wooden Door, said at the top", !E.ro && !E.asSaved && E.items[0] === "w48" && E.warnings.includes(said) && E.note.indexOf(said) >= 0 && E.total === sold, J(E));
+    ok("no console errors", realNoise(v.noise).length === 0 && realNoise(e.noise).length === 0, J(realNoise(v.noise).concat(realNoise(e.noise))));
     await ctx.close();
   }
 } catch (e) {
