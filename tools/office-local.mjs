@@ -210,14 +210,34 @@ const demoBundler = await esbuildContext({
   entryPoints: [resolve(ROOT, "ui/office/demo.js")], bundle: true, format: "esm", platform: "browser",
   target: "es2022", write: false, outfile: "demo.js", logLevel: "silent", sourcemap: "inline",
 });
-const bundler = await esbuildContext({
-  entryPoints: [resolve(ROOT, "ui/office/main.js")], bundle: true, format: "esm", platform: "browser",
-  target: "es2022", write: false, outfile: "main.js", logLevel: "silent", sourcemap: "inline",
-  /* the local copy offers the "try it" demo; with --identity it is the live site's sign-in card */
-  define: { __DEALER_DEMO__: IDENTITY && !WITH_DEMO ? "false" : "true" },
+/* Your buildings' drawing code (ui/office/pictures.js), its own file as in
+   the build; its hash is the main file's __PICTURES_ID__, worked out again
+   on every rebuild, so a change to the drawing code draws the pictures again */
+const picturesBundler = await esbuildContext({
+  entryPoints: [resolve(ROOT, "ui/office/pictures.js")], bundle: true, format: "esm", platform: "browser",
+  target: "es2022", write: false, outfile: "pictures.js", logLevel: "silent", minify: true,
 });
+async function picturesBundle() {
+  const r = await picturesBundler.rebuild();
+  const code = r.outputFiles[0].contents;
+  return { code, id: createHash("sha256").update(code).digest("hex").slice(0, 16) };
+}
+let bundler = null, bundlerId = null;
+async function mainBundler() {
+  const { id } = await picturesBundle();
+  if (bundler && bundlerId === id) return bundler;
+  if (bundler) await bundler.dispose();
+  bundlerId = id;
+  bundler = await esbuildContext({
+    entryPoints: [resolve(ROOT, "ui/office/main.js")], bundle: true, format: "esm", platform: "browser",
+    target: "es2022", write: false, outfile: "main.js", logLevel: "silent", sourcemap: "inline",
+    /* the local copy offers the "try it" demo; with --identity it is the live site's sign-in card */
+    define: { __DEALER_DEMO__: IDENTITY && !WITH_DEMO ? "false" : "true", __PICTURES_ID__: JSON.stringify(id) },
+  });
+  return bundler;
+}
 async function officeBundle() {
-  const r = await bundler.rebuild();
+  const r = await (await mainBundler()).rebuild();
   return r.outputFiles[0].contents;
 }
 
@@ -339,6 +359,9 @@ async function route(request) {
     const r = await demoBundler.rebuild();
     return new Response(r.outputFiles[0].contents, { headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" } });
   }
+  if (path === "/ui/office/pictures.js") {
+    return new Response((await picturesBundle()).code, { headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" } });
+  }
   if (path === "/ui/office/main.js") {
     return new Response(await officeBundle(), { headers: { "Content-Type": "text/javascript; charset=utf-8", "Cache-Control": "no-store" } });
   }
@@ -399,4 +422,4 @@ server.listen(PORT, "127.0.0.1", () => {
     : EMPTY ? `No sample data. Sign in as ${OWNER_EMAIL}: Today opens and asks for the business name.` : "Sign in as anyone on the sample team. Press Ctrl+C to stop.");
 });
 
-for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { bundler.dispose(); demoBundler.dispose(); server.close(); process.exit(0); });
+for (const signal of ["SIGINT", "SIGTERM"]) process.on(signal, () => { bundler?.dispose(); picturesBundler.dispose(); demoBundler.dispose(); server.close(); process.exit(0); });
