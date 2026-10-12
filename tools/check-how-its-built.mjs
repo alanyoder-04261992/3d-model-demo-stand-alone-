@@ -103,8 +103,7 @@ async function openPriceList(page, base = `${BASE}/dealer`) {
   await page.waitForTimeout(300);
 }
 async function openStyle(page, key) {
-  const sel = `.pl-style[data-style="${key}"]`;
-  if (!(await page.$(`${sel}.open`))) await page.click(`${sel} .pl-style-open`);
+  await page.evaluate((key) => { location.hash = `/price-list/building/${key}`; }, key);
   await page.waitForSelector(`[data-built="${key}"]`, { timeout: 10000 });
 }
 async function typeIn(page, field, text) {
@@ -142,17 +141,19 @@ try {
     const wall = await page.getAttribute('[data-field="built:LB:wallHeight"]', "placeholder");
     const from = await page.$eval('[data-built="LB"] [data-field="built:LB:wallHeight"] ~ .hint .pl-built-from', (el) => el.textContent).catch(() => "");
     ok(`${width} wide: an empty box shows the number it builds with ("${wall}") and where it comes from ("${from}")`, wall === "6 ft 7 1/2 in" && from === "Standard: 6 ft 7 1/2 in", `${wall} | ${from}`);
-    ok(`${width} wide: the business-wide card "How your buildings are built" is there`, !!(await page.$(".pl-built-card")) && /Reaches the/.test(await page.textContent(".pl-built-card")));
-    /* "standard" is not one number: the card says what each style is built
-       with now (review W4) */
-    const card = await page.textContent(".pl-built-card");
-    /* five gable styles have the shop's 5/12 since Oct 11 2026 (the Garage,
-       Dog Kennel and Garden Utility too); the Dormer Shed keeps its own */
-    ok(`${width} wide: ... and what each style is built with now ("Built now: 5/12 on the Utility Shed, Side Utility and 3 more; about 6 1/2/12 on the ...")`, /Built now: 5\/12 on the Utility Shed, Side Utility and 3 more; about 6 1\/2\/12 on the /.test(card), card.slice(card.indexOf("Built now"), card.indexOf("Built now") + 300));
-    ok(`${width} wide: no sideways scrolling`, (await sideways(page)) <= 0, String(await sideways(page)));
-    const small = [...await smallTaps(page, '[data-built="LB"]'), ...await smallTaps(page, ".pl-built-card")];
-    ok(`${width} wide: every box, chip and button is at least 44 px tall`, small.length === 0, small.slice(0, 5).join("; "));
+    ok(`${width} wide: no sideways scrolling on the Edit page`, (await sideways(page)) <= 0, String(await sideways(page)));
+    const styleTaps = await smallTaps(page, '[data-built="LB"]');
+    ok(`${width} wide: every style box, chip and button is at least 44 px tall`, styleTaps.length === 0, styleTaps.slice(0, 5).join("; "));
     await page.locator('[data-built="LB"]').screenshot({ path: `${OUT}/style-${width}.png` });
+    await page.evaluate(() => { location.hash = "/price-list/how-its-built"; });
+    await page.waitForSelector(".pl-built-card", { timeout: 10000 });
+    ok(`${width} wide: the business-wide card is on How all your buildings are built`, /How all your buildings are built/.test(await page.textContent(".pl-tab")) && /Reaches the/.test(await page.textContent(".pl-built-card")));
+    /* Each box still says the number every style is built at today. */
+    const card = await page.textContent(".pl-built-card");
+    ok(`${width} wide: ... and what each style is built with now ("Built now: 5/12 on the Utility Shed, Side Utility and 3 more; about 6 1/2/12 on the ...")`, /Built now: 5\/12 on the Utility Shed, Side Utility and 3 more; about 6 1\/2\/12 on the /.test(card), card.slice(card.indexOf("Built now"), card.indexOf("Built now") + 300));
+    ok(`${width} wide: no sideways scrolling on the business-wide page`, (await sideways(page)) <= 0, String(await sideways(page)));
+    const bizTaps = await smallTaps(page, ".pl-built-card");
+    ok(`${width} wide: every business-wide box, chip and button is at least 44 px tall`, bizTaps.length === 0, bizTaps.slice(0, 5).join("; "));
     await page.locator(".pl-built-card").screenshot({ path: `${OUT}/business-${width}.png` });
     ok(`${width} wide: no errors`, page.errors.length === 0, page.errors.slice(0, 3).join(" | "));
     await page.context().close();
