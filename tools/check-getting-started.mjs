@@ -10,7 +10,8 @@
    new business nobody has signed in to), opens Chromium at 1280 and 390
    wide, and proves:
 
-     A. connected to a pretend control room, as if it shipped terms 2.2, and
+     A. connected to a pretend control room, on the terms 2.2 this copy
+        ships (out since October 12, 2026; no pretend terms copies), and
         the Control Room's status pass already brought the owner's sign-up
         (business name, phone, email and their "I agree"): the owner's
         first sign-in opens Today at once, with no setup screens and no
@@ -138,7 +139,7 @@ try {
   /* ======================================================================== */
   section("A. The owner's first sign-in, with their sign-up already brought (connected, terms 2.2)");
   {
-    const A = await startServer(PORT, "test/out/getting-started-data-a", ["--control-room", "--terms-version", "2.2"]);
+    const A = await startServer(PORT, "test/out/getting-started-data-a", ["--control-room"]);
     /* the Control Room's status pass, right after Make their Dealer Center: it carries the sign-up */
     const door = (await A.call("/__local/barnwright", { method: "POST", email: null, body: { door: { action: "status" }, signup: true } })).data?.door;
     const st = await fetch(A.base + "/.netlify/functions/barnwright-setup", { method: "POST", headers: { authorization: `Bearer ${door?.pass}`, "content-type": "application/json" }, body: door?.body });
@@ -308,7 +309,7 @@ try {
   /* ======================================================================== */
   section("C. Connected, but no pass brought a sign-up: the business name, and the terms line on top");
   {
-    const C = await startServer(PORT + 2, "test/out/getting-started-data-c", ["--control-room", "--terms-version", "2.2"]);
+    const C = await startServer(PORT + 2, "test/out/getting-started-data-c", ["--control-room"]);
     const owner = await pageFor(C.base, OWNER);
     await owner.goto(`${C.base}/dealer`);
     await settle(owner);
@@ -335,7 +336,7 @@ try {
   /* ======================================================================== */
   section("D. The start fails for another reason than the name (the account is switched off)");
   {
-    const D = await startServer(PORT + 3, "test/out/getting-started-data-d", ["--control-room-off", "--terms-version", "2.2"]);
+    const D = await startServer(PORT + 3, "test/out/getting-started-data-d", ["--control-room-off"]);
     const owner = await pageFor(D.base, OWNER, { width: 390, height: 844, mobile: true });
     await owner.goto(`${D.base}/dealer`);
     await settle(owner);
