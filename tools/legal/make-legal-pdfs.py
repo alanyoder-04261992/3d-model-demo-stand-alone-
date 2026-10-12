@@ -445,7 +445,7 @@ GUIDE_INTRO = [
     "You need your phone with your Control Room open (<b>" + CONTROL_ROOM + "</b>) and about an hour at their lot. "
     "The words in <b>bold</b> are the buttons you tap.",
     "<b>First time? Practice first.</b> On your Control Room's first page, tap <b>Practice adding a customer</b>. "
-    "Everything works the same, but nothing is real: no texts, no emails, no payments.",
+    "Everything except Claude works the same, but nothing is real: no texts, no emails, no payments.",
 ]
 
 # THE TERMS 2.2 SWITCH. Until Barnwright's new terms (2.2) are out
@@ -471,29 +471,38 @@ def until22(now, then):
 MCP_ADDRESS = "https://control." + DOMAIN + "/mcp"
 CONNECT_STEP = [
     "Your Control Room has every step: <b>Papers</b>, <b>Connect Claude</b>, <b>Open</b>. In short:",
-    "At claude.ai or in the Claude desktop app: <b>Customize</b>, <b>Connectors</b>, <b>Add custom connector</b>. Name it "
+    "At claude.ai (Safari on your iPad, or Edge on your computer): <b>Customize</b>, <b>Connectors</b>, <b>Add custom connector</b>. Name it "
     "<b>Barnwright Control Room</b>, address <b>" + MCP_ADDRESS + "</b>. If it asks, pick <b>Sign in now</b> and "
-    "<b>Use Claude's published identity</b>, then <b>Add</b>.",
-    "Sign in to your Control Room. Tap <b>Allow</b> only if you just tapped Connect in your own Claude app.",
+    "<b>Use Claude's published identity</b>, then <b>Add</b>. It then shows up in the Claude app on your iPad, iPhone and computer too.",
+    "Your Control Room's sign-in page opens: sign in. Tap <b>Allow</b> only if you just added or reconnected "
+    "<b>Barnwright Control Room</b> in your own Claude app. Any other time, tap <b>Don't allow</b>.",
     "In <b>Barnwright Control Room</b>, <b>Tool permissions</b>, set <b>Make the change</b> to <b>Needs approval</b>. "
-    "Do the same for the tools that send, text or call in <b>Yoder inbox</b>, <b>Multi Mail</b>, <b>Resend</b> and <b>Twilio</b>.",
-    "Tap <b>Download the dealersetup skill</b> there. At claude.ai: <b>Customize</b>, <b>Skills</b>, <b>Upload a skill</b>.",
-    "Every time Claude asks, tap <b>Allow</b> once, never <b>Always allow</b>.",
+    "Do the same for every tool that sends, replies, forwards, texts or calls in <b>Yoder inbox</b>, <b>Multi Mail</b>, <b>Resend</b> and <b>Twilio</b>.",
+    "On your Control Room's <b>Connect Claude</b> page, tap <b>Download the dealersetup skill</b>. Then at claude.ai: "
+    "<b>Customize</b>, <b>Skills</b>, <b>Upload a skill</b>, and pick <b>dealersetup.zip</b>.",
+    "Every time Claude asks, tap <b>Allow once</b>, never <b>Always allow</b>. Use Claude in a chat (claude.ai, the iPad or iPhone app, "
+    "or Chat in the desktop app), not in Claude Code: Claude Code may not stop to ask you.",
 ]
 
 # SET UP THEIR PRICE LIST WITH CLAUDE (Alan, Oct 2026: "add a note in setup
 # page ... /dealersetup. when to do what"): the same order and words as the
-# note at the end of each customer's page in the Control Room (control-room
-# shared/claude-note.ts), whose Now line says what to do for that customer.
+# note at the end of the setup steps on each customer's page in the Control
+# Room (Getting <name> set up; control-room shared/claude-note.ts), whose
+# Now line says what to do for that customer. Until terms 2.2 are out there
+# is no go and nothing to Allow: Claude says the terms are not out and makes
+# the plan only (control-room docs/dealersetup SKILL.md, TERMS_NOT_OUT).
 CLAUDE_STEP = [
-    "At the end of the customer's page, <b>Set up their price list with Claude</b> says what to do now. Read its <b>Now</b> line.",
+    "On the customer's page, at the end of <b>Getting (their business) set up</b>, <b>Set up their price list with Claude</b> "
+    "says what to do now. Read its <b>Now</b> line.",
+] + until22([
+    "In the Claude app, type <b>/dealersetup</b> and their business name. Claude says Barnwright's new terms (2.2) aren't out yet, "
+    "so it can't change their prices. Say yes when it offers to read your visit photos and make the plan, or ask it to.",
+    "Claude shows you one plan: each building, size and price, and the photo it came from. Check it against the photos and tell Claude what is wrong.",
+    "Keep the plan: you and the owner type it into their <b>Price list</b> at their computer (Part 4).",
+], [
     "In the Claude app, type <b>/dealersetup</b> and their business name. Claude reads your visit photos and shows you one plan: "
     "each building, size and price, and the photo it came from. Check it against the photos and tell Claude what is wrong.",
-    "It changes nothing until you say go. Then for each batch it asks you to <b>Allow</b>: tap <b>Allow</b> once, never <b>Always allow</b>.",
-] + until22([
-    "Until Barnwright's new terms (2.2) are out, Claude can make the plan but can't change their prices. "
-    "So keep the plan: you and the owner type it into their <b>Price list</b> at their computer (Part 4).",
-], [
+    "It changes nothing until you say go. Then for each batch it asks you to <b>Allow</b>: tap <b>Allow once</b>, never <b>Always allow</b>.",
     "When: right away if they signed up under the Barnwright Terms and Conditions 2.2 or later, even before the owner signs in. "
     "If they signed up before 2.2, once the owner agrees to the new terms: they tick the box in First setup, or tap the button at the top of their Dealer Center.",
     "Check it: tap <b>Open their price list</b> on the customer. The owner checks it in their Dealer Center with <b>Look at the preview</b>.",
@@ -556,11 +565,12 @@ PARTS = [
         ("The owner's login", [
             "On the owner's computer, open <b>https://(their 3D designer web address)/dealer</b>, for example https://cedar-ridge-sheds." + DOMAIN + "/dealer. "
             "<b>Open their Dealer Center sign-in</b> on the customer opens it too.",
-            "They tap <b>Make your login</b>, type their name, the email from their sign-up and a password, and tap <b>Make my login</b>. Then they open the email that comes and tap the link in it.",
-            "Tick <b>Keep me signed in on this device for 30 days</b> only on the owner's own computer and phone. Leave it off on a computer other people use.",
-            until22("They sign in. First setup: their business, a tick in <b>I have read and agree to the Barnwright Terms and Conditions</b>, "
+            "They tap <b>Make your login</b> and type their name, the email from their sign-up and a password. On the owner's own computer, "
+            "tick <b>Keep me signed in on this device for 30 days</b>. Leave it off on a computer other people use. Then they tap <b>Make my login</b>.",
+            "On this same computer, they open the email that comes and tap the link in it. That signs them in.",
+            until22("First setup: their business, a tick in <b>I have read and agree to the Barnwright Terms and Conditions</b>, "
                     "then <b>Every standard building</b> or <b>Start small</b>, then their first lot and <b>Finish setup</b>.",
-                    "They sign in. First setup: their business, a tick in <b>I have read and agree to the Barnwright Terms and Conditions</b>, "
+                    "First setup: their business, a tick in <b>I have read and agree to the Barnwright Terms and Conditions</b>, "
                     "then <b>Every standard building</b> or <b>Start small</b>, then their first lot and <b>Finish setup</b>. "
                     "If you or Claude already started their price list, First setup says \"Barnwright set up your price list. You can change anything.\" and skips that choice."),
         ]),
@@ -572,8 +582,8 @@ PARTS = [
         ("Their prices and options, from your photos", [
             until22("<b>Price list</b>: type in Claude's plan with the owner. Turn off the styles they don't sell and type their price for each size, door, window and option, using your <b>Price list</b> and <b>Options and colors</b> photos.",
                     "<b>Price list</b>: check what Claude set up with the owner. Anything not set up yet: turn off the styles they don't sell and type their price for each size, door, window and option, using your <b>Price list</b> and <b>Options and colors</b> photos."),
-            "<b>Doors &amp; windows</b>: the 8×12 and 10×12 Side Utility, Dormer Shed and Side Lofted Barn come with the 48 in Wooden Door, so it needs a price ($0 is fine). The Dealer Center says so before <b>Save</b>.",
-            "Ten standard styles are already built with your shop numbers. A style they build differently, like a steeper roof or taller walls: <b>Buildings</b>, tap the style, change its numbers under <b>How it's built</b>, then tap <b>Check every size</b>.",
+            "<b>Price list</b>, <b>Doors &amp; windows</b>: the Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12 come with the 48 in Wooden Door, so it needs a price ($0 is fine). The Dealer Center says so before <b>Save</b>.",
+            "Ten standard styles are already built with your shop numbers. A style they build differently, like a steeper roof or taller walls: <b>Price list</b>, <b>Buildings</b>, tap the style, change its numbers under <b>How it's built</b>, then tap <b>Check every size</b>.",
             "<b>Settings</b>: their logo, their colors and the line under the price.",
         ]),
         ("Their other lots and their team", [
@@ -1124,17 +1134,17 @@ WELCOME_SUBTITLE = "Everything you need to get started, on one page"
 WELCOME = [
     ("Your Dealer Center", "Open <b>https://(your 3D designer web address)/dealer</b> and sign in with your email and password. Your 3D designer web address: ____________________." + DOMAIN
      + "<br/>Tick <b>Keep me signed in on this device for 30 days</b> only on your own computer and phone. Lost your password? Tap <b>Forgot your password?</b> "
-     "To sign out everywhere, tap your name, then <b>Sign out on every device</b>."),
+     "To sign out everywhere, tap your name (your initials on a phone), then <b>Sign out on every device</b>."),
     ("Keep it on your computer and phone", "In Chrome or Edge, click <b>Install</b> at the right end of the address bar. On your phone: <b>Share</b>, <b>Add to Home Screen</b>, "
      "then sign in there too, with the same tick."),
-    ("Your prices", "<b>Price list</b>: your styles, sizes, doors, windows and options. Change a price and every lot has it at once. "
-     "Build a style differently? Change <b>How it's built</b> and tap <b>Check every size</b>."),
+    ("Your prices", "<b>Price list</b>: your styles, sizes, doors, windows and options, for every lot at once. "
+     "A style built differently: <b>Buildings</b>, tap the style, change <b>How it's built</b>, tap <b>Check every size</b>."),
     ("Your lots and quotes", "<b>Lots</b>, <b>Add a lot</b>. Each lot has its own 3D designer link and its own customer list. "
      "Every quote a customer sends shows up in <b>Customers</b> as New, on the lot it came from."),
     ("Your team", "<b>Team</b>, <b>Add a person</b>: your managers and dealers. Each one makes their own login with the email you add."),
     ("Your website", "<b>Lots</b>, pick a lot, <b>Put the designer on your website</b>, <b>Copy website code</b>, and send it to whoever runs your website."),
     ("Barnwright", until22(
-        "<b>Settings</b>, <b>Barnwright</b>: when Alan needs to check something, say what in <b>What should Barnwright do?</b>, pick <b>For how long</b>, tap <b>Turn on</b>. "
+        "<b>Settings</b>, <b>Barnwright</b>: when Alan needs to check something, type what in <b>What should Barnwright do?</b>, pick <b>For how long</b>, tap <b>Turn on</b>. "
         "For now Barnwright can only run checks. It never sees your customers, quotes, orders or team.",
         "<b>Settings</b>, <b>Barnwright</b>: until you open your 3D designer to customers, Barnwright can set up your price list; <b>Stop Barnwright's setup access</b> stops it. "
         "After that, Barnwright changes your prices only while <b>Run checks and change my price list and settings</b> is on. <b>Turn off now</b> ends it sooner.")),
