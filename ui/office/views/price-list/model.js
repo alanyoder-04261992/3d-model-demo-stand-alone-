@@ -550,8 +550,9 @@ export function lockStyleNames(lock, M, offer) {
   });
 }
 
-/* The shop standard's own door at some sizes (the 8x12 and 10x12 Side
-   Utility's 48 in Wooden Door) that the draft does not sell: the server
+/* The shop standard's own door at some sizes (the 48 in Wooden Door of the
+   8x12 and 10x12 Side Utility, Dormer Shed and Side Lofted Barn) that the
+   draft does not sell: the server
    refuses a save that adds that problem (model/company.js strictProblems,
    compared with the saved price list), so it shows before Save, on the
    door's own row. */
@@ -588,8 +589,9 @@ export function lockedItems(prepared, M) {
     if (m) { (locks[m[1]] = locks[m[1]] || {}).elec = true; continue; }
     if (/^options\.misc\.ext/.test(p)) (locks.light = locks.light || {}).ext = true;
   }
-  /* the shop standard's own door at some sizes (the 8x12 and 10x12 Side
-     Utility's 48 in Wooden Door): model/company.js strictProblems wants it
+  /* the shop standard's own door at some sizes (the 48 in Wooden Door of
+     the 8x12 and 10x12 Side Utility, Dormer Shed and Side Lofted Barn):
+     model/company.js strictProblems wants it
      sold, so it stays sold here too, and the words name those sizes; the
      door it swaps out names the sizes that do not come with it */
   for (const id of Object.keys(swaps)) {

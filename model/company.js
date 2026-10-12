@@ -267,7 +267,8 @@ function traitsOf(it) {
 /* THE SHOP STANDARD'S OWN DOOR AT SOME SIZES: a library style's
    built.standardSwaps, [{"sizes": ["8x12", "10x12"], "from": "w72", "to":
    "w48"}] (Alan, Oct 11 2026, the Side Utility: "replace 6 foot to 4
-   foot"). Library-only, never a How it's built box: a business's
+   foot"; Oct 12 2026, the Dormer Shed and Side Lofted Barn: "yes").
+   Library-only, never a How it's built box: a business's
    offer.<KEY>.built cannot hold it (build-settings.js problems says "not a
    building setting"), and Barnwright's own company has no built blocks.
    model/loadouts.js standardItems makes the swap; resolve() below puts it
@@ -942,7 +943,8 @@ export function resolve(company, manufacturer, library) {
     CAT[k] = Object.assign({ k: it.kind, n: name, w: it.w, h: it.h, p: itemPrice(v) }, traitsOf(it));
   }
   /* The shop standard's own door at some sizes (built.standardSwaps, the
-     8x12 and 10x12 Side Utility's 48 in Wooden Door): on the style when the
+     48 in Wooden Door of the 8x12 and 10x12 Side Utility, Dormer Shed and
+     Side Lofted Barn): on the style when the
      price list sells it; otherwise the recipe's own door stays and the
      owner is told what to do. */
   const swapWarnings = [];

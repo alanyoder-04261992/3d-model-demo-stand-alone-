@@ -35,7 +35,8 @@
                              does not offer (a package, ramp, upgrade, extra,
                              dormer size, shutters, door window) is switched off;
                              a door of the shop standard's own pair (the
-                             8x12 and 10x12 Side Utility's 48 in Wooden Door)
+                             48 in Wooden Door of the 8x12 and 10x12 Side
+                             Utility, Dormer Shed and Side Lofted Barn)
                              that is not the one the building comes with
                              follows it (followStandardDoor).
    encode(design) / decode(text)   the share link: short keys, defaults left
@@ -200,9 +201,10 @@ export function normalize(state, frame, cat) {
 }
 
 /* THE SHOP STANDARD'S OWN DOOR AT SOME SIZES (the style's standardSwaps:
-   the 8x12 and 10x12 Side Utility come with the 48 in Wooden Door, its
-   other sizes with the 72 in Wooden Double Doors; Alan, Oct 11 2026,
-   "replace 6 foot to 4 foot"). A design can hold the other door of the
+   the 8x12 and 10x12 Side Utility, Dormer Shed and Side Lofted Barn come
+   with the 48 in Wooden Door, their other sizes with the 72 in Wooden
+   Double Doors; Alan, Oct 11 2026, "replace 6 foot to 4 foot", and Oct 12
+   2026, "yes"). A design can hold the other door of the
    pair as the one it came with: a design saved before the change, or one
    whose size changed after the customer touched the doors and windows (the
    size chip keeps them, DIFFERENCES #12). The server prices only what the

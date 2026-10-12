@@ -3,7 +3,7 @@
   "known": [
     {
       "styles": ["SU", "DS", "SLB"], "sizes": ["8x12", "10x12"], "code": "overlap", "id": "overlap:R:w23/w72", "maxIn": 2.4375,
-      "reason": "Barnwright's standard layout: on a 12 ft long side wall the window is pushed 2 3/8 in into the double doors' opening. Kept for the golden test (BUILDFAST-SPEC C.5, question I.11). The shop standard's 8x12 and 10x12 Side Utility have the 48 in Wooden Door there instead (Alan, Oct 11 2026: \"replace 6 foot to 4 foot\"), so only Barnwright's own Side Utility keeps this; the Dormer Shed and Side Lofted Barn still have it."
+      "reason": "Barnwright's standard layout: on a 12 ft long side wall the window is pushed 2 3/8 in into the double doors' opening. Kept for the golden test (BUILDFAST-SPEC C.5, question I.11). The shop standard's 8x12 and 10x12 Side Utility, Dormer Shed and Side Lofted Barn have the 48 in Wooden Door there instead (Alan, Oct 11 2026, the Side Utility: \"replace 6 foot to 4 foot\"; Oct 12 2026, the other two: \"yes\"), so only Barnwright's own Side Utility, Dormer Shed and Side Lofted Barn keep this."
     },
     {
       "styles": ["BU"], "sizes": ["6x10"], "code": "overlap", "id": "overlap:R:w23/w48", "maxIn": 1.125,
