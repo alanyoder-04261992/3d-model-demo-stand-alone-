@@ -38,8 +38,8 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { createRequire } from "node:module";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const BARN = "/home/user/boisterous-lokum-a737e0/public/3ddesign.html";
-const YODER = "/home/user/yoder-storage-barns/design.html";
+const BARN = (process.env.BARNWRIGHT_PUBLIC || "/home/user/boisterous-lokum-a737e0/public") + "/3ddesign.html";
+const YODER = process.env.YODER_FILE || "/home/user/yoder-storage-barns/design.html";
 
 let pass = 0, fail = 0;
 const failures = [];

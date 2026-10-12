@@ -278,9 +278,28 @@ async function boot() {
   if (embedded) document.body.classList.add("embedded");
   const preview = lotMatch ? ({ "1": "team", barnwright: "barnwright" })[q.get("preview")] || null : null;
 
+  /* Layout mode is authorized before loading a public lot, so an owner can
+     set a closed lot's standard layout too. A refused request opens the
+     ordinary customer designer with the server's words. */
+  let layoutStart = null, layoutError = null;
+  if (q.get("layout")) {
+    try {
+      if (q.get("dealerDemo") === "1") {
+        /* The sample Dealer Center keeps its data in this tab. Its optional
+           separate bundle installs the same server adapter before the
+           layout request; client packages do not ship that bundle. */
+        const demoModule = "/ui/office/demo.js";
+        await (await import(demoModule)).startDemo();
+      }
+      layoutStart = await (await import("./layout-mode.js")).fetchLayoutSettings(q.get("layout"));
+    }
+    catch (error) { layoutError = error.message; }
+  }
+
   /* 2. the company, before anything is drawn */
   let loaded;
-  try { loaded = lotMatch ? await loadLot(lotMatch[1], { preview }) : await loadCompany(companyId); }
+  try { loaded = layoutStart?.catalogue ? { catalogue: layoutStart.catalogue, problems: [] }
+    : lotMatch ? await loadLot(lotMatch[1], { preview }) : await loadCompany(companyId); }
   catch (e) {
     console.error("The designer could not load its settings:", e.message);
     reportProblem(e);   /* a closed lot's answer (it carries its status) is not passed on */
@@ -364,7 +383,7 @@ async function boot() {
 
   const ctx = {
     cat: cat, get state() { return state; }, canvas: canvas, stage: stage, renderer: renderer, cam: renderer.cam,
-    embedded: embedded, mode: "out", readOnly: false, asSaved: asSaved, plan: null, result: null,
+    embedded: embedded, mode: "out", readOnly: false, asSaved: asSaved, plan: null, result: null, layoutHooks: null,
     frame() { return frameOf(state, cat); },
     rebuild: rebuild, refreshUI: refreshUI, refreshLists: () => panels.refreshLists(), select: select, act: act, emit: emit,
     goInside(reason) { callInside({ want: "in", reason: reason || "" }); },
@@ -513,6 +532,9 @@ async function boot() {
     hideAddPop: () => interaction.hideAddPop(),
     addAt: (itemCode, spot) => interaction.addAt(itemCode, spot || {}),
     ftIn: ftIn,
+    layoutStart, layoutError,
+    setInteractionHooks(hooks) { ctx.layoutHooks = hooks; },
+    startItemDrag: (event, id) => interaction.startItemDrag(event, id),
     get camera() { return renderer.cam; },
     animYaw: (yaw, pitch) => { animYaw(renderer.cam, yaw, pitch); renderer.needsDraw = true; },
     renderer: renderer, canvas: canvas, stage: stage,
@@ -529,7 +551,9 @@ async function boot() {
   renderer.startLoop({ fit: "fitref" });
 
   /* 6. the plugins (embed-mode only inside a company's own page) */
-  for (const name of embedded ? PLUGINS.concat(["embed-mode"]) : PLUGINS) {
+  const plugins = embedded ? PLUGINS.concat(["embed-mode"]) : PLUGINS.slice();
+  if (q.get("layout")) plugins.push("layout-mode");
+  for (const name of plugins) {
     try {
       const mod = await import("./" + name + ".js");
       const install = typeof mod.install === "function" ? mod.install : (typeof mod.default === "function" ? mod.default : null);

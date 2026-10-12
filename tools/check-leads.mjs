@@ -178,9 +178,22 @@ function listen(page) {
   page.on("pageerror", (e) => noise.push({ type: "pageerror", text: String(e) }));
   return noise;
 }
-async function openDesigner(ctx, id, extraQuery) {
+async function openDesigner(ctx, id, extraQuery, { holdClock = false } = {}) {
   const page = await ctx.newPage();
   const noise = listen(page);
+  if (holdClock) await page.addInitScript(() => {
+    /* The first form's rapid-submit case must stay inside three seconds
+       even when software graphics makes the screen checks take longer.
+       Hold monotonic time before the form records its opening time, then
+       restore the browser's clock before all the ordinary form cases. */
+    const previous = Object.getOwnPropertyDescriptor(performance, "now");
+    Object.defineProperty(performance, "now", { configurable: true, value: () => 0 });
+    window.__restoreLeadClock = () => {
+      if (previous) Object.defineProperty(performance, "now", previous);
+      else delete performance.now;
+      delete window.__restoreLeadClock;
+    };
+  });
   await page.goto(BASE + "/?company=" + id + (extraQuery || ""), { waitUntil: "load" });
   await page.waitForFunction(() => window.shedUI && window.shedUI.ready, null, { timeout: 90000 });
   const readyAt = Date.now();
@@ -232,7 +245,7 @@ try {
   section("1-3. The form service: the boxes, the robots, a real post");
   {
     const ctx = await newContext(browser);
-    const { page, noise, readyAt } = await openDesigner(ctx, "leadform");
+    const { page, noise, readyAt } = await openDesigner(ctx, "leadform", "", { holdClock: true });
     const form = await page.evaluate(() => {
       const m = document.getElementById("quote-mount");
       const names = Array.from(m.querySelectorAll(".qin")).map((e) => e.name);
@@ -274,11 +287,14 @@ try {
     ok("the robots' box is on the page but no person can see it (and its name is not one AutoFill knows)", form.hp && !form.hp.visible && form.hp.auto === "off" && !/company|name|email|phone/i.test(form.hp.name), J(form.hp));
 
     /* 2a. too fast: all filled in and sent at once */
+    ok("the form keeps its real three-second minimum while the rapid-submit clock is held", await page.evaluate(() => window.shedUI.quote.minMs === 3000 && performance.now() === 0));
+    fake.reset();
     await fillBasics(page);
     await page.click("#quote-mount .qsend");
     const fast = await waitLast(page);
     const fastWords = await page.textContent("#quote-mount .qresult");
-    ok("a request sent within 3 seconds of the form appearing is dropped, with a plain 'just a moment' message", fast.status === "dropped" && fast.why === "too-fast" && /Just a moment/.test(fastWords), J({ fast, fastWords }));
+    ok("a request sent within 3 seconds of the form appearing is dropped, with a plain 'just a moment' message", fast.status === "dropped" && fast.why === "too-fast" && /Just a moment/.test(fastWords) && fake.records.length === 0, J({ fast, fastWords, arrived: fake.records.length }));
+    await page.evaluate(() => window.__restoreLeadClock());
 
     /* 1b. required boxes */
     await page.fill('#quote-mount [name="name"]', "");
@@ -488,15 +504,25 @@ try {
     const btn = await page.textContent("#quote-mount .qsend");
     await fillBasics(page, { email: "jane@example.com" });
     await pastMinimum(readyAt);
-    /* the browser really is asked to open the mail app (not just told about it) */
-    const mailOpened = [];
-    page.on("request", (rq) => { if (/^mailto:/i.test(rq.url())) mailOpened.push(rq.url()); });
+    /* A pretend mail app accepts the actual anchor click. External mail
+       handling is unavailable in this headless fixture, so keep the
+       designer available for the post-send checks. */
+    await page.evaluate(() => {
+      window.__leadMailClicks = [];
+      document.addEventListener("click", event => {
+        const anchor = event.target instanceof Element ? event.target.closest("a") : null;
+        if (!anchor || !/^mailto:/i.test(anchor.href)) return;
+        window.__leadMailClicks.push({ href: anchor.href, connected: anchor.isConnected });
+        event.preventDefault();
+      }, true);
+    });
     await page.click("#quote-mount .qsend");
     const last = await waitLast(page, ["opened", "failed"]);
     const want = await page.evaluate(() => window.shedUI.quote.link());
     const href = last.href || "";
     await sleep(300);
-    ok("the tap itself asks the browser to open the customer's mail app, with that mail link", mailOpened.length === 1 && mailOpened[0].slice(0, 60) === href.slice(0, 60), J({ opened: mailOpened.map((u) => u.slice(0, 60)), href: href.slice(0, 60) }));
+    const mailOpened = await page.evaluate(() => window.__leadMailClicks);
+    ok("the tap actually clicks the mail link for the customer's mail app", mailOpened.length === 1 && mailOpened[0].connected && mailOpened[0].href === href, J({ opened: mailOpened.map(request => ({ href: request.href.slice(0, 60), connected: request.connected })), href: href.slice(0, 60) }));
     const body = decodeURIComponent((/[?&]body=([^&]*)/.exec(href) || [])[1] || "");
     const subj = decodeURIComponent((/[?&]subject=([^&]*)/.exec(href) || [])[1] || "");
     ok("the button says what it does ('E-mail my quote request')", /E-mail my quote request/.test(btn), btn);
@@ -524,6 +550,8 @@ try {
     await page.click("#quote-mount .qsend");
     await page.waitForFunction(() => { const l = window.shedUI.quote.last; return l && l.status === "opened" && /14%20x%2040/.test(l.href); }, null, { timeout: 10000 });
     const big = await lastOf(page);
+    const mailAgain = await page.evaluate(() => window.__leadMailClicks);
+    ok("the changed design clicks its own mail link too", mailAgain.length === 2 && mailAgain[1].connected && mailAgain[1].href === big.href, J(mailAgain.map(request => request.href.slice(0, 60))));
     const want2 = await page.evaluate(() => window.shedUI.quote.link());
     const body2 = decodeURIComponent((/[?&]body=([^&]*)/.exec(big.href) || [])[1] || "");
     ok("a design with " + n + " priced options and a long note: the mail link still fits (" + big.href.length + " characters) and still carries the whole link", n >= 25 && big.href.length <= 1800 && body2.indexOf(want2) >= 0, J({ n, len: big.href.length }));

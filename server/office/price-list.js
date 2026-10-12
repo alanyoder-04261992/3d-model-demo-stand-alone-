@@ -29,6 +29,8 @@ import { fail, OfficeError, text, phone as phoneField, email as emailField } fro
 import { describeChanges as builtChanges, describeExtraBuilt, liftRawRules, tidyBuilt } from "../../model/build-settings.js";
 import { drawnOf } from "../../model/built-check.js";
 import { checkChangedStyles, SAVE_BUDGET_MS } from "./built-check.js";
+import { checkLayout } from "../../model/layout-check.js";
+import { builderRecipe } from "../../model/loadout-twins.js";
 
 /* The parts of the settings that change what a customer can pick or pay. */
 const PRICE_PARTS = ["offer", "categories", "items", "options", "palettes", "construction", "built"];
@@ -144,6 +146,7 @@ export function explainProblem(problem, manufacturer, settings = {}) {
     /* How it's built (model/build-settings.js): its problems are already in
        the owner's words, after the settings path */
     [/^(?:offer\.\w+\.|options\.extras\[\d+\]\.)?built(?:\.\S+)?: (.*)$/, (m) => m[1]],
+    [/^offer\.\w+\.layout(?:\S*)?: (.*)$/, (m) => m[1]],
     [/^construction\S*?: (The construction settings hold .+)$/, (m) => m[1]],
     /* a roof length the 3D designer cannot draw (model/construction.js
        roofValueProblems), already in the owner's words */
@@ -198,6 +201,8 @@ export function explainProblem(problem, manufacturer, settings = {}) {
     /* a door a building comes with that is not sold: the styles joined
        "A, B and C" (a swapped-in door's sentence already is, its sizes said
        once), then what to do (review DOORS-7) */
+    [/^items\.(\w+) needs a price: the standard layout of the (.+?) uses the (.+?)'s size to place its doors, windows or posts\./,
+      (m) => `The ${itemName(m[1])} needs a price: the standard layout of the ${withoutCodes(m[2])} uses its size to place doors, windows and posts. Sell it on Doors & windows ($0 is fine).`],
     [/^items\.(\w+) needs a price: the (.+?) \([A-Za-z0-9_-]+\) comes as standard on the (.+?)\. 0 is fine/,
       (m) => `The ${m[2]} comes with the ${swapNeedProblems(S, M).includes(problem) ? withoutCodes(m[3]) : withoutCodes(m[3]).replace(/, ([^,]+)$/, " and $1")}. Sell it on Doors & windows ($0 is fine).`],
     [/^items\.(\w+): there is no item/, () => "One of the doors or windows is not in the builder's library. Reload the page and try again."],
@@ -308,6 +313,36 @@ const textLine = (label, before, after) => {
 const EXTRA_UNITS = { check: "", qty: " each", lf: " a foot", sqftF: " a sq ft of floor", sqftW: " a sq ft of walls", sqftR: " a sq ft of roof" };
 const chargeWords = (x) => (x?.input === "pct" ? `${Number(x.price)}% of the building price` : `${fmtMoney(x?.price)}${EXTRA_UNITS[x?.input] ?? ""}`);
 
+const LAYOUT_WALLS = { F: "the front", R: "the right side", B: "the back", L: "the left side", IN: "inside", S1: "the porch", S2: "the porch", S3: "the porch", P1: "the porch", P2: "the porch", P3: "the porch" };
+function layoutChanges(key, name, before, after, manufacturer, library) {
+  const next = after.offer[key].layout;
+  if (next == null) return [`Standard layout of the ${name}: went back to the builder's layout`];
+  let old = before.offer?.[key]?.layout;
+  if (!Array.isArray(old) && library) {
+    try { old = builderRecipe(resolve(before, manufacturer, library), key); } catch { old = []; }
+  }
+  const had = Array.isArray(old) ? [...old] : [];
+  const added = [];
+  for (const entry of next) {
+    const at = had.findIndex((e) => same(e, entry));
+    if (at >= 0) had.splice(at, 1);
+    else added.push(entry);
+  }
+  const facts = [];
+  const itemWords = (e) => {
+    const own = after.items?.[e.cat];
+    const item = typeof own?.name === "string" && own.name.trim() || manufacturer.items?.[e.cat]?.name || "An item";
+    return `${item} on ${LAYOUT_WALLS[e.wall] || "a wall"}`;
+  };
+  for (const e of added) {
+    const moved = had.findIndex((o) => o.cat === e.cat && o.wall === e.wall);
+    facts.push(`${itemWords(e)} ${moved >= 0 ? "moved" : "added"}`);
+    if (moved >= 0) had.splice(moved, 1);
+  }
+  for (const e of had) facts.push(`${itemWords(e)} removed`);
+  return [`Standard layout of the ${name}: ${facts.slice(0, 12).join("; ") || "kept the builder's doors, windows and porch posts"}${facts.length > 12 ? `; and ${facts.length - 12} more changes` : ""}`];
+}
+
 /* A rent-to-own term: the factor, and what it makes the monthly payment on
    a $5,000 building (the payment is the price / the factor / the months). */
 const RTO_EXAMPLE = 5000;
@@ -394,6 +429,7 @@ export function describeChanges(before, after, manufacturer, { contact = "full",
     const sizes = keys(after.offer[k].sizes);
     const base = after.offer[k].base ? ` (built like the ${M.styles?.[after.offer[k].base]?.name || after.offer[k].base})` : "";
     out.push(`Started selling the ${styleName(after, k)}${base} in ${sizes.length} size${sizes.length === 1 ? "" : "s"}`);
+    if (Array.isArray(after.offer[k].layout)) out.push(...layoutChanges(k, styleName(after, k), before, after, manufacturer, library));
   }
   for (const k of oldStyles) if (!newStyles.includes(k)) out.push(`Stopped selling the ${styleName(before, k)}`);
   for (const k of newStyles) {
@@ -401,6 +437,9 @@ export function describeChanges(before, after, manufacturer, { contact = "full",
     const o = before.offer[k], n = after.offer[k];
     if ((o.name || "") !== (n.name || "")) out.push(`The ${styleName(before, k)} is now called the ${styleName(after, k)}`);
     const name = styleName(after, k);
+    if (!same(o.layout, n.layout)) {
+      out.push(...layoutChanges(k, name, before, after, manufacturer, library));
+    }
     /* which library style a style of their own is built like: its shape */
     if ((o.base || null) !== (n.base || null)) {
       const like = (b) => M.styles?.[b]?.name || b;
@@ -634,10 +673,70 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
 
   /* The resolved catalogue for pricing (cached per version). */
   let cached = null;
-  async function catalogue() {
+  const olderCatalogues = new Map();
+  async function catalogue({ cfg = null, company = null } = {}) {
     const record = await get();
     if (cached?.version !== record.version) cached = { version: record.version, cat: resolve(record.settings, manufacturer, library), record };
-    return cached;
+    if (!Number.isSafeInteger(cfg) || cfg < 1 || cfg >= cached.cat.cfg || (company !== null && company !== cached.cat.id)) return cached;
+    /* An older saved design keeps what its own price list included. The
+       browser's cfg only asks for a record: the allowance always comes
+       from a copy the server itself kept, never from browser item flags.
+       Read in batches for older businesses, and cache an immutable cfg. */
+    let includedCat = olderCatalogues.get(cfg);
+    if (!includedCat) {
+      const names = (await store.keys("price-list-history/")).sort().reverse();
+      for (let i = 0; i < names.length && !includedCat; i += 16) {
+        const entries = await Promise.all(names.slice(i, i + 16).map((key) => store.get(key)));
+        for (const entry of entries) {
+          if (entry?.settings?.cfg !== cfg || entry.settings.id !== cached.cat.id) continue;
+          try { includedCat = resolve(entry.settings, manufacturer, library); } catch { /* an unreadable older copy gives no allowance */ }
+          if (includedCat) {
+            olderCatalogues.set(cfg, includedCat);
+            if (olderCatalogues.size > 16) olderCatalogues.delete(olderCatalogues.keys().next().value);
+            break;
+          }
+        }
+      }
+    }
+    return includedCat ? { ...cached, includedCat } : cached;
+  }
+
+  function layoutStyle(record, style) {
+    if (typeof style !== "string" || !/^[A-Za-z0-9]{1,8}$/.test(style) || !Object.prototype.hasOwnProperty.call(record.settings.offer || {}, style)) {
+      fail(404, "This building isn't on your price list. Tap Add a building to sell it.");
+    }
+    return record.settings.offer[style];
+  }
+
+  /* The owner gets the same resolved building every lot opens on. A
+     builder's named recipe is offered as editable data, without changing
+     an older price list merely because this page was opened. */
+  async function layoutMode(style, lots = []) {
+    const { cat, record } = await catalogue();
+    const offer = layoutStyle(record, style);
+    const sizes = Object.keys(cat.P[style]);
+    const openingSize = sizes.includes(cat.defaults.size) ? cat.defaults.size : sizes[Math.min(4, sizes.length - 1)];
+    const own = Array.isArray(offer.layout);
+    const layout = own ? structuredClone(offer.layout) : builderRecipe(cat, style);
+    if (!Array.isArray(layout)) fail(422, "This building's standard layout could not be opened. Ask Barnwright to check it.");
+    return {
+      style, name: cat.TYPES[style].name, sizes, layout, own, version: record.version,
+      companyId: cat.id, colors: { body: cat.defaults.body, trim: cat.defaults.trim, roof: cat.defaults.roof },
+      openingSize, catalogue: cat, lotSlug: lots.find((l) => l.active !== false)?.slug || null,
+    };
+  }
+
+  /* The layout route changes only the chosen building's recipe. It must
+     still save against the version the owner opened, through prepared()
+     and the same compare-and-replace write as the whole price list. */
+  async function layoutSettings({ style, layout }) {
+    const record = await get();
+    layoutStyle(record, style);
+    if (layout !== null && !Array.isArray(layout)) fail(422, "The standard layout could not be read. Open it again and try saving.");
+    const settings = structuredClone(record.settings);
+    if (layout === null) delete settings.offer[style].layout;
+    else settings.offer[style].layout = structuredClone(layout);
+    return settings;
   }
 
   function clean(settings) {
@@ -834,7 +933,33 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
      (422) when the business's own numbers cause a problem at some size. */
   function sizeCheckOf(old, next, cat, { refuse, mixedFrom = undefined }) {
     const before = liftRawRules(old, manufacturer).settings;
-    const r = checkChangedStyles(before, next, manufacturer, library, { cat, budgetMs: sizeCheckMs });
+    const t0 = performance.now();
+    const layoutReports = [];
+    let catBefore = null;
+    if (Object.values(next.offer).some((o) => Array.isArray(o?.layout))) {
+      try { catBefore = resolve(before, manufacturer, library); } catch { /* an older unreadable list has no previous shapes */ }
+    }
+    const shape = (t) => t ? { ...t, name: undefined } : null;
+    for (const key of Object.keys(next.offer)) {
+      const own = Array.isArray(next.offer[key]?.layout);
+      const changed = !same(before.offer?.[key]?.layout, next.offer[key]?.layout);
+      const sizesChanged = !same(Object.keys(before.offer?.[key]?.sizes || {}), Object.keys(next.offer[key]?.sizes || {}));
+      if (!changed && !(own && (sizesChanged || !same(shape(catBefore?.TYPES[key]), shape(cat.TYPES[key]))))) continue;
+      /* Going back to the builder's layout has always been supported at
+         every sold size. Only a recipe of the business's own is judged. */
+      if (!own) continue;
+      const report = checkLayout(next.offer[key].layout, cat, key, { budgetMs: Math.max(0, sizeCheckMs - (performance.now() - t0)) });
+      layoutReports.push({ key, name: cat.TYPES[key].name, ...report });
+    }
+    const r = checkChangedStyles(before, next, manufacturer, library, { cat, budgetMs: Math.max(0, sizeCheckMs - (performance.now() - t0)) });
+    for (const report of layoutReports) {
+      r.problems.push(...report.errors);
+      r.warnings.push(...report.warnings);
+      r.unchecked.push(...(report.unchecked || []));
+      if (report.unchecked?.length && refuse) r.problems.push("The standard layout could not be checked in time. Tap Save as standard again.");
+      if (!r.styles.some((s) => s.key === report.key)) r.styles.push({ key: report.key, name: report.name });
+      if (!report.unchecked?.length && !r.checked.includes(report.name)) r.checked.push(report.name);
+    }
     /* a put back that carried parts forward: what the copy as it was kept
        finds too is the copy's; anything else the mix caused (a copy that
        can't be read any more causes it all) */
@@ -844,6 +969,10 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
       try {
         const kept = tidyBuilt(liftRawRules(mixedFrom, manufacturer).settings, manufacturer);
         had = checkChangedStyles(before, kept, manufacturer, library, { budgetMs: sizeCheckMs }).problems;
+        const keptCat = resolve(kept, manufacturer, library);
+        for (const report of layoutReports) if (Array.isArray(kept.offer?.[report.key]?.layout)) {
+          had.push(...checkLayout(kept.offer[report.key].layout, keptCat, report.key, { budgetMs: sizeCheckMs }).errors);
+        }
       } catch { had = []; }
       mixWords = r.problems.filter((w) => !had.includes(w));
     }
@@ -853,7 +982,11 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
       err.problems = words;
       throw err;
     }
-    return { checked: r.checked, styles: r.styles, buildings: r.buildings, problems: refuse ? [] : r.problems, warnings: r.warnings, unchecked: r.unchecked };
+    /* The browser already has its result drawings. Keep the answer small:
+       each full check carries a frame and the entire door/window list. */
+    const layouts = layoutReports.map(({ key, name, ok, errors, warnings, problems, fixes, sizes, summary, unchecked, leftOff }) =>
+      ({ key, name, ok, errors, warnings, problems, fixes, sizes, summary, unchecked, leftOff }));
+    return { checked: r.checked, styles: r.styles, buildings: r.buildings, problems: refuse ? [] : r.problems, warnings: r.warnings, unchecked: r.unchecked, ...(layouts.length ? { layouts } : {}) };
   }
 
   async function history() {
@@ -894,5 +1027,5 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
 
   const startForOwner = (by, settings) => startForBarnwright(settings, { id: by.userId, name: by.name || by.email });
 
-  return { get, current, catalogue, setup, signupStart, startForBarnwright, startForOwner, preview, save, history, restore, check };
+  return { get, current, catalogue, layoutMode, layoutSettings, setup, signupStart, startForBarnwright, startForOwner, preview, save, history, restore, check };
 }

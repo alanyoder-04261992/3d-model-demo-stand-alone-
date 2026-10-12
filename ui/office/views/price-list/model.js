@@ -430,11 +430,11 @@ export function explain(problem, draft, M) {
   const xName = (i) => (S.options?.extras?.[Number(i)]?.name || "").trim() || "This option";
   const colorWord = { paint: "siding", trim: "trim", metal: "roof" };
   const rules = [
-    [/^offer is empty/, () => ({ words: "Sell at least one building style. Switch one back on, or add one.", tab: "buildings", where: "buildings" })],
+    [/^offer is empty/, () => ({ words: "Sell at least one building. Tap Sell it again, or Add a building.", tab: "buildings", where: "buildings" })],
     [/^offer\.(\w+) is built like the .+?, so it needs a name/, (m) => ({ words: "Give this style a name customers will see.", tab: "buildings", where: `style:${m[1]}`, field: `name:${m[1]}`, style: m[1] })],
     [/^offer\.(\w+)\.name must be text/, (m) => ({ words: "Give this style a name customers will see.", tab: "buildings", where: `style:${m[1]}`, field: `name:${m[1]}`, style: m[1] })],
     [/^offer\.(\w+)\.name .* is too long/, (m) => ({ words: `Use a shorter name: ${NAME_MAX} letters at most.`, tab: "buildings", where: `style:${m[1]}`, field: `name:${m[1]}`, style: m[1] })],
-    [/^offer\.(\w+)\.sizes: no sizes/, (m) => ({ words: `The ${sName(m[1])} has no sizes. Add a size, or switch it to Not sold.`, tab: "buildings", where: `style:${m[1]}`, field: `newsize:${m[1]}`, style: m[1] })],
+    [/^offer\.(\w+)\.sizes: no sizes/, (m) => ({ words: `The ${sName(m[1])} has no sizes. Add a size, or tap Stop selling.`, tab: "buildings", where: `style:${m[1]}`, field: `newsize:${m[1]}`, style: m[1] })],
     [/^offer\.(\w+)\.sizes\[(.+?)\]: a size must be written/, (m) => ({ words: `${z(m[2])} isn't a size. Remove it and add it again.`, tab: "buildings", where: `style:${m[1]}`, field: `size:${m[1]}:${raw(m[2])}`, style: m[1] })],
     [/^offer\.(\w+)\.sizes\[(.+?)\] has no price/, (m) => ({ words: `${z(m[2])} needs a price.`, tab: "buildings", where: `style:${m[1]}`, field: `size:${m[1]}:${raw(m[2])}`, style: m[1], missing: true })],
     [/^offer\.(\w+)\.sizes\[(.+?)\]: the price must be more than 0/, (m) => ({ words: `${z(m[2])} needs a price above $0. To stop selling a size, remove it.`, tab: "buildings", where: `style:${m[1]}`, field: `size:${m[1]}:${raw(m[2])}`, style: m[1], missing: true })],

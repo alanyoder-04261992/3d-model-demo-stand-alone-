@@ -236,6 +236,7 @@ export function createSheet(ctx) {
       el("sh-len-m").onclick = () => change("item", (s) => S.changeLength(s, it.id, -1, cat), it.id);
       el("sh-len-p").onclick = () => change("item", (s) => S.changeLength(s, it.id, 1, cat), it.id);
     } else lnr.style.display = "none";
+    ctx.emit("sheet", { item: it });
   }
 
   /* select(id): pick an item (null: put it down) -- Barnwright select(). */
@@ -252,10 +253,11 @@ export function createSheet(ctx) {
     const it = itemById(state, id);
     if (!it || !cat.CAT[it.cat]) { state.sel = null; sheet.classList.remove("open"); ctx.refreshLists(); ctx.emit("select", { id: null, item: null }); return; }
     const c = cat.CAT[it.cat];
-    if (id !== lastFaced) { lastFaced = id; if (ctx.mode === "out" && !c.int && ctx.plan) animYaw(ctx.cam, wallYaw(it, ctx.plan, ctx.cam)); }   /* glide round to face what was tapped */
+    if (id !== lastFaced) { lastFaced = id; if (ctx.mode === "out" && !c.int && ctx.plan && !ctx.layoutHooks?.faceItem?.(it)) animYaw(ctx.cam, wallYaw(it, ctx.plan, ctx.cam)); }   /* glide round to face what was tapped */
     render(it);
     sheet.classList.add("open");
-    if (sheet.scrollIntoView) { try { sheet.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "nearest" }); } catch (e) { /* old browsers */ } }
+    if (ctx.layoutHooks?.revealSheet) ctx.layoutHooks.revealSheet(it);
+    else if (sheet.scrollIntoView) { try { sheet.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "nearest" }); } catch (e) { /* old browsers */ } }
     ctx.refreshLists();
     ctx.emit("select", { id: id, item: it });
   }

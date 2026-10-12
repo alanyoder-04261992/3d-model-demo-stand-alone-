@@ -1,7 +1,8 @@
 /* BUILDS THE WEBSITE (npm run build -> dist/, npm run build:client ->
    dist-client/). Only what is listed here ships: the 3D designer (index.html,
    embed.js and the browser files ui/app.js reaches), the Dealer Center
-   (dealer.html, its screens bundled into one file, ui/office/main.js, and
+   (dealer.html, its screens bundled into ui/office/main.js, a separate
+   lazy picture renderer with public fallback pictures, and
    its stylesheets, including ui/office/closed.css for a closed lot's link,
    and its app manifest, dealer.webmanifest, with the icons it names),
    the fonts, the builder's library, the example companies and legal/ (the
@@ -30,6 +31,7 @@
 import { readFileSync, writeFileSync, mkdirSync, readdirSync, existsSync, copyFileSync, rmSync } from "node:fs";
 import { resolve, dirname, relative, extname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { createHash } from "node:crypto";
 import { build } from "esbuild";
 import { buildHeaders, readCompanies, inlineScriptHashes } from "./build-headers.mjs";
 import { includeLearningPreview, includeDealerDemo } from "./site-profiles.mjs";
@@ -51,10 +53,8 @@ function copy(path) {
   mkdirSync(dirname(dest), { recursive: true });
   copyFileSync(source, dest); copied.add(path);
 }
-// The style reference pictures and facts (tools/make-style-refs.mjs): about
-// 1.8 MB that Barnwright's Control Room reads from GitHub for setting a dealer
-// up. No page of the designer or the Dealer Center loads them, so no website
-// and no client package carries them (tools/check-style-refs.mjs).
+// Barnwright's Control Room reads these setup references from GitHub. Dealer
+// sites use the separate, public fallback pictures below, never this folder.
 const NOT_SHIPPED = new Set(["library/style-refs"]);
 function tree(path) {
   for (const entry of readdirSync(resolve(root, path), { withFileTypes: true })) {
@@ -92,11 +92,13 @@ moduleGraph("ui/app.js");
 // app.js intentionally lazy-loads these by name after the first model render.
 for (const name of ["views", "blueprint", "quote", "share", "embed-mode"]) moduleGraph(`ui/${name}.js`);
 for (const name of ["styles", "views", "blueprint", "quote", "share", "embed-mode"]) copy(`ui/${name}.css`);
+copy("ui/layout-mode.css");
 // The Dealer Center's stylesheets (its script is bundled below), and
 // closed.css, the page a closed lot's designer link shows.
 if (!existsSync(resolve(root, "ui/office/closed.css"))) throw new Error("ui/office/closed.css is missing: a closed lot's link needs it");
 for (const file of readdirSync(resolve(root, "ui/office")).filter(f => f.endsWith(".css")).sort()) copy(`ui/office/${file}`);
 tree("fonts"); tree("library"); tree("legal");
+tree("ui/office/building-pictures");
 const { companies, problems } = await readCompanies();
 if (problems.length) throw new Error(problems.join("\n"));
 const selected = companies.filter(c => learning || !c.id.startsWith("learning-"));
@@ -111,9 +113,18 @@ if (learning) {
 // __DEALER_DEMO__ says whether this build offers the "try it" demo: Alan's
 // learning preview and his demo site do. A client build leaves the demo out
 // completely (no demo file, and no "leave both boxes empty" sign-in).
+// Your buildings' drawing code (ui/office/pictures.js: the 3D engine): its
+// own file in every build, loaded only when a picture is missing, so the
+// main file stays small. Its hash goes into the main file as
+// __PICTURES_ID__: a picture the owner's browser keeps is drawn again only
+// when this code changed.
+await build({ entryPoints: [resolve(root, "ui/office/pictures.js")], outfile: resolve(out, "ui/office/pictures.js"),
+  bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, sourcemap: false,
+  legalComments: "none", logLevel: "warning" });
+const picturesId = createHash("sha256").update(readFileSync(resolve(out, "ui/office/pictures.js"))).digest("hex").slice(0, 16);
 await build({ entryPoints: [resolve(root, "ui/office/main.js")], outfile: resolve(out, "ui/office/main.js"),
   bundle: true, format: "esm", platform: "browser", target: "es2022", minify: true, sourcemap: false,
-  legalComments: "none", logLevel: "warning", define: { __DEALER_DEMO__: JSON.stringify(demo) } });
+  legalComments: "none", logLevel: "warning", define: { __DEALER_DEMO__: JSON.stringify(demo), __PICTURES_ID__: JSON.stringify(picturesId) } });
 // The "try it" demo (/dealer?demo): its own file, loaded only by the demo. It
 // carries a copy of the Dealer Center's server code and runs it in the page
 // on made-up data; it holds no secrets (those live only in Netlify's settings).

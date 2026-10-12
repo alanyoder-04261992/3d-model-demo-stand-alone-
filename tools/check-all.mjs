@@ -18,7 +18,7 @@
    table. Checks run one at a time (browser checks each use their own port,
    but one browser at a time keeps them quick and repeatable). */
 
-import { readdirSync, readFileSync } from "node:fs";
+import { readdirSync, readFileSync, mkdirSync, writeFileSync } from "node:fs";
 import { spawnSync } from "node:child_process";
 import { resolve, dirname, basename } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -49,6 +49,8 @@ const checks = readdirSync(TOOLS).filter((f) => /^check-.*\.mjs$/.test(f) && f !
 if (onlyArg) for (const n of onlyArg) if (!checks.some((c) => c.name === n)) { console.log(`FAIL: there is no tools/check-${n}.mjs`); process.exit(1); }
 
 const rows = [];
+const logDir = resolve(ROOT, "test/out/checks");
+mkdirSync(logDir, { recursive: true });
 const t0 = Date.now();
 for (const c of checks) {
   if (onlyArg && !onlyArg.includes(c.name)) continue;
@@ -58,9 +60,10 @@ for (const c of checks) {
   const r = spawnSync(process.execPath, [resolve(TOOLS, c.file)], { cwd: ROOT, encoding: "utf8", timeout: TIMEOUT_MS, maxBuffer: 64 * 1024 * 1024 });
   const secs = (Date.now() - s) / 1000;
   const out = (r.stdout || "") + (r.stderr ? "\n" + r.stderr : "");
+  writeFileSync(resolve(logDir, c.name + ".log"), out + (r.error ? "\n" + r.error.message : ""));
   const lines = out.split("\n").map((l) => l.trimEnd()).filter(Boolean);
   const verdict = lines.find((l) => /^(PROVED|PASSED|PASS|FAIL|FAILED)\b/.test(l.trim())) || lines[lines.length - 1] || "(no output)";
-  let status = r.status === 0 ? "PASS" : "FAIL";
+  let status = r.status === 0 && !r.error ? "PASS" : "FAIL";
   if (r.error && r.error.code === "ETIMEDOUT") status = "FAIL";
   const why = r.error ? (r.error.code === "ETIMEDOUT" ? `timed out after ${TIMEOUT_MS / 60000} min` : String(r.error.message)) : r.signal ? `killed by ${r.signal}` : null;
   console.log(`${status} (${secs.toFixed(1)} s)`);

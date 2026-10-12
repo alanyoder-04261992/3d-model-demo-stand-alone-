@@ -68,7 +68,7 @@ export function createInteraction(ctx) {
   const cat = ctx.cat, canvas = ctx.canvas, stage = ctx.stage;
   const el = (id) => document.getElementById(id);
   const cam = ctx.cam;
-  let ptrs = {}, lastPinch = 0, dragItem = null, dragFr = null, dragMoved = false, downPt = null, lastBuild = 0, lpTimer = null, lpFired = false;
+  let ptrs = {}, lastPinch = 0, dragItem = null, dragFr = null, dragMoved = false, downPt = null, lastBuild = 0, lpTimer = null, lpFired = false, forcedPick = null;
   let ADDSPOT = null;
   let wheelArmed = !ctx.embedded;
 
@@ -117,6 +117,7 @@ export function createInteraction(ctx) {
   function hideAddPop() { el("addpop").classList.remove("open"); ADDSPOT = null; }
   /* the default choices on a wall: the company's first door and first window, and its outlet */
   function wallChoices() {
+    if (ctx.layoutHooks?.wallChoices) return ctx.layoutHooks.wallChoices();
     const out = [];
     const d = S.firstOf(cat, "addDoor"), w = S.firstOf(cat, "addWindow");
     if (d) out.push(["+ Door", d]);
@@ -173,13 +174,16 @@ export function createInteraction(ctx) {
     };
   }
   function pickItem(px, py) {
+    const extra = ctx.layoutHooks?.pickAt?.(px, py);
+    if (extra) return extra;
     const pc = ctx.renderer.projCache, res = ctx.result;
     if (!pc || !pc.proj || !res || !res.build) return null;
     const hitQuads = res.build.hitQuads || [];
     const hidden = hiddenStages();
-    let best = null, bestD = 1e9;
+    let best = null, bestD = 1e9, bestGap = Infinity;
     for (let i = 0; i < hitQuads.length; i++) {
       const q = hitQuads[i], pj = []; let ok = true, dep = 0;
+      if (ctx.layoutHooks?.allowPick && !ctx.layoutHooks.allowPick(q.id)) continue;
       if (hidden(q.stage)) continue;                            /* a step this view does not show */
       if (q.n && pc.cp) {                                        /* skip quads facing away: no grabbing items through the building */
         const qc = [(q.pts[0][0] + q.pts[2][0]) / 2, (q.pts[0][1] + q.pts[2][1]) / 2, (q.pts[0][2] + q.pts[2][2]) / 2];
@@ -191,14 +195,22 @@ export function createInteraction(ctx) {
       for (let a = 0, b = 3; a < 4; b = a++) {
         if ((pj[a][1] > py) !== (pj[b][1] > py) && px < (pj[b][0] - pj[a][0]) * (py - pj[a][1]) / (pj[b][1] - pj[a][1]) + pj[a][0]) inside = !inside;
       }
-      if (inside && dep < bestD) { bestD = dep; best = q.id; }
+      if (ctx.layoutHooks) {
+        const xs = pj.map((point) => point[0]), ys = pj.map((point) => point[1]);
+        const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+        const hw = Math.max(22, (Math.max(...xs) - Math.min(...xs)) / 2), hh = Math.max(22, (Math.max(...ys) - Math.min(...ys)) / 2);
+        inside ||= Math.abs(px - cx) <= hw && Math.abs(py - cy) <= hh;
+        const gap = (px - cx) ** 2 + (py - cy) ** 2;
+        if (inside && gap < bestGap) { bestGap = gap; bestD = dep; best = q.id; }
+      } else if (inside && dep < bestD) { bestD = dep; best = q.id; }
     }
     return best;
   }
 
   /* ---------- the pointer on the 3D picture ---------- */
   window.addEventListener("blur", () => { ptrs = {}; lastPinch = 0; dragItem = null; canvas.classList.remove("dragging"); });
-  canvas.addEventListener("pointerdown", (e) => {
+  function startPointer(e, picked) {
+    forcedPick = picked || null;
     if (e.pointerType === "touch" && e.cancelable) e.preventDefault();
     if (e.isPrimary) { ptrs = {}; lastPinch = 0; dragItem = null; }  /* a fresh first finger clears any stale pointer */
     cam.anim = null;                                                  /* touching the canvas stops any camera glide */
@@ -209,7 +221,7 @@ export function createInteraction(ctx) {
     cam.interacted = true; hideHint(); wheelArmed = true;
     downPt = [px, py]; dragMoved = false;
     const state = ctx.state;
-    const hit = pickItem(px, py);
+    const hit = picked || pickItem(px, py);
     if (hit && hit === state.sel && Object.keys(ptrs).length === 1 && !ctx.readOnly) { dragItem = itemById(state, hit); dragFr = ctx.frame(); }   /* only the selected item drags */
     else { dragItem = null; canvas.classList.add("dragging"); }
     if (lpTimer) { clearTimeout(lpTimer); lpTimer = null; }
@@ -221,7 +233,9 @@ export function createInteraction(ctx) {
         if (spot && showAddPop(px, py, spot)) lpFired = true;
       }, 500);
     }
-  });
+  }
+  canvas.addEventListener("pointerdown", (e) => startPointer(e));
+  function startItemDrag(e, id) { ctx.select(id); startPointer(e, id); }
   canvas.addEventListener("pointermove", (e) => {
     if (!ptrs[e.pointerId]) return;
     if (lpFired) { ptrs[e.pointerId] = [e.clientX, e.clientY]; return; }   /* the menu is up: hold the camera still */
@@ -250,14 +264,16 @@ export function createInteraction(ctx) {
           const vx = s1[0] - s0[0], vy = s1[1] - s0[1], len2 = vx * vx + vy * vy;
           if (len2 > 1) {
             dragItem.pos += (dx * vx + dy * vy) / len2;
-            if (CAT[dragItem.cat].gable || CAT[dragItem.cat].k === "light") {
+            if (!ctx.layoutHooks && (CAT[dragItem.cat].gable || CAT[dragItem.cat].k === "light")) {
               const s2 = c.proj([p0[0], p0[1] + 1, p0[2]]);
               if (s2) {
                 const wx = s2[0] - s0[0], wy = s2[1] - s0[1], len3 = wx * wx + wy * wy;
                 if (len3 > 1) dragItem.vy = (dragItem.vy || 0) + (dx * wx + dy * wy) / len3;
               }
             }
+            const wanted = dragItem.pos;
             clampPos(dragItem, state, fr);
+            if (ctx.layoutHooks?.afterDrag) ctx.layoutHooks.afterDrag(dragItem, wanted);
             /* settle onto the midpoint between neighbours, then read the tape */
             const g9 = snapCenter(dragItem, state, fr);
             if (g9) {
@@ -283,13 +299,17 @@ export function createInteraction(ctx) {
     if (lpFired) { lpFired = false; delete ptrs[e.pointerId]; lastPinch = 0; dragItem = null; if (Object.keys(ptrs).length === 0) canvas.classList.remove("dragging"); return; }
     if (ptrs[e.pointerId] && downPt && !dragMoved) {
       const r = canvas.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
-      const hit = pickItem(px, py);
-      ctx.select(hit || null);
+      /* A dashed post was chosen on the first touch. Opening its sheet can
+         scroll the phone during that touch, so the lift must keep the same
+         post rather than pick what moved underneath the finger. */
+      const hit = forcedPick || pickItem(px, py);
+      if (hit || !ctx.layoutHooks?.onBlank?.(px, py)) ctx.select(hit || null);
     } else if (dragItem) {
+      ctx.layoutHooks?.finishDrag?.(dragItem);
       ctx.act("move", () => null);                               /* Barnwright: buildShed(); refreshUI(); */
     }
     measEl.style.display = "none";
-    delete ptrs[e.pointerId]; lastPinch = 0; dragItem = null; dragFr = null;
+    delete ptrs[e.pointerId]; lastPinch = 0; dragItem = null; dragFr = null; forcedPick = null;
     if (Object.keys(ptrs).length === 0) canvas.classList.remove("dragging");
   }
   canvas.addEventListener("pointerup", endPtr);
@@ -306,7 +326,7 @@ export function createInteraction(ctx) {
   const vroot = el("views");
   el("viewtoggle").onclick = () => { vroot.classList.toggle("open"); };
   Array.prototype.forEach.call(document.querySelectorAll("#viewmenu button"), (b) => {
-    b.onclick = () => { const v = VIEWS[b.getAttribute("data-v")]; if (v) animYaw(cam, v[0], v[1]); ctx.renderer.needsDraw = true; vroot.classList.remove("open"); };
+    b.onclick = () => { const name = b.getAttribute("data-v"); const v = VIEWS[name]; if (!ctx.layoutHooks?.setView?.(name) && v) animYaw(cam, v[0], v[1]); ctx.renderer.needsDraw = true; vroot.classList.remove("open"); };
   });
 
   /* ---------- a card's heading folds it ---------- */
@@ -325,5 +345,5 @@ export function createInteraction(ctx) {
     stage.appendChild(cover);
   }
 
-  return { pickItem, wallAtScreen, showAddPop, hideAddPop, addAt, measShow, ftIn };
+  return { pickItem, wallAtScreen, showAddPop, hideAddPop, addAt, measShow, ftIn, startItemDrag };
 }

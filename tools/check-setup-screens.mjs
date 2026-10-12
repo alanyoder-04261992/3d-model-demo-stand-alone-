@@ -352,12 +352,14 @@ try {
   ok("no Customer button, no Help, no person menu, no Today", !(await alan.$(".new-customer")) && !(await alan.$(".topbar-help")) && !(await alan.$(".person")) && !(await alan.$(".termsBanner")));
   await shot(alan, "3-visit-price-list");
   {
+    await alan.evaluate(() => { location.hash = "/price-list/how-its-built"; });
+    await alan.waitForSelector("[data-flag='built:biz']", { timeout: 10000 });
     /* HB: How it's built in the visit (server/office/setup-lock.js): the numbers for every building are the owner's */
     const biz = await alan.$("[data-flag='built:biz']");
     const bizText = biz ? (await biz.textContent()).replace(/\s+/g, " ") : "";
     ok("HB: the visit shows How it's built for the whole business with no boxes, and says only the owner can change it (old: boxes the lock refuses)",
       !!biz && (await biz.$$("input, select, textarea, button")).length === 0 && bizText.includes(WORDS.visitBiz), bizText.slice(0, 300));
-    await alan.click(".pl-style[data-style='UT'] .pl-style-open");
+    await alan.evaluate(() => { location.hash = "/price-list/building/UT"; });
     const box = await alan.waitForSelector("input[data-field='built:UT:roofPitch']", { timeout: 10000 }).catch(() => null);
     ok("HB: ... while a style's own How it's built boxes are there to change", !!box);
     /* M1: before live the 3D designer is closed to customers, so the Saved
@@ -385,8 +387,8 @@ try {
     await alan.click(".pl-bar .btn-accent");
     await alan.waitForTimeout(1500);
     ok("(the Utility Shed's wall back to the standard)", !(await call("/api/office/price-list")).data?.settings?.offer?.UT?.built);
-    /* close it again, as section 4 opens it */
-    await alan.click(".pl-style[data-style='UT'] .pl-style-open");
+    /* Back to the buildings list, as section 4 opens the Edit page. */
+    await alan.evaluate(() => { location.hash = "/price-list"; });
     await alan.waitForSelector("input[data-field='built:UT:roofPitch']", { state: "detached", timeout: 10000 }).catch(() => {});
     /* M4: on the Options tab, an option's roof pitch and where an option
        that changes the building is offered are the owner's (the lock refuses
@@ -440,7 +442,7 @@ try {
   await alan.goto(`${BASE}/dealer#/price-list`);
   await settle(alan);
   const marker = await alan.evaluate(() => window.__sameLoad);
-  await alan.click(".pl-style[data-style='UT'] .pl-style-open");
+  await alan.evaluate(() => { location.hash = "/price-list/building/UT"; });
   await alan.waitForSelector("input[data-field='size:UT:10x16']");
   await alan.fill("input[data-field='size:UT:10x16']", "5995");
   await alan.waitForTimeout(300);
@@ -469,7 +471,7 @@ try {
   section("4b. COR-2: a kept draft comes back once; Undo changes lets it go");
   {
     const priceBox = "input[data-field='size:UT:10x16']";
-    const openUT = async () => { await alan.click(".pl-style[data-style='UT'] .pl-style-open"); await alan.waitForSelector(priceBox); };
+    const openUT = async () => { await alan.evaluate(() => { location.hash = "/price-list/building/UT"; }); await alan.waitForSelector(priceBox); };
     await openUT();
     await alan.fill(priceBox, "6100");
     await alan.waitForTimeout(300);
@@ -631,13 +633,13 @@ try {
     const alan2 = await pageIn(await ctx2(null));
     await alan2.goto(BASE2 + link2);
     await settle(alan2);
-    await alan2.waitForSelector(".pl-style", { timeout: 15000 }).catch(() => {});
+    await alan2.waitForSelector(".pl-card[data-style]", { timeout: 15000 }).catch(() => {});
     const bar9 = await text(alan2, ".bw-bar");
-    const styles = await alan2.$$eval(".pl-style", (els) => els.length).catch(() => 0);
+    const styles = await alan2.$$eval(".pl-card[data-style]", (els) => els.length).catch(() => 0);
     ok("Alan's visit with the owner's sign-up agreement starts the price list and opens on it: the bar, and Every standard building (23 styles)",
       /^Working on Testing Sheds as Barnwright until (?:[A-Z][a-z]{2} \d{1,2} at )?\d{1,2}:\d{2} [AP]M\./.test(bar9 || "") && styles === 23 && /#\/price-list$/.test(alan2.url()), `${bar9} | ${styles} styles | ${alan2.url()}`);
     await shot(alan2, "9-visit-before-sign-in");
-    await alan2.click(".pl-style[data-style='UT'] .pl-style-open");
+    await alan2.evaluate(() => { location.hash = "/price-list/building/UT"; });
     await alan2.waitForSelector("input[data-field='size:UT:10x16']");
     await alan2.fill("input[data-field='size:UT:10x16']", "5995");
     await alan2.waitForTimeout(300);

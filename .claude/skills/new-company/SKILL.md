@@ -240,6 +240,15 @@ The ones that usually need a hand edit:
 * `built` and each style's `offer.<KEY>.built` -- only through the
   `how-its-built` skill. Today's numbers (and the shop standard where Alan
   confirmed one) need nothing written.
+* `offer.<KEY>.layout` -- the owner sets the standard doors, windows and
+  porch posts on the building's Edit page. Missing means the builder's exact
+  layout; every saved layout is checked at every sold size and porch choice.
+  Items must have prices in this business's price list (0 is fine) and the
+  layout is limited to 100 expanded items. Existing saved designs keep their
+  own items and prices. Read-only quote and order previews also keep their
+  saved item positions when the price list version changes (`toState` with
+  `asSaved`); a customer editing a live design still follows current fitting
+  rules. See the `add-a-style` skill for the data language.
 * `construction` -- only through the `change-construction` skill. A roof
   pitch, overhang, barn roof height or door height written here is refused:
   those are How it's built.

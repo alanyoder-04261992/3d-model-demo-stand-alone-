@@ -83,6 +83,7 @@ const ROUTES = [
   [/^\/orders$/, "orders"],
   [/^\/customers\/([A-Za-z0-9]{8,24})\/orders\/([A-Za-z0-9]{8,24})$/, "order"],
   [/^\/customers\/([A-Za-z0-9]{8,24})\/quotes\/([A-Za-z0-9]{8,24})$/, "quote"],
+  [/^\/price-list\/(building)\/([A-Za-z0-9]{1,8})$/, "price-list"],
   [/^\/price-list(?:\/([a-z-]+))?$/, "price-list"],
   [/^\/lots$/, "lots"],
   [/^\/lots\/([a-z0-9-]{2,40})$/, "lot"],

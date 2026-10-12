@@ -386,6 +386,16 @@ site. One shed business runs everything from it:
   Sales Inbox (your private inbox for Barnwright sales messages) is at
   inbox.barnwrightsoftware.com, and you set up a new client's 3D designer at
   3D Setup, 3dsetup.barnwrightsoftware.com.
+* **Your buildings.** In the price list, picture cards show each building
+  as the business's own 3D designer opens it, with its colors and building
+  numbers. Tap **Edit** for its sizes, prices and **How it's built**.
+  **Add a building** opens the standard gallery, with **Add it** and
+  **Make my own from it**. **Stop selling** is at the bottom of Edit.
+  **How all your buildings are built** has its own page. **Set the standard
+  layout** opens the 3D designer to set the doors, windows and porch posts
+  every building comes with; **Save as standard** checks every size and
+  sends that layout to every lot. Customers can still move things on their
+  own building, and old quotes and orders keep their prices.
 * **Designing for a customer.** "Design a building for them" opens the lot's
   3D designer inside the Dealer Center; "Save quote" puts the building and
   its price on the customer's file. "Copy link to this building" copies a

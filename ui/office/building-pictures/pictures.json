@@ -1,0 +1,108 @@
+{
+  "recipe": {
+    "w": 400,
+    "h": 300,
+    "dpr": 2,
+    "cam": {
+      "yaw": 0.62,
+      "pitch": 0.215,
+      "fit": "fitref"
+    },
+    "bg": "#E9E9E5"
+  },
+  "engine": "53cb2e5ba463dcd9",
+  "styles": {
+    "UT": {
+      "key": "d13aa624b15e0bbd",
+      "sha256": "67a9a01c467b786c8015e0800a35f12dac9d037eea96d7ee8b1886eecc550c76"
+    },
+    "SU": {
+      "key": "4eaa0bb95d43cf1f",
+      "sha256": "f0dc1a901b97e304fcc66361e9e3782b554e703e5dbd0701a589836a1f3d1280"
+    },
+    "DS": {
+      "key": "a9ba3bb3984ba8b2",
+      "sha256": "8f11e0c2ca02b5e33369521772d16f02ccfe866084030b0646591ab8735ce1da"
+    },
+    "BU": {
+      "key": "abb805856f7cdd23",
+      "sha256": "410aac07ce59232d4fb872f0845dee5668e2d9bc969e89a359c3962540bb80df"
+    },
+    "GU": {
+      "key": "6251ac8405c19e10",
+      "sha256": "02d78ba96ae7ed6a2c70f05789da5273182c91edb3593e6583e26108cf7f8047"
+    },
+    "SB": {
+      "key": "cb71f42b455a092d",
+      "sha256": "108eb61def5fc29e3d6565b33565ff0121d407f25e74aadbf2ce9cfe1970418b"
+    },
+    "LB": {
+      "key": "cc9d25a7f06f9bf4",
+      "sha256": "1a99dc71f4efd315da5ed6b2a761eea4644ff8a903443563a46ed9b527698c32"
+    },
+    "SLB": {
+      "key": "5cfaac4742b9325f",
+      "sha256": "a1b0014e58540654cff2d49479bd8ef5606b61cec6b42afb2170a7aba1ce6bb6"
+    },
+    "CS": {
+      "key": "c0a8741651b0aa16",
+      "sha256": "ec4704fe5b3de06392284f2321067cd82fc64612e9d2c438c072eed3f63e5d88"
+    },
+    "SS": {
+      "key": "736bf5aa610a9497",
+      "sha256": "d1dcb73f84ae8c251e5405bd830ff7984eb5a67c437c2358518ac699a295548d"
+    },
+    "C": {
+      "key": "37d6a2b8f51bd894",
+      "sha256": "b4f39427ef5f6af85332f25a0c78eea84b1e4e82d1bb3e13e3c5cd23dc05bcaf"
+    },
+    "LBC": {
+      "key": "949f970f638e21ac",
+      "sha256": "45120b805e5ddd55a6dc45b130b9cfbe3a6d681476362170a4bac22fc4200f7a"
+    },
+    "SC": {
+      "key": "9beaa4952b26f853",
+      "sha256": "9c0f59c20eef9ce62e943415c1ceb4b5e868dd9d71ee63e4c0e741531af7c063"
+    },
+    "LSC": {
+      "key": "3ddc7646e5fd22ba",
+      "sha256": "fb38399233fae4adab34fb8b862fa1af3fade5064c8dbdc92d4103ee3a54c547"
+    },
+    "DSC": {
+      "key": "047c16f426b9e081",
+      "sha256": "45d7f2f390fdb7bd37a3f3dfa1f4345224606815c3d18da6ecff7119df964108"
+    },
+    "SLC": {
+      "key": "181afe79cab83885",
+      "sha256": "56f0cfd925c4c36d53f7f59ddaefc7f43b9388a5c2626e6f556238cf587298b6"
+    },
+    "G": {
+      "key": "bca46000a5f7c779",
+      "sha256": "ee91b01fe154d82d97242211572205830997d33d4bd8eb4dbac7ab767ca1e2bc"
+    },
+    "LBG": {
+      "key": "2fd25683f7d1b877",
+      "sha256": "7e6fb3ef3ab9f13d6a1bced1ec062d924102c1fa907e09df2390d311e0f2449d"
+    },
+    "MU": {
+      "key": "5eec78f57c491293",
+      "sha256": "86224d24b481125deb4a585e583bb207dac902a940b026a84e73b32813b19e33"
+    },
+    "MLB": {
+      "key": "41c4d3f0980170f2",
+      "sha256": "f3dd8cee1d911d515aed0ac20b7544bdfc8c0d284f21153448c17ef16bbc4e50"
+    },
+    "MG": {
+      "key": "36fd997c932bb821",
+      "sha256": "120dc5abf7a5286c183b7ef2f6dd7b8b0f8b861065c2c7e4b1efb969ad20e76f"
+    },
+    "MCS": {
+      "key": "f884372c62aefd61",
+      "sha256": "c0664b3c05d32a831a6f658fe6860ef95d7528949f427f66c9aaad4ef9ed62ea"
+    },
+    "DK": {
+      "key": "7035b344c6ca84f0",
+      "sha256": "69fc9ba0a67f37c04523e43963171e0e52a5208c936d3b5652a7a238206c3308"
+    }
+  }
+}

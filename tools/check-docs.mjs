@@ -79,6 +79,7 @@ import { TERMS } from "../server/office/terms.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const BARNWRIGHT_ROOT = "/home/user/boisterous-lokum-a737e0";   /* read only, never written */
+const YODER_ROOT = process.env.YODER_ROOT || "/home/user/yoder-storage-barns";
 
 export const WORKFLOW_SKILLS = Object.freeze(["new-company", "add-a-style", "add-a-part", "check-the-look", "change-construction", "shed-customer-setup", "how-its-built"]);
 export const DOCS = Object.freeze(["README.md", "docs/FOR-ALAN.md", "docs/SELLING.md",
@@ -126,6 +127,8 @@ function exampleOf(p) { return p.split("/").some((s) => EXAMPLE_SEGMENTS.has(s))
 /* Does a path named in a document exist? -> {ok, how} */
 function pathExists(raw, isDir) {
   let p = raw.replace(/\/+$/, "");
+  const yoder = /^(?:\/home\/user\/)?yoder-storage-barns(?:\/(.*))?$/.exec(p);
+  if (yoder && existsSync(resolve(YODER_ROOT, yoder[1] || "."))) return { ok: true, how: "absolute" };
   if (p.startsWith("/")) {                                    /* an absolute path: outside the repo ... */
     if (p.startsWith(BARNWRIGHT_ROOT) && !existsSync(BARNWRIGHT_ROOT)) return { ok: true, how: "barnwright-absent" };
     if (existsSync(p)) return { ok: true, how: "absolute" };

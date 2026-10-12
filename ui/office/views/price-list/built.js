@@ -78,14 +78,15 @@ function memo(key, make) {
 /* Only what How it's built reads: two drafts that differ in prices alone
    give the same catalogue for these screens. */
 function builtKey(s) {
-  return JSON.stringify([S.saved?.version, s.built ?? null, s.construction ?? null,
-    keysOf(s.offer).map((k) => [k, s.offer[k]?.base ?? null, s.offer[k]?.name ?? null, s.offer[k]?.built ?? null, keysOf(s.offer[k]?.sizes)]),
+  return JSON.stringify([S.saved?.version, s.built ?? null, s.construction ?? null, s.defaults ?? null, s.palettes ?? null, s.look ?? null,
+    keysOf(s.offer).map((k) => [k, s.offer[k]?.base ?? null, s.offer[k]?.name ?? null, s.offer[k]?.built ?? null, s.offer[k]?.layout ?? null, keysOf(s.offer[k]?.sizes)]),
     (Array.isArray(s.options?.extras) ? s.options.extras : []).map((x) => [x?.key, x?.built ?? null])]);
 }
 /* The saved price list with the draft's How it's built numbers: always
    valid, so it resolves even while a new size still has no price. */
 function builtView(draft) {
   const s = structuredClone(S.saved.settings);
+  for (const k of ["defaults", "palettes", "look"]) if (draft[k] !== undefined) s[k] = structuredClone(draft[k]);
   if (draft.built !== undefined) s.built = structuredClone(draft.built); else delete s.built;
   for (const k of keysOf(s.offer)) {
     const d = draft.offer?.[k];
@@ -98,10 +99,20 @@ function builtView(draft) {
   }
   return s;
 }
+/* A new size needs a picture before its price is typed. These placeholder
+   prices are only used to draw; prepare() still saves exactly the draft. */
+function drawingDraft(draft) {
+  const s = prepare(draft);
+  for (const k of keysOf(s.offer)) for (const z of keysOf(s.offer[k]?.sizes)) {
+    const p = s.offer[k].sizes[z];
+    if (!(typeof p === "number" && Number.isFinite(p) && p > 0)) s.offer[k].sizes[z] = 1;
+  }
+  return s;
+}
 /* The catalogue (model/company.js resolve) for a draft, or null. */
-function catOf(draft) {
+export function catOf(draft) {
   return memo("cat|" + builtKey(draft), () => {
-    try { return resolve(prepare(draft), S.M, S.L); } catch { return resolve(builtView(draft), S.M, S.L); }
+    try { return resolve(drawingDraft(draft), S.M, S.L); } catch { return resolve(builtView(draft), S.M, S.L); }
   });
 }
 /* The same with no How it's built number of the business's own. */

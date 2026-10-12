@@ -30,6 +30,7 @@ import { lockedItems, newStyleKey, placeStyle, groupsOf, sortSizes, paletteNames
 import { LOCK_WORDS, GABLE_STYLES } from "./setup-lock.js";
 import { liftRawRules, setBuilt, parse as parseBuilt, checkStyleNumber, extrasThatChangeNothing, KNOBS, KNOB_PATHS } from "../../model/build-settings.js";
 import { styleName, itemName, optionName, BUILT_PARTS } from "./setup-view.js";
+import { layoutProblems } from "../../model/loadouts.js";
 
 export const MAX_EDITS = 300;
 export const TOO_MANY_EDITS = "Send 1 to 300 edits at a time.";
@@ -67,6 +68,7 @@ const EDITS = Object.freeze({
   change_prices: ["scope", "by_percent", "by_dollars", "round_to"],
   set_built: ["style", ...Object.keys(BUILT_PARTS)],
   set_roof_pitch: ["style", "pitch"],
+  set_standard_layout: ["style", "layout"],
   set_item: ["item", "price", "name"],
   stop_selling_item: ["item"],
   set_option: ["group", "key", "price", "name"],
@@ -425,6 +427,19 @@ const HANDLERS = {
     }
     if (problems.length) no(problems.join(" "));
     writeBuilt(s, k, writes, M);
+  },
+
+  /* The same data recipe the owner saves from the 3D designer. The lock,
+     every-size check, history and version check still run after edits;
+     this operation grants no other setup permission. null restores the
+     builder's own layout. */
+  set_standard_layout(s, e, { M }) {
+    const k = soldStyle(s, e.style);
+    if (!("layout" in e)) no("The standard layout is needed. Send null to go back to the builder's layout.");
+    if (e.layout === null) { delete s.offer[k].layout; return; }
+    const problems = layoutProblems(e.layout, styleName(s, k, M));
+    if (problems.length) no(problems.join(" "));
+    s.offer[k].layout = structuredClone(e.layout);
   },
 
   set_item(s, e, { M }) {

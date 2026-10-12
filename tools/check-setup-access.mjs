@@ -2461,6 +2461,45 @@ section("RL. read library: each style's How it's built numbers now and the stand
     r0.status === 200 && (r0.data.view?.styles || []).every((x) => Array.isArray(x.built) && x.built.length >= 3), JSON.stringify(r0.data).slice(0, 300));
 }
 
+section("SL. Standard layouts through Barnwright's visit and setup edits");
+{
+  const L = await fixtureBusiness();
+  const layout = [{ cat: "w48", wall: "F", at: "center" }, { cat: "w23", wall: "R", at: "center", ifFits: true }];
+  const edits = [{ do: "set_standard_layout", style: "LB", layout }];
+  const checked = await L.door({ action: "check", version: 1, edits });
+  const saved = await L.door({ action: "save", version: 1, edits, settingsSha256: checked.data.settingsSha256 });
+  ok("SL: the setup edit checks and saves the same recipe the owner uses", checked.status === 200 && saved.status === 200
+    && JSON.stringify((await L.store.get("price-list")).settings.offer.LB.layout) === JSON.stringify(layout), JSON.stringify([checked.data, saved.data]).slice(0, 500));
+  const firstHistory = await L.store.get("price-list-history/000002");
+  ok("SL: the recipe change is kept in History with Barnwright as who saved it", firstHistory?.savedBy?.id === "barnwright"
+    && firstHistory.changes.some((s) => s.startsWith(`Standard layout of the ${FX.edits.baseSettings.offer.LB.name || manufacturer.styles.LB.name}:`)), JSON.stringify(firstHistory?.changes));
+  const started = await L.start();
+  const cookie = cookieFrom(started);
+  const opened = await L.visit("GET", "layout-mode?style=LB", undefined, cookie);
+  ok("SL: a visit opens the saved layout with the existing visit cookie", started.status === 200 && opened.status === 200
+    && opened.data.own === true && Array.isArray(opened.data.layout) && opened.cookies.some((c) => c.startsWith(COOKIE + "=")), JSON.stringify(opened.data).slice(0, 250));
+  const changed = structuredClone(layout); changed[1].at = { pos: "len*0.1" };
+  const visitSave = await L.visit("POST", "price-list/layout", { style: "LB", layout: changed, version: opened.data.version }, cookie);
+  ok("SL: the visit saves a checked standard layout with History and version checks", visitSave.status === 200 && visitSave.data.savedBy?.id === "barnwright"
+    && visitSave.data.changes.some((s) => /Standard layout/.test(s)), JSON.stringify(visitSave.data).slice(0, 350));
+  const stale = await L.visit("POST", "price-list/layout", { style: "LB", layout, version: opened.data.version }, cookie);
+  ok("SL: a stale layout cannot overwrite the visit's save", stale.status === 409);
+  const bad = await L.visit("POST", "price-list/layout", { style: "LB", layout: [{ cat: "w48", wall: "F", at: "center" }, { cat: "w48", wall: "F", at: "center" }], version: visitSave.data.version }, cookie);
+  ok("SL: a visit's clashing doors are refused by the owner's same every-size check", bad.status === 422 && /door|closer|fit/i.test(bad.data.error));
+  const noCookie = await L.visit("GET", "layout-mode?style=LB", undefined, null);
+  ok("SL: the visit layout route still needs its own valid visit cookie", noCookie.status === 401 || noCookie.status === 403);
+  await L.owner({ prelive: "stopped" });
+  const stopped = await L.visit("POST", "price-list/layout", { style: "LB", layout, version: visitSave.data.version }, cookie);
+  ok("SL: stopping setup access stops the next layout save", stopped.status === 401 && stopped.data.code === "visit-ended", JSON.stringify(stopped.data));
+  const older = FX.edits.baseSettings;
+  const next = structuredClone(older); next.offer.LB.layout = layout;
+  ok("SL: a layout change passes the lock without widening the existing permissions", lockProblems(older, next, { manufacturer }).length === 0);
+  next.built = { wallHeight: { gambrel: 84 } };
+  ok("SL: the business-wide building numbers remain locked alongside a layout change", lockProblems(older, next, { manufacturer }).includes(LOCK_WORDS.built));
+  const reset = applyEdits({ ...older, offer: { ...older.offer, LB: { ...older.offer.LB, layout } } }, [{ do: "set_standard_layout", style: "LB", layout: null }], { manufacturer });
+  ok("SL: the setup edit can go back to the builder's layout", reset.problems.length === 0 && !("layout" in reset.settings.offer.LB));
+}
+
 console.log("");
 if (failed.length) {
   console.log(`FAIL: ${failed.length} of ${passed + failed.length} setup access checks failed.`);

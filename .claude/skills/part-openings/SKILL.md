@@ -237,3 +237,16 @@ The primitives (`common.js`):
   not offered there, are refused by the server, and a saved one still opens.
 * `node tools/check-parts.mjs` -- a valid part with a caption and this skill.
 * `node tools/check-imports.mjs` -- loads in Node with no browser.
+
+## Business standard layouts (October 2026)
+
+`offer.<KEY>.layout` holds doors, windows and porch posts as a validated data
+recipe. `model/loadout-twins.js` preserves the exact named builder layouts.
+`model/item-placement.js` now holds the unchanged `itemW` and `clampPos`
+rules, re-exported by `model/layout.js`; sharing them with the recipe reader
+avoids a second fit decision. Builder items settle before owner items.
+Owner windows use `ifFits`, whose single shared check separates the Single
+Slope's transom row and refuses the open porch and dog run as wall. Owner
+doors must fit or have an agreed size rule. Named defaults and saved item
+order still draw exactly as before. The new standard layout affects new
+buildings only; saved designs and quotes retain their own items and prices.

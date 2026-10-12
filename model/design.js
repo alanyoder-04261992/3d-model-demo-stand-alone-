@@ -391,7 +391,12 @@ export function toState(design, cat, opts) {
   let size = d.size != null ? String((has(ren.sizes, d.size) && ren.sizes[d.size]) || d.size) : null;
   if (size) s.size = size;
   setType(s, type, cat);
-  let asSaved = type === d.type && size === d.size && d.company === cat.id && d.cfg === cat.cfg;
+  /* A quote or order being looked at keeps its saved placement after an
+     owner changes prices or the standard layout. A customer editing a live
+     design still gets today's normal placement rules. Invalid items and walls
+     below can clear this flag in either case. */
+  let asSaved = type === d.type && size === d.size && d.company === cat.id &&
+    (d.cfg === cat.cfg || !!(opts && opts.asSaved));
   if (size && s.size !== size) { warnings.push(`The ${times(size)} size of the ${cat.TYPES[type].name} is no longer sold; showing the ${times(s.size)} instead.`); asSaved = false; }
   else if (size) setSize(s, size, cat);
 

@@ -56,14 +56,18 @@ export const HELP_SCREEN = Object.freeze({
 export const ANSWERS = Object.freeze([
   {
     id: "price",
-    title: "Change a price",
+    title: "Change buildings, prices or their standard layout",
     lines: [
-      "Only the owner changes prices. Tap **Price list**, then a building under **Buildings** to see its sizes and prices.",
+      "Only the owner changes the buildings, prices and standard layouts. Tap **Price list**, then **Edit** on a building under **Your buildings**.",
       "Type the new price next to the size. To raise or lower many prices at once, tap **Change prices** and check the preview.",
-      "Tap the gold button at the bottom: **Save for your lot**, or **Save for all lots** when you have more than one. Every lot's 3D designer shows the new price right away. Quotes you already gave keep their price.",
+      "To add a building, tap **Add a building**. Tap **Add it** for a standard building, or **Make my own from it** for your own name, sizes and prices. Type the prices on its Edit page.",
+      "To stop selling a building, tap **Stop selling** on its Edit page. **Sell it again** brings it back until you save.",
+      "To change the doors, windows and porch posts that come with a building, tap **Set the standard layout** on its Edit page. Move, add or remove them in the 3D designer, then tap **Save as standard**. Every size is checked, and every lot starts customers from that layout.",
+      "Customers can still move the included doors, windows and posts or add more on their own building.",
+      "Prices and building changes wait for the gold button at the bottom: **Save for your lot**, or **Save for all lots** when you have more than one. Every lot's 3D designer shows them right away. Quotes and orders already made keep their building and price.",
     ],
-    find: "cost raise lower dollars size sizes building style save",
-    link: ["#/price-list", "Open the price list"],
+    find: "cost raise lower dollars size sizes building style save add stop selling own version layout door doors window windows porch post posts included standard",
+    link: ["#/price-list", "Open Your buildings"],
   },
   {
     id: "color-option",

@@ -1,7 +1,8 @@
 # The 3D designer and the Dealer Center on Netlify.
 #
 # npm run build (tools/build-site.mjs) ships an explicit list of files into
-# dist/: the designer, the Dealer Center (dealer.html + one bundled script),
+# dist/: the designer, the Dealer Center (dealer.html, its main bundle and
+# separate lazy picture bundle, and public fallback pictures),
 # fonts, the builder's library and the example companies. Source, skills,
 # tools, docs and server code are never published. tools/site-profiles.mjs
 # recognizes Alan's learning-preview site by SITE_ID; every other site gets

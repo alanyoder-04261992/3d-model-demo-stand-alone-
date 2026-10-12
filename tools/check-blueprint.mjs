@@ -97,7 +97,7 @@ import * as S from "../ui/state.js";
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const OUT = resolve(ROOT, "test/out");
 const PORT = 8350, BW_PORT = 8351, BASE = "http://127.0.0.1:" + PORT;
-const BW_PUBLIC = "/home/user/boisterous-lokum-a737e0/public";
+const BW_PUBLIC = process.env.BARNWRIGHT_PUBLIC || "/home/user/boisterous-lokum-a737e0/public";
 const QUIET = process.argv.includes("--quiet");
 /* --only=2,4 runs just those browser sections (the Node part always runs) */
 const ONLY = (process.argv.find((a) => a.startsWith("--only=")) || "").slice(7).split(",").filter(Boolean).map(Number);

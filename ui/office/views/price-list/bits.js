@@ -26,17 +26,6 @@ export function priceInput({ value, label, field, onChange, unit = "$", suffix, 
   return { wrap, input };
 }
 
-/* An on/off switch with its words ("Sold" / "Not sold"). */
-export function switchInput(on, onChange, { label, onText = "Sold", offText = "Not sold" } = {}) {
-  const input = h("input", { type: "checkbox", role: "switch", checked: on, "aria-label": label });
-  const text = h("span", { class: "pl-switch-text" }, on ? onText : offText);
-  input.addEventListener("change", () => {
-    text.textContent = input.checked ? onText : offText;
-    onChange(input.checked, input);
-  });
-  return h("label", { class: ["pl-switch", on && "on"] }, input, h("span", { class: "pl-switch-track", "aria-hidden": "true" }), text);
-}
-
 /* A "Sell this" check box. */
 export function sellBox(on, onChange, label) {
   const input = h("input", { type: "checkbox", checked: on, "aria-label": label });

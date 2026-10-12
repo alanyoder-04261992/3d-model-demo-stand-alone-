@@ -22,13 +22,15 @@ import { put } from "../api.js";
 import { plural, dayWords, when } from "../words.js";
 import { keepDraft, takeDraft, dropDraft } from "../visit-draft.js";
 import { S, TABS, freshParked } from "./price-list/state.js";
-import { prepare, describe, problemsOf, lockedItems, tidyCategories, tidyDefaults, groupsOf, keysOf } from "./price-list/model.js";
+import { prepare, describe, problemsOf, lockedItems, tidyCategories, tidyDefaults, groupsOf, keysOf, isObj } from "./price-list/model.js";
 import { buildingsTab } from "./price-list/buildings.js";
 import { doorsTab } from "./price-list/doors.js";
 import { optionsTab } from "./price-list/options.js";
 import { colorsTab } from "./price-list/colors.js";
 import { historyTab } from "./price-list/history.js";
 import { builtSaved } from "./price-list/built.js";
+import * as pictures from "./price-list/pictures.js";
+import { LAYOUT_RETURN } from "./price-list/building-page.js";
 
 const TAB_VIEWS = { buildings: buildingsTab, doors: doorsTab, options: optionsTab, colors: colorsTab, history: historyTab };
 const IS_PRICE_LIST = /^#\/price-list(?:[/?]|$)/;
@@ -75,6 +77,79 @@ S.hooks.reset = startFrom;
 
 const dirty = () => !!S.draft && S.changes.length > 0;
 
+function withoutLayouts(settings) {
+  const s = structuredClone(settings);
+  delete s.cfg;
+  for (const o of Object.values(s.offer || {})) if (o && typeof o === "object") delete o.layout;
+  return s;
+}
+function sameSettings(a, b) {
+  const sorted = (v) => Array.isArray(v) ? v.map(sorted) : v && typeof v === "object"
+    ? Object.fromEntries(Object.keys(v).sort().map((k) => [k, sorted(v[k])])) : v;
+  return JSON.stringify(sorted(a)) === JSON.stringify(sorted(b));
+}
+function rebaseLayout(record) {
+  if (!S.saved || !S.draft || !Number.isInteger(record?.version) || record.version <= S.saved.version
+      || (S.latest && record.version < S.latest.version)) return false;
+  if (!sameSettings(withoutLayouts(S.saved.settings), withoutLayouts(record.settings))) {
+    S.latest = record; return false;
+  }
+  const changed = keysOf(record.settings.offer).filter((key) => !sameSettings(S.saved.settings.offer?.[key]?.layout, record.settings.offer[key].layout));
+  if (!changed.length) { S.latest = record; return false; }
+  for (const key of changed) {
+    const next = record.settings.offer[key];
+    const target = S.draft.offer?.[key] || S.parked.offer[key];
+    if (target) { if (next.layout === undefined) delete target.layout; else target.layout = structuredClone(next.layout); }
+  }
+  S.draft.cfg = record.settings.cfg;
+  S.saved = record;
+  S.latest = record;
+  recompute();
+  return true;
+}
+S.hooks.rebase = rebaseLayout;
+
+function restoreLayoutDraft(record) {
+  let kept = null;
+  try {
+    const text = sessionStorage.getItem(LAYOUT_RETURN);
+    sessionStorage.removeItem(LAYOUT_RETURN);
+    if (!S.owner) return;
+    if (text && text.length < 2000000) kept = JSON.parse(text);
+  } catch { return; }
+  const actor = S.ctx.app.barnwright ? `visit:${S.ctx.app.barnwright.actor}` : `person:${S.ctx.app.person?.userId}`;
+  if (!isObj(kept) || typeof kept.id !== "string" || !kept.id || kept.id !== record.settings.id
+      || kept.id !== kept.saved?.id || kept.id !== kept.draft?.id || kept.actor !== actor
+      || !Number.isInteger(kept.version) || kept.version < 1 || kept.version > record.version
+      || !Number.isFinite(kept.at) || Date.now() - kept.at < 0 || Date.now() - kept.at > 8 * 3600000
+      || !isObj(kept.saved) || !isObj(kept.saved.offer) || !isObj(kept.draft) || !isObj(kept.draft.offer)
+      || kept.saved.manufacturer !== record.settings.manufacturer || kept.draft.manufacturer !== record.settings.manufacturer
+      || [kept.saved.offer, kept.draft.offer].some((offer) => Object.values(offer).some((o) => !isObj(o) || !isObj(o.sizes)))
+      || !isObj(kept.parked) || !["offer", "items", "options"].every((k) => isObj(kept.parked[k]))
+      || Object.values(kept.parked.offer).some((o) => !isObj(o) || !isObj(o.sizes))) return;
+  S.saved = { ...record, settings: kept.saved, version: kept.version };
+  S.draft = kept.draft;
+  S.parked = kept.parked;
+  S.latest = record;
+  S.layoutGoing = false;
+  try { rebaseLayout(record); } catch { startFrom(record); }
+}
+S.hooks.restoreLayout = restoreLayoutDraft;
+
+/* If layout mode was opened in another tab, returning to this one gives
+   the draft the same layout-only rebase as a same-tab return. */
+async function refreshLayoutRecord() {
+  if (!IS_PRICE_LIST.test(location.hash) || !S.owner || !S.saved || !page?.root?.isConnected) return;
+  try {
+    const record = await S.ctx.app.loadPriceList(true);
+    const returning = S.layoutGoing;
+    if (returning) { S.layoutGoing = false; restoreLayoutDraft(record); }
+    if (returning || rebaseLayout(record)) { await renderTab({ keepScroll: true }); updateBar(); }
+  } catch { /* the next Save gives the sign-in or connection words */ }
+}
+window.addEventListener("focus", refreshLayoutRecord);
+window.addEventListener("pageshow", (event) => { if (event.persisted) refreshLayoutRecord(); });
+
 /* ---- checking the draft --------------------------------------------------- */
 
 function recompute() {
@@ -98,6 +173,7 @@ S.hooks.edited = ({ tab = false } = {}) => {
   if (S.justSaved) { S.justSaved = null; page?.saved?.remove(); }
   if (tab) renderTab({ keepScroll: true });
   else paintProblems();
+  S.hooks.pictures?.();
   updateBar();
   for (const n of notes) toast(n);
 };
@@ -108,28 +184,37 @@ S.hooks.focus = () => setTimeout(focusPending, 30);
 
 export async function render(ctx) {
   const { app } = ctx;
+  if (S.tab === "buildings" && S.sub.page === "list" && page?.root?.isConnected) S.listScroll = window.scrollY;
   ctx.setTitle("Price list");
   S.ctx = ctx;
+  S.layoutGoing = false;
   const owner = app.can("changePrices");
   const record = await app.loadPriceList();
   await loadLibrary(record.settings);
   if (owner !== S.owner || !S.saved || (owner && !S.draft) || (!dirty() && S.saved.version !== record.version)) {
     S.owner = owner;
     startFrom(record);
-  } else if (record.version !== S.saved.version) {
-    S.latest = record;
+  } else if (record.version > S.saved.version) {
+    if (!rebaseLayout(record) && (!S.latest || record.version >= S.latest.version)) S.latest = record;
   }
+  restoreLayoutDraft(record);
   let tab = TABS.some(([k]) => k === ctx.params?.[0]) ? ctx.params[0] : "buildings";
   if (tab === "history" && !app.can("seeHistory")) tab = "buildings";
   S.tab = tab;
+  S.sub = tab !== "buildings" ? { page: "list", key: null }
+    : ctx.params?.[0] === "building" ? { page: "building", key: ctx.params[1] }
+    : ctx.params?.[0] === "add-building" ? { page: "add", key: null }
+    : ctx.params?.[0] === "how-its-built" ? { page: "built", key: null }
+    : { page: "list", key: null };
   S.renderedHash = location.hash || "#/price-list";
 
   const body = h("div", { class: "pl-body" });
+  page?.bar?.observer?.disconnect();
   page = { root: null, body };
   page.root = h("div", { class: "pl" }, head(app), staleBanner(), savedBanner(), tabStrip(app), body, bar(app));
   const root = page.root;
   recompute();
-  renderTab();
+  await renderTab();
   updateBar();
   app.leaveGuard = leaveGuard;
   if (S.focus) S.hooks.focus();
@@ -139,6 +224,9 @@ export async function render(ctx) {
     const on = page?.tabs?.querySelector("[aria-selected=true]");
     if (on && page.tabs.scrollWidth > page.tabs.clientWidth) page.tabs.scrollLeft = Math.max(0, on.offsetLeft - page.tabs.offsetLeft - (page.tabs.clientWidth - on.offsetWidth) / 2);
   }, 0);
+  if (S.tab === "buildings" && S.sub.page === "list" && S.listScroll) {
+    setTimeout(() => { if (page?.root === root && root.isConnected) window.scrollTo(0, S.listScroll); }, 0);
+  }
   return root;
 }
 
@@ -188,7 +276,7 @@ function tabStrip(app) {
   const items = TABS.filter(([k]) => k !== "history" || app.can("seeHistory"))
     .map(([k, label]) => [k, label, k === "buildings" ? keysOf((S.draft || S.saved.settings).offer).length : null]);
   const t = tabs(items, S.tab, (key) => {
-    if (key === S.tab) return;
+    if (key === S.tab && !(key === "buildings" && S.sub.page !== "list")) return;
     S.ctx.go(key === "buildings" ? "/price-list" : `/price-list/${key}`);
   });
   t.el.classList.add("pl-tabs");
@@ -196,10 +284,16 @@ function tabStrip(app) {
   return t.el;
 }
 
-function renderTab({ keepScroll = false } = {}) {
+let tabRender = 0;
+async function renderTab({ keepScroll = false } = {}) {
   if (!page) return;
+  const current = page, token = ++tabRender;
   const y = window.scrollY;
-  clear(page.body, TAB_VIEWS[S.tab]({ app: S.ctx.app, ctx: S.ctx }));
+  S.hooks.pictures = null;
+  pictures.forget();
+  const content = await TAB_VIEWS[S.tab]({ app: S.ctx.app, ctx: S.ctx });
+  if (page !== current || token !== tabRender) return;
+  clear(page.body, content);
   paintProblems();
   if (keepScroll) window.scrollTo(0, y);
 }
@@ -255,18 +349,15 @@ function focusPending() {
   const spec = S.focus;
   if (!spec || !page?.root.isConnected) return;
   if (spec.tab && spec.tab !== S.tab) return;
-  S.focus = null;
-  if (spec.style && !S.openStyles.has(spec.style)) {
-    S.openStyles.add(spec.style);
-    renderTab({ keepScroll: true });
+  if (spec.style && (S.sub.page !== "building" || S.sub.key !== spec.style)) {
+    S.ctx.go(`/price-list/building/${spec.style}`);
+    return;
   }
-  if (spec.group) S.closedGroups.delete(spec.group);
+  S.focus = null;
   const root = page.root;
   const el = (spec.field && root.querySelector(`[data-field="${CSS.escape(spec.field)}"]`))
     || (spec.where && root.querySelector(`[data-msgs="${CSS.escape(spec.where)}"]`));
   if (!el) return;
-  const groupBody = el.closest(".pl-group-body");
-  if (groupBody?.hidden) groupBody.previousElementSibling?.click();
   el.scrollIntoView({ block: "center", behavior: "smooth" });
   const target = el.matches("input, select, textarea, button") ? el : el.closest(".card")?.querySelector("input:not([disabled]), select");
   target?.focus({ preventScroll: true });
@@ -275,13 +366,11 @@ function focusPending() {
 function showFirstProblem() {
   const p = S.problems[0];
   if (!p) return;
-  const spec = { tab: p.tab, field: p.field, where: p.where, style: p.style };
-  if (p.tab !== S.tab) {
-    S.focus = spec;
-    S.ctx.go(p.tab === "buildings" ? "/price-list" : `/price-list/${p.tab}`);
-    return;
-  }
-  S.focus = spec;
+  S.focus = { tab: p.tab, field: p.field, where: p.where, style: p.style };
+  const route = p.style ? `/price-list/building/${p.style}`
+    : /^built:biz/.test(p.where || p.field || "") ? "/price-list/how-its-built"
+    : p.tab === "buildings" ? "/price-list" : `/price-list/${p.tab}`;
+  if (location.hash !== `#${route}`) { S.ctx.go(route); return; }
   focusPending();
 }
 
@@ -300,6 +389,20 @@ function bar(app) {
       h("div", { class: "pl-bar-status" }, count, troubleBox),
       h("div", { class: "pl-bar-actions" }, undo, save)));
   page.bar = { el, count, trouble, troubleBox, save, undo };
+  const measure = () => {
+    if (!el.isConnected) return;
+    const height = el.hidden ? 0 : el.getBoundingClientRect().height;
+    page?.root?.style.setProperty("--pl-bar-height", `${height}px`);
+    const blocked = height + (window.innerWidth <= 760 ? 58 : 0);
+    document.documentElement.style.setProperty("--pl-obscured-bottom", `${blocked}px`);
+    document.documentElement.style.scrollPaddingBottom = height ? `${blocked + 20}px` : "";
+  };
+  if (typeof ResizeObserver !== "undefined") {
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    page.bar.observer = observer;
+  }
+  requestAnimationFrame(measure);
   return el;
 }
 
@@ -434,6 +537,7 @@ function notSaved(problems) {
    closes). Moving between the price list's own tabs keeps the draft, so
    only leaving the price list asks. */
 function leaveGuard() {
+  if (S.layoutGoing) return null;
   if (!dirty()) return null;
   const next = location.hash || "#/";
   if (next !== S.renderedHash && IS_PRICE_LIST.test(next)) return null;
@@ -452,6 +556,11 @@ window.addEventListener("pagehide", keepForVisit);
 window.addEventListener("hashchange", () => {
   if (IS_PRICE_LIST.test(location.hash)) return;
   document.body.classList.remove("pl-bar-on");
+  pictures.release();
+  page?.bar?.observer?.disconnect();
+  document.documentElement.style.scrollPaddingBottom = "";
+  document.documentElement.style.removeProperty("--pl-obscured-bottom");
+  S.hooks.pictures = null;
   /* main.js asked first: leaving lets the changes go, kept or not (a new
      visit's link opened in this tab keeps them: main.js reloads with them) */
   if (!location.hash.startsWith("#barnwright=")) dropDraft("price-list");

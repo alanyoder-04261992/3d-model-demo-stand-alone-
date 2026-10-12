@@ -284,6 +284,10 @@ Each check runs on its own as `node tools/<name>.mjs`, prints in plain words
 what it proved, and exits non-zero when anything is wrong. The browser checks
 use the Playwright installed at `/opt/node22/lib/node_modules/playwright` with
 Chromium's software graphics, each on its own port.
+Full output from each check is kept in `test/out/checks/`. When the read-only
+reference checkouts live elsewhere, set `BARNWRIGHT_PUBLIC` to Barnwright's
+public folder, and `YODER_FILE` and `YODER_ROOT` to the Yoder designer file and
+its folder. The reference checks still require the recorded Barnwright file.
 
 | check | browser? | what it proves |
 |---|---|---|
@@ -332,6 +336,19 @@ Chromium's software graphics, each on its own port.
 | `check-setup-screens.mjs` | yes | the Barnwright card, the closed banner, the preview and a Barnwright visit in Chromium: the reduced screens and the Done bar, a visit that ends keeps the unsaved work, a link that ran out, the confirm line on Open to customers, and a phone |
 | `check-problem-start.mjs` | yes | the 3D designer passes on a problem while it is still loading, in a real browser: a script that didn't arrive, or one that broke as it started, is one report to the site's own problem address; nothing when it opens normally; and why index.html starts the watcher on its own |
 | `check-dealer-demo.mjs` | no | the "try it" demo runs the real Dealer Center on made-up data with nothing sent anywhere, and only Alan's learning preview and his demo site (no lesson pages there) offer it (a client build has no demo file and no empty-boxes sign-in); every build ships the Dealer Center's app manifest and icons |
+| `check-picture-key.mjs` | no | building pictures change with colors, building numbers and layouts, while prices and names leave their picture keys unchanged |
+| `check-building-pictures.mjs` | no | public fallback pictures match their drawing records, the picture engine stays separate with its exact hash, layout styles ship, and internal reference pictures stay out of customer builds |
+| `check-picture-cache.mjs` | yes | pictures draw in visible order, pause in a hidden tab, survive blocked storage, return from cache, and release or recover their renderer cleanly |
+| `check-your-buildings.mjs` | yes | building cards, editing, stopping and restarting sales, gallery additions, focused price errors and unchanged older lists work, with screenshots on phones, tablets and desktops in light and dark |
+| `check-loadout-twins.mjs` | no | editable builder layouts match every existing standard building at every size, including every side porch and its posts |
+| `check-layout-recipe.mjs` | no | inferred layout rules preserve moved items, matched pairs, untouched builder items and entries used only on other sizes |
+| `check-layout-check.mjs` | no | every-size layout checks agree with the customer's designer on doors, windows, transoms, porch openings and posts, and offer the exact size rule for a door that needs more room |
+| `check-standard-layout.mjs` | no | owner layouts are validated and resolved without changing existing price lists; unknown rules, unsold items and more than 100 standard items are refused |
+| `check-layout-server.mjs` | no | owner and Barnwright layout saves keep permission checks, History, versions and lot publishing, and included items keep their prices after size and porch changes |
+| `check-layout-mode.mjs` | yes | real owner layouts reach customers, three-inch moves persist, sheets remain reachable on phones and tablets, and added posts stay clear on every porch |
+| `check-layout-demo.mjs` | yes | the public demo saves a standard layout and returns with unfinished prices and stopped buildings intact, without real accounts or network API calls |
+| `check-layout-return.mjs` | no | return drafts stay bound to their business and person, preserve unfinished prices, rebase layout-only saves, and keep unrelated or late revisions stale |
+| `check-layout-conflict.mjs` | yes | a conflicting save reloads the latest offered sizes while retaining moved items and conditional rules, then retries without restoring a removed size |
 | `check-wording.mjs` | no | every sentence on the Dealer Center's screens, its server answers and emails, and the Barnwright Terms and Conditions uses the plain words in docs/OFFICE.md, none of the old ones; the terms say what Barnwright setup access really does and promise no more |
 | `check-managed-client.mjs` | no | lot links and website code, shared-design lot preservation, safe retries, error handling and customer build exclusions |
 | `check-blueprint.mjs` | yes | the floor plan: every wall, door, window and fixture symbol, touch and pinch, side by side with Barnwright's |

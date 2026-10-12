@@ -54,9 +54,10 @@
    to customers and printed on the quote instead of the usual words. */
 
 import { constructionProblems, mergeConstruction, strictConstructionProblems, effectsToTree, didYouMean } from "./construction.js";
-import { standardItems, NAMED_RECIPES } from "./loadouts.js";
+import { standardItems, NAMED_RECIPES, layoutProblems, layoutVariants } from "./loadouts.js";
 import { dims, pSpan, wallDefs, sidePorchLengthsOf } from "./frame.js";
 import * as BUILT from "./build-settings.js";
+import { isBuilderEntry } from "./loadout-twins.js";
 
 export const ID_RE = /^[a-z0-9-]{2,40}$/;
 export const SIZE_RE = /^(\d{1,3}(?:\.\d+)?)x(\d{1,3}(?:\.\d+)?)$/;
@@ -75,7 +76,7 @@ const TOP_KEYS = ["id", "status", "manufacturer", "brand", "offer", "categories"
 const OPTION_GROUPS = ["dormers", "ramps", "elec", "misc", "rates", "extras"];
 /* What an offer entry and a manufacturer style may hold. Anything else is a
    typo that used to be ignored without a word (offer.UT.wallH, sizez). */
-export const OFFER_KEYS = ["sizes", "name", "base", "built"];
+export const OFFER_KEYS = ["sizes", "name", "base", "built", "layout"];
 export const STYLE_KEYS = ["name", "category", "roof", "wallH", "side", "dormer", "porch", "metal", "kennel", "cottage",
   "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft", "loadout", "porchDepthFt", "sidePorch", "dormerSide", "built"];
 /* A style trait typed on an offer entry is set in How it's built instead. */
@@ -314,7 +315,9 @@ export function standardSwapNeeds(company, manufacturer) {
     const list = isObj(s) && isObj(s.built) && Array.isArray(s.built.standardSwaps) ? s.built.standardSwaps : [];
     const sold = keysOf(o.sizes);
     for (const e of list) {
-      if (!isObj(e) || !Array.isArray(e.sizes) || typeof e.to !== "string") continue;
+      if (!isObj(e)) continue;
+      if (Array.isArray(o.layout) && !o.layout.some((entry) => isObj(entry) && entry.cat === e.from && isBuilderEntry(entry, s))) continue;
+      if (!Array.isArray(e.sizes) || typeof e.to !== "string") continue;
       const sizes = e.sizes.filter((z) => sold.indexOf(z) >= 0);
       if (!sizes.length) continue;
       const name = o.base != null && typeof o.name === "string" && o.name.trim() ? o.name.trim() : s.name;   /* as validate() names it */
@@ -394,14 +397,9 @@ export function newSwapNeedProblems(company, previous, manufacturer) {
 /* Every item a style's standard layout uses at any of these sizes. */
 function loadoutCats(t, key, sizes, CAT) {
   const cats = new Set();
-  /* a side porch at each length the style allows: at the end, flipped and
-     in the middle (the layout differs at 12 ft and longer) */
-  const variants = t.porch === "S"
-    ? [].concat(...sidePorchLengthsOf(t).map((n) => [{ pLen: n }, { pLen: n, pMid: true }, { pLen: n, pFlip: true }]))
-    : [{ pLen: 12 }];
   for (const z of sizes) {
     const d = dims(z, t);
-    for (const v of variants) {
+    for (const v of layoutVariants(t, z)) {
       const span = pSpan(v, d, t);
       const ws = wallDefs(t, d, span, null);
       for (const it of standardItems(t, d.W, d.L, { CAT, span, ws }, key)) cats.add(it.cat);
@@ -529,7 +527,18 @@ export function validate(company, manufacturer) {
     if (!isObj(o.sizes) || !keysOf(o.sizes).length) { err.push(`${at}.sizes: no sizes. List each size sold with its price, like "10x20": 6095.`); continue; }
     offered.push(k);
     baseOf[k] = isVariant ? o.base : k;
-    nameOf[k] = isVariant ? o.name.trim() : styles[k].name;
+    nameOf[k] = isVariant ? o.name.trim() : (o.name || styles[k].name);
+    if (o.layout !== undefined) {
+      err.push(...layoutProblems(o.layout, nameOf[k]));
+      if (Array.isArray(o.layout)) for (const e of o.layout) {
+        const it = isObj(e) && manufacturer.items && manufacturer.items[e.cat];
+        if (it && !["door", "ru", "win", "post"].includes(it.kind)) err.push(`The standard layout of the ${nameOf[k]} can contain doors, windows and porch posts.`);
+        if (it && it.kind === "post") {
+          const porch = styles[baseOf[k]].porch;
+          if (!porch || (porch === "F" && e.wall !== "F") || (porch === "S" && e.wall !== "R") || (porch === "C" && !["F", "R"].includes(e.wall))) err.push(`The ${nameOf[k]}'s porch post needs to stand on its porch edge.`);
+        }
+      }
+    }
     for (const z of keysOf(o.sizes)) {
       const v = o.sizes[z];
       if (!SIZE_RE.test(z)) err.push(`${at}.sizes[${q(z)}]: a size must be written width x length in feet, like "10x20".`);
@@ -567,16 +576,39 @@ export function validate(company, manufacturer) {
   }
   /* every standard door and window of every offered style must be priced */
   const mCAT = manufacturerCAT(manufacturer);
-  const needs = {};
+  const needs = {}, formulaNeeds = {};
   for (const k of offered) {
-    const t = withSoldSwaps(styles[baseOf[k]], items);   /* a style built like another comes with its doors and windows */
+    let t = withSoldSwaps(styles[baseOf[k]], items);   /* a style built like another comes with its doors and windows */
+    if (offer[k].layout !== undefined) {
+      if (layoutProblems(offer[k].layout, nameOf[k]).length) continue;
+      const B = BUILT.apply(c, manufacturer, null).styles[k];
+      t = Object.assign({}, t, B && B.traits, { builderLoadout: t.loadout, loadout: offer[k].layout });
+      for (const entry of offer[k].layout) {
+        if (!own(mCAT, entry.cat)) err.push(`The standard layout of the ${nameOf[k]} uses an item this business does not sell: ${entry.cat}.`);
+        else if (!isBuilderEntry(entry, t) && !own(items, entry.cat)) (needs[entry.cat] = needs[entry.cat] || []).push(`${nameOf[k]} (${k})`);
+        /* The customer only receives the items this business sells. A
+           formula also needs the item whose width or height it reads,
+           even when that item is no longer physically in this layout. */
+        const formulas = [...(isObj(entry.at) ? Object.values(entry.at) : []), ...(isObj(entry.repeat) ? Object.values(entry.repeat) : [])];
+        for (const formula of formulas) if (typeof formula === "string") for (const match of formula.matchAll(/\bCAT\.([A-Za-z0-9_]+)\.(?:w|h)\b/g)) {
+          const ref = match[1];
+          if (!own(mCAT, ref)) err.push(`The standard layout of the ${nameOf[k]} uses the size of an item this business does not sell: ${ref}.`);
+          else if (!own(items, ref)) (formulaNeeds[ref] = formulaNeeds[ref] || []).push(nameOf[k]);
+        }
+      }
+    }
     let cats;
     try { cats = loadoutCats(t, k, keysOf(offer[k].sizes).filter((z) => SIZE_RE.test(z)), mCAT); }
     catch (e) { err.push(`offer.${k}: its standard doors and windows could not be worked out: ${e.message}`); continue; }
     for (const ic of cats) if (!priced.has(ic) && !own(items, ic)) (needs[ic] = needs[ic] || []).push(`${nameOf[k]} (${k})`);
   }
   for (const ic of Object.keys(needs)) {
-    err.push(`items.${ic} needs a price: the ${mItems[ic] ? mItems[ic].name : ic} (${ic}) comes as standard on the ${needs[ic].join(", ")}. 0 is fine for one that is never charged.`);
+    err.push(`items.${ic} needs a price: the ${mItems[ic] ? mItems[ic].name : ic} (${ic}) comes as standard on the ${[...new Set(needs[ic])].join(", ")}. 0 is fine for one that is never charged.`);
+  }
+
+  for (const ic of Object.keys(formulaNeeds)) if (!needs[ic]) {
+    const names = [...new Set(formulaNeeds[ic])];
+    err.push(`items.${ic} needs a price: the standard layout of the ${andWords(names)} uses the ${mItems[ic].name}'s size to place its doors, windows or posts. 0 is fine for one that is never charged.`);
   }
 
   /* options */
@@ -952,7 +984,8 @@ export function resolve(company, manufacturer, library) {
     const t = { name: o.base != null ? o.name.trim() : (o.name || s.name), roof: s.roof, wallH: s.wallH };
     for (const f of ["side", "dormer", "porch", "metal"]) if (s[f] !== undefined) t[f] = s[f];
     for (const f of ["kennel", "cottage", "gambrel", "gableVent", "gableBand", "rakeOverhang", "loft", "porchDepthFt", "sidePorch", "dormerSide"]) if (s[f] !== undefined) t[f] = copy(s[f]);
-    t.loadout = copy(s.loadout);
+    t.loadout = copy(o.layout !== undefined ? o.layout : s.loadout);
+    if (o.layout !== undefined) t.builderLoadout = copy(s.loadout);
     t.category = s.category || "";
     if (o.base != null) t.base = base;
     const B = built.styles[k];
@@ -997,7 +1030,9 @@ export function resolve(company, manufacturer, library) {
     const list = isObj(s.built) && Array.isArray(s.built.standardSwaps) ? s.built.standardSwaps : [];
     const sold = keysOf(o.sizes);
     for (const e of list) {
-      if (!isObj(e) || !Array.isArray(e.sizes)) continue;
+      if (!isObj(e)) continue;
+      if (Array.isArray(o.layout) && !o.layout.some((entry) => isObj(entry) && entry.cat === e.from && isBuilderEntry(entry, s))) continue;
+      if (!Array.isArray(e.sizes)) continue;
       const sizes = e.sizes.filter((z) => sold.indexOf(z) >= 0);
       if (!sizes.length) continue;
       const toName = (m.items[e.to] || {}).name || e.to, fromName = (CAT[e.from] && CAT[e.from].n) || (m.items[e.from] || {}).name || e.from;
