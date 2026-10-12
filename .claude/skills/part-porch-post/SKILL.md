@@ -87,3 +87,17 @@ manufacturer file calls it a 4x4; Barnwright draws it 0.34 ft square.)
   face of a corner porch.
 * `node tools/check-golden.mjs` -- also the draw order and paint.
 * `node tools/check-parts.mjs`, `node tools/check-imports.mjs`.
+
+## Owner standard layouts (October 2026)
+
+A standard layout includes its porch posts in the building price. Named
+defaults stay exact; `model/loadout-twins.js` gives each an editable data
+twin. A side-porch post can be saved from its open end (`porchStart`) or
+from the porch door (`porchDoor`). Front and wrap-front posts keep their
+distance from the middle; wrap-side posts keep their distance from the front.
+The unchanged customer's `clampPos` lives in `model/item-placement.js`,
+re-exported from `model/layout.js`. The data reader holds a post on its
+porch edge on smaller sizes and porch choices; it never drops the post or
+counts it as blocking a door. Two posts in one place are a warning from
+`model/layout-check.js`, with the size and porch choice named. The fixed
+corner posts remain geometry in the porch part, never movable items.

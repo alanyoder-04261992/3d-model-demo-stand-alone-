@@ -169,12 +169,12 @@ is one number, measured level, at every width.
 
 ## In the Dealer Center (the screens and the save)
 
-* `ui/office/views/price-list/built.js`: each style's editor ends with
+* `ui/office/views/price-list/built.js`: each building's Edit page contains
   "How it's built" -- one box per knob that applies, the number an empty box
   builds with as the placeholder and where it comes from ("Standard: 7 ft
   9 in", "Built like the Utility Shed: 6/12"), chips for dormer side and
-  side porch lengths, and "Check every size". The Buildings tab ends with
-  "How your buildings are built" (business-wide, by roof kind, each box
+  side porch lengths, and "Check every size". The Buildings tab links to a separate page,
+  "How all your buildings are built" (business-wide, by roof kind, each box
   saying which styles it reaches, `businessReach()`), and opens with a
   yellow note for numbers the 3D designer could not use
   (`cat.settingsWarnings`), options whose pitch changes nothing on some

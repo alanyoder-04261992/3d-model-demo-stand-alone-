@@ -63,8 +63,12 @@ a construction rule that tests `"styles": ["LB"]` covers both (a rule naming
 follows `offer.LB.built` unless it has its own `built`. `node
 tools/check-style-variants.mjs` proves it for every style at every size.
 
-**When the shape is different** -- another wall height, roof, porch, loft or
-standard door and window layout -- it is a new library style: carry on below.
+**A different standard door, window or porch-post layout** is also business
+settings: `offer.<KEY>.layout`. The owner uses **Set the standard layout** on
+that building's Edit page. Every lot opens from it; a style built like another
+keeps its own layout. No saved layout means the exact builder layout. A new
+shape that existing How it's built settings cannot describe is a new library
+style: carry on below.
 
 ## 1. Where the entry goes
 
@@ -158,17 +162,38 @@ what a Barnwright style comes with, or a **data recipe**: a list of
 * `at` -- `"center"` (default), `{"pos": "q"}` (feet from the middle, + to the
   right from outside), `{"fromStart": "0.9"}` / `{"fromEnd": "1.2"}` (gap from
   the wall's left / right end), `{"sym": "L/4+1.4"}` (a matching pair);
-* `when: {minL, maxL, minW, maxW}`, `ifFits: true` (left off when it would
+* `when: {minL, maxL, minW, maxW, minP, maxP, porch}`, `ifFits: true` (left off when it would
   not fit), `dbl: true` (a double window),
   `repeat: {"count": "...", "spread": "..."}`.
 
-Numbers are formulas over `W L q len CASING CAT.<item>.w CAT.<item>.h` with
+Numbers are formulas over `W L P pd q len CASING CAT.<item>.w CAT.<item>.h` with
 `+ - * / ( ) ? :`, comparisons and `min max floor ceil round abs` -- read by a
-small parser, never `eval`. `model/loadouts.js` has the full rules; the data
-recipes in `tools/check-companies.mjs` (section 8) are the best examples: they
-reproduce thirteen of the named Barnwright recipes exactly, at every size (the
-utility, side-door, garden, barn, single-slope, garage and kennel ones -- the
-cottage, backyard utility, dormer shed and the cabins have no data twin yet).
+small parser, never `eval`. `P` is the side porch length and `pd` is the
+porch depth. `porch` is front, back or middle, or a list of them. A side-porch
+post can use `{porchStart: distance}` from its open end, or
+`{porchDoor: distance}` from the first S1 door already in the recipe.
+`model/loadout-twins.js` has exact data twins of all 23 named builder layouts;
+`tools/check-loadout-twins.mjs` checks every size and allowed porch choice,
+including 6 ft deep porches.
+
+Owner layouts are strictly validated, including their nested keys, and are
+limited to 100 expanded doors, windows and posts. Every item whose width or
+height a layout formula reads must also have a price, even if it is no longer
+drawn in that layout: the lot's public catalogue contains priced items only. The shared fit decision in
+`model/loadouts.js` keeps openings out of open porches and the kennel run,
+and treats the Single Slope's high transoms as a separate row. Untouched
+builder entries settle first using the unchanged customer placement rules;
+owner doors must fit, owner windows give way with `ifFits`, and posts stay on
+their porch edge. `model/layout-recipe.js` preserves untouched builder
+formulas and records a 3 in Move without snapping it back to the middle.
+A partly changed repeated row uses conditional singleton repeat counts for
+its surviving occurrences. The editor passes every sold size to inference,
+so smaller rows stay exact and unseen occurrences on larger buildings remain
+present. Removing a transom from the Single Slope never pushes its unchanged
+neighbours or creates transoms beyond a smaller wall.
+`model/layout-check.js` checks the same recipe at every sold size and porch
+choice. Run `tools/check-layout-recipe.mjs`, `tools/check-layout-check.mjs`
+and `tools/check-standard-layout.mjs` alongside the compatibility checks.
 
 **The shop's own door at some sizes** (`built.standardSwaps`, the shop
 standard only): when Alan's shop builds a size with another door than the
