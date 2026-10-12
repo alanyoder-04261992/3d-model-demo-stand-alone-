@@ -49,6 +49,8 @@ const BANNED = [
   [/\bslug\b/i, "say link name"],
   [/\bscope\b/i, "say lots"],
   [/\bgrant(ed|s)? access\b/i, "say add to the team"],
+  /* there are no setup screens (Oct 12 2026): the owner's first sign-in opens Today */
+  [/\bfirst setup\b/i, "there is no First setup: say the owner's first sign-in, or Getting started on Today"],
 ];
 
 /* A small JavaScript reader: walks the code once, skipping comments and

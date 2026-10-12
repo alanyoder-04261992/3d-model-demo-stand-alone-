@@ -32,10 +32,12 @@
      9. before the owner first signs in (a second local Dealer Center, on
         the next port, as if it shipped terms 2.2): Alan's visit with the
         owner's sign-up agreement starts the price list and opens on it;
-        the owner's first sign-in has two steps, says "Barnwright set up
-        your price list. You can change anything.", still asks for the
-        tick and the first lot, and the card then says Barnwright is
-        setting up, with Stop and the start in its log;
+        the owner's first sign-in (an old #/setup link too) opens Today
+        right away with the Getting started card, which says Barnwright
+        set up the price list; Alan's $5,995 is kept as it was, their first
+        lot is made, no terms line shows (the sign-up agreement is theirs),
+        and the Barnwright card then says Barnwright is setting up, with
+        Stop, the start in its log and who agreed on their sign-up page;
      and the review's fixes: a kept draft comes back once (Undo changes
      lets it go), a new visit opened in another tab brings the bar back,
      the visit's words say why it ended, Turn off before live says that
@@ -88,8 +90,10 @@ const WORDS = {
   visitOnly: "A Barnwright visit has only the price list and settings.",
   opening: "Opening ends Barnwright's setup access. After this, Barnwright needs your switch to change your prices.",
   change: "Run checks and change my price list and settings",
-  started: "Barnwright set up your price list. You can change anything.",
-  helloStarted: "Two short steps. You can change all of it later.",
+  /* the Getting started card (ui/office/views/getting-started.js) */
+  gsTitle: "Getting started",
+  gsReady: "Your Dealer Center is ready. Your 3D designer stays closed to customers until you open it.",
+  gsBarnwright: "Barnwright set up your price list. Check it, and change anything.",
   startLine: "started your price list from Every standard building, using the terms you agreed to when you signed up.",
   visitBiz: "Only the owner can change the numbers for every building. Each style's own numbers can be changed in that style, under How it's built.",
   /* ui/office/views/price-list/options.js VISIT_EXTRA_WORDS */
@@ -157,7 +161,7 @@ const text = (page, sel) => page.$eval(sel, (el) => el.textContent.replace(/\s+/
 const shot = (page, name) => page.screenshot({ path: resolve(OUT, name + ".png"), fullPage: false });
 
 try {
-  /* a new business, connected, First setup done, one lot, the owner on terms 2.2 */
+  /* a new business, connected, made in one go (POST setup), one lot, the owner on terms 2.2 */
   await call("/api/office/me");
   const setup = await call("/api/office/setup", { method: "POST", body: { businessName: "Testing Sheds", phone: "941-555-0100", start: "small", agreeTerms: true } });
   const lot = await call("/api/office/lots", { method: "POST", body: { name: "Riverside", phone: "941-555-0140" } });
@@ -191,7 +195,7 @@ try {
         await ch.close();
       }
     } else {
-      ok("terms 2.2 are out, and First setup agreed to them: the card says Barnwright is setting up", st.termsOk === true && card0?.includes(WORDS.beforeLive), card0);
+      ok("terms 2.2 are out, and the owner agreed to them: the card says Barnwright is setting up", st.termsOk === true && card0?.includes(WORDS.beforeLive), card0);
     }
     await c0.close();
   }
@@ -569,43 +573,29 @@ try {
     ok("... and Alan saves a change in it (version 2, by Barnwright), before anyone has signed in",
       pl9?.version === 2 && pl9.settings?.offer?.UT?.sizes?.["10x16"] === 5995 && pl9.savedBy?.id === "barnwright", JSON.stringify([pl9?.version, pl9?.savedBy]));
     const owner2 = await pageIn(await ctx2(OWNER));
-    await owner2.goto(`${BASE2}/dealer`);
+    /* an old bookmark to First setup: it opens Today */
+    await owner2.goto(`${BASE2}/dealer#/setup`);
     await settle(owner2);
-    await owner2.waitForSelector(".setup-page", { timeout: 15000 }).catch(() => {});
-    const page9 = await text(owner2, ".setup-page");
-    const steps9 = await owner2.$$eval(".setup-steps .setup-step", (els) => els.map((e) => e.textContent.trim())).catch(() => []);
-    ok("the owner's first sign-in: First setup says \"Barnwright set up your price list. You can change anything.\" and \"Two short steps\"",
-      page9?.includes(WORDS.started) && page9.includes(WORDS.helloStarted) && /#\/setup$/.test(owner2.url()), page9);
-    ok("... two steps: Your business and Your first lot (no starting price list)", JSON.stringify(steps9) === JSON.stringify(["1Your business", "2Your first lot"]), JSON.stringify(steps9));
-    const filled = await owner2.$$eval(".setup-card input", (els) => els.map((e) => [e.type, e.value]));
-    ok("... Your business is filled in from the price list (the business name, phone and email from the sign-up)", filled.some(([, v]) => v === "Testing Sheds") && filled.some(([, v]) => v === "941-555-0100") && filled.some(([, v]) => v === OWNER), JSON.stringify(filled));
-    ok("... with the terms box, and no terms banner on top", !!(await owner2.$(".setup-terms input[type=checkbox]")) && !(await owner2.$(".banner.terms")));
-    await shot(owner2, "9-first-setup-two-steps");
-    await owner2.fill(".setup-card input[autocomplete=name]", "Pat Owner");
-    await owner2.click(".setup-card button[type=submit]");
-    await owner2.waitForTimeout(500);
-    const refusedTick = await owner2.$$eval(".setup-card .form-status.error", (els) => els.map((e) => e.textContent.trim()).join(" | ")).catch(() => "");
-    ok("... without the tick it is refused in plain words (the sign-up agreement is never the owner's tick here)", /Tick the box to agree to the Barnwright Terms and Conditions/.test(refusedTick) && !!(await owner2.$(".setup-terms")), refusedTick);
-    await owner2.check(".setup-terms input[type=checkbox]");
-    await owner2.click(".setup-card button[type=submit]");
-    await owner2.waitForSelector(".setup-card input[placeholder=Riverside]", { timeout: 10000 }).catch(() => {});
-    const title9 = await text(owner2, ".setup-card .card-title");
-    ok("... then Your first lot, as step 2", title9 === "2Your first lot", title9);
-    await owner2.fill(".setup-card input[placeholder=Riverside]", "Riverside");
-    await owner2.click(".setup-card button[type=submit]");
-    await owner2.waitForSelector(".setup-ready", { timeout: 10000 }).catch(() => {});
-    ok("... and \"Your Dealer Center is ready.\"", /Your Dealer Center is ready\./.test((await text(owner2, ".setup-ready")) || ""), await text(owner2, ".setup-page"));
+    await owner2.waitForSelector(".gs-card", { timeout: 15000 }).catch(() => {});
+    const card9 = await text(owner2, ".gs-card");
+    ok("the owner's first sign-in opens Today right away (an old #/setup link too): no setup screens, the Getting started card on top",
+      /#\/$/.test(owner2.url()) && !(await owner2.$(".setup-page")) && !!(await owner2.$(".crm-today")) && card9?.includes(WORDS.gsTitle) && card9.includes(WORDS.gsReady), `${owner2.url()} | ${card9}`);
+    ok("... Check your prices says Barnwright set up the price list", card9?.includes("Check your prices") && card9.includes(WORDS.gsBarnwright), card9);
+    ok("... and no terms line on top: the agreement from their sign-up page is theirs (terms 2.2)", !(await owner2.$(".banner.terms")) && (await call2("/api/office/me")).data?.terms?.agreed?.from === "signup");
+    const lots9 = (await call2("/api/office/lots")).data?.lots || [];
+    ok("... their first lot is made, named after the business (Testing Sheds)", lots9.length === 1 && lots9[0].name === "Testing Sheds" && lots9[0].slug === "testing-sheds", JSON.stringify(lots9));
+    await shot(owner2, "9-first-sign-in-today");
     const after9 = (await call2("/api/office/price-list")).data;
-    ok("the owner finds Alan's work kept (the Utility Shed 10x16 at $5,995), the details unchanged, and the agreement is now the owner's own",
-      after9?.settings?.offer?.UT?.sizes?.["10x16"] === 5995 && after9.version === 2 && (await call2("/api/office/me")).data?.terms?.agreed?.version === "2.2", JSON.stringify([after9?.version, after9?.settings?.offer?.UT?.sizes]));
+    ok("the owner finds Alan's work kept exactly (the Utility Shed 10x16 at $5,995, still version 2, saved by Barnwright)",
+      after9?.settings?.offer?.UT?.sizes?.["10x16"] === 5995 && after9.version === 2 && after9.savedBy?.id === "barnwright", JSON.stringify([after9?.version, after9?.savedBy, after9?.settings?.offer?.UT?.sizes]));
     await owner2.goto("about:blank");
     await owner2.goto(`${BASE2}/dealer#/settings`);
     await settle(owner2);
-    const card9 = await text(owner2, ".set-card:has(.card-title:text-is('Barnwright'))");
-    ok("Settings, Barnwright: setting up, with Stop Barnwright's setup access, and the log starts with Barnwright's start and change",
-      card9?.includes(WORDS.beforeLive) && card9.includes("Stop Barnwright's setup access") && card9.includes(WORDS.startLine) && card9.includes("changed your price list"), card9);
+    const bw9 = await text(owner2, ".set-card:has(.card-title:text-is('Barnwright'))");
+    ok("Settings, Barnwright: setting up, with Stop Barnwright's setup access, the log starts with Barnwright's start and change, and who agreed on their sign-up page",
+      bw9?.includes(WORDS.beforeLive) && bw9.includes("Stop Barnwright's setup access") && bw9.includes(WORDS.startLine) && bw9.includes("changed your price list") && /Pat Owner agreed to the Barnwright Terms and Conditions \(version 2\.2\) on their sign-up page on /.test(bw9), bw9);
     await owner2.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
-    await shot(owner2, "9-owner-card-after-first-setup");
+    await shot(owner2, "9-owner-card-after-first-sign-in");
     const err9 = [alan2, owner2].flatMap((p) => p.errors).filter((e) => !/status of 4\d\d/.test(e));
     ok("no errors in those pages", err9.length === 0, err9.join(" | "));
   }

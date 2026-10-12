@@ -4,13 +4,15 @@
    numbers per lot for an owner or manager looking at all lots.
 
    Everything comes from the customer list rows (one call), narrowed by the
-   lot picked at the top. */
+   lot picked at the top. Above it all, for the owner of a new business, the
+   Getting started card (views/getting-started.js). */
 
 import { h, icon, linkButton, emptyState } from "../dom.js";
 import {
   greeting, money, plural, todayKey, addDays, daysBetween, dayWords, followUpWords,
 } from "../words.js";
 import { followUpBadge, callButton, statusPill, buildingWords, thisMonth, dayKeyOf, sourceWords } from "./crm-kit.js";
+import { gettingStartedCard } from "./getting-started.js";
 
 const SHOW = 12;   /* rows per section before "Show all" */
 
@@ -105,14 +107,17 @@ export async function render(ctx) {
           h("th", { class: "right num" }, money(stats.sales)))))));
   }
 
+  const started = gettingStartedCard(ctx);
+  /* no business yet (no name to start from): only the card, which asks for it */
+  if (!app.business && started) return h("div", { class: "crm-today" }, head, started);
   if (!rows.length) {
-    return h("div", { class: "crm-today" }, head,
+    return h("div", { class: "crm-today" }, head, started,
       h("section", { class: "card" }, emptyState("No customers yet",
         "Customers who send a quote from your 3D designer show up here, and so do the walk-ins and phone calls you add.",
         linkButton("Add customer", "#/customers?new=1", { kind: "primary", icon: "plus" }))));
   }
 
-  return h("div", { class: "crm-today" }, head,
+  return h("div", { class: "crm-today" }, head, started,
     h("div", { class: "crm-today-grid" },
       h("div", { class: "stack crm-today-left" }, followCard, newCard),
       h("div", { class: "stack crm-today-right" }, tiles, perLot, deliveryCard)));

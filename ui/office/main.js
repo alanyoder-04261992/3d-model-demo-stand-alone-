@@ -3,10 +3,14 @@
 
    Start-up: handle a link from a Netlify email -> finish a Sign out the
    server never confirmed -> ask the server who this is -> sign-in screen
-   (saying why the last sign-in ended), "not on the team yet", first setup,
-   or the Dealer Center itself. A sign-in from before the Dealer Center had
-   its own cookie moves onto the cookie (until the browser closes); one
-   left in a browser that was closed is cleared, never used.
+   (saying why the last sign-in ended), "not on the team yet", or the
+   Dealer Center itself. The first owner's first sign-in opens Today right
+   away: the page asks the server to start the business first (POST start:
+   the price list and the first lot, server/office/first-start.js), and
+   Today shows the Getting started card. An old #/setup link opens Today.
+   A sign-in from before the Dealer Center had its own cookie moves onto
+   the cookie (until the browser closes); one left in a browser that was
+   closed is cleared, never used.
 
    Sign out (and Sign out on every device) asks a screen with unsaved
    changes first, and lands on a clean sign-in card at /dealer (Sign out on
@@ -85,7 +89,6 @@ const ROUTES = [
   [/^\/team$/, "team"],
   [/^\/settings$/, "settings"],
   [/^\/help$/, "help"],
-  [/^\/setup$/, "setup"],
 ];
 
 /* Each screen's code, loaded when first needed. */
@@ -103,7 +106,6 @@ const VIEWS = {
   team: () => import("./views/team.js"),
   settings: () => import("./views/settings.js"),
   help: () => import("./views/help.js"),
-  setup: () => import("./views/setup.js"),
 };
 
 export function go(path) {
@@ -128,7 +130,7 @@ function applyBrand(business) {
 }
 
 /* The business's name over "Dealer Center" (just "Dealer Center" before
-   the business has a name, during first setup). */
+   the business has a name). */
 function brandWords(business) {
   const name = business?.short || business?.name;
   return h("span", { class: "brand-words" }, h("strong", {}, name || "Dealer Center"), name ? h("span", {}, "Dealer Center") : null);
@@ -254,12 +256,13 @@ function accountBanner() {
 }
 
 /* The owner of a business Barnwright sells to agrees to the Barnwright Terms
-   and Conditions: asked here when they set up before the box existed, or the
-   terms changed (server/office/terms.js). The button says what they agree
-   to, the same words as first setup. Nobody else is asked. */
+   and Conditions: asked here when the agreement from their sign-up page
+   isn't kept (missing, or to older terms), or the terms changed
+   (server/office/terms.js), from their very first sign-in. The button says
+   what they agree to. Nobody else is asked. */
 function termsBanner() {
   const t = app.me?.terms;
-  if (!t || t.agreed || !app.isOwner || !app.business) return null;
+  if (!t || t.agreed || !app.isOwner) return null;
   const btn = button(`I have read and agree to the ${t.title}`, async () => {
     btn.disabled = true;
     try {
@@ -358,8 +361,6 @@ function closedBanner() {
   if (app.barnwright) return visitBar();
   const account = accountBanner();
   if (account) return account;
-  /* First setup asks for the tick itself, and says the rest */
-  if (app.me?.setupNeeded) return null;
   const terms = termsBanner();
   if (terms) return terms;
   const setup = switchBanner();
@@ -460,6 +461,12 @@ let renderSeq = 0;
 async function render() {
   if (!main) return;   /* still on the sign-in screen: nothing to show yet */
   const { path, query } = currentPath();
+  /* First setup is gone: an old #/setup link (a bookmark) opens Today */
+  if (path === "/setup") {
+    history.replaceState(null, "", "#/");
+    lastHash = "#/";
+    return render();
+  }
   let match = null, viewName = null;
   for (const [re, name] of ROUTES) {
     const m = re.exec(path);
@@ -677,10 +684,14 @@ async function start() {
     });
   }
   if (!me.person) return notOnTeam(root, { email: me.user.email, signOut: () => signOutHere() });
-  if (me.setupNeeded) {
-    frameUp();
-    if (currentPath().path !== "/setup") { history.replaceState(null, "", "#/setup"); lastHash = "#/setup"; }
-    return render();
+  if (me.startNeeded) {
+    /* the first owner's first sign-in: the price list and the first lot
+       are made now, then Today opens (anything still missing, like the
+       business name, is on its Getting started card) */
+    clear(root, h("div", { class: "boot" }, loading("Getting your Dealer Center ready…")));
+    try { await post("start", {}); } catch { /* Today's Getting started card says what is missing */ }
+    try { me = await app.loadMe(); } catch { /* the first answer still stands */ }
+    if (currentPath().path !== "/") { history.replaceState(null, "", "#/"); lastHash = "#/"; }
   }
   frameUp();
   if (note || warning) toast(note || warning, { error: !!warning });
