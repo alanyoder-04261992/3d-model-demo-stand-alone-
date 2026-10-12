@@ -199,8 +199,9 @@ export const ANSWERS = Object.freeze([
     link: ["#/settings", "Open Settings"],
   },
   {
-    /* the same card before the terms let Barnwright change anything: the
-       card offers Run checks only (its "aren't out yet" line) */
+    /* the same card before the terms let Barnwright change anything (a
+       Dealer Center that still ships terms older than 2.2): the card offers
+       Run checks only (its "aren't out yet" line) */
     id: "barnwright-checks",
     when: "connected",
     terms: "checks",
