@@ -398,22 +398,24 @@ Dealer Center guide](OFFICE.md).) From then on:
   when they're at the limit.
 * **Barnwright in their Settings:** one card, **Barnwright**, holds
   everything you may do there. Setting up and changing things work once
-  their owner agrees to the Barnwright terms 2.2. Terms 2.2 started on
-  October 12, 2026: you decided that day to start them at once. A new
-  owner agrees on the sign-up page and again in First setup. An owner who
-  agreed to the older terms (2.1) sees **I have read and agree to the
-  Barnwright Terms and Conditions** at the top of their Dealer Center;
-  once they tap it, you can change their prices. Until then only the
-  checks work for them.
+  their owner agrees to the Barnwright terms 2.2. Terms 2.2 start on
+  October 12, 2026: on the evening of October 11 you chose to start them
+  then, not on November 11. A new owner agrees on the sign-up page and
+  again in First setup. An owner who agreed to the older terms (2.1)
+  ticks the box in First setup, or taps **I have read and agree to the
+  Barnwright Terms and Conditions** at the top of their Dealer Center.
+  Once they do, you can change their prices. Your Control Room hears
+  about the button within a few seconds; after First setup, tap **Check
+  again** on their customer page. Until then only the checks work for
+  them.
   * **No 30-day notice went out for 2.2.** Section 19 of the terms says
-    customers hear about new terms 30 days before they start. You decided
-    none was needed, because your one customer then was your own test
-    business, **Testing** (testing.barnwrightsoftware.com). **Created by
-    Design** (Port Charlotte) also signed up in your Control Room that
-    day, a few minutes before you decided. If it is a real dealer and not
-    you, it is owed the notice: email them the new terms, or get their OK
-    in writing to start sooner. For the next new terms, tell every customer
-    30 days ahead.
+    customers hear about new terms 30 days before they start. No customer
+    needed it: your only customer was your own test business, **Testing**
+    (testing.barnwrightsoftware.com). **Created by Design** (Port
+    Charlotte), which also signed up in your Control Room that evening,
+    is you too, not a customer: you said the customers in your Control
+    Room are "actually just me", and you opened its First setup yourself.
+    For the next new terms, tell every customer 30 days ahead.
   * **Before they open to customers,** you may set up their price list and
     settings (Barnwright setup access). In your control room, **Open their
     price list** opens their Dealer Center as Barnwright for up to 8 hours,

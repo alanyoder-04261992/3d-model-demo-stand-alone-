@@ -107,14 +107,17 @@ export function createTerms({ store, account, now, terms: shipped = TERMS }) {
   const asks = () => !!account?.connected;
 
   /* What the screens show: null when nobody is asked. agreed is this
-     version's agreement, or null when the owner still has to agree. */
+     version's agreement, or null when the owner still has to agree; older
+     is the owner's agreement to older terms while they still have to agree
+     to these ({version, agreedAt, by}), else null. */
   async function status() {
     if (!asks()) return null;
     const doc = await store.get(RECORD);
     const current = doc?.current || null;
+    const agreed = current && versionAtLeast(current.version, TERMS.version) ? current : null;
     return {
       version: TERMS.version, date: TERMS.date, url: TERMS.url, title: TERMS.title,
-      agreed: current && versionAtLeast(current.version, TERMS.version) ? current : null,
+      agreed, older: current && !agreed ? current : null,
     };
   }
 

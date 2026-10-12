@@ -48,14 +48,14 @@ let page = null;   /* this screen's state while it is showing */
 const CARD = {
   about: "Let Barnwright run checks on your Dealer Center, or change your price list and settings, for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team.",
   /* on a Dealer Center that ships terms older than 2.2 (not updated since
-     October 12, 2026): Barnwright can only run checks */
+     terms 2.2 went in): Barnwright can only run checks */
   aboutChecks: "Let Barnwright run checks on your Dealer Center for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team, and can't change anything.",
   beforeLive: "Barnwright is setting up your 3D designer. Until you open it to customers, they can change your price list and settings for you. Every change is listed here and in Price list, History.",
   stopped: "Stopped. Barnwright can't change your price list or settings.",
   off: "Off. Barnwright can't run checks or change your price list or settings.",
   termsFirst: "Agree to the new terms at the top of the page first.",
   /* this Dealer Center's own terms are older than 2.2 (not updated since
-     October 12, 2026): nothing to agree to */
+     terms 2.2 went in): nothing to agree to */
   termsNotOut: "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
   /* Turn off, before live: checks stop, setup access goes on */
   checksOff: "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access.",
@@ -746,10 +746,16 @@ async function save(e) {
     page.error = page.stale ? page.error : null;
     return;
   }
+  const statusBefore = page.saved.settings.status;
   const record = await app.loadPriceList(true);
   page.saved = record;
   page.draft = normalized(record.settings);
   await app.loadMe().catch(() => null);
+  /* opening to customers ends setup access: the Barnwright card is read
+     again, so it offers the owner's switch without reloading the page */
+  if (page.card && record.settings.status !== statusBefore) {
+    page.card = await get("barnwright-help").then((r) => (r.help ? { help: r.help, setup: r.setup || null } : page.card)).catch(() => page.card);
+  }
   if (brandBefore !== JSON.stringify([record.settings.brand, record.settings.status])) window.dispatchEvent(new Event("dealer:brand"));
   const lots = out.lotCount;
   toast(!out.changes?.length ? "Nothing changed." : lots ? `Saved. ${lots === 1 ? "Your lot shows" : `All ${lots} lots show`} it now.` : "Saved.");
@@ -801,11 +807,13 @@ function barnwrightCard() {
        no setup access words, no change choice */
     const notOut = termsNotOut(setup);
     if (notOut) parts.push(h("div", { class: "help-state bw-terms-not-out" }, icon("note"), h("span", {}, CARD.termsNotOut)));
-    /* before the business is live: Barnwright is setting it up */
-    if (setup && !setup.live && !notOut) {
+    /* before the business is live: Barnwright is setting it up, once the
+       owner has agreed to these terms (until then, only where to agree) */
+    if (setup && !setup.live && !notOut && setup.prelive !== "stopped" && !setup.termsOk) {
+      parts.push(h("div", { class: "help-state bw-terms" }, icon("alert"), h("span", {}, CARD.termsFirst)));
+    } else if (setup && !setup.live && !notOut) {
       const on = setup.prelive !== "stopped";
-      parts.push(h("div", { class: ["help-state", on && setup.termsOk && "on"] }, icon(on ? "check" : "alert"), h("span", {}, on ? CARD.beforeLive : CARD.stopped)));
-      if (on && !setup.termsOk) parts.push(h("p", { class: "set-problem bw-terms" }, CARD.termsFirst));
+      parts.push(h("div", { class: ["help-state", on && "on"] }, icon(on ? "check" : "alert"), h("span", {}, on ? CARD.beforeLive : CARD.stopped)));
       parts.push(h("div", { class: "actions" }, on
         ? button("Stop Barnwright's setup access", act({ prelive: "stopped" }, "Barnwright can't change your price list or settings now."), { kind: "ghost" })
         : button("Let Barnwright set it up again", act({ prelive: "on" }, "Barnwright can set up your price list again."), { kind: "primary" })));
@@ -851,6 +859,7 @@ function barnwrightCard() {
   const t = page.ctx.app.me?.terms;
   const termsLine = t ? h("p", { class: "help-terms" }, icon("note"), h("span", {},
     t.agreed ? `${t.agreed.by.name || t.agreed.by.email} agreed to the ${t.title} (version ${t.agreed.version}) on ${when(t.agreed.agreedAt)}. `
+      : t.older ? `${t.older.by?.name || t.older.by?.email || "The owner"} agreed to version ${t.older.version} on ${when(t.older.agreedAt)}. Agree to version ${t.version} at the top of the page. `
       : `Nobody has agreed to the ${t.title} (version ${t.version}) yet. `,
     h("a", { href: t.url, target: "_blank", rel: "noopener" }, "Read the terms"))) : null;
   /* the card's own line says only what the terms let Barnwright do */

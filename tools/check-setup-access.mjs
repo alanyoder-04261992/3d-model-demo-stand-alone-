@@ -74,6 +74,7 @@
    tools/check-imports.mjs; A14, the screens, in tools/check-setup-screens.mjs.) */
 
 import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
 import { resolve as resolvePath, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import { createHash, generateKeyPairSync, createPrivateKey, createPublicKey } from "node:crypto";
@@ -207,6 +208,24 @@ const cookieFrom = (r) => {
   return line ? line.split(";")[0] : null;
 };
 const sha256 = (s) => createHash("sha256").update(s).digest("hex");
+/* {version: Set of SHA-256} for every copy of `rel` in git's history and on
+   origin/main, or null when git can't be asked */
+function termsCopiesEver(rel) {
+  const git = (args) => spawnSync("git", args, { cwd: ROOT, encoding: "utf8", maxBuffer: 16 << 20 });
+  const log = git(["log", "--full-history", "--format=%H", "--", rel]);
+  /* a clone missing some history still lists what it can read */
+  if (log.error || (log.status !== 0 && !log.stdout.trim())) return null;
+  const ever = {};
+  const refs = [...log.stdout.split("\n").filter(Boolean), ...(git(["rev-parse", "--verify", "-q", "origin/main"]).status === 0 ? ["origin/main"] : [])];
+  for (const ref of refs) {
+    const shown = git(["show", `${ref}:${rel}`]);
+    if (shown.status !== 0) continue;
+    let versions = {};
+    try { versions = JSON.parse(shown.stdout)?.versions || {}; } catch { continue; }
+    for (const [v, list] of Object.entries(versions)) for (const x of Array.isArray(list) ? list : []) (ever[v] ||= new Set()).add(x);
+  }
+  return ever;
+}
 async function snapshot(store, keys) {
   const out = {};
   for (const prefix of keys) {
@@ -245,13 +264,34 @@ ok("First setup writes the live record at once: not live, checked through versio
 }
 {
   /* a Dealer Center copy whose own terms are older than 2.2 (one not
-     updated since October 12, 2026): no owner can agree there yet */
+     updated since terms 2.2 went in): no owner can agree there yet */
   const O = business({ termsVersion: "2.1" });
   await O.setUp();
   const v = await O.access();
   const r = await O.start();
   ok("W2: a Dealer Center copy whose own terms are older than 2.2 still says the new terms aren't out yet, never to tap a button that isn't there",
     v.mode === null && v.why === "terms" && r.status === 403 && r.data.why === "terms" && r.data.error === TERMS_NOT_OUT && !/button|tap/i.test(r.data.error) && !cookieFrom(r), JSON.stringify(r.data));
+}
+{
+  /* E2E-1: the owner who agreed to 2.1 taps I agree (POST terms): the
+     Dealer Center checks in at once, so Alan's Control Room hears that
+     setup access is open, as it does for the owner's switch */
+  const T = business();
+  await T.setUp();
+  await T.agree("2.1");
+  T.sentLicense.length = 0;
+  const r = await T.call("POST", "/api/office/terms", { agree: true }, { as: "pat" });
+  const heard = T.sentLicense.map((x) => JSON.parse(x));
+  ok("E2E-1: the owner's I agree (POST terms) checks in at once: the control room hears setup access open (prelive, termsOk, agreement owner)",
+    r.status === 200 && r.data.terms?.agreed?.version === TERMS.version && r.data.terms.older === null && heard.length === 1
+    && heard[0].setup?.access === "prelive" && heard[0].setup.termsOk === true && heard[0].setup.agreement === "owner", JSON.stringify([r.status, r.data, heard]));
+  T.sentLicense.length = 0;
+  const again = await T.call("POST", "/api/office/terms", { agree: true }, { as: "pat" });
+  ok("... agreeing again to the same version changes nothing and doesn't check in again", again.status === 200 && T.sentLicense.length === 0, JSON.stringify(T.sentLicense));
+  await T.agree("2.1");
+  const m = await T.me("pat");
+  ok("E2E-3: GET me's terms says the older agreement (version 2.1, when, who) while the owner still has to agree to this version",
+    m.terms?.agreed === null && m.terms.older?.version === "2.1" && m.terms.older.by?.email === USERS.pat.email && typeof m.terms.older.agreedAt === "string", JSON.stringify(m.terms));
 }
 ok("terms: 2.2 or later counts, as numbers (2.10 is later than 2.9)",
   termsAtLeast("2.2") && termsAtLeast("2.10") && termsAtLeast("3") && !termsAtLeast("2.1") && !termsAtLeast("2.1.9") && !termsAtLeast("") && !termsAtLeast(null) && !termsAtLeast("2.2-beta"));
@@ -1713,6 +1753,16 @@ section("F15. The sign-up agreement on the pass, and when it counts");
   ok(`docs/legal/terms-sha256.json is {versions: {version: [64 hex, ...]}}, every version 2.2 or later, and it holds this copy's own terms.json (terms ${TERMS.version} are out, so a sign-up under them counts)`,
     asJson(Object.keys(copies)) === asJson(["versions"]) && Object.entries(copies.versions).every(([v, list]) => termsAtLeast(v) && Array.isArray(list) && list.length && list.every((x) => /^[0-9a-f]{64}$/.test(x)))
     && shipsNew && (copies.versions[TERMS.version] || []).includes(sha256(paper)) && asJson(termsModule.termsCopies?.()) === asJson(copies.versions), asJson(copies));
+  /* CODE-2: the list only grows. Every version and SHA-256 the file ever
+     held (in this repository's history, and on origin/main) is still in it:
+     a sign-up kept in the Control Room under terms the file once listed
+     must keep counting when a later version ships. Skipped without git. */
+  const ever = termsCopiesEver("docs/legal/terms-sha256.json");
+  if (ever) {
+    const dropped = Object.entries(ever).flatMap(([v, shas]) => [...shas].filter((x) => !(copies.versions[v] || []).includes(x)).map((x) => `${v} ${x.slice(0, 12)}...`));
+    ok(`docs/legal/terms-sha256.json only grows: the ${Object.values(ever).reduce((n, x) => n + x.size, 0)} SHA-256 it ever held (git history and origin/main) are all still in it`,
+      dropped.length === 0, `dropped: ${dropped.join("; ")}`);
+  } else console.log("  (no git here: the check that terms-sha256.json only grows was skipped)");
 }
 
 section("F15. The starting price list (version 0)");

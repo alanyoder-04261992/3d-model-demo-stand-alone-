@@ -68,7 +68,7 @@ const BASE2 = `http://127.0.0.1:${PORT2}`;
 const DATA2 = "test/out/setup-screens-data-signup";
 let server2 = null;
 /* the third, as if it shipped terms 2.1 (a Dealer Center not updated since
-   terms 2.2 started on October 12, 2026), for section 0 */
+   terms 2.2 went in), for section 0 */
 const PORT3 = PORT + 2;
 const BASE3 = `http://127.0.0.1:${PORT3}`;
 const DATA3 = "test/out/setup-screens-data-older-terms";
@@ -82,6 +82,7 @@ const WORDS = {
   endedStopped: "Your Barnwright visit ended. The owner stopped Barnwright's setup access in Settings, Barnwright. Your changes are kept in this tab.",
   checksOff: "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access.",
   termsNotOut: "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
+  termsFirst: "Agree to the new terms at the top of the page first.",
   /* the card's own line (ui/office/views/settings.js CARD.about, CARD.aboutChecks) */
   cardAbout: "Let Barnwright run checks on your Dealer Center, or change your price list and settings, for a few hours at a time.",
   cardAboutChecks: "Let Barnwright run checks on your Dealer Center for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team, and can't change anything.",
@@ -179,6 +180,21 @@ try {
     const card0 = await text(o0, ".set-card:has(.card-title:text-is('Barnwright'))");
     ok("terms 2.2 are out here (termsOut), and First setup agreed to them: the card says Barnwright is setting up, with Stop, and no \"aren't out yet\" line",
       st.termsOut === true && st.termsOk === true && card0?.includes(WORDS.beforeLive) && card0.includes("Stop Barnwright's setup access") && !card0.includes(WORDS.termsNotOut), card0);
+    /* E2E-3: an owner who agreed to the older terms (2.1) only: until they
+       agree to 2.2 at the top of the page, the card says only that, never
+       that Barnwright is setting up (with a tick) or that nobody agreed */
+    await call("/__local/barnwright", { method: "POST", body: { terms: "2.1" } });
+    const stOld = (await call("/api/office/barnwright-help")).data.setup;
+    await open(o0, "/settings");
+    const cardOld = await text(o0, ".set-card:has(.card-title:text-is('Barnwright'))");
+    ok("E2E-3: agreed to 2.1 only: the card says \"Agree to the new terms at the top of the page first.\", with no \"Barnwright is setting up\", no tick and no Stop",
+      stOld.termsOut === true && stOld.termsOk === false && cardOld?.includes(WORDS.termsFirst) && !cardOld.includes(WORDS.beforeLive)
+      && !cardOld.includes("Stop Barnwright's setup access") && !(await o0.$(".set-card:has(.card-title:text-is('Barnwright')) .help-state.on")), cardOld);
+    ok("... and its terms line says they agreed to version 2.1 and where to agree to 2.2, never \"Nobody has agreed\"",
+      /agreed to version 2\.1 on .+\. Agree to version 2\.2 at the top of the page\./.test(cardOld || "") && !cardOld.includes("Nobody has agreed"), cardOld);
+    await o0.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
+    await shot(o0, "0-owner-card-agreed-older-terms");
+    await call("/__local/barnwright", { method: "POST", body: { terms: "2.2" } });
     await c0.close();
   }
   {
@@ -517,6 +533,10 @@ try {
   await owner.waitForTimeout(1500);
   ok("... and opening saves (live from now on)", (await call("/api/office/price-list")).data.settings.status === "active",
     `${yes ? "yes found" : "no yes button"}; bar: ${await text(owner, ".set-bar")}; toasts: ${await owner.$$eval(".toast", (els) => els.map((e) => e.textContent).join(" | "))}`);
+  const opened = await text(owner, ".set-card:has(.card-title:text-is('Barnwright'))");
+  ok("E2E-4: on the same page, without reloading, the Barnwright card already offers the owner's switch, never \"Barnwright is setting up\"",
+    opened?.includes("Off. Barnwright can't run checks or change your price list or settings.") && opened.includes(WORDS.change) && !opened.includes(WORDS.beforeLive)
+    && !opened.includes("Stop Barnwright's setup access") && !!(await owner.$(".set-card:has(.card-title:text-is('Barnwright')) input[type=radio][value=change]")), opened);
 
   section("7. After live: the owner's switch");
   await open(owner, "/settings");

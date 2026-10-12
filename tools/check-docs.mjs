@@ -572,6 +572,15 @@ function pdfStreamsText(bytes) {
   }
   return parts.join("\n");
 }
+/* the words a page prints: its strings, unescaped, with every space taken
+   out (so "aren't out yet" is "aren'toutyet" however the lines broke) */
+function pdfWords(streams) {
+  const out = [];
+  for (const m of streams.matchAll(/\((?:\\[^]|[^\\()])*\)/g)) {
+    out.push(m[0].slice(1, -1).replace(/\\([0-7]{1,3}|[^])/g, (_, c) => (/^[0-7]+$/.test(c) ? String.fromCharCode(parseInt(c, 8)) : ({ n: "\n", r: "\r", t: "\t" })[c] ?? c)));
+  }
+  return out.join("").replace(/\s+/g, "");
+}
 {
   const py = existsSync(resolve(ROOT, "tools/legal/make-legal-pdfs.py")) ? read("tools/legal/make-legal-pdfs.py") : "";
   const pyVersion = (py.match(/^TERMS_VERSION = "([^"]+)"/m) || [])[1];
@@ -601,6 +610,15 @@ function pdfStreamsText(bytes) {
     tally.termsPdfs++;
     ok(`${pdf} prints "${header}"${must ? "" : " at the top"}, and no other terms version`, found.length === 1 && found[0] === header,
       found.length ? `it prints ${J(found)}; run python3 tools/legal/make-legal-pdfs.py` : "no version found in the PDF's pages");
+  }
+  /* LEGAL-WORDS-3: from terms 2.2 on, no paper says the new terms "aren't
+     out yet" (a paper made before 2.2, or a line the script's 2.2 switch
+     didn't change). The page's words are read with their spaces taken out,
+     since a line can break anywhere. */
+  if (versionAtLeast(TERMS.version, TERMS_SETUP_ACCESS)) {
+    const stale = pdfs.filter((pdf) => /aren'toutyet/i.test(pdfWords(pdfStreamsText(readFileSync(resolve(ROOT, pdf))))));
+    ok(`terms ${TERMS.version} are out, so no paper says the new terms "aren't out yet" (${pdfs.length} PDFs read)`, stale.length === 0,
+      `${stale.join(", ")}; make the papers again with python3 tools/legal/make-legal-pdfs.py`);
   }
   const office = existsSync(resolve(ROOT, "docs/OFFICE.md")) ? read("docs/OFFICE.md").replace(/\s+/g, " ") : "";
   const quoted = [...office.matchAll(/Please read the Barnwright Terms and Conditions \(version ([^)]+)\)/g)].map((m) => m[1]);
