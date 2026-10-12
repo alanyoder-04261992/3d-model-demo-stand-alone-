@@ -43,7 +43,7 @@ import { frameOf } from "../model/frame.js";
 import { resetItems, pkFixtures, clampPos, freeSpot } from "../model/layout.js";
 import * as LAYOUT from "../model/layout.js";
 import * as S from "../ui/state.js";
-import { priceParts, optxList } from "../model/pricing.js";
+import { priceParts, optxList, money } from "../model/pricing.js";
 import { defaults, fromState, toState, normalize, encode, encodeSync, decode, decodeSync, setType, flipPorch } from "../model/design.js";
 import { mulberry32 } from "../engine/seeded.js";
 import { priceDesign } from "../server/office/pricing.js";
@@ -543,6 +543,9 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
      price is more than the size's) */
   const STYLES48 = [["SU", "Side Utility"], ["DS", "Dormer Shed"], ["SLB", "Side Lofted Barn"]];
   const up = Math.max(0, DEMO.CAT.d36in.p - DEMO.CAT.w48.p);
+  /* a door swapped for the double doors is priced from the 48 in door now:
+     the line says how much more than the customer saw (review DOORS-4) */
+  const rise = up - Math.max(0, DEMO.CAT.d36in.p - DEMO.CAT.w72.p);
   const times = (z) => z.replace("x", "×");
   for (const [k, name] of STYLES48) for (const z of ["8x12", "10x12"]) {
     const old = st(DEMO, k, z); old.items[0].cat = old.items[0].origCat = "w72";
@@ -554,7 +557,7 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
     const backSw = toState(fromState(oldSw, DEMO), DEMO);
     check(G11, J(doors(back.state)) === J([["w48", "w48", true]]) && back.state.items[0].wall === old.items[0].wall && Math.abs(back.state.items[0].pos - old.items[0].pos) < 1e-3
       && back.warnings.includes(said) && priceParts(back.state, DEMO).total === savedPrice && (k !== "SU" || savedPrice === DEMO.P.SU[z])
-      && J(doors(backSw.state)) === J([["d36in", "w48", true]]) && backSw.warnings.includes(`The ${times(z)} ${name} comes with the 48″ Wooden Door, so the 36″ In-Swing Door is kept in its place as an upgrade.`)
+      && J(doors(backSw.state)) === J([["d36in", "w48", true]]) && backSw.warnings.includes(`The ${times(z)} ${name} comes with the 48″ Wooden Door, so the 36″ In-Swing Door is kept in its place and costs ${money(rise)} more than before.`)
       && priceParts(backSw.state, DEMO).total === savedPrice + up,
       `a saved ${name} ${z} with the doubles reopened: ${J(doors(back.state))} ${J(back.warnings)} ${priceParts(back.state, DEMO).total} (saved at ${savedPrice}); swapped for the steel door: ${J(doors(backSw.state))} ${J(backSw.warnings)} ${priceParts(backSw.state, DEMO).total}`);
     const next = send(fromState(back.state, DEMO), DEMO), nextSw = send(fromState(backSw.state, DEMO), DEMO);
@@ -562,6 +565,14 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
       `${name} ${z}: the designs the designer sends after opening them: ${next && (next.status + " " + next.message)} / ${nextSw && (nextSw.status + " " + nextSw.message)}`);
     const stale = send(saved, DEMO);
     check(G11, stale && stale.status === 409 && /no longer offered/.test(stale.message), `${name} ${z}: the stale design itself: ${stale ? stale.status + " " + stale.message : "priced"}`);
+  }
+  {
+    const hide = readJSON("companies/demo/company.json"); hide.pricing = Object.assign({}, hide.pricing, { show: "none" });
+    const HIDE = resolve(hide, readManufacturer(hide.manufacturer), readJSON("library/construction.json"));
+    const o = st(HIDE, "DS", "8x12"); o.items[0].cat = "d36in"; o.items[0].origCat = "w72";
+    const b = toState(fromState(o, HIDE), HIDE);
+    check(G11, rise > 0 && b.warnings.includes("The 8×12 Dormer Shed comes with the 48″ Wooden Door, so the 36″ In-Swing Door is kept in its place and costs more than before.") && !b.warnings.some((w) => /\$/.test(w)),
+      `a company that shows no prices: ${J(b.warnings)}`);
   }
   /* the customer touches a window on a 10x16, then picks 10x12, and the
      other way: the door follows the size's, nothing is said, the price is

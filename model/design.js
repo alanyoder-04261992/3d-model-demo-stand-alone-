@@ -47,7 +47,7 @@
 import { frameOf, porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, porchLengthFor } from "./frame.js";
 import { resetItems, clampPos, keepOnWall, pkFixtures, fitsOnWall } from "./layout.js";
 import { standardItems } from "./loadouts.js";
-import { pPrice, pSizes, priceParts } from "./pricing.js";
+import { pPrice, pSizes, priceParts, money } from "./pricing.js";
 import { colorName, hexOfName, pickByName, sidingPalette, extraOfferedOn } from "./company.js";
 
 /* own keys only: a link naming "constructor" or "__proto__" is not a style,
@@ -280,8 +280,27 @@ function doorWords(state, cat) {
     const theirs = C[x.to], mine = C[x.it.cat];
     if (!x.swapped) return `The ${times(state.size)} ${t.name} comes with the ${theirs.n}, so ${plural(theirs.n) ? "they take" : "it takes"} the place of the ${C[x.was].n}.`;
     const up = (mine.p || 0) - (theirs.p || 0) > 0;
-    return `The ${times(state.size)} ${t.name} comes with the ${theirs.n}, so the ${mine.n} ${plural(mine.n) ? "are" : "is"} kept in ${plural(theirs.n) ? "their" : "its"} place${up ? " as an upgrade" : ""}.`;
+    const kept = `The ${times(state.size)} ${t.name} comes with the ${theirs.n}, so the ${mine.n} ${plural(mine.n) ? "are" : "is"} kept in ${plural(theirs.n) ? "their" : "its"} place`;
+    /* priced from the new door, it can cost more than the customer saw (the
+       36 in steel door in place of the double doors: $150 more in the sample
+       price list); the line says so, with the amount where prices are shown
+       (review DOORS-4) */
+    const more = moreThanBefore(state, cat, x);
+    if (more > 0) return `${kept} and ${plural(mine.n) ? "cost" : "costs"} ${cat.pricing && cat.pricing.show === "none" ? "" : money(more) + " "}more than before.`;
+    return `${kept}${up ? " as an upgrade" : ""}.`;
   }))];
+}
+
+/* How much more a door swapped for the one the building came with costs now
+   that it is priced from the door this size comes with: the price with it
+   priced as before, taken from the price now. */
+function moreThanBefore(state, cat, x) {
+  if (!cat.CAT[x.was]) return 0;
+  const now = priceParts(state, cat).total;
+  x.it.origCat = x.was;
+  const before = priceParts(state, cat).total;
+  x.it.origCat = x.to;
+  return Math.max(0, now - before);
 }
 
 /* ------------------------------------------------------------------------ */
