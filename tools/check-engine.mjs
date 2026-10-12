@@ -35,8 +35,8 @@ import { createRequire } from "node:module";
 import { BARNWRIGHT_PAGE } from "./lib/barnwright-blocks.mjs";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const BARN_DIR = "/home/user/boisterous-lokum-a737e0/public";
-const YODER = "/home/user/yoder-storage-barns/design.html";
+const BARN_DIR = process.env.BARNWRIGHT_PUBLIC || "/home/user/boisterous-lokum-a737e0/public";
+const YODER = process.env.YODER_FILE || "/home/user/yoder-storage-barns/design.html";
 const P_BARN = 8301, P_OURS = 8311;
 const BASE = "http://127.0.0.1:" + P_OURS;
 

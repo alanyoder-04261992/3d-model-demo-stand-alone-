@@ -607,7 +607,7 @@ function sources(dir) {
   }
   return out;
 }
-const screenText = [...sources(resolvePath(ROOT, "ui/office")), readFileSync(resolvePath(ROOT, "ui/quote.js"), "utf8")].join("\n");
+const screenText = [...sources(resolvePath(ROOT, "ui/office")), ...["ui/quote.js", "ui/layout-mode.js"].map(file => readFileSync(resolvePath(ROOT, file), "utf8"))].join("\n");
 const templates2 = [...screenText.matchAll(/`([^`]*)`/g)].map((t) => t[1])
   .filter((t) => /\$\{/.test(t) && t.replace(/\$\{[^}]*\}/g, "").replace(/[^A-Za-z]/g, "").length >= 8)
   .map((t) => new RegExp("^" + t.split(/\$\{[^}]*\}/).map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\S+?") + "$", "i"));

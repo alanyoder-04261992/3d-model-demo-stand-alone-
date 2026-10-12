@@ -1,5 +1,9 @@
 # Handoff: build "Your Buildings" into the Dealer Center
 
+The completed build and current review instructions are recorded in
+[IMPLEMENTED.md](IMPLEMENTED.md). The original handoff below is retained for
+its approved scope and historical decisions.
+
 This is for whoever picks up the build, whether a person or another AI. Claude started it and stopped on October 12, 2026. Claude will check the finished work on October 17 before anything is merged.
 
 ## Who this is for, and the one rule about words

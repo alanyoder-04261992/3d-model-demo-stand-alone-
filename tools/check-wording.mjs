@@ -48,6 +48,10 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
 /* word (as a regular expression) -> what to say instead */
 const BANNED = [
+  [/\bNot sold\b/i, "say Stop selling, or Add it in Add a building", "ui/office/"],
+  [/\bSwitch it on to sell\b/i, "say Add it or Sell it again", "ui/office/"],
+  [/\bTurn off the ones you don't sell\b/i, "say Stop selling the buildings you don't sell", "ui/office/"],
+  [/\bTurn off what you don't sell\b/i, "say Stop selling the buildings you don't sell", "ui/office/"],
   [/\bwork ?space/i, "say Dealer Center"],
   [/\bportal\b/i, "say Dealer Center"],
   [/\bthe office\b|\boffice (account|staff)\b/i, "say Dealer Center"],
@@ -171,6 +175,9 @@ const COPIED = new Set([resolve(ROOT, "server/office/control-room.js")]);
 const files = [
   resolve(ROOT, "dealer.html"),
   ...walk(resolve(ROOT, "ui/office")),
+  resolve(ROOT, "ui/layout-mode.js"),
+  resolve(ROOT, "model/layout-check.js"),
+  resolve(ROOT, "model/layout-recipe.js"),
   ...walk(resolve(ROOT, "server/office")).filter((f) => !COPIED.has(f)),
   resolve(ROOT, "ui/managed-order.js"),
 ].filter(existsSync);
@@ -188,7 +195,8 @@ for (const file of files) {
   }
   for (const { text, line } of items) {
     checked++;
-    for (const [re, instead] of BANNED) {
+    for (const [re, instead, scope] of BANNED) {
+      if (scope && !rel.startsWith(scope)) continue;
       const hit = re.exec(text);
       if (hit) problems.push(`${rel}:${line}: "${hit[0]}" in "${text.trim().slice(0, 90)}" -- ${instead}`);
     }

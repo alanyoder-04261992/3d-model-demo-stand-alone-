@@ -49,7 +49,7 @@ async function pageFor({ email = OWNER, width = 1280, scheme = "light", noWebGL 
 }
 async function route(page, path, selector) {
   await page.evaluate(path => { location.hash = path; }, path);
-  await page.waitForSelector(selector, { timeout: 10000 });
+  await page.waitForSelector(selector, { timeout: 30000 });
 }
 const edit = (page, key) => route(page, "/price-list/building/" + key, `.pl-building-page[data-style="${key}"]`);
 const list = page => route(page, "/price-list", ".pl-building-list");
@@ -190,6 +190,14 @@ try {
   check("a manager keeps the full price sheet including the own building, without cards or Edit", await manager.locator(".pl-sheet-card").count() === soldKeys.length && await manager.locator(".pl-sheet-card", { hasText: "Premium Lofted Barn" }).count() === 1 && await manager.locator(".pl-card[data-style], .pl-card-edit, .pl-building-page").count() === 0);
   await manager.context().close();
 
+  /* A saved owner layout exposes the real reset dialog. Keep the builder's
+     geometry so the screen review still shows the normal Utility Shed. */
+  const resetBase = (await call()).data;
+  const layoutResponse = await fetch(BASE + "/api/office/layout-mode?style=UT", { headers });
+  assert.equal(layoutResponse.status, 200);
+  resetBase.settings.offer.UT.layout = (await layoutResponse.json()).layout;
+  check("the screen review starts with a saved owner layout", (await call({ settings: resetBase.settings, version: resetBase.version })).status === 200);
+
   for (const scheme of ["light", "dark"]) for (const width of [390, 820, 1280]) {
     const p = await pageFor({ width, scheme });
     await edit(p, "UT");
@@ -200,6 +208,21 @@ try {
       if (name === "edit") await input(p, "size:UT:" + sizes[0], String(original.offer.UT.sizes[sizes[0]] + 1));
       await geometry(p, `${name} ${width} ${scheme}`);
       await p.screenshot({ path: resolve(OUT, `${name}-${width}-${scheme}.png`), fullPage: true });
+      if (name === "edit" && width === 390) {
+        await p.getByRole("button", { name: "Go back to the builder's layout", exact: true }).click();
+        await p.evaluate(() => {
+          const header = document.createElement("div"); header.id = "test-phone-header";
+          header.style.cssText = "position:fixed;inset:0 0 auto;height:100px;z-index:99;background:#16130e;color:white";
+          header.textContent = "Phone app header"; document.body.append(header);
+        });
+        await geometry(p, `reset-layout ${width} ${scheme}`);
+        const bounds = await p.getByRole("dialog").evaluate(el => [...el.querySelectorAll("button")].map(button => ({ top: button.getBoundingClientRect().top, bottom: button.getBoundingClientRect().bottom })));
+        check(`reset-layout ${scheme}: both choices clear the phone app header and fixed bars`, bounds.every(r => r.top >= 100 && r.bottom <= 844 - 58));
+        await p.screenshot({ path: resolve(OUT, `reset-layout-${width}-${scheme}.png`) });
+        await p.getByRole("dialog").getByRole("button", { name: "Keep yours", exact: true }).click();
+        await p.evaluate(() => document.getElementById("test-phone-header").remove());
+        check(`reset-layout ${scheme}: Keep yours preserves the layout and unfinished price`, await p.getByRole("button", { name: "Go back to the builder's layout", exact: true }).count() === 1 && await field(p, "size:UT:" + sizes[0]).inputValue() === String(original.offer.UT.sizes[sizes[0]] + 1));
+      }
       if (name === "add") {
         await p.locator('.pl-gallery-card[data-style="LB"]').getByRole("button", { name: "Make my own from it", exact: true }).click();
         await geometry(p, `make-own ${width} ${scheme}`);

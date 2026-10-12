@@ -25,7 +25,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 
-export const BARNWRIGHT_PUBLIC = "/home/user/boisterous-lokum-a737e0/public";
+export const BARNWRIGHT_PUBLIC = process.env.BARNWRIGHT_PUBLIC || "/home/user/boisterous-lokum-a737e0/public";
 export const BARNWRIGHT_FILE = BARNWRIGHT_PUBLIC + "/3ddesign.html";
 
 /* The one copy of Barnwright's 3ddesign.html this table is true of.

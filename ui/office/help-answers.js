@@ -56,36 +56,17 @@ export const HELP_SCREEN = Object.freeze({
 export const ANSWERS = Object.freeze([
   {
     id: "price",
-    title: "Change a price",
+    title: "Change buildings, prices or their standard layout",
     lines: [
-      "Only the owner changes prices. Tap **Price list**, then **Edit** on a building under **Your buildings** to see its sizes and prices.",
+      "Only the owner changes the buildings, prices and standard layouts. Tap **Price list**, then **Edit** on a building under **Your buildings**.",
       "Type the new price next to the size. To raise or lower many prices at once, tap **Change prices** and check the preview.",
-      "Tap the gold button at the bottom: **Save for your lot**, or **Save for all lots** when you have more than one. Every lot's 3D designer shows the new price right away. Quotes you already gave keep their price.",
+      "To add a building, tap **Add a building**. Tap **Add it** for a standard building, or **Make my own from it** for your own name, sizes and prices. Type the prices on its Edit page.",
+      "To stop selling a building, tap **Stop selling** on its Edit page. **Sell it again** brings it back until you save.",
+      "To change the doors, windows and porch posts that come with a building, tap **Set the standard layout** on its Edit page. Move, add or remove them in the 3D designer, then tap **Save as standard**. Every size is checked, and every lot starts customers from that layout.",
+      "Customers can still move the included doors, windows and posts or add more on their own building.",
+      "Prices and building changes wait for the gold button at the bottom: **Save for your lot**, or **Save for all lots** when you have more than one. Every lot's 3D designer shows them right away. Quotes and orders already made keep their building and price.",
     ],
-    find: "cost raise lower dollars size sizes building style save",
-    link: ["#/price-list", "Open the price list"],
-  },
-  {
-    id: "building",
-    title: "Add a building or stop selling one",
-    lines: [
-      "Only the owner changes which buildings are sold. Tap **Price list**, then **Add a building** under **Your buildings**.",
-      "Tap **Add it** on a standard building, or **Make my own from it** for a building with its own name, sizes and prices. Type the prices on its Edit page.",
-      "To stop selling a building, tap **Edit** on its card, then **Stop selling** at the bottom. **Sell it again** brings it back until you save.",
-      "Tap the gold save button to send your changes to every lot. Quotes and orders already made keep their building and price.",
-    ],
-    find: "building buildings add stop selling style own version standard",
-    link: ["#/price-list/add-building", "Add a building"],
-  },
-  {
-    id: "standard-layout",
-    title: "Set the doors, windows and porch posts that come with a building",
-    lines: [
-      "Only the owner sets the standard layout. Under **Your buildings**, tap **Edit**, then **Set the standard layout**.",
-      "Move, add or remove doors, windows and porch posts in the 3D designer, then tap **Save as standard**. Every size is checked before saving, and every lot starts customers from that layout.",
-      "Doors, windows and posts in the standard layout come with the building. Customers can still move them or add more on their own building.",
-    ],
-    find: "layout door doors window windows porch post posts included standard",
+    find: "cost raise lower dollars size sizes building style save add stop selling own version layout door doors window windows porch post posts included standard",
     link: ["#/price-list", "Open Your buildings"],
   },
   {

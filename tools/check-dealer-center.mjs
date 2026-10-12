@@ -96,8 +96,16 @@ async function apiAs(email, path, { method = "GET", body } = {}) {
 
 const browser = await chromium.launch({ args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"] });
 
-async function pageFor(email, { width = 1300, height = 860, base = BASE } = {}) {
-  const context = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: "reduce" });
+async function pageFor(email, { width = 1300, height = 860, base = BASE, persistent = false } = {}) {
+  const options = { viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: "reduce" };
+  /* Chromium cannot install an app in a private context. Use a fresh real
+     profile for the install check; other cases keep their isolated logins. */
+  const profile = resolve(OUT, "install-profile");
+  if (persistent) rmSync(profile, { recursive: true, force: true });
+  const context = persistent ? await chromium.launchPersistentContext(profile, {
+    ...options, ...(process.env.CHROMIUM_EXECUTABLE_PATH ? { executablePath: process.env.CHROMIUM_EXECUTABLE_PATH } : {}),
+    args: ["--use-angle=swiftshader", "--enable-unsafe-swiftshader", "--ignore-gpu-blocklist"],
+  }) : await browser.newContext(options);
   await context.route(/^https?:\/\/(?!127\.0\.0\.1)/, (r) => r.abort());
   if (email) await context.addCookies([{ name: "dealer_local_user", value: encodeURIComponent(email), url: base }]);
   const page = await context.newPage();
@@ -118,7 +126,7 @@ try {
   /* ---- 1 ----------------------------------------------------------------- */
   section("1. Signing in");
   {
-    const page = await pageFor(null);
+    const page = await pageFor(null, { persistent: true });
     await page.goto(`${BASE}/dealer`, { waitUntil: "load" });
     await page.waitForSelector(".person-pick", { timeout: 20000 });
     const names = await page.$$eval(".person-pick strong", (els) => els.map((e) => e.textContent));
@@ -319,7 +327,8 @@ try {
     await page.click(".topbar-help");
     await page.waitForFunction(() => location.hash === "#/help" && document.querySelector(".hp-answer") && !document.querySelector("#main .loading"), null, { timeout: 20000 });
     const n = await page.$$eval(".hp-answer", (els) => els.length);
-    ok(`the Help button at the top opens Help, with the short answers (${n})`, n >= 10 && n <= 14);
+    ok(`the Help button at the top opens Help, with the short answers (${n})`, n >= 10 && n <= 15
+      && !!await page.$('.hp-answer:has-text("Set the standard layout")'));
     await page.fill(".hp-search input", "website code");
     await page.waitForTimeout(400);
     const found = await page.$$eval(".hp-answer", (els) => els.map((e) => [e.querySelector(".hp-q").textContent, e.open]));
