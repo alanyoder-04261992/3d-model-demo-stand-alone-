@@ -7,7 +7,7 @@
 import { h, icon } from "../../dom.js";
 import { money } from "../../words.js";
 import { S, edited, repaint } from "./state.js";
-import { keysOf, priceOf, ownName, lockStyleNames } from "./model.js";
+import { keysOf, priceOf, ownName, lockStyleNames, lockRowWords } from "./model.js";
 import { priceInput, sellBox, renameable, msgs } from "./bits.js";
 
 export const ITEM_GROUPS = [
@@ -35,18 +35,9 @@ export function doorsTab() {
       h("div", { class: "pl-rows" }, ids.map(itemRow))))));
 }
 
-function listWords(names, max = 2) {
-  if (names.length <= max + 1) return names.length > 1 ? `${names.slice(0, -1).join(", ")} and ${names[names.length - 1]}` : names[0];
-  return `${names.slice(0, max).join(", ")} and ${names.length - max} more`;
-}
-
 export function lockWords(lock) {
-  const names = lockStyleNames(lock, S.M, { ...(S.saved?.settings?.offer || {}), ...(S.draft?.offer || {}) });
-  const why = [];
-  if (names.length) why.push(`Comes with the ${listWords(names)}.`);
-  if (lock.elec) why.push("Your electrical packages put it in.");
-  if (lock.ext) why.push("Your exterior light option puts it up.");
-  return { words: `${why.join(" ")} $0 is fine.`, all: names.join(", ") };
+  const offer = { ...(S.saved?.settings?.offer || {}), ...(S.draft?.offer || {}) };
+  return { words: lockRowWords(lock, S.M, offer), all: lockStyleNames(lock, S.M, offer).join(", ") };
 }
 
 function itemRow(id) {

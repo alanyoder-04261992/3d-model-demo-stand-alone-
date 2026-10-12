@@ -498,8 +498,9 @@ function paintNotes(box) {
   const cat = memo("saved|" + S.saved.version, () => resolve(S.saved.settings, S.M, S.L));
   const warnings = cat ? [...cat.settingsWarnings] : [];
   /* a door the shop standard puts in at some sizes that is not sold (the
-     8x12 and 10x12 Side Utility's 48 in Wooden Door): about a door, not a
-     number, so it has its own heading */
+     48 in Wooden Door of the 8x12 and 10x12 Side Utility, Dormer Shed and
+     Side Lofted Barn): about a door, not a number, so it has its own
+     heading */
   const doors = cat ? [...(cat.swapWarnings || [])] : [];
   /* an option's roof pitch a customer would pay for and get nothing (review W2) */
   let noChange = [];

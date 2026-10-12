@@ -120,7 +120,8 @@ a door made from a metal building's siding is steel like the walls.
 
 You said "yes match" in October 2026: the standard buildings every dealer
 gets are built the way your shop builds them, where you gave us the numbers.
-On October 11, after the pictures, you said yes to six more styles.
+On October 11, after the pictures, you said yes to six more styles, and
+on October 12 to the 48 in door on two more.
 
 * **Utility Shed, Side Utility and Garage:** a 5/12 roof at every width (a
   10 ft wide roof rises 2 ft 1 in instead of 2 ft 8 3/8 in; a 12 ft Garage
@@ -142,22 +143,37 @@ On October 11, after the pictures, you said yes to six more styles.
   The roof line over the roof deck is about 1/2 in higher.
 * **Lofted Barn Garage:** the same barn roof heights (4 ft 3 in on the
   12 ft wide ones it is sold in), on its own walls as they were.
-* **Side Utility, 8x12 and 10x12: the 48 in Wooden Door.** We asked how
-  your shop builds these two (with the double doors, a window ran 2 3/8 in
-  into the doors) and you said "replace 6 foot to 4 foot" on October 11.
-  The 48 in door is in the middle of the door side. The two windows are
-  4.4 ft either side of the middle (the left one about 5/8 in closer to the
-  middle than before, so both sides match), with about 9 5/8 in of siding
-  between the door's trim and each window's. Every other Side Utility size
-  keeps the double doors, and so does Barnwright's own. The 48 in door
-  comes with those two sizes at no extra charge, and their prices are as
-  they were. Each price list still has to list it ($0 is fine; the sample
-  charges $175 for an extra one), and the Dealer Center says so before
-  Save. A customer who changes a door or window and then picks the 8x12 or
-  10x12 gets the 48 in door at that size's price. A customer who saved an
-  8x12 or 10x12 before October 11 sees the 48 in door where the double
-  doors were when they open it again, at the price they saw, and one line
-  says so (question 12).
+* **Side Utility, Dormer Shed and Side Lofted Barn, 8x12 and 10x12: the
+  48 in Wooden Door.** We asked how your shop builds the Side Utility at
+  these two sizes (with the double doors, a window ran 2 3/8 in into the
+  doors) and you said "replace 6 foot to 4 foot" on October 11. The Dormer
+  Shed and Side Lofted Barn had the same door side, and on October 12 you
+  said yes to the 48 in door on them too. The 48 in door is in the middle
+  of the door side. The two windows are 4.4 ft either side of the middle
+  (the left one about 5/8 in closer to the middle than before, so both
+  sides match), with about 9 5/8 in of siding between the door's trim and
+  each window's. The Dormer Shed's dormer stays where it was. Every other
+  size of the three keeps the double doors, and so do Barnwright's own.
+  The 48 in door comes with those sizes at no extra charge, and their
+  prices are as they were (you said no to a lower price for the Side
+  Utility, so the other two keep theirs too). Each price list still has to
+  list it ($0 is fine; the sample charges $175 for an extra one), and the
+  Dealer Center says so before Save. A customer who changes a door or
+  window and then picks the 8x12 or 10x12 gets the 48 in door at that
+  size's price; back to a longer size, the double doors return and the
+  windows move clear of them, as they always did.
+
+  Designs saved with the double doors before this change reached a
+  dealer's 3D designer: a customer who opens one again sees the 48 in door
+  where the double doors were, at the price they saw, and one line says
+  so. One who had swapped the double doors for another door keeps that
+  door, now priced from the 48 in door: $150 more in the sample price
+  list, and the line says how much more (question 12). An order or quote
+  keeps the double doors it was sold with: its sheet, its picture and
+  See it in 3D all show them. Tapping Change it on such a quote, or
+  Change this design on its link, gives the 48 in door. A dealer who stops
+  selling the double doors on those sizes still has every saved design
+  open with the 48 in door, never with no door.
 * **14 ft wide lofted barns keep today's height**, about 6 ft 3 in to the
   top of the trusses, as you said. Their walls are 6 ft 7 1/2 in like the
   other widths, so a 14 ft Lofted Barn stands 9/16 in lower overall than
@@ -307,40 +323,54 @@ site. One shed business runs everything from it:
 * **Signing up a new company.** About an hour at their lot. Your step by
   step guide is `docs/legal/Barnwright-Adding-a-New-Customer.pdf`. First
   time? Tap **Practice adding a customer** in your Control Room: it works
-  the same, but nothing is real. There is no paper form any more:
+  the same, but nothing is real. There is no paper form any more. Once,
+  before your first customer: connect Claude to your Control Room
+  (**Papers**, **Connect Claude**).
   1. **The sign-up link.** In your Control Room tap **New customer**, then
      **Send sign-up link**, and text it to the owner. On their phone they
      check their details, read the short version of the terms, tick
      **I agree**, type their name and save their card. Nothing is charged
      that day, except their extra lots if they have more than one. What
      they typed fills into your Control Room by itself.
-  2. **The photos.** Tap **Take photos** and take pictures of their
-     buildings, their price list, and their options and colors.
+  2. **The photos.** If they have a website, tap **Gather from their
+     website** first: it brings in what it finds, and you check every line
+     with the owner. Then tap **Add photos or files**, then **Take Photo**,
+     and take pictures of their buildings, their price list, and their
+     options and colors.
   3. **Their Dealer Center: one button.** Tap **Make their Dealer Center**,
      then **Make it**. This works once you have given your Control Room a
      Netlify key (the first step in the guide, done once). Without the key,
      your Control Room shows the steps to do by hand in Netlify, with one
      paste for all the settings.
-  4. **The owner's computer.** The owner makes their login at their
-     address with /dealer on the end and signs in. There are no setup
+  4. **Their price list with Claude.** In the Claude app, type
+     **/dealersetup** and their business name. Claude reads your photos and
+     shows you one plan; it changes nothing until you say go, and each
+     batch asks you to tap **Allow once**. When they signed up under the
+     terms 2.2, this works right away, even before the owner first signs
+     in.
+  5. **The owner's computer.** The owner makes their login at their
+     address with /dealer on the end. On their own computer they tick
+     **Keep me signed in on this device for 30 days**. There are no setup
      screens: Today opens right away with their business, their price
-     list (yours, when you already set it up, or every standard building
-     at example prices, closed to customers until they open it) and their
-     first lot, named after the business. A **Getting started** list on
-     Today shows what is left: check the prices, the logo and colors, the
-     other lots, the team, look at the preview, open to customers. Each
-     one ticks itself when it's done. The terms they agreed to on the
-     sign-up page count; only when that agreement is missing or older than
-     their Dealer Center's terms does a line at the top ask them to tap
-     **I have read and agree to the Barnwright Terms and Conditions**
-     (until the 2.2 terms are out, it always asks). Put the Dealer Center
-     on their computer and their phone like an app: on the computer, click
-     **Install** at the right end of the address bar in Chrome or Edge; on
-     an iPhone, **Share**, then **Add to Home Screen**. It gets its own
-     black and gold icon. Then type their prices from your photos, add
-     their other lots and their team, and give them the one-page
-     Welcome Sheet (`docs/legal/Barnwright-Welcome-Sheet.pdf`).
-  5. **Start.** When everything works, tap **Start monthly fee**, then
+     list (yours or Claude's, when you already set it up, or every
+     standard building at example prices, closed to customers until they
+     open it) and their first lot, named after the business. A **Getting
+     started** list on Today shows what is left: check the prices, the
+     logo and colors, the other lots, the team, look at the preview, open
+     to customers. Each one ticks itself when it's done. The **I agree**
+     they gave on the sign-up page counts when it was to the terms 2.2 or
+     later; when it is missing or to older terms, a line at the top asks
+     them to tap **I have read and agree to the Barnwright Terms and
+     Conditions**. Put the Dealer Center on their computer and their phone
+     like an app: on the computer, click **Install** at the right end of
+     the address bar in Chrome or Edge; on an iPhone, **Share**, then
+     **Add to Home Screen**. It gets its own black and gold icon. Then
+     check their prices with them against your photos, add their other
+     lots and their team, show them **Settings**, **Barnwright** (until
+     they open to customers, Barnwright can set up their price list, and
+     **Stop Barnwright's setup access** stops it), and give them the
+     one-page Welcome Sheet (`docs/legal/Barnwright-Welcome-Sheet.pdf`).
+  6. **Start.** When everything works, tap **Start monthly fee**, then
      **Start and charge the card**. Their card is charged that day and the
      same day every month.
 
@@ -407,9 +437,25 @@ Dealer Center guide](OFFICE.md).) From then on:
   "3 of 3 open lots in your Barnwright plan" and turns off **Add a lot**
   when they're at the limit.
 * **Barnwright in their Settings:** one card, **Barnwright**, holds
-  everything you may do there. Setting up and changing things start
-  working once their owner agrees to the Barnwright terms 2.2 (the papers
-  still carry 2.1 today, so until then only the checks work).
+  everything you may do there. Setting up and changing things work once
+  their owner agrees to the Barnwright terms 2.2. Terms 2.2 start on
+  October 12, 2026: on the evening of October 11 you chose to start them
+  then, not on November 11. A new owner agrees on the sign-up page: when
+  that was to the terms 2.2 or later, it counts as their **I agree** the
+  first time they sign in, and nothing more is asked. An owner who agreed
+  only to the older terms (2.1) taps **I have read and agree to the
+  Barnwright Terms and Conditions** at the top of their Dealer Center.
+  Once they do, you can change their prices, and your Control Room hears
+  about it within a few seconds. Until then only the checks work for
+  them.
+  * **No 30-day notice went out for 2.2.** Section 19 of the terms says
+    customers hear about new terms 30 days before they start. No customer
+    needed it: your only customer was your own test business, **Testing**
+    (testing.barnwrightsoftware.com). **Created by Design** (Port
+    Charlotte), which also signed up in your Control Room that evening,
+    is you too, not a customer: you said the customers in your Control
+    Room are "actually just me", and you set up its Dealer Center yourself.
+    For the next new terms, tell every customer 30 days ahead.
   * **Before they open to customers,** you may set up their price list and
     settings (Barnwright setup access). In your control room, **Open their
     price list** opens their Dealer Center as Barnwright for up to 8 hours,
@@ -616,7 +662,10 @@ Dormer Shed, Metal Lofted Barn and Lofted Barn Garage (yes, as in the
 pictures), the Metal Garage (no), the 14 ft lofted barns (keep today's
 height), the gable window (not offered where it does not fit), the Steep
 roof (out of the sample price list) and the 8x12 and 10x12 Side Utility's
-door (the 48 in Wooden Door instead of the double doors).
+door (the 48 in Wooden Door instead of the double doors). Answered on
+October 12: should the 8x12 and 10x12 Side Utility cost less (no, their
+prices stay as they are) and the 48 in door on the 8x12 and 10x12 Dormer
+Shed and Side Lofted Barn (yes).
 
 1. **The cabins and the Metal Utility** at 5/12 with a 4 in roof edge, like
    your utility roof? *For now: unchanged.*
@@ -646,20 +695,13 @@ door (the 48 in Wooden Door instead of the double doors).
     yes, 5/12 is your standard pitch at every width.*
 11. **Who can change How it's built.** *For now: the owner only, like
     prices; managers and dealers see the numbers.*
-12. **The 8x12 and 10x12 Side Utility's price and saved designs.** Should
-    those two sizes cost less now that they come with the smaller door?
-    And every customer who saved an 8x12 or 10x12 Side Utility before
-    October 11 sees the 48 in door in place of the double doors when they
-    open it again, at the same price. Is that right, or should they keep
-    the double doors free? A customer who had swapped the double doors for
-    another door keeps that door, but it is now priced from the 48 in door:
-    $150 more in the sample price list. *For now: the size prices are as
-    they were, and a saved design gets the 48 in door at the price the
-    customer saw.*
-13. **The 48 in door on two more styles?** The Dormer Shed and Side Lofted
-    Barn at 8x12 and 10x12 have the same layout as the Side Utility had: a
-    window runs 2 3/8 in into the double doors. Should they get the 48 in
-    door too? *For now: unchanged.*
+12. **Saved designs with the double doors.** A customer who saved an 8x12
+    or 10x12 Side Utility, Dormer Shed or Side Lofted Barn with the double
+    doors opens it with the 48 in door, at the price they saw. One who had
+    swapped the double doors for another door keeps it, but it now costs
+    $150 more in the sample price list, and a line says so. Is that right,
+    or should they keep the double doors free? *For now: the 48 in door at
+    the price they saw, and a swapped door priced from the 48 in door.*
 
 ### Choices about the product
 
@@ -717,7 +759,7 @@ proved; the full list is in [the README](../README.md).
   on live payments there is still to do.
 * The control room's own screens and messages still say "HQ" (for example
   "enable support in HQ Setup"). For a Dealer Center company that switch is
-  **Help from Barnwright** in their Settings.
+  **Run checks** on the **Barnwright** card in their Settings.
 * **Claude's drafts in your Sales Inbox** start when you add the Claude key
   (step 4 in the Sales Inbox's own instructions: a key named `Sales Inbox
   Help` from platform.claude.com, put in Netlify as `ANTHROPIC_API_KEY`).

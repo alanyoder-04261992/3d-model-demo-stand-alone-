@@ -30,8 +30,10 @@
      Metal Lofted Barn:                   6 ft 7 1/2 in walls; barn roofs 3 ft 7 3/4 in,
                                           4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide
      Lofted Barn Garage:                  those barn roofs, walls as they were
-     Side Utility 8x12 and 10x12:         the 48 in Wooden Door, not the 72 in
-                                          double doors ("replace 6 foot to 4 foot")
+     Side Utility, Dormer Shed and
+     Side Lofted Barn 8x12 and 10x12:     the 48 in Wooden Door, not the 72 in
+                                          double doors ("replace 6 foot to 4 foot";
+                                          the other two Oct 12 2026, "yes")
    Not the Metal Garage ("not metal garage") nor the Metal Utility (not
    picked), nor any other style.
 
@@ -61,14 +63,17 @@
       d. a business-wide roof pitch still leaves the Dormer Shed's main roof
          alone: it stays at the shop's 7/12;
       e. the 8x12 and 10x12 Side Utility come with the 48 in Wooden Door
-         ("replace 6 foot to 4 foot"): in the middle of the door side, where
-         the 72 in Wooden Double Doors were, between the same two 2x3
-         windows, and no window runs into it any more. Every other Side
-         Utility size, every other style and Barnwright's own Side Utility
-         keep what they have; a style built like the Side Utility gets it
-         too; a price list that does not sell the 48 in door keeps the
-         doubles and the owner is told; a new price list must sell it, and
-         the Dealer Center keeps it sold.
+         ("replace 6 foot to 4 foot"), and so do the 8x12 and 10x12 Dormer
+         Shed and Side Lofted Barn (Oct 12 2026, "yes"): in the middle of
+         the door side, where the 72 in Wooden Double Doors were, between
+         the same two 2x3 windows, and no window runs into it any more (on
+         the Dormer Shed with each of its dormers). Their prices are the
+         ones they had with the double doors. Every other size of the
+         three, every other style and Barnwright's own keep what they have;
+         a style built like one of the three gets it too; a price list that
+         does not sell the 48 in door keeps the doubles and the owner is
+         told; a new price list must sell it, and the Dealer Center keeps
+         it sold.
    5. What the screens and Alan's papers say is what is drawn:
       a. the Dealer Center's How it's built box says the eave each style is
          drawn with, measured level: a barn's eave width by width, since
@@ -91,6 +96,8 @@ import { barnwrightCatalogue, shopStandardCatalogue, standardManufacturer } from
 import { canonical } from "./lib/headless.mjs";
 import { defaults, setType, fromState, toState } from "../model/design.js";
 import { resolve as resolveCompany, strictProblems, validateManufacturer, validate as validateCompany } from "../model/company.js";
+import { explainProblem, createPriceList } from "../server/office/price-list.js";
+import { MemoryBlobs, wrapStore } from "../server/office/store.js";
 import { optxList, priceParts } from "../model/pricing.js";
 import { checkStyle } from "../model/style-check.js";
 import * as PRICE_LIST from "../ui/office/views/price-list/model.js";
@@ -377,94 +384,174 @@ console.log(`4b. A gable window too tall for the gable is not offered there: ${g
   const pitchOf = (k, z) => measures(cat, k, z).out.pitch;
   ok("a business-wide 6/12 for gable roofs: the Utility Shed and Garage 6/12, the Dormer Shed still 7/12", near(pitchOf("UT", "10x16"), 6) && near(pitchOf("G", "12x24"), 6) && near(pitchOf("DS", "10x16"), 7), JSON.stringify([pitchOf("UT", "10x16"), pitchOf("G", "12x24"), pitchOf("DS", "10x16")]));
 }
-/* e. the 8x12 and 10x12 Side Utility: the 48 in Wooden Door (Alan, Oct 11
-      2026, asked how he builds them: "replace 6 foot to 4 foot") */
-const SU48 = ["8x12", "10x12"];
-let sameLayouts = 0;
+/* e. the 48 in Wooden Door at 8x12 and 10x12: the Side Utility (Alan, Oct
+      11 2026, asked how he builds them: "replace 6 foot to 4 foot"), and
+      the Dormer Shed and Side Lofted Barn, which have the same door side
+      (Alan, Oct 12 2026, asked whether they should get the 48 in door
+      too: "yes") */
+const DOOR48 = { SU: ["8x12", "10x12"], DS: ["8x12", "10x12"], SLB: ["8x12", "10x12"] };
+const has48 = (key, z) => (DOOR48[key] || []).includes(z);
+const NAME48 = { SU: "Side Utility", DS: "Dormer Shed", SLB: "Side Lofted Barn" };
+let sameLayouts = 0, tried48 = 0;
 {
   const items = (cat, key, size) => stateOf(cat, key, size).items.map((i) => ({ id: i.id, cat: i.cat, wall: i.wall, pos: r3(i.pos), inc: i.inc, origCat: i.origCat }));
   const J = (v) => JSON.stringify(v);
-  /* the door side of the 8x12 and 10x12: the 48 in door in the middle, the
-     two 2x3 windows where they were */
-  for (const z of SU48) {
-    const got = items(SHOP, "SU", z);
-    ok(`Side Utility ${z}: the 48″ Wooden Door in the middle of the door side, the two 2×3 Windows 4.4 ft either side of it`,
-      J(got) === J([{ id: "i0", cat: "w48", wall: "R", pos: 0, inc: true, origCat: "w48" }, { id: "i1", cat: "w23", wall: "R", pos: -4.4, inc: true, origCat: "w23" }, { id: "i2", cat: "w23", wall: "R", pos: 4.4, inc: true, origCat: "w23" }]), J(got));
+  const times = (z) => z.replace("x", "×");
+  /* the library says so, for exactly these styles and sizes */
+  const inLibrary = Object.keys(SM.styles).filter((k) => SM.styles[k].built && SM.styles[k].built.standardSwaps)
+    .map((k) => [k, SM.styles[k].built.standardSwaps.map((e) => ({ sizes: e.sizes, from: e.from, to: e.to }))]);
+  ok("the shop standard swaps the 72″ Wooden Double Doors for the 48″ Wooden Door on exactly the 8×12 and 10×12 Side Utility, Dormer Shed and Side Lofted Barn",
+    J(inLibrary) === J(Object.keys(DOOR48).map((k) => [k, [{ sizes: DOOR48[k], from: "w72", to: "w48" }]])), J(inLibrary));
+  for (const [key, sizes] of Object.entries(DOOR48)) {
+    /* the door side: the 48 in door in the middle, the two 2x3 windows 4.4 ft either side */
+    for (const z of sizes) {
+      const got = items(SHOP, key, z);
+      tried48++;
+      ok(`${NAME48[key]} ${z}: the 48″ Wooden Door in the middle of the door side, the two 2×3 Windows 4.4 ft either side of it`,
+        J(got) === J([{ id: "i0", cat: "w48", wall: "R", pos: 0, inc: true, origCat: "w48" }, { id: "i1", cat: "w23", wall: "R", pos: -4.4, inc: true, origCat: "w23" }, { id: "i2", cat: "w23", wall: "R", pos: 4.4, inc: true, origCat: "w23" }]), J(got));
+    }
+    /* no door or window runs into another, with nothing on the known list
+       (the Dormer Shed with each of its dormers) */
+    const fit = checkStyle(SHOP, key, { sizes, framing: false });
+    const touching = fit.problems.concat(fit.warnings).filter((f) => f.code === "overlap");
+    const want = sizes.length * (key === "DS" ? 3 : 1);
+    ok(`${NAME48[key]} 8×12 and 10×12: no window runs into the door, nor their trim (every-size check${key === "DS" ? ", with the 6, 9 and 12 ft dormers" : ""}, nothing on the known list)`, fit.buildings === want && touching.length === 0, `${fit.buildings} buildings, ${J(touching.map((f) => f.words))}`);
+    /* Barnwright's own keeps its double doors (the golden test) */
+    for (const z of sizes) ok(`Barnwright's own ${NAME48[key]} ${z} keeps the 72″ Wooden Double Doors`, items(BW, key, z)[0].cat === "w72");
   }
-  /* no door or window runs into another, with nothing on the known list */
-  const fit = checkStyle(SHOP, "SU", { sizes: SU48, framing: false });
-  const touching = fit.problems.concat(fit.warnings).filter((f) => f.code === "overlap");
-  ok("Side Utility 8×12 and 10×12: no window runs into the door, nor their trim (every-size check, nothing on the known list)", fit.buildings === 2 && touching.length === 0, J(touching.map((f) => f.words)));
   /* everything else: the same doors and windows as Barnwright's */
   for (const key of Object.keys(SHOP.TYPES)) {
     for (const z of Object.keys(SHOP.P[key])) {
-      if (key === "SU" && SU48.includes(z)) continue;
+      if (has48(key, z)) continue;
       if (ok(`${now.styles[key].name} ${z}: the same standard doors and windows as Barnwright's`, J(items(SHOP, key, z)) === J(items(BW, key, z)), `${J(items(SHOP, key, z))} against ${J(items(BW, key, z))}`)) sameLayouts++;
     }
   }
-  /* Barnwright's own Side Utility keeps its double doors (the golden test) */
-  for (const z of SU48) ok(`Barnwright's own Side Utility ${z} keeps the 72″ Wooden Double Doors`, items(BW, "SU", z)[0].cat === "w72");
-  /* the sample price list: the door comes with the building, so it is not charged, and the server agrees */
+  /* the sample price list: the door comes with the building, so it is not
+     charged, the price is the one it had with the double doors, and the
+     server agrees (a Dormer Shed opens with a dormer, so its price is more
+     than the size's) */
   const DEMO = resolveCompany(demoCompany(), SM, LIB);
-  for (const z of SU48) {
-    const s = stateOf(DEMO, "SU", z), parts = priceParts(s, DEMO);
-    let sent = null; try { sent = priceDesign(fromState(s, DEMO), DEMO); } catch (e) { sent = e; }
-    ok(`the sample price list's Side Utility ${z} comes with the 48″ Wooden Door, not charged, and the server prices it the same (${parts.total})`,
-      s.items[0].cat === "w48" && !parts.lines.some((l) => /48″ Wooden Door/.test(J(l))) && parts.total === DEMO.P.SU[z] && !!sent && !!sent.price && sent.price.total === parts.total, sent && (sent.message || J(sent.price)));
+  const unswapped = JSON.parse(JSON.stringify(SM));
+  for (const k of Object.keys(unswapped.styles)) if (unswapped.styles[k].built) delete unswapped.styles[k].built.standardSwaps;
+  const BEFORE = resolveCompany(demoCompany(), unswapped, LIB);
+  for (const [key, sizes] of Object.entries(DOOR48)) {
+    for (const z of sizes) {
+      const s = stateOf(DEMO, key, z), parts = priceParts(s, DEMO);
+      const was = priceParts(stateOf(BEFORE, key, z), BEFORE).total;
+      let sent = null; try { sent = priceDesign(fromState(s, DEMO), DEMO); } catch (e) { sent = e; }
+      ok(`the sample price list's ${NAME48[key]} ${z} comes with the 48″ Wooden Door, not charged, at the price it had with the double doors, and the server prices it the same (${parts.total})`,
+        s.items[0].cat === "w48" && !parts.lines.some((l) => /48″ Wooden Door/.test(J(l))) && parts.total === was && (key !== "SU" || parts.total === DEMO.P.SU[z]) && !!sent && !!sent.price && sent.price.total === parts.total, sent && (sent.message || J(sent.price)) + ` was ${was}`);
+    }
   }
-  /* a style of a business's own built like the Side Utility gets it too */
-  const like = demoCompany(); like.offer.SUX1 = { base: "SU", name: "Premium Side Utility", sizes: { "8x12": 4000, "10x16": 5000 } }; like.categories[0][1].push("SUX1");
+  /* a style of a business's own built like one of them gets it too */
+  const like = demoCompany();
+  like.offer.SUX1 = { base: "SU", name: "Premium Side Utility", sizes: { "8x12": 4000, "10x16": 5000 } }; like.categories[0][1].push("SUX1");
+  like.offer.DSX1 = { base: "DS", name: "Premium Dormer Shed", sizes: { "8x12": 4300, "10x16": 6100 } }; like.categories[0][1].push("DSX1");
+  like.offer.SLBX1 = { base: "SLB", name: "Premium Side Lofted Barn", sizes: { "10x12": 4900, "10x16": 6200 } }; like.categories[1][1].push("SLBX1");
   const LIKE = resolveCompany(like, SM, LIB);
   ok("a Premium Side Utility built like the Side Utility: the 48″ Wooden Door at 8×12, the 72″ Wooden Double Doors at 10×16", items(LIKE, "SUX1", "8x12")[0].cat === "w48" && items(LIKE, "SUX1", "10x16")[0].cat === "w72");
-  /* a price list that sells the Side Utility only (no other building comes
-     with the 48 in door) and does not sell the 48 in door: the double doors
-     stay, and the owner is told */
-  const suOnly = (sizes) => { const c = demoCompany(); c.offer = { SU: { sizes: sizes || c.offer.SU.sizes } }; c.categories = [["Utility & Storage", ["SU"]]]; c.defaults = { style: "SU", size: Object.keys(c.offer.SU.sizes)[0], colors: c.defaults.colors }; delete c.items.w48; return c; };
+  ok("a Premium Dormer Shed built like the Dormer Shed: the 48″ Wooden Door at 8×12, the 72″ Wooden Double Doors at 10×16", items(LIKE, "DSX1", "8x12")[0].cat === "w48" && items(LIKE, "DSX1", "10x16")[0].cat === "w72", `${J(items(LIKE, "DSX1", "8x12"))} ${J(items(LIKE, "DSX1", "10x16"))}`);
+  ok("a Premium Side Lofted Barn built like the Side Lofted Barn: the 48″ Wooden Door at 10×12, the 72″ Wooden Double Doors at 10×16", items(LIKE, "SLBX1", "10x12")[0].cat === "w48" && items(LIKE, "SLBX1", "10x16")[0].cat === "w72", `${J(items(LIKE, "SLBX1", "10x12"))} ${J(items(LIKE, "SLBX1", "10x16"))}`);
+  /* a price list that sells some of them (no other building comes with the
+     48 in door) and does not sell the 48 in door: the double doors stay,
+     and the owner is told */
+  const selling = (keys, sizes) => {
+    const c = demoCompany(), all = c.offer;
+    c.offer = {}; for (const k of keys) c.offer[k] = { sizes: (sizes && sizes[k]) || all[k].sizes };
+    c.categories = [["Utility & Storage", keys]]; c.defaults = { style: keys[0], size: Object.keys(c.offer[keys[0]].sizes)[0], colors: c.defaults.colors };
+    delete c.items.w48; return c;
+  };
+  const suOnly = (sizes) => selling(["SU"], sizes && { SU: sizes });
   const no48 = suOnly();
   const NO48 = resolveCompany(no48, SM, LIB);
   const told = (NO48.swapWarnings || []).filter((w) => /48″ Wooden Door/.test(w));
+  const toldWords = (key) => `${NAME48[key]}: the 8×12 and 10×12 come with the 48″ Wooden Door. Sell it on Doors & windows ($0 is fine); until then they keep the 72″ Wooden Double Doors.`;
   ok("a price list without the 48″ Wooden Door still opens: its 8×12 Side Utility keeps the 72″ Wooden Double Doors", items(NO48, "SU", "8x12")[0].cat === "w72" && items(NO48, "SU", "10x12")[0].cat === "w72");
   ok("... and the owner reads why and what to do, under a heading about a door, not with the numbers that cannot be used (views/price-list/built.js)",
-    told.length === 1 && told[0] === "Side Utility: the 8×12 and 10×12 come with the 48″ Wooden Door. Sell it on Doors & windows ($0 is fine); until then they keep the 72″ Wooden Double Doors."
+    told.length === 1 && told[0] === toldWords("SU")
     && !(NO48.settingsWarnings || []).some((w) => /Wooden Door/.test(w)), `door: ${J(NO48.swapWarnings)} numbers: ${J(NO48.settingsWarnings)}`);
+  const three = selling(["SU", "DS", "SLB"]), THREE = resolveCompany(three, SM, LIB);
+  ok("one that sells the Side Utility, Dormer Shed and Side Lofted Barn without it: all three keep the double doors at 8×12 and 10×12, and the owner reads one line for each",
+    ["SU", "DS", "SLB"].every((k) => items(THREE, k, "8x12")[0].cat === "w72" && items(THREE, k, "10x12")[0].cat === "w72")
+    && J((THREE.swapWarnings || []).filter((w) => /48″ Wooden Door/.test(w))) === J(["SU", "DS", "SLB"].map(toldWords)), J(THREE.swapWarnings));
   ok("... nothing is said to a price list that sells it", !(DEMO.swapWarnings || []).length && !(DEMO.settingsWarnings || []).some((w) => /48″ Wooden Door/.test(w)), J(DEMO.swapWarnings));
   /* a new price list must sell it (the save refuses only a new problem), and the Dealer Center keeps it sold */
   const want = "items.w48 needs a price: the 48″ Wooden Door (w48) comes as standard on the Side Utility (SU) at 8×12 and 10×12. 0 is fine for one that is never charged.";
   ok(`a price list selling the 8×12 Side Utility without the 48″ Wooden Door has the problem "${want}"`, strictProblems(no48, SM).includes(want), J(strictProblems(no48, SM)));
-  const only16 = suOnly({ "10x16": 4800 });
-  ok("... one that sells the Side Utility at no 8×12 nor 10×12 does not", !strictProblems(only16, SM).some((p) => /^items\.w48 /.test(p)) && !strictProblems(demoCompany(), SM).some((p) => /^items\.w48 /.test(p)), J(strictProblems(only16, SM)));
+  const want3 = "items.w48 needs a price: the 48″ Wooden Door (w48) comes as standard on the Side Utility (SU), Dormer Shed (DS) and Side Lofted Barn (SLB) at 8×12 and 10×12. 0 is fine for one that is never charged.";
+  ok(`... and one selling all three, "${want3}"`, strictProblems(three, SM).includes(want3), J(strictProblems(three, SM)));
+  const only16 = selling(["SU", "DS", "SLB"], { SU: { "10x16": 4800 }, DS: { "10x16": 5700 }, SLB: { "10x16": 5780 } });
+  ok("... one that sells them at no 8×12 nor 10×12 does not", !strictProblems(only16, SM).some((p) => /^items\.w48 /.test(p)) && !strictProblems(demoCompany(), SM).some((p) => /^items\.w48 /.test(p)), J(strictProblems(only16, SM)));
   /* the library's swap is checked like the rest of the library; a business may not hold one */
   const bad = JSON.parse(JSON.stringify(SM)); bad.styles.SU.built.standardSwaps = [{ sizes: ["8x12", "8x99x"], from: "w72", to: "w48" }, { sizes: ["10x16"], from: "w36", to: "w48" }];
   const mp = validateManufacturer(bad);
   ok("the library's swap is checked: a size written wrong, or a door the style does not come with there, is named", mp.some((p) => /^styles\.SU\.built\.standardSwaps\[0\]\.sizes must list sizes/.test(p)) && mp.some((p) => /^styles\.SU\.built\.standardSwaps\[1\]: the Side Utility at 10x16 comes without the 36″ Wooden Door \(w36\)/.test(p)) && validateManufacturer(SM).length === 0, JSON.stringify(mp));
-  const biz = demoCompany(); biz.offer.SU.built = { standardSwaps: [{ sizes: ["8x16"], from: "w72", to: "w48" }] };
-  ok("a business cannot hold a swap of its own (\"not a building setting\")", strictProblems(biz, SM).some((p) => /^offer\.SU\.built\.standardSwaps: "standardSwaps" is not a building setting/.test(p)) && items(resolveCompany(biz, SM, LIB), "SU", "8x16")[0].cat === "w72", JSON.stringify(strictProblems(biz, SM)));
+  const biz = demoCompany(); biz.offer.DS.built = { standardSwaps: [{ sizes: ["8x16"], from: "w72", to: "w48" }] };
+  ok("a business cannot hold a swap of its own (\"not a building setting\")", strictProblems(biz, SM).some((p) => /^offer\.DS\.built\.standardSwaps: "standardSwaps" is not a building setting/.test(p)) && items(resolveCompany(biz, SM, LIB), "DS", "8x16")[0].cat === "w72", JSON.stringify(strictProblems(biz, SM)));
   const locks = lockedItems(demoCompany(), SM);
-  ok("the Dealer Center's Doors & windows tab keeps the 48″ Wooden Door sold (it comes with the Side Utility)", !!locks.w48 && (locks.w48.styles || []).includes("SU"), J(locks.w48));
-  /* ... and says which sizes: the 48 in door comes with the 8x12 and 10x12
-     Side Utility, the double doors with the rest */
+  ok("the Dealer Center's Doors & windows tab keeps the 48″ Wooden Door sold (it comes with the Side Utility, Dormer Shed and Side Lofted Barn)", !!locks.w48 && ["SU", "DS", "SLB"].every((k) => (locks.w48.styles || []).includes(k)), J(locks.w48));
+  /* ... and says which sizes: the 48 in door comes with the 8x12 and 10x12,
+     the double doors with the rest */
   const w48names = lockStyleNames(locks.w48, SM, demoCompany().offer), w72names = lockStyleNames(locks.w72, SM, demoCompany().offer);
-  ok("... its words name the sizes: \"8×12 and 10×12 Side Utility\" by the 48″ door, \"Side Utility (not the 8×12 or 10×12)\" by the double doors, and the other buildings by name",
-    w48names.includes("8×12 and 10×12 Side Utility") && w48names.includes("Cottage Shed") && w72names.includes("Side Utility (not the 8×12 or 10×12)") && w72names.includes("Utility Shed"), `${J(w48names)} ${J(w72names)}`);
+  ok("... its words name the sizes once for the styles that share them (review DOORS-7): \"Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12\" by the 48″ door, \"Side Utility, Dormer Shed and Side Lofted Barn, except the 8×12 and 10×12\" by the double doors, and the other buildings by name",
+    w48names.includes("Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12") && w72names.includes("Side Utility, Dormer Shed and Side Lofted Barn, except the 8×12 and 10×12")
+    && !w48names.some((n) => /^8×12 and 10×12 /.test(n)) && w48names.includes("Cottage Shed") && w72names.includes("Utility Shed"), `${J(w48names)} ${J(w72names)}`);
+  /* ... and the row reads as one sentence (views/price-list/doors.js lockWords) */
+  const row48 = PRICE_LIST.lockRowWords ? PRICE_LIST.lockRowWords(locks.w48, SM, demoCompany().offer) : "";
+  ok(`... the 48″ door's row: "${row48}"`, row48 === "Comes with the Backyard Utility, Garden Utility and 4 more, and the Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12. $0 is fine.", row48);
+  const threeLocks = lockedItems(Object.assign(selling(["SU", "DS", "SLB"]), { items: Object.assign({}, selling(["SU", "DS", "SLB"]).items, { w48: 175 }) }), SM);
+  const row48three = PRICE_LIST.lockRowWords ? PRICE_LIST.lockRowWords(threeLocks.w48, SM, three.offer) : "", row72three = PRICE_LIST.lockRowWords ? PRICE_LIST.lockRowWords(threeLocks.w72, SM, three.offer) : "";
+  ok(`... and on a price list that sells only the three: "${row48three}" and "${row72three}"`,
+    row48three === "Comes with the Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12. $0 is fine." && row72three === "Comes with the Side Utility, Dormer Shed and Side Lofted Barn, except the 8×12 and 10×12. $0 is fine.", `${row48three} / ${row72three}`);
   /* the problem shows before Save: a stored price list without the 48 in
-     door that sells the 10x12 Side Utility, and the owner adds the 8x12 (the
-     sentence changes, so it is a new problem on the server too) */
-  const had12 = suOnly({ "10x12": 4000, "10x16": 4500 });
-  const add8 = suOnly({ "10x12": 4000, "10x16": 4500, "8x12": 3500 });
+     door that sells the 10x12s, and the owner adds the 8x12s (the sentence
+     changes, so it is a new problem on the server too) */
+  const had12 = selling(["SU"], { SU: { "10x12": 4000, "10x16": 4500 } });
+  const add8 = selling(["SU"], { SU: { "10x12": 4000, "10x16": 4500, "8x12": 3500 } });
   const shown = problemsOf(add8, SM, had12).filter((p) => p.where === "item:w48");
   ok("the Dealer Center shows that problem before Save, on the 48″ Wooden Door's row on Doors & windows (\"It comes with the Side Utility at 8×12 and 10×12, so it must be sold.\")",
-    shown.length === 1 && shown[0].tab === "doors" && shown[0].field === "item:w48" && /^It comes with the Side Utility at 8×12 and 10×12, so it must be sold\./.test(shown[0].words), J(problemsOf(add8, SM, had12)));
+    shown.length === 1 && shown[0].tab === "doors" && shown[0].field === "item:w48" && /^It comes with the Side Utility at 8×12 and 10×12, so it must be sold\. Check Sell this \(\$0 is fine\)\.$/.test(shown[0].words), J(problemsOf(add8, SM, had12)));
   ok("... and not when the stored price list already had it (the server refuses only a new problem)", !problemsOf(had12, SM, had12).some((p) => p.where === "item:w48") && !problemsOf(demoCompany(), SM, demoCompany()).some((p) => p.where === "item:w48"), J(problemsOf(had12, SM, had12)));
+  const had12x3 = selling(["SU", "DS", "SLB"], { SU: { "10x16": 4500 }, DS: { "10x16": 5700 }, SLB: { "10x16": 5780 } });
+  const shown3 = problemsOf(three, SM, had12x3).filter((p) => p.where === "item:w48");
+  ok("... and with all three, the sizes said once: \"It comes with the Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12, so it must be sold.\"",
+    shown3.length === 1 && /^It comes with the Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12, so it must be sold\./.test(shown3[0].words), J(shown3));
+  /* the save refusal says the same, and what to tap (review DOORS-7) */
+  const refused = explainProblem(want3, SM, three);
+  ok(`... and so does the save refusal: "${refused}"`, refused === "The 48″ Wooden Door comes with the Side Utility, Dormer Shed and Side Lofted Barn at 8×12 and 10×12. Sell it on Doors & windows ($0 is fine).", refused);
+  /* only a style and size that newly needs the door is a new problem: the
+     owner removes a style or a size that needs it, or renames a style of
+     their own built like one, and the save goes through (review DOORS-2;
+     it did on main, where the sentence named only the Side Utility) */
+  const storedSUDS = selling(["SU", "DS"]);
+  const ownDS = (name) => { const c = selling(["SU", "DS"]); c.offer.DSX1 = { base: "DS", name, sizes: { "10x12": 4600, "10x16": 6100 } }; c.categories[0][1].push("DSX1"); return c; };
+  const changes = [
+    ["the Dormer Shed taken off", storedSUDS, selling(["SU"]), false],
+    ["the 10×12 Dormer Shed taken off", storedSUDS, selling(["SU", "DS"], { DS: { "8x12": 3780, "8x16": 4740 } }), false],
+    ["their own Big Dormer renamed Grand Dormer", ownDS("Big Dormer"), ownDS("Grand Dormer"), false],
+    ["nothing changed", storedSUDS, selling(["SU", "DS"]), false],
+    ["the Side Lofted Barn added at 10×12", storedSUDS, selling(["SU", "DS", "SLB"], { SLB: { "10x12": 4560, "10x16": 5780 } }), true],
+  ];
+  const server = createPriceList({ store: wrapStore(new MemoryBlobs()), manufacturer: SM, library: LIB, templates: {}, now: () => new Date(), log: () => {} });
+  const refusal = (draft, stored) => { try { server.check(draft, stored); return ""; } catch (e) { return `${e.status} ${e.message}`; } };
+  for (const [what, stored, draft, isNew] of changes) {
+    const before = problemsOf(draft, SM, stored).filter((p) => p.where === "item:w48");
+    const said = refusal(draft, stored);
+    ok(`a stored price list without the 48″ door, ${what}: ${isNew ? "a new problem, shown before Save and refused by the server" : "no new problem, so the server saves it"}`,
+      isNew ? before.length === 1 && /^422 .*48″ Wooden Door comes with the .*Sell it on Doors & windows/.test(said) : before.length === 0 && said === "", `${J(before)} ${said}`);
+  }
   /* the double doors are needed only where some size sold still comes with them */
-  const only812 = (extra) => { const c = demoCompany(); c.offer = { SU: { sizes: Object.assign({ "8x12": 3500, "10x12": 4000 }, extra || {}) } }; c.categories = [["Utility & Storage", ["SU"]]]; c.defaults = { style: "SU", size: "8x12", colors: c.defaults.colors }; delete c.items.w72; return c; };
-  const v812 = validateCompany(only812(), SM), v816 = validateCompany(only812({ "10x16": 4500 }), SM);
-  const noW48 = only812(); delete noW48.items.w48;
-  ok("a price list selling the Side Utility only at 8×12 and 10×12, with the 48″ door, need not sell the double doors; with the 10×16 too, or without the 48″ door, it must",
-    !v812.some((p) => /^items\.w72 /.test(p)) && v816.some((p) => /^items\.w72 needs a price/.test(p)) && validateCompany(noW48, SM).some((p) => /^items\.w72 needs a price/.test(p)), `${J(v812)} ${J(v816)}`);
-  const l812 = lockedItems(Object.assign(only812(), { items: Object.assign({}, only812().items, { w72: 325 }) }), SM);
-  ok("... and the Dealer Center does not hold the double doors as always sold for it", !l812.w72, J(l812.w72));
+  for (const key of Object.keys(DOOR48)) {
+    const only812 = (extra) => { const c = demoCompany(); c.offer = { [key]: { sizes: Object.assign({ "8x12": 3500, "10x12": 4000 }, extra || {}) } }; c.categories = [["Utility & Storage", [key]]]; c.defaults = { style: key, size: "8x12", colors: c.defaults.colors }; delete c.items.w72; return c; };
+    const v812 = validateCompany(only812(), SM), v816 = validateCompany(only812({ "10x16": 4500 }), SM);
+    const noW48 = only812(); delete noW48.items.w48;
+    ok(`a price list selling the ${NAME48[key]} only at 8×12 and 10×12, with the 48″ door, need not sell the double doors; with the 10×16 too, or without the 48″ door, it must`,
+      !v812.some((p) => /^items\.w72 /.test(p)) && v816.some((p) => /^items\.w72 needs a price/.test(p)) && validateCompany(noW48, SM).some((p) => /^items\.w72 needs a price/.test(p)), `${J(v812)} ${J(v816)}`);
+    const l812 = lockedItems(Object.assign(only812(), { items: Object.assign({}, only812().items, { w72: 325 }) }), SM);
+    ok("... and the Dealer Center does not hold the double doors as always sold for it", !l812.w72, J(l812.w72));
+  }
 }
-console.log(`4e. The 8×12 and 10×12 Side Utility come with the 48″ Wooden Door in the middle of the door side, clear of both windows; ${sameLayouts} other buildings have Barnwright's doors and windows, Barnwright's own Side Utility keeps the doubles, and a price list must sell the 48″ door.`);
+console.log(`4e. The 8×12 and 10×12 Side Utility, Dormer Shed and Side Lofted Barn come with the 48″ Wooden Door in the middle of the door side, clear of both windows (${tried48} buildings); ${sameLayouts} other buildings have Barnwright's doors and windows, Barnwright's own keep the doubles, and a price list must sell the 48″ door.`);
 
 console.log("4. The 14 ft lofted barns keep today's height; no sample price list has the Steep roof and an owner can still make one; a business-wide pitch leaves the Dormer Shed at 7/12.");
 
@@ -567,4 +654,4 @@ if (failures.length) {
   console.log(`\nIf a shop number was changed on purpose, run node tools/check-shop-numbers.mjs --record and say why in the commit.`);
   process.exit(1);
 }
-console.log(`\nPROVED (${pass} checks, ${secs} s): every standard building is drawn with Alan's shop numbers where he gave them (the Utility Shed, Side Utility, Garage, Dog Kennel, Garden Utility, Dormer Shed, Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage) and Barnwright's everywhere else (the Metal Garage and Metal Utility too), the 8×12 and 10×12 Side Utility come with the 48″ Wooden Door ("replace 6 foot to 4 foot"), and ${buildings} buildings (${fingerprints} triangle for triangle) are exactly as recorded in ${FILE}.`);
+console.log(`\nPROVED (${pass} checks, ${secs} s): every standard building is drawn with Alan's shop numbers where he gave them (the Utility Shed, Side Utility, Garage, Dog Kennel, Garden Utility, Dormer Shed, Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage) and Barnwright's everywhere else (the Metal Garage and Metal Utility too), the 8×12 and 10×12 Side Utility, Dormer Shed and Side Lofted Barn come with the 48″ Wooden Door ("replace 6 foot to 4 foot"; "yes"), and ${buildings} buildings (${fingerprints} triangle for triangle) are exactly as recorded in ${FILE}.`);

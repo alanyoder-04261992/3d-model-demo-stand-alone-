@@ -362,8 +362,10 @@ export function standardItems(t, W, L, ctx, key) {
    place, id and order, and it comes with the building (origCat). Alan,
    Oct 11 2026, on the 8x12 and 10x12 Side Utility: "replace 6 foot to 4
    foot" -- the 48 in Wooden Door where Barnwright's recipe puts the 72 in
-   double doors. Barnwright's own company has no built blocks, so its
-   recipe is untouched (the golden test). */
+   double doors; Oct 12 2026, the 8x12 and 10x12 Dormer Shed and Side
+   Lofted Barn too ("yes"; same recipe, same door side). Barnwright's own
+   company has no built blocks, so its recipe is untouched (the golden
+   test). */
 function sizeIs(z, t, W, L) {
   const m = /^(\d+(?:\.\d+)?)x(\d+(?:\.\d+)?)$/.exec(String(z));
   if (!m) return false;

@@ -30,7 +30,7 @@
      8. on a phone the visit fits with no sideways scrolling, and the bars'
         buttons are full touch size (44 px);
      9. before the owner first signs in (a second local Dealer Center, on
-        the next port, as if it shipped terms 2.2): Alan's visit with the
+        the next port): Alan's visit with the
         owner's sign-up agreement starts the price list and opens on it;
         the owner's first sign-in (an old #/setup link too) opens Today
         right away with the Getting started card, which says Barnwright
@@ -41,9 +41,10 @@
      and the review's fixes: a kept draft comes back once (Undo changes
      lets it go), a new visit opened in another tab brings the bar back,
      the visit's words say why it ended, Turn off before live says that
-     setup access goes on, the card says so when terms 2.2 aren't out yet,
-     a closed lot's preview points to Lots, and the log's end time reads
-     right.
+     setup access goes on, the card and Help say the new terms aren't out
+     yet on a Dealer Center that still ships older terms (a third local
+     one, two ports on, as if it shipped terms 2.1), a closed lot's preview
+     points to Lots, and the log's end time reads right.
 
    Pictures go to test/out/setup-screens/. --keep leaves the server running. */
 
@@ -68,6 +69,12 @@ const PORT2 = PORT + 1;
 const BASE2 = `http://127.0.0.1:${PORT2}`;
 const DATA2 = "test/out/setup-screens-data-signup";
 let server2 = null;
+/* the third, as if it shipped terms 2.1 (a Dealer Center not updated since
+   terms 2.2 went in), for section 0 */
+const PORT3 = PORT + 2;
+const BASE3 = `http://127.0.0.1:${PORT3}`;
+const DATA3 = "test/out/setup-screens-data-older-terms";
+let server3 = null;
 
 const WORDS = {
   prelive: "Barnwright is setting up your prices. Look at the preview, check it with Alan, then open it to customers in Settings.",
@@ -79,6 +86,7 @@ const WORDS = {
   endedStopped: "Your Barnwright visit ended. The owner stopped Barnwright's setup access in Settings, Barnwright. Your changes are kept in this tab.",
   checksOff: "Checks are off. Barnwright can still set up your price list until you open it. To stop that too, tap Stop Barnwright's setup access.",
   termsNotOut: "Barnwright's new terms (2.2) aren't out yet, so Barnwright can only run checks for now.",
+  termsFirst: "Agree to the new terms at the top of the page first.",
   /* the card's own line (ui/office/views/settings.js CARD.about, CARD.aboutChecks) */
   cardAbout: "Let Barnwright run checks on your Dealer Center, or change your price list and settings, for a few hours at a time.",
   cardAboutChecks: "Let Barnwright run checks on your Dealer Center for a few hours at a time. It turns itself off when the time is up. Barnwright never sees your customers, quotes, orders or team, and can't change anything.",
@@ -169,37 +177,93 @@ try {
   const lot = await call("/api/office/lots", { method: "POST", body: { name: "Riverside", phone: "941-555-0140" } });
   if (setup.status !== 201 || lot.status !== 201) throw new Error("setting up the business failed: " + JSON.stringify([setup, lot]));
 
-  section("0. W2: before terms 2.2 are out, the card doesn't promise setup access");
+  section("0. W2: terms 2.2 are out (since October 12, 2026), so the card promises setup access; a Dealer Center on older terms doesn't");
   {
     const st = (await call("/api/office/barnwright-help")).data.setup;
     const c0 = await contextFor(OWNER);
     const o0 = await pageIn(c0);
     await open(o0, "/settings");
     const card0 = await text(o0, ".set-card:has(.card-title:text-is('Barnwright'))");
-    if (st.termsOut === false) {
-      ok("terms 2.2 aren't out yet: one line says so, with no setup access words, no Stop and no change choice",
-        card0?.includes(WORDS.termsNotOut) && !card0.includes(WORDS.beforeLive) && !card0.includes("Stop Barnwright's setup access") && !card0.includes(WORDS.change)
-        && !card0.includes("Agree to the new terms") && card0.includes("Turn on"), card0);
-      ok("... and the card's own line says Barnwright can only run checks, never \"or change your price list and settings\"",
-        card0?.includes(WORDS.cardAboutChecks) && !card0.includes(WORDS.cardAbout) && !/change your price list and settings, for a few hours/.test(card0), card0);
-      await o0.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
-      await shot(o0, "0-owner-card-terms-not-out");
-      /* ORD-2: Help says the same to the owner and the team, on a phone */
-      await call("/api/office/team", { method: "POST", body: { email: DEALER, name: "Dana", role: "dealer", lots: ["riverside"] } });
-      for (const [who, email] of [["the owner", OWNER], ["a dealer", DEALER]]) {
-        const ch = await contextFor(email, { width: 390, height: 844, mobile: true });
-        const hp = await pageIn(ch);
-        await open(hp, "/help");
-        const answers = await text(hp, "#hp-answers");
-        ok(`terms 2.2 aren't out yet: ${who}'s Help (390 wide) says Barnwright can run checks and can't change anything, never "set up your price list" or "Run checks and change"`,
-          answers?.includes(WORDS.helpChecks) && !answers.includes(WORDS.helpChange) && !/set up your price list|Run checks and change/.test(answers), answers);
-        await shot(hp, `0-${email === OWNER ? "owner" : "dealer"}-390-help-terms-not-out`);
-        await ch.close();
-      }
-    } else {
-      ok("terms 2.2 are out, and the owner agreed to them: the card says Barnwright is setting up", st.termsOk === true && card0?.includes(WORDS.beforeLive), card0);
-    }
+    ok("terms 2.2 are out here (termsOut), and the business was made agreeing to them (POST setup): the card says Barnwright is setting up, with Stop, and no \"aren't out yet\" line",
+      st.termsOut === true && st.termsOk === true && card0?.includes(WORDS.beforeLive) && card0.includes("Stop Barnwright's setup access") && !card0.includes(WORDS.termsNotOut), card0);
+    /* E2E-3: an owner who agreed to the older terms (2.1) only: until they
+       agree to 2.2 at the top of the page, the card says only that, never
+       that Barnwright is setting up (with a tick) or that nobody agreed */
+    await call("/__local/barnwright", { method: "POST", body: { terms: "2.1" } });
+    const stOld = (await call("/api/office/barnwright-help")).data.setup;
+    await open(o0, "/settings");
+    const cardOld = await text(o0, ".set-card:has(.card-title:text-is('Barnwright'))");
+    ok("E2E-3: agreed to 2.1 only: the card says \"Agree to the new terms at the top of the page first.\", with no \"Barnwright is setting up\", no tick and no Stop",
+      stOld.termsOut === true && stOld.termsOk === false && cardOld?.includes(WORDS.termsFirst) && !cardOld.includes(WORDS.beforeLive)
+      && !cardOld.includes("Stop Barnwright's setup access") && !(await o0.$(".set-card:has(.card-title:text-is('Barnwright')) .help-state.on")), cardOld);
+    ok("... and its terms line says they agreed to version 2.1 and where to agree to 2.2, never \"Nobody has agreed\"",
+      /agreed to version 2\.1 on .+\. Agree to version 2\.2 at the top of the page\./.test(cardOld || "") && !cardOld.includes("Nobody has agreed"), cardOld);
+    await o0.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
+    await shot(o0, "0-owner-card-agreed-older-terms");
+    await call("/__local/barnwright", { method: "POST", body: { terms: "2.2" } });
     await c0.close();
+  }
+  {
+    /* a third local Dealer Center that ships terms 2.1: no owner can agree to
+       2.2 there, so it must not promise setup access */
+    rmSync(resolve(ROOT, DATA3), { recursive: true, force: true });
+    server3 = spawn(process.execPath, ["tools/office-local.mjs", "--reset", "--empty", "--control-room", "--terms-version", "2.1", "--port", String(PORT3), "--data", DATA3], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+    let log3 = "";
+    server3.stdout.on("data", (d) => { log3 += d; });
+    server3.stderr.on("data", (d) => { log3 += d; });
+    for (let i = 0; i < 120 && !/is running/.test(log3); i++) await new Promise((r) => setTimeout(r, 250));
+    ok("(a third local Dealer Center, connected, as if it shipped terms 2.1)", /is running/.test(log3), log3.slice(-400));
+    const call3 = async (path, { method = "GET", body, email = OWNER } = {}) => {
+      const r = await fetch(BASE3 + path, {
+        method, headers: { ...(email ? { cookie: `dealer_local_user=${encodeURIComponent(email)}` } : {}), origin: BASE3, "content-type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+      return { status: r.status, data: await r.json().catch(() => null) };
+    };
+    const ctx3 = async (email, { width = 1280, height = 900, mobile = false } = {}) => {
+      const c3 = await browser.newContext({ viewport: { width, height }, deviceScaleFactor: 1, reducedMotion: "reduce", isMobile: mobile, hasTouch: mobile });
+      await c3.route(/^https?:\/\/(?!127\.0\.0\.1)/, (r) => r.abort());
+      if (email) await c3.addCookies([{ name: "dealer_local_user", value: encodeURIComponent(email), url: BASE3 }]);
+      return c3;
+    };
+    const open3 = async (page, hash) => {
+      await page.goto("about:blank");
+      await page.goto(`${BASE3}/dealer#${hash}`);
+      await settle(page);
+    };
+    await call3("/api/office/me");
+    const setup3 = await call3("/api/office/setup", { method: "POST", body: { businessName: "Testing Sheds", phone: "941-555-0100", start: "small", agreeTerms: true } });
+    const lot3 = await call3("/api/office/lots", { method: "POST", body: { name: "Riverside", phone: "941-555-0140" } });
+    const st3 = (await call3("/api/office/barnwright-help")).data?.setup;
+    ok("... the business made there (POST setup) agrees to 2.1, and its setup access says the terms aren't out (termsOut false)",
+      setup3.status === 201 && lot3.status === 201 && st3?.termsOut === false && st3.termsOk === false && st3.mode === null, JSON.stringify([setup3.status, lot3.status, st3]));
+    const c3 = await ctx3(OWNER);
+    const o3 = await pageIn(c3);
+    await open3(o3, "/settings");
+    const card3 = await text(o3, ".set-card:has(.card-title:text-is('Barnwright'))");
+    ok("on older terms: one line says the new terms aren't out yet, with no setup access words, no Stop and no change choice",
+      card3?.includes(WORDS.termsNotOut) && !card3.includes(WORDS.beforeLive) && !card3.includes("Stop Barnwright's setup access") && !card3.includes(WORDS.change)
+      && !card3.includes("Agree to the new terms") && card3.includes("Turn on"), card3);
+    ok("... and the card's own line says Barnwright can only run checks, never \"or change your price list and settings\"",
+      card3?.includes(WORDS.cardAboutChecks) && !card3.includes(WORDS.cardAbout) && !/change your price list and settings, for a few hours/.test(card3), card3);
+    await o3.$eval(".set-card:has(.card-title:text-is('Barnwright'))", (el) => el.scrollIntoView());
+    await shot(o3, "0-owner-card-terms-not-out");
+    /* ORD-2: Help says the same to the owner and the team, on a phone */
+    await call3("/api/office/team", { method: "POST", body: { email: DEALER, name: "Dana", role: "dealer", lots: ["riverside"] } });
+    for (const [who, email] of [["the owner", OWNER], ["a dealer", DEALER]]) {
+      const ch = await ctx3(email, { width: 390, height: 844, mobile: true });
+      const hp = await pageIn(ch);
+      await open3(hp, "/help");
+      const answers = await text(hp, "#hp-answers");
+      ok(`on older terms: ${who}'s Help (390 wide) says Barnwright can run checks and can't change anything, never "set up your price list" or "Run checks and change"`,
+        answers?.includes(WORDS.helpChecks) && !answers.includes(WORDS.helpChange) && !/set up your price list|Run checks and change/.test(answers), answers);
+      await shot(hp, `0-${email === OWNER ? "owner" : "dealer"}-390-help-terms-not-out`);
+      await ch.close();
+    }
+    const err3 = o3.errors.filter((e) => !/status of 4\d\d/.test(e));
+    ok("no errors on that page", err3.length === 0, err3.join(" | "));
+    await c3.close();
+    if (!KEEP) { server3.kill(); server3 = null; }
   }
   await call("/__local/barnwright", { method: "POST", body: { terms: "2.2" } });
 
@@ -479,6 +543,10 @@ try {
   await owner.waitForTimeout(1500);
   ok("... and opening saves (live from now on)", (await call("/api/office/price-list")).data.settings.status === "active",
     `${yes ? "yes found" : "no yes button"}; bar: ${await text(owner, ".set-bar")}; toasts: ${await owner.$$eval(".toast", (els) => els.map((e) => e.textContent).join(" | "))}`);
+  const opened = await text(owner, ".set-card:has(.card-title:text-is('Barnwright'))");
+  ok("E2E-4: on the same page, without reloading, the Barnwright card already offers the owner's switch, never \"Barnwright is setting up\"",
+    opened?.includes("Off. Barnwright can't run checks or change your price list or settings.") && opened.includes(WORDS.change) && !opened.includes(WORDS.beforeLive)
+    && !opened.includes("Stop Barnwright's setup access") && !!(await owner.$(".set-card:has(.card-title:text-is('Barnwright')) input[type=radio][value=change]")), opened);
 
   section("7. After live: the owner's switch");
   await open(owner, "/settings");
@@ -540,12 +608,12 @@ try {
   section("9. Before the owner first signs in");
   {
     rmSync(resolve(ROOT, DATA2), { recursive: true, force: true });
-    server2 = spawn(process.execPath, ["tools/office-local.mjs", "--reset", "--empty", "--control-room", "--terms-version", "2.2", "--port", String(PORT2), "--data", DATA2], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
+    server2 = spawn(process.execPath, ["tools/office-local.mjs", "--reset", "--empty", "--control-room", "--port", String(PORT2), "--data", DATA2], { cwd: ROOT, stdio: ["ignore", "pipe", "pipe"] });
     let log2 = "";
     server2.stdout.on("data", (d) => { log2 += d; });
     server2.stderr.on("data", (d) => { log2 += d; });
     for (let i = 0; i < 120 && !/is running/.test(log2); i++) await new Promise((r) => setTimeout(r, 250));
-    ok("(a second local Dealer Center, just made: connected, as if it shipped terms 2.2, nobody signed in)", /is running/.test(log2), log2.slice(-400));
+    ok("(a second local Dealer Center, just made: connected, on the terms 2.2 this copy ships, nobody signed in)", /is running/.test(log2), log2.slice(-400));
     const call2 = async (path, { method = "GET", body, email = OWNER } = {}) => {
       const r = await fetch(BASE2 + path, {
         method, headers: { ...(email ? { cookie: `dealer_local_user=${encodeURIComponent(email)}` } : {}), origin: BASE2, "content-type": "application/json" },
@@ -615,7 +683,7 @@ try {
   console.log("    FAIL the check stopped: " + (e.stack || e.message));
 } finally {
   await browser.close();
-  if (!KEEP) { server.kill(); server2?.kill(); }
+  if (!KEEP) { server.kill(); server2?.kill(); server3?.kill(); }
   else console.log(`\n  The local Dealer Center is still running at ${BASE}/dealer (stop it with Ctrl+C).`);
 }
 

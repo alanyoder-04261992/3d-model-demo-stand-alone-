@@ -129,14 +129,23 @@ check("the demo company", DEMO.look.trueColour === true && DEMO.leads.mode === "
 }
 check("the demo company", J(DEMO.COLORS) === J(G.COLORS), "the demo's colours are not Barnwright's (the golden test draws with them)");
 /* the demo's standard doors and windows are Barnwright's, but for the shop
-   standard's own: the 8x12 and 10x12 Side Utility come with the 48 in
-   Wooden Door where Barnwright has the 72 in double doors (Alan, Oct 11
-   2026: "replace 6 foot to 4 foot") */
+   standard's own: the 8x12 and 10x12 Side Utility, Dormer Shed and Side
+   Lofted Barn come with the 48 in Wooden Door where Barnwright has the
+   72 in double doors (Alan, Oct 11 2026, the Side Utility: "replace 6 foot
+   to 4 foot"; Oct 12 2026, the other two: "yes"). The library's swaps
+   (built.standardSwaps) say the same, so a swap added or lost there is
+   seen here. */
+const DOOR48 = { SU: ["8x12", "10x12"], DS: ["8x12", "10x12"], SLB: ["8x12", "10x12"] };
+{
+  const inLibrary = {};
+  for (const k of Object.keys(M.styles)) for (const e of (M.styles[k].built?.standardSwaps || [])) if (e.from === "w72" && e.to === "w48") inLibrary[k] = (inLibrary[k] || []).concat(e.sizes);
+  check("the demo company", J(inLibrary) === J(DOOR48), `the library swaps the 72″ double doors for the 48″ Wooden Door on ${J(inLibrary)}, not ${J(DOOR48)}`);
+}
 for (const k of Object.keys(G.P)) for (const z of Object.keys(G.P[k])) {
   const a = { type: k, size: z, pLen: 12, pFlip: false, pMid: false, items: [], opts: {}, elec: { pkg: 0 } };
   const b = copy(a);
   resetItems(a, frameOf(a, DEMO), DEMO); resetItems(b, frameOf(b, BW), BW);
-  if (k === "SU" && (z === "8x12" || z === "10x12")) {
+  if ((DOOR48[k] || []).includes(z)) {
     const want = copy(b.items); want[0].cat = want[0].origCat = "w48";
     /* Barnwright's double doors and window lap, and the clamp moved them; the 48 in door sits where the recipe puts them */
     const at = (s) => s.items.map((i) => Math.round(i.pos * 1000) / 1000);

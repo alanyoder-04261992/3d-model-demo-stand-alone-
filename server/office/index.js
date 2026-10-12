@@ -31,10 +31,10 @@
      appVersion     optional: what this copy reports to the control room
      termsVersion   optional, for the checks and the local copy only: the
                     Barnwright terms version this copy pretends to ship
-                    (TERMS.version when left out), to try terms that
-                    aren't out yet
+                    (TERMS.version when left out), to try terms newer
+                    or older than the ones it ships
      termsCopies    optional, for the checks and the local copy only:
-                    pretend copies of terms texts, {"2.2": [sha256, ...]},
+                    pretend copies of terms texts, {"2.3": [sha256, ...]},
                     added to docs/legal/terms-sha256.json's (an owner's
                     sign-up agreement is kept as theirs only to a text this
                     copy has, terms.js agreeFromSignup)
@@ -260,15 +260,23 @@ export function createOffice(deps) {
     return json({ business: business(record) }, 201);
   });
 
-  /* The owner agrees to the Barnwright terms (when they set up before the
-     box existed, or the terms changed). Works while changes are stopped too:
+  /* The owner agrees to the Barnwright terms (when their sign-up agreement
+     wasn't kept as theirs at their first sign-in, or the terms changed). Works while changes are stopped too:
      agreeing is never what a switched-off account is waiting for. */
   route("POST", /^\/api\/office\/terms$/, async (req) => {
     const who = await people.member(req);
     must(who.person.role === "owner", `Only the owner can agree to the ${TERMS.title}.`);
     const data = await readBody(req);
     if (data.agree !== true) fail(422, AGREE_FIRST);
-    return json({ terms: await terms.agree(who.person) });
+    const before = (await terms.status())?.agreed || null;
+    const after = await terms.agree(who.person);
+    /* A new agreement can open Barnwright's setup access: Alan's Control
+       Room knows within seconds, as with the owner's switch (best effort,
+       3 seconds; the next check-in tells it otherwise) */
+    if (!before && after?.agreed) {
+      try { await withinMs(account.checkIn({ force: true }), 3000); } catch { /* the next check-in tells it */ }
+    }
+    return json({ terms: after });
   });
 
   route("GET", /^\/api\/office\/price-list$/, async (req) => {

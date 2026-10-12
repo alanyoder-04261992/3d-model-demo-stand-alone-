@@ -38,10 +38,14 @@ Yoder Storage Barns site lights them (true colour), and nothing else moved.
    Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage,
    with 6 ft 7 1/2 in walls on the first three (14 ft wide barns keep their
    height). Not the Metal Garage or Metal Utility; every other style keeps
-   Barnwright's numbers until Alan says yes. The 8x12 and 10x12 Side Utility
-   come with the 48 in Wooden Door, not the 72 in double doors ("replace 6
-   foot to 4 foot"; Barnwright's keep the doubles). No sample price list has
-   a Steep roof; an owner can make one ("Roof pitch at least").
+   Barnwright's numbers until Alan says yes. The 8x12 and 10x12 Side
+   Utility, Dormer Shed and Side Lofted Barn come with the 48 in Wooden Door,
+   not the 72 in double doors (the Side Utility: Alan, Oct 11 2026, "replace
+   6 foot to 4 foot"; the Dormer Shed and Side Lofted Barn: Oct 12 2026,
+   "yes"; the prices stay as they were; Barnwright's own keep the double
+   doors).
+   No sample price list has a Steep roof; an owner can make one ("Roof pitch
+   at least").
    `node tools/check-shop-numbers.mjs` holds the shop numbers (the recorded
    set `test/golden-shop/`) and `node tools/check-style-sizes.mjs` checks
    every style at every size. A red golden test is an engine change: fix the

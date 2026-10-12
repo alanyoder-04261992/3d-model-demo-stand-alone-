@@ -18,7 +18,7 @@
                              (one deliberate difference: an electrical
                              package's fixtures are laid AFTER the new style's
                              standard doors, so they survive a style change)
-   toState(design, cat)      -> {state, warnings}. Applies size, then style,
+   toState(design, cat, opts) -> {state, warnings}. Applies size, then style,
                              then size, like Barnwright's applyDesign, and
                              restores colours by name. Anything that no longer
                              exists (a size no longer sold, an item or colour
@@ -28,16 +28,20 @@
                              style and size, every item stays exactly where it
                              was saved (only kept on its wall); otherwise every
                              item is re-clamped in order, as Barnwright does.
+                             opts.asSaved: a design only looked at keeps the
+                             door it was saved with (normalize below).
    fromState(state, cat)     -> design (its inverse)
-   normalize(state, frame, cat)  Barnwright's render-time rules, so pricing never
+   normalize(state, frame, cat, opts)  Barnwright's render-time rules, so pricing never
                              depends on whether the screen was drawn: a side
                              porch is 4x8 under 20 ft, and anything the company
                              does not offer (a package, ramp, upgrade, extra,
                              dormer size, shutters, door window) is switched off;
                              a door of the shop standard's own pair (the
-                             8x12 and 10x12 Side Utility's 48 in Wooden Door)
+                             48 in Wooden Door of the 8x12 and 10x12 Side
+                             Utility, Dormer Shed and Side Lofted Barn)
                              that is not the one the building comes with
-                             follows it (followStandardDoor).
+                             follows it (followStandardDoor), except with
+                             opts.asSaved (a design only looked at).
    encode(design) / decode(text)   the share link: short keys, defaults left
                              out, items as tuples, UTF-8, optional deflate-raw
                              (a "z" in front), base64url. encodeSync / decodeSync
@@ -46,7 +50,7 @@
 import { frameOf, porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, porchLengthFor } from "./frame.js";
 import { resetItems, clampPos, keepOnWall, pkFixtures, fitsOnWall } from "./layout.js";
 import { standardItems } from "./loadouts.js";
-import { pPrice, pSizes, priceParts } from "./pricing.js";
+import { pPrice, pSizes, priceParts, money } from "./pricing.js";
 import { colorName, hexOfName, pickByName, sidingPalette, extraOfferedOn } from "./company.js";
 
 /* own keys only: a link naming "constructor" or "__proto__" is not a style,
@@ -137,7 +141,7 @@ export function flipPorch(state, cat) {
 
 /* ------------------------------------------------------------------------ */
 
-export function normalize(state, frame, cat) {
+export function normalize(state, frame, cat, opts) {
   const fr = frame || frameOf(state, cat);
   const t = fr.t;
   const changed = [];
@@ -195,14 +199,18 @@ export function normalize(state, frame, cat) {
   changed.push(...new Set(tooTall));
   if ((cat.MISC || {}).shutter == null) state.items.forEach((it) => { if (it.shut) { it.shut = false; changed.push("Shutters are not offered, so they were taken off."); } });
   if ((cat.MISC || {}).lite == null) state.items.forEach((it) => { if (it.lite) { it.lite = false; changed.push("A window in a wooden door is not offered, so it was taken off."); } });
-  changed.push(...doorWords(state, cat));
+  /* a design only looked at (a look-only link: an order or quote sheet's
+     picture, See it in 3D) keeps the door it was saved and sold with
+     (opts.asSaved, review DOORS-3); one opened to change follows the size */
+  if (!(opts && opts.asSaved)) changed.push(...doorWords(state, cat));
   return changed;
 }
 
 /* THE SHOP STANDARD'S OWN DOOR AT SOME SIZES (the style's standardSwaps:
-   the 8x12 and 10x12 Side Utility come with the 48 in Wooden Door, its
-   other sizes with the 72 in Wooden Double Doors; Alan, Oct 11 2026,
-   "replace 6 foot to 4 foot"). A design can hold the other door of the
+   the 8x12 and 10x12 Side Utility, Dormer Shed and Side Lofted Barn come
+   with the 48 in Wooden Door, their other sizes with the 72 in Wooden
+   Double Doors; Alan, Oct 11 2026, "replace 6 foot to 4 foot", and Oct 12
+   2026, "yes"). A design can hold the other door of the
    pair as the one it came with: a design saved before the change, or one
    whose size changed after the customer touched the doors and windows (the
    size chip keeps them, DIFFERENCES #12). The server prices only what the
@@ -210,7 +218,8 @@ export function normalize(state, frame, cat) {
    - a door of the pair the customer never swapped (it is still the door it
      came as) becomes the door this size comes with, with the same id, wall
      and place, then kept inside the wall: the building's own door, at no
-     charge, so the price does not go up;
+     charge, so the price does not go up. When it is the wider one (the
+     double doors), its wall is settled again so nothing runs into it;
    - a door the customer swapped it for is kept, now in the place of the
      door this size comes with, priced as that swap (the difference, never
      a credit).
@@ -258,6 +267,14 @@ export function followStandardDoor(state, cat) {
     left.set(to, left.get(to) - 1);
     out.push({ it, was, to, swapped: it.cat !== to });
   }
+  /* The door it became is wider (the double doors back in the place of the
+     48 in door, a touched 10x12 made 10x16): the wall is settled again with
+     it, item by item in order, the way the size change settles every wall
+     (setSize), so no window runs into it and every item stands where it
+     would with the double doors all along (review DOORS-1). A narrower door
+     moves nothing else. */
+  const wider = new Set(out.filter((x) => !x.swapped && fr.CAT[x.to].w > fr.CAT[x.was].w).map((x) => x.it.wall));
+  if (wider.size) state.items.forEach((o) => { if (wider.has(o.wall)) clampPos(o, state, fr); });
   return out;
 }
 
@@ -269,8 +286,27 @@ function doorWords(state, cat) {
     const theirs = C[x.to], mine = C[x.it.cat];
     if (!x.swapped) return `The ${times(state.size)} ${t.name} comes with the ${theirs.n}, so ${plural(theirs.n) ? "they take" : "it takes"} the place of the ${C[x.was].n}.`;
     const up = (mine.p || 0) - (theirs.p || 0) > 0;
-    return `The ${times(state.size)} ${t.name} comes with the ${theirs.n}, so the ${mine.n} ${plural(mine.n) ? "are" : "is"} kept in ${plural(theirs.n) ? "their" : "its"} place${up ? " as an upgrade" : ""}.`;
+    const kept = `The ${times(state.size)} ${t.name} comes with the ${theirs.n}, so the ${mine.n} ${plural(mine.n) ? "are" : "is"} kept in ${plural(theirs.n) ? "their" : "its"} place`;
+    /* priced from the new door, it can cost more than the customer saw (the
+       36 in steel door in place of the double doors: $150 more in the sample
+       price list); the line says so, with the amount where prices are shown
+       (review DOORS-4) */
+    const more = moreThanBefore(state, cat, x);
+    if (more > 0) return `${kept} and ${plural(mine.n) ? "cost" : "costs"} ${cat.pricing && cat.pricing.show === "none" ? "" : money(more) + " "}more than before.`;
+    return `${kept}${up ? " as an upgrade" : ""}.`;
   }))];
+}
+
+/* How much more a door swapped for the one the building came with costs now
+   that it is priced from the door this size comes with: the price with it
+   priced as before, taken from the price now. */
+function moreThanBefore(state, cat, x) {
+  if (!cat.CAT[x.was]) return 0;
+  const now = priceParts(state, cat).total;
+  x.it.origCat = x.was;
+  const before = priceParts(state, cat).total;
+  x.it.origCat = x.to;
+  return Math.max(0, now - before);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -338,7 +374,7 @@ function colourBack(name, list, cat, what, warnings, fallback) {
   return fallback;
 }
 
-export function toState(design, cat) {
+export function toState(design, cat, opts) {
   const warnings = [];
   const d = design || {};
   const s = defaults(cat);
@@ -387,11 +423,33 @@ export function toState(design, cat) {
   if (d.ramp != null) s.ramp = d.ramp;
 
   const fr = frameOf(s, cat);
+  /* A DOOR THE BUILDING CAME WITH THAT THIS PRICE LIST NO LONGER SELLS, where
+     the style now comes with the other door of its pair at this size (the
+     owner sells the 8x12 and 10x12 Dormer Shed with the 48 in Wooden Door
+     and stopped selling the double doors): it is read as the door the size
+     comes with, in its place, the way a rename is, and said in one line;
+     never left off, so the building keeps a door (review DOORS-5). A door the
+     customer swapped it for is kept, priced from the new one. */
+  const swapTo = {};
+  for (const e of (Array.isArray(t.standardSwaps) ? t.standardSwaps : [])) {
+    if (e && Array.isArray(e.sizes) && e.sizes.indexOf(s.size) >= 0 && !has(cat.CAT, e.from) && has(cat.CAT, e.to)) swapTo[e.from] = e;
+  }
+  const swapWords = (e, mine) => {
+    const to = cat.CAT[e.to], plural = (n) => /s$/.test(n);
+    return mine
+      ? `The ${times(s.size)} ${t.name} comes with the ${to.n}, so the ${mine.n} ${plural(mine.n) ? "are" : "is"} kept in ${plural(to.n) ? "their" : "its"} place.`
+      : `The ${times(s.size)} ${t.name} comes with the ${to.n}, so ${plural(to.n) ? "they take" : "it takes"} the place of the ${e.fromName || e.from}.`;
+  };
   if (Array.isArray(d.items)) {
     const kept = [];
     d.items.forEach((x) => {
       if (!x || typeof x !== "object") { warnings.push("One item in the design could not be read and was left off."); asSaved = false; return; }
-      const catId = (has(ren.items, x.cat) && ren.items[x.cat]) || x.cat;
+      let catId = (has(ren.items, x.cat) && ren.items[x.cat]) || x.cat;
+      if (x.inc && !has(cat.CAT, catId) && has(swapTo, catId)) {
+        const e = swapTo[catId];
+        warnings.push(swapWords(e));
+        catId = e.to;
+      }
       if (catId !== x.cat) asSaved = false;
       if (!has(cat.CAT, catId)) { warnings.push(`The design had a "${x.cat}" item, which this company no longer offers; it was left off.`); asSaved = false; return; }
       const wall = x.wall || "F";
@@ -406,7 +464,11 @@ export function toState(design, cat) {
       if (isNum(x.pos)) it.pos = x.pos; if (isNum(x.vy) && x.vy) it.vy = x.vy;
       if (isNum(x.px)) it.px = x.px; if (isNum(x.pz)) it.pz = x.pz;
       if (isNum(x.ln) && x.ln) it.ln = x.ln;
-      const orig = x.origCat != null ? ((has(ren.items, x.origCat) && ren.items[x.origCat]) || x.origCat) : (x.inc ? catId : null);
+      let orig = x.origCat != null ? ((has(ren.items, x.origCat) && ren.items[x.origCat]) || x.origCat) : (x.inc ? catId : null);
+      if (orig != null && x.inc && !has(cat.CAT, orig) && has(swapTo, orig)) {
+        if (catId !== swapTo[orig].to) warnings.push(swapWords(swapTo[orig], c));
+        orig = swapTo[orig].to; asSaved = false;
+      }
       if (orig != null) {
         if (has(cat.CAT, orig)) it.origCat = orig;
         else warnings.push(`The ${c.n} started as a "${x.origCat}", which this company no longer offers; it is priced as it stands.`);
@@ -447,7 +509,7 @@ export function toState(design, cat) {
     s.items.forEach((it) => clampPos(it, s, fr2));
     warnings.push(`The side porch is now ${porchWords(t, to)}; its windows were set back to the standard ones.`);
   }
-  warnings.push(...normalize(s, frameOf(s, cat), cat));
+  warnings.push(...normalize(s, frameOf(s, cat), cat, opts));
   return { state: s, warnings };
 }
 

@@ -10065,7 +10065,8 @@
                 "date": "<the terms' date>",
                 "url": "/legal/barnwright-terms.pdf",
                 "title": "Barnwright Terms and Conditions",
-                "agreed": null
+                "agreed": null,
+                "older": null
               },
               "setup": {
                 "mode": null,
@@ -10185,7 +10186,8 @@
                   "from": "signup",
                   "termsSha256": "d4011757893114a2992aec5be40465bf6e0857d01644051cfff0821f5233fa6c",
                   "passId": "h7ZxxlF_vb6GK01RA1yxcg"
-                }
+                },
+                "older": null
               },
               "gettingStarted": {
                 "name": false,

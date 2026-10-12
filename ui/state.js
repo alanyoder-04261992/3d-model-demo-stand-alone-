@@ -37,7 +37,8 @@
      the shop standard's own door at some sizes (DIFFERENCES #27): an
      included door of that pair the customer never swapped becomes the door
      the new size comes with (the 72 in double doors and the 48 in door of
-     the 8x12 and 10x12 Side Utility), so the price stays the building's.
+     the 8x12 and 10x12 Side Utility, Dormer Shed and Side Lofted Barn), so
+     the price stays the building's.
    * #8 the electrical package's fixtures are laid AFTER the standard doors
      and windows whenever those are laid out again (style change, the size
      re-lay above, and the side-cabin porch moved to the middle), so the
@@ -168,9 +169,12 @@ export function chooseSize(state, sz, cat) {
   const untouched = isStandardLayout(state, cat);
   if (!untouched) {
     modelSetSize(state, sz, cat);
-    /* the shop standard's own door at some sizes (the 8x12 and 10x12 Side
-       Utility's 48 in Wooden Door): a door of the pair the customer never
-       swapped becomes the one the new size comes with, in its place */
+    /* the shop standard's own door at some sizes (the 48 in Wooden Door of
+       the 8x12 and 10x12 Side Utility, Dormer Shed and Side Lofted Barn): a
+       door of the pair the customer never swapped becomes the one the new
+       size comes with, in its place; the wider double doors settle their
+       wall again, so the windows stand where they would with the double
+       doors all along (review DOORS-1) */
     followStandardDoor(state, cat);
     return { relaid: false };
   }

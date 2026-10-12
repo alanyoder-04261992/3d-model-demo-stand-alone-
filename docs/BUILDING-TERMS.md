@@ -330,7 +330,7 @@ preferred wording have not yet been confirmed.**
 
 | Proposed or model term | What the current model means |
 | --- | --- |
-| **Side Lofted Barn** | A barn with the agreed lofted roof shape (`gambrel` in code) and its standard entrance on a long side. In this model it has centered wooden double doors with one wall window on each side; those detailed labels and layout still need discussion. |
+| **Side Lofted Barn** | A barn with the agreed lofted roof shape (`gambrel` in code) and its standard entrance on a long side. In this model it has centered wooden double doors with one wall window on each side (the 8x12 and 10x12 have one 48 in wooden door there instead, Alan, Oct 12 2026); those detailed labels and layout still need discussion. |
 | **10 x 16** | Width first, length second, in feet: a 10 ft wide building, 16 ft long. Its nominal footprint is 160 square feet. |
 | **Gable end** | Alan uses this wording for the roof-end framing with studs on the gable board. **End wall** remains the confirmed name for the 10 ft wall below, internally `F` and `B`; do not conflate the two framed areas. |
 | **Entrance side** | The wall with the main doors. On the standard Side Lofted Barn it is `R`, a long side. A person may call this the front; that does not change the software's `F` end-wall code. |

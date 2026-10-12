@@ -332,7 +332,7 @@ Chromium's software graphics, each on its own port.
 | `check-setup-screens.mjs` | yes | the Barnwright card, the closed banner, the preview and a Barnwright visit in Chromium: the reduced screens and the Done bar, a visit that ends keeps the unsaved work, a link that ran out, the confirm line on Open to customers, and a phone |
 | `check-problem-start.mjs` | yes | the 3D designer passes on a problem while it is still loading, in a real browser: a script that didn't arrive, or one that broke as it started, is one report to the site's own problem address; nothing when it opens normally; and why index.html starts the watcher on its own |
 | `check-dealer-demo.mjs` | no | the "try it" demo runs the real Dealer Center on made-up data with nothing sent anywhere, and only Alan's learning preview and his demo site (no lesson pages there) offer it (a client build has no demo file and no empty-boxes sign-in); every build ships the Dealer Center's app manifest and icons |
-| `check-wording.mjs` | no | every sentence on the Dealer Center's screens, its server answers and emails uses the plain words in docs/OFFICE.md, none of the old ones |
+| `check-wording.mjs` | no | every sentence on the Dealer Center's screens, its server answers and emails, and the Barnwright Terms and Conditions uses the plain words in docs/OFFICE.md, none of the old ones; the terms say what Barnwright setup access really does and promise no more |
 | `check-managed-client.mjs` | no | lot links and website code, shared-design lot preservation, safe retries, error handling and customer build exclusions |
 | `check-blueprint.mjs` | yes | the floor plan: every wall, door, window and fixture symbol, touch and pinch, side by side with Barnwright's |
 | `check-gallery.mjs` | yes | the parts gallery and the contact sheet draw what they promise |
@@ -341,7 +341,7 @@ Chromium's software graphics, each on its own port.
 | `check-embed.mjs` | yes | the designer sits safely inside a company's website: lazy loading, events, full screen, phones, who may show it |
 | `check-style-refs.mjs` | no | the style reference pictures Barnwright's Control Room reads (`library/style-refs/`): every library style has its corner and end pictures, `styles.json` matches the library today (each pitch as N/12, wall heights, doors and windows, sizes, each picture's sha256), each barn height is How it's built's at its own width, the pictures and every line of words fit what the Control Room takes, and no website build, client package or function carries them |
 | `check-starter.mjs` | yes | a new company can be set up in one command from a spreadsheet, and shows up in the designer, the list and the headers |
-| `check-docs.mjs` | no | every file, tool, command and skill named in this README, docs/FOR-ALAN.md, docs/SELLING.md and the workflow skills exists; every part has its skill; no broken links |
+| `check-docs.mjs` | no | every file, tool, command and skill named in this README, docs/FOR-ALAN.md, docs/SELLING.md and the workflow skills exists; every part has its skill; no broken links; the Barnwright Terms and Conditions are one version (2.2 or later) in the Dealer Center, the PDFs, the sign-up page's copy and the papers list |
 
 ## The rules that matter most
 

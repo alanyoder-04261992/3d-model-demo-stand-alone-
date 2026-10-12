@@ -59,9 +59,10 @@ construction lists come from `library/`). Where each answer goes:
 designer opens to customers (Barnwright setup access, "Barnwright setup
 access" in `docs/OFFICE.md`): in the Control Room, **Open their price list**
 opens their Dealer Center as Barnwright with only the price list and
-settings, and the Claude connector will do the same through the Control
-Room once it is there. It works only after their owner agrees to the
-Barnwright terms 2.2, and their owner can stop it on the Barnwright card in
+settings, and the Control Room's Claude connector does the same. It works
+only once their owner has agreed to the Barnwright terms 2.2 (out since
+October 12, 2026): on their sign-up page, before they first sign in, or in
+their Dealer Center. Their owner can stop it on the Barnwright card in
 Settings. It can't open the 3D designer, change where quotes go or which
 websites may show it, or change how the buildings are built (except a
 building style's own numbers in How it's built, like a gable roof's pitch;
