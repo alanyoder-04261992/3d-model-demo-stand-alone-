@@ -120,7 +120,8 @@ a door made from a metal building's siding is steel like the walls.
 
 You said "yes match" in October 2026: the standard buildings every dealer
 gets are built the way your shop builds them, where you gave us the numbers.
-On October 11, after the pictures, you said yes to six more styles.
+On October 11, after the pictures, you said yes to six more styles, and
+on October 12 to the 48 in door on two more.
 
 * **Utility Shed, Side Utility and Garage:** a 5/12 roof at every width (a
   10 ft wide roof rises 2 ft 1 in instead of 2 ft 8 3/8 in; a 12 ft Garage
@@ -142,22 +143,29 @@ On October 11, after the pictures, you said yes to six more styles.
   The roof line over the roof deck is about 1/2 in higher.
 * **Lofted Barn Garage:** the same barn roof heights (4 ft 3 in on the
   12 ft wide ones it is sold in), on its own walls as they were.
-* **Side Utility, 8x12 and 10x12: the 48 in Wooden Door.** We asked how
-  your shop builds these two (with the double doors, a window ran 2 3/8 in
-  into the doors) and you said "replace 6 foot to 4 foot" on October 11.
-  The 48 in door is in the middle of the door side. The two windows are
-  4.4 ft either side of the middle (the left one about 5/8 in closer to the
-  middle than before, so both sides match), with about 9 5/8 in of siding
-  between the door's trim and each window's. Every other Side Utility size
-  keeps the double doors, and so does Barnwright's own. The 48 in door
-  comes with those two sizes at no extra charge, and their prices are as
-  they were. Each price list still has to list it ($0 is fine; the sample
-  charges $175 for an extra one), and the Dealer Center says so before
-  Save. A customer who changes a door or window and then picks the 8x12 or
-  10x12 gets the 48 in door at that size's price. A customer who saved an
-  8x12 or 10x12 before October 11 sees the 48 in door where the double
+* **Side Utility, Dormer Shed and Side Lofted Barn, 8x12 and 10x12: the
+  48 in Wooden Door.** We asked how your shop builds the Side Utility at
+  these two sizes (with the double doors, a window ran 2 3/8 in into the
+  doors) and you said "replace 6 foot to 4 foot" on October 11. The Dormer
+  Shed and Side Lofted Barn had the same door side, and on October 12 you
+  said yes to the 48 in door on them too. The 48 in door is in the middle
+  of the door side. The two windows are 4.4 ft either side of the middle
+  (the left one about 5/8 in closer to the middle than before, so both
+  sides match), with about 9 5/8 in of siding between the door's trim and
+  each window's. The Dormer Shed's dormer stays where it was. Every other
+  size of the three keeps the double doors, and so do Barnwright's own.
+  The 48 in door comes with those sizes at no extra charge, and their
+  prices are as they were (you said "no" to making them cost less). Each
+  price list still has to list it ($0 is fine; the sample charges $175 for
+  an extra one), and the Dealer Center says so before Save. A customer who
+  changes a door or window and then picks the 8x12 or 10x12 gets the 48 in
+  door at that size's price. A customer who saved one of these sizes with
+  the double doors (a Side Utility before October 11, a Dormer Shed or
+  Side Lofted Barn before October 12) sees the 48 in door where the double
   doors were when they open it again, at the price they saw, and one line
-  says so (question 12).
+  says so. One who had swapped the double doors for another door keeps
+  that door, priced from the 48 in door ($150 more in the sample price
+  list).
 * **14 ft wide lofted barns keep today's height**, about 6 ft 3 in to the
   top of the trusses, as you said. Their walls are 6 ft 7 1/2 in like the
   other widths, so a 14 ft Lofted Barn stands 9/16 in lower overall than
@@ -606,7 +614,10 @@ Dormer Shed, Metal Lofted Barn and Lofted Barn Garage (yes, as in the
 pictures), the Metal Garage (no), the 14 ft lofted barns (keep today's
 height), the gable window (not offered where it does not fit), the Steep
 roof (out of the sample price list) and the 8x12 and 10x12 Side Utility's
-door (the 48 in Wooden Door instead of the double doors).
+door (the 48 in Wooden Door instead of the double doors). Answered on
+October 12: the 8x12 and 10x12 Side Utility's price (no, the size prices
+stay as they are; saved designs open as described above) and the 48 in
+door on the 8x12 and 10x12 Dormer Shed and Side Lofted Barn (yes).
 
 1. **The cabins and the Metal Utility** at 5/12 with a 4 in roof edge, like
    your utility roof? *For now: unchanged.*
@@ -636,20 +647,6 @@ door (the 48 in Wooden Door instead of the double doors).
     yes, 5/12 is your standard pitch at every width.*
 11. **Who can change How it's built.** *For now: the owner only, like
     prices; managers and dealers see the numbers.*
-12. **The 8x12 and 10x12 Side Utility's price and saved designs.** Should
-    those two sizes cost less now that they come with the smaller door?
-    And every customer who saved an 8x12 or 10x12 Side Utility before
-    October 11 sees the 48 in door in place of the double doors when they
-    open it again, at the same price. Is that right, or should they keep
-    the double doors free? A customer who had swapped the double doors for
-    another door keeps that door, but it is now priced from the 48 in door:
-    $150 more in the sample price list. *For now: the size prices are as
-    they were, and a saved design gets the 48 in door at the price the
-    customer saw.*
-13. **The 48 in door on two more styles?** The Dormer Shed and Side Lofted
-    Barn at 8x12 and 10x12 have the same layout as the Side Utility had: a
-    window runs 2 3/8 in into the double doors. Should they get the 48 in
-    door too? *For now: unchanged.*
 
 ### Choices about the product
 

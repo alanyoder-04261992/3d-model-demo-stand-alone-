@@ -90,10 +90,11 @@ golden test holds, or a style that is so by design). One line in
   "reason": "Barnwright's standard layout ... Kept for the golden test. ..." }
 ```
 
-(The shop standard's 8x12 and 10x12 Side Utility no longer have this: they
-come with the 48 in Wooden Door, Alan Oct 11 2026. "SU" stays in the line
-because the run with Barnwright's own numbers still draws the double
-doors there.)
+(The shop standard's 8x12 and 10x12 Side Utility, Dormer Shed and Side
+Lofted Barn no longer have this: they come with the 48 in Wooden Door,
+Alan Oct 11 2026 for the Side Utility, Oct 12 2026 for the other two.
+"SU", "DS" and "SLB" stay in the line because the run with Barnwright's
+own numbers still draws the double doors there.)
 
 * `code` and `id` exactly as the failure printed them; `styles` are library
   codes (a business's own style is matched by the style it is built like);
