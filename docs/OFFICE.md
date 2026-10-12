@@ -2487,6 +2487,9 @@ section 19).
 | `ui/office/visit-draft.js` | keeps a visit's unsaved work in the tab when the visit ends |
 | `tools/check-setup-access.mjs` | Barnwright setup access's rules, against a pretend control room |
 | `tools/check-setup-screens.mjs` | the Barnwright card, the preview and a visit, in Chromium |
+| `server/office/first-start.js` | the owner's first sign-in: the price list, the terms from the sign-up page and the first lot, once; the Getting started steps |
+| `ui/office/views/getting-started.js` | the Getting started card on Today |
+| `tools/check-getting-started.mjs` | the owner's first sign-in and the Getting started card in Chromium (1280 and 390 wide) |
 | `tools/lib/setup-fixtures.json`, `tools/lib/make-setup-fixtures.mjs` | Barnwright setup access: an example of every request and answer (with TEST ONLY key pairs), and the script that makes and checks it (`--check`) |
 
 ## The screens
