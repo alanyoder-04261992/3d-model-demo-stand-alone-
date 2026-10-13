@@ -32,8 +32,9 @@
       answer, the city, the answer about what they want to do, the
       rent-to-own term they looked at, the building, the total, the summary
       and a link that opens THIS design (same style, size and price,
-      look-only); the page says it was sent. A form service that never answers shows the "reach us directly"
-      box after the time limit.
+      look-only); an unobservable cross-origin response asks the customer to
+      confirm receipt and keeps the "reach us directly" box. A form service
+      that never answers shows that same box after the time limit.
    4. WEBHOOK: the post arrives as text/plain with no preflight, carrying
       {design, contact, summary, link, priceComputedBy: "browser"}; no
       pictures unless the company asked for them (leads.images); with them,
@@ -334,8 +335,8 @@ try {
     await shot(page, "leads-form.png");
     await page.click("#quote-mount .qsend");
     const got = await fake.waitFor((r) => r.method === "POST" && r.path === "/form", 20000);
-    const sent = await waitLast(page, ["sent", "failed"]);
-    const onPage = await page.evaluate(() => ({ state: window.shedUI.getState(), total: window.shedUI.price().total, sent: (document.querySelector("#quote-mount .sent") || {}).textContent || "" }));
+    const sent = await waitLast(page, ["sent", "failed", "unconfirmed"]);
+    const onPage = await page.evaluate(() => ({ state: window.shedUI.getState(), total: window.shedUI.price().total, result: document.querySelector("#quote-mount .qresult").textContent, sent: !!document.querySelector("#quote-mount .sent"), copy: !!document.querySelector("#quote-mount .qcopy"), tel: !!document.querySelector('#quote-mount .qresult a[href^="tel:"]') }));
     ok("the form service receives an ordinary form post (application/x-www-form-urlencoded)", got && /application\/x-www-form-urlencoded/.test(got.headers["content-type"]), got && got.headers["content-type"]);
     ok("with no permission request (preflight) before it", preflights(fake).length === 0, J(preflights(fake)));
     const f = (got && got.fields) || {};
@@ -350,7 +351,7 @@ try {
     try { d = await linkDesign(f.link || ""); } catch (e) { d = { error: e.message }; }
     ok("the link opens THIS design, look-only (&view=1), on this designer", /^http:\/\/127\.0\.0\.1:8354\/\?company=leadform#d=/.test(f.link || "") && /&view=1$/.test(f.link || "") && d && d.type === onPage.state.type && d.size === onPage.state.size && d.items.length === onPage.state.items.length, J({ link: (f.link || "").slice(0, 80), d: d && { type: d.type, size: d.size, n: d.items && d.items.length } }));
     ok("the link remembers the price the customer saw (the look-only page compares it with today's)", d && d.priced && Math.abs(d.priced.total - onPage.total) < 0.005 && /^\d{4}-\d{2}-\d{2}$/.test(d.priced.at), J(d && d.priced));
-    ok("the page says it was sent, thanking them by first name", sent.status === "sent" && /Quote request sent/.test(onPage.sent) && /Thanks, Jane!/.test(onPage.sent), J({ sent, words: onPage.sent }));
+    ok("a cross-origin form reply asks the customer to confirm receipt, with the phone and design link, without claiming it was sent", sent.status === "unconfirmed" && /confirm your quote request/.test(onPage.result) && !onPage.sent && onPage.copy && onPage.tel, J({ sent, words: onPage.result }));
     await shot(page, "leads-sent.png");
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
     await ctx.close();
@@ -365,9 +366,9 @@ try {
     await pastMinimum(readyAt);
     fake.reset();
     await page.click("#quote-mount .qsend");
-    const r = await waitLast(page, ["sent", "failed"], 20000);
+    const r = await waitLast(page, ["sent", "failed", "unconfirmed"], 20000);
     const ui = await page.evaluate(() => ({ tel: !!document.querySelector('#quote-mount .qresult a[href^="tel:"]'), copy: !!document.querySelector("#quote-mount .qcopy"), btn: document.querySelector("#quote-mount .qsend").textContent }));
-    ok("a form service that never answers: after the time limit the customer gets the 'reach us directly' box and a Try again button", r.status === "failed" && ui.tel && ui.copy && ui.btn === "Try again", J({ r, ui }));
+    ok("a form service that never answers: after the time limit the customer can call or copy their design to confirm receipt", r.status === "unconfirmed" && ui.tel && ui.copy, J({ r, ui }));
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
     await ctx.close();
   }

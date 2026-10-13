@@ -24,7 +24,9 @@
      on the <div> (they bubble up to the whole page):
        shed:ready             the designer has loaded
        shed:design-changed    the customer changed the building
-       shed:quote-requested   the customer sent a quote request
+       shed:quote-requested   the customer requested a quote; detail.sent === true
+                              means receipt was confirmed (opened/unconfirmed
+                              responses carry sent:false and their status)
      each with event.detail = what the designer said (the building, its
      link, and -- only for a company whose leads go to its own page -- the
      customer's contact details). For example:

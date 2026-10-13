@@ -359,3 +359,19 @@ finished designer retains the golden geometry.
     opening band and exact geometry. Existing approved
     shop roof and wall dimensions remain. `tools/check-opening-trim.mjs`
     checks the emitted board faces across all styles and sizes.
+
+29. **Customer input and confirmed quote delivery** (October 2026 service review).
+    Choice buttons announce selection and retain keyboard focus after redraws.
+    Card headings and item rows are keyboard buttons; Done returns focus to the
+    control that opened the editor. Wall-mounted items can be moved one inch
+    at a time, and gable windows/outside lights can be moved vertically, through
+    the same existing placement clamps as a drag. Browser page zoom is allowed.
+    An included door's type menu shows its actual upgrade contribution rather
+    than its standalone price; the price book and quote math are unchanged.
+    An ordinary form provider's iframe/new-tab page is an unconfirmed response,
+    never proof that a quote was received. Same-origin services can confirm
+    with JSON `ok: true` or `success: true`; other responses offer contact/design
+    fallback and the customer checks the provider's page. Embed integrations
+    count a confirmed receipt only when `event.detail.sent === true`. No geometry
+    or standard opening layout changed. `check-opening-prices` and
+    `check-designer-controls` cover prices/input; `check-quote` covers responses.

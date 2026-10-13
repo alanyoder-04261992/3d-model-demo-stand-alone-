@@ -117,8 +117,8 @@ export function form(children, work, { class: cls } = {}) {
       return;
     }
     el.dataset.busy = "1";
-    const buttons = [...el.querySelectorAll("button")];
-    buttons.forEach((b) => { b.disabled = true; });
+    const controls = [...el.querySelectorAll("button, input, select, textarea")].map((input) => [input, input.disabled]);
+    controls.forEach(([input]) => { input.disabled = true; });
     try {
       const said = await work(el);
       if (typeof said === "string") status.textContent = said;
@@ -127,7 +127,7 @@ export function form(children, work, { class: cls } = {}) {
       status.classList.add("error");
     } finally {
       delete el.dataset.busy;
-      buttons.forEach((b) => { b.disabled = false; });
+      controls.forEach(([input, disabled]) => { input.disabled = disabled; });
     }
   });
   return el;
@@ -157,21 +157,59 @@ export function pageHead(title, subtitle, ...actions) {
     actions.length ? h("div", { class: "actions" }, actions) : null);
 }
 
-/* A pop-up box (<dialog>). Returns {el, close}. onClose runs once. */
+/* Open form dialogs protect their entered work on Escape, Close, Cancel,
+   outside clicks and navigation. close() is for a completed operation;
+   cancel() asks before discarding and waits for an in-flight save. */
+const openDialogs = new Set();
+export function modalLeaveQuestion() {
+  return [...openDialogs].some((box) => box.dirty() || box.busy()) ? "You have changes in this form. Discard them and leave?" : null;
+}
+/* Pure picture/price helpers also import this module in Node. */
+if (typeof window !== "undefined") {
+  window.addEventListener("hashchange", (event) => {
+    const guarded = [...openDialogs].filter((box) => box.dirty() || box.busy());
+    if (!guarded.length) { [...openDialogs].forEach((box) => box.close()); return; }
+    if (guarded.some((box) => box.busy()) || !confirm("Discard the changes in this form and leave?")) {
+      if (guarded.some((box) => box.busy())) toast("Wait for this save to finish before leaving.");
+      history.replaceState(null, "", event.oldURL);
+      event.stopImmediatePropagation();
+      return;
+    }
+    [...openDialogs].forEach((box) => box.close());
+  }, true);
+  window.addEventListener("beforeunload", (event) => {
+    if ([...openDialogs].some((box) => box.dirty() || box.busy())) { event.preventDefault(); event.returnValue = ""; }
+  });
+}
+
+/* A pop-up box (<dialog>). Returns {el, close, cancel}. onClose runs once. */
 export function dialog(title, body, { wide = false, onClose } = {}) {
   const closeBtn = h("button", { type: "button", class: "dialog-x", "aria-label": "Close" }, icon("x"));
   const el = h("dialog", { class: ["dialog", wide && "wide"] },
     h("header", { class: "dialog-head" }, h("h2", {}, title), closeBtn),
     h("div", { class: "dialog-body" }, body));
   let done = false;
-  const close = () => { if (!done) { done = true; el.close(); el.remove(); onClose?.(); } };
-  closeBtn.addEventListener("click", close);
-  el.addEventListener("cancel", (e) => { e.preventDefault(); close(); });
-  el.addEventListener("click", (e) => { if (e.target === el) close(); });
+  const values = () => JSON.stringify([...el.querySelectorAll("form input, form select, form textarea")]
+    .filter((input) => !["submit", "button", "hidden"].includes(input.type))
+    .map((input) => [input.value, input.type === "checkbox" || input.type === "radio" ? input.checked : null]));
+  const initial = values();
+  const dirty = () => values() !== initial;
+  const busy = () => !!el.querySelector("form[data-busy]");
+  const close = () => { if (!done) { done = true; openDialogs.delete(box); el.close(); el.remove(); onClose?.(); } };
+  const cancel = () => {
+    if (busy()) { toast("Wait for this save to finish before closing."); return; }
+    if (dirty() && !confirm("Discard the changes in this form?")) return;
+    close();
+  };
+  const box = { el, close, cancel, dirty, busy };
+  openDialogs.add(box);
+  closeBtn.addEventListener("click", cancel);
+  el.addEventListener("cancel", (e) => { e.preventDefault(); cancel(); });
+  el.addEventListener("click", (e) => { if (e.target === el) cancel(); });
   document.body.append(el);
   el.showModal();
   el.querySelector("input, select, textarea")?.focus();
-  return { el, close };
+  return box;
 }
 
 /* "Are you sure?" -> Promise<boolean> */

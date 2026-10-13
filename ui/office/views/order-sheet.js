@@ -15,8 +15,8 @@
 import { h, icon, button, emptyState, linkButton } from "../dom.js";
 import { app } from "../app.js";
 import { money, phone as phoneWords, PAYMENT_WORDS, ORDER_WORDS, initials } from "../words.js";
-import { encodeSync } from "../../../model/design.js";
-import { resolve as resolveCatalogue } from "../../../model/company.js";
+import { originalQuoteUrl } from "../quote-view.js";
+import { get } from "../api.js";
 import { loadCustomer, missingCustomer } from "./crm-kit.js";
 
 const PICTURE_MS = 25000;
@@ -42,12 +42,12 @@ export async function render(ctx) {
   const kindWords = isOrder ? "Order" : "Quote";
   ctx.setTitle(`${kindWords} #${number} · ${c.name}`);
 
-  /* the price list (fine print) and, if it loads, the names of the doors and windows */
-  const [priceList, cat] = await Promise.all([
-    app.loadPriceList().catch(() => null),
-    catalogue(app).catch(() => null),
-  ]);
-  const settings = priceList?.settings || {};
+  let original = null, originalError = null;
+  if (quote?.design) {
+    try { original = await get(`customers/${c.id}/quotes/${quote.id}/designer`); }
+    catch (error) { originalError = error.message; }
+  }
+  const cat = original?.catalogue || null;
   const business = app.business || {};
   const lot = app.lot(c.lot) || { name: app.lotName(c.lot) };
   const design = quote?.design || null;
@@ -94,7 +94,8 @@ export async function render(ctx) {
       h("h3", {}, "The building"),
       h("p", { class: "sheet-building-name" }, building),
       design ? colorList(design) : null,
-      design && cat ? itemLists(design, cat) : null),
+      design && cat ? itemLists(design, cat) : null,
+      originalError ? h("p", { class: "sheet-small", role: "status" }, originalError) : null),
     picture);
 
   /* ---- the price ---- */
@@ -116,17 +117,17 @@ export async function render(ctx) {
   /* ---- sign and fine print ---- */
   const signs = h("section", { class: "sheet-signs" },
     sign("Customer"), sign("Date"), sign("Dealer"), sign("Date"));
-  const finePrint = settings.notes?.finePrint ? h("p", { class: "sheet-fine" }, settings.notes.finePrint) : null;
+  const finePrint = cat?.notes?.finePrint ? h("p", { class: "sheet-fine" }, cat.notes.finePrint) : null;
 
   const sheet = h("article", { class: "sheet" }, top, title, people, buildingPart, pricePart, signs, finePrint);
 
   const tools = h("div", { class: "sheet-tools" }, backTo,
     h("div", { class: "actions" },
-      design ? h("a", { class: "btn btn-ghost", href: `${app.designerUrl(c.lot)}#d=${encodeSync(design)}&view=1`, target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")) : null,
+      design && original ? h("a", { class: "btn btn-ghost", href: originalQuoteUrl(app.designerUrl(c.lot), c.id, quote.id, design), target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")) : null,
       button(`Print ${kindWords.toLowerCase()}`, () => window.print(), { kind: "primary", icon: "print" })));
 
   const page = h("div", { class: "sheet-page" }, tools, sheet);
-  if (design) setTimeout(() => addPicture(c.lot, design, picture), 50);
+  if (design && original) setTimeout(() => addPicture(c.lot, c.id, quote.id, design, picture), 50);
   return page;
 }
 
@@ -176,28 +177,14 @@ function itemLists(design, cat) {
   return parts.length ? h("div", { class: "sheet-item-cols" }, parts) : null;
 }
 
-let catalogueCache = null;
-async function catalogue(app) {
-  const pl = await app.loadPriceList();
-  if (catalogueCache && catalogueCache.version === pl.version) return catalogueCache.cat;
-  const json = async (url) => {
-    const r = await fetch(url, { credentials: "same-origin" });
-    if (!r.ok) throw new Error("not found");
-    return r.json();
-  };
-  const [manufacturer, library] = await Promise.all([json("/library/manufacturers/standard.json"), json("/library/construction.json")]);
-  const cat = resolveCatalogue(pl.settings, manufacturer, library);
-  catalogueCache = { version: pl.version, cat };
-  return cat;
-}
-
 /* A picture of the building from the lot's own designer, drawn in a frame
    nobody sees. Any trouble (a closed lot, a slow computer) and the sheet
    simply has no picture. */
-async function addPicture(lot, design, slot) {
+async function addPicture(lot, customerId, quoteId, design, slot) {
   if (!slot.isConnected) return;
-  const frame = h("iframe", { class: "sheet-shot", title: "Picture of the building", "aria-hidden": "true", tabindex: "-1",
-    src: `${app.designerUrl(lot)}?embed=1#d=${encodeSync(design)}&view=1` });
+  const url = new URL(originalQuoteUrl(app.designerUrl(lot), customerId, quoteId, design));
+  url.searchParams.set("embed", "1");
+  const frame = h("iframe", { class: "sheet-shot", title: "Picture of the building", "aria-hidden": "true", tabindex: "-1", src: url.href });
   Object.assign(frame.style, { position: "fixed", left: "-12000px", top: "0", width: "960px", height: "640px", border: "0", opacity: "0", pointerEvents: "none" });
   document.body.append(frame);
   const done = () => frame.remove();

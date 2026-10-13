@@ -772,6 +772,30 @@ orders. The lot is emailed when email is set up. No payment is taken.
   images only when `leads.images` is true, capped at 300 KB.
 * `postMessage` — to the embedding page, only to an origin on `embed.origins`.
 
+A form provider's page loading in an iframe or a new tab is not a confirmed
+receipt. Cross-origin form POSTs keep the provider's normal flow, but the
+designer labels the result unconfirmed and offers the business's contact
+buttons and the design link. In a new tab the customer must finish and check
+the provider's confirmation. Same-origin form services can acknowledge a POST
+with an `application/json` response containing `ok: true` or `success: true`;
+a successful HTML response or a CAPTCHA remains unconfirmed. A failure does
+not trigger a second automatic POST. Quote fields stay filled for review.
+Embedding pages must check `event.detail.sent === true` before counting a
+confirmed receipt; opening a mail app or an unconfirmed form response reports
+`sent: false` with its status.
+
+The public designer's choice buttons expose their selected state and keep
+keyboard focus across redraws (`ui/focus.js`). Card headings contain native
+buttons with their expanded state; item rows are keyboard buttons. Closing
+an item editor returns focus to the control that opened it. Wall-mounted
+openings have one-inch keyboard movement controls; gable windows and outside
+lights also have height controls. These call the same `ui/state.js moveItem`
+and existing placement clamps as dragging, including wall/neighbour/porch
+limits. Specialized owner layout tools keep their own controls. The browser
+may zoom the page; the canvas still handles its own camera gestures.
+Included-opening type labels show the contribution above the included opening,
+using the same `itemCharge` rule as the quote, without changing standard prices.
+
 Always: `leads.fields` decides what is asked and required (the address is
 asked as an "Address" heading over a Street box and a City box; the City box
 comes with the address and is never required); optional `leads.smsConsent`
