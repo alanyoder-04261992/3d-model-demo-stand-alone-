@@ -217,7 +217,13 @@ export function drawingCatalogue({ standardBytes, constructionBytes, company }) 
   if (manufacturer.extends) throw new Error(`${STANDARD_PATH} extends another manufacturer file; the style pictures expect the standard line on its own.`);
   if (company.manufacturer !== manufacturer.id) throw new Error(`companies/${DRAW_COMPANY} sells "${company.manufacturer}", not the standard line.`);
   for (const [who, c] of [[STANDARD_PATH, manufacturer.construction], [`companies/${DRAW_COMPANY}/company.json`, company.construction]]) {
-    if (c && Object.keys(c).some((k) => !k.startsWith("_"))) throw new Error(`${who} changes the construction numbers, so the pictures would not show the library's own pitches. Take that out of ${who} first.`);
+    const overrides = structuredClone(c || {});
+    // The library's measured trim belongs in its own reference pictures.
+    if (who === STANDARD_PATH && overrides.openings) {
+      delete overrides.openings.trim;
+      if (!Object.keys(overrides.openings).some(k => !k.startsWith("_"))) delete overrides.openings;
+    }
+    if (Object.keys(overrides).some((k) => !k.startsWith("_"))) throw new Error(`${who} changes the construction numbers, so the pictures would not show the library's own pitches. Take that out of ${who} first.`);
   }
   const cat = resolveCompany(company, manufacturer, library);
   const missing = Object.keys(manufacturer.styles).filter((k) => !Object.prototype.hasOwnProperty.call(cat.TYPES, k));

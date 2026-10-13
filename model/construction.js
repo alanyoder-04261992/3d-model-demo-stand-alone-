@@ -189,13 +189,17 @@ const LUMBER_KEYS = new Set(["floor.joist", "floor.rim", "walls.stud", "walls.he
   "roofDeck.purlins.size", "loft.joist", "porch.post", "porch.joist", "skids.size"]);
 const LUMBER_RE = /^\s*(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\b/i;
 const COUNT_KEYS = { "walls.bottomPlates": [1, 3], "walls.topPlates": [1, 3], "floor.deck.layers": [1, 4] };
-const CHOICES = { "roof.framing": ["truss", "rafter"], "roofDeck.type": ["purlins", "osb"] };
+const CHOICES = { "roof.framing": ["truss", "rafter"], "roofDeck.type": ["purlins", "osb"], "openings.trim.headJoint": ["continuous", "reveal"] };
 function valueProblems(tree, where) {
   const out = [];
   const say = (path, msg) => out.push(`${where}.${path}: ${msg}`);
   function values(v) { return isRuleList(v) ? v.map((r) => r && r.value) : [v]; }
   function check(key, v) {
     if (v === undefined) return;
+    if (key === "openings.trim.widthIn") {
+      for (const x of values(v)) if (!(typeof x === "number" && Number.isFinite(x) && x >= 1 && x <= 8)) say(key, `${JSON.stringify(x)} should be a trim width from 1 to 8 inches.`);
+      return;
+    }
     if (LUMBER_KEYS.has(key)) {
       for (const x of values(v)) {
         const m = LUMBER_RE.exec(String(x == null ? "" : x));
@@ -272,6 +276,7 @@ export const CONSTRUCTION_SCHEMA = freezeAll({
   walls: { stud: VALUE, spacingIn: VALUE, bottomPlates: VALUE, topPlates: VALUE, corner: VALUE, header: VALUE,
     studLengthIn: { loft: VALUE, tall: VALUE } },
   openings: {
+    trim: { widthIn: VALUE, headJoint: VALUE },
     doorHeightIn: byRoof(VALUE, true),
     windowTop: byRoof({ belowWallTopIn: VALUE, levelWithDoor: VALUE, minBelowWallTopFt: VALUE }),
   },

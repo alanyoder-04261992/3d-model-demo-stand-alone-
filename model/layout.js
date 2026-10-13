@@ -32,10 +32,11 @@
    offers only the ones that fit and the server refuses a new one that does
    not. It never moves anything already drawn. */
 
-import { y0, CASING, OCT_WIN } from "../engine/constants.js";
+import { y0, OCT_WIN } from "../engine/constants.js";
 import { profileYat, gableClip, gableBandY } from "./roof-shapes.js";
 import { standardItems, evalFormula } from "./loadouts.js";
 import { doorHeightFt, windowTopFt } from "./construction.js";
+import { openingTrim } from "./opening-trim.js";
 import { frameOf, porchDepthOf } from "./frame.js";
 
 /* Shared placement remains available from the original public module. */
@@ -54,7 +55,7 @@ export function keepOnWall(it, state, frame) {
   var CAT = frame.CAT, c0 = CAT[it.cat], T = frame.t;
   if (c0.free || c0.stretch || c0.gable) { clampPos(it, state, frame); return; }
   if (c0.draw === "transom" && it.rot && T.roof === "slope" && it.wall === "R") it.rot = false;
-  var w = frame.ws[it.wall], lim = w.len / 2 - itemW(it, CAT) / 2 - 0.50;
+  var w = frame.ws[it.wall], lim = w.len / 2 - itemW(it, CAT, frame) / 2 - 0.50;
   if (lim < 0) lim = 0;
   if (c0.k === "light") it.vy = Math.max(-4.2, Math.min(3.2, it.vy || 0));
   if (typeof it.pos !== "number" || !isFinite(it.pos)) it.pos = 0;
@@ -80,13 +81,13 @@ export function neighborGaps(it, state, frame) {
   if (it.rot && c.draw === "transom") c = { k: c.k, w: c.h, h: c.w };
   if (c.gable || c.free || c.stretch || c.k === "post") return null;
   var w = frame.ws[it.wall]; if (!w) return null;
-  var cw = itemW(it, CAT);
+  var cw = itemW(it, CAT, frame);
   var half = w.len / 2, lo = -half, hi = half;
   state.items.forEach(function (o) {
     if (o.id === it.id || o.wall !== it.wall) return;
     var oc = CAT[o.cat];
     if (oc.gable || oc.k === "post" || oc.k === "light" || oc.k === "out" || oc.k === "ilt" || oc.free || oc.stretch) return;
-    var ow = itemW(o, CAT);
+    var ow = itemW(o, CAT, frame);
     if (o.pos <= it.pos) lo = Math.max(lo, o.pos + ow / 2);
     else hi = Math.min(hi, o.pos - ow / 2);
   });
@@ -160,7 +161,7 @@ export function pkFixtures(state, frame, cat) {
   var dw = door ? door.wall : "F", dp = door ? (door.pos + CAT[door.cat].w / 2 + 1.0) : 1.5;
   if ("FBRL".indexOf(dw) < 0) { dw = "F"; dp = 1.5; }
   var list = (cat && cat.ELECFX && cat.ELECFX[String(p)]) || [];
-  var vars = { W: d.W, L: d.L, q: d.L / 4, len: 0, CASING: CASING, CAT: CAT };
+  var vars = { W: d.W, L: d.L, q: d.L / 4, len: 0, CASING: openingTrim(frame).width, CAT: CAT };
   list.forEach(function (fx) {
     if (fx.at === "besideBiggestDoor") { mk(fx.cat, dw, dp); return; }
     var c = CAT[fx.cat];
@@ -249,20 +250,21 @@ export function openingRect(it, plan) {
     yb = Math.max(y0 + 0.25, y0 + wTop - c.h);
   } else yb = y0;
   if (c.k === "win" && t.roof === "slope" && it.wall === "R" && c.draw === "transom") yb = w.top - c.h - 0.50;
-  var u = it.pos, fr = CASING, HW2 = itemW(it, CAT) / 2;   /* HW2 is half the WHOLE opening */
+  var trim = openingTrim(plan);
+  var u = it.pos, fr = trim.width, HW2 = itemW(it, CAT, plan) / 2;   /* HW2 is half the WHOLE opening */
   var isWn = (c.k === "win");
-  var revealY = isWn ? (yb + ch + 0.02) : (yb + ch - 0.06);
-  var hE = 0.12, hxl = u - HW2 - fr, hxr = u + HW2 + fr, hyb = yb + ch - 0.02, hyt = yb + ch - 0.02 + 0.29;
+  var revealY = isWn || trim.continuous ? (yb + ch + 0.02) : (yb + ch - 0.06);
+  var hE = trim.headFlare, hxl = u - HW2 - fr, hxr = u + HW2 + fr, hyb = yb + ch - 0.02, hyt = hyb + trim.headHeight;
   var u0 = hxl - hE, u1 = hxr + hE, yLo = yb, yHi = hyt;
   var sill = null, band = null;
   if (t.porch && c.k !== "ru") {
-    var hby = yb + ch + fr - 0.04, hbh = 0.29, hbe = 0.12;
+    var hby = yb + ch + fr - 0.04, hbh = trim.headHeight, hbe = trim.headFlare;
     band = { u0: u - HW2 - fr - hbe, u1: u + HW2 + fr + hbe, y0: hby, y1: hby + hbh };
     u0 = Math.min(u0, u - HW2 - fr - hbe); u1 = Math.max(u1, u + HW2 + fr + hbe);
     yHi = Math.max(yHi, hby + hbh);
   }
   if (isWn) {
-    var syt = yb - 0.02, syb = yb - 0.27, sE = 0.10;
+    var syt = yb - 0.02, syb = syt - trim.sillHeight, sE = trim.sillFlare;
     sill = { u0: hxl - sE, u1: hxr + sE, y0: syb, y1: syt };
     u0 = Math.min(u0, hxl - sE); u1 = Math.max(u1, hxr + sE);
     yLo = Math.min(yLo, syb);
@@ -280,13 +282,14 @@ export function openingRect(it, plan) {
 
 /* A gable window's trim, as renderGableWin draws it. */
 function gableRect(it, c, plan) {
+  var trim = openingTrim(plan);
   var t = plan.t, d = plan.d, L = d.L, prof = plan.prof;
   var onSide = (it.wall === "R" || it.wall === "L");
   var u = it.pos, yc, gz = 0, sgn = 1, wD = null;
   /* THE 18x24 WEARS ITS TRIM OUTSIDE ITS OWN OPENING -- a head board above and
      a sill below, like every window on a wall. */
   var isG18 = (c.draw === "gable-1824");
-  var padX = isG18 ? 0.39 : 0, padT = isG18 ? 0.29 : 0, padB = isG18 ? 0.27 : 0;
+  var padX = isG18 ? trim.width + trim.headFlare : 0, padT = isG18 ? trim.headHeight : 0, padB = isG18 ? (trim.measured ? 0.02 + trim.sillHeight : 0.27) : 0;
   if (onSide) {
     wD = plan.ws[it.wall];
     var base = y0 + Math.min(4.6, t.wallH - 1.0);
@@ -332,19 +335,27 @@ function gableRect(it, c, plan) {
     pieces.push(oct);
   } else {
     /* the 18x24: the same casing, head and sill as every other window */
-    var HW = c.w / 2, HH = c.h / 2, fr = 0.27, hE = 0.12, sE = 0.10;
-    pieces.push([gp(-HW - fr, -HH), gp(-HW + 0.02, -HH), gp(-HW + 0.02, HH + 0.02), gp(-HW - fr, HH + 0.02)]);
-    pieces.push([gp(HW - 0.02, -HH), gp(HW + fr, -HH), gp(HW + fr, HH + 0.02), gp(HW - 0.02, HH + 0.02)]);
-    pieces.push([gp(-HW - fr, HH - 0.02), gp(HW + fr, HH - 0.02), gp(HW + fr + hE, HH + 0.27), gp(-HW - fr - hE, HH + 0.27)]);
-    pieces.push([gp(-HW - fr - sE, -HH - 0.25), gp(HW + fr + sE, -HH - 0.25), gp(HW + fr, -HH - 0.02), gp(-HW - fr, -HH - 0.02)]);
+    var HW = c.w / 2, HH = c.h / 2, fr = trim.width, hE = trim.headFlare, sE = trim.sillFlare;
+    var headTop = HH - 0.02 + trim.headHeight, sillBottom = -HH - (trim.measured ? 0.02 + trim.sillHeight : 0.25);
+    pieces.push([gp(-HW - fr, -HH), gp(-HW + trim.overlap, -HH), gp(-HW + trim.overlap, HH + 0.02), gp(-HW - fr, HH + 0.02)]);
+    pieces.push([gp(HW - trim.overlap, -HH), gp(HW + fr, -HH), gp(HW + fr, HH + 0.02), gp(HW - trim.overlap, HH + 0.02)]);
+    pieces.push([gp(-HW - fr, HH - 0.02), gp(HW + fr, HH - 0.02), gp(HW + fr + hE, headTop), gp(-HW - fr - hE, headTop)]);
+    pieces.push([gp(-HW - fr - sE, sillBottom), gp(HW + fr + sE, sillBottom), gp(HW + fr, -HH - 0.02), gp(-HW - fr, -HH - 0.02)]);
   }
   var full = bbox(pieces);
   var drawn = full, clipped = false;
   if (!onSide) {
-    var cut = pieces.map(function (pp) { return gableClip(pp, prof, 0.10); }).filter(function (pp) { return pp.length > 2; });
+    var cutPieces = pieces.map(function (pp) { return gableClip(pp, prof, 0.10); });
+    var cut = cutPieces.filter(function (pp) { return pp.length > 2; });
     drawn = bbox(cut);
     clipped = !drawn || Math.abs(drawn.x0 - full.x0) > 1e-12 || Math.abs(drawn.x1 - full.x1) > 1e-12 ||
       Math.abs(drawn.y0 - full.y0) > 1e-12 || Math.abs(drawn.y1 - full.y1) > 1e-12;
+    // Equal head/sill flares can keep the same bounding box even after the
+    // roof cuts a head corner. Compare the actual polygons for measured trim.
+    if (trim.measured && isG18) clipped = clipped || pieces.some(function (pp, i) {
+      var cp = cutPieces[i];
+      return cp.length !== pp.length || pp.some(function (p, j) { return Math.abs(p[0] - cp[j][0]) > 1e-12 || Math.abs(p[1] - cp[j][1]) > 1e-12; });
+    });
   }
   /* the opening itself: the catalogue box, except the octagon, whose 2.3 ft
      catalogue size INCLUDES its trim ring -- the window inside it is OCT_WIN

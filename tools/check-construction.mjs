@@ -273,8 +273,8 @@ for (const t of Object.keys(DEMO.P)) for (const z of Object.keys(DEMO.P[t])) {
      built blocks (BUILDFAST-SPEC E.5), and every check that compares with
      Barnwright gets them from tools/lib/barnwright-company.mjs. */
   const G = "Barnwright's numbers come from one place";
-  const strip = (m) => { const x = copy(m); for (const k of Object.keys(x.styles)) delete x.styles[k].built; return x; };
-  check(G, J(M) === J(strip(STANDARD)), "barnwrightManufacturer() differs from library/manufacturers/standard.json by more than its styles' built blocks");
+  const strip = (m) => { const x = copy(m); for (const k of Object.keys(x.styles)) delete x.styles[k].built; delete x.construction.openings.trim; if (!Object.keys(x.construction.openings).length) delete x.construction.openings; return x; };
+  check(G, J(M) === J(strip(STANDARD)), "barnwrightManufacturer() differs from the shop standard beyond its built blocks and measured opening trim");
   const shop = Object.keys(STANDARD.styles).filter((k) => STANDARD.styles[k].built !== undefined);
   check(G, Object.keys(M.styles).every((k) => M.styles[k].built === undefined), "barnwrightManufacturer() still holds a built block");
   check(G, validateManufacturer(M).length === 0, J(validateManufacturer(M)));

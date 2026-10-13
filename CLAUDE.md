@@ -44,6 +44,12 @@ Yoder Storage Barns site lights them (true colour), and nothing else moved.
    6 foot to 4 foot"; the Dormer Shed and Side Lofted Barn: Oct 12 2026,
    "yes"; the prices stay as they were; Barnwright's own keep the double
    doors).
+   The shop standard also uses actual 3 1/2 in opening trim and the Yoder
+   site's continuous casing/head joint (Alan, Oct 12 2026: "Use actual
+   3½-inch trim"). `construction.openings.trim` and `model/opening-trim.js`
+   keep the boards, paired windows, layouts and selection bounds together;
+   `tools/check-opening-trim.mjs` checks the emitted faces. Barnwright's
+   recorded catalogue omits that setting as well as the built blocks.
    No sample price list has a Steep roof; an owner can make one ("Roof pitch
    at least").
    `node tools/check-shop-numbers.mjs` holds the shop numbers (the recorded

@@ -4,7 +4,7 @@ import { itemW } from "./item-placement.js";
 import { evalDataRecipe, evalFormula, recipeEntries, standardPostBounds, layoutVariants } from "./loadouts.js";
 import { loadoutTwin, splitRepeatedEntry } from "./loadout-twins.js";
 import { porchDepthOf, dims, pSpan, wallDefs } from "./frame.js";
-import { CASING } from "../engine/constants.js";
+import { openingTrim } from "./opening-trim.js";
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const CENTER = 1 / 192, PAIR = 1 / 24;
 function number(n, places = 4) { const v = Math.round(n * 10 ** places) / 10 ** places; return String(Object.is(v, -0) ? 0 : v); }
@@ -38,8 +38,8 @@ function inferredAt(it, frame) {
   }
   if (Math.abs(it.pos) <= CENTER) return "center";
   if (!c.gable) {
-    const left = it.pos - itemW(it, frame.CAT) / 2 + len / 2;
-    const right = len / 2 - it.pos - itemW(it, frame.CAT) / 2;
+    const left = it.pos - itemW(it, frame.CAT, frame) / 2 + len / 2;
+    const right = len / 2 - it.pos - itemW(it, frame.CAT, frame) / 2;
     /* A Move tap off the middle always stays a share, even on a short wall. */
     if (Math.abs(it.pos) >= 0.5 && Math.min(left, right) <= 3 && Math.min(left, right) >= -CENTER) return left <= right ? { fromStart: inch(left) } : { fromEnd: inch(right) };
   }
@@ -59,7 +59,7 @@ function splitEntry(source, occurrence) {
   return e;
 }
 function repeatCount(entry, frame) {
-  return evalFormula(entry.repeat.count, { W: frame.W, L: frame.L, P: frame.span.P, pd: porchDepthOf(frame.t), q: frame.L / 4, len: frame.ws[entry.wall].len, CAT: frame.CAT, CASING });
+  return evalFormula(entry.repeat.count, { W: frame.W, L: frame.L, P: frame.span.P, pd: porchDepthOf(frame.t), q: frame.L / 4, len: frame.ws[entry.wall].len, CAT: frame.CAT, CASING: openingTrim(frame).width });
 }
 function largestRepeatCount(entry, frame, sizes) {
   let largest = repeatCount(entry, frame);
@@ -123,7 +123,7 @@ export function inferRecipe(items, frame, options = {}) {
     if (!rule && c.k !== "post" && !c.gable && Math.abs(it.pos) > CENTER) {
       const pi = changed.findIndex(({ item: other, rule: otherRule }, j) => j > i && !paired.has(j) && !otherRule && other.cat === it.cat && other.wall === it.wall && !!other.dbl === !!it.dbl && Math.abs(other.pos + it.pos) <= PAIR);
       if (pi >= 0) {
-        const gap = len / 2 - Math.abs(it.pos) - itemW(it, frame.CAT) / 2;
+        const gap = len / 2 - Math.abs(it.pos) - itemW(it, frame.CAT, frame) / 2;
         const e = madeEntry(it, frame);
         e.at = { sym: gap <= 3 && gap >= -CENTER ? `len/2-${inch(gap)}-${it.dbl ? `(2*CAT.${it.cat}.w+CASING)` : `CAT.${it.cat}.w`}/2` : `len*${number(Math.abs(it.pos) / len)}` };
         entries.push(e); paired.add(pi); return;
