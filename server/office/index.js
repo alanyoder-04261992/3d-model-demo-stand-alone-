@@ -60,6 +60,7 @@ import { createHelp } from "./help.js";
 import { createSetupAccess } from "./setup-access.js";
 import { createSessions } from "./session.js";
 import { createFirstStart } from "./first-start.js";
+import { randomId } from "./hash.js";
 
 /* the scheduled check-in's look back for Barnwright setup access, at most */
 const LOOK_BACK_MS = 5000;
@@ -453,7 +454,8 @@ export function createOffice(deps) {
      stopped, so there is no account.mustWrite here. */
   route("GET", /^\/api\/office\/help$/, async (req) => {
     const who = await people.member(req);
-    return json(await help.thread(who));
+    const query = new URL(req.url).searchParams;
+    return json(await help.thread(who, { ...(query.has("limit") ? { limit: Number(query.get("limit")) } : {}), ...(query.has("cursor") ? { cursor: query.get("cursor") } : {}) }));
   });
   route("POST", /^\/api\/office\/help$/, async (req) => {
     const who = await people.member(req);
@@ -533,7 +535,7 @@ export function createOffice(deps) {
       }
       fail(pathMatched ? 405 : 404, pathMatched ? "Something went wrong. Reload the page and try again." : "We couldn't find that.");
     } catch (error) {
-      return errorAnswer(error, log);
+      return errorAnswer(error, log, { requestId: randomId(16) });
     }
   }
 

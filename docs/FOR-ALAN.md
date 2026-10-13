@@ -495,12 +495,20 @@ Center on a computer or phone), with a search box, and **Ask
 Barnwright**: a box and **Send**, with no phone number anywhere. The
 question lands in your Sales Inbox (inbox.barnwrightsoftware.com) with the
 page they were on and a few technical details, never their customers or
-prices. Claude drafts the reply, you approve it, and they get it by email
-and under **Your questions** on their Help screen. Their owner and managers
+prices. With automatic answers enabled in Sales Inbox, Claude answers
+supported how-to questions, explains billing or access from recent checked
+account facts, and asks for missing details. A software release, account
+change or data repair still needs the person responsible to approve it.
+Other replies stay in your Help queue for review. The answer shows under
+**Your questions**, and email delivery retries when it fails. Their owner and managers
 see every question from the company; a dealer sees their own. It works
 even while their account is switched off. When something on their pages
 breaks, the error goes to your Sales Inbox by itself, each kind once a day
-and at most 10 a day. Your own business and the demo show the answers and
+and at most 10 a day. Help updates a waiting answer while the page stays
+open; **Refresh** checks now and **Show older questions** opens the rest
+of their history. An unsent Help question or customer note stays in its
+browser tab when they move to another screen or their sign-in ends.
+Your own business and the demo show the answers and
 say to email support@barnwrightsoftware.com instead.
 
 ### Older company links (without the Dealer Center)

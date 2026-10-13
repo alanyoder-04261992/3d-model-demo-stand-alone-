@@ -498,7 +498,7 @@ asked answers 503 `{code: "sign-in-down"}`, never 401.
 | `GET barnwright-help` | owner | `{help: {on, until, reason, log}, setup: {mode, until, why, live, liveAt, prelive, termsOk, termsOut}}`, both null when not connected to the control room |
 | `POST barnwright-help` | owner | `{on: true, reason, hours: 1–24, level}`: `level` `"checks"` (left out too) lets Barnwright run checks, `"change"` also lets it change the price list and settings; `{on: false}` stops both at once; `{prelive: "stopped"\|"on"}` stops or allows setup access before live (see "Barnwright setup access") |
 | `GET lots/:slug/preview` | lot access | the lot's 3D designer as a preview, as `GET /api/lots/:slug` plus `preview: true` and `closed` (`business`, `lot` or null), also while it is closed |
-| `GET help` | everyone | `{connected, canAsk, items}`: the questions asked of Barnwright and Barnwright's answers, newest first (owner and managers every question from the business, a dealer their own); `items: null` with `problem` (plain words) when Barnwright can't be reached; `connected: false` when not connected to the control room; `canAsk: false` when Help isn't set up for it (the control room refusing its key included) |
+| `GET help` | everyone | `{connected, canAsk, items, nextCursor}`: the questions asked of Barnwright and Barnwright's answers, newest first (owner and managers every question from the business, a dealer their own); `?limit=1…30&cursor=…` reads older pages (30 by default, `nextCursor: null` at the end); `items: null` with `problem` (plain words) when Barnwright can't be reached; `connected: false` when not connected to the control room; `canAsk: false` when Help isn't set up for it (the control room refusing its key included) |
 | `POST help` | everyone | `{text, page, details: {browser, screen, language, timezone, errors}}` asks Barnwright (see "Help"); the asker is the person signed in, never the body; works while changes are stopped → `{ok, id, at, email}` (201) |
 
 Barnwright's visit has routes of its own under `barnwright/`, signed in by
@@ -609,8 +609,12 @@ read the same way.
 ## Help
 
 Alan's words (October 2026): a Help button inside the software (no phone
-number), short help answers, and problem alerts. Barnwright drafts each
-reply with Claude, and Alan approves it in his Sales Inbox.
+number), short help answers, and problem alerts. When automatic answers
+are enabled in Sales Inbox, Claude can answer supported how-to questions,
+explain billing or access using recent signed account facts, and ask for
+missing details. Questions that need account changes, data repairs or a
+software release stay with the person responsible to approve the action.
+Without automatic answers, Claude drafts the reply for Alan to review.
 
 * **The Help screen** (`#/help`): **Help** is in everyone's menu (under
   **More** on a phone) and at the top of every screen. It has 15 short
@@ -621,6 +625,24 @@ reply with Claude, and Alan approves it in his Sales Inbox.
   newest first. The owner and managers see every question from the
   business; a dealer sees their own. After sending: "Sent. Barnwright will
   answer here and by email at <their email>."
+  **Refresh** checks for answers now; a question still waiting checks
+  quietly every 30 seconds while the page is visible (less often after
+  failed checks or when more pending pages are open), and coming back to the tab checks again. **Show older
+  questions** brings in the next page without repeating questions or
+  clearing anything typed. Refresh also checks pages already opened;
+  quiet checks include older pages with questions still waiting.
+  Requests never overlap and stop when the
+  screen is left. An older Inbox that has no paging still gives its first
+  page.
+* **Unsent writing stays in this tab.** A customer's activity text and
+  follow-up fields, and the question being typed in Help, are kept for
+  that business and that person in the tab's session storage, for up to
+  seven days. Changing the customer's stage or another field keeps them;
+  leaving asks first, and coming back or refreshing restores them. They
+  stay on the screen when sign-in ends. A successful save clears only the
+  writing it saved; a failed save keeps it. Another person's sign-in
+  cannot restore these drafts. Closing the tab ends its stored drafts.
+  (`ui/office/drafts.js`, `tools/check-support-experience.mjs`.)
 * **A question** goes from the business's own server, never the browser:
   the control room gives a pass good for 10 minutes (`POST /api/help-pass`
   with the activation key; `control-room.js` `helpPass`), and the pass goes
@@ -666,7 +688,15 @@ reply with Claude, and Alan approves it in his Sales Inbox.
   `POST /api/office/problem` on their own site, and so do the failures a
   page catches to show its own words (`reportProblem`: "This page didn't
   load", a 3D designer whose settings or lot price list didn't load, a part
-  that didn't start; an answer from the server is never one). The 3D
+  that didn't start). Unexpected 5xx answers from the Dealer Center API
+  are reported too (`reportApiProblem`), even when a form caught them:
+  only the status, route category and server request reference, never
+  the request's body, customer ID or error text. The server includes the
+  reference in its 5xx JSON and `X-Request-Id` header and in its log, so
+  Barnwright can find the corresponding failure. Repeated references
+  for the same route and status count as one kind of problem. Validation,
+  permissions, sign-in outages and the reporting request itself stay
+  quiet. The 3D
   designer starts watching before anything else (`ui/problems-start.js`,
   loaded by `index.html` just before `ui/app.js`, which imports it first
   too), so a script that didn't arrive, or one that broke as it started, is

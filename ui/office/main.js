@@ -485,8 +485,11 @@ export const NO_BUSINESS = Object.freeze({
 });
 
 let renderSeq = 0;
+let disposeView = null;
 async function render() {
   if (!main) return;   /* still on the sign-in screen: nothing to show yet */
+  disposeView?.();
+  disposeView = null;
   const { path, query } = currentPath();
   /* First setup is gone: an old #/setup link (a bookmark) opens Today */
   if (path === "/setup") {
@@ -536,6 +539,7 @@ async function render() {
     const mod = await VIEWS[viewName]();
     const ctx = {
       app, params: match, query, go, toast, view: viewName,
+      onDispose: (cleanup) => { if (seq === renderSeq) disposeView = cleanup; else cleanup(); },
       refresh: () => render(),
       setTitle: (words) => { document.title = `${words} · ${app.business?.name || "Dealer Center"}`; },
     };

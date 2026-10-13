@@ -71,6 +71,27 @@ export function reportProblem(error) {
   try { if (state.on) note(fromRejection({ reason: error })); } catch { /* never in the way */ }
 }
 
+/* API failures are caught by forms. Unexpected 5xx answers still belong
+   in support's problem feed. Report only a route's category, status and
+   the server's reference -- never an ID in the address or anything sent.
+   The reference is outside the signature so repeats remain one problem. */
+export function reportApiProblem({ status, path, requestId, code: answerCode } = {}) {
+  try {
+    if (!state.on || !Number.isInteger(status) || status < 500 || status > 599 || answerCode === "sign-in-down") return;
+    const parts = String(path || "").split(/[?#]/)[0].split("/").filter(Boolean);
+    if (parts[0] === "barnwright") parts.shift();
+    if (parts[0] === "problem") return; // reporting cannot report its own failure
+    const categories = new Set(["me", "session", "sign-out", "setup", "start", "getting-started", "terms", "customers", "price-list", "lots", "team", "help", "barnwright-help"]);
+    const category = categories.has(parts[0]) ? parts[0] : "request";
+    const problem = made(`Dealer Center request failed (${status}).`, `/api/office/${category}`);
+    if (!problem) return;
+    if (typeof requestId === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(requestId)) {
+      problem.message += ` Request ${requestId}.`;
+    }
+    note(problem);
+  } catch { /* never prevent the form from showing its own answer */ }
+}
+
 /* The errors seen on this page so far, newest last (at most 10), for a
    question to Barnwright. */
 export function recentProblems() {
@@ -178,6 +199,7 @@ function note(problem) {
   if (known) {
     known.count++;
     known.lastAt = at;
+    known.message = problem.message;
     /* told once already: how many more times goes later, in one report */
     if (known.told && !state.timer) state.timer = setTimeout(followUp, state.options.followUpMs);
     return;

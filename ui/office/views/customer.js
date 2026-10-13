@@ -13,6 +13,7 @@
 import { h, clear, icon, button, linkButton, field, checkbox, form, dialog, confirmBox, toast } from "../dom.js";
 import { app } from "../app.js";
 import { post, patch } from "../api.js";
+import { readDraft, writeDraft, clearDraft } from "../drafts.js";
 import {
   STAGES, STAGE_WORDS, PAYMENTS, PAYMENT_WORDS, ORDER_WORDS, NOTE_KINDS, money, phone as phoneWords, telHref, smsHref,
   todayKey, addDays, dayWords, followUpWords, ago, when, plural,
@@ -40,14 +41,38 @@ export async function render(ctx) {
   const [id] = ctx.params;
   let c = await loadCustomer(id);
   if (!c) return missingCustomer(ctx);
-  const view = { kind: "note", draft: "", activityShown: ACTIVITY_PAGE, open: new Set() };
+  const draftKey = `customer:${id}`;
+  const kept = readDraft(app, draftKey);
+  const view = {
+    kind: Object.hasOwn(COMPOSE, kept.kind) ? kept.kind : "note",
+    draft: typeof kept.text === "string" ? kept.text.slice(0, 4000) : "",
+    followDate: typeof kept.followDate === "string" ? kept.followDate.slice(0, 10) : c.followUp?.date || "",
+    followNote: typeof kept.followNote === "string" ? kept.followNote.slice(0, 300) : c.followUp?.note || "",
+    activityShown: ACTIVITY_PAGE, open: new Set(),
+  };
+  const followDirty = () => view.followDate !== (c.followUp?.date || "") || view.followNote !== (c.followUp?.note || "");
+  const keepDraft = () => {
+    const follow = followDirty();
+    if (!view.draft && !follow) { clearDraft(app, draftKey); return; }
+    writeDraft(app, draftKey, { kind: view.kind, text: view.draft,
+      ...(follow ? { followDate: view.followDate, followNote: view.followNote } : {}) });
+  };
+  app.leaveGuard = () => view.draft.trim() || followDirty() ? "Leave before saving? Your draft will be here when you come back." : null;
   const root = h("div", { class: "crm-customer" });
 
   /* every change goes through here: send, take the new customer, redraw */
-  async function act(work, done) {
+  async function act(work, done, { followSaved = null } = {}) {
+    const hadFollowDraft = followDirty();
+    const followBefore = { date: view.followDate, note: view.followNote };
     try {
       const out = await work();
       if (out?.customer) c = out.customer;
+      if ((!hadFollowDraft && view.followDate === followBefore.date && view.followNote === followBefore.note)
+        || (followSaved && view.followDate === followSaved.date && view.followNote === followSaved.note)) {
+        view.followDate = c.followUp?.date || "";
+        view.followNote = c.followUp?.note || "";
+      }
+      keepDraft();
       app.customersChanged();
       paint();
       if (done) toast(typeof done === "function" ? done(out) : done);
@@ -152,10 +177,13 @@ export async function render(ctx) {
   /* ---- follow-up ---- */
   function followCard() {
     const f = c.followUp;
-    const note = field("Note", { value: f?.note || "", placeholder: "Call about the delivery date", maxLength: 300 });
-    const date = field("Or pick a day", { type: "date", value: f?.date || "" });
+    const note = field("Note", { value: view.followNote, placeholder: "Call about the delivery date", maxLength: 300 });
+    const date = field("Or pick a day", { type: "date", value: view.followDate });
+    note.input.addEventListener("input", () => { view.followNote = note.input.value; keepDraft(); });
+    date.input.addEventListener("input", () => { view.followDate = date.input.value; keepDraft(); });
+    const snapshot = () => ({ date: view.followDate, note: view.followNote });
     const setTo = (key) => quiet(act(() => patch(`customers/${c.id}`, { followUp: { date: key, note: note.input.value.trim() } }),
-      `Follow-up set for ${dayWords(key)}.`));
+      `Follow-up set for ${dayWords(key)}.`, { followSaved: snapshot() }));
     const quick = h("div", { class: "crm-quick" },
       [["Today", 0], ["Tomorrow", 1], ["In 3 days", 3], ["Next week", 7]].map(([label, n]) =>
         h("button", { type: "button", class: "chip", onclick: () => setTo(addDays(todayKey(), n)) }, label)));
@@ -368,10 +396,11 @@ export async function render(ctx) {
     const kinds = h("div", { class: "crm-kinds", role: "group", "aria-label": "What happened" });
     const textBox = h("textarea", { rows: 3, "aria-label": "What happened", maxLength: 4000 });
     textBox.value = view.draft;
-    textBox.addEventListener("input", () => { view.draft = textBox.value; });
+    textBox.addEventListener("input", () => { view.draft = textBox.value; keepDraft(); });
     const saveBtn = h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, ""));
     const setKind = (k) => {
       view.kind = k;
+      keepDraft();
       for (const b of kinds.children) b.setAttribute("aria-pressed", String(b.dataset.key === k));
       textBox.placeholder = COMPOSE[k][0];
       saveBtn.querySelector("span").textContent = COMPOSE[k][1];
@@ -386,9 +415,11 @@ export async function render(ctx) {
       const words = textBox.value.trim();
       if (view.kind === "note" && !words) { textBox.focus(); throw new Error("Write the note first."); }
       const body = { type: view.kind, text: words };
+      const submittedText = view.draft;
+      const submittedKind = view.kind;
       if (doneBox?.input.checked) body.clearFollowUp = true;
       const out = await post(`customers/${c.id}/activity`, body);
-      view.draft = "";
+      if (view.draft === submittedText && view.kind === submittedKind) view.draft = "";
       await act(async () => out, { note: "Note saved.", call: "Call saved.", text: "Text saved.", email: "Email saved.", visit: "Visit saved." }[body.type]);
     }, { class: "crm-compose" });
 
