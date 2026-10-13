@@ -210,7 +210,25 @@ at once.
 
 * **Quotes keep their price.** A quote stores its price lines and total when
   it is made. Changing the price list later never changes an existing quote
-  or order.
+  or order. New quotes also keep a reference to an immutable copy of their
+  original resolved building definitions in `quote-catalogues/<sha256>`.
+  These copies retain the sold style, size, item names, construction settings
+  and fine print. Identical copies share one record, with the logo and quote
+  submission links removed and only the saved style/size kept; the copy is
+  bounded to 250,000 UTF-8 JSON bytes. The private quote-view route checks
+  the customer's current lot access before returning it. A quote or order
+  sheet, customer quote card and original 3D view use that copy, including
+  when the lot or public designer is now closed. Owner History copies
+  contain settings without their original manufacturer/library definitions;
+  those cannot prove an older quote's item labels or construction. An old
+  quote without a trusted snapshot keeps its saved building name and price
+  lines, with an original-details-unavailable explanation. When an original
+  copy is unavailable, its saved building name and price lines still show,
+  with a plain explanation; current item labels, pictures and fine print
+  are never silently substituted.
+  Historical viewer cards say “Original quote total” and keep their original
+  saved state, with “Back to customer” for further work. The ordinary public
+  shared designer keeps its current-price wording and editable copy flow.
 * **Nobody designing a building is thrown out.** The price list has a
   `cfg` number that goes up only when something that changes a price or what
   can be picked changes (sizes, prices, doors and windows, options, colors).
@@ -425,6 +443,7 @@ A **customer**:
   stage, lostReason, assignedTo /* userId or null */,
   followUp,          // {date: "2026-10-05", note} or null
   quotes: [{ id, number, at, by, source, building, design, price, total, cfg,
+             snapshot?,       // {v: 1, catalogueId}: trusted immutable original definitions
              note?,           // a quote made in the Dealer Center
              plan?,           // website: what they want to do (model/quote-plan.js key)
              rto? }],         // website: {months, monthly} the rent to own they looked at
@@ -487,11 +506,12 @@ asked answers 503 `{code: "sign-in-down"}`, never 401.
 | `PATCH team/:userId` | owner | `{name?, role?, lots?, active?}` |
 | `DELETE team/invites/:hash` | owner | removes an invite not yet used |
 | `GET customers` | everyone | `{rows}` for the lots the person can see; `?lot=` narrows |
-| `POST customers` | everyone | `{lot, name, phone, email, …, source, note?}` |
+| `POST customers` | everyone | `{lot, name, phone, email, …, source, note?, requestKey?}`; a form keeps its random `requestKey` through retries, scoped to the signed-in person; the same unchanged save returns its original customer, even for simultaneous retries; changed details on an already used key answer 409 |
 | `GET customers/:id` | lot access | the whole customer |
 | `PATCH customers/:id` | lot access | contact fields, `stage`, `lostReason`, `assignedTo`, `followUp`, `lot` (owner/manager) |
 | `POST customers/:id/activity` | lot access | `{type: note\|call\|text\|email\|visit, text}` |
 | `POST customers/:id/quotes` | lot access | `{design}` — a building designed in the Dealer Center; priced on the server |
+| `GET customers/:id/quotes/:quoteId/designer` | lot access | `{catalogue, design, lot, historical: true}` — original saved definitions for the authenticated historical 3D view; 409 with an explanation when an original copy cannot be recovered |
 | `POST customers/:id/orders` | lot access | `{quoteId, payment, deposit, deliveryAddress, deliveryDate, deliveryNotes, notes}`; the deposit is never above the total |
 | `PATCH customers/:id/orders/:orderId` | lot access | `{status?, payment?, deposit?, deliveryDate?, …}` |
 | `GET customers.csv` | owner, manager | a spreadsheet of the visible customers |
@@ -2648,6 +2668,16 @@ more than one lot, **+ Customer**, **Help**, the person's menu with Sign out).
 Navigation: a left column on wide screens, a bottom bar on phones (the first
 four screens, the rest under **More**).
 
+Customer, team, lot and order form dialogs ask before discarding entered
+changes with Close, Cancel, Escape, an outside click or navigation. Declining
+keeps the entered work and route. During a save, inputs are locked and these
+close/navigation actions wait for the result; a failed save restores the
+form so the person can correct or retry it. Completed saves close normally.
+The browser also warns before a tab with a changed or pending dialog is
+reloaded or closed. A recorded “Don't text” preference removes the manual
+Text action while retaining Call and Email. Add customer's untouched State
+default follows the selected lot; a State the person has edited stays theirs.
+
 **Today** (`#/`) — "Good morning, Alan." Follow-ups due today and overdue
 (overdue in red), new customers nobody has contacted, numbers for this month
 (new customers, quotes, buildings sold, sales $), and for owners and managers
@@ -2757,7 +2787,14 @@ email must be; the street address is asked as Street and City; "Ask what
 they want to do with the quote", on unless turned off; the texting
 permission sentence, empty = don't ask). It all
 saves into the price list record with one bar at the bottom ("3 changes",
-"Undo changes", "Save settings"); someone saving first is told to reload.
+"Undo changes", "Save settings"). A saved write whose refresh fails keeps
+its acknowledged version and offers “Retry refresh”, without resubmitting
+the saved change. Settings inputs and navigation wait while saving. Someone
+else saving first keeps the draft and offers “Review newer settings”: it
+lists each person's changed settings and overlapping fields. “Keep my
+changes” carries only this editor's changed fields onto the newer saved
+settings for review before saving; unrelated newer changes remain. “Use
+saved settings” asks explicitly before discarding the draft.
 Managers and dealers see "Only the owner can change settings".
 
 **Help** (`#/help`, everyone) — short answers with a search box ("website",

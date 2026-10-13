@@ -18,7 +18,7 @@ import {
   STAGES, STAGE_WORDS, PAYMENTS, PAYMENT_WORDS, ORDER_WORDS, NOTE_KINDS, money, phone as phoneWords, telHref, smsHref,
   todayKey, addDays, dayWords, followUpWords, ago, when, plural,
 } from "../words.js";
-import { encodeSync } from "../../../model/design.js";
+import { originalQuoteUrl } from "../quote-view.js";
 import { planWords } from "../../../model/quote-plan.js";
 import { statusPill, followUpTone, changeStage, sourceWords, confirmChoice, dayKeyOf, dateFromNow, loadCustomer, missingCustomer } from "./crm-kit.js";
 
@@ -132,7 +132,7 @@ export async function render(ctx) {
     const cityLine = [c.city, [c.state, c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
     const quick = h("div", { class: "crm-reach" },
       c.phone ? linkButton("Call", telHref(c.phone), { kind: "primary", icon: "phone" }) : null,
-      c.phone ? linkButton("Text", smsHref(c.phone), { kind: "ghost", icon: "text" }) : null,
+      c.phone && c.smsOk !== false ? linkButton("Text", smsHref(c.phone), { kind: "ghost", icon: "text" }) : null,
       c.email ? linkButton("Email", `mailto:${c.email}`, { kind: "ghost", icon: "mail" }) : null);
     return h("section", { class: "card crm-contact" },
       h("div", { class: "card-head" }, h("h2", { class: "card-title" }, "Contact"),
@@ -160,7 +160,7 @@ export async function render(ctx) {
     const box = dialog(`Edit ${c.name}`, form([
       h("div", { class: "form-grid" }, Object.values(f).map((x) => x.wrap)),
       sms.wrap,
-      h("div", { class: "actions end" }, button("Cancel", () => box.close()),
+      h("div", { class: "actions end" }, button("Cancel", () => box.cancel()),
         h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, "Save changes"))),
     ], async () => {
       const body = {};
@@ -212,8 +212,12 @@ export async function render(ctx) {
       h("option", { value: "" }, "Nobody yet"), team.map((p) => h("option", { value: p.userId }, p.name || p.email)));
     who.value = team.some((p) => p.userId === c.assignedTo) ? c.assignedTo : "";
     who.addEventListener("change", () => {
-      const pickedName = who.value ? app.personName(who.value) : "";
-      quiet(act(() => patch(`customers/${c.id}`, { assignedTo: who.value || null }), pickedName ? `${pickedName} is working ${c.name} now.` : `Nobody is working ${c.name} now.`));
+      const picked = who.value || null;
+      const pickedName = picked ? app.personName(picked) : "";
+      who.value = c.assignedTo || "";
+      who.disabled = true;
+      quiet(act(() => patch(`customers/${c.id}`, { assignedTo: picked }), pickedName ? `${pickedName} is working ${c.name} now.` : `Nobody is working ${c.name} now.`)
+        .finally(() => { if (who.isConnected) { who.value = c.assignedTo || ""; who.disabled = false; } }));
     });
     let lotPart;
     if (app.can("moveCustomers") && app.lots.length > 1) {
@@ -271,7 +275,7 @@ export async function render(ctx) {
       details,
       h("div", { class: "crm-quote-actions" },
         order ? null : button("Mark sold", () => markSold(q), { kind: "primary", icon: "check" }),
-        h("a", { class: "btn btn-ghost", href: `${app.designerUrl(c.lot)}#d=${encodeSync(q.design)}&view=1`, target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")),
+        h("a", { class: "btn btn-ghost", href: originalQuoteUrl(app.designerUrl(c.lot), c.id, q.id, q.design), target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")),
         linkButton("Change it", `#/customers/${c.id}/design/${q.id}`, { kind: "ghost", icon: "edit" }),
         linkButton("Print", `#/customers/${c.id}/quotes/${q.id}`, { kind: "ghost", icon: "print" })));
   }
@@ -300,7 +304,7 @@ export async function render(ctx) {
     const box = dialog(`Mark quote #${q.number} sold`, form([
       h("div", { class: "crm-sold-sum" }, icon("shed"), h("div", {}, h("strong", {}, q.building), h("span", {}, `Quote #${q.number}`)), h("strong", { class: "num" }, money(q.total))),
       h("div", { class: "form-grid" }, pay.wrap, deposit.wrap, date.wrap, addr.wrap, dnotes.wrap, notes.wrap),
-      h("div", { class: "actions end" }, button("Cancel", () => box.close()),
+      h("div", { class: "actions end" }, button("Cancel", () => box.cancel()),
         h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, "Make the order"))),
     ], async () => {
       const dep = deposit.input.value === "" ? null : Number(deposit.input.value);
@@ -374,7 +378,7 @@ export async function render(ctx) {
     const notes = field("Order notes", { type: "textarea", rows: 2, value: o.notes || "", wide: true });
     const box = dialog(`Order #${o.number}`, form([
       h("div", { class: "form-grid" }, pay.wrap, deposit.wrap, date.wrap, addr.wrap, dnotes.wrap, notes.wrap),
-      h("div", { class: "actions end" }, button("Cancel", () => box.close()),
+      h("div", { class: "actions end" }, button("Cancel", () => box.cancel()),
         h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, "Save order"))),
     ], async () => {
       const dep = deposit.input.value === "" ? 0 : Number(deposit.input.value);

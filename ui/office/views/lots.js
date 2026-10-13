@@ -417,7 +417,7 @@ function lotDialog(ctx, lot) {
     h("div", { class: "lots-addr" }, city.wrap, state.wrap, zip.wrap),
     h("div", { class: "form-grid" }, phone.wrap, email.wrap, hours.wrap, website.wrap),
     h("div", { class: "actions end" },
-      button("Cancel", () => box.close()),
+      button("Cancel", () => box.cancel()),
       h("button", { type: "submit", class: "btn btn-primary" }, icon(isNew ? "plus" : "check"), h("span", {}, isNew ? "Add lot" : "Save lot"))),
   ], async () => {
     const body = {

@@ -275,7 +275,7 @@ function summaryHtml(api) {
   pp.lines.forEach((l) => { h += '<div class="sumline"><span>' + esc(l[0]) + "</span>" + amt(l[1]) + "</div>"; });
   h += '<div class="sumline"><span>' + (T.metal ? "Metal" : "Siding") + " " + esc(colorName(sidingPalette(T, cat.COLORS), st.body)) +
     " · Trim " + esc(colorName(cat.COLORS.trim, st.trim)) + " · Roof " + esc(colorName(cat.COLORS.metal, st.roof)) + "</span><b>—</b></div>";
-  if (show) h += '<div class="sumline tot"><span class="disp" style="letter-spacing:.08em;text-transform:uppercase;font-size:13px">Estimated total today</span><b>' + esc(money(pp.total)) + "</b></div>";
+  if (show) h += '<div class="sumline tot"><span class="disp" style="letter-spacing:.08em;text-transform:uppercase;font-size:13px">' + (cat.managed?.historical === true ? "Original quote total" : "Estimated total today") + '</span><b>' + esc(money(pp.total)) + "</b></div>";
   return h;
 }
 
@@ -406,24 +406,26 @@ export function install(api) {
 
   /* ---- the look-only page ---- */
   function enterView(note) {
+    const historical = cat.managed?.historical === true;
     info.view = true;
     api.setReadOnly(true);
     const hint = document.getElementById("hint");
     const hintWas = hint ? hint.textContent : "";
     if (hint) hint.textContent = "Drag to spin it around";
     const card = cardAtTop("shview",
-      "<h3>" + esc(name ? name + " — a shared design" : "A shared design") + "</h3>" +
+      "<h3>" + esc(historical ? "Original saved quote" : name ? name + " — a shared design" : "A shared design") + "</h3>" +
       '<div class="shsum"></div>' +
       (note ? '<p class="vnote shprice">' + esc(note) + "</p>" : "") + warnHtml() +
-      contactHtml(cat, { sms: "Hi, I'm looking at a shed design on your website and I have a question." }) +
-      '<button type="button" class="bigbtn shchange">Change this design</button>' +
-      '<div class="shviewshare"></div>' +
-      '<p class="vnote">' + (cat.pricing.show !== "none" ? "Prices are from today’s price list" + (cat.notes && cat.notes.finePrint ? ". " : ".") : "") +
+      (historical ? '<a class="bigbtn" href="/dealer#/customers/' + esc(cat.managed.savedQuote.split("/")[0]) + '">Back to customer</a>'
+        : contactHtml(cat, { sms: "Hi, I'm looking at a shed design on your website and I have a question." }) +
+          '<button type="button" class="bigbtn shchange">Change this design</button><div class="shviewshare"></div>') +
+      '<p class="vnote">' + (historical ? "Prices and fine print are from this saved quote. " : cat.pricing.show !== "none" ? "Prices are from today’s price list" + (cat.notes && cat.notes.finePrint ? ". " : ".") : "") +
       esc((cat.notes && cat.notes.finePrint) || "") + "</p>");
     const sum = card.querySelector(".shsum");
     const paint = () => { sum.innerHTML = summaryHtml(api); };
     paint();
     const offChange = api.on("change", paint);
+    if (historical) return;
     card.querySelector(".shviewshare").appendChild(shareBox("Share this design"));
     card.querySelector(".shchange").addEventListener("click", () => {
       offChange();

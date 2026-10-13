@@ -509,6 +509,10 @@ export function createOffice(deps) {
     const who = await writer(req);
     return json(await customers.addQuote(who, id, await readBody(req)), 201);
   });
+  route("GET", /^\/api\/office\/customers\/([A-Za-z0-9]{8,24})\/quotes\/([A-Za-z0-9]{8,24})\/designer$/, async (req, [id, quoteId]) => {
+    const who = await people.member(req);
+    return json(await customers.quoteView(who, id, quoteId));
+  });
   route("POST", /^\/api\/office\/customers\/([A-Za-z0-9]{8,24})\/orders$/, async (req, [id]) => {
     const who = await writer(req);
     return json(await customers.addOrder(who, id, await readBody(req)), 201);

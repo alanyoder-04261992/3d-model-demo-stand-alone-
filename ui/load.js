@@ -121,6 +121,21 @@ export async function loadCatalogue(id, opts) {
 export async function loadLot(slug, opts = {}) {
   checkId(slug, "The lot");
   const base = opts.base || ROOT;
+  if (opts.savedQuote) {
+    if (!/^[A-Za-z0-9]{8,24}\/[A-Za-z0-9]{8,24}$/.test(opts.savedQuote)) throw new Error("Open the original building from its quote or order in the Dealer Center.");
+    let response;
+    try { response = await fetch(new URL(`api/office/customers/${opts.savedQuote.replace("/", "/quotes/")}/designer`, base), { cache: "no-store", credentials: "same-origin" }); }
+    catch { throw Object.assign(new Error("The original building couldn't load. Check your connection and try again."), { status: 0 }); }
+    const data = await response.json().catch(() => null);
+    if (!response.ok) throw Object.assign(new Error(data?.error || "The original building couldn't load. Open it again from the Dealer Center."), { status: response.status });
+    if (!data?.historical || data.lot?.slug !== slug || !data.catalogue?.TYPES?.[data.design?.type]
+      || data.catalogue.cfg !== data.design?.cfg) throw Object.assign(new Error("The original building details could not be read. Ask Barnwright to check this quote."), { status: 409 });
+    const cat = data.catalogue;
+    return { catalogue: Object.freeze({ ...cat, status: "active",
+      leads: Object.freeze({ ...cat.leads, mode: "none", url: "" }),
+      managed: Object.freeze({ slug, lotName: data.lot.name || "", businessName: cat.brand.name || "", companyId: cat.id, quoteUrl: null, historical: true, savedQuote: opts.savedQuote }),
+    }), lot: data.lot, savedDesign: data.design, problems: [] };
+  }
   const preview = opts.preview === "team" || opts.preview === "barnwright" ? opts.preview : null;
   const data = await fetchLot(preview === "barnwright" ? `api/office/barnwright/lots/${slug}/preview`
     : preview ? `api/office/lots/${slug}/preview` : `api/lots/${slug}`, base);

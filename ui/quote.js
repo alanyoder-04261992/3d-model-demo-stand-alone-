@@ -24,7 +24,10 @@
                   the kind a browser sends without asking permission first. It
                   goes into a hidden frame (or a new tab, when leads.target is
                   "tab", for a service that shows its own "are you human?"
-                  page); the service answering counts as sent.
+                  page). A cross-origin frame load or a new tab cannot prove
+                  receipt: the customer gets ways to confirm it directly.
+                  A same-origin service can acknowledge receipt with JSON
+                  {ok:true} or {success:true}; an HTML answer is unconfirmed.
      mailto       opens the customer's own e-mail app with the summary and the
                   link to the design in it, addressed to leads.email (else
                   brand.email). Kept under about 1,800 characters (older mail
@@ -54,7 +57,9 @@
                   customer gets the "reach us directly" box.
    In the other modes, when the designer sits inside an allowed company page,
    that page is told a quote was requested ({type: "shed:quote-requested",
-   mode, sent: true, design, link}) WITHOUT the customer's details.
+   mode, sent, status, design, link}) WITHOUT the customer's details. sent
+   is true only after an observable acknowledgement; opening an e-mail app
+   or an unconfirmed form answer uses sent: false.
 
    WHAT IS ASKED: company.leads.fields -- name, phone, email, zip, address,
    note, each "required", "optional" or "off" (not asked). The address is a
@@ -80,11 +85,13 @@
    dead end.
 
    THE RESULT IS ALWAYS SHOWN. Sent: "Quote request sent". Not sent (the
-   service was down, the webhook broken, no answer in 20 seconds, not inside
+   service was down, the webhook broken, not inside
    the company's page) -- and ALWAYS after mailto, because the page cannot
    know whether the customer pressed Send -- the customer gets the company's
    phone as Call and Text links, a "Copy my design link" button and the
    summary of their design, so nothing is ever lost.
+   An unconfirmed form answer or timeout gets those same ways to reach the
+   company, with words asking the customer to confirm receipt.
 
    The link sent with a quote opens the design LOOK-ONLY (ui/share.js,
    "&view=1") and prices it from the company's price list on the day it is
@@ -324,7 +331,30 @@ export async function leadImages(api, cap) {
    Sending. */
 
 let seq = 0;
+async function postLocalForm(url, fields, timeoutMs) {
+  const ctl = new AbortController();
+  const tm = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const r = await fetch(url, {
+      method: "POST", body: new URLSearchParams(fields),
+      headers: { Accept: "application/json" }, credentials: "same-origin", signal: ctl.signal,
+    });
+    if (!r.ok) return { ok: false, why: "the form service answered " + r.status };
+    if (/\bapplication\/json\b/i.test(r.headers.get("Content-Type") || "")) {
+      let answer = null;
+      try { answer = await r.json(); } catch (e) { /* no usable acknowledgement */ }
+      if (answer && (answer.ok === false || answer.success === false)) return { ok: false, why: "the form service refused the request" };
+      if (answer && (answer.ok === true || answer.success === true)) return { ok: true, how: "form" };
+    }
+    return { ok: false, unconfirmed: true, how: "form", why: "the form service did not confirm receipt" };
+  } catch (e) {
+    /* A failed read can follow a successful send. Never repeat the POST. */
+    return { ok: false, unconfirmed: true, how: "form", why: e && e.name === "AbortError" ? "the form service did not answer in time" : "the form service could not be reached" };
+  } finally { clearTimeout(tm); }
+}
+
 function postForm(url, fields, target, timeoutMs) {
+  if (target !== "tab" && typeof fetch === "function" && typeof AbortController === "function" && new URL(url, location.href).origin === location.origin) return postLocalForm(url, fields, timeoutMs);
   const name = "shedq" + (++seq) + "x" + Date.now();
   const form = document.createElement("form");
   form.method = "POST"; form.action = url; form.acceptCharset = "UTF-8";
@@ -337,8 +367,8 @@ function postForm(url, fields, target, timeoutMs) {
   if (target === "tab") {
     form.target = "_blank";
     document.body.appendChild(form);
-    form.submit(); form.remove();
-    return Promise.resolve({ ok: true, how: "tab" });
+    try { form.submit(); } finally { form.remove(); }
+    return Promise.resolve({ ok: false, unconfirmed: true, how: "tab", why: "finish and confirm the request in the new tab" });
   }
   const frame = document.createElement("iframe");
   frame.name = name; frame.title = "Sending your quote request"; frame.hidden = true;
@@ -353,11 +383,13 @@ function postForm(url, fields, target, timeoutMs) {
       form.remove(); setTimeout(() => frame.remove(), 50);
       resolve(r);
     };
-    const tm = setTimeout(() => finish({ ok: false, why: "the form service did not answer" }), timeoutMs);
+    const tm = setTimeout(() => finish({ ok: false, unconfirmed: true, how: "frame", why: "the form service did not answer" }), timeoutMs);
     frame.addEventListener("load", () => {
       let blank = false;
       try { blank = frame.contentWindow.location.href === "about:blank"; } catch (e) { blank = false; }
-      if (!blank) finish({ ok: true, how: "frame" });       /* the service's own page came back */
+      /* Browser isolation hides the response's status and contents. Loading
+         an error page or a captcha is not an acknowledgement. */
+      if (!blank) finish({ ok: false, unconfirmed: true, how: "frame", why: "the form service did not confirm receipt" });
     });
     try { form.submit(); } catch (e) { finish({ ok: false, why: "the form could not be sent" }); }
   });
@@ -558,14 +590,23 @@ export function install(api) {
     if (a) a.addEventListener("click", () => { res.innerHTML = ""; btn.hidden = false; btn.disabled = false; btn.textContent = btnWords; });
   }
 
-  function showSent(c, how) {
+  function showSent(c) {
     const first = String(c.name || "").trim().split(/\s+/)[0] || "";
     const reach = c.phone ? " at " + c.phone : c.email ? " at " + c.email : "";
-    const p = how === "tab"
-      ? "Your request opened in a new tab" + (first ? ", " + first : "") + ". If it asks you anything there, finish it and " + who + " will have your design."
-      : (first ? "Thanks, " + first + "! " : "Thanks! ") + who + " has your design and will get back to you" + reach + " with the exact price.";
+    const p = (first ? "Thanks, " + first + "! " : "Thanks! ") + who + " has your design and will get back to you" + reach + " with the exact price.";
     res.innerHTML = '<div class="sent"><div class="disp">✓ Quote request sent</div><p class="qsentwords"></p></div>' + again("Changed something? Send it again");
     res.querySelector(".qsentwords").textContent = p;
+    btn.hidden = true;
+    wireAgain();
+  }
+  function showUnconfirmed(link, summary, how) {
+    const title = how === "tab" ? "Finish your request in the new tab" : "Please confirm your quote request";
+    const words = how === "tab"
+      ? "The form service should have opened. Finish any questions there and check for its confirmation, or " + (canReach ? "reach " + who + " below." : "copy your design link below and send it to " + who + ".")
+      : "We couldn’t confirm that " + who + " received your request. " + (canReach ? "Reach them directly below to check they have your design." : "Copy your design link below and send it to them.");
+    res.innerHTML = '<div class="qok qunconfirmed"><b>' + esc(title) + '</b><p></p></div>' + fallback(link, summary) + again("Edit my request");
+    res.querySelector(".qunconfirmed p").textContent = words;
+    wireFallback(link, summary);
     btn.hidden = true;
     wireAgain();
   }
@@ -700,7 +741,7 @@ export function install(api) {
         }
         showMailto(href, link, summary);
         out = record({ status: "opened", why: "", href: href, length: href.length });
-        tellParent({ type: "shed:quote-requested", v: 1, mode: mode, sent: true, design: api.getDesign({ priced: true, at: today() }), link: link }, false);
+        tellParent({ type: "shed:quote-requested", v: 1, mode: mode, sent: false, status: "opened", design: api.getDesign({ priced: true, at: today() }), link: link }, false);
         return out;
       }
 
@@ -744,10 +785,14 @@ export function install(api) {
         r = { ok: false, why: "unknown leads mode " + mode };
       }
       if (r.ok) {
-        showSent(c, r.how);
+        showSent(c);
         if (r.receipt) showReceipt(r.receipt, shownTotal);
-        if (mode !== "postMessage") tellParent({ type: "shed:quote-requested", v: 1, mode: mode, sent: true, design: design, link: link }, false);
+        if (mode !== "postMessage") tellParent({ type: "shed:quote-requested", v: 1, mode: mode, sent: true, status: "sent", design: design, link: link }, false);
         out = record(Object.assign({ status: "sent" }, r));
+      } else if (r.unconfirmed) {
+        showUnconfirmed(link, summary, r.how);
+        tellParent({ type: "shed:quote-requested", v: 1, mode: mode, sent: false, status: "unconfirmed", design: design, link: link }, false);
+        out = record(Object.assign({ status: "unconfirmed" }, r));
       } else {
         if (mode === "managed") showManagedFailed(link, summary, r);
         else showFailed(link, summary, r.why);
