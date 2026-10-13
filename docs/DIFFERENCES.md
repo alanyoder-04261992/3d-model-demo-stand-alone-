@@ -344,10 +344,18 @@ finished designer retains the golden geometry.
     gable-window trim. The legacy renderer's casing was 3.24 in, with another
     0.24 in overlapping the opening; the shop boards now measure 3 1/2 in
     edge to edge. Door casings meet the head continuously, matching the Yoder
-    site's joint. The cabin porch band remains part of that design. Shared
-    measurements in `model/opening-trim.js` keep the mesh, placement, floor
+    site's joint. Alan's cabin correction sets
+    `construction.openings.trim.porchBand: false`, removing the extra stacked
+    opening band on every wall of Cabin, Lofted Barn Cabin, Side Cabin, Loft
+    Side Cabin, Deluxe Side Cabin and Deluxe Loft Side Cabin. Their doors and
+    wall windows keep one existing 3 1/2 in tapered head matching ordinary
+    windows and rectangular 18x24 loft-window trim. Decorative faux loft
+    rectangles and octagonal frames retain their design; porch perimeter
+    and beam trim stay as drawn. Shared measurements in
+    `model/opening-trim.js` keep the mesh, placement, floor
     plan, saved layout formulas and selection target together. The shop
     standard sets `construction.openings.trim`; the recorded Barnwright
-    catalogue omits it and retains its exact geometry. Existing approved
+    catalogue omits it and retains its original door reveal, extra porch
+    opening band and exact geometry. Existing approved
     shop roof and wall dimensions remain. `tools/check-opening-trim.mjs`
     checks the emitted board faces across all styles and sizes.

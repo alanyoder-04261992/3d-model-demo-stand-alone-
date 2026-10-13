@@ -2,9 +2,9 @@
  "format": 1,
  "about": "Pictures and shape facts for every style in the 3D designer's library, for matching a dealer's photos to a style. Made by node tools/make-style-refs.mjs and checked by node tools/check-style-refs.mjs in the 3D designer repository.",
  "pitch_note": "Every pitch, height and size here is the standard building line as the 3D designer draws it. The Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility use Alan's 5/12, the Dormer Shed's main roof his 7/12, and the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage his barn roof heights (3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide); the other styles use Barnwright's drawing. A barn roof's height is to the peak of its trusses, the way a builder measures it; every other roof's is to the top of the roof. The words say every length and pitch the way How it's built does (5/12, about 6 1/2/12, 7 ft 4 13/16 in); a barn roof is said by its height, not by the pitch of its steep part. Each slope's pitch is also given as an exact number for measuring a photo. A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.",
- "library_version": "3f2f6a72c21323a7",
+ "library_version": "0a5b177fd59b11ed",
  "library_files": {
-  "library/manufacturers/standard.json": "5f421fd20c9121bebcbb3eb923dbb04488fa48ca98131a13cc8a32bb85b08003",
+  "library/manufacturers/standard.json": "1c4b0da827a39c77d1d66963084a959153899fe0f53851608597fde3f82bf1f4",
   "library/construction.json": "bc45a625290a988f7ee7b274352eb7f4f6a6ce7aa5b971f568837dc0fc5a1297"
  },
  "drawn_with": {
@@ -46,8 +46,8 @@
  },
  "sheet": {
   "file": "sheet.jpg",
-  "sha256": "8a2692097679b1994e6a7ad6a4465adb42a80f88ba857abd4b1f9f0ba91d7bab",
-  "bytes": 97048,
+  "sha256": "b4f6aba3e4309b3c7a6e7b8e37a74308b15faaf6dd69a69aadd4fd30a6979219",
+  "bytes": 97064,
   "width": 1024,
   "height": 1194,
   "columns": 4,
@@ -1726,15 +1726,15 @@
    "pictures": {
     "three_quarter": {
      "file": "C.jpg",
-     "sha256": "88d48a2df2305cc6889261d6af5b42058d890c8c9b7891acbee14e4970cc010b",
-     "bytes": 52592,
+     "sha256": "0826d99f29590ec9708ce6d3dfeaf37430834c1a6559f64218e3d5c4efb7e6a2",
+     "bytes": 52674,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "C-end.jpg",
-     "sha256": "09ccce96473a57d7a32c5258afdb2c15e389afbf7d1d72ff45a628c07cc53d1c",
-     "bytes": 30670,
+     "sha256": "0265bdc0a989d8416db513bf8666f03e4f7433756cd52e0ddc72f7c77d642c06",
+     "bytes": 30686,
      "width": 1024,
      "height": 761
     }
@@ -1893,15 +1893,15 @@
    "pictures": {
     "three_quarter": {
      "file": "LBC.jpg",
-     "sha256": "36abee99e9a8a39a8addcb0e3b899a5e2102fb19a568a5df79f7fa7356224301",
-     "bytes": 49504,
+     "sha256": "ed0529fdf9d6292b8115016181e679d19f1540b11fd49f523d439e2a964ee368",
+     "bytes": 49498,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "LBC-end.jpg",
-     "sha256": "d2504c2fb4fb44aadf7d79955eba490c4cecb728b133cddb445dd95513ea6e65",
-     "bytes": 32917,
+     "sha256": "5df64cdf7b0db50ee4139bad6eafb554950864234c45d32013cecee26acf26e4",
+     "bytes": 32953,
      "width": 1024,
      "height": 761
     }
@@ -2025,15 +2025,15 @@
    "pictures": {
     "three_quarter": {
      "file": "SC.jpg",
-     "sha256": "350df421c15915822d76590384399e8c40567d54bde4be0e806e913eca23c204",
-     "bytes": 54102,
+     "sha256": "128bd00d8ee4c37d42bfb6a76fe2e0c2bc79e03ca5aa4f8966f4748f11d1d20e",
+     "bytes": 54148,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "SC-end.jpg",
-     "sha256": "4e4c6b432e4c807b14cc38e53b716e3994b5cd211979eb877ba4e45d83b7ee40",
-     "bytes": 26225,
+     "sha256": "0edf019c6b79c29b76d085c28a093c32a4334594198e3c4a03b615035d69e88c",
+     "bytes": 26189,
      "width": 1024,
      "height": 761
     }
@@ -2167,15 +2167,15 @@
    "pictures": {
     "three_quarter": {
      "file": "LSC.jpg",
-     "sha256": "9537f36fe9091cf129da3d6fdde119ace0be78fb9aa1d02d241a5259684533a4",
-     "bytes": 50120,
+     "sha256": "c49bf2b731958e44d51d2a977203edd9ba4dacfb5d2cd78da31e4bca6dba91f8",
+     "bytes": 50328,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "LSC-end.jpg",
-     "sha256": "eb11f5869bd8accc10de3361572d0205ad77c850768813644ad2a69be9718fb1",
-     "bytes": 27865,
+     "sha256": "cbb13ae5df0a516085b9ba5321ff02531e7e722232665153da25dd9f011fec77",
+     "bytes": 28138,
      "width": 1024,
      "height": 761
     }
@@ -2298,15 +2298,15 @@
    "pictures": {
     "three_quarter": {
      "file": "DSC.jpg",
-     "sha256": "8e883af8fb092e5c1eb48311dfacfbef5500b7a9e07078f6b2ade6b3a7262292",
-     "bytes": 46608,
+     "sha256": "70654509d6f1e603f8739daa80b4168f3e39646b6d258f7cc880318764ea57e8",
+     "bytes": 46631,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "DSC-end.jpg",
-     "sha256": "f0ef13c6edd4e8b987c0ab75cc81b242586987a12a6aa2c5c98bd5dfeedead4e",
-     "bytes": 23467,
+     "sha256": "ca454c660d152480d75952485e1d3b0e52f9778d9dd41fc8926dbeda2f21ee2f",
+     "bytes": 23583,
      "width": 1024,
      "height": 761
     }
@@ -2439,15 +2439,15 @@
    "pictures": {
     "three_quarter": {
      "file": "SLC.jpg",
-     "sha256": "ee41eae4d5cb459b9531f16d01a8fffd565a2cc486eff4da6e1cdfbf46765c21",
-     "bytes": 41936,
+     "sha256": "1f47213a60e0d47f819b3fc0cae0254c5919d613ddf7497de160d55776acfe43",
+     "bytes": 41928,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "SLC-end.jpg",
-     "sha256": "181d1784de1cdbcccaaf709f1d498fae64527d897186a686242e4a14d1747dd7",
-     "bytes": 24545,
+     "sha256": "3b439091434f2898859072dd198520555974e60ec2e084177ef49210c12623dd",
+     "bytes": 24535,
      "width": 1024,
      "height": 761
     }

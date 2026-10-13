@@ -22,9 +22,9 @@ pair of them as French doors (5.6 ft across). On the picture, per leaf:
 * **A silver knob** 0.30 ft in from the latch edge (on the French doors, at
   the meeting edges).
 * On the French doors the two leaves are each `w/2 - 0.06` wide, a hair apart.
-* Round it, the shared trim: side casings stopping just under the head, the
-  22.5-degree head board, and on a porch building the header band (see
-  `part-openings`).
+* Round it, the shared trim: 3 1/2 in side casings meeting one 22.5-degree
+  head board in the shop standard. The recorded Barnwright drawing keeps
+  its door reveal and extra porch opening band (see `part-openings`).
 
 ## Stage
 
@@ -119,19 +119,16 @@ And the shared trim (`common.js`, full text in `part-openings`):
 
 ## Shop opening trim — October 12, 2026
 
-Alan requested the Yoder Storage Barns trim shape and selected **actual
-3 1/2-inch boards**. The standard manufacturer sets
-`construction.openings.trim.widthIn: 3.5` and `headJoint: "continuous"`.
-`model/opening-trim.js` supplies the side-board width, head and sill heights,
-22.5-degree flares and paired-window shared board. Door casings meet the
-head continuously, as in `yoder-storage-barns/design.html`; there is no
-separate shadow filling the old gap. Rectangular 18x24 gable windows use the
-same measured stock. Decorative faux and octagonal frames keep their design.
-Placement, saved layout formulas, the floor plan and full-trim tap bounds
-use the same measurements. Existing roof, wall and door sizes stay as approved.
+The standard manufacturer uses actual 3 1/2-inch trim with
+`construction.openings.trim.widthIn: 3.5`, `headJoint: "continuous"` and
+`porchBand: false`. Alan's cabin correction removes the extra stacked
+opening band on all walls of the six cabin styles listed in `part-openings`.
+Each door or wall window keeps one tapered head matching ordinary windows
+and rectangular 18x24 loft-window trim. Porch perimeter and beam trim stay
+as drawn. Decorative faux loft rectangles and octagonal frames keep their design.
 
-The legacy Barnwright catalogue deliberately omits this shop trim setting,
-so its recorded triangles remain exact. `node tools/check-opening-trim.mjs`
-checks emitted trim faces at every sold style/size and porch variant;
-`node tools/check-golden.mjs` guards the legacy drawing. The shop geometry
-record is updated on purpose for this requested trim change.
+Shared measurements in `model/opening-trim.js` keep geometry, paired windows,
+layouts and tap bounds together. The legacy Barnwright catalogue retains
+its original door reveal and extra porch opening band. Check emitted boards
+and single heads with `node tools/check-opening-trim.mjs`, and legacy geometry
+with `node tools/check-golden.mjs`.
