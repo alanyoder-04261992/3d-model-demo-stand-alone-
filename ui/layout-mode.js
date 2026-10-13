@@ -216,7 +216,7 @@ export async function install(api) {
     let rule = rules[item.id];
     if (!rule && savedEntry(item)?.when) rule = rules[item.id] = { when: copy(savedEntry(item).when) };
     if (!rule) return;
-    const fr = frame(), len = fr.ws[item.wall]?.len || fr.d.W, width = itemW(item, cat.CAT), post = cat.CAT[item.cat].k === "post", at = rule.at;
+    const fr = frame(), len = fr.ws[item.wall]?.len || fr.d.W, width = itemW(item, cat.CAT, fr), post = cat.CAT[item.cat].k === "post", at = rule.at;
     let next;
     if (at === "center") next = { pos: `len*${item.pos / len}` };
     else if (at?.fromStart != null) next = { fromStart: item.pos + len / 2 - width / 2 };
@@ -302,7 +302,7 @@ export async function install(api) {
     carries.innerHTML = `<p class="layout-rule">${esc(ruleWords(entry, frame()))}</p>${isPost ? `<p>The railing stays open ${porch === "S" ? "in front of the porch door" : "in the widest gap"}: that’s the way in, and where a ramp goes.</p>` : ''}<label for="layout-rule-select">How it carries over to other sizes</label><select id="layout-rule-select"><option value="${builderSource ? "builder" : ""}"${builderSource ? "" : " disabled"}>${builderSource ? "Where the builder puts it" : "Pick a rule"}</option>${options.map(([key, label]) => `<option value="${key}">${label}</option>`).join("")}</select><div id="layout-gaprow" hidden><label for="layout-gap">Distance in inches</label><input id="layout-gap" type="number" step="0.0625"><button type="button" id="layout-gapapply">Use this distance</button></div><p id="layout-now">${builderNow ? "Now: where the builder puts it. Pick one to change it." : "Your rule is kept on every size."}</p><div id="layout-closeposts"></div>`;
     const choose = el("layout-rule-select");
     choose.onchange = () => {
-      const kind = choose.value, fr = frame(), len = fr.ws[item.wall]?.len || fr.d.W, width = itemW(item, cat.CAT);
+      const kind = choose.value, fr = frame(), len = fr.ws[item.wall]?.len || fr.d.W, width = itemW(item, cat.CAT, fr);
       if (kind === "builder" && builderSource) {
         delete rules[item.id]; touched.delete(item.id);
         api.setState(() => Object.assign(item, before), { reason: "layout-rule" }); api.select(item.id); return;

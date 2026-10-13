@@ -17,7 +17,7 @@
    price meanwhile. */
 
 import { toState, fromState } from "../../model/design.js";
-import { frameOf, dims, pSpan, wallDefs } from "../../model/frame.js";
+import { frameOf } from "../../model/frame.js";
 import { standardItems, layoutVariants } from "../../model/loadouts.js";
 import { pkFixtures, fitsOnWall } from "../../model/layout.js";
 import { priceParts } from "../../model/pricing.js";
@@ -51,11 +51,10 @@ function mostIncluded(cat, type) {
   if (byStyle.has(type)) return byStyle.get(type);
   const maximum = new Map(), t = cat.TYPES[type];
   for (const size of Object.keys(cat.P[type])) {
-    const d = dims(size, t);
     for (const variant of layoutVariants(t, size)) {
-      const span = pSpan(variant, d, t), ws = wallDefs(t, d, span, null);
+      const frame = frameOf({ type, size, ...variant }, cat), { d, span, ws } = frame;
       const counts = new Map();
-      for (const item of standardItems(t, d.W, d.L, { CAT: cat.CAT, span, ws }, type)) counts.set(item.cat, (counts.get(item.cat) || 0) + 1);
+      for (const item of standardItems(t, d.W, d.L, { CAT: cat.CAT, span, ws, frame }, type)) counts.set(item.cat, (counts.get(item.cat) || 0) + 1);
       for (const [key, n] of counts) maximum.set(key, Math.max(maximum.get(key) || 0, n));
     }
   }

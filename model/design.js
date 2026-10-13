@@ -242,7 +242,7 @@ export function followStandardDoor(state, cat) {
   if (!inc.length) return out;
   const fr = frameOf(state, cat);
   let std;
-  try { std = standardItems(fr.t, fr.d.W, fr.d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws }, state.type); } catch (e) { return out; }
+  try { std = standardItems(fr.t, fr.d.W, fr.d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws, frame: fr }, state.type); } catch (e) { return out; }
   const left = new Map();
   for (const s of std) left.set(s.cat, (left.get(s.cat) || 0) + 1);
   const over = [];
@@ -507,7 +507,7 @@ export function toState(design, cat, opts) {
     s.pLen = to;
     const fr2 = frameOf(s, cat);
     const porchWalls = ["S1", "S2", "S3"];
-    const fresh = standardItems(fr2.t, fr2.d.W, fr2.d.L, { CAT: fr2.CAT, span: fr2.span, ws: fr2.ws }, s.type).filter((it) => porchWalls.indexOf(it.wall) >= 0);
+    const fresh = standardItems(fr2.t, fr2.d.W, fr2.d.L, { CAT: fr2.CAT, span: fr2.span, ws: fr2.ws, frame: fr2 }, s.type).filter((it) => porchWalls.indexOf(it.wall) >= 0);
     s.items = s.items.filter((it) => !(it.inc && porchWalls.indexOf(it.wall) >= 0)).concat(fresh);
     s.items.forEach((it, i) => { it.id = "e" + i; });
     s.seq = s.items.length + 1;

@@ -162,3 +162,22 @@ And the shared trim (`common.js`, full text in `part-openings`):
 * `node tools/check-model-live.mjs` -- `openingRect` (casings, head, sill,
   porch band) against the trim Barnwright's live page draws.
 * `node tools/check-parts.mjs`, `node tools/check-imports.mjs`.
+
+## Shop opening trim — October 12, 2026
+
+Alan requested the Yoder Storage Barns trim shape and selected **actual
+3 1/2-inch boards**. The standard manufacturer sets
+`construction.openings.trim.widthIn: 3.5` and `headJoint: "continuous"`.
+`model/opening-trim.js` supplies the side-board width, head and sill heights,
+22.5-degree flares and paired-window shared board. Door casings meet the
+head continuously, as in `yoder-storage-barns/design.html`; there is no
+separate shadow filling the old gap. Rectangular 18x24 gable windows use the
+same measured stock. Decorative faux and octagonal frames keep their design.
+Placement, saved layout formulas, the floor plan and full-trim tap bounds
+use the same measurements. Existing roof, wall and door sizes stay as approved.
+
+The legacy Barnwright catalogue deliberately omits this shop trim setting,
+so its recorded triangles remain exact. `node tools/check-opening-trim.mjs`
+checks emitted trim faces at every sold style/size and porch variant;
+`node tools/check-golden.mjs` guards the legacy drawing. The shop geometry
+record is updated on purpose for this requested trim change.

@@ -45,6 +45,7 @@
 
 import { texFlat } from "../../engine/tex-names.js";
 import { y0, OCT_WIN } from "../../engine/constants.js";
+import { openingTrim } from "../../model/opening-trim.js";
 import { profileYat, roofProfile, gableClip } from "../../model/roof-shapes.js";
 import { hasDraw, drawOwn } from "./common.js";
 
@@ -65,7 +66,8 @@ function renderGableWin(plan,kit,it,c,prof,mT,mG){
      So the room it needs in the gable is bigger than c.w/c.h, and clamping on
      the window alone would push the head board through the roof line. */
   var isG18=(c.draw==="gable-1824");
-  var padX=isG18?0.39:0, padT=isG18?0.29:0, padB=isG18?0.27:0;
+  var trim=openingTrim(plan);
+  var padX=isG18?trim.width+trim.headFlare:0, padT=isG18?trim.headHeight:0, padB=isG18?(trim.measured?0.02+trim.sillHeight:0.27):0;
   if(onSide){
     wD=plan.ws[it.wall];
     var base=y0+Math.min(4.6, t.wallH-1.0);
@@ -166,11 +168,12 @@ function renderGableWin(plan,kit,it,c,prof,mT,mG){
        These are that code's own numbers (fr / hE / sE and the 0.29 head),
        drawn flat because a gable end is drawn flat. */
     var mWht3=mat("white",texFlat,"#FBFBF8",0.12,22);
-    var HW=c.w/2, HH=c.h/2, fr=0.27, hE=0.12, sE=0.10;
-    G(mT,[gp(-HW-fr,-HH),gp(-HW+0.02,-HH),gp(-HW+0.02,HH+0.02),gp(-HW-fr,HH+0.02)],0.058);
-    G(mT,[gp(HW-0.02,-HH),gp(HW+fr,-HH),gp(HW+fr,HH+0.02),gp(HW-0.02,HH+0.02)],0.058);
-    G(mT,[gp(-HW-fr,HH-0.02),gp(HW+fr,HH-0.02),gp(HW+fr+hE,HH+0.27),gp(-HW-fr-hE,HH+0.27)],0.062);
-    G(mT,[gp(-HW-fr-sE,-HH-0.25),gp(HW+fr+sE,-HH-0.25),gp(HW+fr,-HH-0.02),gp(-HW-fr,-HH-0.02)],0.062);
+    var HW=c.w/2, HH=c.h/2, fr=trim.width, hE=trim.headFlare, sE=trim.sillFlare;
+    var headTop=HH-0.02+trim.headHeight, sillBottom=-HH-(trim.measured?0.02+trim.sillHeight:0.25);
+    G(mT,[gp(-HW-fr,-HH),gp(-HW+trim.overlap,-HH),gp(-HW+trim.overlap,HH+0.02),gp(-HW-fr,HH+0.02)],0.058);
+    G(mT,[gp(HW-trim.overlap,-HH),gp(HW+fr,-HH),gp(HW+fr,HH+0.02),gp(HW-trim.overlap,HH+0.02)],0.058);
+    G(mT,[gp(-HW-fr,HH-0.02),gp(HW+fr,HH-0.02),gp(HW+fr+hE,headTop),gp(-HW-fr-hE,headTop)],0.062);
+    G(mT,[gp(-HW-fr-sE,sillBottom),gp(HW+fr+sE,sillBottom),gp(HW+fr,-HH-0.02),gp(-HW-fr,-HH-0.02)],0.062);
     G(mWht3,[gp(-HW,-HH),gp(HW,-HH),gp(HW,HH),gp(-HW,HH)],0.068);
     /* double-hung, four panes to a sash, the way the real one is glazed */
     var gx=HW-0.12, gy=HH-0.12;

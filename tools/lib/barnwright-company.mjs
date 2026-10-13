@@ -13,6 +13,7 @@
    5/12 roof, the Lofted Barn's walls and barn roof heights ...). Barnwright's
    own numbers are still the raw traits and library/construction.json, so
    Barnwright's company is the standard manufacturer WITHOUT those blocks.
+   Its measured opening trim is also removed for this legacy reference.
    Every check that compares with Barnwright resolves through this file, and
    tools/check-construction.mjs proves no other tools file pairs
    barnwrightCompany() with the standard manufacturer by itself.
@@ -90,6 +91,12 @@ export function barnwrightCompany() {
 export function barnwrightManufacturer() {
   const m = JSON.parse(JSON.stringify(readManufacturer("standard")));
   for (const k of Object.keys(m.styles || {})) if (m.styles[k] && typeof m.styles[k] === "object") delete m.styles[k].built;
+  /* The recorded reference predates Alan's measured opening trim and the
+     Yoder casing joint. Keep those shop changes out of legacy fixtures. */
+  if (m.construction?.openings) {
+    delete m.construction.openings.trim;
+    if (!Object.keys(m.construction.openings).length) delete m.construction.openings;
+  }
   return m;
 }
 

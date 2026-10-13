@@ -102,7 +102,7 @@ export function sqftCharge(basis, rate, frame, cat) {
 export function stdDouble(catId, state, cat, frame) {
   try {
     const fr = frame || frameOf(state, cat);
-    return standardItems(fr.t, fr.d.W, fr.d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws }, state.type)
+    return standardItems(fr.t, fr.d.W, fr.d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws, frame: fr }, state.type)
       .some((x) => x.dbl && x.cat === catId);
   } catch (e) { return false; }
 }

@@ -5,7 +5,7 @@ proves it triangle for triangle, on Barnwright's own company with Barnwright's
 numbers). This list is everything ELSE that behaves differently on purpose,
 with the reason. Each change is either a real bug in Barnwright's designer
 that this product should not inherit, or something a standalone product
-needs, or Alan's own choice. Only #26 changes the shape of a finished
+needs, or Alan's own choice. #26 and #28 change the shape of a finished
 building (Alan's shop numbers on ten standard styles); one (#25) changes its
 light, because Alan chose the Yoder site's.
 
@@ -336,3 +336,18 @@ finished designer retains the golden geometry.
     buildings, the Cottage among them (its 10x12 comes with the 48″ door,
     its 10x16 with the doubles), keep a touched design's door exactly as
     Barnwright does, at Barnwright's price.
+
+
+28. **Actual opening-trim width and Yoder joints** (Alan, Oct 12 2026).
+    The shop standard uses actual 3 1/2 in boards around doors and windows,
+    including the head, sill, paired-window middle board and rectangular
+    gable-window trim. The legacy renderer's casing was 3.24 in, with another
+    0.24 in overlapping the opening; the shop boards now measure 3 1/2 in
+    edge to edge. Door casings meet the head continuously, matching the Yoder
+    site's joint. The cabin porch band remains part of that design. Shared
+    measurements in `model/opening-trim.js` keep the mesh, placement, floor
+    plan, saved layout formulas and selection target together. The shop
+    standard sets `construction.openings.trim`; the recorded Barnwright
+    catalogue omits it and retains its exact geometry. Existing approved
+    shop roof and wall dimensions remain. `tools/check-opening-trim.mjs`
+    checks the emitted board faces across all styles and sizes.

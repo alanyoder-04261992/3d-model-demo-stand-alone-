@@ -82,7 +82,7 @@ export async function startServer(port = PORT) {
 }
 
 export function loadPlaywright() {
-  return require("/opt/node22/lib/node_modules/playwright/index.js");
+  return require(process.env.PLAYWRIGHT_MODULE || "/opt/node22/lib/node_modules/playwright/index.js");
 }
 
 /* The Barnwright company as the page receives it: the company object (built
