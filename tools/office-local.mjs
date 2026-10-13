@@ -175,7 +175,9 @@ const deps = {
    business name, phone and email they gave), as the Control Room sends for
    a customer who signed up on its sign-up page: with no owner signed in
    yet, that is how to try "Before the owner first signs in" here. */
-const roomClock = { get t() { return (clock.at || new Date()).getTime(); } };
+/* The virtual clock advances every fake service together: lease/pass
+   expiry and Inbox's daily limits must agree with sign-in expiry. */
+const roomClock = { get t() { return (clock.at || new Date(Date.now() + clock.shift)).getTime(); } };
 const room = CONTROL_ROOM ? fakeControlRoom({ clock: roomClock, dealerLimit: 3 }) : null;
 const helpInbox = room ? fakeHelpInbox({ clock: roomClock, publicKeyPem: room.publicKeyPem }) : null;
 const office = createOffice({
@@ -184,6 +186,7 @@ const office = createOffice({
     controlRoomUrl: room.origin, customerId: room.business.id, siteId: room.business.siteId,
     activationKey: room.business.key, publicKeyPem: room.publicKeyPem,
     store: createLeaseStore(room.business.id, room.business.siteId, blobs), fetch: room.fetch,
+    now: () => roomClock.t,
   }) : undefined,
   help: helpInbox ? { url: helpInbox.origin, fetch: helpInbox.fetch } : null,
   appVersion: "dealer-center local",

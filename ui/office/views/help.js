@@ -21,6 +21,7 @@
 
 import { h, clear, icon, button, field, form, pageHead, loading } from "../dom.js";
 import { get, post } from "../api.js";
+import { readDraft, writeDraft, clearDraft } from "../drafts.js";
 import { when, plural } from "../words.js";
 import { HELP_SCREEN, SUPPORT_EMAIL, answersFor, findAnswers } from "../help-answers.js";
 import { recentProblems, screenOf } from "../../problems.js";
@@ -50,6 +51,9 @@ export async function render(ctx) {
   /* {connected, canAsk} from GET me: the box needs no wait */
   const known = app.me?.help || null;
   const connected = known ? known.connected : !!app.account;
+  const kept = readDraft(app, "help");
+  const draft = { text: typeof kept.text === "string" ? kept.text.slice(0, 4000) : "" };
+  app.leaveGuard = () => draft.text.trim() ? "Leave before sending? Your question will be here when you come back." : null;
 
   /* the terms decide whether Barnwright can change things (the Barnwright card's rule) */
   const answers = answersCard(app, connected, app.me?.terms || null);
@@ -76,46 +80,110 @@ export async function render(ctx) {
   let shown = "";   /* what the Ask card shows: "box" or "line" */
   const showAsk = (state) => {
     if (state.canAsk) {
-      if (shown !== "box") drawAsk(ctx, ask, state, page, questionsAgain);
+      if (shown !== "box") drawAsk(ctx, ask, state, page, questionsAgain, draft);
       shown = "box";
       return;
     }
     /* questions can't go from here: the line with the email, unless someone already typed in the box */
     if (shown === "box" && ask.querySelector("textarea")?.value.trim()) return;
-    drawAsk(ctx, ask, state, page, questionsAgain);
+    drawAsk(ctx, ask, state, page, questionsAgain, draft);
     shown = "line";
   };
   const showList = (state) => {
-    drawQuestions(app, questions, state, questionsAgain);
+    drawQuestions(app, questions, state, questionsAgain, () => questionsAgain({ older: true }));
     toQuestions.hidden = !state.canAsk;
   };
-  const questionsAgain = async () => {
-    let state;
-    try { state = await get("help"); } catch (e) { state = { canAsk: true, items: null, problem: e.message }; }
-    if (!state.canAsk) showAsk(state);
-    showList(state);
+  let thread = { canAsk: true, items: undefined, nextCursor: null };
+  const loadedPages = new Map();
+  let busy = false, stopped = false, timer = null, olderPages = false, failures = 0;
+  const stop = () => {
+    stopped = true;
+    clearTimeout(timer);
+    window.removeEventListener("focus", onFocus);
+    document.removeEventListener("visibilitychange", onFocus);
+    window.removeEventListener("pagehide", onPageHide);
+    window.removeEventListener("pageshow", onFocus);
   };
-  const fill = async () => {
+  const schedule = () => {
+    clearTimeout(timer);
+    if (stopped || !thread.items?.some((item) => item.status === "waiting")) return;
+    const waiting = new Set(thread.items.filter((item) => item.status === "waiting").map((item) => item.id));
+    const pageCount = 1 + [...loadedPages.values()].filter((ids) => ids.some((id) => waiting.has(id))).length;
+    timer = setTimeout(() => {
+      if (!root.isConnected) { stop(); return; }
+      if (document.visibilityState === "hidden") { schedule(); return; }
+      questionsAgain({ background: true });
+    }, Math.min(120000, 30000 * 2 ** Math.min(failures, 2)) * pageCount);
+  };
+  const questionsAgain = async ({ older = false, background = false } = {}) => {
+    if (busy || stopped || (older && !thread.nextCursor)) return;
+    busy = true;
+    const pageCursor = older ? thread.nextCursor : null;
+    let newestOverlaps = false;
     let state;
     try {
-      state = await get("help");
+      state = await get(`help?limit=30${pageCursor ? `&cursor=${encodeURIComponent(pageCursor)}` : ""}`);
+      if (Array.isArray(state.items)) {
+        if (older) loadedPages.set(pageCursor, state.items.map((item) => item.id));
+        else {
+          const existing = new Set((thread.items || []).map((item) => item.id));
+          newestOverlaps = state.items.some((item) => existing.has(item.id));
+          /* A pending question can be on a page the person already opened.
+             Recheck those pages too, without reopening or dropping them. */
+          const waiting = new Set((thread.items || []).filter((item) => item.status === "waiting").map((item) => item.id));
+          for (const [cursor, ids] of loadedPages) {
+            if (stopped) break;
+            if (background && !ids.some((id) => waiting.has(id))) continue;
+            try {
+              const previous = await get(`help?limit=30&cursor=${encodeURIComponent(cursor)}`);
+              if (Array.isArray(previous.items)) {
+                state.items.push(...previous.items);
+                loadedPages.set(cursor, previous.items.map((item) => item.id));
+              } else state.refreshProblem = previous.problem;
+            } catch (e) { state.refreshProblem = e.message; }
+          }
+        }
+      }
+      failures = state.items === null || state.refreshProblem ? failures + 1 : 0;
     } catch (e) {
-      if (shown) { showList({ canAsk: true, items: null, problem: e.message }); return; }
-      clear(ask.querySelector(".hp-ask-body"), h("div", { class: "hp-note warn" }, icon("alert"),
-        h("div", {}, h("p", {}, e.message), button("Try again", () => fill(), { small: true }))));
-      return;
+      state = { canAsk: true, items: null, problem: e.message };
+      failures++;
     }
+    busy = false;
+    if (stopped) return;
+    if (Array.isArray(state.items)) {
+      const items = new Map((thread.items || []).map((item) => [item.id, item]));
+      for (const item of state.items) items.set(item.id, item);
+      /* If an entire new first page arrived, restart the history cursor
+         there so questions between it and the old pages stay reachable. */
+      const nextCursor = older || !olderPages || !newestOverlaps ? state.nextCursor || null : thread.nextCursor;
+      thread = { ...state, items: [...items.values()].sort((a, b) => b.at.localeCompare(a.at) || b.id.localeCompare(a.id)), nextCursor };
+      if (older) olderPages = true;
+    } else if (Array.isArray(thread.items)) {
+      thread = { ...thread, refreshProblem: state.problem, canAsk: state.canAsk };
+    } else thread = state;
     showAsk(state);
-    showList(state);
+    showList(thread);
+    schedule();
   };
+  const onFocus = () => {
+    if (!root.isConnected) { stop(); return; }
+    if (document.visibilityState !== "hidden") questionsAgain();
+  };
+  const onPageHide = (event) => { if (event.persisted) clearTimeout(timer); else stop(); };
+  ctx.onDispose?.(stop);
+  window.addEventListener("focus", onFocus);
+  document.addEventListener("visibilitychange", onFocus);
+  window.addEventListener("pagehide", onPageHide);
+  window.addEventListener("pageshow", onFocus);
   toQuestions.hidden = true;
   if (known) {
     showAsk(known);
     /* nothing to list where questions can't go */
-    if (!known.canAsk) return root;
+    if (!known.canAsk) { stop(); return root; }
     showList({ canAsk: true, items: undefined });
   }
-  fill().catch((e) => console.error(e));
+  questionsAgain().catch((e) => console.error(e));
   return root;
 }
 
@@ -168,13 +236,18 @@ function emailLine(sentence) {
     h("span", {}, before, h("a", { href: `mailto:${SUPPORT_EMAIL}` }, SUPPORT_EMAIL), after));
 }
 
-function drawAsk(ctx, ask, state, page, questionsAgain) {
+function drawAsk(ctx, ask, state, page, questionsAgain, draft) {
   const body = ask.querySelector(".hp-ask-body");
   if (!state.canAsk) {
     clear(body, emailLine(state.connected ? HELP_SCREEN.notSetUp : HELP_SCREEN.notConnected));
     return;
   }
   const box = field("Your question", { type: "textarea", rows: 5, maxLength: 4000, placeholder: "Like: how do I add a 12×32 size to the Lofted Barn?" });
+  box.input.value = draft.text;
+  box.input.addEventListener("input", () => {
+    draft.text = box.input.value;
+    if (draft.text) writeDraft(ctx.app, "help", { text: draft.text }); else clearDraft(ctx.app, "help");
+  });
   const sent = (email) => HELP_SCREEN.sent(email);
   const f = form([
     box.wrap,
@@ -182,9 +255,14 @@ function drawAsk(ctx, ask, state, page, questionsAgain) {
     h("div", { class: "actions" }, h("button", { type: "submit", class: "btn btn-primary" }, icon("send"), h("span", {}, "Send"))),
   ], async () => {
     const text = box.input.value.trim();
+    const submitted = draft.text;
     if (!text) { box.input.focus(); throw new Error("Type your question, then tap Send."); }
     const out = await post("help", { text, page, details: browserDetails() });
-    box.input.value = "";
+    if (draft.text === submitted) {
+      draft.text = "";
+      box.input.value = "";
+      clearDraft(ctx.app, "help");
+    }
     questionsAgain().catch(() => {});
     return sent(out.email || ctx.app.person.email);
   }, { class: "hp-form" });
@@ -207,13 +285,14 @@ function browserDetails() {
 
 /* ---- Your questions ----------------------------------------------------------------------- */
 
-function drawQuestions(app, card, state, again) {
+function drawQuestions(app, card, state, again, older) {
   card.hidden = !state.canAsk;
   if (!state.canAsk) return;
   const items = state.items;
   const head = h("div", { class: "card-head" },
     h("h2", { class: "card-title" }, icon("text"), "Your questions"),
-    Array.isArray(items) && items.length ? h("span", { class: "crm-count" }, String(items.length)) : null);
+    Array.isArray(items) && items.length ? h("span", { class: "crm-count" }, String(items.length)) : null,
+    button("Refresh", (e) => { e.currentTarget.disabled = true; again(); }, { kind: "quiet", small: true }));
   /* still on its way from Barnwright */
   if (items === undefined) {
     clear(card, head, h("div", { class: "hp-quiet" }, loading()));
@@ -233,8 +312,10 @@ function drawQuestions(app, card, state, again) {
   }
   const waiting = items.filter((q) => q.status === "waiting").length;
   clear(card, head,
+    state.refreshProblem ? h("p", { class: "hp-note warn", role: "status" }, state.refreshProblem) : null,
     waiting ? h("p", { class: "hp-waiting-line" }, `${plural(waiting, "question")} waiting for an answer.`) : null,
-    h("div", { class: "hp-items" }, items.map((q) => questionItem(app, q))));
+    h("div", { class: "hp-items" }, items.map((q) => questionItem(app, q))),
+    state.nextCursor ? button("Show older questions", (e) => { e.currentTarget.disabled = true; older(); }, { kind: "ghost" }) : null);
 }
 
 function questionItem(app, q) {
