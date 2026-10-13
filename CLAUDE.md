@@ -46,10 +46,17 @@ Yoder Storage Barns site lights them (true colour), and nothing else moved.
    doors).
    The shop standard also uses actual 3 1/2 in opening trim and the Yoder
    site's continuous casing/head joint (Alan, Oct 12 2026: "Use actual
-   3½-inch trim"). `construction.openings.trim` and `model/opening-trim.js`
-   keep the boards, paired windows, layouts and selection bounds together;
+   3½-inch trim"). His cabin correction sets
+   `construction.openings.trim.porchBand: false`: one existing tapered head
+   above doors and windows on every wall of Cabin, Lofted Barn Cabin, Side
+   Cabin, Loft Side Cabin, Deluxe Side Cabin and Deluxe Loft Side Cabin,
+   matching ordinary and rectangular 18x24 loft-window trim. Decorative faux
+   loft rectangles and octagonal frames retain their designs; porch perimeter
+   and beam trim stay as drawn. `construction.openings.trim` and
+   `model/opening-trim.js` keep boards, paired windows, layouts and bounds together;
    `tools/check-opening-trim.mjs` checks the emitted faces. Barnwright's
-   recorded catalogue omits that setting as well as the built blocks.
+   recorded catalogue omits that setting as well as the built blocks,
+   retaining its original door reveal and extra porch opening band.
    No sample price list has a Steep roof; an owner can make one ("Roof pitch
    at least").
    `node tools/check-shop-numbers.mjs` holds the shop numbers (the recorded

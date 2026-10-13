@@ -231,7 +231,7 @@ export function openingFrame(plan, kit, it, c, mT) {
   quadUV(mT,[wallPt(w,hxl-hE,hyt,0.13),wallPt(w,hxr+hE,hyt,0.13),wallPt(w,hxr+hE,hyt,0.02),wallPt(w,hxl-hE,hyt,0.02)],RUV);
   quadUV(mT,[wallPt(w,hxl,hyb,0.02),wallPt(w,hxl,hyb,0.13),wallPt(w,hxl-hE,hyt,0.13),wallPt(w,hxl-hE,hyt,0.02)],RUV);
   quadUV(mT,[wallPt(w,hxr,hyb,0.13),wallPt(w,hxr,hyb,0.02),wallPt(w,hxr+hE,hyt,0.02),wallPt(w,hxr+hE,hyt,0.13)],RUV);
-  if(plan.t.porch && c.k!=="ru"){
+  if(r.porchBand){
     var hby=r.porchBand.y0, hbh=trim.headHeight, hbe=trim.headFlare;
     wq(mT,w,u-HW2-fr,hby,u+HW2+fr,hby+hbh,0.14);
     wtri3(mT,w,[u-HW2-fr-hbe,hby],[u-HW2-fr,hby],[u-HW2-fr,hby+hbh],0.14);

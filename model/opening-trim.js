@@ -16,5 +16,6 @@ export function openingTrim(frame) {
     headFlare: measured ? width * Math.tan(Math.PI / 8) : 0.12,
     sillFlare: measured ? width * Math.tan(Math.PI / 8) : 0.10,
     continuous: String(trim?.headJoint || "reveal").toLowerCase() === "continuous",
+    porchBand: trim?.porchBand !== false,
   };
 }

@@ -196,6 +196,10 @@ function valueProblems(tree, where) {
   function values(v) { return isRuleList(v) ? v.map((r) => r && r.value) : [v]; }
   function check(key, v) {
     if (v === undefined) return;
+    if (key === "openings.trim.porchBand") {
+      for (const x of values(v)) if (typeof x !== "boolean") say(key, `${JSON.stringify(x)} should be true or false.`);
+      return;
+    }
     if (key === "openings.trim.widthIn") {
       for (const x of values(v)) if (!(typeof x === "number" && Number.isFinite(x) && x >= 1 && x <= 8)) say(key, `${JSON.stringify(x)} should be a trim width from 1 to 8 inches.`);
       return;
@@ -276,7 +280,7 @@ export const CONSTRUCTION_SCHEMA = freezeAll({
   walls: { stud: VALUE, spacingIn: VALUE, bottomPlates: VALUE, topPlates: VALUE, corner: VALUE, header: VALUE,
     studLengthIn: { loft: VALUE, tall: VALUE } },
   openings: {
-    trim: { widthIn: VALUE, headJoint: VALUE },
+    trim: { widthIn: VALUE, headJoint: VALUE, porchBand: VALUE },
     doorHeightIn: byRoof(VALUE, true),
     windowTop: byRoof({ belowWallTopIn: VALUE, levelWithDoor: VALUE, minBelowWallTopFt: VALUE }),
   },

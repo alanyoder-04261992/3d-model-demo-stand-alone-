@@ -257,7 +257,7 @@ export function openingRect(it, plan) {
   var hE = trim.headFlare, hxl = u - HW2 - fr, hxr = u + HW2 + fr, hyb = yb + ch - 0.02, hyt = hyb + trim.headHeight;
   var u0 = hxl - hE, u1 = hxr + hE, yLo = yb, yHi = hyt;
   var sill = null, band = null;
-  if (t.porch && c.k !== "ru") {
+  if (t.porch && c.k !== "ru" && trim.porchBand) {
     var hby = yb + ch + fr - 0.04, hbh = trim.headHeight, hbe = trim.headFlare;
     band = { u0: u - HW2 - fr - hbe, u1: u + HW2 + fr + hbe, y0: hby, y1: hby + hbh };
     u0 = Math.min(u0, u - HW2 - fr - hbe); u1 = Math.max(u1, u + HW2 + fr + hbe);

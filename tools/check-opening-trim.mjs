@@ -46,6 +46,8 @@ for (const type of Object.keys(cat.TYPES)) for (const size of Object.keys(cat.P[
     // Each side slab emits a front and four returns; the head follows them.
     const left = bounds(faces[0]), right = bounds(faces[5]), head = bounds(faces[10]);
     const label = `${type} ${size} ${it.cat}`;
+    assert.equal(faces.length, 15, label + " has one head board and no second stacked band");
+    assert.equal(openingRect(it, plan).porchBand, null, label + " uses the loft window's single header");
     near(left.u1 - left.u0, width, label + " left board");
     near(right.u1 - right.u0, width, label + " right board");
     near(head.y1 - head.y0, width, label + " head board");
@@ -74,6 +76,12 @@ near(again.find(it => it.dbl).pos, pair.pos, "paired-window layout round trip");
 const legacy = barnwrightCatalogue(), oldFrame = frameOf({ ...state }, legacy);
 near(itemW(pair, legacy.CAT, oldFrame), 2 * legacy.CAT[pair.cat].w + 0.27, "legacy reference casing");
 for (const invalid of [0, -1, 9, "3.5", NaN]) assert.ok(constructionProblems({ openings: { trim: { widthIn: invalid } } }, "trim").length);
+for (const invalid of [0, "false", null]) assert.ok(constructionProblems({ openings: { trim: { porchBand: invalid } } }, "trim").length);
+// Existing reference catalogues still draw their original porch band.
+const cabin = { ...state, type: "C", size: "10x20" };
+resetItems(cabin, frameOf(cabin, legacy), legacy);
+const oldPlan = makePlan(cabin, legacy), oldDoor = cabin.items.find(it => legacy.CAT[it.cat].k === "door");
+assert.ok(openingRect(oldDoor, oldPlan).porchBand, "legacy cabin opening band remains exact");
 // The rectangular gable window is drawn by a separate module. Inspect its
 // actual flat trim faces on a side wall, where no roof clipping is applied.
 const gstate = { ...state, items: [{ id: "gable", cat: "g1824", wall: "R", pos: 0, vy: 0 }] };
@@ -93,4 +101,4 @@ const clipped = openingRect({ id: "gable", cat: "g1824", wall: "F", pos: 0, vy: 
 assert.ok(clipped.clipped, "roof cuts the measured head corners even when the full trim bounding box is unchanged");
 near(clipped.unclipped.x0, clipped.x0, "unchanged box left after corner clip");
 near(clipped.unclipped.y1, clipped.y1, "unchanged box top after corner clip");
-console.log(`PROVED: ${openings} openings across ${buildings} buildings use actual 3 1/2 in side, head and sill boards; continuous joints, full trim tap bounds and paired-window layouts agree. Legacy reference width remains exact.`);
+console.log(`PROVED: ${openings} openings across ${buildings} buildings use actual 3 1/2 in side, head and sill boards with one loft-style header, no extra cabin band; continuous joints, full trim tap bounds and paired-window layouts agree. Legacy reference trim remains exact.`);
