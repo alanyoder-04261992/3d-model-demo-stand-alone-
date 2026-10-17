@@ -74,7 +74,9 @@ finished designer retains the golden geometry.
     customer has not touched them**; otherwise their items are kept and moved
     onto the new walls, as Barnwright does (one exception on the shop
     standard: the door of the Side Utility, Dormer Shed and Side Lofted
-    Barn follows the size, #27).
+    Barn follows the size, #27). The kept items keep their "comes with the
+    building" marks, but only as many as the new size and porch come with
+    are free; the rest are charged (#30).
 
 ## Standalone product
 
@@ -378,3 +380,27 @@ finished designer retains the golden geometry.
     `event.detail.sent === true`. No geometry
     or standard opening layout changed. `check-opening-prices` and
     `check-designer-controls` cover prices/input; `check-quote` covers responses.
+
+30. **"Comes with the building" covers only the building's own size and
+    porch** (Alan, Oct 17 2026: "Yes, charge for them"; review 17 CS-1).
+    Barnwright priced every item marked included at $0, and after PR #45
+    the server allowed as many as the style came with at any size, so a
+    customer (or an edited link) could lay out a 12x32 Cabin, move a door,
+    pick 8x12 and keep all the 12x32's windows free. Now an item marked
+    included is free only up to how many of it the design's own size and
+    porch come with (`model/pricing.js chargedIncluded`, used by the
+    designer's `priceParts` and by `server/office/pricing.js`, so the
+    designer shows the total the server charges); the rest are charged at
+    their normal price, never refused. When there are more than that, the
+    ones that would cost the most stay free. A kept item standing in for
+    one this size comes with that is not on the building is priced as that
+    swap would be (the difference, never a refund), and the shop
+    standard's door pair (#27) counts as either door. The designer says it
+    in one line under the price ("2 windows that came with the 12×32 are
+    now charged on the 8×12."). Saved quotes and orders keep their stored
+    total; a saved quote opened from the Dealer Center shows the price it
+    was saved with (`server/office/customers.js quoteView`, `ui/panels.js
+    savedPriceOf`). The server may use a design's older History copy's
+    counts when that costs less. Checked by `tools/check-included-own-size.mjs`
+    (routes and stored totals), `tools/check-layout-server.mjs` and the
+    browser check `tools/check-included-resize.mjs`.

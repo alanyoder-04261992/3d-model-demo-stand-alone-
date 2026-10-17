@@ -61,6 +61,19 @@ can choose instead to show a "from" price (the building on its own) or no price
 at all (the plate then says "Ask us"), and a rent-to-own monthly figure or
 none.
 
+**Free doors and windows (your decision, Oct 17 2026: "Yes, charge for
+them").** A building's standard doors and windows are free only up to how
+many its own size and porch come with. If a customer lays out a 12x32 Cabin,
+moves a door, then picks 8x12, the windows the 12x32 came with stay on the
+walls, but the ones an 8x12 does not come with are charged at the normal
+window price. The plate and Your quote say so in one line, for example "2
+windows that came with the 12×32 are now charged on the 8×12." A design link
+changed by hand to do the same is charged the same way; nothing is turned
+away for it. A door kept from the other size in place of the door this size
+comes with costs only the difference, like swapping it on the building. Quotes
+and orders already saved keep the price they were saved with; the rule counts
+when something is priced again (Change it, or a new quote).
+
 ## The views
 
 Two buttons sit over the top-left of the picture:

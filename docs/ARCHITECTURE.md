@@ -701,7 +701,13 @@ the swap, and nothing else moved.
 
 **`state`** — the live, mutable, Barnwright-shaped object the UI owns:
 hex `body trim roof doorC shutC`; `items[]` with `id cat wall pos vy px pz rot
-ln inc pk dbl shut lite origCat`; `sel seq dormer pLen pFlip pMid opts elec ramp xopt`.
+ln inc pk dbl shut lite origCat`; `sel seq dormer pLen pFlip pMid opts elec ramp xopt
+laidFor` (`laidFor`: the size and porch length the doors and windows were laid
+out for, noted by `ui/state.js` when a size or porch-length change keeps
+them; only for the words of `chargedNote`, never saved or priced).
+`inc` ("comes with the building") is free only up to how many of that item
+the design's own size and porch come with; the rest is charged at its normal
+price (`model/pricing.js chargedIncluded`, DIFFERENCES #30).
 Only `model/layout.js`, `model/design.js` and the UI mutate it. Layout functions
 read siblings from the live `state.items` (clamping order matters).
 

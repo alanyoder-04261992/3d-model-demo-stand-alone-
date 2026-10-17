@@ -2375,7 +2375,11 @@ exactly as they were, and nothing here sends email.
 * **Prices come from the server.** Every quote is checked and priced by
   `server/office/pricing.js` from the stored price list. A browser total, a
   forged lot or company, or "included" flags that would make an extra free
-  change nothing.
+  change nothing: an item marked included is free only up to how many the
+  design's own size and porch come with, and the rest is charged at its
+  normal price, never refused (Alan, Oct 17 2026; `model/pricing.js
+  chargedIncluded`). A saved quote or order keeps the total it was saved
+  with; the rule counts when a design is priced again.
 * **Sign-in is Netlify Identity.** Only a confirmed email counts. Roles live
   in `people/<userId>`, never in anything the browser can edit. The
   password goes only to Identity. The sign-in is kept by the server, in a

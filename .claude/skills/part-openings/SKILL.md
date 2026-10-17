@@ -88,6 +88,18 @@ refuses it. A saved design holding one opens with it taken off and one
 plain line (`model/design.js normalize`), so what is drawn and what is
 priced agree. See the `part-gable-window` skill.
 
+**What "comes with the building" covers** (Alan, Oct 17 2026: "Yes, charge
+for them"). A door or window marked included (`inc`) is free only up to how
+many of it the design's own size and porch come with: the standard layout
+for that size and porch (`model/loadouts.js standardItems`), counted by the
+item it came as (`origCat`). Items kept from a bigger size after a size or
+porch-length change are charged at their normal price; one standing in for
+an item this size comes with that is missing is priced as that swap; the
+shop standard's door pair counts as either door. One function decides it for
+the designer and the server (`model/pricing.js chargedIncluded`), and the
+designer shows one line near the price (`ui/state.js chargedNote`). Saved
+quotes and orders keep their stored totals. DIFFERENCES #30.
+
 ## Where it came from in Barnwright
 
 `boisterous-lokum-a737e0/public/3ddesign.html` (pinned SHA-256
