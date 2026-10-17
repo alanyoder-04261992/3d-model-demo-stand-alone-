@@ -111,6 +111,20 @@ try {
       await p.touchscreen.tap(ghostHit.x + ghostHit.width / 2, ghostHit.y + ghostHit.height / 2);
       check("a phone tap on a dashed post opens Porch and selects that post", await p.evaluate(id => window.shedUI.layoutMode.view === "PF" && window.shedUI.getState().sel === id, ghostId));
       check("tapping the dashed post leaves the wall's door and windows alone", JSON.stringify((await state(p)).filter(i => i.cat !== "ppost")) === JSON.stringify(beforeTap.filter(i => i.cat !== "ppost")));
+      /* A slow, careful press: the finger rests on the dashed post for two
+         seconds before it lifts. The click that follows the lift must not
+         pick the post that now sits under the finger on the Porch view. */
+      await p.evaluate(() => window.shedUI.select(null));
+      await p.locator('.layout-wallchoices [data-layout-view="F"]').click();
+      await p.locator("#stage").evaluate(el => window.scrollBy(0, el.getBoundingClientRect().top - 120));
+      await p.waitForTimeout(300);
+      const heldHit = await p.locator(`.layout-posthit.ghost[data-item="${ghostId}"]`).boundingBox(), held = { x: heldHit.x + heldHit.width / 2, y: heldHit.y + heldHit.height / 2 };
+      const holdCdp = await phone.newCDPSession(p);
+      await holdCdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [held] });
+      await p.waitForTimeout(2000);
+      await holdCdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await p.waitForTimeout(400);
+      check("a two-second press on a dashed post still picks that post", await p.evaluate(id => window.shedUI.layoutMode.view === "PF" && window.shedUI.getState().sel === id, ghostId));
       const selected = p.locator(`.layout-posthit.solid[data-item="${ghostId}"]`);
       await p.waitForTimeout(300);
       const hit = await selected.boundingBox(), clearance = await p.evaluate(() => ({ sheet: document.getElementById("sheet").getBoundingClientRect().top, bar: document.getElementById("layout-savebar").getBoundingClientRect().top }));
@@ -126,6 +140,13 @@ try {
       const fixed = p.locator('.layout-posthit.fixed').first(), unchanged = await state(p);
       await fixed.tap();
       check("a corner post explains why it stays and changes no items", /hold up the porch roof, so they stay/.test(await p.locator("#layout-notice").innerText()) && JSON.stringify(await state(p)) === JSON.stringify(unchanged));
+      /* The keyboard still picks a dashed post: Enter on its button. */
+      await p.locator('.layout-wallchoices [data-layout-view="F"]').click();
+      await p.waitForTimeout(300);
+      await p.locator(`.layout-posthit.ghost[data-item="${ghostId}"]`).focus();
+      await p.keyboard.press("Enter");
+      await p.waitForTimeout(300);
+      check("Enter on a dashed post's button picks that post", await p.evaluate(id => window.shedUI.layoutMode.view === "PF" && window.shedUI.getState().sel === id, ghostId));
     }
     await p.close(); await phone.close();
   }
