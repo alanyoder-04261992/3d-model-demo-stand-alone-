@@ -192,7 +192,8 @@ export async function install(api) {
     el("card-size").querySelector("h3").textContent = "Size you're looking at";
     for (const chip of el("sizechips").children) {
       const size = chip.dataset.size;
-      /* Whole-dollar prices, the way the Dealer Center writes them. */
+      /* Sizes as 8×12 and prices the way the Dealer Center's money() writes
+         them: no ".00", and cents only when a price has some ($4,355.50). */
       for (const node of chip.childNodes) if (node.nodeType === 3) node.textContent = node.textContent.replace(/(\d+) × (\d+)/, "$1×$2");
       const money = chip.querySelector("small"); if (money) money.textContent = money.textContent.replace(/\.00$/, "");
       if (size) chip.onclick = () => { if (blockedRecipe) return; recipe = inferCurrent(); lay({ size }); };

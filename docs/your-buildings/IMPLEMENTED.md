@@ -100,7 +100,7 @@ Selected review captures are committed here:
 - [Tablet building cards in dark mode](review/buildings-820-dark.png)
 - [Tablet Edit](review/edit-820-light.png) and [desktop Edit in dark mode, Stop selling readable](review/edit-1280-dark.png)
 - [How all your buildings are built, dark, desktop](review/built-1280-dark.png) and [phone](review/built-390-dark.png)
-- Saved result box: [phone](review/layout-result-390-light.png), [tablet dark](review/layout-result-820-dark.png), [desktop](review/layout-result-1280-light.png)
+- Saved result box: [phone](review/layout-result-390-light.png), [tablet dark](review/layout-result-820-dark.png), [desktop](review/layout-result-1280-light.png), [phone turned sideways](review/layout-result-844x390-light.png)
 - [Phone leave question with named buttons](review/layout-leave-390-light.png)
 
 Completed focused checks: Your Buildings **144**, Dealer Center **73**,
@@ -115,11 +115,11 @@ match the recorded pixels.
 
 **Correction (review after merge, c355440).** The sentence that used to
 stand here said there were no remaining check failures. That was not true
-on main: a full run in the private network had 77 programs, 72 passing and
+on main: a full run of every check had 77 programs, 72 passing and
 5 failing. Three (golden-labels, model-live, shaders) fail because
 Barnwright's pinned `3ddesign.html` changed; they failed before this work
-too. The other two were new: the layout editor (a phone tap on a dashed
-porch post picked a different post) and the support check (it read the
+too. The other two were new: the layout editor (a phone tap or a long press on a
+dashed porch post picked a different post) and the support check (it read the
 address before the leave-page box had been answered). Both are fixed on
 `lane/fix17-screens`. After those fixes the full run has **78 programs:
 75 pass and 3 fail**, and the 3 are only golden-labels, model-live and
