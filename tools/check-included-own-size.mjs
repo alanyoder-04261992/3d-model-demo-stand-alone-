@@ -8,7 +8,20 @@
    The case (review 17 CS-1): an 8x12 Cabin with the 12x32's windows still
    marked included, made in the designer (12x32, move a door, pick 8x12) or
    by editing a design link by hand. On c355440 both were given away free
-   through the public quote route and the dealer quote route. */
+   through the public quote route and the dealer quote route.
+
+   Review 17 FREE (each fails on bf2be2c):
+   FREE-1 a side porch's length is a free choice at the same price: the
+          porch chip lays an untouched layout out again for the new porch,
+          and a changed layout is never charged for the windows the other
+          porch length comes with (step 3);
+   FREE-2 a design made before the owner changed a standard layout: the
+          designer, given the lot's copy of that older price list, shows
+          what the server charges, and the server never charges more for it
+          (step 5);
+   FREE-4 a charged item is saved as added, a stand-in as a swap from the
+          item it stands in for, named plainly (step 6);
+   FREE-6 the line says what this size comes with (step 2). */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createOffice } from "../server/office/index.js";
@@ -20,7 +33,7 @@ import { chooseSize, choosePorchLength } from "../ui/state.js";
 import * as UI from "../ui/state.js";
 import { priceParts } from "../model/pricing.js";
 import { resetItems } from "../model/layout.js";
-import { frameOf } from "../model/frame.js";
+import { frameOf, sidePorchLengthsFor } from "../model/frame.js";
 
 const read = (p) => JSON.parse(readFileSync(new URL("../" + p, import.meta.url), "utf8"));
 const manufacturer = read("library/manufacturers/standard.json"), library = read("library/construction.json");
@@ -96,30 +109,61 @@ chooseSize(made, "8x12", cat);
 prove("the designer (12x32, move a door, pick 8x12) shows the same total the server charges",
   priceParts(made, cat).total === charged && priceDesign(fromState(made, cat), cat).price.total === charged);
 const line = note(made);
-prove(`... and says so in one line: "${line}"`, line === `${extra} windows that came with the 12×32 are now charged on the 8×12.`, line);
+const comes = small.items.filter(isWin).length;
+const LINE = `An 8×12 comes with ${comes} window${comes === 1 ? "" : "s"}, so ${extra} of your windows are charged.`;
+prove(`... and says so in one plain line: "${line}"`, line === LINE, line);
 const sent = await website(fromState(made, cat), "Designer customer");
 prove("... and the public route charges the designer's total", sent.status === 201 && sent.data.total === priceParts(made, cat).total);
 const back = toState(fromState(made, cat), cat).state;
-prove("a reopened link says it without the size it came from", note(back) === `This 8×12 comes with fewer, so ${extra} windows are now charged.` && priceParts(back, cat).total === charged);
+prove("a reopened link says the same line", note(back) === LINE && priceParts(back, cat).total === charged);
 chooseSize(made, "12x32", cat);
 prove("going back to 12x32 makes them free again, with nothing said", priceParts(made, cat).total === priceParts(big, cat).total + 0 && note(made) === "");
 
 /* 3. Honest designs keep their price: every style and size the business
-   sells, as laid out, and with each porch length */
-let honest = 0;
+   sells, as laid out, with each side-porch length picked on its chip
+   (review 17 FREE-1: on bf2be2c the Side Cabin and Loft Side Cabin chip
+   kept the 12 ft porch's layout on the 8 ft porch and charged a window),
+   and with a window moved first and then each porch length */
+let honest = 0, chips = 0, touchedChips = 0;
+const wrong = [];
+const priceOf = (s) => ({ designer: priceParts(s, cat).total, server: priceDesign(fromState(s, cat), cat).price.total });
 for (const type of Object.keys(cat.TYPES)) for (const size of Object.keys(cat.P[type])) {
   const s = building(type, size);
-  const lens = cat.TYPES[type].porch === "S" ? [8, 12] : [null];
+  const lens = cat.TYPES[type].porch === "S" ? sidePorchLengthsFor(cat.TYPES[type], frameOf(s, cat).d.L) : [null];
   for (const len of lens) {
-    if (len != null) { choosePorchLength(s, len, cat); resetItems(s, frameOf(s, cat), cat); }
+    if (len != null) choosePorchLength(s, len, cat);
     const p = priceParts(s, cat);
-    assert.ok(!p.lines.some((l) => /^cat\./.test(l[2])), `${type} ${size}: a standard building's doors and windows are all free (${JSON.stringify(p.lines)})`);
-    assert.equal(priceDesign(fromState(s, cat), cat).price.total, p.total);
-    assert.equal(note(s) === "(the designer has no line for it)" ? "" : note(s), "");
+    if (p.lines.some((l) => /^cat\./.test(l[2])) || priceDesign(fromState(s, cat), cat).price.total !== p.total || note(s) !== "") wrong.push(`${type} ${size}${len ? ` ${len} ft porch` : ""}: ${JSON.stringify(p.lines)} "${note(s)}"`);
     honest++;
   }
+  if (lens.length < 2) continue;
+  const base = cat.P[type][size];
+  for (const len of lens) {
+    /* the chip on an untouched layout: laid out again, the price unchanged */
+    const u = building(type, size);
+    choosePorchLength(u, len, cat);
+    const up = priceOf(u);
+    prove(`${type} ${size}: the ${len} ft porch chip keeps the price ${base} (designer ${up.designer}, server ${up.server}) and lays the porch's own layout`,
+      up.designer === base && up.server === base && UI.isStandardLayout(u, cat) && note(u) === "");
+    chips++;
+    /* then another size still lays its own layout out */
+    const other = Object.keys(cat.P[type]).find((z) => z !== size);
+    if (other) { const r = chooseSize(u, other, cat); prove(`${type} ${size}: after the ${len} ft chip, picking ${other} still lays its own layout out at its own price`, r.relaid === true && priceOf(u).designer === cat.P[type][other] && priceOf(u).server === cat.P[type][other]); }
+    /* a window moved first, then the chip: the windows are kept, never charged */
+    const t = building(type, size);
+    const w = t.items.find((i) => i.inc && cat.CAT[i.cat].k === "win");
+    if (!w) continue;
+    UI.moveItem(t, w.id, { pos: w.pos + 0.25 }, cat);
+    for (const to of lens) {
+      choosePorchLength(t, to, cat);
+      const tp = priceOf(t);
+      prove(`${type} ${size}: a changed layout moved to the ${to} ft porch is not charged (designer ${tp.designer}, server ${tp.server})`, tp.designer === base && tp.server === base && note(t) === "");
+      touchedChips++;
+    }
+  }
 }
-prove(`${honest} standard buildings (every style, size and side-porch length) have every door and window free, priced the same by the designer and the server`, honest > 50);
+prove(`${honest} standard buildings (every style, size and side-porch length) have every door and window free, priced the same by the designer and the server`, honest > 50 && !wrong.length, wrong.slice(0, 6).join("; "));
+prove(`${chips} porch chips on untouched side porches and ${touchedChips} on changed ones keep the building's price`, chips >= 10 && touchedChips >= 10);
 
 /* 4. Saved quotes and orders keep the price they were saved with. A quote
    saved on c355440 (extra windows free) is written as it was stored; the
@@ -146,6 +190,62 @@ const changed = await call("POST", `customers/${keep.id}/quotes`, { design: view
 prove("... priced again (Change it, a new quote), the rule counts", changed.status === 201 && changed.data.quote.total === charged);
 const again = (await call("GET", `customers/${keep.id}`)).data.customer;
 prove("... and the first quote and its order still say the saved total", again.quotes.find((q) => q.id === first.data.quote.id).total === oldTotal && again.orders[0].total === oldTotal);
+
+/* 5. FREE-2: a design made before the owner changed a standard layout.
+   The owner takes the Lofted Barn's double doors and faux loft window out
+   of its standard layout. The server prices a design made before with
+   what its own price list came with (its History copy) when that costs
+   less; the lot sends the designer that same copy for the design's
+   version, so the page shows what the server charges, and neither raises
+   the old design's price. */
+const before = (await call("GET", "price-list")).data;
+const oldCat = resolve(before.settings, manufacturer, library);
+const lb = defaults(oldCat); setType(lb, "LB", oldCat); lb.size = "10x20"; resetItems(lb, frameOf(lb, oldCat), oldCat);
+const oldDesign = fromState(lb, oldCat);
+const oldLb = priceParts(lb, oldCat).total;
+before.settings.offer.LB.layout = [{ cat: "w48", wall: "B", at: "center" }];
+const put = await call("PUT", "price-list", { settings: before.settings, version: before.version });
+const newCat = resolve((await call("GET", "price-list")).data.settings, manufacturer, library);
+prove("the owner saves a new Lofted Barn layout, and the price list moves to a new version", put.status === 200 && newCat.cfg > oldCat.cfg, `${put.status} ${JSON.stringify(put.data.error || "")}`);
+const lotAnswer = async (q) => { const r = await office.handle(new Request(SITE + "/api/lots/riverside" + q, { headers: { origin: SITE } })); return { status: r.status, data: await r.json() }; };
+const asked = await lotAnswer(`?cfg=${oldCat.cfg}`);
+prove("the lot sends the designer its kept copy of the older version when a link of that version is opened (GET /api/lots/riverside?cfg=old)",
+  asked.status === 200 && asked.data.included?.cfg === oldCat.cfg && asked.data.included.company?.cfg === oldCat.cfg, JSON.stringify(Object.keys(asked.data)));
+prove("... and nothing for today's version, a version it never had, or no version",
+  !(await lotAnswer(`?cfg=${newCat.cfg}`)).data.included && !(await lotAnswer("?cfg=9999")).data.included && !(await lotAnswer("?cfg=x")).data.included && !(await lotAnswer("")).data.included);
+const pageCat = Object.freeze({ ...newCat, olderIncluded: asked.data.included ? resolve(asked.data.included.company, manufacturer, library) : undefined });
+const opened = toState(structuredClone(oldDesign), pageCat).state;
+const shown = priceParts(opened, pageCat).total;
+const fromPage = fromState(opened, pageCat, { priced: true });
+const olderSent = await website(fromPage, "Older link customer");
+prove(`the designer shows the older design at ${shown}, what the server charges for what the page sends (${olderSent.data.total})`, olderSent.status === 201 && olderSent.data.total === shown && fromPage.priced.total === shown,
+  `${olderSent.status} ${olderSent.data.total ?? olderSent.data.error}`);
+prove(`... which is the price it was made at (${oldLb}): the owner's change never makes it dearer`, shown === oldLb && priceDesign(structuredClone(oldDesign), newCat, { includedCat: oldCat }).price.total === oldLb);
+prove("... and the line under the price says nothing is charged", UI.chargedNote(opened, pageCat) === "");
+const plain = toState(structuredClone(oldDesign), newCat).state;
+const plainSent = await website(fromState(plain, newCat), "Older link, no copy");
+prove("without the older copy the page and the server both use today's layout, and agree", plainSent.status === 201 && plainSent.data.total === priceParts(plain, newCat).total);
+
+/* 6. FREE-4: what is saved, printed and sold says what was charged. The
+   dealer's quote from step 1 keeps the windows an 8x12 comes with marked
+   included and saves the charged ones as added; a Cottage made 10x16, a
+   door moved, then 10x12, keeps its 72 in double doors as a swap from the
+   48 in door the 10x12 comes with, named plainly, at the difference. */
+const savedItems = dealer.data.quote.design.items;
+const incWins = savedItems.filter((i) => i.inc && cat.CAT[i.cat].k === "win").length, addedWins = savedItems.filter((i) => !i.inc && !i.pk && cat.CAT[i.cat].k === "win").length;
+prove(`the saved 8x12 lists ${comes} window${comes === 1 ? "" : "s"} it comes with and the ${extra} charged ones as added`, incWins === comes && addedWins === extra, `${incWins} included, ${addedWins} added`);
+prove("... and the saved design prices to the saved total", priceParts(toState(dealer.data.quote.design, cat).state, cat).total === dealer.data.quote.total);
+const cot = building("CS", "10x16");
+cot.items.find((i) => cat.CAT[i.cat].k === "door").pos += 0.25;
+chooseSize(cot, "10x12", cat);
+const cotQuote = await call("POST", `customers/${customer.id}/quotes`, { design: fromState(cot, cat) }, { person: "dealer" });
+const cotDoor = cotQuote.data.quote?.design.items.find((i) => i.cat === "w72");
+const diff = cat.CAT.w72.p - cat.CAT.w48.p;
+const cotLine = cotQuote.data.quote?.price.lines.find((l) => l[2] === "cat.w72");
+prove(`a kept 72 in double door on the 10x12 Cottage is saved in place of the 48 in door it comes with, charged the difference ${diff}: "${cotLine?.[0]}"`,
+  cotQuote.status === 201 && cotDoor?.inc === true && cotDoor.origCat === "w48" && cotLine?.[1] === diff && cotLine[0] === `${cat.CAT.w72.n}, in place of the ${cat.CAT.w48.n}`
+  && cotQuote.data.quote.total === priceParts(cot, cat).total, JSON.stringify(cotQuote.data.quote?.price.lines || cotQuote.data.error));
+prove(`... and the designer's line says only the difference is charged: "${note(cot)}"`, note(cot) === `A 10×12 comes with the ${cat.CAT.w48.n}, so only the difference is charged for your ${cat.CAT.w72.n}.`);
 
 if (failed.length) {
   for (const s of said) console.log("  ok   " + s);
