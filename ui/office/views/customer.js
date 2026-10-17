@@ -18,7 +18,7 @@ import {
   STAGES, STAGE_WORDS, PAYMENTS, PAYMENT_WORDS, ORDER_WORDS, NOTE_KINDS, money, phone as phoneWords, telHref, smsHref,
   todayKey, addDays, dayWords, followUpWords, ago, when, plural,
 } from "../words.js";
-import { originalQuoteUrl } from "../quote-view.js";
+import { quoteViewUrl } from "../quote-view.js";
 import { planWords } from "../../../model/quote-plan.js";
 import { statusPill, followUpTone, changeStage, sourceWords, confirmChoice, dayKeyOf, dateFromNow, loadCustomer, missingCustomer } from "./crm-kit.js";
 
@@ -275,7 +275,7 @@ export async function render(ctx) {
       details,
       h("div", { class: "crm-quote-actions" },
         order ? null : button("Mark sold", () => markSold(q), { kind: "primary", icon: "check" }),
-        h("a", { class: "btn btn-ghost", href: originalQuoteUrl(app.designerUrl(c.lot), c.id, q.id, q.design), target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")),
+        h("a", { class: "btn btn-ghost", href: quoteViewUrl(app.designerUrl(c.lot), c.id, q), target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")),
         linkButton("Change it", `#/customers/${c.id}/design/${q.id}`, { kind: "ghost", icon: "edit" }),
         linkButton("Print", `#/customers/${c.id}/quotes/${q.id}`, { kind: "ghost", icon: "print" })));
   }

@@ -220,12 +220,16 @@ at once.
   sheet, customer quote card and original 3D view use that copy, including
   when the lot or public designer is now closed. Owner History copies
   contain settings without their original manufacturer/library definitions;
-  those cannot prove an older quote's item labels or construction. An old
-  quote without a trusted snapshot keeps its saved building name and price
-  lines, with an original-details-unavailable explanation. When an original
-  copy is unavailable, its saved building name and price lines still show,
-  with a plain explanation; current item labels, pictures and fine print
-  are never silently substituted.
+  those cannot prove an older quote's item labels or construction. A quote
+  or order saved before quotes kept this copy (no snapshot, before Oct 13
+  2026) prints as every sheet did then: its own building name and price
+  lines, with the door and window names, picture and fine print from
+  today's price list, and "See it in 3D" opens the lot's 3D designer with
+  its saved design; a line on the screen (never printed) says the names and
+  fine print are today's. When a quote that has a snapshot cannot find its
+  copy, its saved building name and price lines still show, with a plain
+  explanation on the screen only; current item labels, pictures and fine
+  print are never silently substituted for it.
   Historical viewer cards say “Original quote total” and keep their original
   saved state, with “Back to customer” for further work. The ordinary public
   shared designer keeps its current-price wording and editable copy flow.

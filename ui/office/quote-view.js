@@ -10,3 +10,14 @@ export function originalQuoteUrl(designerUrl, customerId, quoteId, design) {
   url.hash = `d=${encodeSync(design)}&view=1`;
   return url.href;
 }
+
+/* A quote saved before quotes kept their own copy of the price list (no
+   snapshot) has no original to open, so it opens the way every quote did
+   then: the lot's 3D designer with the saved design, priced and named from
+   today's price list (DIFFERENCES #14). */
+export function quoteViewUrl(designerUrl, customerId, quote) {
+  if (quote.snapshot) return originalQuoteUrl(designerUrl, customerId, quote.id, quote.design);
+  const url = new URL(designerUrl, location.origin);
+  url.hash = `d=${encodeSync(quote.design)}&view=1`;
+  return url.href;
+}
