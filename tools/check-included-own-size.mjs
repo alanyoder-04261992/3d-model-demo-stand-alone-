@@ -21,7 +21,11 @@
           (step 5);
    FREE-4 a charged item is saved as added, a stand-in as a swap from the
           item it stands in for, named plainly (step 6);
-   FREE-6 the line says what this size comes with (step 2). */
+   FREE-6 the line says what this size comes with (step 2).
+   Alan, Oct 17 2026 (step 7): "standard" is the business's own standard
+   layout; a standard door or window the customer removes comes off the
+   price ("Yes, take its price off"); the library's layout gives nothing
+   free and charges nothing for a business with its own. */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createOffice } from "../server/office/index.js";
@@ -29,7 +33,7 @@ import { MemoryBlobs } from "../server/office/store.js";
 import { priceDesign } from "../server/office/pricing.js";
 import { resolve } from "../model/company.js";
 import { defaults, setType, fromState, toState } from "../model/design.js";
-import { chooseSize, choosePorchLength } from "../ui/state.js";
+import { chooseSize, chooseType, choosePorchLength, addItem, removeItem } from "../ui/state.js";
 import * as UI from "../ui/state.js";
 import { priceParts } from "../model/pricing.js";
 import { resetItems } from "../model/layout.js";
@@ -247,11 +251,58 @@ prove(`a kept 72 in double door on the 10x12 Cottage is saved in place of the 48
   && cotQuote.data.quote.total === priceParts(cot, cat).total, JSON.stringify(cotQuote.data.quote?.price.lines || cotQuote.data.error));
 prove(`... and the designer's line says only the difference is charged: "${note(cot)}"`, note(cot) === `A 10×12 comes with the ${cat.CAT.w48.n}, so only the difference is charged for your ${cat.CAT.w72.n}.`);
 
+/* 7. Alan, Oct 17 2026: "standard" is always THIS business's own standard
+   layout, never the library's. A business whose standard Cabin is only one
+   door and one window: adding a window charges it, removing that window
+   takes its price off ("Yes, take its price off"), and the library's
+   Cabin layout gives nothing free and charges nothing. An owner changing
+   the standard changes new quotes only; saved quotes keep their totals. */
+const libCat = resolve((await call("GET", "price-list")).data.settings, manufacturer, library);
+const libCabin = building("C", "10x16");                     /* the library's Cabin, as this business sold it so far */
+const libDesign = fromState(libCabin, libCat);
+const libQuote = await call("POST", `customers/${customer.id}/quotes`, { design: libDesign }, { person: "dealer" });
+const cabinBase = libCat.P.C["10x16"], w23 = libCat.CAT.w23.p;
+prove(`before the change, the library's Cabin 10x16 is this business's standard and costs ${cabinBase}`, libQuote.status === 201 && libQuote.data.quote.total === cabinBase);
+const own = (await call("GET", "price-list")).data;
+own.settings.offer.C = { ...(own.settings.offer.C || {}), layout: [{ cat: "d36lite", wall: "F", at: "center" }, { cat: "w23", wall: "R", at: "center" }] };
+const ownPut = await call("PUT", "price-list", { settings: own.settings, version: own.version });
+const ownCat = resolve((await call("GET", "price-list")).data.settings, manufacturer, library);
+const mine = (size) => { const s = defaults(ownCat); chooseType(s, "C", ownCat); chooseSize(s, size, ownCat); return s; };
+const std1 = mine("10x16");
+prove("the owner's standard Cabin is one door and one window at every size",
+  ownPut.status === 200 && Object.keys(ownCat.P.C).every((z) => { const s = mine(z); return s.items.filter((i) => !i.pk).map((i) => i.cat).sort().join() === "d36lite,w23"; }), JSON.stringify(ownPut.data.error || std1.items.map((i) => i.cat)));
+const priced = (s) => ({ designer: priceParts(s, ownCat).total, server: priceDesign(fromState(s, ownCat), ownCat).price.total });
+const p0 = priced(std1);
+prove(`... and it costs the Cabin's own price ${cabinBase}, nothing added or taken off (designer ${p0.designer}, server ${p0.server})`, p0.designer === cabinBase && p0.server === cabinBase);
+const plus = mine("10x16"); addItem(plus, "w23", ownCat, Math.PI);
+const p1 = priced(plus);
+prove(`a customer adding a window pays ${w23} for it (designer ${p1.designer}, server ${p1.server})`, p1.designer === cabinBase + w23 && p1.server === cabinBase + w23);
+const minus = mine("10x16"); removeItem(minus, minus.items.find((i) => i.cat === "w23").id);
+const p2 = priced(minus);
+const minusLine = priceParts(minus, ownCat).lines.find((l) => l[2] === "removed.w23");
+prove(`a customer removing that window gets ${w23} taken off (designer ${p2.designer}, server ${p2.server}, "${minusLine?.[0]}")`, p2.designer === cabinBase - w23 && p2.server === cabinBase - w23 && minusLine?.[1] === -w23);
+const minusSent = await website(fromState(minus, ownCat), "Took a window off");
+prove("... through the public quote route too", minusSent.status === 201 && minusSent.data.total === cabinBase - w23);
+const minusOrder = await call("POST", `customers/${customer.id}/quotes`, { design: fromState(minus, ownCat) }, { person: "dealer" });
+const minusSold = await call("POST", `customers/${customer.id}/orders`, { quoteId: minusOrder.data.quote?.id, payment: "cash", deposit: 0 }, { person: "dealer" });
+prove("... and a dealer quote and its order", minusOrder.data.quote?.total === cabinBase - w23 && minusSold.data.order?.total === cabinBase - w23);
+/* the library's layout on this business today (a link edited to it, or made with today's version) */
+const libToday = structuredClone(libDesign); libToday.cfg = ownCat.cfg;
+const libPriced = priceDesign(libToday, ownCat).price;
+const libExtra = libCabin.items.filter((i) => i.cat === "w23").length - 1;
+prove(`the library's Cabin layout is never free here: its ${libExtra} extra windows are charged (${libPriced.total})`, libPriced.total === cabinBase + libExtra * w23 && priceParts(toState(libToday, ownCat).state, ownCat).total === libPriced.total);
+const forgedOff = fromState(std1, ownCat); forgedOff.removed = ["w23", "w23", "w23", "ppost"];
+prove("... and the library's windows and posts this Cabin never had are never taken off, even when a link says they were", priceDesign(forgedOff, ownCat).price.total === cabinBase && priceParts(toState(forgedOff, ownCat).state, ownCat).total === cabinBase);
+const keptQuote = (await call("GET", `customers/${customer.id}`, undefined, { person: "dealer" })).data.customer.quotes.find((q) => q.id === libQuote.data.quote.id);
+prove("the quote saved before the owner's change keeps its total", keptQuote?.total === cabinBase);
+const oldAgain = await call("POST", `customers/${customer.id}/quotes`, { design: libDesign }, { person: "dealer" });
+prove("... and its design, made under the earlier version, is still compared with that version's standard", oldAgain.status === 201 && oldAgain.data.quote.total === cabinBase);
+
 if (failed.length) {
   for (const s of said) console.log("  ok   " + s);
   for (const f of failed) console.log("  FAIL " + f);
   console.log(`FAIL: ${failed.length} of ${checks} checks failed.`);
   process.exit(1);
 }
-console.log(`PROVED (${checks} checks): an item marked "comes with the building" is free only up to what its own size and porch come with; the rest is charged at its normal price on the public and dealer quote routes, the designer shows the same total with one plain line, honest buildings keep their price, and saved quotes and orders keep theirs.`);
+console.log(`PROVED (${checks} checks): every design is compared with the business's own standard layout for its size: an item marked "comes with the building" is free only up to what that standard comes with and the rest is charged, a standard door or window the customer removes comes off the price, on the public and dealer quote routes and in orders; the designer shows the same total with one plain line; the porch chip and an owner's later change never move a price on their own; honest buildings keep their price; saved quotes and orders keep theirs.`);
 for (const s of said) console.log("  ok " + s);

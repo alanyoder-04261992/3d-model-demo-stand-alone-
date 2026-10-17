@@ -15,6 +15,9 @@
            saved total does, never "+ $195".
    FREE-8  On a phone (390 wide), that saved quote's "Back to customer"
            button sits below "Original quote total", never over it.
+   And (Alan, Oct 17 2026, "Yes, take its price off"): a standard window
+   the customer took off comes off the saved price and is printed under
+   "Taken off".
 
    Runs the local Dealer Center (tools/office-local.mjs) with its sample
    business on a free port, signed in as the sample owner. */
@@ -68,6 +71,7 @@ async function designed(steps) {
     for (const [what, arg] of steps) {
       if (what === "type") S.chooseType(s, arg, cat);
       if (what === "size") S.chooseSize(s, arg, cat);
+      if (what === "removeWindow") { const w = s.items.find((i) => i.inc && cat.CAT[i.cat].k === "win"); S.removeItem(s, w.id); }
       if (what === "moveDoor") { const d = s.items.find((i) => i.inc && cat.CAT[i.cat].k === "door"); S.moveItem(s, d.id, { pos: d.pos + 0.25 }, cat); }
     }
     return { design: D.fromState(s, cat), names: { w23: cat.CAT.w23?.n, w72: cat.CAT.w72?.n, w48: cat.CAT.w48?.n }, cfg: cat.cfg, price: (await import("/model/pricing.js")).priceParts(s, cat).total };
@@ -123,6 +127,16 @@ try {
   const cotSheet = await page.locator(".sheet").innerText();
   const cotComes = await page.evaluate(() => [...document.querySelectorAll(".sheet .sheet-items")].find((b) => b.querySelector("h4").textContent === "Comes with")?.innerText || "");
   ok(`the kept double doors are named plainly in "Comes with" and on the price line: "${plainly}"`, cotComes.includes(plainly) && cotSheet.split(plainly).length >= 3, cotComes);
+
+  /* a standard window taken off (Alan, Oct 17 2026: "Yes, take its price off") */
+  const fewer = await designed([["type", "C"], ["size", "10x16"], ["removeWindow"]]);
+  const fewerQ = await api(`customers/${id}/quotes`, { design: fewer.design }, "POST");
+  ok(`a Cabin 10x16 with a standard window taken off is saved at the designer's ${fewer.price}, the window's price less`, fewerQ.status === 201 && fewerQ.data.quote.total === fewer.price && fewerQ.data.quote.total === fewerQ.data.quote.price.base - (fewerQ.data.quote.price.lines.find((l) => l[2] === "removed.w23") ? -fewerQ.data.quote.price.lines.find((l) => l[2] === "removed.w23")[1] : NaN));
+  await openDealer(`#/customers/${id}/quotes/${fewerQ.data.quote.id}`);
+  await page.locator(".sheet .sheet-item-cols").waitFor();
+  const offLists = await page.evaluate(() => Object.fromEntries([...document.querySelectorAll(".sheet .sheet-items")].map((b) => [b.querySelector("h4").textContent, [...b.querySelectorAll("li")].map((li) => li.textContent)])));
+  const offSheet = await page.locator(".sheet-price").innerText();
+  ok(`the printed quote lists the window under "Taken off" and its price comes off ("${winName}, taken off")`, (offLists["Taken off"] || []).includes(winName) && offSheet.includes(`${winName}, taken off`) && offSheet.includes("-$195"), JSON.stringify(offLists));
 
   /* ---- FREE-3 and FREE-8: a quote saved before the rule ---- */
   const forged = structuredClone(cabin.design);
