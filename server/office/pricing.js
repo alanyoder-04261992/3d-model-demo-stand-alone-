@@ -4,12 +4,13 @@
    is checked for its type and range BEFORE the designer's own reader
    (model/design.js toState) sees it, because that reader is kind to old
    saved links and would quietly turn a bad value into a different building.
-   Then the "this came with the building" and "part of the electrical
-   package" marks are checked against what the building really comes with
-   at its sold sizes and porch choices. An older design may also use the
-   included counts from its original price list, provided by the server's
-   own History copy. The price is worked out by the same priceParts the
-   designer uses.
+   Then the "part of the electrical package" marks are checked against the
+   package, and the "this came with the building" marks are priced: free
+   only up to what the building comes with at its own size and porch, the
+   rest at their normal price (model/pricing.js chargedIncluded). An older
+   design may use the included counts from its original price list,
+   provided by the server's own History copy. The price is worked out by
+   the same priceParts the designer uses.
 
    A design made under an earlier price list (its cfg is lower) is priced at
    today's prices when everything in it is still sold, so a customer who
@@ -18,9 +19,8 @@
 
 import { toState, fromState } from "../../model/design.js";
 import { frameOf } from "../../model/frame.js";
-import { standardItems, layoutVariants } from "../../model/loadouts.js";
 import { pkFixtures, fitsOnWall } from "../../model/layout.js";
-import { priceParts } from "../../model/pricing.js";
+import { priceParts, includedCounts, chargedIncluded, swapsOf } from "../../model/pricing.js";
 import { extraOfferedOn } from "../../model/company.js";
 import { OfficeError } from "./http.js";
 
@@ -38,36 +38,6 @@ function unreadable() { throw new DesignProblem(UNREADABLE); }
 function notOffered() { throw new DesignProblem(NOT_OFFERED, 409); }
 
 const own = (o, k) => o != null && Object.prototype.hasOwnProperty.call(o, k);
-
-/* A customer can move an included item and then choose a shorter size or
-   porch. Those items keep their included marks, even when that smaller
-   standard layout has fewer. Allow only the highest count the business
-   actually includes on a sold size and porch; forged extras are still
-   refused. A resolved price list is immutable, so count it once.
-   Known and waiting for Alan (review 17 CS-1): because the designer itself
-   lets any customer keep a bigger size's included windows this way, a
-   link edited to do the same is priced the same, and nothing in a saved
-   design can prove which size its items came with. Narrowing this here
-   refused honest saved designs; closing it means the designer charging
-   for those extras after a size change, which changes prices.
-   tools/check-layout-server.mjs writes both down. */
-const includedCache = new WeakMap();
-function mostIncluded(cat, type) {
-  let byStyle = includedCache.get(cat);
-  if (!byStyle) includedCache.set(cat, byStyle = new Map());
-  if (byStyle.has(type)) return byStyle.get(type);
-  const maximum = new Map(), t = cat.TYPES[type];
-  for (const size of Object.keys(cat.P[type])) {
-    for (const variant of layoutVariants(t, size)) {
-      const frame = frameOf({ type, size, ...variant }, cat), { d, span, ws } = frame;
-      const counts = new Map();
-      for (const item of standardItems(t, d.W, d.L, { CAT: cat.CAT, span, ws, frame }, type)) counts.set(item.cat, (counts.get(item.cat) || 0) + 1);
-      for (const [key, n] of counts) maximum.set(key, Math.max(maximum.get(key) || 0, n));
-    }
-  }
-  byStyle.set(type, maximum);
-  return maximum;
-}
 
 function plainObject(value, keys) {
   if (!value || typeof value !== "object" || Array.isArray(value)) unreadable();
@@ -166,24 +136,6 @@ export function priceDesign(input, cat, { includedCat = null } = {}) {
   if (warnings.length) notOffered();
 
   const frame = frameOf(state, cat);
-  const required = new Map();
-  for (const item of state.items.filter((i) => i.inc && !i.pk)) {
-    const original = item.origCat || item.cat;
-    required.set(original, (required.get(original) || 0) + 1);
-  }
-  const fitsAllowance = (allowed) => [...required].every(([key, n]) => n <= (allowed.get(key) || 0));
-  let allowance = mostIncluded(cat, state.type);
-  /* Only an authoritative history copy from the price-list service can
-     allow the items an older design came with. Never infer an allowance
-     from browser positions, counts, or an unrecognised cfg. The entire
-     included set must belong to one price list: merging their counts
-     would give away both the old door and its new replacement. */
-  if (!fitsAllowance(allowance) && includedCat?.id === cat.id && includedCat.cfg === input.cfg && input.cfg < cat.cfg && includedCat.TYPES[state.type]) {
-    allowance = mostIncluded(includedCat, state.type);
-  }
-  if (!fitsAllowance(allowance)) unreadable();
-  const comesWith = new Map(allowance);
-
   const packageOnly = structuredClone(state);
   packageOnly.items = packageOnly.items.filter((item) => !item.pk);
   pkFixtures(packageOnly, frameOf(packageOnly, cat), cat);
@@ -202,11 +154,7 @@ export function priceDesign(input, cat, { includedCat = null } = {}) {
       delete item.origCat;
     } else if (item.inc) {
       const original = item.origCat || item.cat;
-      if (!(comesWith.get(original) > 0)) unreadable();
-      const kind = cat.CAT[original].k;
-      const swaps = kind === "win" ? cat.LISTS.sheetWindow : ["door", "ru"].includes(kind) ? cat.LISTS.sheetDoor : [original];
-      if (item.cat !== original && !(swaps || []).includes(item.cat)) unreadable();
-      comesWith.set(original, comesWith.get(original) - 1);
+      if (item.cat !== original && !swapsOf(original, cat).includes(item.cat)) unreadable();
       item.origCat = original;
       item.pk = false;
     } else {
@@ -217,7 +165,24 @@ export function priceDesign(input, cat, { includedCat = null } = {}) {
     if (item.dbl && (c.k !== "win" || c.gable)) unreadable();
   }
 
-  const price = priceParts(state, cat);
+  /* "Comes with the building" covers only what this size and porch come
+     with (model/pricing.js chargedIncluded, Alan Oct 17 2026: "Yes, charge
+     for them"): more is charged at its normal price, never refused. The
+     server cannot tell a customer who laid out a bigger size and then chose
+     this one from a link edited by hand, so both are priced the same.
+     Only an authoritative History copy from the price-list service can
+     allow the items an older design came with (a door the owner has since
+     replaced); it is used when it makes the design cost less. Never infer
+     an allowance from browser positions, counts, or an unrecognised cfg.
+     The whole included set comes from one price list: merging their counts
+     would give away both the old door and its new replacement. */
+  let allowance = includedCounts(state, cat, frame);
+  if (includedCat?.id === cat.id && includedCat.cfg === input.cfg && input.cfg < cat.cfg && includedCat.TYPES[state.type] && chargedIncluded(state, cat, frame, allowance).size) {
+    let older = null;
+    try { older = includedCounts(state, includedCat, frameOf(state, includedCat)); } catch { older = null; }
+    if (older && priceParts(state, cat, frame, { allowance: older }).total < priceParts(state, cat, frame, { allowance }).total) allowance = older;
+  }
+  const price = priceParts(state, cat, frame, { allowance });
   if (!Number.isFinite(price.total) || price.total < 0 || price.total > 100000000) unreadable();
   return { design: fromState(state, cat), price, repriced, state };
 }
