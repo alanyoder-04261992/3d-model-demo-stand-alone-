@@ -108,6 +108,23 @@ try {
     await page.screenshot({ path: `${OUT}/legacy-${what}-screen.png`, fullPage: true });
   }
 
+  /* the screen-only note at phone width and in dark mode: no sideways
+     scroll, and its words stand out from its background */
+  for (const [label, width, scheme] of [["phone", 390, "light"], ["dark", 1280, "dark"], ["phone-dark", 390, "dark"]]) {
+    await page.setViewportSize({ width, height: 850 });
+    await page.emulateMedia({ media: "screen", colorScheme: scheme });
+    await open(`#/customers/${id}/orders/${orderId}`);
+    await page.locator(".sheet-screen-note").waitFor();
+    const fit = await page.evaluate(() => {
+      const el = document.scrollingElement, note = document.querySelector(".sheet-screen-note"), r = note.getBoundingClientRect(), cs = getComputedStyle(note);
+      return { sideways: el.scrollWidth - el.clientWidth, right: r.right, width: innerWidth, color: cs.color, bg: cs.backgroundColor };
+    });
+    ok(`${label} (${width} wide, ${scheme}): the old order sheet has no sideways scroll and its screen note fits`, fit.sideways <= 0 && fit.right <= fit.width + 0.5);
+    ok(`${label}: the screen note's words differ from its background`, fit.color !== fit.bg);
+    await page.screenshot({ path: `${OUT}/legacy-order-${label}.png`, fullPage: true });
+  }
+  await page.setViewportSize({ width: 1280, height: 850 });
+  await page.emulateMedia({ media: "screen", colorScheme: "light" });
   await open(`#/customers/${id}`);
   const cardLink = new URL(await page.getByRole("link", { name: "See it in 3D", exact: true }).first().getAttribute("href"));
   ok("the customer card opens the old quote in the 3D designer, not an error page", !cardLink.searchParams.has("saved-quote") && /^#d=.+&view=1$/.test(cardLink.hash));
