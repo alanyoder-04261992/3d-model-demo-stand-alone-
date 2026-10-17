@@ -1,5 +1,7 @@
 /* CHECK: the Dealer Center's red Stop selling buttons and the How it's built
-   chips are readable in light and dark: every state reaches 4.5:1.
+   chips are readable in light and dark: every state reaches 4.5:1. A picked
+   chip also stands apart from an unpicked one: its fill or its edge differs
+   from the unpicked chip's by 3:1 or more.
    Loads the real stylesheets into a small page in Chromium.
    Run: node tools/check-dealer-colours.mjs   (check-all: browser) */
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -13,11 +15,11 @@ const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "/opt/node22/lib/n
 const sheets = ["office.css", "crm.css", "owner.css", "help.css"].map((name) => pathToFileURL(resolve(ROOT, "ui/office", name)).href);
 const body = `<div class="main pl">
   <button class="btn btn-danger" data-name="Stop selling on the Edit page">Stop selling</button>
-  <div class="pl-built-chips">
+  <div class="card"><div class="pl-built-chips">
     <button class="pl-built-chip" aria-pressed="false" data-name="an unpicked chip">4 ft</button>
     <button class="pl-built-chip" aria-pressed="true" data-name="a picked chip">8 ft</button>
     <button class="pl-built-chip std" aria-pressed="true" data-name="a picked chip from the standard">Door side</button>
-  </div>
+  </div></div>
 </div>
 <dialog class="dialog" open><div class="dialog-body"><div class="actions end"><button class="btn">Keep selling</button><button class="btn btn-danger" data-name="Stop selling in its question box">Stop selling</button></div></div></dialog>`;
 
@@ -44,8 +46,17 @@ try {
       console.log(`  ${good ? "ok" : "FAIL"} ${colorScheme}: ${item.name} ${value.toFixed(2)}:1 (${item.color} on ${item.background})`);
       good ? passed++ : failed++;
     }
+    /* Picked against unpicked: the larger of the fill and edge differences. */
+    const chips = await page.$$eval(".pl-built-chip", (nodes) => nodes.map((node) => { const s = getComputedStyle(node); return { name: node.dataset.name, fill: s.backgroundColor, edge: s.borderTopColor }; }));
+    const unpicked = chips.find((chip) => chip.name === "an unpicked chip");
+    for (const chip of chips.filter((chip) => chip !== unpicked)) {
+      const fill = ratio(rgb(chip.fill), rgb(unpicked.fill)), edge = ratio(rgb(chip.edge), rgb(unpicked.edge)), value = Math.max(fill, edge);
+      const good = value >= 3;
+      console.log(`  ${good ? "ok" : "FAIL"} ${colorScheme}: ${chip.name} stands apart from an unpicked chip ${value.toFixed(2)}:1 (fill ${chip.fill} against ${unpicked.fill}, edge ${chip.edge} against ${unpicked.edge})`);
+      good ? passed++ : failed++;
+    }
     await page.close();
   }
 } finally { await browser?.close(); }
-if (failed) { console.log(`FAILED: ${failed} of ${passed + failed} colour pairs are below 4.5:1.`); process.exit(1); }
-console.log(`PROVED (${passed} checks): Stop selling buttons and How it's built chips read at 4.5:1 or better in light and dark.`);
+if (failed) { console.log(`FAILED: ${failed} of ${passed + failed} colour checks fall short (words below 4.5:1, or a picked chip within 3:1 of an unpicked one).`); process.exit(1); }
+console.log(`PROVED (${passed} checks): Stop selling buttons and How it's built chips read at 4.5:1 or better in light and dark, and a picked chip stands apart from an unpicked one by 3:1 or more.`);
