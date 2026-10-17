@@ -106,7 +106,7 @@ export async function render(ctx) {
       h("h3", {}, "The building"),
       h("p", { class: "sheet-building-name" }, building),
       design ? colorList(design) : null,
-      design && cat ? itemLists(design, cat) : null),
+      design && cat ? itemLists(design, cat, price.lines || []) : null),
     picture);
 
   /* ---- the price ---- */
@@ -173,8 +173,15 @@ function colorList(design) {
 }
 
 /* The doors, windows and fixtures by name, counted ("2×3 Window × 2"). */
-function itemLists(design, cat) {
-  const groups = { comes: new Map(), added: new Map(), elec: new Map() };
+function itemLists(design, cat, priceLines = []) {
+  const groups = { comes: new Map(), added: new Map(), elec: new Map(), off: new Map() };
+  /* a standard door or window the customer took off, as the price has it
+     (its "removed.<item>" line; model/pricing.js removedCredits) */
+  for (const line of priceLines) {
+    const key = Array.isArray(line) && typeof line[2] === "string" && line[2].startsWith("removed.") ? line[2].slice(8) : null;
+    const name = key && cat.CAT?.[key]?.n;
+    if (name) groups.off.set(name, (groups.off.get(name) || 0) + 1);
+  }
   for (const it of design.items || []) {
     const def = cat.CAT?.[it.cat];
     if (!def) continue;
@@ -190,7 +197,7 @@ function itemLists(design, cat) {
   }
   const list = (title, map) => map.size ? h("div", { class: "sheet-items" }, h("h4", {}, title),
     h("ul", {}, [...map].map(([name, n]) => h("li", {}, n > 1 ? `${name} × ${n}` : name)))) : null;
-  const parts = [list("Comes with", groups.comes), list("Added", groups.added), list("Electrical", groups.elec)].filter(Boolean);
+  const parts = [list("Comes with", groups.comes), list("Added", groups.added), list("Taken off", groups.off), list("Electrical", groups.elec)].filter(Boolean);
   return parts.length ? h("div", { class: "sheet-item-cols" }, parts) : null;
 }
 

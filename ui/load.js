@@ -171,9 +171,9 @@ export async function loadLot(slug, opts = {}) {
 }
 
 /* AN OLDER DESIGN'S OWN PRICE LIST (review 17 FREE-2). A design link made
-   before the owner changed a standard layout is priced by the server with
-   what that older price list came with, when that costs less
-   (server/office/pricing.js, model/pricing.js includedAllowance). So the
+   before the owner changed a standard layout is compared by the server
+   with that older price list's standard (server/office/pricing.js,
+   model/pricing.js includedAllowance). So the
    page shows the same total, it asks the lot for that version
    (GET api/lots/<lot>?cfg=<the design's version>); the server answers with
    its own kept copy, or nothing. -> the catalogue with olderIncluded (that

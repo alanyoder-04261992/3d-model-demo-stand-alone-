@@ -11,7 +11,9 @@
          colors: {body, trim, roof, door, shutters},     ("" = match siding / trim)
          items: [{cat, wall, pos, vy, px, pz, rot, ln, inc, pk, dbl, shut, lite, origCat}],
          dormer, porch: {pLen, pFlip, pMid}, opts: ["jo12", ...], elec: {pkg, ext},
-         ramp, xopt: {key: n}, priced?: {total, at} }
+         ramp, xopt: {key: n}, priced?: {total, at},
+         removed?: ["w23", ...] }   (standard doors and windows the customer
+                                     took off: model/pricing.js removedCredits)
 
    defaults(cat)             the design a new visitor starts on, laid out
    setType / setSize / flipPorch   the three building chips, as in Barnwright
@@ -50,7 +52,7 @@
 import { frameOf, porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, porchLengthFor } from "./frame.js";
 import { resetItems, clampPos, keepOnWall, pkFixtures, fitsOnWall } from "./layout.js";
 import { standardItems } from "./loadouts.js";
-import { pPrice, pSizes, priceParts, includedCounts, money } from "./pricing.js";
+import { pPrice, pSizes, priceParts, money } from "./pricing.js";
 import { colorName, hexOfName, pickByName, sidingPalette, extraOfferedOn } from "./company.js";
 
 /* own keys only: a link naming "constructor" or "__proto__" is not a style,
@@ -331,14 +333,12 @@ function itemOut(it) {
 
 /* The price list version a design is saved with: the catalogue's own, or,
    in a lot's designer opening an older design (cat.olderIncluded, ui/load.js
-   withOlderList), that older version while what it came with is what makes
-   the design cost less, so the server prices it the same way
-   (model/pricing.js includedAllowance, server/office/pricing.js). */
+   withOlderList), that older version, so the server compares it with the
+   same standard (model/pricing.js includedAllowance,
+   server/office/pricing.js). */
 function cfgFor(state, cat) {
   const o = cat.olderIncluded;
-  if (!o || !(o.cfg < cat.cfg)) return cat.cfg;
-  try { return priceParts(state, cat).total < priceParts(state, cat, null, { allowance: includedCounts(state, cat) }).total ? o.cfg : cat.cfg; }
-  catch (e) { return cat.cfg; }
+  return o && o.cfg < cat.cfg ? o.cfg : cat.cfg;
 }
 
 export function fromState(state, cat, opts) {
@@ -365,6 +365,10 @@ export function fromState(state, cat, opts) {
     ramp: state.ramp || "none",
     xopt: Object.assign({}, state.xopt || {}),
   };
+  /* the standard doors and windows the customer took off (model/pricing.js
+     removedCredits), only when there are any */
+  const removed = Array.isArray(state.removed) ? state.removed.filter((k) => typeof k === "string") : [];
+  if (removed.length) d.removed = removed.slice(0, 100);
   if (opts && opts.priced) d.priced = { total: priceParts(state, cat).total, at: opts.at || new Date().toISOString().slice(0, 10) };
   return d;
 }
@@ -526,6 +530,13 @@ export function toState(design, cat, opts) {
     s.items.forEach((it) => clampPos(it, s, fr2));
     warnings.push(`The side porch is now ${porchWords(t, to)}; its windows were set back to the standard ones.`);
   }
+  /* the standard doors and windows the customer took off (model/pricing.js
+     removedCredits): items this company still sells, by today's names */
+  if (Array.isArray(d.removed)) {
+    s.removed = d.removed.map((k) => (typeof k === "string" && has(ren.items, k) && ren.items[k]) || k)
+      .filter((k) => typeof k === "string" && has(cat.CAT, k)).slice(0, 100);
+    if (!s.removed.length) delete s.removed;
+  }
   warnings.push(...normalize(s, frameOf(s, cat), cat, opts));
   return { state: s, warnings };
 }
@@ -560,6 +571,7 @@ function compact(design) {
   if (d.ramp && d.ramp !== "none") o.r = d.ramp;
   if (d.xopt && Object.keys(d.xopt).length) o.x = d.xopt;
   if (d.priced) o.$ = [d.priced.total, d.priced.at];
+  if (Array.isArray(d.removed) && d.removed.length) o.m = d.removed.slice();
   return o;
 }
 
@@ -598,6 +610,7 @@ function expand(o) {
     ramp: o.r || "none",
     xopt: o.x && typeof o.x === "object" ? o.x : {},
   };
+  if (Array.isArray(o.m) && o.m.length) d.removed = o.m.slice();
   if (!d.colors.body && !d.colors.trim && !d.colors.roof) delete d.colors;
   if (d.items === undefined) delete d.items;
   if (Array.isArray(o.$)) d.priced = { total: o.$[0], at: o.$[1] };

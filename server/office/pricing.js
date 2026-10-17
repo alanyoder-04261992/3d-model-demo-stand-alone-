@@ -52,7 +52,7 @@ function isNumber(value, min, max, whole = false) {
   if (whole && !Number.isSafeInteger(value)) unreadable();
 }
 
-const DESIGN_KEYS = ["v", "company", "cfg", "type", "size", "colors", "items", "dormer", "porch", "opts", "elec", "ramp", "xopt", "priced"];
+const DESIGN_KEYS = ["v", "company", "cfg", "type", "size", "colors", "items", "dormer", "porch", "opts", "elec", "ramp", "xopt", "priced", "removed"];
 const ITEM_KEYS = ["cat", "wall", "pos", "vy", "px", "pz", "ln", "inc", "pk", "dbl", "shut", "lite", "rot", "origCat"];
 const WALLS = ["F", "B", "R", "L", "IN", "S1", "S2", "S3", "P1", "P2", "P3"];
 
@@ -109,6 +109,13 @@ function checkDesign(design, cat) {
     isNumber(design.priced.total, 0, 100000000);
     isText(design.priced.at, 10);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(design.priced.at)) unreadable();
+  }
+
+  /* the standard doors and windows the customer took off: item names; one
+     this price list does not sell is passed over (model/design.js toState) */
+  if (own(design, "removed")) {
+    if (!Array.isArray(design.removed) || design.removed.length > 100) unreadable();
+    for (const key of design.removed) isText(key, 40);
   }
 
   if (!Array.isArray(design.items) || design.items.length > 250) unreadable();
@@ -171,10 +178,13 @@ export function priceDesign(input, cat, { includedCat = null } = {}) {
      charged at its normal price, never refused. The server cannot tell a
      customer who laid out a bigger size and then chose this one from a
      link edited by hand, so both are priced the same.
-     Only an authoritative History copy from the price-list service can
-     allow the items an older design came with (a door the owner has since
-     replaced); it is used when it makes the design cost less, by the same
-     function the designer uses with the same copy (ui/load.js olderList).
+     A standard door or window the customer took off comes off the price
+     (model/pricing.js removedCredits; Alan: "Yes, take its price off").
+     Every comparison is with this business's own standard layout. A design
+     made under an older price list is compared with that list's standard
+     (Alan, Oct 17 2026), which only an authoritative History copy from the
+     price-list service can give, by the same function the designer uses
+     with the same copy (ui/load.js withOlderList).
      Never infer an allowance from browser positions, counts, or an
      unrecognised cfg. The whole included set comes from one price list:
      merging their counts would give away both the old door and its new

@@ -128,6 +128,8 @@ export function resetItems(state, frame, cat) {
   var fr = frame || frameOf(state, cat);
   var d = fr.d;
   state.items = standardItems(fr.t, d.W, d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws, frame: fr }, state.type);
+  /* laid out again: nothing has been taken off (model/pricing.js removedCredits) */
+  delete state.removed;
   state.sel = null;
   state.seq = state.items.length;
   /* Owner recipes already settled their untouched builder items before fit

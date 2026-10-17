@@ -54,7 +54,7 @@
 import { frameOf } from "../model/frame.js";
 import { resetItems, clampPos, pkFixtures, freeSpot, itemById, fitsOnWall } from "../model/layout.js";
 import { setType as modelSetType, setSize as modelSetSize, flipPorch as modelFlipPorch, followStandardDoor } from "../model/design.js";
-import { pPrice, chargedIncluded, includedAllowance, itemCharge } from "../model/pricing.js";
+import { pPrice, chargedIncluded, includedAllowance, removedCredits, itemCharge } from "../model/pricing.js";
 import { wallPt } from "../engine/wall.js";
 
 function has(o, k) { return o != null && Object.prototype.hasOwnProperty.call(o, k); }
@@ -231,6 +231,15 @@ export function chargedNote(state, cat, fr) {
   for (const [it, as] of standIn) {
     said.push(aSize(state.size) + " comes with the " + cat.CAT[as].n + ", so only the difference is charged for your " + cat.CAT[it.cat].n + ".");
   }
+  /* a standard door or window taken off: its price comes off */
+  let credits = [];
+  try { credits = removedCredits(state, cat, fr, allowance); } catch (e) { credits = []; }
+  if (credits.length) {
+    const off = new Map();
+    for (const [key] of credits) { const w = wordsOf(key); off.set(w[0], { w, n: ((off.get(w[0]) || {}).n || 0) + 1 }); }
+    const n = credits.length;
+    said.push("The " + listWords([...off.values()].map((x) => (x.n === 1 ? "" : x.n + " ") + (x.n === 1 ? x.w[0] : x.w[1]))) + " you took off " + (n === 1 ? "comes" : "come") + " off the price.");
+  }
   return said.join(" ");
 }
 
@@ -330,8 +339,17 @@ export function addAt(state, catId, spot, cat) {
 /* ------------------------------------------------------------------------
    The selection sheet */
 
+/* Remove. A door or window that came with the building is noted
+   (state.removed), so its price comes off while this size comes with it
+   (model/pricing.js removedCredits; Alan, Oct 17 2026: "Yes, take its
+   price off"). Laying the doors and windows out again clears the note. */
 export function removeItem(state, id) {
-  for (let i = 0; i < state.items.length; i++) if (state.items[i].id === id) { state.items.splice(i, 1); break; }
+  for (let i = 0; i < state.items.length; i++) if (state.items[i].id === id) {
+    const it = state.items[i];
+    if (it.inc && !it.pk) state.removed = (Array.isArray(state.removed) ? state.removed : []).concat([it.origCat || it.cat]).slice(-100);
+    state.items.splice(i, 1);
+    break;
+  }
   if (state.sel === id) state.sel = null;
   return state;
 }
