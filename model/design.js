@@ -92,6 +92,9 @@ export function defaults(cat) {
   };
   for (const k of Object.keys(cat.RATES || {})) state.opts[k] = false;
   resetItems(state, frameOf(state, cat), cat);
+  /* (the starting design stays exactly Barnwright's; laidFor is filled in
+     the first time the size or porch changes, see keepLaidFor) */
+  delete state.laidFor;
   return state;
 }
 
@@ -114,7 +117,15 @@ export function setType(state, t, cat) {
 
 /* Barnwright's setSize: the doors and windows are NOT laid out again, only
    kept inside the walls. */
+/* The size and porch the doors and windows were laid for (model/layout.js
+   resetItems), noted before a change that keeps the items. */
+export function keepLaidFor(state) {
+  if (!state.laidFor) state.laidFor = { size: state.size, pLen: +state.pLen, pMid: !!state.pMid, pFlip: !!state.pFlip };
+  return state.laidFor;
+}
+
 export function setSize(state, sz, cat) {
+  keepLaidFor(state);
   state.size = sz;
   const fr = frameOf(state, cat);
   state.items.forEach((it) => clampPos(it, state, fr));
@@ -125,6 +136,9 @@ export function setSize(state, sz, cat) {
 /* Barnwright's flipPorch: the side porch to the other end, items mirrored. */
 export function flipPorch(state, cat) {
   if (state.pMid) return state;
+  /* the items are mirrored with the porch, so they came with the mirrored
+     porch */
+  keepLaidFor(state).pFlip = !state.laidFor.pFlip;
   state.pFlip = !state.pFlip;
   state.items.forEach((it) => {
     const g = cat.CAT[it.cat] && cat.CAT[it.cat].gable;
@@ -353,6 +367,14 @@ export function fromState(state, cat, opts) {
     ramp: state.ramp || "none",
     xopt: Object.assign({}, state.xopt || {}),
   };
+  /* the size and porch the included items came with, when the customer
+     changed the size or porch length afterwards and kept their items
+     (model/layout.js resetItems) */
+  const was = state.laidFor;
+  if (was && typeof was.size === "string" && (was.size !== state.size ||
+      (t.porch === "S" && (porchLen(was.pLen) !== porchLen(state.pLen) || !!was.pMid !== !!state.pMid || !!was.pFlip !== !!state.pFlip)))) {
+    d.orig = { size: was.size, pLen: porchLen(was.pLen), pMid: !!was.pMid, pFlip: !!was.pFlip };
+  }
   if (opts && opts.priced) d.priced = { total: priceParts(state, cat).total, at: opts.at || new Date().toISOString().slice(0, 10) };
   return d;
 }
@@ -514,6 +536,12 @@ export function toState(design, cat, opts) {
     s.items.forEach((it) => clampPos(it, s, fr2));
     warnings.push(`The side porch is now ${porchWords(t, to)}; its windows were set back to the standard ones.`);
   }
+  /* the size and porch the saved included items came with: as saved, or
+     the design's own */
+  const O = d.orig;
+  s.laidFor = O && typeof O === "object" && typeof O.size === "string"
+    ? { size: String((has(ren.sizes, O.size) && ren.sizes[O.size]) || O.size), pLen: porchLen(O.pLen), pMid: !!O.pMid, pFlip: !!O.pFlip }
+    : { size: s.size, pLen: +s.pLen, pMid: !!s.pMid, pFlip: !!s.pFlip };
   warnings.push(...normalize(s, frameOf(s, cat), cat, opts));
   return { state: s, warnings };
 }
@@ -548,6 +576,7 @@ function compact(design) {
   if (d.ramp && d.ramp !== "none") o.r = d.ramp;
   if (d.xopt && Object.keys(d.xopt).length) o.x = d.xopt;
   if (d.priced) o.$ = [d.priced.total, d.priced.at];
+  if (d.orig) o.f = [d.orig.size, porchLen(d.orig.pLen), d.orig.pFlip ? 1 : 0, d.orig.pMid ? 1 : 0];
   return o;
 }
 
@@ -589,6 +618,7 @@ function expand(o) {
   if (!d.colors.body && !d.colors.trim && !d.colors.roof) delete d.colors;
   if (d.items === undefined) delete d.items;
   if (Array.isArray(o.$)) d.priced = { total: o.$[0], at: o.$[1] };
+  if (Array.isArray(o.f)) d.orig = { size: o.f[0], pLen: o.f[1], pMid: !!o.f[3], pFlip: !!o.f[2] };
   return d;
 }
 

@@ -74,7 +74,9 @@ finished designer retains the golden geometry.
     customer has not touched them**; otherwise their items are kept and moved
     onto the new walls, as Barnwright does (one exception on the shop
     standard: the door of the Side Utility, Dormer Shed and Side Lofted
-    Barn follows the size, #27).
+    Barn follows the size, #27). The kept items keep their included marks;
+    the saved design names the size and porch they came with (`orig`), and
+    the server allows only that size's and the new size's included items.
 
 ## Standalone product
 

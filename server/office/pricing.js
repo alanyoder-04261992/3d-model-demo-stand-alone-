@@ -6,9 +6,10 @@
    saved links and would quietly turn a bad value into a different building.
    Then the "this came with the building" and "part of the electrical
    package" marks are checked against what the building really comes with
-   at its sold sizes and porch choices. An older design may also use the
-   included counts from its original price list, provided by the server's
-   own History copy. The price is worked out by the same priceParts the
+   at its own size and porch (and at the size and porch its included items
+   came with, when the customer changed size afterwards). An older design
+   may also use the included counts from its original price list, provided
+   by the server's own History copy. The price is worked out by the same priceParts the
    designer uses.
 
    A design made under an earlier price list (its cfg is lower) is priced at
@@ -17,7 +18,7 @@
    price meanwhile. */
 
 import { toState, fromState } from "../../model/design.js";
-import { frameOf } from "../../model/frame.js";
+import { frameOf, sidePorchLengthsOf } from "../../model/frame.js";
 import { standardItems, layoutVariants } from "../../model/loadouts.js";
 import { pkFixtures, fitsOnWall } from "../../model/layout.js";
 import { priceParts } from "../../model/pricing.js";
@@ -39,27 +40,39 @@ function notOffered() { throw new DesignProblem(NOT_OFFERED, 409); }
 
 const own = (o, k) => o != null && Object.prototype.hasOwnProperty.call(o, k);
 
-/* A customer can move an included item and then choose a shorter size or
-   porch. Those items keep their included marks, even when that smaller
-   standard layout has fewer. Allow only the highest count the business
-   actually includes on a sold size and porch; forged extras are still
-   refused. A resolved price list is immutable, so count it once. */
+/* What a building comes with at one size and porch: how many of each door,
+   window and post its standard layout includes. A customer can move an
+   included item and then choose another size or porch length; the items
+   keep their included marks, so the design names the size and porch they
+   came with (design.orig, model/layout.js resetItems) and the server allows
+   that size's included items as well as the design's own. Nothing else:
+   a small building never claims a bigger size's windows unless it was
+   designed at that size. A resolved price list is immutable, so each count
+   is worked out once. */
 const includedCache = new WeakMap();
-function mostIncluded(cat, type) {
-  let byStyle = includedCache.get(cat);
-  if (!byStyle) includedCache.set(cat, byStyle = new Map());
-  if (byStyle.has(type)) return byStyle.get(type);
-  const maximum = new Map(), t = cat.TYPES[type];
-  for (const size of Object.keys(cat.P[type])) {
-    for (const variant of layoutVariants(t, size)) {
-      const frame = frameOf({ type, size, ...variant }, cat), { d, span, ws } = frame;
-      const counts = new Map();
-      for (const item of standardItems(t, d.W, d.L, { CAT: cat.CAT, span, ws, frame }, type)) counts.set(item.cat, (counts.get(item.cat) || 0) + 1);
-      for (const [key, n] of counts) maximum.set(key, Math.max(maximum.get(key) || 0, n));
-    }
+function includedAt(cat, type, size, porch) {
+  let counts = includedCache.get(cat);
+  if (!counts) includedCache.set(cat, counts = new Map());
+  const t = cat.TYPES[type];
+  const variant = t.porch === "S" ? { pLen: porch.pLen, pMid: !!porch.pMid, pFlip: !!porch.pFlip } : layoutVariants(t, size)[0];
+  const key = JSON.stringify([type, size, variant.pLen, variant.pMid, variant.pFlip]);
+  if (counts.has(key)) return counts.get(key);
+  const frame = frameOf({ type, size, ...variant }, cat), { d, span, ws } = frame;
+  const count = new Map();
+  for (const item of standardItems(t, d.W, d.L, { CAT: cat.CAT, span, ws, frame }, type)) count.set(item.cat, (count.get(item.cat) || 0) + 1);
+  counts.set(key, count);
+  return count;
+}
+/* The design's own size and porch, and the one its included items came
+   with when that is another size or porch length this price list sells. */
+function allowanceOf(cat, state, orig) {
+  if (!cat.TYPES[state.type] || !own(cat.P[state.type], state.size)) return new Map();
+  const allowed = new Map(includedAt(cat, state.type, state.size, state));
+  const t = cat.TYPES[state.type];
+  if (orig && own(cat.P[state.type], orig.size) && (t.porch !== "S" || sidePorchLengthsOf(t).includes(orig.pLen))) {
+    for (const [key, n] of includedAt(cat, state.type, orig.size, orig)) allowed.set(key, Math.max(allowed.get(key) || 0, n));
   }
-  byStyle.set(type, maximum);
-  return maximum;
+  return allowed;
 }
 
 function plainObject(value, keys) {
@@ -75,7 +88,7 @@ function isNumber(value, min, max, whole = false) {
   if (whole && !Number.isSafeInteger(value)) unreadable();
 }
 
-const DESIGN_KEYS = ["v", "company", "cfg", "type", "size", "colors", "items", "dormer", "porch", "opts", "elec", "ramp", "xopt", "priced"];
+const DESIGN_KEYS = ["v", "company", "cfg", "type", "size", "colors", "items", "dormer", "porch", "opts", "elec", "ramp", "xopt", "priced", "orig"];
 const ITEM_KEYS = ["cat", "wall", "pos", "vy", "px", "pz", "ln", "inc", "pk", "dbl", "shut", "lite", "rot", "origCat"];
 const WALLS = ["F", "B", "R", "L", "IN", "S1", "S2", "S3", "P1", "P2", "P3"];
 
@@ -134,6 +147,15 @@ function checkDesign(design, cat) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(design.priced.at)) unreadable();
   }
 
+  /* the size and porch the included items came with (see allowanceOf) */
+  if (own(design, "orig")) {
+    plainObject(design.orig, ["size", "pLen", "pMid", "pFlip"]);
+    isText(design.orig.size, 40);
+    isNumber(design.orig.pLen, 4, 20, true);
+    isBool(design.orig.pMid);
+    isBool(design.orig.pFlip);
+  }
+
   if (!Array.isArray(design.items) || design.items.length > 250) unreadable();
   for (const item of design.items) {
     plainObject(item, ITEM_KEYS);
@@ -165,14 +187,15 @@ export function priceDesign(input, cat, { includedCat = null } = {}) {
     required.set(original, (required.get(original) || 0) + 1);
   }
   const fitsAllowance = (allowed) => [...required].every(([key, n]) => n <= (allowed.get(key) || 0));
-  let allowance = mostIncluded(cat, state.type);
+  const orig = own(input, "orig") ? state.laidFor : null;
+  let allowance = allowanceOf(cat, state, orig);
   /* Only an authoritative history copy from the price-list service can
      allow the items an older design came with. Never infer an allowance
      from browser positions, counts, or an unrecognised cfg. The entire
      included set must belong to one price list: merging their counts
      would give away both the old door and its new replacement. */
   if (!fitsAllowance(allowance) && includedCat?.id === cat.id && includedCat.cfg === input.cfg && input.cfg < cat.cfg && includedCat.TYPES[state.type]) {
-    allowance = mostIncluded(includedCat, state.type);
+    allowance = allowanceOf(includedCat, state, orig);
   }
   if (!fitsAllowance(allowance)) unreadable();
   const comesWith = new Map(allowance);
