@@ -368,7 +368,11 @@ export async function install(api) {
 
   /* Screen targets are placed from the same world coordinates as the part,
      while ordinary walls use the renderer's existing item hit quads. */
-  let layerKeys = "", layerButtons = [];
+  /* A tap's own click can arrive with detail 0 (the canvas captures the
+     pointer and the view switch rebuilds these buttons), and it then lands
+     on whichever post button is under the finger. The pointerdown already
+     picked the nearest post, so that click must not pick again. */
+  let layerKeys = "", layerButtons = [], pointerPickedAt = -Infinity;
   function layerParts() {
     const fr = frame(), state = api.getState(); if (!porch || api.getMode() === "in" || view === "34") return [];
     const face = isPorch() ? edge() : view === "F" ? "F" : view === "R" ? "R" : null;
@@ -388,9 +392,10 @@ export async function install(api) {
       layerKeys = keys; ghosts.replaceChildren(); layerButtons = parts.map((part) => {
         const button = document.createElement("button"); button.type = "button"; button.dataset.item = part.id; button.className = "layout-posthit" + (isPorch() ? " solid" : " ghost") + (part.fixed ? " fixed" : "");
         button.setAttribute("aria-label", part.fixed ? "Corner post holds up the porch roof" : isPorch() ? "Move this porch post" : "Dashed porch post. Move it on the porch");
-        button.onclick = (event) => { if (event.detail || blockedRecipe) return; if (part.fixed) say("The corner posts hold up the porch roof, so they stay."); else { if (!isPorch()) setView(part.item.wall === "R" ? "PR" : "PF", true); api.select(part.id); } };
+        button.onclick = (event) => { if (event.detail || blockedRecipe || performance.now() - pointerPickedAt < 1500) { pointerPickedAt = -Infinity; return; } if (part.fixed) say("The corner posts hold up the porch roof, so they stay."); else { if (!isPorch()) setView(part.item.wall === "R" ? "PR" : "PF", true); api.select(part.id); } };
         button.onpointerdown = (event) => {
           if (event.button > 0 || blockedRecipe) return;
+          pointerPickedAt = performance.now();
           const bounds = api.canvas.getBoundingClientRect(), point = [event.clientX - bounds.left, event.clientY - bounds.top];
           const nearest = layerParts().reduce((best, candidate) => { const at = api.renderer.projCache.proj(candidate.p0); const gap = at ? Math.abs(at[0] - point[0]) : Infinity; return !best || gap < best.gap ? { candidate, gap } : best; }, null)?.candidate || part;
           if (nearest.fixed) { event.preventDefault(); event.stopPropagation(); say("The corner posts hold up the porch roof, so they stay."); return; }
