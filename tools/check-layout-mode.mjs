@@ -163,12 +163,16 @@ try {
   /* After Save as standard the result box keeps its heading, its close
      button and its way-out buttons on the screen: below a phone app's own
      100 px header and above the save bar. A change after a save says it is
-     not saved, and Cancel and Start again ask in the page with named buttons. */
-  for (const colorScheme of SCHEMES) for (const width of WIDTHS) {
-    const height = width === 390 ? 844 : width === 820 ? 1180 : 800;
-    const ctx = await browser.newContext({ viewport: { width, height }, colorScheme, reducedMotion: "reduce", hasTouch: true, isMobile: width === 390 });
+     not saved, and Cancel and Start again ask in the page with named buttons.
+     A phone turned sideways (844 x 390) is checked too: the words and
+     drawings still get room to read between the heading and the buttons. */
+  const screens = WIDTHS.map((width) => ({ width, height: width === 390 ? 844 : width === 820 ? 1180 : 800, phone: width === 390 }));
+  if (WIDTHS.includes(390)) screens.push({ width: 844, height: 390, phone: true, sideways: true });
+  for (const colorScheme of SCHEMES) for (const { width, height, phone, sideways } of screens) {
+    if (sideways && colorScheme !== SCHEMES[0]) continue;
+    const ctx = await browser.newContext({ viewport: { width, height }, colorScheme, reducedMotion: "reduce", hasTouch: true, isMobile: phone });
     await ctx.addCookies([{ name: "dealer_local_user", value: "chris%40samplebarns.example", url: BASE }]);
-    const r = await open(ctx, "C"), label = `${width} ${colorScheme}`, browserBoxes = [];
+    const r = await open(ctx, "C"), label = sideways ? `${width}x${height} ${colorScheme}` : `${width} ${colorScheme}`, browserBoxes = [];
     r.on("dialog", (dialog) => { browserBoxes.push(dialog.message()); dialog.dismiss(); });
     await r.addStyleTag({ content: ".test-app-header { position:fixed;inset:0 0 auto;height:100px;z-index:35;background:#16130e;color:white; }" });
     await r.evaluate(() => { const h = document.createElement("div"); h.className = "test-app-header"; h.textContent = "Phone app header"; document.body.append(h); });
@@ -176,6 +180,8 @@ try {
     await r.locator('.layout-wallchoices [data-layout-view="PF"]').click();
     await select(r, "ppost", "F");
     await r.locator("#layout-right").click();
+    /* The sample prices are whole dollars, so no cents show. A price with
+       cents keeps them on purpose, as the Dealer Center's money() does. */
     const words = await r.evaluate(() => ({ chips: document.getElementById("sizechips").innerText, caption: document.getElementById("layout-caption").innerText }));
     check(`${label}: the layout screen writes sizes 8×12 and whole-dollar prices ${JSON.stringify(words.chips.slice(0, 60))}`, /\d+×\d+/.test(words.chips) && !/\d \u00d7 \d/.test(words.chips + words.caption) && !/\.\d\d\b/.test(words.chips) && /\$\d/.test(words.chips));
     await r.locator("#layout-save").click();
@@ -184,13 +190,14 @@ try {
     const box = await r.evaluate(() => {
       const at = (node) => { const b = node.getBoundingClientRect(); return { top: Math.round(b.top), bottom: Math.round(b.bottom) }; };
       return { h2: at(document.querySelector("#layout-result h2")), close: at(document.getElementById("layout-resultclose")),
-        buttons: [...document.querySelectorAll(".layout-resultbuttons button")].map((b) => ({ text: b.textContent, ...at(b) })),
+        buttons: [...document.querySelectorAll(".layout-resultbuttons button")].map((b) => ({ text: b.textContent, ...at(b) })), room: Math.round(document.querySelector(".layout-resultbody").getBoundingClientRect().height),
         bar: Math.round(document.getElementById("layout-savebar").getBoundingClientRect().top), screen: innerHeight };
     });
-    await r.screenshot({ path: resolve(OUT, `layout-result-${width}-${colorScheme}.png`) });
+    await r.screenshot({ path: resolve(OUT, `layout-result-${sideways ? `${width}x${height}` : width}-${colorScheme}.png`) });
     const floor = Math.min(box.bar, box.screen);
     check(`${label}: the saved result's heading and close button sit below the app header ${JSON.stringify(box)}`, box.h2.top >= header && box.close.top >= header);
     check(`${label}: the saved result's buttons are on the screen above the save bar`, box.buttons.length > 0 && box.buttons.some((b) => /Back to Edit building/.test(b.text)) && box.buttons.every((b) => b.top >= header && b.bottom <= floor));
+    check(`${label}: the saved result's words and drawings get at least 120 px to read in (${box.room} px)`, box.room >= 120);
     await r.locator("#layout-resultclose").click();
     check(`${label}: right after a save the bar says it saved`, /Saved for every lot/.test(await r.locator("#layout-savewords").innerText()));
     await select(r, "ppost", "F");
@@ -225,7 +232,7 @@ try {
   await edit.close();
   check("the layout editor had no browser errors", page.errors.length === 0);
   await context.close();
-  console.log(`PROVED (${passed} checks): checked owner layouts reach customers, three-inch moves and included items persist, phone and tablet sheets stay reachable, and added posts stay clear on every porch.`);
+  console.log(`PROVED (${passed} checks): checked owner layouts reach customers, three-inch moves and included items persist, phone and tablet sheets stay reachable, added posts stay clear on every porch, a quick tap, a two-second press and Enter each pick the dashed post they are on, the saved result box keeps its heading and buttons between a phone app's header and the save bar (upright and sideways) with room to read, a change after a save says it is not saved yet, Cancel and Start again ask with named buttons, and sizes and prices read like the Dealer Center.`);
 } finally {
   await browser?.close(); server.kill("SIGTERM");
 }

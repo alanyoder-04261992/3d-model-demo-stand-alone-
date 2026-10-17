@@ -94,6 +94,18 @@ body.layout-mode { --layout-bar-height: 96px; padding-bottom: calc(var(--layout-
   #layout-result { padding: 116px 12px calc(var(--layout-bar-top, 0px) + 12px); place-items: start center; }
   .layout-resultcard { padding: 16px; }
   #layout-ask { margin: 116px auto auto; }
+  /* A phone turned sideways is short: the heading and the buttons go in a
+     column on the left and the words and drawings scroll on the right, so
+     they keep room to read. The question gets wider and lower. */
+  @media (max-height:599px) and (min-width:600px) {
+    .layout-resultcard { display: grid; grid-template-columns: minmax(0,240px) minmax(0,1fr); grid-template-rows: auto minmax(0,1fr); column-gap: 16px; }
+    .layout-resultcard h2 { grid-column: 1; grid-row: 1; }
+    .layout-resultbody { grid-column: 2; grid-row: 1 / span 2; padding-right: 44px; }
+    .layout-resultbuttons { grid-column: 1; grid-row: 2; align-self: start; margin-top: 8px; }
+    .layout-resultbody .layout-examples { grid-template-columns: repeat(auto-fit,minmax(min(100%,180px),1fr)); }
+    #layout-ask { width: min(calc(100% - 24px), 620px); max-height: calc(100dvh - 128px); padding: 16px; }
+    #layout-ask p { margin-bottom: 12px; }
+  }
 }
 @media (prefers-color-scheme:dark) {
   body.layout-mode { --paper: #211f1b; --ink: #f3eadd; --sub: #c2b8a9; --line: #494238; --card-line: #625949; --navy: #ddcbaa; --navy-deep: #16130e; --cream: #fff3dd; --green: #8cc59d; }
