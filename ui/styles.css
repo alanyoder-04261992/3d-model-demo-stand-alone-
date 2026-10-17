@@ -232,6 +232,10 @@ button,select{font-family:inherit;cursor:pointer}
 .bigbtn{width:100%;margin-top:12px;background:var(--red);color:var(--on-red);border:none;border-radius:9px;padding:14px;font-family:'Oswald','Arial Narrow',system-ui,sans-serif;font-size:15px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;box-shadow:0 3px 8px rgba(var(--red-rgb),.35)}
 .bigbtn.alt{background:#fff;color:var(--navy);border:2px solid var(--navy)}
 .bigbtn:disabled{opacity:.55}
+/* a link drawn as the big button (a saved quote's "Back to customer",
+   ui/share.js): a block like the buttons, so its padding never lies over
+   the total above it on a phone (review 17 FREE-8) */
+a.bigbtn{display:block;box-sizing:border-box;text-align:center;text-decoration:none}
 .qnote{font-size:11px;color:var(--sub);text-align:center;margin-top:8px}
 .qnote:empty{display:none}
 .sent{background:#e9f6ee;border:1.5px solid var(--green);border-radius:9px;padding:14px;text-align:center}

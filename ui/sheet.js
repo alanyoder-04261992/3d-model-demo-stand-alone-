@@ -41,6 +41,7 @@ import * as S from "./state.js";
 import { itemById, fitsOnWall } from "../model/layout.js";
 import { itemCharge, money } from "../model/pricing.js";
 import { colorName } from "../model/company.js";
+import { chargedForRows } from "./panels.js";
 import { animYaw, wallYaw } from "../engine/camera.js";
 import { rememberFocus, restoreFocus } from "./focus.js";
 
@@ -123,7 +124,7 @@ export function createSheet(ctx) {
     const c = CAT[it.cat];
     const fr = ctx.frame();
     el("sh-title").textContent = TITLES[c.k] || "Door";
-    const chg = itemCharge(it, state, cat, fr);
+    const chg = itemCharge(it, state, cat, fr, chargedForRows(state, cat, fr));
     el("sh-price").textContent = chg > 0 ? (showMoney() ? "+ " + money(chg) : "extra") : (it.pk ? "in package" : "included");
 
     /* Type (built from the price tables, so the labels follow the company's prices) */

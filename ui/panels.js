@@ -45,6 +45,17 @@ export function savedPriceOf(cat) {
   return p && typeof p.total === "number" && isFinite(p.total) && Array.isArray(p.lines) ? p : null;
 }
 
+/* The items marked "comes with the building" that a row shows as charged
+   (model/pricing.js chargedIncluded). A saved quote opened as it was saved
+   shows the price it was saved with, which charged none of them: a quote
+   saved before Oct 17 2026 gave them all, and since then the server saves
+   a charged one as an added item (server/office/pricing.js
+   chargedAsAdded). So its rows say "included", as its total does (review
+   17 FREE-3). Used by the rows here and the selection sheet (ui/sheet.js). */
+export function chargedForRows(state, cat, fr) {
+  return savedPriceOf(cat) ? new Map() : chargedIncluded(state, cat, fr);
+}
+
 /* feet on a chip: "4", "4' 6\"" -- the chips have always said "4 × 8" */
 function feetWords(ft) {
   const i = Math.round(ft * 12), f = Math.floor(i / 12), r = i - f * 12;
@@ -327,7 +338,7 @@ export function createPanels(ctx) {
     /* a saved quote opened from the Dealer Center shows the price it was
        saved with (ui/load.js savedPrice), never a new one */
     const saved = savedPriceOf(cat);
-    const charged = chargedIncluded(state, cat, fr);
+    const charged = chargedForRows(state, cat, fr);
     const il = el("itemlist"); il.innerHTML = "";
     state.items.forEach((it) => {
       const c = CAT[it.cat]; if (!c) return;

@@ -114,7 +114,7 @@ export async function render(ctx) {
   const priceTable = h("table", { class: "sheet-price" },
     h("thead", {}, h("tr", {}, h("th", {}, "Item"), h("th", { class: "num" }, "Price"))),
     h("tbody", {},
-      h("tr", {}, h("td", {}, building, h("span", { class: "sheet-small" }, " — base price, standard doors and windows included")), h("td", { class: "num" }, money(price.base))),
+      h("tr", {}, h("td", {}, building, h("span", { class: "sheet-small" }, " — base price, with the doors and windows this size comes with")), h("td", { class: "num" }, money(price.base))),
       (price.lines || []).map(([label, amount]) => h("tr", {}, h("td", {}, label), h("td", { class: "num" }, money(amount))))),
     h("tfoot", {},
       h("tr", { class: "sheet-total" }, h("th", {}, "Total"), h("th", { class: "num" }, money(total))),
@@ -182,7 +182,9 @@ function itemLists(design, cat) {
     if (it.dbl) name += " (double)";
     if (it.shut) name += " with shutters";
     if (it.lite) name += " with door window";
-    if (it.inc && it.origCat && it.origCat !== it.cat) name += " (upgrade)";
+    /* a door or window the customer took in place of one the building
+       comes with: the price list charges the difference (review 17 FREE-4) */
+    if (it.inc && it.origCat && it.origCat !== it.cat) name += cat.CAT[it.origCat] ? `, in place of the ${cat.CAT[it.origCat].n}` : " (upgrade)";
     const group = it.pk ? groups.elec : it.inc ? groups.comes : groups.added;
     group.set(name, (group.get(name) || 0) + 1);
   }
