@@ -685,7 +685,11 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
   function learn(key, entry) {
     const cfg = entry?.settings?.cfg;
     if (!Number.isSafeInteger(cfg) || (cached && entry.settings.id !== cached.cat.id)) return;
-    if (!pastCfgs.byCfg.has(cfg) || pastCfgs.byCfg.get(cfg) < key) pastCfgs.byCfg.set(cfg, key);
+    /* every copy with this cfg, newest first, so an unreadable newest copy
+       falls back to the next older one as the old lookup did */
+    const keys = pastCfgs.byCfg.get(cfg) || [];
+    if (!keys.includes(key)) { keys.push(key); keys.sort().reverse(); }
+    pastCfgs.byCfg.set(cfg, keys);
   }
   async function readHistory(keys) {
     for (let i = 0; i < keys.length; i += 16) {
@@ -694,32 +698,35 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
       entries.forEach((entry, j) => learn(batch[j], entry));
     }
   }
-  async function historyKeyFor(cfg, version) {
+  /* The History copies with this cfg, newest first: at least `need` of
+     them, or every one there is. */
+  async function historyKeysFor(cfg, version, need = 1) {
     if (pastCfgs.version !== version) {
       pastCfgs.names = (await store.keys("price-list-history/")).sort().reverse();
       pastCfgs.version = version;
     }
     const names = pastCfgs.names;
+    const found = () => (pastCfgs.byCfg.get(cfg) || []).length >= need;
     if (pastCfgs.hi === null) {
-      /* nothing read yet: newest first, stopping at the first copy found */
-      for (let i = 0; i < names.length && !pastCfgs.byCfg.has(cfg); i += 16) {
+      /* nothing read yet: newest first, stopping once enough are found */
+      for (let i = 0; i < names.length && !found(); i += 16) {
         await readHistory(names.slice(i, i + 16));
         pastCfgs.hi = names[0]; pastCfgs.lo = names[Math.min(i + 15, names.length - 1)];
       }
       if (pastCfgs.lo === names[names.length - 1]) pastCfgs.all = true;
-      return pastCfgs.byCfg.get(cfg) || null;
+      return pastCfgs.byCfg.get(cfg) || [];
     }
     /* copies saved since: read them all, so the copies read stay the newest */
     const newer = names.filter((key) => key > pastCfgs.hi);
     if (newer.length) { await readHistory(newer); pastCfgs.hi = names[0]; }
-    if (pastCfgs.byCfg.has(cfg) || pastCfgs.all) return pastCfgs.byCfg.get(cfg) || null;
+    if (found() || pastCfgs.all) return pastCfgs.byCfg.get(cfg) || [];
     const older = names.filter((key) => key < pastCfgs.lo);
-    for (let i = 0; i < older.length && !pastCfgs.byCfg.has(cfg); i += 16) {
+    for (let i = 0; i < older.length && !found(); i += 16) {
       await readHistory(older.slice(i, i + 16));
       pastCfgs.lo = older[Math.min(i + 15, older.length - 1)];
     }
     if (!older.length || pastCfgs.lo === older[older.length - 1]) pastCfgs.all = true;
-    return pastCfgs.byCfg.get(cfg) || null;
+    return pastCfgs.byCfg.get(cfg) || [];
   }
   async function catalogue({ cfg = null, company = null } = {}) {
     const record = await get();
@@ -728,13 +735,17 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
     /* An older saved design keeps what its own price list included. The
        browser's cfg only asks for a record: the allowance always comes
        from a copy the server itself kept, never from browser item flags.
-       The newest History copy with that cfg is used, and an immutable cfg
-       is cached. */
+       The newest History copy with that cfg that resolves is used, and an
+       immutable cfg is cached. */
     let includedCat = olderCatalogues.get(cfg);
     if (!includedCat) {
-      const key = await historyKeyFor(cfg, record.version);
-      const entry = key ? await store.get(key) : null;
-      if (entry?.settings?.cfg === cfg && entry.settings.id === cached.cat.id) {
+      /* newest first; a copy that no longer resolves is passed over for
+         the next older one with the same cfg */
+      for (let tried = 0; !includedCat; tried++) {
+        const keys = await historyKeysFor(cfg, record.version, tried + 1);
+        if (tried >= keys.length) break;
+        const entry = await store.get(keys[tried]);
+        if (entry?.settings?.cfg !== cfg || entry.settings.id !== cached.cat.id) continue;
         try { includedCat = resolve(entry.settings, manufacturer, library); } catch { /* an unreadable older copy gives no allowance */ }
       }
       if (includedCat) {

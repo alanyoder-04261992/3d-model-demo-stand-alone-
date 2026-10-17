@@ -74,4 +74,14 @@ pl.settings.items.w23 = { ...pl.settings.items.w23, price: 999 };
 prove("one more price change saves", (await call("PUT", "price-list", { settings: pl.settings, version: pl.version })).status === 200);
 const lastOld = (await priceList.catalogue({ cfg: replacedCfg, company })).includedCat;
 prove("the price list just replaced is found from its new History copy", lastOld?.cfg === replacedCfg && lastOld.CAT.w23.p === replacedPrice);
+/* A newer History copy with the same cfg that no longer resolves: the next
+   older copy with that cfg is used, as before (review 17 round 2). A fresh
+   server, so nothing is remembered from above. */
+const brokenCfg = older[2];
+const realKey = [...blobs.values.keys()].filter((k) => k.startsWith("price-list-history/") && blobs.values.get(k).data?.settings?.cfg === brokenCfg).sort().pop();
+const broken = structuredClone(blobs.values.get(realKey).data); broken.settings.items = null;
+await blobs.setJSON(realKey + "a", broken);
+const fresh = createOffice({ blobs, identityUser: async () => null, ownerEmail: owner.email, manufacturer, library, templates, now: () => new Date("2026-10-12T12:00:00Z"), log: () => {} });
+const fallback = (await fresh.parts.priceList.catalogue({ cfg: brokenCfg, company })).includedCat;
+prove("a History copy that no longer resolves is passed over for the next older copy with the same cfg", fallback?.cfg === brokenCfg && fallback.CAT.w23.p === (windowPrice.get(brokenCfg) ?? 195));
 console.log(`PROVED (${checks} checks): an older design's price list comes from the newest History copy with its cfg, and each History copy is read at most once while the server runs, so older cfgs sent from the public quote form never make it read the whole History again.`);
