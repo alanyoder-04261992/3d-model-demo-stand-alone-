@@ -155,6 +155,8 @@ try {
     await r.locator('.layout-wallchoices [data-layout-view="PF"]').click();
     await select(r, "ppost", "F");
     await r.locator("#layout-right").click();
+    const words = await r.evaluate(() => ({ chips: document.getElementById("sizechips").innerText, caption: document.getElementById("layout-caption").innerText }));
+    check(`${label}: the layout screen writes sizes 8×12 and whole-dollar prices ${JSON.stringify(words.chips.slice(0, 60))}`, /\d+×\d+/.test(words.chips) && !/\d \u00d7 \d/.test(words.chips + words.caption) && !/\.\d\d\b/.test(words.chips) && /\$\d/.test(words.chips));
     await r.locator("#layout-save").click();
     await r.waitForFunction(() => /Saved/.test(document.querySelector("#layout-result h2")?.textContent || ""), null, { timeout: 60000 });
     await r.waitForTimeout(200);
@@ -194,6 +196,12 @@ try {
     check(`${label}: Leave without saving goes back to the Dealer Center`, /\/dealer/.test(r.url()) && browserBoxes.length === 0);
     await r.close(); await ctx.close();
   }
+  /* The Edit page's layout card writes a porch post in small letters. */
+  const edit = await context.newPage(); await edit.goto(`${BASE}/dealer#/price-list/building/C`);
+  await edit.locator(".pl-layout-card .pl-layout-list li").first().waitFor({ timeout: 60000 });
+  const cardWords = await edit.locator(".pl-layout-card .pl-layout-list").innerText();
+  check(`the Edit page says "porch post" in small letters mid-sentence ${JSON.stringify(cardWords.slice(0, 160))}`, /porch post/.test(cardWords) && !/Porch Post/.test(cardWords));
+  await edit.close();
   check("the layout editor had no browser errors", page.errors.length === 0);
   await context.close();
   console.log(`PROVED (${passed} checks): checked owner layouts reach customers, three-inch moves and included items persist, phone and tablet sheets stay reachable, and added posts stay clear on every porch.`);

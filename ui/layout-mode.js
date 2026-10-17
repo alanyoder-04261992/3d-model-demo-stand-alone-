@@ -19,7 +19,8 @@ const copy = (value) => JSON.parse(JSON.stringify(value));
 const el = (id) => document.getElementById(id);
 const WALLS = { F: "Front", R: "Right side", B: "Back", L: "Left side", S1: "Inside the porch", S2: "Porch side wall", S3: "Porch side wall", P1: "Angled porch wall", P2: "Porch front wall", P3: "Porch door wall" };
 const YAW = { F: 0, R: Math.PI / 2, B: Math.PI, L: -Math.PI / 2, PF: 0, PR: Math.PI / 2, "34": .62 };
-const sizeWords = (size) => String(size).replace("x", " × ");
+/* Sizes read 8×12 everywhere on this screen, as in the every-size results. */
+const sizeWords = (size) => String(size).replace("x", "×");
 const keyOf = (variant) => `${variant.pLen || 0}:${!!variant.pFlip}:${!!variant.pMid}`;
 const apiPrefix = () => new URLSearchParams(location.search).get("preview") === "barnwright"
   || new URLSearchParams(location.search).get("layoutVisit") === "1" ? "/api/office/barnwright/" : "/api/office/";
@@ -191,6 +192,9 @@ export async function install(api) {
     el("card-size").querySelector("h3").textContent = "Size you're looking at";
     for (const chip of el("sizechips").children) {
       const size = chip.dataset.size;
+      /* Whole-dollar prices, the way the Dealer Center writes them. */
+      for (const node of chip.childNodes) if (node.nodeType === 3) node.textContent = node.textContent.replace(/(\d+) × (\d+)/, "$1×$2");
+      const money = chip.querySelector("small"); if (money) money.textContent = money.textContent.replace(/\.00$/, "");
       if (size) chip.onclick = () => { if (blockedRecipe) return; recipe = inferCurrent(); lay({ size }); };
     }
     if (porch === "S") {
