@@ -54,7 +54,7 @@
 import { frameOf } from "../model/frame.js";
 import { resetItems, clampPos, pkFixtures, freeSpot, itemById, fitsOnWall } from "../model/layout.js";
 import { setType as modelSetType, setSize as modelSetSize, flipPorch as modelFlipPorch, followStandardDoor } from "../model/design.js";
-import { pPrice } from "../model/pricing.js";
+import { pPrice, chargedIncluded, itemCharge } from "../model/pricing.js";
 import { wallPt } from "../engine/wall.js";
 
 function has(o, k) { return o != null && Object.prototype.hasOwnProperty.call(o, k); }
@@ -145,6 +145,7 @@ export function isStandardLayout(state, cat) {
    laid after the standard items (model/design.js setType, DIFFERENCES #8). */
 export function chooseType(state, t, cat) {
   modelSetType(state, t, cat);
+  delete state.laidFor;
   state.sel = null;
   return state;
 }
@@ -168,6 +169,7 @@ export function chooseSize(state, sz, cat) {
   if (!pPrice(state.type, sz, cat)) throw new Error(`"${sz}" is not a size of the ${cat.TYPES[state.type].name} this company sells.`);
   const untouched = isStandardLayout(state, cat);
   if (!untouched) {
+    keepLaidFor(state);
     modelSetSize(state, sz, cat);
     /* the shop standard's own door at some sizes (the 48 in Wooden Door of
        the 8x12 and 10x12 Side Utility, Dormer Shed and Side Lofted Barn): a
@@ -179,6 +181,7 @@ export function chooseSize(state, sz, cat) {
     return { relaid: false };
   }
   state.size = sz;
+  delete state.laidFor;
   const fr = frame(state, cat);
   resetItems(state, fr, cat);
   if (state.elec && state.elec.pkg > 0) pkFixtures(state, fr, cat);
@@ -186,9 +189,43 @@ export function chooseSize(state, sz, cat) {
   return { relaid: true };
 }
 
+/* The size and porch length the doors and windows were laid out for, noted
+   the first time a size or porch-length change keeps them (only for the
+   words below; never saved in the design, never used for a price). */
+function keepLaidFor(state) {
+  if (!state.laidFor) state.laidFor = { size: state.size, pLen: +state.pLen };
+  return state.laidFor;
+}
+
+/* ONE PLAIN LINE when items marked "comes with the building" are charged
+   because this size and porch come with fewer (model/pricing.js
+   chargedIncluded; Alan, Oct 17 2026, "Yes, charge for them"):
+   "2 windows that came with the 12×32 are now charged on the 8×12."
+   "" when nothing is. Shown near the price (ui/panels.js). */
+const KIND_WORDS = { win: ["window", "windows"], door: ["door", "doors"], ru: ["door", "doors"], post: ["porch post", "porch posts"] };
+export function chargedNote(state, cat, fr) {
+  let charged;
+  try { fr = fr || frame(state, cat); charged = chargedIncluded(state, cat, fr); } catch (e) { return ""; }
+  const counts = new Map();
+  for (const it of charged.keys()) {
+    if (!(itemCharge(it, state, cat, fr, charged) > 0)) continue;
+    const words = KIND_WORDS[cat.CAT[it.cat].k] || ["item", "items"];
+    counts.set(words, (counts.get(words) || 0) + 1);
+  }
+  if (!counts.size) return "";
+  const parts = [...counts].map(([w, n]) => n + " " + (n === 1 ? w[0] : w[1]));
+  const what = parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts[0];
+  const n = [...counts.values()].reduce((a, b) => a + b, 0);
+  const times = (z) => String(z).replace("x", "×");
+  const was = state.laidFor;
+  if (was && was.size && was.size !== state.size) return what + " that came with the " + times(was.size) + (n === 1 ? " is" : " are") + " now charged on the " + times(state.size) + ".";
+  return "This " + times(state.size) + " comes with fewer, so " + what + (n === 1 ? " is" : " are") + " now charged.";
+}
+
 /* "4 x 8 porch" / "4 x 12 porch" (Barnwright 5160): the items are kept and
    moved clear of the new porch. */
 export function choosePorchLength(state, len, cat) {
+  keepLaidFor(state);
   state.pLen = +len;
   const fr = frame(state, cat);
   state.items.forEach((it) => clampPos(it, state, fr));
@@ -199,6 +236,7 @@ export function choosePorchLength(state, len, cat) {
    windows are laid out again for the new porch, then the package fixtures. */
 export function choosePorchPlace(state, mid, cat) {
   state.pMid = !!mid;
+  delete state.laidFor;
   const fr = frame(state, cat);
   resetItems(state, fr, cat);
   if (state.elec && state.elec.pkg > 0) pkFixtures(state, fr, cat);

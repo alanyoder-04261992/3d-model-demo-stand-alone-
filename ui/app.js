@@ -130,7 +130,7 @@ import { assemble } from "../engine/assemble.js";
 import { createRenderer, stageTableFor } from "../engine/renderer.js";
 import { createCamera, animYaw } from "../engine/camera.js";
 import { paintBackdrop } from "../engine/scene.js";
-import { createPanels } from "./panels.js";
+import { createPanels, savedPriceOf } from "./panels.js";
 import { createSheet } from "./sheet.js";
 import { rememberFocus, restoreFocus } from "./focus.js";
 import { createInteraction, ftIn } from "./interaction.js";
@@ -495,7 +495,7 @@ async function boot() {
     getCatalogue: () => cat,
     getPlan: () => ctx.plan,
     getResult: () => ctx.result,
-    price: () => priceParts(state, cat),
+    price: () => savedPriceOf(cat) || priceParts(state, cat),
     rentToOwn: () => panels.rentToOwn(),       /* {months, monthly} the customer is looking at, or null */
     getDesign: (opts) => fromState(state, cat, opts),
     applyDesign(design) {

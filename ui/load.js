@@ -133,7 +133,9 @@ export async function loadLot(slug, opts = {}) {
     const cat = data.catalogue;
     return { catalogue: Object.freeze({ ...cat, status: "active",
       leads: Object.freeze({ ...cat.leads, mode: "none", url: "" }),
-      managed: Object.freeze({ slug, lotName: data.lot.name || "", businessName: cat.brand.name || "", companyId: cat.id, quoteUrl: null, historical: true, savedQuote: opts.savedQuote }),
+      managed: Object.freeze({ slug, lotName: data.lot.name || "", businessName: cat.brand.name || "", companyId: cat.id, quoteUrl: null, historical: true, savedQuote: opts.savedQuote,
+        /* the price the quote was saved with (ui/panels.js savedPriceOf) */
+        savedPrice: savedPriceFrom(data) }),
     }), lot: data.lot, savedDesign: data.design, problems: [] };
   }
   const preview = opts.preview === "team" || opts.preview === "barnwright" ? opts.preview : null;
@@ -182,4 +184,13 @@ async function fetchLot(rel, base) {
     throw Object.assign(new Error(`${rel} did not include the price list.`), { status: r.status });
   }
   return data;
+}
+
+/* A saved quote's price from the Dealer Center: {base, lines, total} with
+   the stored total, or null (an older answer without it). */
+function savedPriceFrom(data) {
+  const p = data && data.price;
+  if (!p || typeof p !== "object" || typeof p.total !== "number" || !isFinite(p.total) || !Array.isArray(p.lines)) return null;
+  if (typeof data.total === "number" && data.total !== p.total) return null;
+  return Object.freeze({ base: +p.base || 0, lines: p.lines.filter((l) => Array.isArray(l) && typeof l[0] === "string" && typeof l[1] === "number"), total: p.total });
 }
