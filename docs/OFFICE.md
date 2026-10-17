@@ -533,7 +533,7 @@ Public routes (no sign-in):
 
 | Route | Does |
 |---|---|
-| `GET /api/lots/:slug` | `{company, lot, version}` for the lot's 3D designer; 404 when the lot is closed or the business is not open yet. With `?cfg=<n>` (a design link's older price list version) it also has `included: {cfg, company}`, the server's own History copy of that version, when it kept one, so the designer prices the link the way the server will |
+| `GET /api/lots/:slug` | `{company, lot, version}` for the lot's 3D designer; 404 when the lot is closed or the business is not open yet. With `?cfg=<n>` (a design link's older price list version) it also has `included: {cfg, company}`: today's price list with that version's standard layouts, taken from the server's own History copy when it kept one (never the older prices or settings), so the designer prices the link the way the server will |
 | `GET /d/:slug/` | the lot's 3D designer page; when closed, a short "Our 3D designer isn't open right now" page that says who to call — the lot's phone when the owner closed the whole designer, the business's phone when only that lot is closed (`pages.js` `closedPage`) |
 | `POST /api/lots/:slug/quote-requests` | `{design, contact, idempotencyKey}` → `{id, number, total, price, receivedAt, repriced}` (201; the same send again → the same receipt, 200) |
 | `POST /.netlify/functions/tenant-diagnostics` | Barnwright's support check (control room only, with a support pass, while the owner has help turned on) |

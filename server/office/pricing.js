@@ -191,9 +191,12 @@ export function priceDesign(input, cat, { includedCat = null } = {}) {
      replacement. */
   const older = includedCat?.id === cat.id && includedCat.cfg === input.cfg && input.cfg < cat.cfg ? includedCat : null;
   const allowance = includedAllowance(state, cat, frame, older);
-  const price = priceParts(state, cat, frame, { allowance });
+  const price = priceParts(state, cat, frame, { allowance, older });
   if (!Number.isFinite(price.total) || price.total < 0 || price.total > 100000000) unreadable();
-  return { design: fromState(chargedAsAdded(state, cat, frame, allowance, price.total), cat), price, repriced, state };
+  /* saved with the older version it was priced under, so reopening or
+     sending it again prices it the same way (review 17 final SHOULD-2) */
+  const savedCat = older ? { ...cat, olderIncluded: older } : cat;
+  return { design: fromState(chargedAsAdded(state, cat, frame, allowance, price.total, older), savedCat), price, repriced, state };
 }
 
 /* What is saved, printed and sold says what was charged (review 17
@@ -203,7 +206,7 @@ export function priceDesign(input, cat, { includedCat = null } = {}) {
    is saved as a swap from that item (the order sheet names both). The
    price is the same either way; when it would not be, the design is saved
    as it was sent. */
-function chargedAsAdded(state, cat, frame, allowance, total) {
+function chargedAsAdded(state, cat, frame, allowance, total, older = null) {
   const charged = chargedIncluded(state, cat, frame, allowance);
   if (!charged.size) return state;
   const out = structuredClone(state);
@@ -213,7 +216,7 @@ function chargedAsAdded(state, cat, frame, allowance, total) {
     if (as == null) { copy.inc = false; delete copy.origCat; }
     else copy.origCat = as;
   });
-  return priceParts(out, cat, frame, { allowance }).total === total ? out : state;
+  return priceParts(out, cat, frame, { allowance, older }).total === total ? out : state;
 }
 
 /* priceDesign for the routes: a DesignProblem keeps its words; anything

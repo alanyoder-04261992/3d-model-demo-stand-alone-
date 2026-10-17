@@ -107,11 +107,16 @@ export function sqftCharge(basis, rate, frame, cat) {
    Worked out fresh from the loadout, because a saved design is reopened
    without the fields that say where an item came from. */
 export function stdDouble(catId, state, cat, frame) {
+  return stdDoubles(catId, state, cat, frame) > 0;
+}
+
+/* how many doubles of this window the building comes with as it is sold */
+function stdDoubles(catId, state, cat, frame) {
   try {
     const fr = frame || frameOf(state, cat);
     return standardItems(fr.t, fr.d.W, fr.d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws, frame: fr }, state.type)
-      .some((x) => x.dbl && x.cat === catId);
-  } catch (e) { return false; }
+      .filter((x) => x.dbl && x.cat === catId).length;
+  } catch (e) { return 0; }
 }
 
 /* WHAT "COMES WITH THE BUILDING" COVERS (Alan, Oct 17 2026: "Yes, charge
@@ -181,8 +186,39 @@ export function includedCounts(state, cat, frame) {
 export function includedAllowance(state, cat, frame, older) {
   const fr = frame || frameOf(state, cat);
   const now = includedCounts(state, cat, fr);
-  if (!older || older.id !== cat.id || !(older.cfg < cat.cfg) || !ownKey(older.TYPES, state.type)) return now;
+  if (!olderFor(state, cat, older)) return now;
   try { return includedCounts(state, older, frameOf(state, older)); } catch (e) { return now; }
+}
+
+function olderFor(state, cat, older) {
+  return !!older && older.id === cat.id && older.cfg < cat.cfg && ownKey(older.TYPES, state.type);
+}
+
+/* What a removal can be credited against (review 17 final): the standard
+   for this size AT THE PORCH LENGTH CHOSEN, never the most generous one, so
+   an 8 ft porch is never credited for the 12 ft porch's extra window; and
+   for an older design, no more than both its own price list and today's
+   come with, so naming an older list never credits what today's standard
+   does not have. -> Map(item -> {n, dbl}): how many, and how many of them
+   are doubles. */
+function creditCounts(state, cat, fr, older) {
+  const own = (c, f) => {
+    const m = new Map();
+    let std = [];
+    try { std = standardItems(f.t, f.d.W, f.d.L, { CAT: f.CAT, span: f.span, ws: f.ws, frame: f }, state.type); } catch (e) { std = []; }
+    std.forEach((x) => { const e = m.get(x.cat) || { n: 0, dbl: 0 }; e.n++; if (x.dbl) e.dbl++; m.set(x.cat, e); });
+    return m;
+  };
+  const now = own(cat, fr);
+  if (!olderFor(state, cat, older)) return now;
+  let then;
+  try { then = own(older, frameOf(state, older)); } catch (e) { return new Map(); }
+  const out = new Map();
+  for (const [k, e] of now) {
+    const o = then.get(k);
+    if (o) out.set(k, { n: Math.min(e.n, o.n), dbl: Math.min(e.dbl, o.dbl) });
+  }
+  return out;
 }
 
 const NONE = new Map();
@@ -260,16 +296,40 @@ function standardPairs(state, cat) {
    the other door of the shop standard's pair or a door it could have been
    swapped for, so taking off the door that stood in for this size's door
    still credits this size's door.
+   Only doors and windows are credited (Alan's words), and only against
+   the standard at the porch length chosen, for an older design no more
+   than today's own standard as well (creditCounts). A double is credited
+   as two panes only while a standard double of it is missing: a layout
+   with a double and a single of the same window credits the single at
+   one pane.
    -> [[item this size comes with, credit], ...] */
-export function removedCredits(state, cat, frame, allowance) {
+export function removedCredits(state, cat, frame, allowance, older) {
   const removed = Array.isArray(state.removed) ? state.removed.filter((k) => typeof k === "string" && cat.CAT[k]) : [];
   if (!removed.length) return [];
   const fr = frame || frameOf(state, cat);
-  const missing = new Map([...settleIncluded(state, cat, fr, allowance).left].filter(([k, n]) => n > 0 && cat.CAT[k]));
+  const counts = creditCounts(state, cat, fr, older);
+  const strict = new Map([...counts].map(([k, e]) => [k, e.n]));
+  /* never more than the allowance the design is priced with either */
+  const priced = allowance || includedAllowance(state, cat, fr, older);
+  for (const [k, n] of strict) strict.set(k, Math.min(n, priced.get(k) || 0));
+  const KINDS = ["door", "ru", "win"];
+  const missing = new Map([...settleIncluded(state, cat, fr, strict).left].filter(([k, n]) => n > 0 && cat.CAT[k] && KINDS.indexOf(cat.CAT[k].k) > -1));
   if (!missing.size) return [];
+  /* standard doubles not on the building, by the window they came as */
+  const dblLeft = new Map();
+  for (const [k, e] of counts) {
+    const on = (state.items || []).filter((it) => it.inc && !it.pk && it.dbl && (it.origCat || it.cat) === k).length;
+    dblLeft.set(k, Math.max(0, Math.min(e.dbl, strict.get(k) || 0) - on));
+  }
   const pairs = standardPairs(state, cat);
   const out = [];
-  const take = (k) => { missing.set(k, missing.get(k) - 1); const c = cat.CAT[k]; out.push([k, c.p * (c.k === "win" && !c.gable && stdDouble(k, state, cat, fr) ? 2 : 1)]); };
+  const take = (k) => {
+    missing.set(k, missing.get(k) - 1);
+    const c = cat.CAT[k];
+    const twin = c.k === "win" && !c.gable && dblLeft.get(k) > 0;
+    if (twin) dblLeft.set(k, dblLeft.get(k) - 1);
+    out.push([k, c.p * (twin ? 2 : 1)]);
+  };
   const fits = (r, k) => r === k || pairs.some((e) => (e.from === r && e.to === k) || (e.to === r && e.from === k)) || swapsOf(k, cat).indexOf(r) >= 0;
   for (const r of removed) {
     let k = missing.get(r) > 0 ? r : null;
@@ -300,7 +360,11 @@ export function itemCharge(it, state, cat, frame, charged, asPaid) {
   const up = (it.inc && it.origCat && it.origCat !== it.cat) ? Math.max(0, c.p - CAT[it.origCat].p) : 0;
   if (!it.inc || asPaid) return c.p + (twin ? c.p : 0);
   if (!twin) return up;
-  return up + (stdDouble(it.origCat || it.cat, state, cat, frame) ? up : c.p);
+  /* free as a double only up to how many doubles of it the building comes
+     with: a standard single made double is charged its second pane */
+  const key = it.origCat || it.cat, n = stdDoubles(key, state, cat, frame);
+  const rank = (state.items || []).filter((x) => x.inc && !x.pk && x.dbl && (x.origCat || x.cat) === key).indexOf(it);
+  return up + ((rank < 0 ? n > 0 : rank < n) ? up : c.p);
 }
 
 function hidden(cat, key) { return !!(cat.OPTX && (cat.OPTX.hide || []).indexOf(key) > -1); }
@@ -359,7 +423,8 @@ export function priceParts(state, cat, frame, opts) {
   const fr = frame || frameOf(state, cat);
   const CAT = cat.CAT, MISC = cat.MISC || {};
   const lines = [];
-  const allowance = (opts && opts.allowance) || includedAllowance(state, cat, fr, opts && opts.older ? opts.older : cat.olderIncluded);
+  const older = opts && opts.older !== undefined ? opts.older : cat.olderIncluded;
+  const allowance = (opts && opts.allowance) || includedAllowance(state, cat, fr, older);
   const charged = chargedIncluded(state, cat, fr, allowance);
   let total = basePrice(state, cat), shutN = 0, liteN = 0;
 
@@ -373,7 +438,7 @@ export function priceParts(state, cat, frame, opts) {
     total += chg;
   });
   /* a standard door or window the customer took off: its price off */
-  for (const [key, credit] of removedCredits(state, cat, fr, allowance)) {
+  for (const [key, credit] of removedCredits(state, cat, fr, allowance, older)) {
     lines.push([CAT[key].n + ", taken off", -credit, "removed." + key]);
     total -= credit;
   }
