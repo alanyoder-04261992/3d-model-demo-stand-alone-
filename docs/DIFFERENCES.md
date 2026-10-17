@@ -368,10 +368,13 @@ finished designer retains the golden geometry.
     the same existing placement clamps as a drag. Browser page zoom is allowed.
     An included door's type menu shows its actual upgrade contribution rather
     than its standalone price; the price book and quote math are unchanged.
-    An ordinary form provider's iframe/new-tab page is an unconfirmed response,
-    never proof that a quote was received. Same-origin services can confirm
-    with JSON `ok: true` or `success: true`; other responses offer contact/design
-    fallback and the customer checks the provider's page. Embed integrations
-    count a confirmed receipt only when `event.detail.sent === true`. No geometry
+    An ordinary form service on another site answers into a hidden frame
+    whose page can never be read; its page loading counts as sent and the
+    customer sees "Quote request sent", as Barnwright did (review 17 F4).
+    No answer in time, or a new tab, is unconfirmed. Same-origin services
+    confirm with JSON `ok: true` or `success: true`; other same-origin
+    responses offer contact/design fallback and the customer checks the
+    provider's page. Embed integrations count a sent quote only when
+    `event.detail.sent === true`. No geometry
     or standard opening layout changed. `check-opening-prices` and
     `check-designer-controls` cover prices/input; `check-quote` covers responses.

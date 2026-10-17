@@ -6,7 +6,7 @@
 @page { size: letter; margin: 0.45in 0.5in; }
 
 html, body { background: #fff !important; color: #000 !important; font-size: 10pt; }
-.topbar, .sidenav, .tabbar, .more-sheet, .skip, .toasts, .banner, .sheet-tools, .btn, button, .dialog, .sheet-shot, .crm-design-bar { display: none !important; }
+.topbar, .sidenav, .tabbar, .more-sheet, .skip, .toasts, .banner, .sheet-tools, .sheet-screen-note, .btn, button, .dialog, .sheet-shot, .crm-design-bar { display: none !important; }
 .main { margin: 0 !important; padding: 0 !important; max-width: none !important; }
 a { color: #000 !important; text-decoration: none !important; }
 .card, .crm-quote, .crm-order { box-shadow: none !important; border-color: #bbb !important; }

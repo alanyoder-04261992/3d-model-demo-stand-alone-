@@ -8,7 +8,7 @@ import { MemoryBlobs } from "../server/office/store.js";
 import { priceDesign } from "../server/office/pricing.js";
 import { resolve } from "../model/company.js";
 import { defaults, setType, setSize, fromState, toState } from "../model/design.js";
-import { choosePorchLength } from "../ui/state.js";
+import { choosePorchLength, chooseSize } from "../ui/state.js";
 import { priceParts } from "../model/pricing.js";
 import { resetItems } from "../model/layout.js";
 import { frameOf } from "../model/frame.js";
@@ -133,6 +133,41 @@ for (const [type, from, to] of [["C", "10x20", "8x12"], ["BU", "6x12", "6x8"], [
 }
 const cabin = building("SC", "12x24"); choosePorchLength(cabin, 8, cat);
 quotes("a Side Cabin keeps its included price with the 4 x 8 porch", cabin);
+/* Designs saved by the live designer (c355440, October 13 2026): open a
+   size, move a door, choose a smaller size. The items keep their "came
+   with the building" marks and the saved design names no other size. Such
+   saved links, autosaves and dealer quotes must still send, at the price
+   the designer shows (review 17 round 2: a first fix refused them). */
+let sentOld = 0;
+for (const [type, from, to] of [["C", "12x32", "8x12"], ["SS", "12x24", "8x12"], ["SC", "12x32", "10x20"]]) {
+  if (!cat.P[type] || !cat.P[type][from] || !cat.P[type][to]) continue;
+  const state = building(type, from); state.items.find((i) => cat.CAT[i.cat].k === "door").pos += 0.25;
+  chooseSize(state, to, cat);
+  const design = fromState(state, cat); delete design.orig;
+  const r = await office.handle(new Request(SITE + "/api/lots/riverside/quote-requests", {
+    method: "POST", headers: { "content-type": "application/json", origin: SITE },
+    body: JSON.stringify({ design, contact: { name: "Resized customer", phone: "941-555-0102", zip: "33952" }, idempotencyKey: `resized-${type}-${from}-${to}` }),
+  }));
+  const receipt = await r.json();
+  prove(`a ${type} ${from} made ${to} on the live designer still sends, at the designer's price`, r.status === 201 && receipt.total === priceParts(toState(design, cat).state, cat).total);
+  sentOld++;
+}
+prove("the resized designs above were really sent (the price list sells those sizes)", sentOld >= 2);
+/* KNOWN, waiting for Alan: the designer itself lets a customer keep the
+   bigger size's included windows after choosing a smaller size (move a
+   door first), so a link edited to do the same is priced the same way,
+   as on the live site. The server cannot tell the two apart. Closing it
+   means the designer charging for those extras after a size change, which
+   changes prices. */
+{
+  const big = building("C", "12x32"), small = building("C", "8x12");
+  const extra = big.items.filter((i) => i.inc && cat.CAT[i.cat].k !== "door").length - small.items.filter((i) => i.inc && cat.CAT[i.cat].k !== "door").length;
+  const edited = fromState(small, cat);
+  const w = edited.items.find((i) => i.inc && cat.CAT[i.cat].k !== "door");
+  for (let n = 0; n < extra; n++) edited.items.push({ ...structuredClone(w), pos: 0.1 + 0.1 * n });
+  let priced = null; try { priced = priceDesign(structuredClone(edited), cat).price.total; } catch (e) { priced = e.message; }
+  prove("known (Alan to decide): an 8x12 Cabin link edited to keep the 12x32's included windows is priced as the live site prices it", extra > 0 && priced === priceParts(small, cat).total);
+}
 const forged = fromState(building("LB", "10x20"), cat);
 forged.items.push(structuredClone(forged.items.find((i) => i.cat === "w48")));
 assert.throws(() => priceDesign(forged, cat), /This design could not be read/); checks++;

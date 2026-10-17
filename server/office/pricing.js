@@ -43,7 +43,14 @@ const own = (o, k) => o != null && Object.prototype.hasOwnProperty.call(o, k);
    porch. Those items keep their included marks, even when that smaller
    standard layout has fewer. Allow only the highest count the business
    actually includes on a sold size and porch; forged extras are still
-   refused. A resolved price list is immutable, so count it once. */
+   refused. A resolved price list is immutable, so count it once.
+   Known and waiting for Alan (review 17 CS-1): because the designer itself
+   lets any customer keep a bigger size's included windows this way, a
+   link edited to do the same is priced the same, and nothing in a saved
+   design can prove which size its items came with. Narrowing this here
+   refused honest saved designs; closing it means the designer charging
+   for those extras after a size change, which changes prices.
+   tools/check-layout-server.mjs writes both down. */
 const includedCache = new WeakMap();
 function mostIncluded(cat, type) {
   let byStyle = includedCache.get(cat);
