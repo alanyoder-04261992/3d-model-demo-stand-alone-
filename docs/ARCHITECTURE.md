@@ -702,18 +702,26 @@ the swap, and nothing else moved.
 **`state`** — the live, mutable, Barnwright-shaped object the UI owns:
 hex `body trim roof doorC shutC`; `items[]` with `id cat wall pos vy px pz rot
 ln inc pk dbl shut lite origCat`; `sel seq dormer pLen pFlip pMid opts elec ramp xopt
-laidFor` (`laidFor`: the size and porch length the doors and windows were laid
-out for, noted by `ui/state.js` when a size or porch-length change keeps
-them; only for the words of `chargedNote`, never saved or priced).
-`inc` ("comes with the building") is free only up to how many of that item
-the design's own size and porch come with; the rest is charged at its normal
-price (`model/pricing.js chargedIncluded`, DIFFERENCES #30).
+removed` (`removed`: the standard doors and windows the customer took off, by
+item, noted by `ui/state.js removeItem`, cleared by `resetItems`, saved in the
+design as `removed`, so their price comes off: `model/pricing.js removedCredits`).
+The price is the business's own standard building for the size and porch,
+adjusted from that business's own standard layout (`offer[K].layout`, else its
+price list's style): `inc` ("comes with the building") is free only up to how
+many of that item the size comes with, at any of its porch lengths; the rest is
+charged at its normal price; a standard door or window the customer took off
+comes off at its price (`model/pricing.js includedCounts`, `includedAllowance`,
+`chargedIncluded`, `removedCredits`, DIFFERENCES #30). A lot's designer
+opening a design made under an older price list gets that list from the lot
+(`GET /api/lots/:slug?cfg=`) as `cat.olderIncluded`, so it prices the design
+with the same counts as the server (`ui/load.js withOlderList`).
 Only `model/layout.js`, `model/design.js` and the UI mutate it. Layout functions
 read siblings from the live `state.items` (clamping order matters).
 
 **`design`** — the saved/shared form: `{ v:1, company, cfg, type, size,
 colors by NAME, items with Barnwright's field names (defaults left out), dormer,
-porch, opts, elec, ramp, xopt, priced?: {total, at} }`.
+porch, opts, elec, ramp, xopt, priced?: {total, at}, removed?: [item, ...] }`
+(`removed`: the standard doors and windows the customer took off).
 `toState(design, cat, opts)` applies size → type → size (Barnwright `applyDesign`)
 and restores colours by name; anything that no longer exists (renamed or
 dropped item, size no longer sold) is reported, never silently dropped. An
@@ -762,7 +770,9 @@ Dealer Center. Sending a quote request: the server takes the lot from the
 address, checks and prices the design itself, adds the quote to that lot's
 customer (matched by email or phone) or a new one, and answers with the quote
 number and price. A design made under an older price list is priced at
-today's prices when everything in it is still sold. A design link keeps its
+today's prices when everything in it is still sold, compared with that
+list's own standard layout; the page asks the lot for that list (`?cfg=`),
+so it shows the same total. A design link keeps its
 lot. Owners set the price list; dealers see their own lots' customers and
 orders. The lot is emailed when email is set up. No payment is taken.
 

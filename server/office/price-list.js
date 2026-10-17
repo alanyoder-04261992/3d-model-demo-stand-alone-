@@ -674,6 +674,9 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
   /* The resolved catalogue for pricing (cached per version). */
   let cached = null;
   const olderCatalogues = new Map();
+  /* the History copy's own settings, for a lot's 3D designer opening an
+     older design (website.js publicLot) */
+  const olderSettings = new WeakMap();
   /* Which History copy holds each older cfg, learnt as copies are read.
      History copies never change, so each is read at most once per running
      server: the copies read so far are always the newest ones (from hi down
@@ -746,14 +749,14 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
         if (tried >= keys.length) break;
         const entry = await store.get(keys[tried]);
         if (entry?.settings?.cfg !== cfg || entry.settings.id !== cached.cat.id) continue;
-        try { includedCat = resolve(entry.settings, manufacturer, library); } catch { /* an unreadable older copy gives no allowance */ }
+        try { includedCat = resolve(entry.settings, manufacturer, library); olderSettings.set(includedCat, entry.settings); } catch { /* an unreadable older copy gives no allowance */ }
       }
       if (includedCat) {
         olderCatalogues.set(cfg, includedCat);
         if (olderCatalogues.size > 16) olderCatalogues.delete(olderCatalogues.keys().next().value);
       }
     }
-    return includedCat ? { ...cached, includedCat } : cached;
+    return includedCat ? { ...cached, includedCat, includedSettings: olderSettings.get(includedCat) } : cached;
   }
 
   function layoutStyle(record, style) {

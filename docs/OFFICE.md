@@ -533,7 +533,7 @@ Public routes (no sign-in):
 
 | Route | Does |
 |---|---|
-| `GET /api/lots/:slug` | `{company, lot, version}` for the lot's 3D designer; 404 when the lot is closed or the business is not open yet |
+| `GET /api/lots/:slug` | `{company, lot, version}` for the lot's 3D designer; 404 when the lot is closed or the business is not open yet. With `?cfg=<n>` (a design link's older price list version) it also has `included: {cfg, company}`, the server's own History copy of that version, when it kept one, so the designer prices the link the way the server will |
 | `GET /d/:slug/` | the lot's 3D designer page; when closed, a short "Our 3D designer isn't open right now" page that says who to call — the lot's phone when the owner closed the whole designer, the business's phone when only that lot is closed (`pages.js` `closedPage`) |
 | `POST /api/lots/:slug/quote-requests` | `{design, contact, idempotencyKey}` → `{id, number, total, price, receivedAt, repriced}` (201; the same send again → the same receipt, 200) |
 | `POST /.netlify/functions/tenant-diagnostics` | Barnwright's support check (control room only, with a support pass, while the owner has help turned on) |
@@ -2376,10 +2376,15 @@ exactly as they were, and nothing here sends email.
   `server/office/pricing.js` from the stored price list. A browser total, a
   forged lot or company, or "included" flags that would make an extra free
   change nothing: an item marked included is free only up to how many the
-  design's own size and porch come with, and the rest is charged at its
-  normal price, never refused (Alan, Oct 17 2026; `model/pricing.js
-  chargedIncluded`). A saved quote or order keeps the total it was saved
-  with; the rule counts when a design is priced again.
+  design's own size comes with (at any of its porch lengths) in the
+  business's own standard layout, and the rest is charged at its normal
+  price, never refused; a standard door or window the customer took off
+  (the design's `removed` list, credited only while that standard has one
+  that is not on the building) comes off the price (Alan, Oct 17 2026;
+  `model/pricing.js chargedIncluded` and `removedCredits`). A charged item is saved as an added
+  one, so the quote and order sheet list it under Added. A saved quote or
+  order keeps the total it was saved with; the rule counts when a design is
+  priced again.
 * **Sign-in is Netlify Identity.** Only a confirmed email counts. Roles live
   in `people/<userId>`, never in anything the browser can edit. The
   password goes only to Identity. The sign-in is kept by the server, in a

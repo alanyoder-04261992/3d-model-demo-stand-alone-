@@ -5,14 +5,18 @@
    ones an 8x12 does not come with are charged at the normal window price:
    the plate and Your quote show the charged total, which is the total the
    server charges for the design the page would send, and one plain line
-   says why ("2 windows that came with the 12×32 are now charged on the
-   8×12."). Back to 12x32, the line goes and the windows are free again.
+   says why ("An 8×12 comes with 1 window, so 2 of your windows are
+   charged."). Back to 12x32, the line goes and the windows are free again.
    On a desktop and a phone, with no sideways scrolling. On c355440 the page
    showed the 8x12's own price and no line.
+   Then the Side Cabin 12x24 and its "4 × 8 porch" chip (review 17 FREE-1):
+   the price stays the building's own, with no line, the 8 ft porch's own
+   doors and windows are laid out, and a later size still lays its own;
+   on bf2be2c the chip added a window and "1 window now charged".
 
-   Served on 127.0.0.1:16201 (this lane's ports are 16200-16249). Graphics
-   are switched off for speed: the no-graphics page has every card, price
-   and the plate (ui/app.js). */
+   Served on a free port of 127.0.0.1 (review 17 FREE-7). Graphics are
+   switched off for speed: the no-graphics page has every card, price and
+   the plate (ui/app.js). */
 import assert from "node:assert/strict";
 import { createServer } from "node:http";
 import { readFile, mkdir } from "node:fs/promises";
@@ -24,7 +28,6 @@ import { priceDesign } from "../server/office/pricing.js";
 import { money } from "../model/pricing.js";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), ".."), OUT = resolve(ROOT, "test/out");
-const PORT = 16201;
 const MIME = { ".html": "text/html", ".js": "text/javascript", ".mjs": "text/javascript", ".json": "application/json", ".css": "text/css", ".woff2": "font/woff2", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml" };
 const server = createServer(async (request, response) => {
   try {
@@ -35,12 +38,12 @@ const server = createServer(async (request, response) => {
     response.writeHead(200, { "Content-Type": MIME[extname(file)] || "application/octet-stream" }); response.end(data);
   } catch { response.writeHead(404).end(); }
 });
-await new Promise((done, fail) => { server.once("error", fail); server.listen(PORT, "127.0.0.1", done); });
-const base = `http://127.0.0.1:${PORT}`;
+await new Promise((done, fail) => { server.once("error", fail); server.listen(0, "127.0.0.1", done); });
+const base = `http://127.0.0.1:${server.address().port}`;
 const require = createRequire(import.meta.url);
 const { chromium } = require("/opt/node22/lib/node_modules/playwright/index.js");
 const cat = loadCatalogue("demo");
-const LINE = "2 windows that came with the 12×32 are now charged on the 8×12.";
+const LINE = "An 8×12 comes with 1 window, so 2 of your windows are charged.";
 const charged = cat.P.C["8x12"] + 2 * cat.CAT.w23.p;
 let browser, checks = 0;
 const proved = (name, value, detail) => { assert.ok(value, name + (detail ? " -- " + detail : "")); checks++; console.log("  ok " + name); };
@@ -91,6 +94,26 @@ try {
     await page.locator('#sizechips button[data-size="12x32"]').click();
     proved(label + ": back to 12x32, the windows are free again and the line is gone",
       await page.evaluate((p) => window.shedUI.price().total === p, cat.P.C["12x32"]) && await page.locator("#platenote").isHidden() && await page.locator("#sum .chargednote").count() === 0);
+    /* the Side Cabin's porch chip (review 17 FREE-1) */
+    const sideGroup = await page.evaluate(() => (window.shedUI.getCatalogue().CATS || []).findIndex((c) => String(c[1]).split(",").includes("SC")));
+    await page.locator("#catsel").selectOption(String(sideGroup));
+    await page.locator('#typechips button[data-focus-key="SC"]').click();
+    await page.locator('#sizechips button[data-size="12x24"]').click();
+    const chip = page.locator('[data-focus-key="length:8"]');
+    await chip.click();
+    const porch = await page.evaluate(() => {
+      const ui = window.shedUI, s = ui.getState(), c = ui.getCatalogue();
+      return { pLen: s.pLen, total: ui.price().total, plate: document.getElementById("plateprice").textContent,
+        noteShown: !document.getElementById("platenote").hidden, sum: document.querySelectorAll("#sum .chargednote").length,
+        wins: s.items.filter((i) => c.CAT[i.cat].k === "win").length, design: ui.getDesign() };
+    });
+    const sideBase = cat.P.SC["12x24"], eightWins = 3;
+    proved(`${label}: the Side Cabin 12x24's "4 × 8 porch" chip keeps ${money(sideBase)}, with no line`,
+      porch.pLen === 8 && porch.total === sideBase && porch.plate === money(sideBase) && !porch.noteShown && porch.sum === 0, JSON.stringify([porch.pLen, porch.total, porch.plate, porch.noteShown]));
+    proved(`${label}: ... the 8 ft porch's own ${eightWins} windows are laid out, and the server charges the same`, porch.wins === eightWins && priceDesign(porch.design, cat).price.total === sideBase, String(porch.wins));
+    await page.locator('#sizechips button[data-size="10x20"]').click();
+    proved(`${label}: ... and 10x20 after it lays its own layout at its own price`,
+      await page.evaluate((p) => window.shedUI.price().total === p && document.getElementById("platenote").hidden, cat.P.SC["10x20"]));
     proved(label + ": no page errors", errors.length === 0, errors.join(" | "));
     await context.close();
   }
@@ -98,4 +121,4 @@ try {
   if (browser) await browser.close();
   server.close();
 }
-console.log(`PROVED (${checks} checks): in the 3D designer, a Cabin made 12x32, a door moved, then 8x12, keeps the 12x32's windows on its walls but is charged the normal window price for the two an 8x12 does not come with; the plate and Your quote show the total the server charges, with one plain line saying why, on a desktop and a phone.`);
+console.log(`PROVED (${checks} checks): in the 3D designer, a Cabin made 12x32, a door moved, then 8x12, keeps the 12x32's windows on its walls but is charged the normal window price for the two an 8x12 does not come with; the plate and Your quote show the total the server charges, with one plain line saying why; the Side Cabin's 8 ft porch chip keeps the building's price; on a desktop and a phone.`);

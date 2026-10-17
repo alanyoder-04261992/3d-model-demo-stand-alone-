@@ -170,6 +170,34 @@ export async function loadLot(slug, opts = {}) {
   return { company, manufacturer, library, lot, catalogue, problems: [] };
 }
 
+/* AN OLDER DESIGN'S OWN PRICE LIST (review 17 FREE-2). A design link made
+   before the owner changed a standard layout is compared by the server
+   with that older price list's standard (server/office/pricing.js,
+   model/pricing.js includedAllowance). So the
+   page shows the same total, it asks the lot for that version
+   (GET api/lots/<lot>?cfg=<the design's version>); the server answers with
+   its own kept copy, or nothing. -> the catalogue with olderIncluded (that
+   copy, resolved the way the server resolves it), or the catalogue as it
+   was. Never throws: without the copy the page and the server both use
+   today's counts (model/design.js fromState then saves today's version). */
+export async function withOlderList(loaded, slug, design, opts = {}) {
+  const cat = loaded && loaded.catalogue;
+  const cfg = design && design.cfg;
+  if (!cat || !cat.managed || cat.managed.historical || cat.managed.preview || !loaded.manufacturer || !loaded.library) return cat;
+  if (!Number.isSafeInteger(cfg) || cfg < 1 || !(cfg < cat.cfg) || design.company !== cat.id) return cat;
+  try {
+    const data = await fetchLot(`api/lots/${slug}?cfg=${cfg}`, opts.base || ROOT);
+    const inc = data && data.included;
+    if (!inc || inc.cfg !== cfg || !inc.company || typeof inc.company !== "object") return cat;
+    const older = resolve(inc.company, loaded.manufacturer, loaded.library);
+    if (older.id !== cat.id || older.cfg !== cfg) return cat;
+    return Object.freeze({ ...cat, olderIncluded: older });
+  } catch (e) {
+    console.error("The older price list for this design could not be read:", e.message);
+    return cat;
+  }
+}
+
 /* GET api/lots/<lot>, keeping the server's answer code on the Error (a
    closed lot is 404) so the page can tell "closed" from "no connection". */
 async function fetchLot(rel, base) {

@@ -106,7 +106,7 @@ export async function render(ctx) {
       h("h3", {}, "The building"),
       h("p", { class: "sheet-building-name" }, building),
       design ? colorList(design) : null,
-      design && cat ? itemLists(design, cat) : null),
+      design && cat ? itemLists(design, cat, price.lines || []) : null),
     picture);
 
   /* ---- the price ---- */
@@ -114,7 +114,7 @@ export async function render(ctx) {
   const priceTable = h("table", { class: "sheet-price" },
     h("thead", {}, h("tr", {}, h("th", {}, "Item"), h("th", { class: "num" }, "Price"))),
     h("tbody", {},
-      h("tr", {}, h("td", {}, building, h("span", { class: "sheet-small" }, " — base price, standard doors and windows included")), h("td", { class: "num" }, money(price.base))),
+      h("tr", {}, h("td", {}, building, h("span", { class: "sheet-small" }, " — base price, with the doors and windows this size comes with")), h("td", { class: "num" }, money(price.base))),
       (price.lines || []).map(([label, amount]) => h("tr", {}, h("td", {}, label), h("td", { class: "num" }, money(amount))))),
     h("tfoot", {},
       h("tr", { class: "sheet-total" }, h("th", {}, "Total"), h("th", { class: "num" }, money(total))),
@@ -173,8 +173,15 @@ function colorList(design) {
 }
 
 /* The doors, windows and fixtures by name, counted ("2×3 Window × 2"). */
-function itemLists(design, cat) {
-  const groups = { comes: new Map(), added: new Map(), elec: new Map() };
+function itemLists(design, cat, priceLines = []) {
+  const groups = { comes: new Map(), added: new Map(), elec: new Map(), off: new Map() };
+  /* a standard door or window the customer took off, as the price has it
+     (its "removed.<item>" line; model/pricing.js removedCredits) */
+  for (const line of priceLines) {
+    const key = Array.isArray(line) && typeof line[2] === "string" && line[2].startsWith("removed.") ? line[2].slice(8) : null;
+    const name = key && cat.CAT?.[key]?.n;
+    if (name) groups.off.set(name, (groups.off.get(name) || 0) + 1);
+  }
   for (const it of design.items || []) {
     const def = cat.CAT?.[it.cat];
     if (!def) continue;
@@ -182,13 +189,15 @@ function itemLists(design, cat) {
     if (it.dbl) name += " (double)";
     if (it.shut) name += " with shutters";
     if (it.lite) name += " with door window";
-    if (it.inc && it.origCat && it.origCat !== it.cat) name += " (upgrade)";
+    /* a door or window the customer took in place of one the building
+       comes with: the price list charges the difference (review 17 FREE-4) */
+    if (it.inc && it.origCat && it.origCat !== it.cat) name += cat.CAT[it.origCat] ? `, in place of the ${cat.CAT[it.origCat].n}` : " (upgrade)";
     const group = it.pk ? groups.elec : it.inc ? groups.comes : groups.added;
     group.set(name, (group.get(name) || 0) + 1);
   }
   const list = (title, map) => map.size ? h("div", { class: "sheet-items" }, h("h4", {}, title),
     h("ul", {}, [...map].map(([name, n]) => h("li", {}, n > 1 ? `${name} × ${n}` : name)))) : null;
-  const parts = [list("Comes with", groups.comes), list("Added", groups.added), list("Electrical", groups.elec)].filter(Boolean);
+  const parts = [list("Comes with", groups.comes), list("Added", groups.added), list("Taken off", groups.off), list("Electrical", groups.elec)].filter(Boolean);
   return parts.length ? h("div", { class: "sheet-item-cols" }, parts) : null;
 }
 
