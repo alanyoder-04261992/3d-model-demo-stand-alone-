@@ -53,18 +53,31 @@ body.layout-mode { --layout-bar-height: 96px; padding-bottom: calc(var(--layout-
 #layout-savebar button { padding: 8px 14px; border-radius: 7px; color: #fff8ed; border: 1px solid #827563; background: transparent; font: inherit; }
 #layout-savebar #layout-save { background: #c29a38; color: #17130e; border-color: #c29a38; font-weight: 700; }
 #layout-savewords { font-size: 13px; line-height: 1.4; }
-#layout-result { position: fixed; z-index: 50; inset: 0; padding: 20px; background: #0008; display: grid; place-items: center; }
+#layout-result { position: fixed; z-index: 50; inset: 0; padding: 20px; background: #0008; display: grid; grid-template-rows: minmax(0,1fr); place-items: center; box-sizing: border-box; }
 #layout-result[hidden] { display: none; }
-.layout-resultcard { position: relative; width: min(100%,850px); box-sizing: border-box; max-height: calc(100dvh - 40px); overflow-y: auto; padding: 24px; background: var(--paper); color: var(--ink); border: 2px solid #398154; border-radius: 12px; }
+.layout-resultcard { position: relative; width: min(100%,850px); box-sizing: border-box; max-height: 100%; display: flex; flex-direction: column; overflow: hidden; padding: 24px; background: var(--paper); color: var(--ink); border: 2px solid #398154; border-radius: 12px; }
 #layout-result.warning .layout-resultcard { border-color: #aa7b1e; background: #fff7df; color: #3f301c; }
 #layout-result.bad .layout-resultcard { border-color: #b14943; }
-.layout-resultcard h2 { font-size: 22px; padding-right: 35px; margin-top: 0; }
+.layout-resultcard h2 { font-size: 22px; padding-right: 35px; margin: 0 0 10px; flex: none; }
+/* The words and drawings scroll; the heading and the way-out buttons stay in view. */
+.layout-resultbody { flex: 1 1 auto; min-height: 0; overflow-y: auto; overscroll-behavior: contain; }
+.layout-resultbody > p:first-child { margin-top: 0; }
+#layout-ask { box-sizing: border-box; width: min(calc(100% - 24px), 460px); max-height: calc(100dvh - 140px); overflow-y: auto; padding: 20px; border: 2px solid #aa7b1e; border-radius: 12px; background: var(--paper); color: var(--ink); }
+#layout-ask::backdrop { background: #0008; }
+#layout-ask h2 { margin: 0 0 8px; font-size: 20px; line-height: 1.3; }
+#layout-ask p { margin: 0 0 16px; font-size: 14px; line-height: 1.5; }
+.layout-askbuttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+.layout-askbuttons button { min-height: 44px; padding: 8px 14px; border-radius: 7px; border: 1px solid var(--card-line); background: var(--paper); color: var(--ink); font: inherit; }
+.layout-askbuttons #layout-ask-yes { background: #c29a38; color: #17130e; border-color: #c29a38; font-weight: 700; }
 .layout-resultcard p { line-height: 1.5; font-size: 14px; }
 #layout-resultclose { position: absolute; right: 8px; top: 8px; min-width: 44px; font-size: 25px; }
 .layout-examples { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
 .layout-examples figure { margin: 0; font-size: 12px; }
 .layout-examples svg { width: 100%; }
 .layout-resultbuttons, #layout-fixes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.layout-resultbuttons { flex: none; }
+#layout-fixes:empty { display: none; }
+#layout-fixes { margin: 0 0 16px; }
 @media (max-width:939px), (max-aspect-ratio:1/1) {
   .layout-mode .layout { display: block; }
   .layout-mode .stage { height: 300px; min-height: 300px; }
@@ -73,9 +86,14 @@ body.layout-mode { --layout-bar-height: 96px; padding-bottom: calc(var(--layout-
   #layout-savebar { align-items: flex-start; flex-direction: column; gap: 8px; padding: 10px 14px calc(10px + env(safe-area-inset-bottom,0px)); }
   #layout-savebar > div { width: 100%; }
   #layout-savebar #layout-save { flex: 1; }
-  .layout-examples { grid-template-columns: 1fr; }
-  #layout-result { padding: 12px; }
-  .layout-resultcard { padding: 16px; max-height: calc(100dvh - 24px); }
+  /* Phones and tablets: two or three drawings side by side when they fit,
+     each no wider than 360 px, so the words come first. */
+  .layout-examples { grid-template-columns: repeat(auto-fit,minmax(min(100%,220px),1fr)); }
+  .layout-examples figure { max-width: 360px; }
+  /* Clear the app's own 100 px header and the save bar. */
+  #layout-result { padding: 116px 12px calc(var(--layout-bar-top, 0px) + 12px); place-items: start center; }
+  .layout-resultcard { padding: 16px; }
+  #layout-ask { margin: 116px auto auto; }
 }
 @media (prefers-color-scheme:dark) {
   body.layout-mode { --paper: #211f1b; --ink: #f3eadd; --sub: #c2b8a9; --line: #494238; --card-line: #625949; --navy: #ddcbaa; --navy-deep: #16130e; --cream: #fff3dd; --green: #8cc59d; }
