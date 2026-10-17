@@ -33,9 +33,28 @@
 
 import { esc } from "./esc.js";
 import * as S from "./state.js";
-import { money, pPrice, pSizes, minPrice, priceParts, itemCharge, rateCharges, optxList, optxQty, optxOn, optxCharge, optxChargeIfOn, rtoTerms, rtoMonthly, RTO_NOTE } from "../model/pricing.js";
+import { money, pPrice, pSizes, minPrice, priceParts, itemCharge, chargedIncluded, rateCharges, optxList, optxQty, optxOn, optxCharge, optxChargeIfOn, rtoTerms, rtoMonthly, RTO_NOTE } from "../model/pricing.js";
 import { colorName, sidingPalette } from "../model/company.js";
 import { porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, SIDE_WALL_MIN_FT } from "../model/frame.js";
+
+/* The price a saved quote was saved with, when the Dealer Center opened
+   it as it was saved (ui/load.js, managed.historical): {base, lines, total}
+   or null. */
+export function savedPriceOf(cat) {
+  const m = cat && cat.managed, p = m && m.historical === true ? m.savedPrice : null;
+  return p && typeof p.total === "number" && isFinite(p.total) && Array.isArray(p.lines) ? p : null;
+}
+
+/* The items marked "comes with the building" that a row shows as charged
+   (model/pricing.js chargedIncluded). A saved quote opened as it was saved
+   shows the price it was saved with, which charged none of them: a quote
+   saved before Oct 17 2026 gave them all, and since then the server saves
+   a charged one as an added item (server/office/pricing.js
+   chargedAsAdded). So its rows say "included", as its total does (review
+   17 FREE-3). Used by the rows here and the selection sheet (ui/sheet.js). */
+export function chargedForRows(state, cat, fr) {
+  return savedPriceOf(cat) ? new Map() : chargedIncluded(state, cat, fr);
+}
 
 /* feet on a chip: "4", "4' 6\"" -- the chips have always said "4 × 8" */
 function feetWords(ft) {
@@ -316,6 +335,10 @@ export function createPanels(ctx) {
   function refreshLists() {
     const state = ctx.state, CAT = cat.CAT, T = cat.TYPES[state.type];
     const fr = ctx.frame();
+    /* a saved quote opened from the Dealer Center shows the price it was
+       saved with (ui/load.js savedPrice), never a new one */
+    const saved = savedPriceOf(cat);
+    const charged = chargedForRows(state, cat, fr);
     const il = el("itemlist"); il.innerHTML = "";
     state.items.forEach((it) => {
       const c = CAT[it.cat]; if (!c) return;
@@ -324,7 +347,7 @@ export function createPanels(ctx) {
       row.setAttribute("data-focus-key", it.id);
       row.setAttribute("aria-pressed", String(state.sel === it.id));
       row.setAttribute("aria-controls", "sheet");
-      const chg = itemCharge(it, state, cat, fr);
+      const chg = itemCharge(it, state, cat, fr, charged);
       row.innerHTML = '<span class="dot"></span><span>' + esc(c.n) + (c.stretch ? (" " + esc(it.ln || 4) + " ft") : "") + (it.dbl ? " (double)" : "") + (it.shut ? " + shutters" : "") + (it.lite ? " + window" : "") +
         ' <span class="wl">— ' + esc(wallWords(it, c)) + '</span></span>' +
         '<span class="pr' + (chg > 0 ? "" : " inc") + '">' + (chg > 0 ? (showMoney() ? "+ " + M(chg) : "extra") : (it.pk ? "package" : "included")) + "</span>";
@@ -332,7 +355,8 @@ export function createPanels(ctx) {
       il.appendChild(row);
     });
     /* the summary, then the plate */
-    const pp = priceParts(state, cat, fr);
+    const pp = saved || priceParts(state, cat, fr);
+    const extraNote = saved ? "" : S.chargedNote(state, cat, fr);
     const title = String(state.size).replace("x", " × ") + " " + T.name;
     const amt = (n) => showMoney() ? "<b>" + M(n) + "</b>" : "<b></b>";
     let h = '<div class="sumline"><span>' + esc(title) + "</span>" + amt(pp.base) + "</div>";
@@ -340,6 +364,7 @@ export function createPanels(ctx) {
     h += '<div class="sumline"><span>' + (T.metal ? "Metal" : "Siding") + " " + esc(colorName(sidingPalette(T, cat.COLORS), state.body)) +
       " · Trim " + esc(colorName(cat.COLORS.trim, state.trim)) + " · Roof " + esc(colorName(cat.COLORS.metal, state.roof)) + "</span><b>—</b></div>";
     if (showMoney()) h += '<div class="sumline tot"><span class="disp" style="letter-spacing:.08em;text-transform:uppercase;font-size:13px">Estimated total</span><b>' + M(pp.total) + "</b></div>";
+    if (extraNote) h += '<p class="chargednote">' + esc(extraNote) + "</p>";
     rtoTotal = pp.total;
     if (rtoShown()) h += rtoHtml();
     el("sum").innerHTML = h;
@@ -348,6 +373,8 @@ export function createPanels(ctx) {
     el("plateprice").textContent = show === "none" ? "Ask us" : show === "from" ? "from " + M(pp.base) : M(pp.total);
     el("platesample").textContent = show === "none" ? "for a price" : "plus tax";
     el("platerto").textContent = show === "none" ? "" : rtoText(show === "from" ? pp.base : pp.total);
+    const pn = el("platenote");
+    if (pn) { pn.textContent = extraNote; pn.hidden = !extraNote; }
     return pp;
   }
 

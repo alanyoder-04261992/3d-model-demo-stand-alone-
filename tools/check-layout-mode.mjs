@@ -111,6 +111,20 @@ try {
       await p.touchscreen.tap(ghostHit.x + ghostHit.width / 2, ghostHit.y + ghostHit.height / 2);
       check("a phone tap on a dashed post opens Porch and selects that post", await p.evaluate(id => window.shedUI.layoutMode.view === "PF" && window.shedUI.getState().sel === id, ghostId));
       check("tapping the dashed post leaves the wall's door and windows alone", JSON.stringify((await state(p)).filter(i => i.cat !== "ppost")) === JSON.stringify(beforeTap.filter(i => i.cat !== "ppost")));
+      /* A slow, careful press: the finger rests on the dashed post for two
+         seconds before it lifts. The click that follows the lift must not
+         pick the post that now sits under the finger on the Porch view. */
+      await p.evaluate(() => window.shedUI.select(null));
+      await p.locator('.layout-wallchoices [data-layout-view="F"]').click();
+      await p.locator("#stage").evaluate(el => window.scrollBy(0, el.getBoundingClientRect().top - 120));
+      await p.waitForTimeout(300);
+      const heldHit = await p.locator(`.layout-posthit.ghost[data-item="${ghostId}"]`).boundingBox(), held = { x: heldHit.x + heldHit.width / 2, y: heldHit.y + heldHit.height / 2 };
+      const holdCdp = await phone.newCDPSession(p);
+      await holdCdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [held] });
+      await p.waitForTimeout(2000);
+      await holdCdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await p.waitForTimeout(400);
+      check("a two-second press on a dashed post still picks that post", await p.evaluate(id => window.shedUI.layoutMode.view === "PF" && window.shedUI.getState().sel === id, ghostId));
       const selected = p.locator(`.layout-posthit.solid[data-item="${ghostId}"]`);
       await p.waitForTimeout(300);
       const hit = await selected.boundingBox(), clearance = await p.evaluate(() => ({ sheet: document.getElementById("sheet").getBoundingClientRect().top, bar: document.getElementById("layout-savebar").getBoundingClientRect().top }));
@@ -126,6 +140,13 @@ try {
       const fixed = p.locator('.layout-posthit.fixed').first(), unchanged = await state(p);
       await fixed.tap();
       check("a corner post explains why it stays and changes no items", /hold up the porch roof, so they stay/.test(await p.locator("#layout-notice").innerText()) && JSON.stringify(await state(p)) === JSON.stringify(unchanged));
+      /* The keyboard still picks a dashed post: Enter on its button. */
+      await p.locator('.layout-wallchoices [data-layout-view="F"]').click();
+      await p.waitForTimeout(300);
+      await p.locator(`.layout-posthit.ghost[data-item="${ghostId}"]`).focus();
+      await p.keyboard.press("Enter");
+      await p.waitForTimeout(300);
+      check("Enter on a dashed post's button picks that post", await p.evaluate(id => window.shedUI.layoutMode.view === "PF" && window.shedUI.getState().sel === id, ghostId));
     }
     await p.close(); await phone.close();
   }
@@ -138,9 +159,80 @@ try {
   await sc.locator("#sh-del").click();
   check("Remove deletes the selected porch post", (await state(sc)).filter(i => i.cat === "ppost").length === 2);
   await sc.close();
+
+  /* After Save as standard the result box keeps its heading, its close
+     button and its way-out buttons on the screen: below a phone app's own
+     100 px header and above the save bar. A change after a save says it is
+     not saved, and Cancel and Start again ask in the page with named buttons.
+     A phone turned sideways (844 x 390) is checked too: the words and
+     drawings still get room to read between the heading and the buttons. */
+  const screens = WIDTHS.map((width) => ({ width, height: width === 390 ? 844 : width === 820 ? 1180 : 800, phone: width === 390 }));
+  if (WIDTHS.includes(390)) screens.push({ width: 844, height: 390, phone: true, sideways: true });
+  for (const colorScheme of SCHEMES) for (const { width, height, phone, sideways } of screens) {
+    if (sideways && colorScheme !== SCHEMES[0]) continue;
+    const ctx = await browser.newContext({ viewport: { width, height }, colorScheme, reducedMotion: "reduce", hasTouch: true, isMobile: phone });
+    await ctx.addCookies([{ name: "dealer_local_user", value: "chris%40samplebarns.example", url: BASE }]);
+    const r = await open(ctx, "C"), label = sideways ? `${width}x${height} ${colorScheme}` : `${width} ${colorScheme}`, browserBoxes = [];
+    r.on("dialog", (dialog) => { browserBoxes.push(dialog.message()); dialog.dismiss(); });
+    await r.addStyleTag({ content: ".test-app-header { position:fixed;inset:0 0 auto;height:100px;z-index:35;background:#16130e;color:white; }" });
+    await r.evaluate(() => { const h = document.createElement("div"); h.className = "test-app-header"; h.textContent = "Phone app header"; document.body.append(h); });
+    const header = width === 1280 ? 0 : 100;
+    await r.locator('.layout-wallchoices [data-layout-view="PF"]').click();
+    await select(r, "ppost", "F");
+    await r.locator("#layout-right").click();
+    /* The sample prices are whole dollars, so no cents show. A price with
+       cents keeps them on purpose, as the Dealer Center's money() does. */
+    const words = await r.evaluate(() => ({ chips: document.getElementById("sizechips").innerText, caption: document.getElementById("layout-caption").innerText }));
+    check(`${label}: the layout screen writes sizes 8×12 and whole-dollar prices ${JSON.stringify(words.chips.slice(0, 60))}`, /\d+×\d+/.test(words.chips) && !/\d \u00d7 \d/.test(words.chips + words.caption) && !/\.\d\d\b/.test(words.chips) && /\$\d/.test(words.chips));
+    await r.locator("#layout-save").click();
+    await r.waitForFunction(() => /Saved/.test(document.querySelector("#layout-result h2")?.textContent || ""), null, { timeout: 60000 });
+    await r.waitForTimeout(200);
+    const box = await r.evaluate(() => {
+      const at = (node) => { const b = node.getBoundingClientRect(); return { top: Math.round(b.top), bottom: Math.round(b.bottom) }; };
+      return { h2: at(document.querySelector("#layout-result h2")), close: at(document.getElementById("layout-resultclose")),
+        buttons: [...document.querySelectorAll(".layout-resultbuttons button")].map((b) => ({ text: b.textContent, ...at(b) })), room: Math.round(document.querySelector(".layout-resultbody").getBoundingClientRect().height),
+        bar: Math.round(document.getElementById("layout-savebar").getBoundingClientRect().top), screen: innerHeight };
+    });
+    await r.screenshot({ path: resolve(OUT, `layout-result-${sideways ? `${width}x${height}` : width}-${colorScheme}.png`) });
+    const floor = Math.min(box.bar, box.screen);
+    check(`${label}: the saved result's heading and close button sit below the app header ${JSON.stringify(box)}`, box.h2.top >= header && box.close.top >= header);
+    check(`${label}: the saved result's buttons are on the screen above the save bar`, box.buttons.length > 0 && box.buttons.some((b) => /Back to Edit building/.test(b.text)) && box.buttons.every((b) => b.top >= header && b.bottom <= floor));
+    check(`${label}: the saved result's words and drawings get at least 120 px to read in (${box.room} px)`, box.room >= 120);
+    await r.locator("#layout-resultclose").click();
+    check(`${label}: right after a save the bar says it saved`, /Saved for every lot/.test(await r.locator("#layout-savewords").innerText()));
+    await select(r, "ppost", "F");
+    await r.locator("#layout-right").click();
+    check(`${label}: a move after a save says it is not saved yet`, /Not saved yet/.test(await r.locator("#layout-savewords").innerText()));
+    await r.locator("#layout-cancel").click();
+    const ask = r.locator("#layout-ask");
+    await ask.waitFor({ state: "visible" });
+    const askBox = await ask.boundingBox();
+    check(`${label}: Cancel asks in the page with named buttons`, browserBoxes.length === 0 && /Leave without saving the layout/.test(await ask.innerText())
+      && await r.getByRole("button", { name: "Leave without saving", exact: true }).isVisible() && await r.getByRole("button", { name: "Keep changing it", exact: true }).isVisible());
+    check(`${label}: the question sits below the app header and above the save bar`, askBox.y >= header && askBox.y + askBox.height <= floor);
+    await r.getByRole("button", { name: "Keep changing it", exact: true }).click();
+    check(`${label}: Keep changing it stays in the layout`, await ask.waitFor({ state: "detached", timeout: 5000 }).then(() => true, () => false) && /layout=C/.test(r.url()));
+    await r.evaluate(() => window.shedUI.select(null));
+    await r.locator("#layout-builder").evaluate((node) => node.click());
+    await ask.waitFor({ state: "visible" });
+    check(`${label}: Start again asks in the page with named buttons`, browserBoxes.length === 0 && await r.getByRole("button", { name: "Start again", exact: true }).isVisible() && await r.getByRole("button", { name: "Keep mine", exact: true }).isVisible());
+    await r.getByRole("button", { name: "Keep mine", exact: true }).click();
+    await ask.waitFor({ state: "detached", timeout: 5000 });
+    await r.locator("#layout-cancel").click();
+    await r.getByRole("button", { name: "Leave without saving", exact: true }).click();
+    await r.waitForURL(/\/dealer/, { timeout: 30000 }).catch(() => {});
+    check(`${label}: Leave without saving goes back to the Dealer Center`, /\/dealer/.test(r.url()) && browserBoxes.length === 0);
+    await r.close(); await ctx.close();
+  }
+  /* The Edit page's layout card writes a porch post in small letters. */
+  const edit = await context.newPage(); await edit.goto(`${BASE}/dealer#/price-list/building/C`);
+  await edit.locator(".pl-layout-card .pl-layout-list li").first().waitFor({ timeout: 60000 });
+  const cardWords = await edit.locator(".pl-layout-card .pl-layout-list").innerText();
+  check(`the Edit page says "porch post" in small letters mid-sentence ${JSON.stringify(cardWords.slice(0, 160))}`, /porch post/.test(cardWords) && !/Porch Post/.test(cardWords));
+  await edit.close();
   check("the layout editor had no browser errors", page.errors.length === 0);
   await context.close();
-  console.log(`PROVED (${passed} checks): checked owner layouts reach customers, three-inch moves and included items persist, phone and tablet sheets stay reachable, and added posts stay clear on every porch.`);
+  console.log(`PROVED (${passed} checks): checked owner layouts reach customers, three-inch moves and included items persist, phone and tablet sheets stay reachable, added posts stay clear on every porch, a quick tap, a two-second press and Enter each pick the dashed post they are on, the saved result box keeps its heading and buttons between a phone app's header and the save bar (upright and sideways) with room to read, a change after a save says it is not saved yet, Cancel and Start again ask with named buttons, and sizes and prices read like the Dealer Center.`);
 } finally {
   await browser?.close(); server.kill("SIGTERM");
 }

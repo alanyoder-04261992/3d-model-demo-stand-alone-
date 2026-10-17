@@ -24,8 +24,11 @@
                   the kind a browser sends without asking permission first. It
                   goes into a hidden frame (or a new tab, when leads.target is
                   "tab", for a service that shows its own "are you human?"
-                  page). A cross-origin frame load or a new tab cannot prove
-                  receipt: the customer gets ways to confirm it directly.
+                  page). The service's page loading in the hidden frame
+                  counts as sent (a page from another site can never be
+                  read, so nothing surer is possible); no answer in time,
+                  or a new tab, gives the customer ways to confirm it
+                  directly.
                   A same-origin service can acknowledge receipt with JSON
                   {ok:true} or {success:true}; an HTML answer is unconfirmed.
      mailto       opens the customer's own e-mail app with the summary and the
@@ -90,8 +93,9 @@
    know whether the customer pressed Send -- the customer gets the company's
    phone as Call and Text links, a "Copy my design link" button and the
    summary of their design, so nothing is ever lost.
-   An unconfirmed form answer or timeout gets those same ways to reach the
-   company, with words asking the customer to confirm receipt.
+   A form service that does not answer in time, a same-site answer without
+   {ok:true}, or a new tab gets those same ways to reach the company, with
+   words asking the customer to confirm receipt.
 
    The link sent with a quote opens the design LOOK-ONLY (ui/share.js,
    "&view=1") and prices it from the company's price list on the day it is
@@ -387,9 +391,13 @@ function postForm(url, fields, target, timeoutMs) {
     frame.addEventListener("load", () => {
       let blank = false;
       try { blank = frame.contentWindow.location.href === "about:blank"; } catch (e) { blank = false; }
-      /* Browser isolation hides the response's status and contents. Loading
-         an error page or a captcha is not an acknowledgement. */
-      if (!blank) finish({ ok: false, unconfirmed: true, how: "frame", why: "the form service did not confirm receipt" });
+      /* The service's own page came back, so the request reached it. A
+         page from another site can never be read (its words or its
+         status), so this is as sure as an ordinary form service gets: the
+         customer is told it was sent, as before October 2026 (review 17
+         F4). A same-site service, which can be read, must say {ok:true}
+         (postLocalForm); a timeout keeps the "please confirm" words. */
+      if (!blank) finish({ ok: true, how: "frame" });
     });
     try { form.submit(); } catch (e) { finish({ ok: false, why: "the form could not be sent" }); }
   });

@@ -19,7 +19,8 @@ const copy = (value) => JSON.parse(JSON.stringify(value));
 const el = (id) => document.getElementById(id);
 const WALLS = { F: "Front", R: "Right side", B: "Back", L: "Left side", S1: "Inside the porch", S2: "Porch side wall", S3: "Porch side wall", P1: "Angled porch wall", P2: "Porch front wall", P3: "Porch door wall" };
 const YAW = { F: 0, R: Math.PI / 2, B: Math.PI, L: -Math.PI / 2, PF: 0, PR: Math.PI / 2, "34": .62 };
-const sizeWords = (size) => String(size).replace("x", " × ");
+/* Sizes read 8×12 everywhere on this screen, as in the every-size results. */
+const sizeWords = (size) => String(size).replace("x", "×");
 const keyOf = (variant) => `${variant.pLen || 0}:${!!variant.pFlip}:${!!variant.pMid}`;
 const apiPrefix = () => new URLSearchParams(location.search).get("preview") === "barnwright"
   || new URLSearchParams(location.search).get("layoutVisit") === "1" ? "/api/office/barnwright/" : "/api/office/";
@@ -74,9 +75,12 @@ export async function install(api) {
   heading.innerHTML = `<h1>Setting the standard layout for ${esc(name)}. Every lot uses it.</h1><p>Move, add or remove doors and windows${cat.TYPES[style].porch ? " and porch posts" : ""}, then tap Save as standard. Customers start from it and can still move things on their own building.</p>`;
   el("hdr").after(heading);
   const foot = document.createElement("div"); foot.id = "layout-savebar";
-  foot.innerHTML = '<span id="layout-savewords" role="status">Every size is checked before it saves.</span><div><button type="button" id="layout-cancel">Cancel</button><button type="button" id="layout-save">Save as standard</button></div>';
+  foot.innerHTML = `<span id="layout-savewords" role="status">${dirty ? "Not saved yet. " : ""}Every size is checked before it saves.</span><div><button type="button" id="layout-cancel">Cancel</button><button type="button" id="layout-save">Save as standard</button></div>`;
   document.body.append(foot);
-  el("layout-cancel").onclick = () => { if (!dirty || confirm("Leave these layout changes?")) { dirty = false; forgetDraft(); location.assign(back); } };
+  el("layout-cancel").onclick = async () => {
+    if (dirty && !await ask("Leave without saving the layout?", "Your changes go away. Every lot keeps the layout it has now.", { yes: "Leave without saving", no: "Keep changing it" })) return;
+    dirty = false; forgetDraft(); location.assign(back);
+  };
   el("layout-save").onclick = save;
 
   const viewChoices = document.createElement("div"); viewChoices.className = "layout-wallchoices"; viewChoices.setAttribute("role", "group"); viewChoices.setAttribute("aria-label", "Pick a wall or the porch");
@@ -101,7 +105,10 @@ export async function install(api) {
   const addCard = document.createElement("section"); addCard.id = "layout-add"; addCard.className = "card";
   addCard.innerHTML = '<h3>Add a door or window' + (porch ? ' or porch post' : '') + '</h3><div id="layout-addchoices"></div><p>What you add here comes with the building. Raise the prices on the Edit page if you need to.</p><button type="button" id="layout-builder">Start again from the builder’s layout</button>';
   el("wrap").append(addCard);
-  el("layout-builder").onclick = () => { if (confirm("Start again from the builder's doors, windows and posts?")) { blockedRecipe = null; document.body.classList.remove("layout-mode-blocked"); recipe = builderRecipe(cat, style); lay({}); dirty = true; rememberDraft(); } };
+  el("layout-builder").onclick = async () => {
+    if (!await ask("Start again from the builder’s layout?", "Your doors, windows and posts go back to where the builder puts them. Nothing is saved until you tap Save as standard.", { yes: "Start again", no: "Keep mine" })) return;
+    blockedRecipe = null; document.body.classList.remove("layout-mode-blocked"); recipe = builderRecipe(cat, style); lay({}); changed(); rememberDraft();
+  };
   const result = document.createElement("section"); result.id = "layout-result"; result.hidden = true; result.setAttribute("role", "dialog"); result.setAttribute("aria-modal", "true"); result.setAttribute("aria-label", "Every size checked"); document.body.append(result);
 
   function isPorch() { return view === "PF" || view === "PR"; }
@@ -112,6 +119,22 @@ export async function install(api) {
   function rememberDraft(notice = "") { try { sessionStorage.setItem(storageKey, JSON.stringify({ version, layout: blockedRecipe || recipe, at: Date.now(), notice, pendingUnpriced: !!blockedRecipe })); } catch { /* changes still stay on screen */ } }
   function forgetDraft() { try { sessionStorage.removeItem(storageKey); } catch { /* optional */ } }
   function say(words) { newest = words || ""; notice.textContent = newest; }
+  /* Anything changed after a save is not saved yet, so the bar says so. */
+  function changed() { dirty = true; el("layout-savewords").textContent = "Not saved yet. Every size is checked before it saves."; }
+  /* The Dealer Center's own question box, with buttons that say what they do. */
+  function ask(title, words, { yes, no }) {
+    return new Promise((resolve) => {
+      const box = document.createElement("dialog"); box.id = "layout-ask"; box.setAttribute("aria-labelledby", "layout-ask-title");
+      box.innerHTML = `<h2 id="layout-ask-title">${esc(title)}</h2><p>${esc(words)}</p><div class="layout-askbuttons"><button type="button" id="layout-ask-no">${esc(no)}</button><button type="button" id="layout-ask-yes">${esc(yes)}</button></div>`;
+      let answer = false;
+      const finish = (value) => { answer = value; box.close(); };
+      box.addEventListener("close", () => { box.remove(); resolve(answer); });
+      box.querySelector("#layout-ask-no").onclick = () => finish(false);
+      box.querySelector("#layout-ask-yes").onclick = () => finish(true);
+      box.addEventListener("click", (event) => { if (event.target === box) finish(false); });
+      document.body.append(box); box.showModal(); box.querySelector("#layout-ask-no").focus();
+    });
+  }
 
   /* Keep entries which are conditional on another size or porch. Looking at
      a smaller building must never erase a window from the larger ones. */
@@ -169,6 +192,10 @@ export async function install(api) {
     el("card-size").querySelector("h3").textContent = "Size you're looking at";
     for (const chip of el("sizechips").children) {
       const size = chip.dataset.size;
+      /* Sizes as 8×12 and prices the way the Dealer Center's money() writes
+         them: no ".00", and cents only when a price has some ($4,355.50). */
+      for (const node of chip.childNodes) if (node.nodeType === 3) node.textContent = node.textContent.replace(/(\d+) × (\d+)/, "$1×$2");
+      const money = chip.querySelector("small"); if (money) money.textContent = money.textContent.replace(/\.00$/, "");
       if (size) chip.onclick = () => { if (blockedRecipe) return; recipe = inferCurrent(); lay({ size }); };
     }
     if (porch === "S") {
@@ -285,7 +312,7 @@ export async function install(api) {
       }
       item.inc = true;
     }, { reason: "layout-add" });
-    if (item) { api.select(item.id); dirty = true; recipe = inferCurrent(); rememberDraft(); }
+    if (item) { api.select(item.id); changed(); recipe = inferCurrent(); rememberDraft(); }
   }
 
   function sheet(item) {
@@ -313,7 +340,7 @@ export async function install(api) {
       if (kind === "share" || kind === "pair") {
         setRule(item, { [kind === "pair" ? "sym" : "pos"]: `len*${((kind === "pair" ? Math.abs(item.pos) : item.pos) / len).toFixed(6)}` });
         if (kind === "pair" && savedEntry(item)?.at?.sym != null) api.setState((state) => { state.items = state.items.filter((part) => part.id === item.id || part.entryIndex !== item.entryIndex); }, { reason: "layout-pair", refresh: false });
-        recipe = inferCurrent(); dirty = true; rememberDraft();
+        recipe = inferCurrent(); changed(); rememberDraft();
         if (kind === "pair") { const where = { cat: item.cat, wall: item.wall, pos: item.pos }; lay({}); const match = api.getState().items.filter((part) => part.cat === where.cat && part.wall === where.wall).sort((a, b) => Math.abs(a.pos - where.pos) - Math.abs(b.pos - where.pos))[0]; if (match) api.select(match.id); }
       }
       el("layout-gapapply").onclick = () => {
@@ -368,7 +395,13 @@ export async function install(api) {
 
   /* Screen targets are placed from the same world coordinates as the part,
      while ordinary walls use the renderer's existing item hit quads. */
-  let layerKeys = "", layerButtons = [];
+  /* A tap's own click can arrive with detail 0 (the canvas captures the
+     pointer and the view switch rebuilds these buttons), and it then lands
+     on whichever post button is under the finger. The pointerdown already
+     picked the nearest post, so the click that follows it must not pick
+     again, however long the finger rested first. A click from a pointer
+     (pointerType set) never picks; only a keyboard press does. */
+  let layerKeys = "", layerButtons = [], pointerPicked = false;
   function layerParts() {
     const fr = frame(), state = api.getState(); if (!porch || api.getMode() === "in" || view === "34") return [];
     const face = isPorch() ? edge() : view === "F" ? "F" : view === "R" ? "R" : null;
@@ -388,9 +421,12 @@ export async function install(api) {
       layerKeys = keys; ghosts.replaceChildren(); layerButtons = parts.map((part) => {
         const button = document.createElement("button"); button.type = "button"; button.dataset.item = part.id; button.className = "layout-posthit" + (isPorch() ? " solid" : " ghost") + (part.fixed ? " fixed" : "");
         button.setAttribute("aria-label", part.fixed ? "Corner post holds up the porch roof" : isPorch() ? "Move this porch post" : "Dashed porch post. Move it on the porch");
-        button.onclick = (event) => { if (event.detail || blockedRecipe) return; if (part.fixed) say("The corner posts hold up the porch roof, so they stay."); else { if (!isPorch()) setView(part.item.wall === "R" ? "PR" : "PF", true); api.select(part.id); } };
+        button.onclick = (event) => { if (event.detail || event.pointerType || blockedRecipe || pointerPicked) { pointerPicked = false; return; } if (part.fixed) say("The corner posts hold up the porch roof, so they stay."); else { if (!isPorch()) setView(part.item.wall === "R" ? "PR" : "PF", true); api.select(part.id); } };
+        button.onkeydown = () => { pointerPicked = false; };
         button.onpointerdown = (event) => {
+          pointerPicked = false;
           if (event.button > 0 || blockedRecipe) return;
+          pointerPicked = true;
           const bounds = api.canvas.getBoundingClientRect(), point = [event.clientX - bounds.left, event.clientY - bounds.top];
           const nearest = layerParts().reduce((best, candidate) => { const at = api.renderer.projCache.proj(candidate.p0); const gap = at ? Math.abs(at[0] - point[0]) : Infinity; return !best || gap < best.gap ? { candidate, gap } : best; }, null)?.candidate || part;
           if (nearest.fixed) { event.preventDefault(); event.stopPropagation(); say("The corner posts hold up the porch roof, so they stay."); return; }
@@ -463,16 +499,17 @@ export async function install(api) {
   }
 
   function showResult(check, saved = false, extra = "") {
+    result.style.setProperty("--layout-bar-top", `${Math.max(0, innerHeight - foot.getBoundingClientRect().top)}px`);
     result.hidden = false; result.className = check.errors.length ? "bad" : check.warnings.length ? "warning" : "good";
     const hasPosts = check.problems?.some((problem) => problem.kind === "posts");
-    result.innerHTML = `<div class="layout-resultcard"><button id="layout-resultclose" type="button" aria-label="Close results">×</button><h2>${saved ? check.warnings.length ? "Saved. One thing to look at" : "Saved as standard" : check.errors.length ? "One thing to change before it saves" : "Every size checked"}</h2><p>${esc(extra || check.summary || `Checked ${data.sizes.length} sizes.`)}</p>${check.messages.map((words) => `<p>${esc(typeof words === "string" ? words : words.message)}</p>`).join("")}<div class="layout-examples">${(check.examples || []).map(drawing).join("")}</div><div id="layout-fixes"></div><div class="layout-resultbuttons">${hasPosts ? '<button type="button" id="layout-showposts">Show me the two posts</button>' : ''}${saved ? '<button type="button" id="layout-return">Back to Edit building</button>' : '<button type="button" id="layout-keep">Keep changing it</button>'}</div></div>`;
+    result.innerHTML = `<div class="layout-resultcard"><button id="layout-resultclose" type="button" aria-label="Close results">×</button><h2>${saved ? check.warnings.length ? "Saved. One thing to look at" : "Saved as standard" : check.errors.length ? "One thing to change before it saves" : "Every size checked"}</h2><div class="layout-resultbody"><p>${esc(extra || check.summary || `Checked ${data.sizes.length} sizes.`)}</p>${check.messages.map((words) => `<p>${esc(typeof words === "string" ? words : words.message)}</p>`).join("")}<div id="layout-fixes"></div><div class="layout-examples">${(check.examples || []).map(drawing).join("")}</div></div><div class="layout-resultbuttons">${hasPosts ? '<button type="button" id="layout-showposts">Show me the two posts</button>' : ''}${saved ? '<button type="button" id="layout-return">Back to Edit building</button>' : '<button type="button" id="layout-keep">Keep changing it</button>'}</div></div>`;
     el("layout-resultclose").onclick = () => { result.hidden = true; if (hasPosts) showPosts(check); };
     el("layout-keep")?.addEventListener("click", () => { result.hidden = true; });
     el("layout-return")?.addEventListener("click", () => { forgetDraft(); location.assign(back); });
     el("layout-showposts")?.addEventListener("click", () => { result.hidden = true; showPosts(check); });
     for (const fix of check.fixes || []) {
       const button = document.createElement("button"); button.type = "button"; button.textContent = fix.message || fix.label || `Only put it on sizes ${fix.when?.minL} ft long and up`;
-      button.onclick = () => { recipe[fix.entryIndex].when = copy(fix.when); lay({}); dirty = true; result.hidden = true; say("That door is kept on the sizes you picked. Tap Save as standard."); }; el("layout-fixes").append(button);
+      button.onclick = () => { recipe[fix.entryIndex].when = copy(fix.when); lay({}); changed(); result.hidden = true; say("That door is kept on the sizes you picked. Tap Save as standard."); }; el("layout-fixes").append(button);
     }
     el("layout-resultclose").focus();
   }
@@ -515,7 +552,7 @@ export async function install(api) {
   });
   api.on("sheet", ({ item }) => sheet(item));
   api.on("select", ({ item }) => { if (!item) { newest = ""; notice.textContent = ""; el("layout-limit").textContent = ""; } refreshCaption(); });
-  api.on("change", ({ reason }) => { if (laying || reason === "layout-look") return; dirty = true; recipe = inferCurrent(); rememberDraft(); refresh(); });
+  api.on("change", ({ reason }) => { if (laying || reason === "layout-look") return; changed(); recipe = inferCurrent(); rememberDraft(); refresh(); });
   api.on("rebuild", () => { if (!laying) refresh(); });
   window.addEventListener("keydown", (event) => {
     if (result.hidden === false && event.key === "Escape") { result.hidden = true; return; }

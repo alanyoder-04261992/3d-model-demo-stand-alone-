@@ -603,7 +603,8 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
     }
     if (!catalogue) fail(409, "The original building details are unavailable. The saved building name and prices are still shown; ask Barnwright before using a picture or fine print for this quote or order.");
     const lot = await lots.get(c.lot);
-    return { catalogue, design: quote.design, lot: { ...(lot || {}), slug: c.lot }, historical: true };
+    /* the price it was saved with: the page shows that, never a new one */
+    return { catalogue, design: quote.design, price: quote.price, total: quote.total, lot: { ...(lot || {}), slug: c.lot }, historical: true };
   }
 
   return { list, get, create, update, addActivity, addQuote, addOrder, updateOrder, csv, addWebsiteQuote, quoteView, rowOf };

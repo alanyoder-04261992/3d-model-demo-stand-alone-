@@ -61,6 +61,62 @@ can choose instead to show a "from" price (the building on its own) or no price
 at all (the plate then says "Ask us"), and a rent-to-own monthly figure or
 none.
 
+**Free doors and windows (your decision, Oct 17 2026: "Yes, charge for
+them").** A building's standard doors and windows are free only up to how
+many its own size comes with. If a customer lays out a 12x32 Cabin, moves a
+door, then picks 8x12, the windows the 12x32 came with stay on the walls, but
+the ones an 8x12 does not come with are charged at the normal window price.
+The plate and Your quote say so in one line: "An 8×12 comes with 1 window, so
+2 of your windows are charged." A design link changed by hand to do the same
+is charged the same way; nothing is turned away for it. A door kept from the
+other size in place of the door this size comes with costs only the
+difference, like swapping it on the building, and the line says so: "A 10×12
+comes with the 48″ Wooden Door, so only the difference is charged for your
+72″ Wooden Double Doors." The printed quote and order sheet list a charged
+window under Added, not Comes with, and name a kept door with the door it
+stands in for. Quotes and orders already saved keep the price they were saved
+with, and "See it in 3D" shows their doors and windows as included, the way
+that price had them; the rule counts when something is priced again (Change
+it, or a new quote).
+
+**A standard door or window taken off comes off the price (your answer,
+Oct 17 2026: "Yes, take its price off").** The price is your standard
+building for the size and porch the customer picks. A door or window added
+beyond your standard layout is charged; one of your standard doors or windows
+the customer removes is taken off at its price; a swap costs the difference.
+The quote shows it as its own line, for example "2×3 Window, taken off
+-$195", the printed quote lists it under Taken off, and the line under the
+price says "The window you took off comes off the price." Only a real
+removal counts: a customer who picks a bigger size after changing a smaller
+one is not paid back for the windows the smaller one never had. "Standard"
+always means your own standard layout for that building (the one you set
+with Set the standard layout, or your price list's own), never the built-in
+library's. Moving a door or window never changes the price.
+
+**The porch length is the customer's free choice.** The Side Cabin and Loft
+Side Cabin cost the same with the 4 × 8 or the 4 × 12 porch. Tapping the
+other porch lays out that porch's own doors and windows when the customer has
+not changed any; a customer who has keeps theirs. Either way nothing is added:
+a size gets as many free windows as its longest-porch layout comes with. A
+window taken off is counted against the porch the customer picks: a 12 ft
+porch Side Cabin with one window taken off costs one window less, and if the
+customer then picks the 8 ft porch, the building is the 8 ft porch's
+standard, so it costs the standard price again.
+
+**An older design link keeps its price when you change a standard layout.**
+When you change a building's standard layout in Your buildings, new quotes
+use the new layout. A design link made before is still compared with the
+layout it was made with, and quotes and orders already saved keep their
+totals. The 3D designer and the Dealer Center give it the same total.
+
+**One price went down, on purpose.** On the Cottage Shed and the Metal
+Cottage, a customer who swaps the 48″ door of an 8x12 or 10x12 for the 72″
+double doors and then picks 10x16 or larger now pays $150 less than before.
+Those sizes come with the double doors, so the doors are free, the same as a
+customer who never swapped. Before, the swap's $150 stayed on the quote. In
+a sample of 19,873 designs these 48 were the only ones whose price went down
+apart from designs where the customer removed a standard door or window.
+
 ## The views
 
 Two buttons sit over the top-left of the picture:

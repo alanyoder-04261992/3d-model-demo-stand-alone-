@@ -118,7 +118,7 @@
    Barnwright too (ui/problems-start.js; index.html also loads it on its own,
    for a file that doesn't arrive at all) */
 import "./problems-start.js";
-import { loadCompany, loadLot } from "./load.js";
+import { loadCompany, loadLot, withOlderList } from "./load.js";
 import { esc, safeUrl, telHref } from "./esc.js";
 import { defaults, normalize, toState, fromState, decode } from "../model/design.js";
 import { viewAsked as lookOnlyAddress } from "./share.js";
@@ -130,7 +130,7 @@ import { assemble } from "../engine/assemble.js";
 import { createRenderer, stageTableFor } from "../engine/renderer.js";
 import { createCamera, animYaw } from "../engine/camera.js";
 import { paintBackdrop } from "../engine/scene.js";
-import { createPanels } from "./panels.js";
+import { createPanels, savedPriceOf } from "./panels.js";
 import { createSheet } from "./sheet.js";
 import { rememberFocus, restoreFocus } from "./focus.js";
 import { createInteraction, ftIn } from "./interaction.js";
@@ -334,7 +334,7 @@ async function boot() {
       loaded.problems.map((p) => "<li>" + esc(p) + "</li>").join("") + "</ul></div>");
     return null;
   }
-  const cat = loaded.catalogue;
+  let cat = loaded.catalogue;
 
   /* 3. the company's colours and name */
   applyTheme(cat.brand.colors);
@@ -362,6 +362,9 @@ async function boot() {
   if (loaded.savedDesign || /[#&]d=/.test(location.hash || "")) {
     try {
       startDesign = loaded.savedDesign || await decode(location.hash);
+      /* an older design's link is priced with what its own price list came
+         with, as the server prices it (ui/load.js withOlderList) */
+      if (lotMatch && !loaded.savedDesign) cat = await withOlderList(loaded, lotMatch[1], startDesign);
       asSaved = !!loaded.savedDesign || lookOnlyAddress(location.href);
       const t = toState(startDesign, cat, { asSaved });
       state = t.state; startWarnings = t.warnings;
@@ -495,7 +498,7 @@ async function boot() {
     getCatalogue: () => cat,
     getPlan: () => ctx.plan,
     getResult: () => ctx.result,
-    price: () => priceParts(state, cat),
+    price: () => savedPriceOf(cat) || priceParts(state, cat),
     rentToOwn: () => panels.rentToOwn(),       /* {months, monthly} the customer is looking at, or null */
     getDesign: (opts) => fromState(state, cat, opts),
     applyDesign(design) {

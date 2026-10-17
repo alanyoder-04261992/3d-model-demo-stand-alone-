@@ -40,6 +40,10 @@ async function signIn(tab) {
 }
 const note = () => page.getByRole("textbox", { name: "What happened", exact: true });
 const followNote = () => page.getByLabel("Note", { exact: true });
+/* Wait for a box to hold the words; a slow screen fails the check after 15 s. */
+async function waitForValue(locator, value) {
+  for (let i = 0; i < 150; i++) { if (await locator.inputValue().catch(() => "") === value) return; await pause(100); }
+}
 const followDate = () => page.getByLabel("Or pick a day", { exact: true });
 async function api(path, body) {
   return page.evaluate(async ({ path, body }) => {
@@ -76,18 +80,25 @@ try {
   ok("changing Stage preserves activity text and both follow-up fields", await note().inputValue() === "Keep this activity note while changing the stage."
     && await followNote().inputValue() === "Keep this follow-up note too." && await followDate().inputValue() === "2026-12-20");
 
-  page.once("dialog", (dialog) => dialog.dismiss());
+  /* The leave-page box comes a moment after the click (on the address
+     change), so wait for it to be answered and for the address to settle. */
+  const answered = new Promise((done) => page.once("dialog", (dialog) => dialog.dismiss().then(() => done(true), () => done(true))));
   await page.getByRole("link", { name: "Help", exact: true }).first().click();
-  ok("cancelling navigation keeps the customer's unsaved writing", page.url().endsWith(customerHash) && await note().inputValue() !== "");
+  const settled = await Promise.race([answered, pause(15000).then(() => false)])
+    && await page.waitForFunction((hash) => location.hash === hash, customerHash, { timeout: 15000 }).then(() => true, () => false);
+  ok("cancelling navigation keeps the customer's unsaved writing", settled && page.url().endsWith(customerHash) && await note().inputValue() !== "");
   page.once("dialog", (dialog) => dialog.accept());
   await page.getByRole("link", { name: "Help", exact: true }).first().click();
   await page.waitForURL(/#\/help$/);
   await page.getByRole("link", { name: "Customers", exact: true }).first().click();
   await page.evaluate((hash) => { location.hash = hash; }, customerHash);
+  await note().waitFor();
+  await waitForValue(note(), "Keep this activity note while changing the stage.");
   ok("returning from Help restores the customer draft", await note().inputValue() === "Keep this activity note while changing the stage."
     && await followNote().inputValue() === "Keep this follow-up note too.");
   page.once("dialog", (dialog) => dialog.accept());
   await page.reload();
+  await waitForValue(note(), "Keep this activity note while changing the stage.");
   ok("a tab refresh restores the customer draft", await note().inputValue() === "Keep this activity note while changing the stage.");
 
   let reloads = 0;

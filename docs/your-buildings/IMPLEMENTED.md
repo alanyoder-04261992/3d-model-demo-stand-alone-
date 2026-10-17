@@ -39,8 +39,11 @@ record; this file describes what was implemented.
 
 A price list without an owner layout still uses the builder's layout.
 Existing saved designs, quotes and orders keep their items and prices.
-Included items remain included after a customer moves them and changes
-size or porch. Server checks still reject invented included additions.
+Included items keep their "comes with the building" mark after a customer
+moves them and changes size or porch, but since Oct 17 2026 (Alan: "Yes,
+charge for them") only as many as the design's own size comes with are free;
+the rest are charged at their normal price, and nothing is refused for them
+(DIFFERENCES #30).
 
 Layout saves use the existing permission checks, version checks, Barnwright
 lock and History. Current Barnwright visit permissions are preserved:
@@ -97,6 +100,11 @@ Selected review captures are committed here:
 - [Phone Edit in dark mode](review/edit-390-dark.png)
 - [Phone porch selection above the save bar](review/layout-sheet-390-light.png)
 - [Phone reset choices with the 100 px app header](review/reset-layout-390-dark.png)
+- [Tablet building cards in dark mode](review/buildings-820-dark.png)
+- [Tablet Edit](review/edit-820-light.png) and [desktop Edit in dark mode, Stop selling readable](review/edit-1280-dark.png)
+- [How all your buildings are built, dark, desktop](review/built-1280-dark.png) and [phone](review/built-390-dark.png)
+- Saved result box: [phone](review/layout-result-390-light.png), [tablet dark](review/layout-result-820-dark.png), [desktop](review/layout-result-1280-light.png), [phone turned sideways](review/layout-result-844x390-light.png)
+- [Phone leave question with named buttons](review/layout-leave-390-light.png)
 
 Completed focused checks: Your Buildings **144**, Dealer Center **73**,
 layout server **60**, layout return **27**, public demo flow **15**,
@@ -108,8 +116,46 @@ check matches **521,769 triangles across 148 buildings**. The live reference
 model matches all **24,111 comparisons**, and all **24 finished pictures**
 match the recorded pixels.
 
-All **68 check programs** were covered by the full run and successful
-targeted reruns, with no remaining check failures. The first aggregate run
+**Correction (review after merge, c355440).** The sentence that used to
+stand here said there were no remaining check failures. That was not true
+on main: a full run of every check had 77 programs, 72 passing and
+5 failing. Three (golden-labels, model-live, shaders) fail because
+Barnwright's pinned `3ddesign.html` changed; they failed before this work
+too. The other two were new: the layout editor (a phone tap or a long press on a
+dashed porch post picked a different post) and the support check (it read the
+address before the leave-page box had been answered). Both are fixed on
+`lane/fix17-screens`. After those fixes the full run has **78 programs:
+75 pass and 3 fail**, and the 3 are only golden-labels, model-live and
+shaders, waiting on Barnwright's changed page.
+
+**Prices after the "comes with the building" rule (review 17, Oct 17
+2026).** The fix pull request first said that of 1,947 sample designs 1,835
+kept their price, 99 went up and 0 went down. A larger sample of 19,873
+designs made the way customers make them showed that was not the whole
+story: 20 Side Cabin and Loft Side Cabin designs went up only because the
+customer tapped the 8 ft porch, and 48 Cottage Shed and Metal Cottage
+designs went down. Alan then asked for a standard door or window the
+customer removes to come off the price ("Yes, take its price off"), always
+compared with the business's own standard layout. After the review fixes:
+
+- 19,873 designs: 18,525 the same, 254 up, 998 down, 96 refused before and
+  after (a door swap the price list does not sell). Every one that went up
+  went up by exactly the normal price of the included items above what its
+  own size comes with. Of those that went down, 950 had a standard door or
+  window removed, each down by exactly that item's price (1,178 removals
+  were checked; the other 228 removed a $0 item such as a porch post), and
+  48 are Cottage Shed and Metal Cottage 8x12 or 10x12 designs whose 48″
+  door was swapped for the 72″ double doors before picking 10x16 or
+  larger: those sizes come with the double doors, so the $150 swap is no
+  longer charged (kept on purpose, docs/FOR-ALAN.md).
+- The first 1,947 designs (none removes anything): 1,908 the same line for
+  line, 39 up (by $145 to $400, each the normal price of its extra items),
+  0 down, 13 refused as before. The other 60 that had gone up were 8 ft
+  porch designs, now free.
+- In both samples the 3D designer's total equals the server's for every
+  design.
+
+The record below is the original build's own account. The first aggregate run
 covered 65 programs and reported 55 passes and 10 failures. The three checks
 added during review (layout return, demo and conflict recovery) passed
 separately. Targeted reruns resolved all ten initial failures:

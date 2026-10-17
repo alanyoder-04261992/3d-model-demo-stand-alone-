@@ -3,7 +3,9 @@
    Run: node tools/check-quote.mjs
    A real browser sends the real quote form to two local origins. The small
    fixture installs only the quote plugin; WebGL and rendering are unused.
-   It proves that HTTP 503 in a foreign iframe, an HTML captcha/rejection,
+   It proves that a form service on another site whose page loads in the
+   hidden frame says "Quote request sent" (its page can never be read, so
+   nothing surer is possible; review 17 F4), while a same-site HTML answer,
    a timeout, and opening a tab or mail app never claim receipt. Observable
    JSON acknowledgements and failures are distinguished. Each request is
    sent once, and the contact details, design and direct-contact fallback
@@ -153,11 +155,23 @@ try {
     ok(name + ": contact details and design fallback survive", r.name === "Jane Doe" && r.tel && r.copy && /Name: Jane Doe/.test(r.summary) && /See it in 3D:.*#d=/.test(r.summary));
     ok(name + ": parent receives no false sent flag or customer details", r.events.length === 1 && r.events[0].sent === false && r.events[0].status === "unconfirmed" && !r.events[0].contact && !r.events[0].summary && !JSON.stringify(r.events).includes("Jane Doe"));
   }
-  const failed = await run("fail", { outside: true });
-  unconfirmed("cross-origin HTTP 503 is unconfirmed", failed);
+  /* A form service on another site (Formspree and the like): its page
+     loading in the hidden frame is the only answer a browser can see, so
+     the customer is told it was sent (review 17 F4). */
+  function sentToOtherSite(name, r) {
+    ok(name, r.last.status === "sent" && r.sent && /Quote request sent/.test(r.words) && /Thanks, Jane!/.test(r.words) && !/confirm your quote request/i.test(r.words));
+    ok(name + ": parent is told it was sent, without customer details", r.events.length === 1 && r.events[0].sent === true && r.events[0].status === "sent" && !JSON.stringify(r.events).includes("Jane Doe"));
+  }
+  const crossSite = await run("html", { outside: true });
+  sentToOtherSite("cross-origin form service page loading says Quote request sent", crossSite);
+  /* The trade-off, written down (waiting for Alan's yes): a browser cannot
+     read a page from another site, so when the form service is down
+     (HTTP 503) or shows an "are you human?" page, the customer ALSO sees
+     "Quote request sent". The fixture's HTML page above is such a
+     verification page; this is the service being down. */
+  sentToOtherSite("known trade-off: a cross-origin HTTP 503 (form service down) also says Quote request sent", await run("fail", { outside: true }));
+  ok("cross-origin HTTP 503 sends once", requests.length === 1);
   ok("cross-origin form preserves its URL-encoded fields and sends once", requests.length === 1 && /application\/x-www-form-urlencoded/.test(requests[0].contentType) && requests[0].fields.name === "Jane Doe" && requests[0].fields.email === "jane@example.com" && requests[0].fields.note === "Gate is 10 ft wide." && requests[0].fields.link.includes("#d="));
-  unconfirmed("cross-origin HTTP 200 HTML is unconfirmed", await run("html", { outside: true }));
-  ok("cross-origin HTTP 200 sends once", requests.length === 1);
   unconfirmed("same-origin HTTP 200 HTML is unconfirmed", await run("html"));
   unconfirmed("JSON without acknowledgement is unconfirmed", await run("empty"));
   for (const kind of ["ok", "success"]) {

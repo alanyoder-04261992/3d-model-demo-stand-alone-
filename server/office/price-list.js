@@ -674,31 +674,116 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
   /* The resolved catalogue for pricing (cached per version). */
   let cached = null;
   const olderCatalogues = new Map();
+  /* the History copy's own settings, for a lot's 3D designer opening an
+     older design (website.js publicLot) */
+  const olderSettings = new WeakMap();
+  /* Which History copy holds each older cfg, learnt as copies are read.
+     History copies never change, so each is read at most once per running
+     server: the copies read so far are always the newest ones (from hi down
+     to lo), a later save only adds newer ones, and when every copy has been
+     read an unknown cfg costs nothing (review 17 P3/CS-3: anyone sending an
+     older cfg on the public quote form made the server read the whole
+     History again). */
+  const pastCfgs = { byCfg: new Map(), hi: null, lo: null, all: false, version: null, names: [] };
+  function learn(key, entry) {
+    const cfg = entry?.settings?.cfg;
+    if (!Number.isSafeInteger(cfg) || (cached && entry.settings.id !== cached.cat.id)) return;
+    /* every copy with this cfg, newest first, so an unreadable newest copy
+       falls back to the next older one as the old lookup did */
+    const keys = pastCfgs.byCfg.get(cfg) || [];
+    if (!keys.includes(key)) { keys.push(key); keys.sort().reverse(); }
+    pastCfgs.byCfg.set(cfg, keys);
+  }
+  async function readHistory(keys) {
+    for (let i = 0; i < keys.length; i += 16) {
+      const batch = keys.slice(i, i + 16);
+      const entries = await Promise.all(batch.map((key) => store.get(key)));
+      entries.forEach((entry, j) => learn(batch[j], entry));
+    }
+  }
+  /* The History copies with this cfg, newest first: at least `need` of
+     them, or every one there is. */
+  async function historyKeysFor(cfg, version, need = 1) {
+    if (pastCfgs.version !== version) {
+      pastCfgs.names = (await store.keys("price-list-history/")).sort().reverse();
+      pastCfgs.version = version;
+    }
+    const names = pastCfgs.names;
+    const found = () => (pastCfgs.byCfg.get(cfg) || []).length >= need;
+    if (pastCfgs.hi === null) {
+      /* nothing read yet: newest first, stopping once enough are found */
+      for (let i = 0; i < names.length && !found(); i += 16) {
+        await readHistory(names.slice(i, i + 16));
+        pastCfgs.hi = names[0]; pastCfgs.lo = names[Math.min(i + 15, names.length - 1)];
+      }
+      if (pastCfgs.lo === names[names.length - 1]) pastCfgs.all = true;
+      return pastCfgs.byCfg.get(cfg) || [];
+    }
+    /* copies saved since: read them all, so the copies read stay the newest */
+    const newer = names.filter((key) => key > pastCfgs.hi);
+    if (newer.length) { await readHistory(newer); pastCfgs.hi = names[0]; }
+    if (found() || pastCfgs.all) return pastCfgs.byCfg.get(cfg) || [];
+    const older = names.filter((key) => key < pastCfgs.lo);
+    for (let i = 0; i < older.length && !found(); i += 16) {
+      await readHistory(older.slice(i, i + 16));
+      pastCfgs.lo = older[Math.min(i + 15, older.length - 1)];
+    }
+    if (!older.length || pastCfgs.lo === older[older.length - 1]) pastCfgs.all = true;
+    return pastCfgs.byCfg.get(cfg) || [];
+  }
   async function catalogue({ cfg = null, company = null } = {}) {
     const record = await get();
-    if (cached?.version !== record.version) cached = { version: record.version, cat: resolve(record.settings, manufacturer, library), record };
+    if (cached?.version !== record.version) {
+      cached = { version: record.version, cat: resolve(record.settings, manufacturer, library), record };
+      /* the older copies are today's price list with older layouts: made again from the new one */
+      olderCatalogues.clear();
+    }
     if (!Number.isSafeInteger(cfg) || cfg < 1 || cfg >= cached.cat.cfg || (company !== null && company !== cached.cat.id)) return cached;
     /* An older saved design keeps what its own price list included. The
        browser's cfg only asks for a record: the allowance always comes
        from a copy the server itself kept, never from browser item flags.
-       Read in batches for older businesses, and cache an immutable cfg. */
+       The newest History copy with that cfg that resolves is used, and an
+       immutable cfg is cached. */
     let includedCat = olderCatalogues.get(cfg);
     if (!includedCat) {
-      const names = (await store.keys("price-list-history/")).sort().reverse();
-      for (let i = 0; i < names.length && !includedCat; i += 16) {
-        const entries = await Promise.all(names.slice(i, i + 16).map((key) => store.get(key)));
-        for (const entry of entries) {
-          if (entry?.settings?.cfg !== cfg || entry.settings.id !== cached.cat.id) continue;
-          try { includedCat = resolve(entry.settings, manufacturer, library); } catch { /* an unreadable older copy gives no allowance */ }
-          if (includedCat) {
-            olderCatalogues.set(cfg, includedCat);
-            if (olderCatalogues.size > 16) olderCatalogues.delete(olderCatalogues.keys().next().value);
-            break;
-          }
-        }
+      /* newest first; a copy that no longer resolves is passed over for
+         the next older one with the same cfg */
+      for (let tried = 0; !includedCat; tried++) {
+        const keys = await historyKeysFor(cfg, record.version, tried + 1);
+        if (tried >= keys.length) break;
+        const entry = await store.get(keys[tried]);
+        if (entry?.settings?.cfg !== cfg || entry.settings.id !== cached.cat.id) continue;
+        try {
+          const settings = olderLayouts(record.settings, entry.settings, cfg);
+          includedCat = resolve(settings, manufacturer, library);
+          olderSettings.set(includedCat, settings);
+        } catch { /* an unreadable older copy gives no allowance */ }
+      }
+      if (includedCat) {
+        olderCatalogues.set(cfg, includedCat);
+        if (olderCatalogues.size > 16) olderCatalogues.delete(olderCatalogues.keys().next().value);
       }
     }
-    return includedCat ? { ...cached, includedCat } : cached;
+    return includedCat ? { ...cached, includedCat, includedSettings: olderSettings.get(includedCat) } : cached;
+  }
+
+  /* AN OLDER PRICE LIST, AS FAR AS A DESIGN'S STANDARD GOES (review 17
+     final SHOULD-3): today's price list with each building's standard
+     layout as that older version had it, and that version's number.
+     Everything else (prices, brand, notes, quote settings, drafts' other
+     changes) stays today's, so the 3D designer, which is sent this copy
+     (website.js publicLot), learns nothing new but the old layouts, and
+     the server prices with exactly the copy the designer has. */
+  function olderLayouts(today, old, cfg) {
+    const out = structuredClone(today);
+    out.cfg = cfg;
+    for (const style of Object.keys(out.offer || {})) {
+      const was = old.offer && Object.prototype.hasOwnProperty.call(old.offer, style) ? old.offer[style] : null;
+      if (!was) continue;
+      if (was.layout !== undefined) out.offer[style].layout = structuredClone(was.layout);
+      else delete out.offer[style].layout;
+    }
+    return out;
   }
 
   function layoutStyle(record, style) {

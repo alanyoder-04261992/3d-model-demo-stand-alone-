@@ -220,12 +220,16 @@ at once.
   sheet, customer quote card and original 3D view use that copy, including
   when the lot or public designer is now closed. Owner History copies
   contain settings without their original manufacturer/library definitions;
-  those cannot prove an older quote's item labels or construction. An old
-  quote without a trusted snapshot keeps its saved building name and price
-  lines, with an original-details-unavailable explanation. When an original
-  copy is unavailable, its saved building name and price lines still show,
-  with a plain explanation; current item labels, pictures and fine print
-  are never silently substituted.
+  those cannot prove an older quote's item labels or construction. A quote
+  or order saved before quotes kept this copy (no snapshot, before Oct 13
+  2026) prints as every sheet did then: its own building name and price
+  lines, with the door and window names, picture and fine print from
+  today's price list, and "See it in 3D" opens the lot's 3D designer with
+  its saved design; a line on the screen (never printed) says the names and
+  fine print are today's. When a quote that has a snapshot cannot find its
+  copy, its saved building name and price lines still show, with a plain
+  explanation on the screen only; current item labels, pictures and fine
+  print are never silently substituted for it.
   Historical viewer cards say “Original quote total” and keep their original
   saved state, with “Back to customer” for further work. The ordinary public
   shared designer keeps its current-price wording and editable copy flow.
@@ -529,7 +533,7 @@ Public routes (no sign-in):
 
 | Route | Does |
 |---|---|
-| `GET /api/lots/:slug` | `{company, lot, version}` for the lot's 3D designer; 404 when the lot is closed or the business is not open yet |
+| `GET /api/lots/:slug` | `{company, lot, version}` for the lot's 3D designer; 404 when the lot is closed or the business is not open yet. With `?cfg=<n>` (a design link's older price list version) it also has `included: {cfg, company}`: today's price list with that version's standard layouts, taken from the server's own History copy when it kept one (never the older prices or settings), so the designer prices the link the way the server will |
 | `GET /d/:slug/` | the lot's 3D designer page; when closed, a short "Our 3D designer isn't open right now" page that says who to call — the lot's phone when the owner closed the whole designer, the business's phone when only that lot is closed (`pages.js` `closedPage`) |
 | `POST /api/lots/:slug/quote-requests` | `{design, contact, idempotencyKey}` → `{id, number, total, price, receivedAt, repriced}` (201; the same send again → the same receipt, 200) |
 | `POST /.netlify/functions/tenant-diagnostics` | Barnwright's support check (control room only, with a support pass, while the owner has help turned on) |
@@ -2371,7 +2375,16 @@ exactly as they were, and nothing here sends email.
 * **Prices come from the server.** Every quote is checked and priced by
   `server/office/pricing.js` from the stored price list. A browser total, a
   forged lot or company, or "included" flags that would make an extra free
-  change nothing.
+  change nothing: an item marked included is free only up to how many the
+  design's own size comes with (at any of its porch lengths) in the
+  business's own standard layout, and the rest is charged at its normal
+  price, never refused; a standard door or window the customer took off
+  (the design's `removed` list, credited only while that standard has one
+  that is not on the building) comes off the price (Alan, Oct 17 2026;
+  `model/pricing.js chargedIncluded` and `removedCredits`). A charged item is saved as an added
+  one, so the quote and order sheet list it under Added. A saved quote or
+  order keeps the total it was saved with; the rule counts when a design is
+  priced again.
 * **Sign-in is Netlify Identity.** Only a confirmed email counts. Roles live
   in `people/<userId>`, never in anything the browser can edit. The
   password goes only to Identity. The sign-in is kept by the server, in a

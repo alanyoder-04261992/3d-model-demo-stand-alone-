@@ -54,7 +54,7 @@
 import { frameOf } from "../model/frame.js";
 import { resetItems, clampPos, pkFixtures, freeSpot, itemById, fitsOnWall } from "../model/layout.js";
 import { setType as modelSetType, setSize as modelSetSize, flipPorch as modelFlipPorch, followStandardDoor } from "../model/design.js";
-import { pPrice } from "../model/pricing.js";
+import { pPrice, chargedIncluded, includedAllowance, removedCredits, itemCharge } from "../model/pricing.js";
 import { wallPt } from "../engine/wall.js";
 
 function has(o, k) { return o != null && Object.prototype.hasOwnProperty.call(o, k); }
@@ -186,11 +186,80 @@ export function chooseSize(state, sz, cat) {
   return { relaid: true };
 }
 
-/* "4 x 8 porch" / "4 x 12 porch" (Barnwright 5160): the items are kept and
-   moved clear of the new porch. */
+/* ONE PLAIN LINE when items marked "comes with the building" are charged
+   because this size comes with fewer (model/pricing.js chargedIncluded;
+   Alan, Oct 17 2026, "Yes, charge for them"), said the same way whatever
+   the customer changed (review 17 FREE-6):
+   "An 8×12 comes with 1 window, so 2 of your windows are charged."
+   and for an item kept in place of one this size comes with, only the
+   difference is charged:
+   "A 10×12 comes with the 48″ Wooden Door, so only the difference is
+   charged for your 72″ Wooden Double Doors."
+   "" when nothing is. Shown near the price (ui/panels.js). */
+const KIND_WORDS = { win: ["window", "windows"], door: ["door", "doors"], ru: ["door", "doors"], post: ["porch post", "porch posts"] };
+function aSize(size) {
+  const z = String(size).replace("x", "×"), n = parseInt(z, 10);
+  return (n === 8 || n === 11 || n === 18 || (n >= 80 && n < 90) ? "An " : "A ") + z;
+}
+function listWords(parts) { return parts.length > 1 ? parts.slice(0, -1).join(", ") + " and " + parts[parts.length - 1] : parts[0]; }
+export function chargedNote(state, cat, fr) {
+  let charged, allowance;
+  try {
+    fr = fr || frame(state, cat);
+    allowance = includedAllowance(state, cat, fr, cat.olderIncluded);
+    charged = chargedIncluded(state, cat, fr, allowance);
+  } catch (e) { return ""; }
+  const full = new Map(), standIn = [];
+  const wordsOf = (key) => { const c = cat.CAT[key]; return (c && KIND_WORDS[c.k]) || ["item", "items"]; };
+  for (const [it, as] of charged) {
+    if (!(itemCharge(it, state, cat, fr, charged) > 0)) continue;
+    if (as != null) { standIn.push([it, as]); continue; }
+    const w = wordsOf(it.cat), was = full.get(w[0]) || { w, n: 0, keys: new Set() };
+    was.n++; was.keys.add(it.origCat || it.cat);
+    full.set(w[0], was);
+  }
+  const said = [];
+  if (full.size) {
+    /* how many of those same items this size comes with (a faux loft
+       window is not counted as one of the 2×3 windows) */
+    const comes = new Map([...full].map(([k, x]) => [k, [...x.keys].reduce((sum, key) => sum + (allowance.get(key) || 0), 0)]));
+    const has = listWords([...full].map(([k, x]) => { const n = comes.get(k); return (n ? n : "no") + " " + (n === 1 ? x.w[0] : x.w[1]); }));
+    const yours = listWords([...full.values()].map((x) => x.n + " of your " + x.w[1]));
+    const n = [...full.values()].reduce((sum, x) => sum + x.n, 0);
+    said.push(aSize(state.size) + " comes with " + has + ", so " + yours + (n === 1 ? " is" : " are") + " charged.");
+  }
+  for (const [it, as] of standIn) {
+    said.push(aSize(state.size) + " comes with the " + cat.CAT[as].n + ", so only the difference is charged for your " + cat.CAT[it.cat].n + ".");
+  }
+  /* a standard door or window taken off: its price comes off */
+  let credits = [];
+  try { credits = removedCredits(state, cat, fr, allowance); } catch (e) { credits = []; }
+  if (credits.length) {
+    const off = new Map();
+    for (const [key] of credits) { const w = wordsOf(key); off.set(w[0], { w, n: ((off.get(w[0]) || {}).n || 0) + 1 }); }
+    const n = credits.length;
+    said.push("The " + listWords([...off.values()].map((x) => (x.n === 1 ? "" : x.n + " ") + (x.n === 1 ? x.w[0] : x.w[1]))) + " you took off " + (n === 1 ? "comes" : "come") + " off the price.");
+  }
+  return said.join(" ");
+}
+
+/* "4 x 8 porch" / "4 x 12 porch" (Barnwright 5160). While the doors and
+   windows are still the standard ones (isStandardLayout), they are laid
+   out again for the new porch, then the package fixtures, the same way a
+   size chip does (DIFFERENCES #12; review 17 FREE-1: keeping the 12 ft
+   porch's layout on an 8 ft porch looked like a change the customer made).
+   Once the customer has changed any of them, they are kept and moved clear
+   of the new porch, as Barnwright does. */
 export function choosePorchLength(state, len, cat) {
+  const untouched = isStandardLayout(state, cat);
   state.pLen = +len;
   const fr = frame(state, cat);
+  if (untouched) {
+    resetItems(state, fr, cat);
+    if (state.elec && state.elec.pkg > 0) pkFixtures(state, fr, cat);
+    state.sel = null;
+    return state;
+  }
   state.items.forEach((it) => clampPos(it, state, fr));
   return state;
 }
@@ -270,8 +339,17 @@ export function addAt(state, catId, spot, cat) {
 /* ------------------------------------------------------------------------
    The selection sheet */
 
+/* Remove. A door or window that came with the building is noted
+   (state.removed), so its price comes off while this size comes with it
+   (model/pricing.js removedCredits; Alan, Oct 17 2026: "Yes, take its
+   price off"). Laying the doors and windows out again clears the note. */
 export function removeItem(state, id) {
-  for (let i = 0; i < state.items.length; i++) if (state.items[i].id === id) { state.items.splice(i, 1); break; }
+  for (let i = 0; i < state.items.length; i++) if (state.items[i].id === id) {
+    const it = state.items[i];
+    if (it.inc && !it.pk) state.removed = (Array.isArray(state.removed) ? state.removed : []).concat([it.origCat || it.cat]).slice(-100);
+    state.items.splice(i, 1);
+    break;
+  }
   if (state.sel === id) state.sel = null;
   return state;
 }

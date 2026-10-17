@@ -437,4 +437,6 @@ table.table { width: 100%; border-collapse: collapse; font-size: 15px; }
   }
   .main .btn-ghost:hover { border-color: var(--gold-bright); }
   .main .confirm { background: var(--card); }
+  /* Dark words on the light red, so Stop selling reads at night. */
+  .btn-danger { color: #3A0D0A; }
 }

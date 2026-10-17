@@ -32,9 +32,9 @@
       answer, the city, the answer about what they want to do, the
       rent-to-own term they looked at, the building, the total, the summary
       and a link that opens THIS design (same style, size and price,
-      look-only); an unobservable cross-origin response asks the customer to
-      confirm receipt and keeps the "reach us directly" box. A form service
-      that never answers shows that same box after the time limit.
+      look-only); the page says it was sent once the service's page loads.
+      A form service that never answers asks the customer to confirm receipt
+      and shows the "reach us directly" box after the time limit.
    4. WEBHOOK: the post arrives as text/plain with no preflight, carrying
       {design, contact, summary, link, priceComputedBy: "browser"}; no
       pictures unless the company asked for them (leads.images); with them,
@@ -351,7 +351,7 @@ try {
     try { d = await linkDesign(f.link || ""); } catch (e) { d = { error: e.message }; }
     ok("the link opens THIS design, look-only (&view=1), on this designer", /^http:\/\/127\.0\.0\.1:8354\/\?company=leadform#d=/.test(f.link || "") && /&view=1$/.test(f.link || "") && d && d.type === onPage.state.type && d.size === onPage.state.size && d.items.length === onPage.state.items.length, J({ link: (f.link || "").slice(0, 80), d: d && { type: d.type, size: d.size, n: d.items && d.items.length } }));
     ok("the link remembers the price the customer saw (the look-only page compares it with today's)", d && d.priced && Math.abs(d.priced.total - onPage.total) < 0.005 && /^\d{4}-\d{2}-\d{2}$/.test(d.priced.at), J(d && d.priced));
-    ok("a cross-origin form reply asks the customer to confirm receipt, with the phone and design link, without claiming it was sent", sent.status === "unconfirmed" && /confirm your quote request/.test(onPage.result) && !onPage.sent && onPage.copy && onPage.tel, J({ sent, words: onPage.result }));
+    ok("the page says it was sent, thanking them by first name", sent.status === "sent" && onPage.sent && /Quote request sent/.test(onPage.result) && /Thanks, Jane!/.test(onPage.result) && !/confirm your quote request/i.test(onPage.result), J({ sent, words: onPage.result }));
     await shot(page, "leads-sent.png");
     ok("no console errors", realNoise(noise).length === 0, J(realNoise(noise)));
     await ctx.close();

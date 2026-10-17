@@ -43,7 +43,13 @@ export function createWebsite({ store, now, lots, priceList, customers, account 
     throw error;
   }
 
-  async function publicLot(slug) {
+  /* olderCfg: the price list version (cfg) of a design link the designer
+     is opening. When it is older and the server kept that version (its
+     History copy, server/office/price-list.js), the answer also carries
+     it as included: {cfg, company}, so the designer prices the design with
+     what that version came with, exactly as the server will
+     (model/pricing.js includedAllowance). Anything else is left out. */
+  async function publicLot(slug, { olderCfg = null } = {}) {
     const lot = await lots.get(slug);
     const record = lot ? await priceList.current() : null;
     const brand = record?.data.settings.brand || {};
@@ -52,7 +58,15 @@ export function createWebsite({ store, now, lots, priceList, customers, account 
     if (!record || record.data.settings.status === "suspended") closed(brand.name || lot.name, lot.phone || brand.phone);
     /* the business's Barnwright account stopped changes: a quote is a change, so the link closes the same way */
     if (account && !(await account.designerOpen())) closed(brand.name || lot.name, lot.phone || brand.phone);
-    return { company: record.data.settings, lot: publicLotFields(lot), version: record.data.version };
+    const out = { company: record.data.settings, lot: publicLotFields(lot), version: record.data.version };
+    const cfg = Number(olderCfg);
+    if (Number.isSafeInteger(cfg) && cfg >= 1 && cfg < record.data.settings.cfg) {
+      try {
+        const { includedCat, includedSettings } = await priceList.catalogue({ cfg, company: record.data.settings.id });
+        if (includedCat && includedSettings && includedCat.cfg === cfg) out.included = { cfg, company: includedSettings };
+      } catch (e) { log("An older price list could not be read for a design link:", e); }
+    }
+    return out;
   }
 
   async function previewLot(slug) {
