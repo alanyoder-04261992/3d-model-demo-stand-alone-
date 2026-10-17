@@ -75,8 +75,12 @@ finished designer retains the golden geometry.
     onto the new walls, as Barnwright does (one exception on the shop
     standard: the door of the Side Utility, Dormer Shed and Side Lofted
     Barn follows the size, #27). The kept items keep their "comes with the
-    building" marks, but only as many as the new size and porch come with
-    are free; the rest are charged (#30).
+    building" marks, but only as many as the new size comes with are free;
+    the rest are charged (#30). The side porch's length chip (4 × 8, 4 × 12)
+    works the same way: an untouched layout is laid out again for the new
+    porch (Barnwright kept the 12 ft porch's items on the 8 ft porch, which
+    then looked like a change the customer made); a changed one is kept and
+    moved clear of the porch, as Barnwright does.
 
 ## Standalone product
 
@@ -381,26 +385,55 @@ finished designer retains the golden geometry.
     or standard opening layout changed. `check-opening-prices` and
     `check-designer-controls` cover prices/input; `check-quote` covers responses.
 
-30. **"Comes with the building" covers only the building's own size and
-    porch** (Alan, Oct 17 2026: "Yes, charge for them"; review 17 CS-1).
+30. **"Comes with the building" covers only the building's own size, and
+    a standard item taken off comes off the price**
+    (Alan, Oct 17 2026: "Yes, charge for them"; review 17 CS-1 and FREE).
     Barnwright priced every item marked included at $0, and after PR #45
     the server allowed as many as the style came with at any size, so a
     customer (or an edited link) could lay out a 12x32 Cabin, move a door,
     pick 8x12 and keep all the 12x32's windows free. Now an item marked
-    included is free only up to how many of it the design's own size and
-    porch come with (`model/pricing.js chargedIncluded`, used by the
-    designer's `priceParts` and by `server/office/pricing.js`, so the
-    designer shows the total the server charges); the rest are charged at
-    their normal price, never refused. When there are more than that, the
-    ones that would cost the most stay free. A kept item standing in for
-    one this size comes with that is not on the building is priced as that
-    swap would be (the difference, never a refund), and the shop
-    standard's door pair (#27) counts as either door. The designer says it
-    in one line under the price ("2 windows that came with the 12×32 are
-    now charged on the 8×12."). Saved quotes and orders keep their stored
-    total; a saved quote opened from the Dealer Center shows the price it
-    was saved with (`server/office/customers.js quoteView`, `ui/panels.js
-    savedPriceOf`). The server may use a design's older History copy's
-    counts when that costs less. Checked by `tools/check-included-own-size.mjs`
-    (routes and stored totals), `tools/check-layout-server.mjs` and the
-    browser check `tools/check-included-resize.mjs`.
+    included is free only up to how many of it the design's own size comes
+    with, at any of its side-porch lengths, since the porch length is a free
+    choice at the same price (`model/pricing.js includedCounts` and
+    `chargedIncluded`, used by the designer's `priceParts` and by
+    `server/office/pricing.js`, so the designer shows the total the server
+    charges); the rest are charged at their normal price, never refused.
+    When there are more than that, the ones that would cost the most stay
+    free. A kept item standing in for one this size comes with that is not
+    on the building is priced as that swap would be (the difference, never
+    a refund) and its quote line says so ("72″ Wooden Double Doors, in place
+    of the 48″ Wooden Door"); the shop standard's door pair (#27) counts as
+    either door. The designer says it in one line under the price ("An 8×12
+    comes with 1 window, so 2 of your windows are charged."; for a kept door,
+    only the difference is charged). The server saves a charged item as an
+    added one and a stand-in as a swap from the item it stands in for, so
+    the quote and order sheet list them under Added and by name; the base
+    line reads "base price, with the doors and windows this size comes
+    with". Saved quotes and orders keep their stored total; a saved quote
+    opened from the Dealer Center shows the price it was saved with and its
+    rows say "included" (`server/office/customers.js quoteView`,
+    `ui/panels.js savedPriceOf` and `chargedForRows`). A design made under
+    an older price list is compared with that list's own standard (the
+    server's History copy, Alan Oct 17 2026); the lot sends the designer
+    the same copy for such a link (`GET /api/lots/:slug?cfg=`, `ui/load.js
+    withOlderList`, `model/pricing.js includedAllowance`), and the design
+    the page sends keeps that version, so the page and the server agree.
+    **Removals come off** (Alan, Oct 17 2026: "Yes, take its price off";
+    Barnwright never took anything off). A standard door or window the
+    customer removes on the sheet is noted (`state.removed`, saved as the
+    design's `removed`) and its normal price comes off as a quote line
+    ("2×3 Window, taken off", key `removed.<item>`), while the size, in
+    the business's own standard, comes with one that is not on the
+    building; laying the layout out again clears the note. So a smaller
+    size's kept layout on a bigger size is never credited for doors and
+    windows it never had. "Standard" is always the business's own layout
+    (`offer[K].layout` from Set the standard layout, else its price list's
+    style), never the library's. One deliberate decrease: a Cottage Shed or Metal Cottage
+    8x12 or 10x12 whose 48″ door was swapped for the 72″ double doors, then
+    made 10x16 or larger, no longer pays the $150 swap, because those sizes
+    come with the double doors. Checked by
+    `tools/check-included-own-size.mjs` (routes, porch lengths, older
+    designs, what is saved), `tools/check-layout-server.mjs` and the browser
+    checks `tools/check-included-resize.mjs` and
+    `tools/check-included-saved.mjs` (older links, the printed quote, saved
+    quotes on a phone).
