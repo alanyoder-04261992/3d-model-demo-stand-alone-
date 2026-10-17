@@ -130,12 +130,6 @@ export function resetItems(state, frame, cat) {
   state.items = standardItems(fr.t, d.W, d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws, frame: fr }, state.type);
   state.sel = null;
   state.seq = state.items.length;
-  /* The size and porch these included doors and windows came with. A later
-     size or porch-length change keeps the items (ui/state.js chooseSize,
-     choosePorchLength), so the saved design names this as orig and the
-     server allows the included items of that size and porch as well as the
-     current one's (server/office/pricing.js), never any other size's. */
-  state.laidFor = { size: state.size, pLen: +state.pLen, pMid: !!state.pMid, pFlip: !!state.pFlip };
   /* Owner recipes already settled their untouched builder items before fit
      decisions. A second push-apart pass would undo those decisions. */
   if (fr.t.builderLoadout === undefined) state.items.forEach(function (it) { clampPos(it, state, fr); });

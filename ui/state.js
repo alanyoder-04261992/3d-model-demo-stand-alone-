@@ -53,7 +53,7 @@
 
 import { frameOf } from "../model/frame.js";
 import { resetItems, clampPos, pkFixtures, freeSpot, itemById, fitsOnWall } from "../model/layout.js";
-import { setType as modelSetType, setSize as modelSetSize, flipPorch as modelFlipPorch, followStandardDoor, keepLaidFor } from "../model/design.js";
+import { setType as modelSetType, setSize as modelSetSize, flipPorch as modelFlipPorch, followStandardDoor } from "../model/design.js";
 import { pPrice } from "../model/pricing.js";
 import { wallPt } from "../engine/wall.js";
 
@@ -189,7 +189,6 @@ export function chooseSize(state, sz, cat) {
 /* "4 x 8 porch" / "4 x 12 porch" (Barnwright 5160): the items are kept and
    moved clear of the new porch. */
 export function choosePorchLength(state, len, cat) {
-  keepLaidFor(state);
   state.pLen = +len;
   const fr = frame(state, cat);
   state.items.forEach((it) => clampPos(it, state, fr));

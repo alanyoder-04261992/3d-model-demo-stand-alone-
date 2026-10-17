@@ -701,21 +701,13 @@ the swap, and nothing else moved.
 
 **`state`** — the live, mutable, Barnwright-shaped object the UI owns:
 hex `body trim roof doorC shutC`; `items[]` with `id cat wall pos vy px pz rot
-ln inc pk dbl shut lite origCat`; `sel seq dormer pLen pFlip pMid opts elec ramp xopt
-laidFor` (`laidFor`: the size and porch the doors and windows were laid out
-for, set by `resetItems`, kept when a size or porch-length change keeps the
-items).
+ln inc pk dbl shut lite origCat`; `sel seq dormer pLen pFlip pMid opts elec ramp xopt`.
 Only `model/layout.js`, `model/design.js` and the UI mutate it. Layout functions
 read siblings from the live `state.items` (clamping order matters).
 
 **`design`** — the saved/shared form: `{ v:1, company, cfg, type, size,
 colors by NAME, items with Barnwright's field names (defaults left out), dormer,
-porch, opts, elec, ramp, xopt, priced?: {total, at}, orig?: {size, pLen, pMid,
-pFlip} }`. `orig` is written only when the customer changed the size or
-porch length after the doors and windows were laid out: it names the size
-and porch the included items came with. The server allows the included
-items of the design's own size and porch and of `orig`, never another
-size's (`server/office/pricing.js`).
+porch, opts, elec, ramp, xopt, priced?: {total, at} }`.
 `toState(design, cat, opts)` applies size → type → size (Barnwright `applyDesign`)
 and restores colours by name; anything that no longer exists (renamed or
 dropped item, size no longer sold) is reported, never silently dropped. An
