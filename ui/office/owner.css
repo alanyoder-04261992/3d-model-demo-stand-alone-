@@ -885,6 +885,9 @@ body.set-bar-on .toasts { bottom: 96px; }
   .pl-preview-head, .pl-preview-nums strong, .pl-sheet-title { color: var(--ink); }
   .pl-card-name, .pl-page-title { color: var(--ink); }
   .pl-saved-mark { background: #2E7D32; }
+  /* Chips follow the dark cards: light words on a dark pill. */
+  .pl-built-chip { background: var(--card); }
+  .pl-built-chip.std[aria-pressed=true] { color: var(--ink); }
 }
 
 /* A layout reset keeps both choices above the save bar, with room for a
