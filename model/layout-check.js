@@ -138,7 +138,7 @@ export function checkLayout(layout, cat, key, options = {}) {
         }
         const posts = evaluated.filter((it) => frame.CAT[it.cat].k === "post");
         for (let a = 0; a < posts.length; a++) for (let b = a + 1; b < posts.length; b++) {
-          if (posts[a].wall !== posts[b].wall || Math.abs(posts[a].pos - posts[b].pos) >= (itemW(posts[a], frame.CAT) + itemW(posts[b], frame.CAT)) / 2 - 1e-9) continue;
+          if (posts[a].wall !== posts[b].wall || Math.abs(posts[a].pos - posts[b].pos) >= (itemW(posts[a], frame.CAT, frame) + itemW(posts[b], frame.CAT, frame)) / 2 - 1e-9) continue;
           const held = check.held.some((h) => h.entryIndex === posts[a].entryIndex || h.entryIndex === posts[b].entryIndex);
           const event = { kind: "posts", size, variant, frame, item: posts[a], entryIndex: posts[a].entryIndex, otherEntryIndex: posts[b].entryIndex, wall: posts[a].wall, cat: posts[a].cat, held };
           events.push(event); check.warnings.push(event);

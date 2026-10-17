@@ -30,9 +30,9 @@ double doors (the "72", opening 76 in). The opening is 71 1/2 in tall on loft
   (0.16 ft left of centre on a pair).
 * A single door hinges on the LEFT (handle on the right); on a pair each leaf
   hinges on its outer edge.
-* Round it, the shared trim: side casings stopping just under the head, the
-  22.5-degree head board, and on a porch building the header band (see
-  `part-openings`).
+* Round it, the shared trim: 3 1/2 in side casings meeting one 22.5-degree
+  head board in the shop standard. The recorded Barnwright drawing keeps
+  its door reveal and extra porch opening band (see `part-openings`).
 
 ## Stage
 
@@ -165,3 +165,19 @@ And the trim round it (shared, `common.js`; full text in `part-openings`):
 * `node tools/check-model-live.mjs` -- the opening rectangle (`openingRect`)
   against the trim Barnwright's live page draws.
 * `node tools/check-parts.mjs`, `node tools/check-imports.mjs`.
+
+## Shop opening trim — October 12, 2026
+
+The standard manufacturer uses actual 3 1/2-inch trim with
+`construction.openings.trim.widthIn: 3.5`, `headJoint: "continuous"` and
+`porchBand: false`. Alan's cabin correction removes the extra stacked
+opening band on all walls of the six cabin styles listed in `part-openings`.
+Each door or wall window keeps one tapered head matching ordinary windows
+and rectangular 18x24 loft-window trim. Porch perimeter and beam trim stay
+as drawn. Decorative faux loft rectangles and octagonal frames keep their design.
+
+Shared measurements in `model/opening-trim.js` keep geometry, paired windows,
+layouts and tap bounds together. The legacy Barnwright catalogue retains
+its original door reveal and extra porch opening band. Check emitted boards
+and single heads with `node tools/check-opening-trim.mjs`, and legacy geometry
+with `node tools/check-golden.mjs`.

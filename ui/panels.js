@@ -33,9 +33,17 @@
 
 import { esc } from "./esc.js";
 import * as S from "./state.js";
-import { money, pPrice, pSizes, minPrice, priceParts, itemCharge, rateCharges, optxList, optxQty, optxOn, optxCharge, optxChargeIfOn, rtoTerms, rtoMonthly, RTO_NOTE } from "../model/pricing.js";
+import { money, pPrice, pSizes, minPrice, priceParts, itemCharge, chargedIncluded, rateCharges, optxList, optxQty, optxOn, optxCharge, optxChargeIfOn, rtoTerms, rtoMonthly, RTO_NOTE } from "../model/pricing.js";
 import { colorName, sidingPalette } from "../model/company.js";
 import { porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, SIDE_WALL_MIN_FT } from "../model/frame.js";
+
+/* The price a saved quote was saved with, when the Dealer Center opened
+   it as it was saved (ui/load.js, managed.historical): {base, lines, total}
+   or null. */
+export function savedPriceOf(cat) {
+  const m = cat && cat.managed, p = m && m.historical === true ? m.savedPrice : null;
+  return p && typeof p.total === "number" && isFinite(p.total) && Array.isArray(p.lines) ? p : null;
+}
 
 /* feet on a chip: "4", "4' 6\"" -- the chips have always said "4 × 8" */
 function feetWords(ft) {
@@ -85,11 +93,13 @@ export function createPanels(ctx) {
   const showMoney = () => cat.pricing.show !== "none";
   const M = (n) => money(n);
 
-  function chip(on, html, onClick, disabled) {
+  function chip(on, html, onClick, disabled, key) {
     const b = document.createElement("button");
     b.type = "button";
     b.className = "chip" + (on ? " on" : "");
     b.innerHTML = html;
+    b.setAttribute("aria-pressed", String(on));
+    b.setAttribute("data-focus-key", String(key));
     if (disabled) b.disabled = true;
     b.onclick = onClick;
     return b;
@@ -110,6 +120,8 @@ export function createPanels(ctx) {
       b.type = "button";
       b.className = "sw" + (ctx.state[key] === cc[1] ? " on" : "");
       b.style.background = cc[1]; b.title = cc[0]; b.setAttribute("aria-label", cc[0]);
+      b.setAttribute("aria-pressed", String(ctx.state[key] === cc[1]));
+      b.setAttribute("data-focus-key", cc[1]);
       b.onclick = () => ctx.act("colour", (s) => S.setColour(s, key, cc[1]), { keepSheet: true });
       host.appendChild(b);
     });
@@ -126,7 +138,7 @@ export function createPanels(ctx) {
       ec.appendChild(chip(state.elec.pkg === +pk[0], esc(pk[1]) + (showMoney() && pk[2] ? small("+ " + M(pk[2])) : small("—")), () => {
         ctx.act("elec", (s) => S.setElec(s, pk[0], cat));
         if (ctx.state.elec.pkg > 0) ctx.goInside("elec");
-      }));
+      }, false, pk[0]));
     });
     const MISC = cat.MISC || {};
     el("extlrow").style.display = (state.elec.pkg > 0 && MISC.ext != null) ? "flex" : "none";
@@ -148,7 +160,7 @@ export function createPanels(ctx) {
     const ramps = cat.RAMPS || [];
     el("ramprow").style.display = ramps.length > 1 ? "" : "none";
     ramps.forEach((rp) => {
-      rc.appendChild(chip(state.ramp === rp[0], esc(rp[1]) + (showMoney() && rp[2] ? small("+ " + M(rp[2])) : small("—")), () => ctx.act("ramp", (s) => S.setRamp(s, rp[0]))));
+      rc.appendChild(chip(state.ramp === rp[0], esc(rp[1]) + (showMoney() && rp[2] ? small("+ " + M(rp[2])) : small("—")), () => ctx.act("ramp", (s) => S.setRamp(s, rp[0])), false, rp[0]));
     });
   }
 
@@ -231,19 +243,19 @@ export function createPanels(ctx) {
     cs.style.display = (cat.CATS || []).length > 1 ? "" : "none";
     const tc = el("typechips"); tc.innerHTML = "";
     S.stylesIn(curCat, cat).forEach((t) => {
-      tc.appendChild(chip(state.type === t, esc(cat.TYPES[t].name) + (showMoney() ? small("from " + M(minPrice(t, cat))) : ""), () => ctx.act("style", (s) => S.chooseType(s, t, cat))));
+      tc.appendChild(chip(state.type === t, esc(cat.TYPES[t].name) + (showMoney() ? small("from " + M(minPrice(t, cat))) : ""), () => ctx.act("style", (s) => S.chooseType(s, t, cat)), false, t));
     });
     el("dormerrow").style.display = T.dormer && (cat.DORMERS || []).length > 1 ? "block" : "none";
     if (T.dormer) {
       const dc = el("dormerchips"); dc.innerHTML = "";
       (cat.DORMERS || []).forEach((dd) => {
-        dc.appendChild(chip(state.dormer === dd[0], esc(dd[1]) + (dd[2] ? (showMoney() ? small("+" + M(dd[2])) : "") : small("included look")), () => ctx.act("dormer", (s) => S.chooseDormer(s, dd[0]))));
+        dc.appendChild(chip(state.dormer === dd[0], esc(dd[1]) + (dd[2] ? (showMoney() ? small("+" + M(dd[2])) : "") : small("included look")), () => ctx.act("dormer", (s) => S.chooseDormer(s, dd[0])), false, dd[0]));
       });
     }
     /* 2: sizes, the size note, the side porch */
     const sc = el("sizechips"); sc.innerHTML = "";
     pSizes(state.type, cat).forEach((sz) => {
-      const b = chip(state.size === sz, esc(sz.replace("x", " × ")) + (showMoney() ? small(M(pPrice(state.type, sz, cat))) : ""), () => ctx.act("size", (s) => S.chooseSize(s, sz, cat)));
+      const b = chip(state.size === sz, esc(sz.replace("x", " × ")) + (showMoney() ? small(M(pPrice(state.type, sz, cat))) : ""), () => ctx.act("size", (s) => S.chooseSize(s, sz, cat)), false, sz);
       b.setAttribute("data-size", sz);
       sc.appendChild(b);
     });
@@ -260,14 +272,15 @@ export function createPanels(ctx) {
       plens.map((n) => ["" + n, `${feetWords(pdep)} × ${feetWords(n)} porch`]).forEach((pp2) => {
         const n = +pp2[0], dis = ok.indexOf(n) < 0;
         const from = n === plens[0] ? n + SIDE_WALL_MIN_FT : Math.max(20, n + SIDE_WALL_MIN_FT);
-        pc.appendChild(chip(("" + state.pLen) === pp2[0], pp2[1] + small(dis ? `${from} ft &amp; up` : "included"), () => ctx.act("porch", (s) => S.choosePorchLength(s, pp2[0], cat)), dis));
+        pc.appendChild(chip(("" + state.pLen) === pp2[0], pp2[1] + small(dis ? `${from} ft &amp; up` : "included"), () => ctx.act("porch", (s) => S.choosePorchLength(s, pp2[0], cat)), dis, "length:" + pp2[0]));
       });
       [["end", "Corner porch"], ["mid", "Middle porch"]].forEach((pm) => {
         const on = (pm[0] === "mid") === (!!state.pMid);
-        pc.appendChild(chip(on, pm[1] + small(pm[0] === "mid" ? "centered" : "at one end"), () => ctx.act("porch", (s) => S.choosePorchPlace(s, pm[0] === "mid", cat))));
+        pc.appendChild(chip(on, pm[1] + small(pm[0] === "mid" ? "centered" : "at one end"), () => ctx.act("porch", (s) => S.choosePorchPlace(s, pm[0] === "mid", cat)), false, "place:" + pm[0]));
       });
       if (!state.pMid) {
-        pc.appendChild(chip(false, "⇄ Flip porch" + small("now: " + (state.pFlip ? "right" : "left") + " end"), () => ctx.act("porch", (s) => S.flipPorch(s, cat))));
+        const flip = chip(false, "⇄ Flip porch" + small("now: " + (state.pFlip ? "right" : "left") + " end"), () => ctx.act("porch", (s) => S.flipPorch(s, cat)), false, "flip");
+        flip.removeAttribute("aria-pressed"); pc.appendChild(flip);
       }
       el("porchnote").textContent = state.pMid
         ? "Porch is set into the middle of the long side, with the building enclosed on both ends."
@@ -311,20 +324,28 @@ export function createPanels(ctx) {
   function refreshLists() {
     const state = ctx.state, CAT = cat.CAT, T = cat.TYPES[state.type];
     const fr = ctx.frame();
+    /* a saved quote opened from the Dealer Center shows the price it was
+       saved with (ui/load.js savedPrice), never a new one */
+    const saved = savedPriceOf(cat);
+    const charged = chargedIncluded(state, cat, fr);
     const il = el("itemlist"); il.innerHTML = "";
     state.items.forEach((it) => {
       const c = CAT[it.cat]; if (!c) return;
-      const row = document.createElement("div"); row.className = "itemrow" + (state.sel === it.id ? " sel" : "");
+      const row = document.createElement("button"); row.type = "button"; row.className = "itemrow" + (state.sel === it.id ? " sel" : "");
       row.setAttribute("data-id", it.id);
-      const chg = itemCharge(it, state, cat, fr);
+      row.setAttribute("data-focus-key", it.id);
+      row.setAttribute("aria-pressed", String(state.sel === it.id));
+      row.setAttribute("aria-controls", "sheet");
+      const chg = itemCharge(it, state, cat, fr, charged);
       row.innerHTML = '<span class="dot"></span><span>' + esc(c.n) + (c.stretch ? (" " + esc(it.ln || 4) + " ft") : "") + (it.dbl ? " (double)" : "") + (it.shut ? " + shutters" : "") + (it.lite ? " + window" : "") +
         ' <span class="wl">— ' + esc(wallWords(it, c)) + '</span></span>' +
         '<span class="pr' + (chg > 0 ? "" : " inc") + '">' + (chg > 0 ? (showMoney() ? "+ " + M(chg) : "extra") : (it.pk ? "package" : "included")) + "</span>";
-      row.onclick = () => ctx.select(it.id);
+      row.onclick = (event) => { ctx.select(it.id); if (event.detail === 0) el("sh-type")?.focus({preventScroll: true}); };
       il.appendChild(row);
     });
     /* the summary, then the plate */
-    const pp = priceParts(state, cat, fr);
+    const pp = saved || priceParts(state, cat, fr);
+    const extraNote = saved ? "" : S.chargedNote(state, cat, fr);
     const title = String(state.size).replace("x", " × ") + " " + T.name;
     const amt = (n) => showMoney() ? "<b>" + M(n) + "</b>" : "<b></b>";
     let h = '<div class="sumline"><span>' + esc(title) + "</span>" + amt(pp.base) + "</div>";
@@ -332,6 +353,7 @@ export function createPanels(ctx) {
     h += '<div class="sumline"><span>' + (T.metal ? "Metal" : "Siding") + " " + esc(colorName(sidingPalette(T, cat.COLORS), state.body)) +
       " · Trim " + esc(colorName(cat.COLORS.trim, state.trim)) + " · Roof " + esc(colorName(cat.COLORS.metal, state.roof)) + "</span><b>—</b></div>";
     if (showMoney()) h += '<div class="sumline tot"><span class="disp" style="letter-spacing:.08em;text-transform:uppercase;font-size:13px">Estimated total</span><b>' + M(pp.total) + "</b></div>";
+    if (extraNote) h += '<p class="chargednote">' + esc(extraNote) + "</p>";
     rtoTotal = pp.total;
     if (rtoShown()) h += rtoHtml();
     el("sum").innerHTML = h;
@@ -340,6 +362,8 @@ export function createPanels(ctx) {
     el("plateprice").textContent = show === "none" ? "Ask us" : show === "from" ? "from " + M(pp.base) : M(pp.total);
     el("platesample").textContent = show === "none" ? "for a price" : "plus tax";
     el("platerto").textContent = show === "none" ? "" : rtoText(show === "from" ? pp.base : pp.total);
+    const pn = el("platenote");
+    if (pn) { pn.textContent = extraNote; pn.hidden = !extraNote; }
     return pp;
   }
 
@@ -406,22 +430,22 @@ export function createPanels(ctx) {
      select() redraws the building and the list. */
   function wireButtons() {
     const yaw = () => ctx.cam.yaw;
-    function addWith(fn) {
+    function addWith(fn, event) {
       const it = ctx.act("add", fn, { refresh: false });
-      if (it && it.id) ctx.select(it.id);
+      if (it && it.id) { ctx.select(it.id); if (event?.detail === 0) el("sh-type")?.focus({preventScroll: true}); }
       return it;
     }
-    const fromList = (name) => () => { const id = S.firstOf(cat, name); if (id) addWith((s) => S.addItem(s, id, cat, yaw())); };
+    const fromList = (name) => (event) => { const id = S.firstOf(cat, name); if (id) addWith((s) => S.addItem(s, id, cat, yaw()), event); };
     el("add-door").onclick = fromList("addDoor");
     el("add-win").onclick = fromList("addWindow");
     el("add-ru").onclick = fromList("addRollup");
-    el("add-post").onclick = () => { if (cat.CAT.ppost) addWith((s) => S.addItem(s, "ppost", cat, yaw())); };
-    el("add-light").onclick = () => { if (cat.CAT.light) addWith((s) => S.addItem(s, "light", cat, yaw())); };
-    const inside = (id) => () => {
+    el("add-post").onclick = (event) => { if (cat.CAT.ppost) addWith((s) => S.addItem(s, "ppost", cat, yaw()), event); };
+    el("add-light").onclick = (event) => { if (cat.CAT.light) addWith((s) => S.addItem(s, "light", cat, yaw()), event); };
+    const inside = (id) => (event) => {
       if (!cat.CAT[id]) return;
       const it = ctx.act("add", (s) => S.addInterior(s, id, cat, yaw()), { refresh: false });
       ctx.goInside("add");
-      if (it && it.id) ctx.select(it.id);
+      if (it && it.id) { ctx.select(it.id); if (event?.detail === 0) el("sh-type")?.focus({preventScroll: true}); }
     };
     el("add-bench").onclick = inside("bench");
     el("add-shelf").onclick = inside("shelf");

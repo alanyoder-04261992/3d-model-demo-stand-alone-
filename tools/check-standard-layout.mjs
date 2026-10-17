@@ -58,7 +58,16 @@ assert.ok(validate(repeatDimensions, base.manufacturer).some((x) => /items.w33 n
 const oldState = defaults(base.catalogue), oldPrice = priceParts(oldState, base.catalogue).total, saved = fromState(oldState, base.catalogue);
 const changed = copy(base.company); changed.cfg++; changed.offer[oldState.type].layout = [{ cat: "w48", wall: "B", at: "center" }];
 const changedCat = resolve(changed, base.manufacturer, base.library), reopened = toState(saved, changedCat, { asSaved: true }).state;
-assert.deepEqual(fromState(reopened, changedCat).items, saved.items); assert.equal(priceParts(reopened, changedCat).total, oldPrice);
+assert.deepEqual(fromState(reopened, changedCat).items, saved.items);
+/* Its price is today's (the look-only page says "Estimated total today";
+   a saved quote keeps its own total and its own saved price list). Since
+   Alan's Oct 17 2026 "Yes, charge for them" (model/pricing.js
+   chargedIncluded), what today's standard no longer includes is charged:
+   the 72 in double doors stand in for today's 48 in door (the difference),
+   the faux loft window at its normal price. */
+const CC = changedCat.CAT;
+assert.deepEqual(saved.items.map((i) => i.cat), ["w72", "fake"]);
+assert.equal(priceParts(reopened, changedCat).total, oldPrice + (CC.w72.p - CC.w48.p) + CC.fake.p);
 const crowded = defaults(base.catalogue); crowded.type = "SU"; crowded.size = "8x12"; resetItems(crowded, frameOf(crowded, base.catalogue), base.catalogue);
 const crowdedSaved = fromState(crowded, base.catalogue), crowdedOpened = toState(crowdedSaved, changedCat, { asSaved: true }).state;
 assert.deepEqual(fromState(crowdedOpened, changedCat).items, crowdedSaved.items, "An old quote's crowded doors and windows never move after cfg changes");

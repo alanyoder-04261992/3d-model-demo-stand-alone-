@@ -258,6 +258,12 @@ export function addCustomer(ctx) {
   const street = field("Street address", { autocomplete: "off", wide: true });
   const city = field("City", { autocomplete: "off" });
   const st = field("State", { autocomplete: "off", value: lots.find((l) => l.slug === picked)?.state || "", maxLength: 40 });
+  let stateEdited = false;
+  st.input.addEventListener("input", () => { stateEdited = true; });
+  lot.input.addEventListener("change", () => {
+    if (!stateEdited) st.input.value = lots.find((l) => l.slug === lot.input.value)?.state || "";
+  });
+  const requestKey = crypto.randomUUID();
   const zip = field("ZIP", { autocomplete: "off", inputmode: "numeric", maxLength: 12 });
   const source = field("How they found us", { type: "select", options: SOURCES.filter(([k]) => k !== "website") });
   source.input.value = "walk-in";
@@ -270,7 +276,7 @@ export function addCustomer(ctx) {
     lots.length > 1 ? lot.wrap : h("p", { class: "muted small" }, `For ${lots[0].name}`),
     h("div", { class: "form-grid crm-add-grid" }, name.wrap, tel.wrap, mail.wrap, street.wrap, city.wrap, st.wrap, zip.wrap,
       source.wrap, h("div", { class: "crm-follow-pick" }, follow.wrap, quick), note.wrap),
-    h("div", { class: "actions end" }, button("Cancel", () => box.close()),
+    h("div", { class: "actions end" }, button("Cancel", () => box.cancel()),
       h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, "Save customer"))),
   ], async () => {
     if (!tel.input.value.trim() && !mail.input.value.trim()) {
@@ -278,7 +284,7 @@ export function addCustomer(ctx) {
       throw new Error("Add a phone number or an email address so the lot can reach them.");
     }
     const body = {
-      lot: lot.input.value, name: name.input.value.trim(), phone: tel.input.value.trim(), email: mail.input.value.trim(),
+      requestKey, lot: lot.input.value, name: name.input.value.trim(), phone: tel.input.value.trim(), email: mail.input.value.trim(),
       address: street.input.value.trim(), city: city.input.value.trim(), state: st.input.value.trim(), zip: zip.input.value.trim(),
       source: source.input.value,
     };

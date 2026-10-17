@@ -73,7 +73,7 @@
    * rule 6: CURIT -> kit.setItem; hitQuads.push -> kit.hit. */
 
 import { texTrim, texSiding, texMetal, texFlat, texGlass } from "../../engine/tex-names.js";
-import { CASING } from "../../engine/constants.js";
+import { openingTrim } from "../../model/opening-trim.js";
 import { tintShade } from "../../engine/math.js";
 import { openingRect, itemW } from "../../model/layout.js";
 import { doorHeightFt } from "../../model/construction.js";
@@ -194,8 +194,10 @@ export function openingFrame(plan, kit, it, c, mT) {
   var r=openingRect(it, plan);                /* rule 5: Barnwright 3172-3197, the same numbers */
   if(!w || !r) return null;
   var ch=r.ch, yb=r.yb;
-  var u=it.pos, fr=CASING, HW2=itemW(it,plan.CAT)/2;   /* HW2 is half the WHOLE opening -- a double window is two, sharing a board */
-  kit.hit(it.id, w.n, [wallPt(w,u-HW2-fr,yb-fr,0.3),wallPt(w,u+HW2+fr,yb-fr,0.3),wallPt(w,u+HW2+fr,yb+ch+fr,0.3),wallPt(w,u-HW2-fr,yb+ch+fr,0.3)]);
+  var trim=openingTrim(plan);
+  var u=it.pos, fr=trim.width, HW2=itemW(it,plan.CAT,plan)/2;   /* HW2 is half the WHOLE opening -- a double window is two, sharing a board */
+  var hit=trim.measured? {u0:r.u0,u1:r.u1,y0:r.y0,y1:r.y1} : {u0:u-HW2-fr,u1:u+HW2+fr,y0:yb-fr,y1:yb+ch+fr};
+  kit.hit(it.id, w.n, [wallPt(w,hit.u0,hit.y0,0.3),wallPt(w,hit.u1,hit.y0,0.3),wallPt(w,hit.u1,hit.y1,0.3),wallPt(w,hit.u0,hit.y1,0.3)]);
   /* casing: protruding jamb frame with a soft wall shadow behind it */
   var isWn=(c.k==="win");
   var mAO=mat("aoWall",texFlat,tintShade(plan.state.body,0.60),0.04,8);
@@ -203,7 +205,9 @@ export function openingFrame(plan, kit, it, c, mT) {
   /* casings the way the shop cuts them (see the lot photos): side casings run
      between sill and head; the head board is WIDEST AT ITS TOP, the ends cut
      at 22.5 degrees sloping back down to land flush on the side casings */
-  /* THE REVEAL IS A DOOR DETAIL, and only a door gets it.
+  /* Legacy Barnwright joint (kept for its recorded fixtures).
+     The shop's continuous Yoder joint is selected by openings.trim.headJoint.
+     THE REVEAL IS A DOOR DETAIL, and only a door gets it.
      On a door the side casings stop just below the head board rather than
      running through it, so the three boards read as three cut boards with a
      joint between them instead of one poured white slab. That was asked for and
@@ -212,23 +216,23 @@ export function openingFrame(plan, kit, it, c, mT) {
      and giving it the door's gap and the shadow that fills it made the trim
      round every window look broken - a white line across the top corners of
      something that should be one continuous frame. */
-  var revealY=isWn? (yb+ch+0.02) : (yb+ch-0.06);
-  wslab(mT,w,u-HW2-fr,yb,u-HW2+0.02,revealY,0.02,0.12);
-  wslab(mT,w,u+HW2-0.02,yb,u+HW2+fr,revealY,0.02,0.12);
-  var hE=0.12, hxl=u-HW2-fr, hxr=u+HW2+fr, hyb=yb+ch-0.02, hyt=yb+ch-0.02+0.29;
+  var revealY=r.casing.y1;
+  wslab(mT,w,u-HW2-fr,yb,u-HW2+trim.overlap,revealY,0.02,0.12);
+  wslab(mT,w,u+HW2-trim.overlap,yb,u+HW2+fr,revealY,0.02,0.12);
+  var hE=trim.headFlare, hxl=u-HW2-fr, hxr=u+HW2+fr, hyb=r.head.y0, hyt=r.head.y1;
   /* the shadow the head board drops into that gap. Sits in front of the side
      casings (0.12) and behind the head board's face (0.13), so it fills the
      reveal without poking through either. There is no gap on a window, so there
      is nothing for it to fill. */
-  if(!isWn) wq(mAO,w,hxl,revealY,hxr,hyb,0.125);
+  if(revealY<hyb) wq(mAO,w,hxl,revealY,hxr,hyb,0.125);
   quadUV(mT,[wallPt(w,hxl,hyb,0.13),wallPt(w,hxr,hyb,0.13),wallPt(w,hxr+hE,hyt,0.13),wallPt(w,hxl-hE,hyt,0.13)],
     [[0,0],[(hxr-hxl)/0.8,0],[(hxr-hxl)/0.8,0.36],[0,0.36]]);
   quadUV(mT,[wallPt(w,hxl,hyb,0.02),wallPt(w,hxr,hyb,0.02),wallPt(w,hxr,hyb,0.13),wallPt(w,hxl,hyb,0.13)],RUV);
   quadUV(mT,[wallPt(w,hxl-hE,hyt,0.13),wallPt(w,hxr+hE,hyt,0.13),wallPt(w,hxr+hE,hyt,0.02),wallPt(w,hxl-hE,hyt,0.02)],RUV);
   quadUV(mT,[wallPt(w,hxl,hyb,0.02),wallPt(w,hxl,hyb,0.13),wallPt(w,hxl-hE,hyt,0.13),wallPt(w,hxl-hE,hyt,0.02)],RUV);
   quadUV(mT,[wallPt(w,hxr,hyb,0.13),wallPt(w,hxr,hyb,0.02),wallPt(w,hxr+hE,hyt,0.02),wallPt(w,hxr+hE,hyt,0.13)],RUV);
-  if(plan.t.porch && c.k!=="ru"){
-    var hby=yb+ch+fr-0.04, hbh=0.29, hbe=0.12;
+  if(r.porchBand){
+    var hby=r.porchBand.y0, hbh=trim.headHeight, hbe=trim.headFlare;
     wq(mT,w,u-HW2-fr,hby,u+HW2+fr,hby+hbh,0.14);
     wtri3(mT,w,[u-HW2-fr-hbe,hby],[u-HW2-fr,hby],[u-HW2-fr,hby+hbh],0.14);
     wtri3(mT,w,[u+HW2+fr+hbe,hby],[u+HW2+fr,hby],[u+HW2+fr,hby+hbh],0.14);
@@ -244,7 +248,8 @@ export function windowSill(plan, kit, f, mT) {
   /* the sill mirrors the head: widest at its BOTTOM, ends cut at 22.5
      degrees flaring down and out from the side casings, face sitting a
      little prouder than the casings the way a real sill does */
-  var sx0=u-HW2-fr, sx1=u+HW2+fr, syt=yb-0.02, syb=yb-0.27, sE=0.10;
+  var trim=openingTrim(plan);
+  var sx0=u-HW2-fr, sx1=u+HW2+fr, syt=yb-0.02, syb=syt-trim.sillHeight, sE=trim.sillFlare;
   var mAO2=mat("aoWall",texFlat,tintShade(plan.state.body,0.60),0.04,8);
   wq(mAO2,w,sx0-0.05,syb-0.13,sx1+0.05,syb,0.018);
   quadUV(mT,[wallPt(w,sx0-sE,syb,0.17),wallPt(w,sx1+sE,syb,0.17),wallPt(w,sx1,syt,0.17),wallPt(w,sx0,syt,0.17)],

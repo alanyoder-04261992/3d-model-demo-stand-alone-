@@ -350,7 +350,9 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
 
   /* ---- GET /api/office/help ---------------------------------------------------- */
 
-  async function thread(who) {
+  async function thread(who, { cursor, limit = 30 } = {}) {
+    if (!Number.isInteger(limit) || limit < 1 || limit > 30) fail(422, "Show between 1 and 30 questions at a time.");
+    if (cursor != null && (typeof cursor !== "string" || !/^[A-Za-z0-9_-]{1,2048}$/.test(cursor))) fail(422, "That list link has expired. Refresh your questions.");
     if (!connected) return { connected: false, canAsk: false, items: [] };
     if (!canAsk) return { connected: true, canAsk: false, items: [] };
     const left = deadline();
@@ -368,7 +370,7 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
     let answer;
     try {
       /* a dealer's own questions only (the inbox picks them; checked again below) */
-      answer = await send("thread", { pass, ...(seesAll ? {} : { askerId: person.userId }) }, left);
+      answer = await send("thread", { pass, limit, ...(cursor ? { cursor } : {}), ...(seesAll ? {} : { askerId: person.userId }) }, left);
     } catch (error) {
       log("Help: Barnwright couldn't be reached for the questions:", error?.name || "Error");
       return { connected: true, canAsk: true, items: null, problem: HELP_WORDS.listUnreachable };
@@ -377,10 +379,11 @@ export function createHelp({ store, license = null, inbox = null, account, lots,
       log("Help: the Sales Inbox didn't give the questions; it answered", answer.status, codeOf(answer.data));
       return { connected: true, canAsk: true, items: null, problem: HELP_WORDS.listUnreachable };
     }
-    const items = answer.data.items.slice(0, 30).map(cleanItem)
+    const items = answer.data.items.slice(0, limit).map(cleanItem)
       .filter((item) => item && (seesAll || item.asker.id === person.userId))
       .sort((a, b) => String(b.at).localeCompare(String(a.at)));
-    return { connected: true, canAsk: true, items };
+    const nextCursor = typeof answer.data.nextCursor === "string" && /^[A-Za-z0-9_-]{1,2048}$/.test(answer.data.nextCursor) ? answer.data.nextCursor : null;
+    return { connected: true, canAsk: true, items, nextCursor };
   }
 
   /* ---- POST /api/office/help --------------------------------------------------- */

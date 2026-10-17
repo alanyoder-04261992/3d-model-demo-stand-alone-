@@ -723,6 +723,21 @@ const pause = (ms) => new Promise((done) => setTimeout(done, ms));
     sent.body.askerId === "sample-mike" && mikes.data.items.some((x) => x.id === mikeQ) && mikes.data.items.every((x) => x.asker.id === "sample-mike"), JSON.stringify(sent.body).slice(0, 80));
   const owners = await list(EMAIL.owner);
   ok("... while the owner's list asks for the whole business's (the 30 newest)", !("askerId" in lastCall("/help/v1/thread").body) && owners.data.items.length === 30);
+  const pageIds = owners.data.items.map((item) => item.id);
+  let cursor = owners.data.nextCursor;
+  while (cursor) {
+    const older = await call("GET", `/api/office/help?limit=7&cursor=${encodeURIComponent(cursor)}`, undefined, { as: EMAIL.owner });
+    ok("an older Help page loads without losing team questions", older.status === 200 && older.data.items.length <= 7);
+    pageIds.push(...older.data.items.map((item) => item.id));
+    cursor = older.data.nextCursor;
+  }
+  ok("Help pagination includes every business question exactly once, including equal times", pageIds.length === inbox.questions.length && new Set(pageIds).size === pageIds.length);
+  const leakedPage = await call("GET", `/api/office/help?cursor=${encodeURIComponent(owners.data.nextCursor)}`, undefined, { as: EMAIL.mike });
+  ok("an owner's history cursor never gives a dealer the team's questions", leakedPage.status !== 200 || !Array.isArray(leakedPage.data.items) || leakedPage.data.items.every((item) => item.asker.id === "sample-mike"));
+  for (const query of ["limit=0", "limit=31", "limit=1.5", "cursor=%3Cbad%3E"]) {
+    const invalid = await call("GET", `/api/office/help?${query}`, undefined, { as: EMAIL.owner });
+    ok(`invalid Help paging (${query}) is refused before reaching the inbox`, invalid.status === 422);
+  }
 }
 {
   /* the words of an error are cleaned on the server too, whatever the browser sent */
@@ -763,6 +778,31 @@ const pause = (ms) => new Promise((done) => setTimeout(done, ms));
   await pause(20);
   ok("a failure the page caught itself is passed on like one nothing caught; an answer from the server isn't", posts.length === 1 && /^TypeError: Cannot read properties/.test(posts[0].body.message)
     && posts[0].body.area === "dealer-center" && posts[0].body.page === "/dealer#/customers/:id", JSON.stringify(posts.map((x) => x.body.message)));
+  const beforeApi = posts.length;
+  for (const status of [401, 403, 404, 422, 429]) caught.reportApiProblem({ status, path: "customers/privateCustomerId", requestId: "quietrequest1234" });
+  caught.reportApiProblem({ status: 503, path: "me", code: "sign-in-down", requestId: "quietrequest1234" });
+  caught.reportApiProblem({ status: 503, path: "problem", requestId: "quietrequest1234" });
+  ok("validation, permissions, sign-in outages and problem-report failures stay quiet", posts.length === beforeApi);
+  caught.reportApiProblem({ status: 503, path: "customers/privateCustomerId/activity?token=PRIVATE", requestId: "requestoneABC1234" });
+  caught.reportApiProblem({ status: 503, path: "customers/anotherPrivateCustomer/activity", requestId: "requesttwoABC1234" });
+  await pause(20);
+  const apiFailure = posts.at(-1)?.body;
+  ok("a caught 5xx reports its request reference and route category, never private path or query", posts.length === beforeApi + 1
+    && apiFailure.message.includes("requestoneABC1234") && apiFailure.where === "/api/office/customers" && !/privateCustomer|PRIVATE/.test(JSON.stringify(apiFailure)));
+  ok("different request references for the same failure remain one counted problem", caught.recentProblems().at(-1)?.count === 2
+    && caught.recentProblems().at(-1)?.message.includes("requesttwoABC1234"));
+  const fullReport = await report({ ...apiFailure, signature: "dealer-center:0123456789abcdee" }, { as: EMAIL.owner, ip: visitor(84) });
+  ok("the request reference survives the real Dealer Center's cleaning and reaches Inbox", fullReport.status === 200
+    && lastCall("/help/v1/problem").body.problem.message.includes("requestoneABC1234"));
+  const broken = createOffice({ ...base, identityUser: async () => USERS[EMAIL.owner], blobs: {
+    getWithMetadata: async () => { throw new Error("Private server failure"); },
+  } });
+  const failureResponse = await broken.handle(new Request(`${BASE}/api/office/me`));
+  const failureData = await failureResponse.json();
+  ok("an unexpected server failure gives a reference that matches its response header and server log, with no internal detail", failureResponse.status === 503
+    && /^[A-Za-z0-9]{16}$/.test(failureData.requestId) && failureResponse.headers.get("X-Request-Id") === failureData.requestId
+    && logged.some((line) => line.includes(failureData.requestId)) && !JSON.stringify(failureData).includes("Private server failure"));
+  fire("pagehide", {}); // flush counted repeats and release the reporter's timer
   delete globalThis.window;
   delete globalThis.location;
   const mainSrc = readFileSync(resolvePath(ROOT, "ui/office/main.js"), "utf8");

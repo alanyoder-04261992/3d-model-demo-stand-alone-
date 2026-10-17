@@ -13,11 +13,12 @@
 import { h, clear, icon, button, linkButton, field, checkbox, form, dialog, confirmBox, toast } from "../dom.js";
 import { app } from "../app.js";
 import { post, patch } from "../api.js";
+import { readDraft, writeDraft, clearDraft } from "../drafts.js";
 import {
   STAGES, STAGE_WORDS, PAYMENTS, PAYMENT_WORDS, ORDER_WORDS, NOTE_KINDS, money, phone as phoneWords, telHref, smsHref,
   todayKey, addDays, dayWords, followUpWords, ago, when, plural,
 } from "../words.js";
-import { encodeSync } from "../../../model/design.js";
+import { quoteViewUrl } from "../quote-view.js";
 import { planWords } from "../../../model/quote-plan.js";
 import { statusPill, followUpTone, changeStage, sourceWords, confirmChoice, dayKeyOf, dateFromNow, loadCustomer, missingCustomer } from "./crm-kit.js";
 
@@ -40,14 +41,38 @@ export async function render(ctx) {
   const [id] = ctx.params;
   let c = await loadCustomer(id);
   if (!c) return missingCustomer(ctx);
-  const view = { kind: "note", draft: "", activityShown: ACTIVITY_PAGE, open: new Set() };
+  const draftKey = `customer:${id}`;
+  const kept = readDraft(app, draftKey);
+  const view = {
+    kind: Object.hasOwn(COMPOSE, kept.kind) ? kept.kind : "note",
+    draft: typeof kept.text === "string" ? kept.text.slice(0, 4000) : "",
+    followDate: typeof kept.followDate === "string" ? kept.followDate.slice(0, 10) : c.followUp?.date || "",
+    followNote: typeof kept.followNote === "string" ? kept.followNote.slice(0, 300) : c.followUp?.note || "",
+    activityShown: ACTIVITY_PAGE, open: new Set(),
+  };
+  const followDirty = () => view.followDate !== (c.followUp?.date || "") || view.followNote !== (c.followUp?.note || "");
+  const keepDraft = () => {
+    const follow = followDirty();
+    if (!view.draft && !follow) { clearDraft(app, draftKey); return; }
+    writeDraft(app, draftKey, { kind: view.kind, text: view.draft,
+      ...(follow ? { followDate: view.followDate, followNote: view.followNote } : {}) });
+  };
+  app.leaveGuard = () => view.draft.trim() || followDirty() ? "Leave before saving? Your draft will be here when you come back." : null;
   const root = h("div", { class: "crm-customer" });
 
   /* every change goes through here: send, take the new customer, redraw */
-  async function act(work, done) {
+  async function act(work, done, { followSaved = null } = {}) {
+    const hadFollowDraft = followDirty();
+    const followBefore = { date: view.followDate, note: view.followNote };
     try {
       const out = await work();
       if (out?.customer) c = out.customer;
+      if ((!hadFollowDraft && view.followDate === followBefore.date && view.followNote === followBefore.note)
+        || (followSaved && view.followDate === followSaved.date && view.followNote === followSaved.note)) {
+        view.followDate = c.followUp?.date || "";
+        view.followNote = c.followUp?.note || "";
+      }
+      keepDraft();
       app.customersChanged();
       paint();
       if (done) toast(typeof done === "function" ? done(out) : done);
@@ -107,7 +132,7 @@ export async function render(ctx) {
     const cityLine = [c.city, [c.state, c.zip].filter(Boolean).join(" ")].filter(Boolean).join(", ");
     const quick = h("div", { class: "crm-reach" },
       c.phone ? linkButton("Call", telHref(c.phone), { kind: "primary", icon: "phone" }) : null,
-      c.phone ? linkButton("Text", smsHref(c.phone), { kind: "ghost", icon: "text" }) : null,
+      c.phone && c.smsOk !== false ? linkButton("Text", smsHref(c.phone), { kind: "ghost", icon: "text" }) : null,
       c.email ? linkButton("Email", `mailto:${c.email}`, { kind: "ghost", icon: "mail" }) : null);
     return h("section", { class: "card crm-contact" },
       h("div", { class: "card-head" }, h("h2", { class: "card-title" }, "Contact"),
@@ -135,7 +160,7 @@ export async function render(ctx) {
     const box = dialog(`Edit ${c.name}`, form([
       h("div", { class: "form-grid" }, Object.values(f).map((x) => x.wrap)),
       sms.wrap,
-      h("div", { class: "actions end" }, button("Cancel", () => box.close()),
+      h("div", { class: "actions end" }, button("Cancel", () => box.cancel()),
         h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, "Save changes"))),
     ], async () => {
       const body = {};
@@ -152,10 +177,13 @@ export async function render(ctx) {
   /* ---- follow-up ---- */
   function followCard() {
     const f = c.followUp;
-    const note = field("Note", { value: f?.note || "", placeholder: "Call about the delivery date", maxLength: 300 });
-    const date = field("Or pick a day", { type: "date", value: f?.date || "" });
+    const note = field("Note", { value: view.followNote, placeholder: "Call about the delivery date", maxLength: 300 });
+    const date = field("Or pick a day", { type: "date", value: view.followDate });
+    note.input.addEventListener("input", () => { view.followNote = note.input.value; keepDraft(); });
+    date.input.addEventListener("input", () => { view.followDate = date.input.value; keepDraft(); });
+    const snapshot = () => ({ date: view.followDate, note: view.followNote });
     const setTo = (key) => quiet(act(() => patch(`customers/${c.id}`, { followUp: { date: key, note: note.input.value.trim() } }),
-      `Follow-up set for ${dayWords(key)}.`));
+      `Follow-up set for ${dayWords(key)}.`, { followSaved: snapshot() }));
     const quick = h("div", { class: "crm-quick" },
       [["Today", 0], ["Tomorrow", 1], ["In 3 days", 3], ["Next week", 7]].map(([label, n]) =>
         h("button", { type: "button", class: "chip", onclick: () => setTo(addDays(todayKey(), n)) }, label)));
@@ -184,8 +212,12 @@ export async function render(ctx) {
       h("option", { value: "" }, "Nobody yet"), team.map((p) => h("option", { value: p.userId }, p.name || p.email)));
     who.value = team.some((p) => p.userId === c.assignedTo) ? c.assignedTo : "";
     who.addEventListener("change", () => {
-      const pickedName = who.value ? app.personName(who.value) : "";
-      quiet(act(() => patch(`customers/${c.id}`, { assignedTo: who.value || null }), pickedName ? `${pickedName} is working ${c.name} now.` : `Nobody is working ${c.name} now.`));
+      const picked = who.value || null;
+      const pickedName = picked ? app.personName(picked) : "";
+      who.value = c.assignedTo || "";
+      who.disabled = true;
+      quiet(act(() => patch(`customers/${c.id}`, { assignedTo: picked }), pickedName ? `${pickedName} is working ${c.name} now.` : `Nobody is working ${c.name} now.`)
+        .finally(() => { if (who.isConnected) { who.value = c.assignedTo || ""; who.disabled = false; } }));
     });
     let lotPart;
     if (app.can("moveCustomers") && app.lots.length > 1) {
@@ -243,7 +275,7 @@ export async function render(ctx) {
       details,
       h("div", { class: "crm-quote-actions" },
         order ? null : button("Mark sold", () => markSold(q), { kind: "primary", icon: "check" }),
-        h("a", { class: "btn btn-ghost", href: `${app.designerUrl(c.lot)}#d=${encodeSync(q.design)}&view=1`, target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")),
+        h("a", { class: "btn btn-ghost", href: quoteViewUrl(app.designerUrl(c.lot), c.id, q), target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")),
         linkButton("Change it", `#/customers/${c.id}/design/${q.id}`, { kind: "ghost", icon: "edit" }),
         linkButton("Print", `#/customers/${c.id}/quotes/${q.id}`, { kind: "ghost", icon: "print" })));
   }
@@ -272,7 +304,7 @@ export async function render(ctx) {
     const box = dialog(`Mark quote #${q.number} sold`, form([
       h("div", { class: "crm-sold-sum" }, icon("shed"), h("div", {}, h("strong", {}, q.building), h("span", {}, `Quote #${q.number}`)), h("strong", { class: "num" }, money(q.total))),
       h("div", { class: "form-grid" }, pay.wrap, deposit.wrap, date.wrap, addr.wrap, dnotes.wrap, notes.wrap),
-      h("div", { class: "actions end" }, button("Cancel", () => box.close()),
+      h("div", { class: "actions end" }, button("Cancel", () => box.cancel()),
         h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, "Make the order"))),
     ], async () => {
       const dep = deposit.input.value === "" ? null : Number(deposit.input.value);
@@ -346,7 +378,7 @@ export async function render(ctx) {
     const notes = field("Order notes", { type: "textarea", rows: 2, value: o.notes || "", wide: true });
     const box = dialog(`Order #${o.number}`, form([
       h("div", { class: "form-grid" }, pay.wrap, deposit.wrap, date.wrap, addr.wrap, dnotes.wrap, notes.wrap),
-      h("div", { class: "actions end" }, button("Cancel", () => box.close()),
+      h("div", { class: "actions end" }, button("Cancel", () => box.cancel()),
         h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, "Save order"))),
     ], async () => {
       const dep = deposit.input.value === "" ? 0 : Number(deposit.input.value);
@@ -368,10 +400,11 @@ export async function render(ctx) {
     const kinds = h("div", { class: "crm-kinds", role: "group", "aria-label": "What happened" });
     const textBox = h("textarea", { rows: 3, "aria-label": "What happened", maxLength: 4000 });
     textBox.value = view.draft;
-    textBox.addEventListener("input", () => { view.draft = textBox.value; });
+    textBox.addEventListener("input", () => { view.draft = textBox.value; keepDraft(); });
     const saveBtn = h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, ""));
     const setKind = (k) => {
       view.kind = k;
+      keepDraft();
       for (const b of kinds.children) b.setAttribute("aria-pressed", String(b.dataset.key === k));
       textBox.placeholder = COMPOSE[k][0];
       saveBtn.querySelector("span").textContent = COMPOSE[k][1];
@@ -386,9 +419,11 @@ export async function render(ctx) {
       const words = textBox.value.trim();
       if (view.kind === "note" && !words) { textBox.focus(); throw new Error("Write the note first."); }
       const body = { type: view.kind, text: words };
+      const submittedText = view.draft;
+      const submittedKind = view.kind;
       if (doneBox?.input.checked) body.clearFollowUp = true;
       const out = await post(`customers/${c.id}/activity`, body);
-      view.draft = "";
+      if (view.draft === submittedText && view.kind === submittedKind) view.draft = "";
       await act(async () => out, { note: "Note saved.", call: "Call saved.", text: "Text saved.", email: "Email saved.", visit: "Visit saved." }[body.type]);
     }, { class: "crm-compose" });
 

@@ -488,5 +488,14 @@
     "sheetWindow": ["fake", "w23", "w33", "tr", "g1824", "oct"],
     "sheetDoor": ["w48", "w72", "w36", "d36in", "d36lite", "dfr", "ru6", "ru8"]
   },
-  "construction": {}
+  "construction": {
+    "openings": {
+      "trim": {
+        "widthIn": 3.5,
+        "headJoint": "continuous",
+        "porchBand": false,
+        "_source": "Alan, Oct 12 2026: use actual 3 1/2-inch trim on doors and windows, with a continuous casing-to-head joint. His cabin correction: the trim above cabin-like doors and windows must match the loft window's single head board; omit the extra stacked porch opening band. Width also applies to the head, sill and shared board between paired windows."
+      }
+    }
+  }
 }

@@ -15,12 +15,15 @@ its own part with its own skill (`part-door-wood`, `part-door-steel`,
 the order the customer added them, and the trim they all share:
 
 * **Side casings** -- the 3 1/2 in boards standing proud of the siding up each
-  side of an opening. On a DOOR they stop just under the head board (three cut
-  boards with a joint); on a WINDOW they run right up into it.
+  side of an opening, meeting the head continuously in the shop standard.
+  The recorded Barnwright door keeps its reveal below the head; its window
+  casings run right up into it.
 * **The head board** -- over every opening, WIDEST AT ITS TOP, its ends cut at
   22.5 degrees sloping back down onto the side casings (a drip cap).
-* **The porch header band** -- on a porch building (cabins), a second trim
-  band over every door and window on EVERY wall (not a roll-up).
+* **The porch opening band** -- an optional second trim band over doors and
+  windows on every wall of a porch building (never a roll-up). The shop
+  standard omits it; the recorded Barnwright catalogue retains it. This is
+  separate from the porch's perimeter and beam trim.
 * **The window sill** -- the head's mirror image under a window: widest at its
   bottom, face a little prouder than the casings.
 * A soft shadow on the wall round the whole thing, and the tap target the
@@ -84,6 +87,18 @@ go) off that building's gable ends: the designer greys it and the server
 refuses it. A saved design holding one opens with it taken off and one
 plain line (`model/design.js normalize`), so what is drawn and what is
 priced agree. See the `part-gable-window` skill.
+
+**What "comes with the building" covers** (Alan, Oct 17 2026: "Yes, charge
+for them"). A door or window marked included (`inc`) is free only up to how
+many of it the design's own size and porch come with: the standard layout
+for that size and porch (`model/loadouts.js standardItems`), counted by the
+item it came as (`origCat`). Items kept from a bigger size after a size or
+porch-length change are charged at their normal price; one standing in for
+an item this size comes with that is missing is priced as that swap; the
+shop standard's door pair counts as either door. One function decides it for
+the designer and the server (`model/pricing.js chargedIncluded`), and the
+designer shows one line near the price (`ui/state.js chargedNote`). Saved
+quotes and orders keep their stored totals. DIFFERENCES #30.
 
 ## Where it came from in Barnwright
 
@@ -250,3 +265,26 @@ Slope's transom row and refuses the open porch and dog run as wall. Owner
 doors must fit or have an agreed size rule. Named defaults and saved item
 order still draw exactly as before. The new standard layout affects new
 buildings only; saved designs and quotes retain their own items and prices.
+
+## Shop opening trim — October 12, 2026
+
+Alan selected **actual 3 1/2-inch boards** with a continuous casing/head
+joint. The standard manufacturer sets `construction.openings.trim` to
+`widthIn: 3.5`, `headJoint: "continuous"` and `porchBand: false`. His cabin
+correction removes the extra stacked opening band on every wall of all six
+cabin styles: Cabin (`C`), Lofted Barn Cabin (`LBC`), Side Cabin (`SC`), Loft
+Side Cabin (`LSC`), Deluxe Side Cabin (`DSC`) and Deluxe Loft Side Cabin
+(`SLC`). Doors and wall windows have one existing 3 1/2-inch tapered head,
+matching ordinary windows and the rectangular 18x24 loft window. Decorative
+faux loft windows keep their rectangular frame and corner triangles;
+octagonal frames keep their design. Porch perimeter and beam trim are unchanged.
+
+`model/opening-trim.js` supplies measured widths, head/sill heights,
+22.5-degree flares and the paired-window shared board. `openingRect` includes
+a porch band only when enabled, and the drawing follows that same result;
+placement, saved layout formulas, floor plans and tap bounds agree. The
+legacy Barnwright catalogue omits these shop trim settings, retaining its
+original door reveal, extra porch opening band and exact geometry.
+`node tools/check-opening-trim.mjs` checks emitted boards, single heads and
+bounds at every sold style/size and porch variant; `node tools/check-golden.mjs`
+guards the legacy drawing. Existing roof, wall and door sizes stay as approved.

@@ -42,14 +42,31 @@ import { itemById, fitsOnWall } from "../model/layout.js";
 import { itemCharge, money } from "../model/pricing.js";
 import { colorName } from "../model/company.js";
 import { animYaw, wallYaw } from "../engine/camera.js";
+import { rememberFocus, restoreFocus } from "./focus.js";
 
 const TITLES = { win: "Window", ru: "Roll-up door", post: "Porch post", light: "Outside light", bench: "Work bench", shelf: "Shelf", out: "Electric outlet", ilt: "Inside light" };
+
+/* An included opening's replacement contributes the upgrade difference,
+   just as the quote does. Never mutate the displayed design for a label. */
+export function replacementCharge(state, itemId, kind, cat) {
+  const draft = structuredClone(state);
+  const changed = S.setItemType(draft, itemId, kind, cat).item;
+  return changed && changed.cat === kind ? itemCharge(changed, draft, cat) : null;
+}
+
+function positionWords(feet, direction) {
+  const inches = Math.round(Math.abs(feet || 0) * 12);
+  if (!inches) return direction === "horizontal" ? "Centered" : "Usual height";
+  const distance = (Math.floor(inches / 12) ? Math.floor(inches / 12) + " ft " : "") + (inches % 12 ? inches % 12 + " in" : "");
+  return distance.trim() + (direction === "horizontal" ? (feet < 0 ? " left of center" : " right of center") : (feet < 0 ? " below usual" : " above usual"));
+}
 
 export function createSheet(ctx) {
   const cat = ctx.cat;
   const el = (id) => document.getElementById(id);
   const showMoney = () => cat.pricing.show !== "none";
   let lastFaced = null;
+  let returnFocus = null;
 
   function reduced() { try { return matchMedia("(prefers-reduced-motion: reduce)").matches; } catch (e) { return false; } }
 
@@ -68,6 +85,8 @@ export function createSheet(ctx) {
       b.className = "sw" + (extra || "") + (((st[key] || "") === val) ? " on" : "");
       if (bg) b.style.background = bg;
       b.title = name; b.setAttribute("aria-label", name);
+      b.setAttribute("aria-pressed", String((st[key] || "") === val));
+      b.setAttribute("data-focus-key", val);
       b.onclick = () => { ctx.act("colour", (s) => S.setColour(s, key, val), { keepSheet: true }); select(selId); };
       host.appendChild(b);
     }
@@ -123,7 +142,12 @@ export function createSheet(ctx) {
       else if (elecCtx && ck && ck.k === "out" && ck.switch) label = ck.n + " — in package";
       else if (elecCtx && ck && ck.k === "out") label = "Additional outlet" + pr(ck.p);
       else if (elecCtx && ck && ck.k === "ilt") label = "Additional overhead light" + pr(ck.p);
-      else label = (ck ? ck.n : kk) + (ck ? pr(ck.p, ck.perFt) : "");
+      else {
+        const contribution = ck && it.inc ? replacementCharge(state, it.id, kk, cat) : null;
+        label = (ck ? ck.n : kk) + (ck ? (it.inc && contribution !== null
+          ? (showMoney() ? (contribution > 0 ? "  (+" + money(contribution) + ")" : "  (included)") : "")
+          : pr(ck.p, ck.perFt)) : "");
+      }
       if (elecCtx && it.pk && kk === it.cat && !(ck && ck.switch)) label = ck.n + " — in package";
       /* a gable window too tall for this gable is not offered on a gable end
          (model/layout.js gableItemFits); one already there (a design saved
@@ -154,6 +178,8 @@ export function createSheet(ctx) {
       wr.style.display = "flex"; wc.innerHTML = "";
       [["F", "Front"], ["B", "Back"], ["L", "Left"], ["R", "Right"]].forEach((pair) => {
         const wb = document.createElement("button"); wb.type = "button"; wb.textContent = pair[1];
+        wb.setAttribute("aria-pressed", String(it.wall === pair[0]));
+        wb.setAttribute("data-focus-key", pair[0]);
         if (it.wall === pair[0]) wb.className = "on";
         else if (!fitsOnWall(c, pair[0], fr)) { wb.disabled = true; wb.title = "Too tall for this gable"; }
         wb.onclick = () => {
@@ -168,6 +194,40 @@ export function createSheet(ctx) {
         wc.appendChild(wb);
       });
     } else wr.style.display = "none";
+
+    /* The public opening controls use the same one-inch positions and clamp
+       as dragging. Specialized owner layout tools keep their own controls. */
+    const movable = !ctx.layoutHooks && !c.free && !c.stretch && c.k !== "post" && Number.isFinite(it.pos);
+    const horizontalSign = c.gable && it.wall === "B" ? -1 : 1;
+    const hint = el("sheet").querySelector(".shint");
+    if (hint) hint.textContent = movable
+      ? "Drag it on the building, move it one inch at a time with the arrows, or choose another wall."
+      : (c.free || c.stretch) ? "Drag it on the floor plan to move it. Use the controls above to change it."
+      : "Drag it to move it. Use the controls above to change it.";
+    const positionRow = el("sh-posrow"), heightRow = el("sh-vyrow");
+    if (positionRow) {
+      positionRow.style.display = movable ? "flex" : "none";
+      if (movable) {
+        el("sh-pos").textContent = positionWords(it.pos * horizontalSign, "horizontal");
+        for (const [suffix, direction] of [["m", -1], ["p", 1]]) el("sh-pos-" + suffix).onclick = () => {
+          const before = it.pos;
+          change("item", state => S.moveItem(state, it.id, {pos: before + direction * horizontalSign / 12}, cat), it.id);
+          if (Math.abs(it.pos - before) < 1e-8) el("sh-pos").textContent = positionWords(it.pos * horizontalSign, "horizontal") + " — at the limit";
+        };
+      }
+    }
+    const vertical = movable && (c.gable || c.k === "light");
+    if (heightRow) {
+      heightRow.style.display = vertical ? "flex" : "none";
+      if (vertical) {
+        el("sh-vy").textContent = positionWords(it.vy, "vertical");
+        for (const [suffix, direction] of [["m", -1], ["p", 1]]) el("sh-vy-" + suffix).onclick = () => {
+          const before = it.vy || 0;
+          change("item", state => S.moveItem(state, it.id, {vy: before + direction / 12}, cat), it.id);
+          if (Math.abs((it.vy || 0) - before) < 1e-8) el("sh-vy").textContent = positionWords(it.vy, "vertical") + " — at the limit";
+        };
+      }
+    }
 
     /* Turn 90 degrees -- the high transom row of a single slope has no room for a turned one */
     const rr = el("sh-rotrow");
@@ -243,10 +303,17 @@ export function createSheet(ctx) {
   function select(id) {
     const state = ctx.state;
     const sheet = el("sheet");
+    const focused = rememberFocus(), fromSheet = sheet.contains(document.activeElement);
+    const previousId = state.sel;
+    if (id && (!sheet.classList.contains("open") || !fromSheet)) returnFocus = focused;
     state.sel = id || null;
     ctx.rebuild();
     if (!id) {
       sheet.classList.remove("open"); ctx.refreshLists(); lastFaced = null;
+      if (fromSheet && !restoreFocus(returnFocus, {force: true, preventScroll: false})) {
+        const row = Array.from(el("itemlist")?.querySelectorAll("[data-id]") || []).find(node => node.getAttribute("data-id") === previousId);
+        (row || el("add-win") || el("add-door"))?.focus();
+      }
       ctx.emit("select", { id: null, item: null });
       return;
     }
@@ -259,6 +326,7 @@ export function createSheet(ctx) {
     if (ctx.layoutHooks?.revealSheet) ctx.layoutHooks.revealSheet(it);
     else if (sheet.scrollIntoView) { try { sheet.scrollIntoView({ behavior: reduced() ? "auto" : "smooth", block: "nearest" }); } catch (e) { /* old browsers */ } }
     ctx.refreshLists();
+    restoreFocus(focused);
     ctx.emit("select", { id: id, item: it });
   }
 

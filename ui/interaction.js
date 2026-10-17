@@ -331,7 +331,21 @@ export function createInteraction(ctx) {
 
   /* ---------- a card's heading folds it ---------- */
   Array.prototype.forEach.call(document.querySelectorAll(".card h3"), (h) => {
-    h.onclick = () => { h.parentNode.classList.toggle("closed"); };
+    const card = h.parentNode;
+    const content = document.createElement("div"); content.className = "card-content";
+    content.id = card.id + "-content";
+    while (h.nextSibling) content.appendChild(h.nextSibling);
+    const button = document.createElement("button"); button.type = "button"; button.className = "card-toggle";
+    button.setAttribute("aria-controls", content.id);
+    while (h.firstChild) button.appendChild(h.firstChild);
+    h.appendChild(button); card.appendChild(content);
+    const sync = () => button.setAttribute("aria-expanded", String(!card.classList.contains("closed")));
+    const toggle = () => { card.classList.toggle("closed"); sync(); };
+    button.onclick = toggle;
+    // Retain the heading's existing click target; keyboard activation is the
+    // native button's Enter/Space action and is not handled twice.
+    h.onclick = (event) => { if (event.target === h) toggle(); };
+    sync();
   });
 
   /* ---------- embedded on a touch screen: "Tap to design" ---------- */

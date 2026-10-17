@@ -97,6 +97,11 @@ Selected review captures are committed here:
 - [Phone Edit in dark mode](review/edit-390-dark.png)
 - [Phone porch selection above the save bar](review/layout-sheet-390-light.png)
 - [Phone reset choices with the 100 px app header](review/reset-layout-390-dark.png)
+- [Tablet building cards in dark mode](review/buildings-820-dark.png)
+- [Tablet Edit](review/edit-820-light.png) and [desktop Edit in dark mode, Stop selling readable](review/edit-1280-dark.png)
+- [How all your buildings are built, dark, desktop](review/built-1280-dark.png) and [phone](review/built-390-dark.png)
+- Saved result box: [phone](review/layout-result-390-light.png), [tablet dark](review/layout-result-820-dark.png), [desktop](review/layout-result-1280-light.png), [phone turned sideways](review/layout-result-844x390-light.png)
+- [Phone leave question with named buttons](review/layout-leave-390-light.png)
 
 Completed focused checks: Your Buildings **144**, Dealer Center **73**,
 layout server **60**, layout return **27**, public demo flow **15**,
@@ -108,8 +113,19 @@ check matches **521,769 triangles across 148 buildings**. The live reference
 model matches all **24,111 comparisons**, and all **24 finished pictures**
 match the recorded pixels.
 
-All **68 check programs** were covered by the full run and successful
-targeted reruns, with no remaining check failures. The first aggregate run
+**Correction (review after merge, c355440).** The sentence that used to
+stand here said there were no remaining check failures. That was not true
+on main: a full run of every check had 77 programs, 72 passing and
+5 failing. Three (golden-labels, model-live, shaders) fail because
+Barnwright's pinned `3ddesign.html` changed; they failed before this work
+too. The other two were new: the layout editor (a phone tap or a long press on a
+dashed porch post picked a different post) and the support check (it read the
+address before the leave-page box had been answered). Both are fixed on
+`lane/fix17-screens`. After those fixes the full run has **78 programs:
+75 pass and 3 fail**, and the 3 are only golden-labels, model-live and
+shaders, waiting on Barnwright's changed page.
+
+The record below is the original build's own account. The first aggregate run
 covered 65 programs and reported 55 passes and 10 failures. The three checks
 added during review (layout return, demo and conflict recovery) passed
 separately. Targeted reruns resolved all ten initial failures:

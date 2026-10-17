@@ -1,6 +1,9 @@
 /* check-all: node
    PROVE that standard layouts save only for the owner, keep every lot on
-   the same checked recipe, and preserve included prices after resizing. */
+   the same checked recipe, and that "comes with the building" covers only
+   what a design's own size and porch come with: more is charged at its
+   normal price through the public and dealer quote routes, never refused
+   (Alan, Oct 17 2026: "Yes, charge for them"). */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { createOffice } from "../server/office/index.js";
@@ -8,7 +11,7 @@ import { MemoryBlobs } from "../server/office/store.js";
 import { priceDesign } from "../server/office/pricing.js";
 import { resolve } from "../model/company.js";
 import { defaults, setType, setSize, fromState, toState } from "../model/design.js";
-import { choosePorchLength } from "../ui/state.js";
+import { choosePorchLength, chooseSize } from "../ui/state.js";
 import { priceParts } from "../model/pricing.js";
 import { resetItems } from "../model/layout.js";
 import { frameOf } from "../model/frame.js";
@@ -71,11 +74,14 @@ prove("opening an older crowded quote keeps every saved position", JSON.stringif
 const olderAgain = await call("POST", `customers/${customer.id}/quotes`, { design: olderDesign });
 prove("an older moved design keeps previously included windows after the owner removes them", olderAgain.status === 201 && olderAgain.data.quote.total === oldQuote.data.quote.total);
 const forgedOlder = structuredClone(olderDesign);
-forgedOlder.items.push(structuredClone(forgedOlder.items.find((i) => initialCat.CAT[i.cat].gable)));
+const gableOld = forgedOlder.items.find((i) => initialCat.CAT[i.cat].gable);
+forgedOlder.items.push(structuredClone(gableOld));
 const overHistory = await call("POST", `customers/${customer.id}/quotes`, { design: forgedOlder });
-prove("an old cfg never allows more included windows than its authoritative history", overHistory.status === 422 && /could not be read/.test(overHistory.data.error));
+prove("an old cfg never allows more included windows than its authoritative history: the extra one is charged at its normal price", overHistory.status === 201 && overHistory.data.quote.total === oldQuote.data.quote.total + afterLayoutCat.CAT[gableOld.cat].p);
 const future = structuredClone(olderDesign); future.cfg = saved.data.cfg + 100;
-prove("an invented cfg cannot claim historical included items", (await call("POST", `customers/${customer.id}/quotes`, { design: future })).status === 422);
+const futureQuote = await call("POST", `customers/${customer.id}/quotes`, { design: future });
+const todayOnly = priceDesign({ ...structuredClone(olderDesign), cfg: afterLayoutCat.cfg }, afterLayoutCat).price.total;
+prove("an invented cfg cannot claim historical included items: they are charged as today's list says", futureQuote.status === 201 && futureQuote.data.quote.total === todayOnly && todayOnly > oldQuote.data.quote.total);
 prove("history says what changed on this building", saved.data.changes.some((s) => s.startsWith("Standard layout of the Lofted Barn:") && /added|removed/.test(s)));
 const history = await call("GET", "price-list/history");
 prove("history kept the saved version", history.data.entries[0].version === saved.data.version && history.data.entries[0].changes.some((s) => /Standard layout/.test(s)));
@@ -112,7 +118,8 @@ const websiteForge = await office.handle(new Request(SITE + "/api/lots/riverside
   method: "POST", headers: { "content-type": "application/json", origin: SITE },
   body: JSON.stringify({ design: forgedOlder, contact: { name: "Existing customer", phone: "941-555-0101", zip: "33952" }, idempotencyKey: "older-layout-website-2" }),
 }));
-prove("public sends refuse included items above the historical allowance", websiteForge.status === 422);
+const websiteForgeReceipt = await websiteForge.json();
+prove("public sends charge included items above the historical allowance at their normal price", websiteForge.status === 201 && websiteForgeReceipt.total === oldQuote.data.quote.total + afterLayoutCat.CAT[gableOld.cat].p);
 
 /* These are the real customer actions that used to be rejected by the
    current-size-only included count. Compare with the browser's own price. */
@@ -133,9 +140,57 @@ for (const [type, from, to] of [["C", "10x20", "8x12"], ["BU", "6x12", "6x8"], [
 }
 const cabin = building("SC", "12x24"); choosePorchLength(cabin, 8, cat);
 quotes("a Side Cabin keeps its included price with the 4 x 8 porch", cabin);
+/* Designs saved by the live designer (c355440, October 13 2026): open a
+   size, move a door, choose a smaller size. The items keep their "came
+   with the building" marks and the saved design names no other size. Such
+   saved links, autosaves and dealer quotes must still send, at the price
+   the designer shows (review 17 round 2: a first fix refused them). */
+let sentOld = 0;
+for (const [type, from, to] of [["C", "12x32", "8x12"], ["SS", "12x24", "8x12"], ["SC", "12x32", "10x20"]]) {
+  if (!cat.P[type] || !cat.P[type][from] || !cat.P[type][to]) continue;
+  const state = building(type, from); state.items.find((i) => cat.CAT[i.cat].k === "door").pos += 0.25;
+  chooseSize(state, to, cat);
+  const design = fromState(state, cat); delete design.orig;
+  const r = await office.handle(new Request(SITE + "/api/lots/riverside/quote-requests", {
+    method: "POST", headers: { "content-type": "application/json", origin: SITE },
+    body: JSON.stringify({ design, contact: { name: "Resized customer", phone: "941-555-0102", zip: "33952" }, idempotencyKey: `resized-${type}-${from}-${to}` }),
+  }));
+  const receipt = await r.json();
+  prove(`a ${type} ${from} made ${to} on the live designer still sends, at the designer's price`, r.status === 201 && receipt.total === priceParts(toState(design, cat).state, cat).total);
+  sentOld++;
+}
+prove("the resized designs above were really sent (the price list sells those sizes)", sentOld >= 2);
+/* Alan, Oct 17 2026, "Yes, charge for them" (review 17 CS-1): an 8x12
+   Cabin link edited by hand to keep the 12x32's included windows is
+   charged the normal window price for each window above what an 8x12
+   comes with, through the public quote route and the dealer quote route
+   (c355440 gave them away). The same design made in the designer (12x32,
+   move a door, pick 8x12) is priced the same, and the designer shows it. */
+{
+  const big = building("C", "12x32"), small = building("C", "8x12");
+  const isWin = (i) => i.inc && cat.CAT[i.cat].k === "win";
+  const extra = big.items.filter(isWin).length - small.items.filter(isWin).length;
+  const edited = fromState(small, cat);
+  const w = edited.items.find(isWin);
+  for (let n = 0; n < extra; n++) edited.items.push({ ...structuredClone(w), pos: 0.1 + 0.1 * n });
+  const fair = priceParts(small, cat).total + extra * cat.CAT[w.cat].p;
+  const r = await office.handle(new Request(SITE + "/api/lots/riverside/quote-requests", {
+    method: "POST", headers: { "content-type": "application/json", origin: SITE },
+    body: JSON.stringify({ design: edited, contact: { name: "Edited link", phone: "941-555-0103", zip: "33952" }, idempotencyKey: "edited-cabin-8x12" }),
+  }));
+  const receipt = await r.json();
+  prove(`an 8x12 Cabin link edited to keep the 12x32's ${extra} included windows is charged ${extra} x the window price on the public quote route`, extra > 0 && r.status === 201 && receipt.total === fair
+    && receipt.price.lines.filter((l) => l[2] === "cat." + w.cat && l[1] === cat.CAT[w.cat].p && !/upgrade/.test(l[0])).length === extra);
+  const dealerQuote = await call("POST", `customers/${customer.id}/quotes`, { design: edited }, { person: "dealer" });
+  prove("... and the same on the dealer quote route", dealerQuote.status === 201 && dealerQuote.data.quote.total === fair);
+  const made = building("C", "12x32"); made.items.find((i) => cat.CAT[i.cat].k === "door").pos += 0.25;
+  chooseSize(made, "8x12", cat);
+  prove("the same building made in the designer (12x32, move a door, pick 8x12) shows that price", priceParts(made, cat).total === fair && priceDesign(fromState(made, cat), cat).price.total === fair);
+}
 const forged = fromState(building("LB", "10x20"), cat);
-forged.items.push(structuredClone(forged.items.find((i) => i.cat === "w48")));
-assert.throws(() => priceDesign(forged, cat), /This design could not be read/); checks++;
+const twin = forged.items.find((i) => i.cat === "w48");
+forged.items.push(structuredClone(twin));
+prove("a second door marked as coming with the building is charged at its normal price, never refused", priceDesign(forged, cat).price.total === priceParts(building("LB", "10x20"), cat).total + cat.CAT.w48.p);
 const back = await saveLayout(null);
 prove("going back removes only the chosen layout", back.status === 200 && !("layout" in back.data.settings.offer.LB) && back.data.changes.some((s) => /went back to the builder's layout/.test(s)));
 const raceVersion = back.data.version;
@@ -164,10 +219,11 @@ const currentUtility = fromState(building("UT", "10x20", actualHistory.cat), act
 prove("the genuine current door stays included", (await call("POST", `customers/${customer.id}/quotes`, { design: currentUtility })).status === 201);
 const union = structuredClone(oldUtility);
 union.items.push({ cat: "w48", wall: "B", pos: 0, inc: true });
-prove("old and current included doors cannot be combined into a forged free allowance", (await call("POST", `customers/${customer.id}/quotes`, { design: union })).status === 422);
+const unionQuote = await call("POST", `customers/${customer.id}/quotes`, { design: union });
+prove("old and current included doors cannot be combined into a free allowance: one of them is charged", unionQuote.status === 201 && unionQuote.data.quote.total === realOld.data.quote.total + actualHistory.cat.CAT.w48.p);
 union.items.at(-1).inc = false;
 const paid = await call("POST", `customers/${customer.id}/quotes`, { design: union });
-prove("the extra replacement door can be bought at its current price", paid.status === 201 && paid.data.quote.total > realOld.data.quote.total);
+prove("the extra replacement door can be bought at its current price", paid.status === 201 && paid.data.quote.total === realOld.data.quote.total + actualHistory.cat.CAT.w48.p);
 const dependencyRecord = await priceList();
 const dependencySettings = structuredClone(dependencyRecord.settings);
 const cabinRecipe = (await call("GET", "layout-mode?style=C")).data.layout;
@@ -181,4 +237,4 @@ delete dependencySettings.items.d36lite;
 const dependency = await call("PUT", "price-list", { settings: dependencySettings, version: dependencyRecord.version });
 prove("an unpriced item used only for a layout's measurements gets useful owner words", dependency.status === 422
   && dependency.data.problems.some((words) => words.includes("standard layout of the Cabin uses its size") && words.includes("Sell it on Doors & windows") && !/items\.|CAT\./.test(words)));
-console.log(`PROVED (${checks} checks): owners save checked standard layouts for every lot, history and version checks hold, and included items keep their prices after size and porch changes while forged extras are refused.`);
+console.log(`PROVED (${checks} checks): owners save checked standard layouts for every lot, history and version checks hold, and items marked as coming with the building are free only up to what the design's own size and porch come with: the rest is charged at its normal price, never refused.`);

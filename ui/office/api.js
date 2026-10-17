@@ -33,6 +33,7 @@
    told. */
 
 import { fetchWithin, forgetOldSignIn } from "./identity.js";
+import { reportApiProblem } from "../problems.js";
 
 export class ApiError extends Error {
   constructor(status, message, problems = null, data = null) {
@@ -91,6 +92,7 @@ export async function api(path, options = {}) {
     throw new ApiError(401, typeof words === "string" && words ? words : "You were signed out. Sign in again.", null, data);
   }
   if (!r.ok && !(path === "me" && r.status === 401)) {
+    reportApiProblem({ status: r.status, path, requestId: data?.requestId || r.headers.get("X-Request-Id"), code: data?.code });
     throw new ApiError(r.status, data?.error || "Something went wrong on our end. Try again in a minute.", data?.problems || null, data);
   }
   return { status: r.status, ...(data || {}) };

@@ -227,7 +227,7 @@ a.pl-card:hover { border-color: var(--gold); }
   border: 1px solid var(--line-strong); background: #fff; color: var(--ink); cursor: pointer; font-size: 14.5px; font-weight: 500; font-variant-numeric: tabular-nums;
 }
 .pl-built-chip[aria-pressed=true] { background: var(--brand-header); border-color: var(--brand-header); color: #fff; }
-.pl-built-chip.std[aria-pressed=true] { background: var(--gold-soft); border-color: var(--gold-line); color: #5E480C; }
+.pl-built-chip.std[aria-pressed=true] { background: var(--gold-soft); border-color: var(--gold-deep); color: #5E480C; }
 .pl-built-from { display: block; margin-top: 2px; color: var(--ink); font-weight: 500; }
 .pl-built-chip:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .pl-built-check { display: grid; gap: 10px; margin-top: 6px; }
@@ -885,6 +885,12 @@ body.set-bar-on .toasts { bottom: 96px; }
   .pl-preview-head, .pl-preview-nums strong, .pl-sheet-title { color: var(--ink); }
   .pl-card-name, .pl-page-title { color: var(--ink); }
   .pl-saved-mark { background: #2E7D32; }
+  /* Chips follow the dark cards: an unpicked chip is light words on a dark
+     pill; a picked chip is filled light (gold when it comes from the
+     standard) with dark words, so picked and unpicked never look alike. */
+  .pl-built-chip { background: var(--card); }
+  .pl-built-chip[aria-pressed=true] { background: var(--ink); border-color: var(--ink); color: #16130E; }
+  .pl-built-chip.std[aria-pressed=true] { background: var(--gold-deep); border-color: var(--gold-deep); color: #16130E; }
 }
 
 /* A layout reset keeps both choices above the save bar, with room for a

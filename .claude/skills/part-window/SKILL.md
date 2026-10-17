@@ -21,9 +21,9 @@ A window in a wall, and the shutters that can go either side of it:
   run across both).
 * Every window: a white frame ring 0.12 ft wide with the glass set back
   behind a reveal; the shared trim round it -- side casings running right up
-  into the head (no door-style gap), the 22.5-degree head board, the porch
-  header band on a porch building -- and the sloped **sill** under it, widest
-  at its bottom (see `part-openings`).
+  into the head, one 22.5-degree head board, and the sloped **sill** under
+  it, widest at its bottom. The recorded Barnwright catalogue also keeps
+  its extra porch opening band (see `part-openings`).
 * **Shutters** (ticked per window): board and batten, 0.86 ft wide, one each
   side of the WHOLE opening (both sides of a double), 0.09 ft outside the
   casing: three boards with a daylight gap and three battens across them
@@ -162,3 +162,19 @@ And the shared trim (`common.js`, full text in `part-openings`):
 * `node tools/check-model-live.mjs` -- `openingRect` (casings, head, sill,
   porch band) against the trim Barnwright's live page draws.
 * `node tools/check-parts.mjs`, `node tools/check-imports.mjs`.
+
+## Shop opening trim — October 12, 2026
+
+The standard manufacturer uses actual 3 1/2-inch trim with
+`construction.openings.trim.widthIn: 3.5`, `headJoint: "continuous"` and
+`porchBand: false`. Alan's cabin correction removes the extra stacked
+opening band on all walls of the six cabin styles listed in `part-openings`.
+Each door or wall window keeps one tapered head matching ordinary windows
+and rectangular 18x24 loft-window trim. Porch perimeter and beam trim stay
+as drawn. Decorative faux loft rectangles and octagonal frames keep their design.
+
+Shared measurements in `model/opening-trim.js` keep geometry, paired windows,
+layouts and tap bounds together. The legacy Barnwright catalogue retains
+its original door reveal and extra porch opening band. Check emitted boards
+and single heads with `node tools/check-opening-trim.mjs`, and legacy geometry
+with `node tools/check-golden.mjs`.

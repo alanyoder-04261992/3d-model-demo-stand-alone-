@@ -22,13 +22,15 @@
    safe way round. A Dealer Center has no example or practice customers, so
    every one counts. */
 
-import { randomId } from "./hash.js";
+import { randomId, sha256Hex } from "./hash.js";
 import { fail, text, email, phone, day, money, oneOf, bool, onlyKeys } from "./http.js";
 import { KEEP } from "./store.js";
 import { can, ROLE_WORDS } from "./people.js";
 import { priceOrExplain, buildingName } from "./pricing.js";
 import { rtoMonthly } from "../../model/pricing.js";
 import { planWords } from "../../model/quote-plan.js";
+import { quoteCatalogue } from "../../model/quote-catalogue.js";
+import { toState } from "../../model/design.js";
 
 export const STAGES = ["new", "contacted", "quoted", "sold", "delivered", "lost"];
 export const STAGE_WORDS = { new: "New", contacted: "Contacted", quoted: "Quoted", sold: "Sold", delivered: "Delivered", lost: "Lost" };
@@ -235,22 +237,40 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
   }
 
   async function create(who, data) {
-    onlyKeys(data, ["lot", "name", "phone", "email", "address", "city", "state", "zip", "smsOk", "source", "note", "assignedTo", "followUp"], "The customer");
+    onlyKeys(data, ["lot", "name", "phone", "email", "address", "city", "state", "zip", "smsOk", "source", "note", "assignedTo", "followUp", "requestKey"], "The customer");
     await mustSeeLot(who, data.lot);
     const source = data.source == null ? "walk-in" : oneOf(data.source, SOURCES.filter((s) => s !== "website"), "Pick where they came from.");
     const contact = contactFields(data);
     const assignee = data.assignedTo === undefined ? who.person : await checkAssignee(data.assignedTo, data.lot);
+    const requestKey = data.requestKey == null ? null : text(data.requestKey, 128, "The save reference", { required: true });
+    if (requestKey && !/^[A-Za-z0-9_-]{8,128}$/.test(requestKey)) fail(422, "The save reference could not be read. Close this form and try again.");
+    const note = text(data.note, 4000, "Note", { multiline: true });
+    const followUp = data.followUp ? followUpOf(data.followUp) : null;
+    const assignedTo = assignee && can.seeLot(assignee, data.lot) ? assignee.userId : null;
+    const requestHash = sha256Hex(JSON.stringify([data.lot, contact, source, assignedTo, note, followUp]));
+    /* One form keeps one reference until it finishes. Its customer id is
+       stable for this person, so an acknowledged write and a lost response
+       cannot create two records, even when two retries arrive together. */
+    const id = requestKey ? sha256Hex(`${who.person.userId}\n${requestKey}`).slice(0, 24) : newId();
+    const repeat = async () => {
+      const existing = await load(who, id);
+      if (existing.createRequestHash !== requestHash) fail(409, "That customer was already added with different details. Open Customers to check it before adding another.");
+      await repairRows(existing);
+      return existing;
+    };
+    if (requestKey && await store.get(`customers/${id}`)) return repeat();
     const at = iso();
     const c = {
-      id: newId(), lot: data.lot, ...contact, smsOk: contact.smsOk ?? null, source, stage: "new", lostReason: "",
-      assignedTo: assignee && can.seeLot(assignee, data.lot) ? assignee.userId : null,
-      followUp: null, quotes: [], orders: [], activity: [], createdAt: at, updatedAt: at,
+      id, lot: data.lot, ...contact, smsOk: contact.smsOk ?? null, source, stage: "new", lostReason: "",
+      assignedTo, followUp, quotes: [], orders: [], activity: [], createdAt: at, updatedAt: at,
+      ...(requestKey ? { createRequestHash: requestHash } : {}),
     };
     log(c, who, "created", `Added by ${byOf(who).name} (${SOURCE_WORDS[source].toLowerCase()})`);
-    const note = text(data.note, 4000, "Note", { multiline: true });
     if (note) log(c, who, "note", note);
-    if (data.followUp) c.followUp = followUpOf(data.followUp);
-    if (!(await store.create(`customers/${c.id}`, c))) fail(503, "Something went wrong saving that. Please try again.");
+    if (!(await store.create(`customers/${c.id}`, c))) {
+      if (requestKey) return repeat();
+      fail(503, "Something went wrong saving that. Please try again.");
+    }
     await syncRows(c, [c.lot]);
     return c;
   }
@@ -335,11 +355,17 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
 
   /* ---- quotes -------------------------------------------------------------- */
 
-  function quoteOf(priced, cat, { by, source, number }) {
+  async function quoteOf(priced, cat, { by, source, number }) {
+    const catalogue = quoteCatalogue(cat, priced.design);
+    const encoded = JSON.stringify(catalogue);
+    if (new TextEncoder().encode(encoded).length > 250000) fail(422, "This building's saved details are too large. Ask Barnwright to check the price list before saving this quote.");
+    const catalogueId = sha256Hex(encoded);
+    await store.create(`quote-catalogues/${catalogueId}`, { v: 1, catalogue });
     return {
       id: newId(), number, at: iso(), by, source,
       building: buildingName(priced.design, cat),
       design: priced.design, price: priced.price, total: priced.price.total, cfg: cat.cfg,
+      snapshot: { v: 1, catalogueId },
     };
   }
 
@@ -351,7 +377,7 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
     const note = text(data.note, 1000, "Note", { multiline: true });
     if (c0.quotes.length >= MAX_QUOTES) fail(422, "This customer has too many quotes. Add a new customer for new buildings.");
     const number = await nextNumber("quote-number");
-    const quote = quoteOf(priced, cat, { by: byOf(who), source: "office", number });
+    const quote = await quoteOf(priced, cat, { by: byOf(who), source: "office", number });
     if (note) quote.note = note;
     if (markLive) await markLive("quote");
     const c = await changeCustomer(who, id, (cur) => {
@@ -499,7 +525,7 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
 
   async function addWebsiteQuote(slug, contact, priced, cat) {
     const number = await nextNumber("quote-number");
-    const quote = quoteOf(priced, cat, { by: null, source: "website", number });
+    const quote = await quoteOf(priced, cat, { by: null, source: "website", number });
     /* what they want to do with it, and the rent-to-own payment they looked
        at -- worked out here from the server's own price, never the page's */
     if (contact.plan) quote.plan = contact.plan;
@@ -558,7 +584,30 @@ export function createCustomers({ store, now, lots, priceList, log: logError = c
     }
   }
 
-  return { list, get, create, update, addActivity, addQuote, addOrder, updateOrder, csv, addWebsiteQuote, rowOf };
+  /* A private historical view uses the quote's own saved definitions.
+     History stores owner settings, not the original manufacturer/library,
+     so it cannot prove an old quote's labels and construction. Legacy
+     records never silently substitute today's resolved building. */
+  async function quoteView(who, id, quoteId) {
+    const c = await load(who, id);
+    const quote = c.quotes.find((q) => q.id === quoteId);
+    if (!quote) fail(404, "We couldn't find that quote.");
+    let catalogue = null;
+    if (quote.snapshot?.v === 1 && /^[a-f0-9]{64}$/.test(quote.snapshot.catalogueId || "")) {
+      const kept = await store.get(`quote-catalogues/${quote.snapshot.catalogueId}`);
+      if (kept?.v === 1 && sha256Hex(JSON.stringify(kept.catalogue)) === quote.snapshot.catalogueId) catalogue = kept.catalogue;
+    }
+    if (catalogue) {
+      try { if (toState(quote.design, catalogue, { asSaved: true }).warnings.length) catalogue = null; }
+      catch { catalogue = null; }
+    }
+    if (!catalogue) fail(409, "The original building details are unavailable. The saved building name and prices are still shown; ask Barnwright before using a picture or fine print for this quote or order.");
+    const lot = await lots.get(c.lot);
+    /* the price it was saved with: the page shows that, never a new one */
+    return { catalogue, design: quote.design, price: quote.price, total: quote.total, lot: { ...(lot || {}), slug: c.lot }, historical: true };
+  }
+
+  return { list, get, create, update, addActivity, addQuote, addOrder, updateOrder, csv, addWebsiteQuote, quoteView, rowOf };
 }
 
 export const WORDS = { STAGE_WORDS, SOURCE_WORDS, ORDER_WORDS, PAYMENT_WORDS, ROLE_WORDS, LOST_REASONS };

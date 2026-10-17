@@ -88,12 +88,23 @@ export function fakeHelpInbox({ clock, publicKeyPem, origin = "https://help-inbo
     return answer({ ok: true, id: item.id, at: item.at }, 201);
   }
 
-  function thread(c, askerId) {
+  function thread(c, { askerId, limit = 30, cursor } = {}) {
     if (askerId !== undefined && !str(askerId, 128, 1)) return refuse(400, "bad_request", "That asker isn't right.");
-    const items = inbox.questions.filter((x) => x.customerId === c.customerId && (askerId === undefined || x.asker.id === askerId))
-      .sort((x, y) => y.at.localeCompare(x.at) || inbox.questions.indexOf(y) - inbox.questions.indexOf(x)).slice(0, 30)
+    if (!Number.isInteger(limit) || limit < 1 || limit > 30) return refuse(400, "bad_request", "That page size isn't right.");
+    let after = null;
+    if (cursor !== undefined) {
+      try { after = JSON.parse(Buffer.from(cursor, "base64url").toString("utf8")); } catch { /* refused below */ }
+      if (!after || after.customerId !== c.customerId || after.askerId !== (askerId || "") || !str(after.at, 100, 1) || !str(after.id, 100, 1)) return refuse(400, "bad_request", "That list link isn't right.");
+    }
+    const all = inbox.questions.filter((x) => x.customerId === c.customerId && (askerId === undefined || x.asker.id === askerId))
+      .sort((x, y) => y.at.localeCompare(x.at) || y.id.localeCompare(x.id))
+      .filter((x) => !after || x.at < after.at || (x.at === after.at && x.id.localeCompare(after.id) < 0));
+    const page = all.slice(0, limit);
+    const last = page.at(-1);
+    const nextCursor = all.length > page.length && last ? Buffer.from(JSON.stringify({ customerId: c.customerId, askerId: askerId || "", at: last.at, id: last.id })).toString("base64url") : null;
+    const items = page
       .map((x) => ({ id: x.id, at: x.at, text: x.text, page: x.page, asker: { id: x.asker.id, name: x.asker.name }, status: x.status, replies: x.replies.map((r) => ({ at: r.at, text: r.text })) }));
-    return answer({ ok: true, items });
+    return answer({ ok: true, items, nextCursor });
   }
 
   function problem(c, p) {
@@ -139,7 +150,7 @@ export function fakeHelpInbox({ clock, publicKeyPem, origin = "https://help-inbo
     const claims = checkPass(body.pass, kind);
     if (!claims) return refuse(401, "bad_pass", "That pass isn't valid.");
     if (kind === "question") return ask(claims, body.question);
-    if (kind === "thread") return thread(claims, body.askerId);
+    if (kind === "thread") return thread(claims, body);
     return problem(claims, body.problem);
   };
 

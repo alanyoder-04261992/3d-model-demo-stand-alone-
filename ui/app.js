@@ -130,8 +130,9 @@ import { assemble } from "../engine/assemble.js";
 import { createRenderer, stageTableFor } from "../engine/renderer.js";
 import { createCamera, animYaw } from "../engine/camera.js";
 import { paintBackdrop } from "../engine/scene.js";
-import { createPanels } from "./panels.js";
+import { createPanels, savedPriceOf } from "./panels.js";
 import { createSheet } from "./sheet.js";
+import { rememberFocus, restoreFocus } from "./focus.js";
 import { createInteraction, ftIn } from "./interaction.js";
 import { reportProblem } from "./problems.js";
 
@@ -299,10 +300,14 @@ async function boot() {
   /* 2. the company, before anything is drawn */
   let loaded;
   try { loaded = layoutStart?.catalogue ? { catalogue: layoutStart.catalogue, problems: [] }
-    : lotMatch ? await loadLot(lotMatch[1], { preview }) : await loadCompany(companyId); }
+    : lotMatch ? await loadLot(lotMatch[1], { preview, savedQuote: q.get("saved-quote") }) : await loadCompany(companyId); }
   catch (e) {
     console.error("The designer could not load its settings:", e.message);
     reportProblem(e);   /* a closed lot's answer (it carries its status) is not passed on */
+    if (q.get("saved-quote")) {
+      bootMessage("The original building can't open", "<p>" + esc(e.status === 401 ? "Sign in to your Dealer Center, then open the building from its quote or order again." : e.message) + "</p>");
+      return null;
+    }
     if (preview) {
       bootMessage("This preview can't open", "<p>" + (e.status === 401
         ? (preview === "barnwright" ? "Your Barnwright visit ended. In your Control Room tap Open their price list, then open the preview again." : "Sign in to your Dealer Center first, then open the preview again.")
@@ -354,10 +359,10 @@ async function boot() {
   let state = defaults(cat);
   let startDesign = null, startWarnings = [], startError = null;
   let asSaved = false;
-  if (/[#&]d=/.test(location.hash || "")) {
+  if (loaded.savedDesign || /[#&]d=/.test(location.hash || "")) {
     try {
-      startDesign = await decode(location.hash);
-      asSaved = lookOnlyAddress(location.href);
+      startDesign = loaded.savedDesign || await decode(location.hash);
+      asSaved = !!loaded.savedDesign || lookOnlyAddress(location.href);
       const t = toState(startDesign, cat, { asSaved });
       state = t.state; startWarnings = t.warnings;
     } catch (e) { startError = e.message; state = defaults(cat); asSaved = false; }
@@ -383,7 +388,7 @@ async function boot() {
 
   const ctx = {
     cat: cat, get state() { return state; }, canvas: canvas, stage: stage, renderer: renderer, cam: renderer.cam,
-    embedded: embedded, mode: "out", readOnly: false, asSaved: asSaved, plan: null, result: null, layoutHooks: null,
+    embedded: embedded, mode: "out", readOnly: !!loaded.savedDesign, asSaved: asSaved, plan: null, result: null, layoutHooks: null,
     frame() { return frameOf(state, cat); },
     rebuild: rebuild, refreshUI: refreshUI, refreshLists: () => panels.refreshLists(), select: select, act: act, emit: emit,
     goInside(reason) { callInside({ want: "in", reason: reason || "" }); },
@@ -438,6 +443,7 @@ async function boot() {
   /* Every change: do it, apply the rules, redraw, tell the listeners. */
   function act(reason, fn, opts) {
     opts = opts || {};
+    const focused = rememberFocus();
     const out = fn ? fn(state) : undefined;
     /* a change is never only looking: the door follows the size from now on */
     if (!ctx.readOnly) ctx.asSaved = false;
@@ -449,6 +455,7 @@ async function boot() {
       refreshUI();
       if (state.sel) sheet.sync(); else el("sheet").classList.remove("open");
     }
+    restoreFocus(focused);
     emit("change", { reason: reason || "", state: state });
     return out;
   }
@@ -488,7 +495,7 @@ async function boot() {
     getCatalogue: () => cat,
     getPlan: () => ctx.plan,
     getResult: () => ctx.result,
-    price: () => priceParts(state, cat),
+    price: () => savedPriceOf(cat) || priceParts(state, cat),
     rentToOwn: () => panels.rentToOwn(),       /* {months, monthly} the customer is looking at, or null */
     getDesign: (opts) => fromState(state, cat, opts),
     applyDesign(design) {
@@ -568,6 +575,7 @@ async function boot() {
       }
     }
   }
+  if (loaded.savedDesign) api.setReadOnly(true);
   api.ready = true;
   try { window.dispatchEvent(new CustomEvent("shedui:ready", { detail: api })); } catch (e) { /* very old browsers */ }
   return api;

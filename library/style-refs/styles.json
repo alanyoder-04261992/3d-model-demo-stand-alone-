@@ -2,9 +2,9 @@
  "format": 1,
  "about": "Pictures and shape facts for every style in the 3D designer's library, for matching a dealer's photos to a style. Made by node tools/make-style-refs.mjs and checked by node tools/check-style-refs.mjs in the 3D designer repository.",
  "pitch_note": "Every pitch, height and size here is the standard building line as the 3D designer draws it. The Utility Shed, Side Utility, Garage, Dog Kennel and Garden Utility use Alan's 5/12, the Dormer Shed's main roof his 7/12, and the Lofted Barn, Side Lofted Barn, Metal Lofted Barn and Lofted Barn Garage his barn roof heights (3 ft 7 3/4 in, 4 ft and 4 ft 3 in tall at 8, 10 and 12 ft wide); the other styles use Barnwright's drawing. A barn roof's height is to the peak of its trusses, the way a builder measures it; every other roof's is to the top of the roof. The words say every length and pitch the way How it's built does (5/12, about 6 1/2/12, 7 ft 4 13/16 in); a barn roof is said by its height, not by the pitch of its steep part. Each slope's pitch is also given as an exact number for measuring a photo. A dealer's real buildings can be steeper or flatter, and a photo can only say roughly how steep a roof is.",
- "library_version": "ae437bc34f8661e7",
+ "library_version": "0a5b177fd59b11ed",
  "library_files": {
-  "library/manufacturers/standard.json": "4c2fb64d5d98064ded542be401e5dec808c9deb0a286faeffbd9470ceb49f5a1",
+  "library/manufacturers/standard.json": "1c4b0da827a39c77d1d66963084a959153899fe0f53851608597fde3f82bf1f4",
   "library/construction.json": "bc45a625290a988f7ee7b274352eb7f4f6a6ce7aa5b971f568837dc0fc5a1297"
  },
  "drawn_with": {
@@ -46,8 +46,8 @@
  },
  "sheet": {
   "file": "sheet.jpg",
-  "sha256": "fae1e5e735756b20567996ae40fb4766171c177808eb764307584779c7abd062",
-  "bytes": 96145,
+  "sha256": "b4f6aba3e4309b3c7a6e7b8e37a74308b15faaf6dd69a69aadd4fd30a6979219",
+  "bytes": 97064,
   "width": 1024,
   "height": 1194,
   "columns": 4,
@@ -187,15 +187,15 @@
    "pictures": {
     "three_quarter": {
      "file": "UT.jpg",
-     "sha256": "801f7dfd8a1a1a2d6268b48eb10ad51f7bf1cb87a71972f2279463394967bc92",
-     "bytes": 42925,
+     "sha256": "5a4cb188c7f3ccc1d3e7fc290e676bd7dc7b4e6a351b2bfc62d76be8e1468200",
+     "bytes": 42514,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "UT-end.jpg",
-     "sha256": "7991ca11adbee96c5a98025b52b02809c85507624606f0ad2491492e56952cd1",
-     "bytes": 24951,
+     "sha256": "464a3030a979d77022752b53f3fe8c8ddc9162e346652bc0547c2288008fba1b",
+     "bytes": 24906,
      "width": 1024,
      "height": 761
     }
@@ -345,8 +345,8 @@
    "pictures": {
     "three_quarter": {
      "file": "SU.jpg",
-     "sha256": "39ceaf4f1703d9fd4b4285876d70146e8a5d23b0f996aa897f053719407d3c6d",
-     "bytes": 43630,
+     "sha256": "fd2f11608b0607e1d5ebcad1d44dd5245e176a9947c49bc5c018ba11675dbeec",
+     "bytes": 43452,
      "width": 1024,
      "height": 796
     },
@@ -502,8 +502,8 @@
    "pictures": {
     "three_quarter": {
      "file": "DS.jpg",
-     "sha256": "bf5d135541b9242fabdeefff77bfa895dc1a8b57865df985db93e707ed6af805",
-     "bytes": 45507,
+     "sha256": "fc173a00e6a75f9d7d217a0c5e73d3405197e8861f2e450433437d4c6c6d0406",
+     "bytes": 45346,
      "width": 1024,
      "height": 796
     },
@@ -640,8 +640,8 @@
    "pictures": {
     "three_quarter": {
      "file": "BU.jpg",
-     "sha256": "f00406845ca644d1fe4c69897c89c0159b8dfaa2f6219dbcd4e84456258520fb",
-     "bytes": 38076,
+     "sha256": "386f69f8299bfcb15ae6d33a56f4afb6ccb77555d0523410857c55e22e54e01f",
+     "bytes": 37865,
      "width": 1024,
      "height": 796
     },
@@ -742,15 +742,15 @@
    "pictures": {
     "three_quarter": {
      "file": "GU.jpg",
-     "sha256": "0577a9a7b5acae25f7eb6a128ac7146ee2fa03b228516f0aa59aee6f5e671b56",
-     "bytes": 37470,
+     "sha256": "3a714db5adb54914931a4ade996d8ca3f3bf77a71606fe7a7dacea9a89511f7c",
+     "bytes": 37054,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "GU-end.jpg",
-     "sha256": "5a42364e5334b61a3f7c1d6ed46c7aaa95e467b166621ba0d3f975c81e23c336",
-     "bytes": 21976,
+     "sha256": "a0f0364b33e3664dc1a0842201856e5fb29fdbca4af85931a6876f28f2d54f8a",
+     "bytes": 21619,
      "width": 1024,
      "height": 761
     }
@@ -864,15 +864,15 @@
    "pictures": {
     "three_quarter": {
      "file": "SB.jpg",
-     "sha256": "a804c34ecc9c381c668890defa80283abd021587cdfa5dac2cd97a212ba6138d",
-     "bytes": 41029,
+     "sha256": "05720b5e193fa15e02f7f25d42bd40281b076ae0505e6af83ea4ae2a28373137",
+     "bytes": 40561,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "SB-end.jpg",
-     "sha256": "fe0512240ac4954ad7c547d5bd326efb3dab13d9db791436e4b64692cdc7f8ca",
-     "bytes": 24950,
+     "sha256": "ed5d0d12843582372dd3359efaedaea75e1e367c4c76e7771152e4c2408ed6fa",
+     "bytes": 24656,
      "width": 1024,
      "height": 761
     }
@@ -1030,15 +1030,15 @@
    "pictures": {
     "three_quarter": {
      "file": "LB.jpg",
-     "sha256": "bc3453d945c9f9fb9aee6e02b9a6d31a4399caa537d3134f04cf386f338b917c",
-     "bytes": 41483,
+     "sha256": "d3aa372cbb6aa462d5b7bd218576cc89d8c95e9ec539a4526742f907b3582680",
+     "bytes": 41094,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "LB-end.jpg",
-     "sha256": "f2d65e6df0755eb0a47442d43a69948444e5cff37e6a58bdc667622af953f374",
-     "bytes": 26214,
+     "sha256": "9c53f8f3273d1d968fe2e263acf8260c25fbc9ea23cc1e1b2cb0c94da9197b88",
+     "bytes": 26519,
      "width": 1024,
      "height": 761
     }
@@ -1209,8 +1209,8 @@
    "pictures": {
     "three_quarter": {
      "file": "SLB.jpg",
-     "sha256": "0d331d76b3301d87d43950262ca84abb1c8d1f655e776327ce49cd894f9a20a4",
-     "bytes": 39740,
+     "sha256": "ba3fdf7c1b9d7c0997657755cfb3b045387d0e3188695a93cc4a6a6cda9e6924",
+     "bytes": 39466,
      "width": 1024,
      "height": 796
     },
@@ -1356,8 +1356,8 @@
    "pictures": {
     "three_quarter": {
      "file": "CS.jpg",
-     "sha256": "ff003de75987aaaa017d46caf11edeaf9223025a4e2683f6628cf274b2002189",
-     "bytes": 41729,
+     "sha256": "7753fc6fe81b7171d424f4929e8cebf23ef1c1ef8c10f182bd6dce07d8e374e5",
+     "bytes": 41414,
      "width": 1024,
      "height": 796
     },
@@ -1566,8 +1566,8 @@
    "pictures": {
     "three_quarter": {
      "file": "SS.jpg",
-     "sha256": "28dce130ad8e4f7978f8bd084d0d5fb582eb224d7c9faf11b2058935daa7040e",
-     "bytes": 38537,
+     "sha256": "f9eb2a0e7aee8b17459a3785f8005d201c1919f7e444ba929fe35e5a59a42546",
+     "bytes": 38515,
      "width": 1024,
      "height": 796
     },
@@ -1726,15 +1726,15 @@
    "pictures": {
     "three_quarter": {
      "file": "C.jpg",
-     "sha256": "e29b26ecdce920f968469436fcd34a54f88520b125d1363abc5eaae25294d72a",
-     "bytes": 52532,
+     "sha256": "0826d99f29590ec9708ce6d3dfeaf37430834c1a6559f64218e3d5c4efb7e6a2",
+     "bytes": 52674,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "C-end.jpg",
-     "sha256": "bb02364b415709c269b5c10180472d412c8131820a39b6be4902abace2e51dbe",
-     "bytes": 30436,
+     "sha256": "0265bdc0a989d8416db513bf8666f03e4f7433756cd52e0ddc72f7c77d642c06",
+     "bytes": 30686,
      "width": 1024,
      "height": 761
     }
@@ -1893,15 +1893,15 @@
    "pictures": {
     "three_quarter": {
      "file": "LBC.jpg",
-     "sha256": "7eb126f753e7dabc1c39442880431b399676b5d383bc15567ca3cd6139b01798",
-     "bytes": 49459,
+     "sha256": "ed0529fdf9d6292b8115016181e679d19f1540b11fd49f523d439e2a964ee368",
+     "bytes": 49498,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "LBC-end.jpg",
-     "sha256": "fc9e481bec7fe4e463e640a58b28a1010ee62fc8d3d1686531023c056651f943",
-     "bytes": 32826,
+     "sha256": "5df64cdf7b0db50ee4139bad6eafb554950864234c45d32013cecee26acf26e4",
+     "bytes": 32953,
      "width": 1024,
      "height": 761
     }
@@ -2025,15 +2025,15 @@
    "pictures": {
     "three_quarter": {
      "file": "SC.jpg",
-     "sha256": "f93317f9091be1fc41926713e722173b94d90a644bccc27e5021e5d7251ca79e",
-     "bytes": 53902,
+     "sha256": "128bd00d8ee4c37d42bfb6a76fe2e0c2bc79e03ca5aa4f8966f4748f11d1d20e",
+     "bytes": 54148,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "SC-end.jpg",
-     "sha256": "c401381725b8a78d2cfb9d1b24844529ddd867db33a42baa3485498f971649d5",
-     "bytes": 26239,
+     "sha256": "0edf019c6b79c29b76d085c28a093c32a4334594198e3c4a03b615035d69e88c",
+     "bytes": 26189,
      "width": 1024,
      "height": 761
     }
@@ -2167,15 +2167,15 @@
    "pictures": {
     "three_quarter": {
      "file": "LSC.jpg",
-     "sha256": "c9829811a50ed90d04b6704529482aa70eca1a138741dad9808eb9283770579d",
-     "bytes": 49948,
+     "sha256": "c49bf2b731958e44d51d2a977203edd9ba4dacfb5d2cd78da31e4bca6dba91f8",
+     "bytes": 50328,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "LSC-end.jpg",
-     "sha256": "1a424836ae3888880eb805676b4253a7f0a2222c699bcc24b6374b6980df2e0d",
-     "bytes": 27891,
+     "sha256": "cbb13ae5df0a516085b9ba5321ff02531e7e722232665153da25dd9f011fec77",
+     "bytes": 28138,
      "width": 1024,
      "height": 761
     }
@@ -2298,15 +2298,15 @@
    "pictures": {
     "three_quarter": {
      "file": "DSC.jpg",
-     "sha256": "edbc160f2cba4827f89993e2b54b897ae1db7d300d23350d9ccf71d48e70846e",
-     "bytes": 46544,
+     "sha256": "70654509d6f1e603f8739daa80b4168f3e39646b6d258f7cc880318764ea57e8",
+     "bytes": 46631,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "DSC-end.jpg",
-     "sha256": "411e843456856de819566f6ea0dc10025cdaddcc6f5763a076a3024f6a0c8888",
-     "bytes": 23441,
+     "sha256": "ca454c660d152480d75952485e1d3b0e52f9778d9dd41fc8926dbeda2f21ee2f",
+     "bytes": 23583,
      "width": 1024,
      "height": 761
     }
@@ -2439,15 +2439,15 @@
    "pictures": {
     "three_quarter": {
      "file": "SLC.jpg",
-     "sha256": "4ac9283d5a67844ef6974c5d37c79d31d453b8419958170b3395e483536eede3",
-     "bytes": 41810,
+     "sha256": "1f47213a60e0d47f819b3fc0cae0254c5919d613ddf7497de160d55776acfe43",
+     "bytes": 41928,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "SLC-end.jpg",
-     "sha256": "d6189a6e787747859dad3e74ea1dc571cd2bd69455cc1b29e59e9983d507463a",
-     "bytes": 24475,
+     "sha256": "3b439091434f2898859072dd198520555974e60ec2e084177ef49210c12623dd",
+     "bytes": 24535,
      "width": 1024,
      "height": 761
     }
@@ -2568,15 +2568,15 @@
    "pictures": {
     "three_quarter": {
      "file": "G.jpg",
-     "sha256": "32e9f3c262e4b929aac10c4931dc79f37e8053be31b74690a61903989ed23151",
-     "bytes": 57388,
+     "sha256": "3f8fc830195edd842c9a7cd356e0ada3ac071facaea691ec9c281d04868cebe0",
+     "bytes": 57374,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "G-end.jpg",
-     "sha256": "e250eb0e715614cb895b3aa1922d60b9a0b034b84bdcac6715d3762e13006180",
-     "bytes": 32137,
+     "sha256": "a215b1663b5f1b7b97e2d5300f0d54a1187e1972a8d11bddf5b76fabba769a5c",
+     "bytes": 32099,
      "width": 1024,
      "height": 761
     }
@@ -2692,15 +2692,15 @@
    "pictures": {
     "three_quarter": {
      "file": "LBG.jpg",
-     "sha256": "3de5c24e5b8949222bd68d0e99b90a22ccc49c2a63130a411d37c8bd6e97fce3",
-     "bytes": 40946,
+     "sha256": "a0acba60dad322954a76f782ed68935c55cb3848918017f3cf6f84570f4d66c1",
+     "bytes": 40983,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "LBG-end.jpg",
-     "sha256": "ac829769ff50b050fee37c4a6cefac4db40097cb46b641a85c1e1921b6d41da7",
-     "bytes": 23194,
+     "sha256": "c2017e7373200baa28c59597be16caacdca1b211da5bfdc9343545bb6d8bc055",
+     "bytes": 22989,
      "width": 1024,
      "height": 761
     }
@@ -2803,15 +2803,15 @@
    "pictures": {
     "three_quarter": {
      "file": "MU.jpg",
-     "sha256": "e338f8546231bb704de2858f6358a40262e601581cbeeee7335e5f9cfadb1728",
-     "bytes": 46182,
+     "sha256": "00127b7277ce76b6374e333fdabc50494f7a3b18d44eb6758d8aa7757e9660f6",
+     "bytes": 45772,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "MU-end.jpg",
-     "sha256": "4e808b50dccfd0bdf734e60436f6ca9afe3ac0e7254c96573fd09dab305c8e79",
-     "bytes": 27049,
+     "sha256": "c693a7344344c916d7b274efb3dce378a3b3c3d07168293e322f61b9daaae176",
+     "bytes": 27256,
      "width": 1024,
      "height": 761
     }
@@ -2938,15 +2938,15 @@
    "pictures": {
     "three_quarter": {
      "file": "MLB.jpg",
-     "sha256": "184cc70e60e2a2f2015f5a808c3ffe1f461e84609ed8e73de07ca88b94d99bfb",
-     "bytes": 41973,
+     "sha256": "171136a293e653bb3a9fad0b174ad29705a6937a3f7185d07a22e0bc6ccc7a54",
+     "bytes": 41578,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "MLB-end.jpg",
-     "sha256": "18458f16445f19a7a520f668f38030340580ad602b0869c9b412431cf11f98ca",
-     "bytes": 27680,
+     "sha256": "c189e098c989e8f962044c2d9ceb51acf051151c314b25b1fd066f8f957e2602",
+     "bytes": 27959,
      "width": 1024,
      "height": 761
     }
@@ -3056,15 +3056,15 @@
    "pictures": {
     "three_quarter": {
      "file": "MG.jpg",
-     "sha256": "e7485b023ec63a0406dcf993d2a2615b22db88fe9bfebdaf02ed62b688003eb1",
-     "bytes": 46057,
+     "sha256": "f8cebd19be533e378767a1e148663cd98233d06150810cd01f3398cbdb587921",
+     "bytes": 46135,
      "width": 1024,
      "height": 796
     },
     "end": {
      "file": "MG-end.jpg",
-     "sha256": "5204b073fdb5b341e0da4b1b93b1f0415130604f9dec21350d9cdbe38f21c693",
-     "bytes": 21958,
+     "sha256": "caabfba0e9d36334c4b0314c9069aa2ac83ded62a3c78e06d2eb374b632a53dc",
+     "bytes": 21791,
      "width": 1024,
      "height": 761
     }
@@ -3197,8 +3197,8 @@
    "pictures": {
     "three_quarter": {
      "file": "MCS.jpg",
-     "sha256": "a36ba7a80233310b28b67c7f19f6c5c51b2b0c145aac886690ab7faeff70796d",
-     "bytes": 42704,
+     "sha256": "8bb4d2bd25ba712374b5d6e641eeffcd804b2449da2165b12826b3708a557519",
+     "bytes": 42363,
      "width": 1024,
      "height": 796
     },
@@ -3303,8 +3303,8 @@
    "pictures": {
     "three_quarter": {
      "file": "DK.jpg",
-     "sha256": "f368df41091c8465e949266bbe48aebab4a724b094657edc5fe4277aacc41be3",
-     "bytes": 63540,
+     "sha256": "ae765fccf6da81d15cbf8b7db9b42d38f22204254c7d5897df0703e13866642d",
+     "bytes": 63617,
      "width": 1024,
      "height": 796
     },

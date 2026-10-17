@@ -660,15 +660,25 @@ for (const bad of ["", "!!!!", "eyJ2Ijox", "z" + "A".repeat(40), "e" + "Q".repea
         `${name} ${z} saved with the double doors, opened on a price list that no longer sells them: ${J(doors(back.state, ONLY))} ${J(back.warnings)}; swapped for the steel door: ${J(doors(backSw.state, ONLY))} ${J(backSw.warnings)}; server ${sent && (sent.status + " " + sent.message)} / ${sentSw && (sentSw.status + " " + sentSw.message)}`);
     }
   }
-  /* the Cottage, and Barnwright's own Side Utility, Dormer Shed and Side Lofted Barn: as Barnwright, door kept, nothing said, no upgrade */
+  /* the Cottage, and Barnwright's own Side Utility, Dormer Shed and Side
+     Lofted Barn: as Barnwright, door kept, nothing said. Since Alan's Oct 17
+     2026 "Yes, charge for them" (model/pricing.js chargedIncluded) the kept
+     door stands in for the door the new size comes with and is priced as
+     that swap on the sheet would be: the 10x16's 72 in double doors on a
+     10x12 cost the difference from the 48 in door; the 48 in door on a
+     10x16 costs nothing more (never a refund). */
   for (const cat of [DEMO, BW]) {
     for (const [a, b] of [["10x16", "10x12"], ["10x12", "10x16"]]) {
       const c = st(cat, "CS", a); c.items[1].shut = true;
       const was = doors(c, cat), plus = extras(c, cat);
+      const sizeDoor = doors(st(cat, "CS", b), cat)[0][0];
+      const swap = Math.max(0, cat.CAT[was[0][0]].p - cat.CAT[sizeDoor].p);
       S.chooseSize(c, b, cat);
       const w = normalize(c, null, cat);
-      check(G11, J(doors(c, cat)) === J(was) && w.length === 0 && priceParts(c, cat).total === cat.P.CS[b] + plus,
-        `${cat.id} Cottage ${a} touched, then ${b}: ${J(doors(c, cat))} (was ${J(was)}) ${J(w)} ${priceParts(c, cat).total} (Barnwright: ${cat.P.CS[b] + plus})`);
+      check(G11, J(doors(c, cat)) === J(was) && w.length === 0 && priceParts(c, cat).total === cat.P.CS[b] + plus + swap && (b !== "10x12" || swap > 0),
+        `${cat.id} Cottage ${a} touched, then ${b}: ${J(doors(c, cat))} (was ${J(was)}) ${J(w)} ${priceParts(c, cat).total} (Barnwright: ${cat.P.CS[b] + plus}, plus the swap ${swap})`);
+      const sent = send(fromState(c, cat), cat);
+      check(G11, sent && sent.price && sent.price.total === priceParts(c, cat).total, `${cat.id} Cottage ${a} touched, then ${b}, sent: ${sent && (sent.status + " " + sent.message)}`);
     }
   }
   for (const [k, name] of STYLES48) for (const z of ["8x12", "10x12"]) {

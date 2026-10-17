@@ -24,7 +24,8 @@
    A Barnwright visit sees this screen too, without the card, without Open
    or Closed, and its draft is kept in this tab if the visit ends. */
 
-import { h, clear, icon, button, field, checkbox, form, toast, pageHead, emptyState, linkButton, confirmBox, nextId } from "../dom.js";
+import { h, clear, icon, button, field, checkbox, form, dialog, toast, pageHead, emptyState, linkButton, confirmBox, nextId } from "../dom.js";
+import { mergeSettings } from "../settings-merge.js";
 import { get, put, post } from "../api.js";
 import { money, size as sizeWords, plural, initials, when, untilWords } from "../words.js";
 import { keepDraft, takeDraft, dropDraft } from "../visit-draft.js";
@@ -177,6 +178,8 @@ function draw() {
   page.bar = h("div", { class: "set-bar", hidden: true, role: "region", "aria-label": "Save settings" });
   const el = h("div", { class: "set" },
     pageHead("Settings", "Your business and how your 3D designer looks and works. Saving changes every lot at once."),
+    page.refreshNeeded ? h("div", { class: "banner info", role: "status" },
+      h("span", {}, "Settings saved. The refresh couldn't finish."), button("Retry refresh", refreshSaved, { kind: "ghost" })) : null,
     jump,
     h("div", { class: "set-cards" },
       cards[0][2],
@@ -530,7 +533,7 @@ function widthNotes() {
     const free = widths.filter((w) => !(String(w) in N));
     if (!free.length) { clear(addRow); return; }
     const pick = h("select", { "aria-label": "Width" }, free.map((w) => h("option", { value: String(w) }, `${w} ft wide`)));
-    clear(addRow, pick, button("Add a note", () => { N[pick.value] = ""; draw(); edited(); list.querySelector(`input[aria-label="Note for ${pick.value} ft wide buildings"]`)?.focus(); }, { icon: "plus", small: true }));
+    clear(addRow, pick, button("Add a note", () => { const width = pick.value; N[width] = ""; draw(); edited(); list.querySelector(`textarea[aria-label="Note for ${width} ft wide buildings"]`)?.focus(); }, { icon: "plus", small: true }));
   };
   draw();
   return h("div", { class: "set-block" }, h("h3", { class: "set-sub" }, "Notes for building widths"),
@@ -682,21 +685,49 @@ function drawBar() {
         : [h("strong", {}, plural(list.length, "change")), h("span", {}, shown)]),
     h("div", { class: "set-bar-actions" },
       page.stale
-        ? button("Reload settings", reload, { kind: "accent" })
+        ? button("Review newer settings", reload, { kind: "accent" })
         : [button("Undo changes", undo, { kind: "ghost" }),
           button("Save settings", save, { kind: "accent", icon: "check" })])));
 }
 
-/* someone else saved first: start again from what they saved */
+/* A conflict never silently drops the draft. Review which settings each
+   person changed, then carry this person's edits onto the newer version. */
 async function reload() {
-  const record = await page.ctx.app.loadPriceList(true);
-  dropDraft("settings");
-  page.saved = record;
-  page.draft = normalized(record.settings);
-  page.stale = false;
-  page.error = null;
-  rerender();
-  toast("Settings reloaded. Make your changes again.");
+  let record;
+  try { record = await page.ctx.app.loadPriceList(true); }
+  catch (error) { toast(error.message, { error: true }); return; }
+  const mine = changes();
+  const theirs = WATCH.filter(([, read]) => JSON.stringify(read(page.saved.settings)) !== JSON.stringify(read(record.settings))).map(([words]) => words);
+  const overlap = mine.filter((words) => theirs.includes(words));
+  const finish = (draft) => {
+    dropDraft("settings"); page.saved = record; page.draft = normalized(draft); page.stale = false; page.error = null; page.refreshNeeded = false;
+    box.close(); rerender();
+  };
+  const box = dialog("Review newer settings", [
+    h("p", {}, "Someone else saved while you were editing. Your changes are still here."),
+    h("p", {}, h("strong", {}, "Your changes: "), mine.join(", ") || "None"),
+    h("p", {}, h("strong", {}, "Newer saved changes: "), theirs.join(", ") || "None"),
+    overlap.length ? h("p", {}, `Both changed ${overlap.join(", ")}. Keeping your changes replaces those newer values when you save.`) : null,
+    h("div", { class: "actions end" }, button("Keep editing", () => box.close()),
+      button("Use saved settings", async () => {
+        if (await confirmBox("Discard your settings changes?", `Your changes to ${mine.join(", ") || "settings"} will be replaced by the newer saved settings.`, { yes: "Discard my changes" })) finish(record.settings);
+      }, { kind: "ghost" }),
+      button("Keep my changes", () => {
+        finish(mergeSettings(page.saved.settings, page.draft, record.settings));
+        toast("Your changes are kept with the newer settings. Review them, then tap Save settings.", { ms: 7000 });
+      }, { kind: "accent" })),
+  ]);
+}
+
+async function refreshSaved() {
+  if (changes().length) { await reload(); return; }
+  try {
+    const record = await page.ctx.app.loadPriceList(true);
+    page.saved = record; page.draft = normalized(record.settings); page.refreshNeeded = false;
+    await page.ctx.app.loadMe().catch(() => null);
+    window.dispatchEvent(new Event("dealer:brand"));
+    rerender(); toast("Settings refreshed.");
+  } catch (error) { toast(error.message, { error: true }); }
 }
 
 async function undo() {
@@ -733,6 +764,14 @@ async function save(e) {
     if (!yes) return;
   }
   if (btn) btn.disabled = true;
+  const controls = [...page.root.querySelectorAll("input, select, textarea, button")].map((input) => [input, input.disabled]);
+  controls.forEach(([input]) => { input.disabled = true; });
+  const stopLeaving = (event) => {
+    history.replaceState(null, "", event.oldURL); event.stopImmediatePropagation();
+    toast("Wait for these settings to finish saving before leaving.");
+  };
+  window.addEventListener("hashchange", stopLeaving, true);
+  try {
   const brandBefore = JSON.stringify([page.saved.settings.brand, page.saved.settings.status]);
   let out;
   try {
@@ -747,9 +786,24 @@ async function save(e) {
     return;
   }
   const statusBefore = page.saved.settings.status;
-  const record = await app.loadPriceList(true);
+  let record;
+  try { record = await app.loadPriceList(true); }
+  catch (error) {
+    /* The server's successful PUT already returned the saved version.
+       A failed refresh must not turn that write into a stuck or repeat save. */
+    page.saved = { ...page.saved, ...out };
+    page.draft = normalized(out.settings || page.draft);
+    app.priceList = page.saved; app.priceListAt = Date.now();
+    page.error = null; page.stale = false; page.refreshNeeded = true;
+    await app.loadMe().catch(() => null);
+    window.dispatchEvent(new Event("dealer:brand"));
+    toast("Settings saved. Tap Retry refresh to update this screen.", { ms: 7000 });
+    rerender();
+    return;
+  }
   page.saved = record;
   page.draft = normalized(record.settings);
+  page.refreshNeeded = false;
   await app.loadMe().catch(() => null);
   /* opening to customers ends setup access: the Barnwright card is read
      again, so it offers the owner's switch without reloading the page */
@@ -760,6 +814,11 @@ async function save(e) {
   const lots = out.lotCount;
   toast(!out.changes?.length ? "Nothing changed." : lots ? `Saved. ${lots === 1 ? "Your lot shows" : `All ${lots} lots show`} it now.` : "Saved.");
   rerender();
+  } finally {
+    window.removeEventListener("hashchange", stopLeaving, true);
+    controls.forEach(([input, disabled]) => { input.disabled = disabled; });
+    if (btn?.isConnected) btn.disabled = false;
+  }
 }
 
 /* ---- Barnwright (only with a Barnwright account) ---------------------------------------

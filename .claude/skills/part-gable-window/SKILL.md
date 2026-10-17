@@ -181,3 +181,20 @@ From the catalogue (Barnwright 731-734, `engine/constants.js`):
   opening and trim in one set of coordinates, clipped as drawn) against
   Barnwright's live page.
 * `node tools/check-parts.mjs`, `node tools/check-imports.mjs`.
+
+## Shop opening trim — October 12, 2026
+
+The standard manufacturer sets `construction.openings.trim.widthIn: 3.5`,
+`headJoint: "continuous"` and `porchBand: false`. The rectangular 18x24 loft
+window's existing 3 1/2-inch tapered head is the same trim used above ordinary
+wall windows and doors. Alan's cabin correction removes their extra stacked
+opening band on every wall of the six cabin styles listed in `part-openings`;
+it changes no gable-window geometry. The decorative faux loft window keeps
+its rectangular frame and corner triangles, and the octagonal frame keeps
+its design. Porch perimeter and beam trim stay as drawn.
+
+`model/opening-trim.js` keeps the rectangular window's measured stock, roof
+clearance and selection bounds together. The legacy Barnwright catalogue
+retains its original stock and extra cabin opening band. Check measured
+trim with `node tools/check-opening-trim.mjs`, and legacy geometry with
+`node tools/check-golden.mjs`.

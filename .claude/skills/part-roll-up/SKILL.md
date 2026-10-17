@@ -123,3 +123,18 @@ And the shared trim (`common.js`, full text in `part-openings`):
 * `node tools/check-model-live.mjs` -- its opening rectangle against the trim
   Barnwright's live page draws.
 * `node tools/check-parts.mjs`, `node tools/check-imports.mjs`.
+
+## Shop opening trim — October 12, 2026
+
+The standard manufacturer sets `construction.openings.trim.widthIn: 3.5`,
+`headJoint: "continuous"` and `porchBand: false`; shared trim dimensions come
+from `model/opening-trim.js`. Alan's cabin correction removes the extra
+stacked band on every wall of the six cabin styles listed in `part-openings`.
+Roll-ups already have one tapered head and never receive that extra band;
+their 3 1/2-inch trim and continuous joint stay as approved. Porch perimeter
+and beam trim, faux loft rectangles and octagonal frames retain their design.
+
+The legacy Barnwright catalogue retains its original trim and door reveal,
+including the extra porch band on its other door/window openings. Check
+measured boards and single heads with `node tools/check-opening-trim.mjs`,
+and legacy geometry with `node tools/check-golden.mjs`.

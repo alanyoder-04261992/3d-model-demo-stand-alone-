@@ -37,7 +37,7 @@
    that ends never shows a sign-in screen and never reloads: the work on
    screen stays (and is kept in this tab, visit-draft.js). */
 
-import { h, clear, icon, button, linkButton, toast, loading, emptyState } from "./dom.js";
+import { h, clear, icon, button, linkButton, toast, loading, emptyState, modalLeaveQuestion } from "./dom.js";
 import { app } from "./app.js";
 import { configureApi, signOut, finishSignOut, startSession, onOtherTabs, post, get, startVisit, endVisit, VISIT_ENDED, takeSignInNote } from "./api.js";
 import { signInScreen, notOnTeam, handleEmailLink, endedWords } from "./auth.js";
@@ -346,7 +346,7 @@ const SIGNED_OUT_KEEP = {
   tap: "You were signed out. Sign in in a new tab, then tap Save again.",
 };
 function signedOutHere(data) {
-  const question = main && app.leaveGuard ? app.leaveGuard() : null;
+  const question = main ? modalLeaveQuestion() || app.leaveGuard?.() : null;
   if (!question) {
     location.reload();
     return null;
@@ -485,8 +485,11 @@ export const NO_BUSINESS = Object.freeze({
 });
 
 let renderSeq = 0;
+let disposeView = null;
 async function render() {
   if (!main) return;   /* still on the sign-in screen: nothing to show yet */
+  disposeView?.();
+  disposeView = null;
   const { path, query } = currentPath();
   /* First setup is gone: an old #/setup link (a bookmark) opens Today */
   if (path === "/setup") {
@@ -536,6 +539,7 @@ async function render() {
     const mod = await VIEWS[viewName]();
     const ctx = {
       app, params: match, query, go, toast, view: viewName,
+      onDispose: (cleanup) => { if (seq === renderSeq) disposeView = cleanup; else cleanup(); },
       refresh: () => render(),
       setTitle: (words) => { document.title = `${words} · ${app.business?.name || "Dealer Center"}`; },
     };
@@ -656,7 +660,7 @@ async function otherTab(what) {
       }
     } catch { /* redraw */ }
   }
-  const question = main && app.leaveGuard ? app.leaveGuard() : null;
+  const question = main ? modalLeaveQuestion() || app.leaveGuard?.() : null;
   if (question) {
     toast(what === "out" ? "You signed out in another window. Copy what you typed, then sign in again." : "Somebody else signed in in another window. Copy what you typed, then reload this page.", { ms: 12000 });
     return;

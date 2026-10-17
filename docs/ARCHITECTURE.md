@@ -701,7 +701,13 @@ the swap, and nothing else moved.
 
 **`state`** — the live, mutable, Barnwright-shaped object the UI owns:
 hex `body trim roof doorC shutC`; `items[]` with `id cat wall pos vy px pz rot
-ln inc pk dbl shut lite origCat`; `sel seq dormer pLen pFlip pMid opts elec ramp xopt`.
+ln inc pk dbl shut lite origCat`; `sel seq dormer pLen pFlip pMid opts elec ramp xopt
+laidFor` (`laidFor`: the size and porch length the doors and windows were laid
+out for, noted by `ui/state.js` when a size or porch-length change keeps
+them; only for the words of `chargedNote`, never saved or priced).
+`inc` ("comes with the building") is free only up to how many of that item
+the design's own size and porch come with; the rest is charged at its normal
+price (`model/pricing.js chargedIncluded`, DIFFERENCES #30).
 Only `model/layout.js`, `model/design.js` and the UI mutate it. Layout functions
 read siblings from the live `state.items` (clamping order matters).
 
@@ -771,6 +777,30 @@ orders. The lot is emailed when email is set up. No payment is taken.
   `{ design, contact, summary, link, priceComputedBy: "browser", images? }`;
   images only when `leads.images` is true, capped at 300 KB.
 * `postMessage` — to the embedding page, only to an origin on `embed.origins`.
+
+A form provider's page loading in an iframe or a new tab is not a confirmed
+receipt. Cross-origin form POSTs keep the provider's normal flow, but the
+designer labels the result unconfirmed and offers the business's contact
+buttons and the design link. In a new tab the customer must finish and check
+the provider's confirmation. Same-origin form services can acknowledge a POST
+with an `application/json` response containing `ok: true` or `success: true`;
+a successful HTML response or a CAPTCHA remains unconfirmed. A failure does
+not trigger a second automatic POST. Quote fields stay filled for review.
+Embedding pages must check `event.detail.sent === true` before counting a
+confirmed receipt; opening a mail app or an unconfirmed form response reports
+`sent: false` with its status.
+
+The public designer's choice buttons expose their selected state and keep
+keyboard focus across redraws (`ui/focus.js`). Card headings contain native
+buttons with their expanded state; item rows are keyboard buttons. Closing
+an item editor returns focus to the control that opened it. Wall-mounted
+openings have one-inch keyboard movement controls; gable windows and outside
+lights also have height controls. These call the same `ui/state.js moveItem`
+and existing placement clamps as dragging, including wall/neighbour/porch
+limits. Specialized owner layout tools keep their own controls. The browser
+may zoom the page; the canvas still handles its own camera gestures.
+Included-opening type labels show the contribution above the included opening,
+using the same `itemCharge` rule as the quote, without changing standard prices.
 
 Always: `leads.fields` decides what is asked and required (the address is
 asked as an "Address" heading over a Street box and a City box; the City box

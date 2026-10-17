@@ -40,7 +40,7 @@
                                 porch span, and the walls (data recipes only).
    includedItems(key, W, L, ctx)  the named Barnwright recipe for style key. */
 
-import { CASING } from "../engine/constants.js";
+import { openingTrim } from "./opening-trim.js";
 import { porchDepthOf, dims, sidePorchLengthsFor } from "./frame.js";
 import { clampPos } from "./item-placement.js";
 import { builderEntryIndices, builderEntrySources, builderLoadout } from "./loadout-twins.js";
@@ -55,6 +55,7 @@ function toItems(s) {
 /* Barnwright's includedItems, verbatim but for CAT and pSpan() coming in. */
 export function includedItems(t, W, L, ctx) {
   var CAT = ctx.CAT;
+  var CASING = openingTrim(ctx.frame || ctx).width;
   var s = [], q = L / 4, pi = Math.max(1.8, W * 0.16), ps = Math.max(1.8, L * 0.12);   /* pi, ps: unused, as in Barnwright */
   void pi; void ps;
   switch (t) {
@@ -274,9 +275,9 @@ export function evalFormula(src, vars) {
 }
 
 /* How much wall an item takes (layout.js itemW's rule, without importing it). */
-function widthOf(CAT, cat, dbl) {
+function widthOf(CAT, cat, dbl, ctx) {
   const c = CAT[cat];
-  if (dbl && c.k === "win" && !c.gable) return 2 * c.w + CASING;
+  if (dbl && c.k === "win" && !c.gable) return 2 * c.w + openingTrim(ctx?.frame || ctx).width;
   return c.w;
 }
 
@@ -341,7 +342,7 @@ export function layoutProblems(recipe, name = "this building") {
    accepts current item objects or the legacy [cat,wall,pos,dbl] tuples. */
 export function fitProblem(CAT, placed, cat, wall, pos, dbl, len, ctx = {}) {
   const c = CAT[cat], t = ctx.t || {}, sp = ctx.span || {}, d = ctx.d || { W: ctx.W || 0, L: ctx.L || len };
-  const width = widthOf(CAT, cat, dbl);
+  const width = widthOf(CAT, cat, dbl, ctx);
   if (c.k === "post") return null;
   if (!Number.isFinite(pos) || Math.abs(pos) > len / 2 - width / 2 - 0.5 + 1e-9) return { kind: "edge" };
   if (c.gable) return null;
@@ -364,7 +365,7 @@ export function fitProblem(CAT, placed, cat, wall, pos, dbl, len, ctx = {}) {
     if (!oc || oc.gable || ["post", "light", "out", "ilt"].includes(oc.k)) continue;
     const band = t.roof === "slope" && wall === "R";
     if (band && (c.draw === "transom") !== (oc.draw === "transom")) continue;
-    if (Math.abs(pos - o.pos) < (width + widthOf(CAT, o.cat, o.dbl)) / 2 + 0.62 - 1e-9) return { kind: "crowding", other: o };
+    if (Math.abs(pos - o.pos) < (width + widthOf(CAT, o.cat, o.dbl, ctx)) / 2 + 0.62 - 1e-9) return { kind: "crowding", other: o };
   }
   return null;
 }
@@ -401,6 +402,7 @@ function metadata(it, idx, occurrence) {
    Entry identity is non-enumerable, so saved designs and golden fixtures do
    not acquire fields from the editor. */
 export function recipeEntries(recipe, W, L, ctx) {
+  const CASING = openingTrim(ctx.frame || ctx).width;
   if (!Array.isArray(recipe)) throw new Error("A data loadout must be a list of entries.");
   if (recipe.length > 100) throw new Error("The standard layout can have at most 100 doors, windows and posts.");
   const CAT = ctx.CAT, ws = ctx.ws || {}, span = ctx.span, pd = ctx.porchDepth == null ? porchDepthOf(ctx.t) : ctx.porchDepth;
@@ -416,7 +418,7 @@ export function recipeEntries(recipe, W, L, ctx) {
     if (!own(CAT, cat)) throw new Error(`${where} uses item "${cat}", which this company does not sell.`);
     const wd = ws[e.wall];
     if (!wd && e.wall !== "IN") throw new Error(`${where} puts "${e.cat}" on wall "${e.wall}", which this building does not have.`);
-    const len = wd ? wd.len : 0, vars = { W, L, P: span && span.P || 0, pd, q: L / 4, len, CASING, CAT }, dbl = !!e.dbl, iw = widthOf(CAT, cat, dbl);
+    const len = wd ? wd.len : 0, vars = { W, L, P: span && span.P || 0, pd, q: L / 4, len, CASING, CAT }, dbl = !!e.dbl, iw = widthOf(CAT, cat, dbl, ctx);
     const at = e.at == null ? "center" : e.at;
     let bases;
     if (at === "center") bases = [0];
@@ -475,7 +477,7 @@ export function evalDataRecipe(recipe, W, L, ctx) {
           const source = sources.get(it.entryIndex); if (!source) continue;
           let occurrence = source.sourceOccurrence === undefined ? it._layoutOccurrence : source.sourceOccurrence;
           if (source.repeatOccurrence !== undefined) {
-            const e = sourceRecipe[source.sourceIndex], vars = { W, L, P: ctx.span.P, pd: porchDepthOf(t), q: L / 4, len: ctx.ws[e.wall].len, CAT, CASING };
+            const e = sourceRecipe[source.sourceIndex], vars = { W, L, P: ctx.span.P, pd: porchDepthOf(t), q: L / 4, len: ctx.ws[e.wall].len, CAT, CASING: openingTrim(ctx.frame || ctx).width };
             occurrence = source.repeatBase * evalFormula(e.repeat.count, vars) + source.repeatOccurrence;
           }
           const before = original.find((part) => part.entryIndex === source.sourceIndex && part._layoutOccurrence === occurrence);

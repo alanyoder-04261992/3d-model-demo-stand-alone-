@@ -42,12 +42,16 @@ export function json(data, status = 200, extraHeaders = {}) {
 }
 
 /* Turn any thrown thing into an answer. */
-export function errorAnswer(error, log = console.error) {
+export function errorAnswer(error, log = console.error, { requestId } = {}) {
+  const reference = typeof requestId === "string" && /^[A-Za-z0-9_-]{8,64}$/.test(requestId) ? requestId : null;
+  const trace = reference ? { requestId: reference } : {};
+  const headers = reference ? { "X-Request-Id": reference } : {};
   if (error instanceof OfficeError) {
-    return json({ ...(error.extra || {}), error: error.message, ...(error.problems ? { problems: error.problems } : {}) }, error.status);
+    if (error.status >= 500 && reference) log("Dealer Center request failed:", reference, error.status, error.extra?.code || "service-unavailable");
+    return json({ ...(error.extra || {}), ...(error.status >= 500 ? trace : {}), error: error.message, ...(error.problems ? { problems: error.problems } : {}) }, error.status, error.status >= 500 ? headers : {});
   }
-  log("Dealer Center error:", error);
-  return json({ error: "Something went wrong on our end. Try again in a minute." }, 503);
+  log("Dealer Center error:", ...(reference ? [reference] : []), error);
+  return json({ ...trace, error: "Something went wrong on our end. Try again in a minute." }, 503, headers);
 }
 
 export function requireSameSite(request) {

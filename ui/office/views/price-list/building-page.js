@@ -159,7 +159,8 @@ function layoutCard(key, entry) {
         if (!c) return;
         const wall = c.k === "post" ? "Porch" : c.gable ? `Gable on the ${walls[item.wall]?.toLowerCase() || "front"}` : walls[item.wall] || item.wall;
         if (!groups.has(wall)) groups.set(wall, []);
-        const name = c.n || "Item";
+        /* A porch post is a plain thing, written in small letters mid-list. */
+        const name = c.k === "post" ? (c.n || "Porch post").toLowerCase() : c.n || "Item";
         const pair = item.at?.sym !== undefined;
         const rule = c.k === "post" ? postWords(item, entryIndex, placed, frame) : ruleWords(item, frame);
         const details = h("span", {}, item.repeat ? `A row of ${name.toLowerCase()}s` : pair ? `Two ${name.toLowerCase()}s` : item.dbl ? `Double ${name.toLowerCase()}` : name,

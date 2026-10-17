@@ -1,16 +1,17 @@
 /* The unchanged customer item placement rules, shared by runtime layouts and
    the standard-layout checker. Node-safe. Default building geometry stays exact. */
-import { y0, CASING } from "../engine/constants.js";
+import { y0 } from "../engine/constants.js";
+import { openingTrim } from "./opening-trim.js";
 import { profileYat } from "./roof-shapes.js";
 import { porchDepthOf } from "./frame.js";
 
 /* THE DOUBLE WINDOW: two windows butted together in ONE opening, sharing a
    single trim board down the middle. CASING is the 3 1/2 in board that runs
    round every opening, and the shared middle board is one of them. */
-export function itemW(it, CAT) {
+export function itemW(it, CAT, frame) {
   var c = CAT[it.cat];
   if (it.rot && c.draw === "transom") return c.h;                     /* a transom stood on end */
-  if (it.dbl && c.k === "win" && !c.gable) return 2 * c.w + CASING;
+  if (it.dbl && c.k === "win" && !c.gable) return 2 * c.w + openingTrim(frame).width;
   return c.w;
 }
 
@@ -54,7 +55,7 @@ export function clampPos(it, state, frame) {
   if (c0.draw === "transom" && it.rot && T.roof === "slope" && it.wall === "R") it.rot = false;  /* the high transom row has no room for a turned one */
   /* c.w is the clear opening — the 3 1/2" casing lives OUTSIDE it, so keep
      enough room that trim never laps the corner post */
-  var w = ws[it.wall], lim = w.len / 2 - itemW(it, CAT) / 2 - 0.50;
+  var w = ws[it.wall], lim = w.len / 2 - itemW(it, CAT, frame) / 2 - 0.50;
   if (lim < 0) lim = 0;
   if (c.k === "light") it.vy = Math.max(-4.2, Math.min(3.2, it.vy || 0));
   it.pos = Math.max(-lim, Math.min(lim, it.pos));
@@ -71,7 +72,7 @@ export function clampPos(it, state, frame) {
       if (ke === "light" || ke === "out" || ke === "ilt" || ko === "light" || ko === "out" || ko === "ilt") return;
       var band1 = (T.roof === "slope" && it.wall === "R" && c0.draw === "transom"), band2 = (T.roof === "slope" && o.wall === "R" && CAT[o.cat].draw === "transom");
       if (band1 !== band2) return;
-      var need = (itemW(it, CAT) + itemW(o, CAT)) / 2 + 0.62, dv = it.pos - o.pos;   /* two 3 1/2" casings plus a hair of siding */
+      var need = (itemW(it, CAT, frame) + itemW(o, CAT, frame)) / 2 + 0.62, dv = it.pos - o.pos;   /* two 3 1/2" casings plus a hair of siding */
       if (Math.abs(dv) < need) it.pos = o.pos + (dv < 0 ? -need : need);
     });
     it.pos = Math.max(-lim, Math.min(lim, it.pos));

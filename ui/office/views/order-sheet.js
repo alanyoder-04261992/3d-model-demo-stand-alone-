@@ -15,7 +15,8 @@
 import { h, icon, button, emptyState, linkButton } from "../dom.js";
 import { app } from "../app.js";
 import { money, phone as phoneWords, PAYMENT_WORDS, ORDER_WORDS, initials } from "../words.js";
-import { encodeSync } from "../../../model/design.js";
+import { quoteViewUrl } from "../quote-view.js";
+import { get } from "../api.js";
 import { resolve as resolveCatalogue } from "../../../model/company.js";
 import { loadCustomer, missingCustomer } from "./crm-kit.js";
 
@@ -42,12 +43,23 @@ export async function render(ctx) {
   const kindWords = isOrder ? "Order" : "Quote";
   ctx.setTitle(`${kindWords} #${number} · ${c.name}`);
 
-  /* the price list (fine print) and, if it loads, the names of the doors and windows */
-  const [priceList, cat] = await Promise.all([
-    app.loadPriceList().catch(() => null),
-    catalogue(app).catch(() => null),
-  ]);
-  const settings = priceList?.settings || {};
+  /* The doors and windows by name and the fine print come from the copy of
+     the price list the quote kept. A quote saved before quotes kept one (no
+     snapshot) shows them from today's price list, as every sheet did then,
+     and says so on the screen only; its price lines are its own. */
+  let original = null, originalError = null, cat = null, finePrintText = "";
+  const legacy = !!quote?.design && !quote.snapshot;
+  if (legacy) {
+    const [priceList, today] = await Promise.all([app.loadPriceList().catch(() => null), catalogue(app).catch(() => null)]);
+    cat = today;
+    finePrintText = priceList?.settings?.notes?.finePrint || "";
+  } else if (quote?.design) {
+    try { original = await get(`customers/${c.id}/quotes/${quote.id}/designer`); }
+    catch (error) { originalError = error.message; }
+    cat = original?.catalogue || null;
+    finePrintText = cat?.notes?.finePrint || "";
+  }
+  const canOpen = !!quote?.design && (legacy || !!original);
   const business = app.business || {};
   const lot = app.lot(c.lot) || { name: app.lotName(c.lot) };
   const design = quote?.design || null;
@@ -116,17 +128,21 @@ export async function render(ctx) {
   /* ---- sign and fine print ---- */
   const signs = h("section", { class: "sheet-signs" },
     sign("Customer"), sign("Date"), sign("Dealer"), sign("Date"));
-  const finePrint = settings.notes?.finePrint ? h("p", { class: "sheet-fine" }, settings.notes.finePrint) : null;
+  const finePrint = finePrintText ? h("p", { class: "sheet-fine" }, finePrintText) : null;
 
   const sheet = h("article", { class: "sheet" }, top, title, people, buildingPart, pricePart, signs, finePrint);
 
   const tools = h("div", { class: "sheet-tools" }, backTo,
     h("div", { class: "actions" },
-      design ? h("a", { class: "btn btn-ghost", href: `${app.designerUrl(c.lot)}#d=${encodeSync(design)}&view=1`, target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")) : null,
+      canOpen ? h("a", { class: "btn btn-ghost", href: quoteViewUrl(app.designerUrl(c.lot), c.id, quote), target: "_blank", rel: "noopener" }, icon("cube"), h("span", {}, "See it in 3D")) : null,
       button(`Print ${kindWords.toLowerCase()}`, () => window.print(), { kind: "primary", icon: "print" })));
 
-  const page = h("div", { class: "sheet-page" }, tools, sheet);
-  if (design) setTimeout(() => addPicture(c.lot, design, picture), 50);
+  /* said on the screen, never printed (print.css hides .sheet-screen-note) */
+  const screenNote = legacy
+    ? h("p", { class: "sheet-screen-note", role: "status" }, `This ${kindWords.toLowerCase()} was saved before quotes kept their own copy of the price list, so the door and window names and the fine print are from today's price list. The prices are the ${kindWords.toLowerCase()}'s own.`)
+    : originalError ? h("p", { class: "sheet-screen-note", role: "status" }, originalError) : null;
+  const page = h("div", { class: "sheet-page" }, tools, screenNote, sheet);
+  if (canOpen) setTimeout(() => addPicture(c.lot, c.id, quote, picture), 50);
   return page;
 }
 
@@ -176,6 +192,8 @@ function itemLists(design, cat) {
   return parts.length ? h("div", { class: "sheet-item-cols" }, parts) : null;
 }
 
+/* Today's price list, resolved the way the 3D designer resolves it (only
+   for a quote saved before quotes kept their own copy). */
 let catalogueCache = null;
 async function catalogue(app) {
   const pl = await app.loadPriceList();
@@ -194,10 +212,11 @@ async function catalogue(app) {
 /* A picture of the building from the lot's own designer, drawn in a frame
    nobody sees. Any trouble (a closed lot, a slow computer) and the sheet
    simply has no picture. */
-async function addPicture(lot, design, slot) {
+async function addPicture(lot, customerId, quote, slot) {
   if (!slot.isConnected) return;
-  const frame = h("iframe", { class: "sheet-shot", title: "Picture of the building", "aria-hidden": "true", tabindex: "-1",
-    src: `${app.designerUrl(lot)}?embed=1#d=${encodeSync(design)}&view=1` });
+  const url = new URL(quoteViewUrl(app.designerUrl(lot), customerId, quote));
+  url.searchParams.set("embed", "1");
+  const frame = h("iframe", { class: "sheet-shot", title: "Picture of the building", "aria-hidden": "true", tabindex: "-1", src: url.href });
   Object.assign(frame.style, { position: "fixed", left: "-12000px", top: "0", width: "960px", height: "640px", border: "0", opacity: "0", pointerEvents: "none" });
   document.body.append(frame);
   const done = () => frame.remove();

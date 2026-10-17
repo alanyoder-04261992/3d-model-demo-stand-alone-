@@ -197,7 +197,7 @@ function addDialog(ctx) {
     lots.el,
     sendIt,
     h("div", { class: "actions end" },
-      button("Cancel", () => box.close()),
+      button("Cancel", () => box.cancel()),
       h("button", { type: "submit", class: "btn btn-primary" }, icon("plus"), h("span", {}, "Add person"))),
   ], async () => {
     const role = job.value();
@@ -293,7 +293,7 @@ function editDialog(ctx, p) {
     lots.el,
     me ? h("p", { class: "hint" }, "This is you. If you stop being an owner, you can't change prices, lots or people anymore.") : null,
     h("div", { class: "actions end" },
-      button("Cancel", () => box.close()),
+      button("Cancel", () => box.cancel()),
       h("button", { type: "submit", class: "btn btn-primary" }, icon("check"), h("span", {}, removed ? "Save and put back" : "Save changes"))),
     h("div", { class: "team-danger" },
       removed

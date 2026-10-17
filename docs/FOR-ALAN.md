@@ -61,6 +61,19 @@ can choose instead to show a "from" price (the building on its own) or no price
 at all (the plate then says "Ask us"), and a rent-to-own monthly figure or
 none.
 
+**Free doors and windows (your decision, Oct 17 2026: "Yes, charge for
+them").** A building's standard doors and windows are free only up to how
+many its own size and porch come with. If a customer lays out a 12x32 Cabin,
+moves a door, then picks 8x12, the windows the 12x32 came with stay on the
+walls, but the ones an 8x12 does not come with are charged at the normal
+window price. The plate and Your quote say so in one line, for example "2
+windows that came with the 12×32 are now charged on the 8×12." A design link
+changed by hand to do the same is charged the same way; nothing is turned
+away for it. A door kept from the other size in place of the door this size
+comes with costs only the difference, like swapping it on the building. Quotes
+and orders already saved keep the price they were saved with; the rule counts
+when something is priced again (Change it, or a new quote).
+
 ## The views
 
 Two buttons sit over the top-left of the picture:
@@ -495,12 +508,20 @@ Center on a computer or phone), with a search box, and **Ask
 Barnwright**: a box and **Send**, with no phone number anywhere. The
 question lands in your Sales Inbox (inbox.barnwrightsoftware.com) with the
 page they were on and a few technical details, never their customers or
-prices. Claude drafts the reply, you approve it, and they get it by email
-and under **Your questions** on their Help screen. Their owner and managers
+prices. With automatic answers enabled in Sales Inbox, Claude answers
+supported how-to questions, explains billing or access from recent checked
+account facts, and asks for missing details. A software release, account
+change or data repair still needs the person responsible to approve it.
+Other replies stay in your Help queue for review. The answer shows under
+**Your questions**, and email delivery retries when it fails. Their owner and managers
 see every question from the company; a dealer sees their own. It works
 even while their account is switched off. When something on their pages
 breaks, the error goes to your Sales Inbox by itself, each kind once a day
-and at most 10 a day. Your own business and the demo show the answers and
+and at most 10 a day. Help updates a waiting answer while the page stays
+open; **Refresh** checks now and **Show older questions** opens the rest
+of their history. An unsent Help question or customer note stays in its
+browser tab when they move to another screen or their sign-in ends.
+Your own business and the demo show the answers and
 say to email support@barnwrightsoftware.com instead.
 
 ### Older company links (without the Dealer Center)

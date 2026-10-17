@@ -1269,7 +1269,11 @@ const wrongBusiness = clone(lbDesign); wrongBusiness.company = "someone-else";
 let refused = await sendQuote("port-charlotte", wrongBusiness, john, { status: 422, label: "a design from another business" });
 ok("... refused with the customer's words", refused.error === UNREADABLE);
 const freeDoor = clone(lbDesign); freeDoor.items.push({ cat: "d36in", wall: "B", pos: 0, inc: true, origCat: "w72" });
-await sendQuote("port-charlotte", freeDoor, john, { status: 422, label: "a steel door marked as coming with the building" });
+/* Alan, Oct 17 2026, "Yes, charge for them": an item marked as coming with
+   the building beyond what its size comes with is charged at its normal
+   price, never refused (model/pricing.js chargedIncluded) */
+receipt = await sendQuote("port-charlotte", freeDoor, john, { label: "a steel door marked as coming with the building" });
+ok("a steel door marked as coming with the building is charged at its normal price", receipt.total === lbTotal + cat.CAT.d36in.p && receipt.price.lines.some((l) => l[2] === "cat.d36in" && l[1] === cat.CAT.d36in.p));
 const freeFixture = clone(lbDesign); freeFixture.items.push({ cat: "d36in", wall: "B", pos: 0, pk: true });
 await sendQuote("port-charlotte", freeFixture, john, { status: 422, label: "a door marked as part of an electrical package" });
 const packageLight = clone(lbDesign); packageLight.items.push({ cat: "light", wall: "F", pos: 2, pk: true });
@@ -1632,7 +1636,8 @@ ok("... and moves the customer to Quoted", officeQuote.customer.stage === "quote
 const counterNow = (await S.get("counters/quote-number")).next;
 ok("the counter is ready for the next number", counterNow === officeQuote.quote.number + 1);
 const forgedOffice = clone(garage.design); forgedOffice.items.push({ cat: "d36in", wall: "B", pos: 0, inc: true, origCat: "w72" });
-await want(422, "POST", `/api/office/customers/${bob.id}/quotes`, { design: forgedOffice }, { label: "a quote with a free steel door" });
+const chargedOffice = await want(201, "POST", `/api/office/customers/${bob.id}/quotes`, { design: forgedOffice }, { label: "a quote with a steel door marked as coming with the building" });
+ok("... the steel door is charged at its normal price (Alan, Oct 17 2026: \"Yes, charge for them\")", chargedOffice.quote.total === officeQuote.quote.total + cat.CAT.d36in.p);
 await want(422, "POST", `/api/office/customers/${bob.id}/quotes`, { design: garage.design, total: 1 }, { label: "a quote that sends its own total" });
 
 const order = await want(201, "POST", `/api/office/customers/${bob.id}/orders`, { quoteId: officeQuote.quote.id, payment: "rto", deposit: 450, deliveryDate: "2026-10-20", notes: "Gate code 1234" });

@@ -210,7 +210,29 @@ at once.
 
 * **Quotes keep their price.** A quote stores its price lines and total when
   it is made. Changing the price list later never changes an existing quote
-  or order.
+  or order. New quotes also keep a reference to an immutable copy of their
+  original resolved building definitions in `quote-catalogues/<sha256>`.
+  These copies retain the sold style, size, item names, construction settings
+  and fine print. Identical copies share one record, with the logo and quote
+  submission links removed and only the saved style/size kept; the copy is
+  bounded to 250,000 UTF-8 JSON bytes. The private quote-view route checks
+  the customer's current lot access before returning it. A quote or order
+  sheet, customer quote card and original 3D view use that copy, including
+  when the lot or public designer is now closed. Owner History copies
+  contain settings without their original manufacturer/library definitions;
+  those cannot prove an older quote's item labels or construction. A quote
+  or order saved before quotes kept this copy (no snapshot, before Oct 13
+  2026) prints as every sheet did then: its own building name and price
+  lines, with the door and window names, picture and fine print from
+  today's price list, and "See it in 3D" opens the lot's 3D designer with
+  its saved design; a line on the screen (never printed) says the names and
+  fine print are today's. When a quote that has a snapshot cannot find its
+  copy, its saved building name and price lines still show, with a plain
+  explanation on the screen only; current item labels, pictures and fine
+  print are never silently substituted for it.
+  Historical viewer cards say “Original quote total” and keep their original
+  saved state, with “Back to customer” for further work. The ordinary public
+  shared designer keeps its current-price wording and editable copy flow.
 * **Nobody designing a building is thrown out.** The price list has a
   `cfg` number that goes up only when something that changes a price or what
   can be picked changes (sizes, prices, doors and windows, options, colors).
@@ -425,6 +447,7 @@ A **customer**:
   stage, lostReason, assignedTo /* userId or null */,
   followUp,          // {date: "2026-10-05", note} or null
   quotes: [{ id, number, at, by, source, building, design, price, total, cfg,
+             snapshot?,       // {v: 1, catalogueId}: trusted immutable original definitions
              note?,           // a quote made in the Dealer Center
              plan?,           // website: what they want to do (model/quote-plan.js key)
              rto? }],         // website: {months, monthly} the rent to own they looked at
@@ -487,18 +510,19 @@ asked answers 503 `{code: "sign-in-down"}`, never 401.
 | `PATCH team/:userId` | owner | `{name?, role?, lots?, active?}` |
 | `DELETE team/invites/:hash` | owner | removes an invite not yet used |
 | `GET customers` | everyone | `{rows}` for the lots the person can see; `?lot=` narrows |
-| `POST customers` | everyone | `{lot, name, phone, email, …, source, note?}` |
+| `POST customers` | everyone | `{lot, name, phone, email, …, source, note?, requestKey?}`; a form keeps its random `requestKey` through retries, scoped to the signed-in person; the same unchanged save returns its original customer, even for simultaneous retries; changed details on an already used key answer 409 |
 | `GET customers/:id` | lot access | the whole customer |
 | `PATCH customers/:id` | lot access | contact fields, `stage`, `lostReason`, `assignedTo`, `followUp`, `lot` (owner/manager) |
 | `POST customers/:id/activity` | lot access | `{type: note\|call\|text\|email\|visit, text}` |
 | `POST customers/:id/quotes` | lot access | `{design}` — a building designed in the Dealer Center; priced on the server |
+| `GET customers/:id/quotes/:quoteId/designer` | lot access | `{catalogue, design, lot, historical: true}` — original saved definitions for the authenticated historical 3D view; 409 with an explanation when an original copy cannot be recovered |
 | `POST customers/:id/orders` | lot access | `{quoteId, payment, deposit, deliveryAddress, deliveryDate, deliveryNotes, notes}`; the deposit is never above the total |
 | `PATCH customers/:id/orders/:orderId` | lot access | `{status?, payment?, deposit?, deliveryDate?, …}` |
 | `GET customers.csv` | owner, manager | a spreadsheet of the visible customers |
 | `GET barnwright-help` | owner | `{help: {on, until, reason, log}, setup: {mode, until, why, live, liveAt, prelive, termsOk, termsOut}}`, both null when not connected to the control room |
 | `POST barnwright-help` | owner | `{on: true, reason, hours: 1–24, level}`: `level` `"checks"` (left out too) lets Barnwright run checks, `"change"` also lets it change the price list and settings; `{on: false}` stops both at once; `{prelive: "stopped"\|"on"}` stops or allows setup access before live (see "Barnwright setup access") |
 | `GET lots/:slug/preview` | lot access | the lot's 3D designer as a preview, as `GET /api/lots/:slug` plus `preview: true` and `closed` (`business`, `lot` or null), also while it is closed |
-| `GET help` | everyone | `{connected, canAsk, items}`: the questions asked of Barnwright and Barnwright's answers, newest first (owner and managers every question from the business, a dealer their own); `items: null` with `problem` (plain words) when Barnwright can't be reached; `connected: false` when not connected to the control room; `canAsk: false` when Help isn't set up for it (the control room refusing its key included) |
+| `GET help` | everyone | `{connected, canAsk, items, nextCursor}`: the questions asked of Barnwright and Barnwright's answers, newest first (owner and managers every question from the business, a dealer their own); `?limit=1…30&cursor=…` reads older pages (30 by default, `nextCursor: null` at the end); `items: null` with `problem` (plain words) when Barnwright can't be reached; `connected: false` when not connected to the control room; `canAsk: false` when Help isn't set up for it (the control room refusing its key included) |
 | `POST help` | everyone | `{text, page, details: {browser, screen, language, timezone, errors}}` asks Barnwright (see "Help"); the asker is the person signed in, never the body; works while changes are stopped → `{ok, id, at, email}` (201) |
 
 Barnwright's visit has routes of its own under `barnwright/`, signed in by
@@ -609,8 +633,12 @@ read the same way.
 ## Help
 
 Alan's words (October 2026): a Help button inside the software (no phone
-number), short help answers, and problem alerts. Barnwright drafts each
-reply with Claude, and Alan approves it in his Sales Inbox.
+number), short help answers, and problem alerts. When automatic answers
+are enabled in Sales Inbox, Claude can answer supported how-to questions,
+explain billing or access using recent signed account facts, and ask for
+missing details. Questions that need account changes, data repairs or a
+software release stay with the person responsible to approve the action.
+Without automatic answers, Claude drafts the reply for Alan to review.
 
 * **The Help screen** (`#/help`): **Help** is in everyone's menu (under
   **More** on a phone) and at the top of every screen. It has 15 short
@@ -621,6 +649,24 @@ reply with Claude, and Alan approves it in his Sales Inbox.
   newest first. The owner and managers see every question from the
   business; a dealer sees their own. After sending: "Sent. Barnwright will
   answer here and by email at <their email>."
+  **Refresh** checks for answers now; a question still waiting checks
+  quietly every 30 seconds while the page is visible (less often after
+  failed checks or when more pending pages are open), and coming back to the tab checks again. **Show older
+  questions** brings in the next page without repeating questions or
+  clearing anything typed. Refresh also checks pages already opened;
+  quiet checks include older pages with questions still waiting.
+  Requests never overlap and stop when the
+  screen is left. An older Inbox that has no paging still gives its first
+  page.
+* **Unsent writing stays in this tab.** A customer's activity text and
+  follow-up fields, and the question being typed in Help, are kept for
+  that business and that person in the tab's session storage, for up to
+  seven days. Changing the customer's stage or another field keeps them;
+  leaving asks first, and coming back or refreshing restores them. They
+  stay on the screen when sign-in ends. A successful save clears only the
+  writing it saved; a failed save keeps it. Another person's sign-in
+  cannot restore these drafts. Closing the tab ends its stored drafts.
+  (`ui/office/drafts.js`, `tools/check-support-experience.mjs`.)
 * **A question** goes from the business's own server, never the browser:
   the control room gives a pass good for 10 minutes (`POST /api/help-pass`
   with the activation key; `control-room.js` `helpPass`), and the pass goes
@@ -666,7 +712,15 @@ reply with Claude, and Alan approves it in his Sales Inbox.
   `POST /api/office/problem` on their own site, and so do the failures a
   page catches to show its own words (`reportProblem`: "This page didn't
   load", a 3D designer whose settings or lot price list didn't load, a part
-  that didn't start; an answer from the server is never one). The 3D
+  that didn't start). Unexpected 5xx answers from the Dealer Center API
+  are reported too (`reportApiProblem`), even when a form caught them:
+  only the status, route category and server request reference, never
+  the request's body, customer ID or error text. The server includes the
+  reference in its 5xx JSON and `X-Request-Id` header and in its log, so
+  Barnwright can find the corresponding failure. Repeated references
+  for the same route and status count as one kind of problem. Validation,
+  permissions, sign-in outages and the reporting request itself stay
+  quiet. The 3D
   designer starts watching before anything else (`ui/problems-start.js`,
   loaded by `index.html` just before `ui/app.js`, which imports it first
   too), so a script that didn't arrive, or one that broke as it started, is
@@ -2321,7 +2375,11 @@ exactly as they were, and nothing here sends email.
 * **Prices come from the server.** Every quote is checked and priced by
   `server/office/pricing.js` from the stored price list. A browser total, a
   forged lot or company, or "included" flags that would make an extra free
-  change nothing.
+  change nothing: an item marked included is free only up to how many the
+  design's own size and porch come with, and the rest is charged at its
+  normal price, never refused (Alan, Oct 17 2026; `model/pricing.js
+  chargedIncluded`). A saved quote or order keeps the total it was saved
+  with; the rule counts when a design is priced again.
 * **Sign-in is Netlify Identity.** Only a confirmed email counts. Roles live
   in `people/<userId>`, never in anything the browser can edit. The
   password goes only to Identity. The sign-in is kept by the server, in a
@@ -2618,6 +2676,16 @@ more than one lot, **+ Customer**, **Help**, the person's menu with Sign out).
 Navigation: a left column on wide screens, a bottom bar on phones (the first
 four screens, the rest under **More**).
 
+Customer, team, lot and order form dialogs ask before discarding entered
+changes with Close, Cancel, Escape, an outside click or navigation. Declining
+keeps the entered work and route. During a save, inputs are locked and these
+close/navigation actions wait for the result; a failed save restores the
+form so the person can correct or retry it. Completed saves close normally.
+The browser also warns before a tab with a changed or pending dialog is
+reloaded or closed. A recorded “Don't text” preference removes the manual
+Text action while retaining Call and Email. Add customer's untouched State
+default follows the selected lot; a State the person has edited stays theirs.
+
 **Today** (`#/`) — "Good morning, Alan." Follow-ups due today and overdue
 (overdue in red), new customers nobody has contacted, numbers for this month
 (new customers, quotes, buildings sold, sales $), and for owners and managers
@@ -2727,7 +2795,14 @@ email must be; the street address is asked as Street and City; "Ask what
 they want to do with the quote", on unless turned off; the texting
 permission sentence, empty = don't ask). It all
 saves into the price list record with one bar at the bottom ("3 changes",
-"Undo changes", "Save settings"); someone saving first is told to reload.
+"Undo changes", "Save settings"). A saved write whose refresh fails keeps
+its acknowledged version and offers “Retry refresh”, without resubmitting
+the saved change. Settings inputs and navigation wait while saving. Someone
+else saving first keeps the draft and offers “Review newer settings”: it
+lists each person's changed settings and overlapping fields. “Keep my
+changes” carries only this editor's changed fields onto the newer saved
+settings for review before saving; unrelated newer changes remain. “Use
+saved settings” asks explicitly before discarding the draft.
 Managers and dealers see "Only the owner can change settings".
 
 **Help** (`#/help`, everyone) — short answers with a search box ("website",

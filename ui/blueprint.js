@@ -320,7 +320,7 @@ export function drawPlan(x, Wc, Hc, d, state, cat, view, opts) {
       x.beginPath(); x.arc(ql[0], ql[1], 3.6 * d, 0, 7); x.stroke();
       return;
     }
-    const cw = itemW(it, CAT);
+    const cw = itemW(it, CAT, fr);
     const A = wallPt(w, it.pos - cw / 2, 0, 0), B = wallPt(w, it.pos + cw / 2, 0, 0);
     const a = Pt(A[0], A[2]), b = Pt(B[0], B[2]);
     /* clear the band across the opening */
@@ -429,7 +429,7 @@ export function drawPlan(x, Wc, Hc, d, state, cat, view, opts) {
     } else if (!cs.gable && cs.k !== "post") {
       const w2 = ws[selIt.wall];
       if (w2) {
-        const cw2 = itemW(selIt, CAT);
+        const cw2 = itemW(selIt, CAT, fr);
         const offp = function (u) { const pw = wallPt(w2, u, 0, 0); return Pt(pw[0] + w2.n[0] * 1.7, pw[2] + w2.n[2] * 1.7); };
         /* measure to the nearest neighbour on the wall, not just the corners */
         const gN = neighborGaps(selIt, state, fr);
@@ -489,7 +489,7 @@ export function planReach(state, fr, CAT) {
     const c = CAT[it.cat]; if (!c || c.gable || c.k === "post" || c.int) return;
     if (c.k === "out" || c.k === "light" || c.k === "win" || c.k === "ru") return;
     const w = ws[it.wall]; if (!w) return;
-    const cw = itemW(it, CAT), r = c.leaves === 2 ? cw / 2 : cw;
+    const cw = itemW(it, CAT, fr), r = c.leaves === 2 ? cw / 2 : cw;
     take(wallPt(w, it.pos - cw / 2, 0, r)); take(wallPt(w, it.pos + cw / 2, 0, r));
   });
   const rs = rampOf(fr);
@@ -526,13 +526,13 @@ export function hitAt(p, state, cat, BPS) {
     const ex = (f.rot ? cc.dep : ln) / 2, ez = (f.rot ? ln : cc.dep) / 2;
     if (Math.abs(wx - (f.px || 0)) <= ex + 0.15 && Math.abs(wz - (f.pz || 0)) <= ez + 0.15) return f.id;
   }
-  const ws = BPS.fr.ws;
+  const fr = BPS.fr, ws = fr.ws;
   let bd = 1e9, bid = null;
   state.items.forEach(function (it) {
     const c = CAT[it.cat]; if (!c || c.gable || c.k === "post") return;
     if (c.int && c.k !== "out") return;
     const w = ws[it.wall]; if (!w) return;
-    const cw = itemW(it, CAT) || 1;
+    const cw = itemW(it, CAT, fr) || 1;
     const mid = wallPt(w, it.pos, 0, (c.k === "light") ? 0.7 : 0);
     const q = [BPS.cx + mid[0] * s, BPS.cy + mid[2] * s];
     const dd2 = Math.hypot(q[0] - p[0], q[1] - p[1]);
