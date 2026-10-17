@@ -7,7 +7,9 @@
    every such quote, remembering only 16 answers, so anyone cycling older
    cfg numbers through the public quote form made it read the whole History
    each time. Each History copy is now read at most once while the server
-   runs, and the answer is still the newest copy with that cfg.
+   runs, and the answer is still the newest copy with that cfg. What it
+   answers with is today's price list with that copy's standard layouts
+   (review 17 final), so each version is told apart here by its layout.
 
    Run: node tools/check-history-lookup.mjs (no browser) */
 
@@ -35,18 +37,21 @@ async function call(method, path, body) {
 }
 
 prove("the starting price list is made", (await call("POST", "setup", { businessName: "History Sheds", start: "full", phone: "941-555-0123", agreeTerms: true })).status === 201);
-/* 24 price changes, each one a new cfg; the 2x3 window's price says which */
-const windowPrice = new Map();
+/* 24 standard layout changes, each one a new cfg; a window that only a
+   building 100 ft or longer would get says which (no size is that long) */
+const layoutOf = (n) => [{ cat: "d36lite", wall: "F", at: "center" }, { cat: "w23", wall: "R", at: "center", when: { minL: 100 + n } }];
+const markOf = (settings) => settings?.offer?.C?.layout?.find((e) => e.when)?.when.minL;
+const mark = new Map();
 for (let n = 0; n < 24; n++) {
   const pl = (await call("GET", "price-list")).data;
-  windowPrice.set(pl.settings.cfg, pl.settings.items.w23?.price);
-  pl.settings.items.w23 = { ...(pl.settings.items.w23 || {}), price: 200 + n };
+  mark.set(pl.settings.cfg, markOf(pl.settings));
+  pl.settings.offer.C = { ...(pl.settings.offer.C || {}), layout: layoutOf(n) };
   const saved = await call("PUT", "price-list", { settings: pl.settings, version: pl.version });
   if (saved.status !== 200) throw new Error("save " + n + " failed: " + JSON.stringify(saved.data));
 }
 const now = (await call("GET", "price-list")).data;
 const company = now.settings.id;
-const older = [...windowPrice.keys()].filter((cfg) => cfg < now.settings.cfg);
+const older = [...mark.keys()].filter((cfg) => cfg < now.settings.cfg);
 const historyCount = Object.keys(Object.fromEntries([...blobs.values.keys()].filter((k) => k.startsWith("price-list-history/")).map((k) => [k, 1]))).length;
 prove("the price list has a long History with many older cfgs", older.length >= 20 && historyCount >= 24);
 
@@ -55,8 +60,8 @@ let right = true;
 historyReads = 0;
 for (let round = 0; round < 3; round++) {
   for (const cfg of older) {
-    const { includedCat } = await priceList.catalogue({ cfg, company });
-    if (!includedCat || includedCat.cfg !== cfg || includedCat.CAT.w23.p !== (windowPrice.get(cfg) ?? 195)) right = false;
+    const { includedCat, includedSettings } = await priceList.catalogue({ cfg, company });
+    if (!includedCat || includedCat.cfg !== cfg || markOf(includedSettings) !== mark.get(cfg)) right = false;
   }
 }
 prove("each older cfg gets the price list it was made under", right);
@@ -69,19 +74,19 @@ prove(`once History has been read, a round of ${older.length} lookups reads at m
 /* a save after the History was read: its copy is read too, and the newest
    copy with a cfg still wins */
 const pl = (await call("GET", "price-list")).data;
-const replacedCfg = pl.settings.cfg, replacedPrice = pl.settings.items.w23.price;
-pl.settings.items.w23 = { ...pl.settings.items.w23, price: 999 };
-prove("one more price change saves", (await call("PUT", "price-list", { settings: pl.settings, version: pl.version })).status === 200);
-const lastOld = (await priceList.catalogue({ cfg: replacedCfg, company })).includedCat;
-prove("the price list just replaced is found from its new History copy", lastOld?.cfg === replacedCfg && lastOld.CAT.w23.p === replacedPrice);
+const replacedCfg = pl.settings.cfg, replacedMark = markOf(pl.settings);
+pl.settings.offer.C = { ...pl.settings.offer.C, layout: layoutOf(99) };
+prove("one more layout change saves", (await call("PUT", "price-list", { settings: pl.settings, version: pl.version })).status === 200);
+const lastOld = await priceList.catalogue({ cfg: replacedCfg, company });
+prove("the price list just replaced is found from its new History copy", lastOld.includedCat?.cfg === replacedCfg && markOf(lastOld.includedSettings) === replacedMark);
 /* A newer History copy with the same cfg that no longer resolves: the next
    older copy with that cfg is used, as before (review 17 round 2). A fresh
    server, so nothing is remembered from above. */
 const brokenCfg = older[2];
 const realKey = [...blobs.values.keys()].filter((k) => k.startsWith("price-list-history/") && blobs.values.get(k).data?.settings?.cfg === brokenCfg).sort().pop();
-const broken = structuredClone(blobs.values.get(realKey).data); broken.settings.items = null;
+const broken = structuredClone(blobs.values.get(realKey).data); broken.settings.offer.C = { ...broken.settings.offer.C, layout: "not a layout" };
 await blobs.setJSON(realKey + "a", broken);
 const fresh = createOffice({ blobs, identityUser: async () => null, ownerEmail: owner.email, manufacturer, library, templates, now: () => new Date("2026-10-12T12:00:00Z"), log: () => {} });
-const fallback = (await fresh.parts.priceList.catalogue({ cfg: brokenCfg, company })).includedCat;
-prove("a History copy that no longer resolves is passed over for the next older copy with the same cfg", fallback?.cfg === brokenCfg && fallback.CAT.w23.p === (windowPrice.get(brokenCfg) ?? 195));
+const fallback = await fresh.parts.priceList.catalogue({ cfg: brokenCfg, company });
+prove("a History copy that no longer resolves is passed over for the next older copy with the same cfg", fallback.includedCat?.cfg === brokenCfg && markOf(fallback.includedSettings) === mark.get(brokenCfg));
 console.log(`PROVED (${checks} checks): an older design's price list comes from the newest History copy with its cfg, and each History copy is read at most once while the server runs, so older cfgs sent from the public quote form never make it read the whole History again.`);

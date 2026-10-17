@@ -181,7 +181,7 @@ function layoutCard(key, entry) {
     h("div", { class: "actions" }, button(entry.layout ? "Change the standard layout" : "Set the standard layout", () => openLayout(key), { kind: "primary", icon: "cube" }),
       entry.layout ? button("Go back to the builder's layout", () => resetLayout(key)) : null),
     !S.saved.settings.offer?.[key] ? h("p", { class: "hint" }, "Save this building first, then set its standard layout.") : null,
-    h("p", { class: "hint" }, "Doors, windows and posts in the standard layout come with the building. Customers can add more; their prices are on the Doors & windows tab."));
+    h("p", { class: "hint" }, "Doors, windows and posts in the standard layout come with the building. Customers can add more, and a door or window they take off comes off the price. Prices are on the Doors & windows tab."));
   return out;
 }
 

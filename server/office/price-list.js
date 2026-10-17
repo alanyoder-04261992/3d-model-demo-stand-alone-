@@ -733,7 +733,11 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
   }
   async function catalogue({ cfg = null, company = null } = {}) {
     const record = await get();
-    if (cached?.version !== record.version) cached = { version: record.version, cat: resolve(record.settings, manufacturer, library), record };
+    if (cached?.version !== record.version) {
+      cached = { version: record.version, cat: resolve(record.settings, manufacturer, library), record };
+      /* the older copies are today's price list with older layouts: made again from the new one */
+      olderCatalogues.clear();
+    }
     if (!Number.isSafeInteger(cfg) || cfg < 1 || cfg >= cached.cat.cfg || (company !== null && company !== cached.cat.id)) return cached;
     /* An older saved design keeps what its own price list included. The
        browser's cfg only asks for a record: the allowance always comes
@@ -749,7 +753,11 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
         if (tried >= keys.length) break;
         const entry = await store.get(keys[tried]);
         if (entry?.settings?.cfg !== cfg || entry.settings.id !== cached.cat.id) continue;
-        try { includedCat = resolve(entry.settings, manufacturer, library); olderSettings.set(includedCat, entry.settings); } catch { /* an unreadable older copy gives no allowance */ }
+        try {
+          const settings = olderLayouts(record.settings, entry.settings, cfg);
+          includedCat = resolve(settings, manufacturer, library);
+          olderSettings.set(includedCat, settings);
+        } catch { /* an unreadable older copy gives no allowance */ }
       }
       if (includedCat) {
         olderCatalogues.set(cfg, includedCat);
@@ -757,6 +765,25 @@ export function createPriceList({ store, manufacturer, library, templates, now, 
       }
     }
     return includedCat ? { ...cached, includedCat, includedSettings: olderSettings.get(includedCat) } : cached;
+  }
+
+  /* AN OLDER PRICE LIST, AS FAR AS A DESIGN'S STANDARD GOES (review 17
+     final SHOULD-3): today's price list with each building's standard
+     layout as that older version had it, and that version's number.
+     Everything else (prices, brand, notes, quote settings, drafts' other
+     changes) stays today's, so the 3D designer, which is sent this copy
+     (website.js publicLot), learns nothing new but the old layouts, and
+     the server prices with exactly the copy the designer has. */
+  function olderLayouts(today, old, cfg) {
+    const out = structuredClone(today);
+    out.cfg = cfg;
+    for (const style of Object.keys(out.offer || {})) {
+      const was = old.offer && Object.prototype.hasOwnProperty.call(old.offer, style) ? old.offer[style] : null;
+      if (!was) continue;
+      if (was.layout !== undefined) out.offer[style].layout = structuredClone(was.layout);
+      else delete out.offer[style].layout;
+    }
+    return out;
   }
 
   function layoutStyle(record, style) {

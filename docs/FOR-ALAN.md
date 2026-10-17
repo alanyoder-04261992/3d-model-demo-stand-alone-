@@ -97,7 +97,11 @@ library's. Moving a door or window never changes the price.
 Side Cabin cost the same with the 4 × 8 or the 4 × 12 porch. Tapping the
 other porch lays out that porch's own doors and windows when the customer has
 not changed any; a customer who has keeps theirs. Either way nothing is added:
-a size gets as many free windows as its longest-porch layout comes with.
+a size gets as many free windows as its longest-porch layout comes with. A
+window taken off is counted against the porch the customer picks: a 12 ft
+porch Side Cabin with one window taken off costs one window less, and if the
+customer then picks the 8 ft porch, the building is the 8 ft porch's
+standard, so it costs the standard price again.
 
 **An older design link keeps its price when you change a standard layout.**
 When you change a building's standard layout in Your buildings, new quotes

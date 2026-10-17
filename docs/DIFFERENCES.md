@@ -426,7 +426,16 @@ finished designer retains the golden geometry.
     the business's own standard, comes with one that is not on the
     building; laying the layout out again clears the note. So a smaller
     size's kept layout on a bigger size is never credited for doors and
-    windows it never had. "Standard" is always the business's own layout
+    windows it never had. A removal is counted against the standard at
+    the porch length chosen (never the longest porch's extra window), for
+    an older design against no more than today's standard too, and only
+    doors and windows are credited, never a porch post; a double is
+    credited at two panes only while a standard double of it is missing,
+    and a standard single made double is charged its second pane (final
+    review of Oct 17 2026, `tools/check-removal-credits.mjs`). The lot's
+    older version (`?cfg=`) is today's price list with only that version's
+    standard layouts, and a design priced under it is saved with that
+    version, so it prices the same when it is sent again. "Standard" is always the business's own layout
     (`offer[K].layout` from Set the standard layout, else its price list's
     style), never the library's. One deliberate decrease: a Cottage Shed or Metal Cottage
     8x12 or 10x12 whose 48″ door was swapped for the 72″ double doors, then

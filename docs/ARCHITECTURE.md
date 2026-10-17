@@ -710,7 +710,7 @@ adjusted from that business's own standard layout (`offer[K].layout`, else its
 price list's style): `inc` ("comes with the building") is free only up to how
 many of that item the size comes with, at any of its porch lengths; the rest is
 charged at its normal price; a standard door or window the customer took off
-comes off at its price (`model/pricing.js includedCounts`, `includedAllowance`,
+comes off at its price, counted against the porch length chosen (`model/pricing.js includedCounts`, `includedAllowance`,
 `chargedIncluded`, `removedCredits`, DIFFERENCES #30). A lot's designer
 opening a design made under an older price list gets that list from the lot
 (`GET /api/lots/:slug?cfg=`) as `cat.olderIncluded`, so it prices the design
