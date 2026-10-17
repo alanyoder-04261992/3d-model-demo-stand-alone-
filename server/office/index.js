@@ -199,7 +199,7 @@ export function createOffice(deps) {
   const route = (method, pattern, fn) => routes.push({ method, pattern, fn });
 
   /* public: a lot's designer */
-  route("GET", /^\/api\/lots\/([a-z0-9-]{2,40})$/, async (_req, [slug]) => json(await website.publicLot(slug)));
+  route("GET", /^\/api\/lots\/([a-z0-9-]{2,40})$/, async (req, [slug]) => json(await website.publicLot(slug, { olderCfg: new URL(req.url).searchParams.get("cfg") })));
   for (const tail of ["quote-requests", "orders"]) {
     route("POST", new RegExp(`^/api/lots/([a-z0-9-]{2,40})/${tail}$`), async (req, [slug], ctx) => {
       const out = await website.quoteRequest(slug, await readBody(req), { clientIp: ctx.clientIp });

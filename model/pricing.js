@@ -14,8 +14,9 @@
                                   refunds, a second pane costs a window unless
                                   the building comes with the double
      includedCounts /             "comes with the building" covers only what
-     chargedIncluded              the building's own size and porch come with;
-                                  more is charged at the normal price
+     includedAllowance /          the building's own size (at any porch
+     chargedIncluded              length) comes with; more is charged at the
+                                  normal price
      priceParts                   every quote line [label, amount, key] + total
      sqftCharge                   THE ONE per-square-foot price, used by the
                                   button label AND the charge (Barnwright had
@@ -35,7 +36,7 @@
    Quote-line keys use one namespace everywhere: cat.<item>, misc.<shutter|lite|ext>,
    dormer.<size>, elec.<n>, ramp.<id>, rate.<id>, and an extra's own key. */
 
-import { frameOf } from "./frame.js";
+import { frameOf, sidePorchLengthsFor } from "./frame.js";
 import { standardItems } from "./loadouts.js";
 import { extraOfferedOn } from "./company.js";
 
@@ -112,11 +113,13 @@ export function stdDouble(catId, state, cat, frame) {
 
 /* WHAT "COMES WITH THE BUILDING" COVERS (Alan, Oct 17 2026: "Yes, charge
    for them"). An item marked included (inc) is free only up to how many of
-   that item the building comes with AT ITS OWN SIZE AND PORCH: the standard
-   layout for the size and porch it is now (model/loadouts.js standardItems,
-   the same list a style or size change lays out). Counted by the item the
-   building came with: a swapped door counts as the door it replaced
-   (origCat).
+   that item the building comes with AT ITS OWN SIZE: the standard layout
+   for the size it is now (model/loadouts.js standardItems, the same list a
+   style or size change lays out). A side porch's length is a free choice at
+   the same price, so the count is the most that any porch length of this
+   size comes with: the 12 ft porch's windows stay free on the 8 ft porch
+   (review 17 FREE-1). Counted by the item the building came with: a
+   swapped door counts as the door it replaced (origCat).
    Why: a customer can lay out a 12x32, move a door, then pick 8x12; the
    doors and windows are kept, still marked included (DIFFERENCES #12). The
    ones above what an 8x12 comes with are charged at their normal price, as
@@ -136,20 +139,50 @@ export function stdDouble(catId, state, cat, frame) {
    When more are marked than the building comes with, the ones that would
    cost the most stay included (in their order on the building when they
    cost the same), so the customer pays the least the rule allows.
-   includedCounts -> Map(item -> how many come with this size and porch)
+   includedCounts -> Map(item -> how many come with this size)
+   includedAllowance -> the counts a design is priced with (below)
    chargedIncluded -> Map(marked item -> null: charged at its normal price,
-   or the item it is priced as a swap from). allowance: another count to use
-   instead (the server's History copy for a design made under an older price
-   list, server/office/pricing.js). */
+   or the item it is priced as a swap from). allowance: the counts to use
+   (includedAllowance when not given). */
 export function includedCounts(state, cat, frame) {
   const counts = new Map();
-  let std = [];
-  try {
-    const fr = frame || frameOf(state, cat);
-    std = standardItems(fr.t, fr.d.W, fr.d.L, { CAT: fr.CAT, span: fr.span, ws: fr.ws, frame: fr }, state.type);
-  } catch (e) { std = []; }
-  std.forEach((x) => counts.set(x.cat, (counts.get(x.cat) || 0) + 1));
+  let fr;
+  try { fr = frame || frameOf(state, cat); } catch (e) { return counts; }
+  const frames = [fr];
+  /* every other porch length this size is sold with */
+  if (fr.t && fr.t.porch === "S") {
+    for (const len of sidePorchLengthsFor(fr.t, fr.d.L)) {
+      if (fr.span && +fr.span.P === +len) continue;
+      try { frames.push(frameOf(Object.assign({}, state, { pLen: len }), cat)); } catch (e) { /* that length cannot be laid out */ }
+    }
+  }
+  for (const f of frames) {
+    let std = [];
+    try { std = standardItems(f.t, f.d.W, f.d.L, { CAT: f.CAT, span: f.span, ws: f.ws, frame: f }, state.type); } catch (e) { std = []; }
+    const one = new Map();
+    std.forEach((x) => one.set(x.cat, (one.get(x.cat) || 0) + 1));
+    for (const [k, n] of one) counts.set(k, Math.max(counts.get(k) || 0, n));
+  }
   return counts;
+}
+
+/* THE COUNTS A DESIGN IS PRICED WITH: what its own size comes with
+   (includedCounts), or, for a design made under an older price list, what
+   the same size came with on that list when that costs the customer less
+   (an owner who since took a window out of the standard layout never makes
+   an older design dearer). older: that price list, resolved: the server's
+   own History copy (server/office/pricing.js), and in the designer the same
+   copy, which the lot sends for an older design's link (ui/load.js
+   olderList, cat.olderIncluded). One function, so the designer shows what
+   the server charges. */
+export function includedAllowance(state, cat, frame, older) {
+  const fr = frame || frameOf(state, cat);
+  const now = includedCounts(state, cat, fr);
+  if (!older || older.id !== cat.id || !(older.cfg < cat.cfg) || !ownKey(older.TYPES, state.type)) return now;
+  if (!chargedIncluded(state, cat, fr, now).size) return now;
+  let then;
+  try { then = includedCounts(state, older, frameOf(state, older)); } catch (e) { return now; }
+  return priceParts(state, cat, fr, { allowance: then }).total < priceParts(state, cat, fr, { allowance: now }).total ? then : now;
 }
 
 const NONE = new Map();
@@ -172,7 +205,7 @@ export function chargedIncluded(state, cat, frame, allowance) {
   });
   if (!groups.size) return out;
   const fr = frame || frameOf(state, cat);
-  const allowed = allowance || includedCounts(state, cat, fr);
+  const allowed = allowance || includedAllowance(state, cat, fr, cat.olderIncluded);
   const left = new Map(allowed), over = [];
   for (const [key, list] of groups) {
     const room = allowed.get(key) || 0;
@@ -271,20 +304,26 @@ export function rateCharges(state, cat, frame) {
 }
 
 /* Every quote line and the total. Same lines, labels, keys and order as
-   Barnwright's priceParts. An included item above what this size and porch
-   come with is a normal line at its normal price (chargedIncluded).
-   opts.allowance: the included counts to use instead (the server's History
-   copy, server/office/pricing.js). */
+   Barnwright's priceParts. An included item above what this size comes
+   with is a normal line at its normal price (chargedIncluded); one standing
+   in for an item this size comes with says so ("72″ Wooden Double Doors,
+   in place of the 48″ Wooden Door"), at the difference.
+   opts.allowance: the included counts to use; opts.older: an older price
+   list for includedAllowance (the server's History copy,
+   server/office/pricing.js). Neither given: includedAllowance with
+   cat.olderIncluded (the designer). */
 export function priceParts(state, cat, frame, opts) {
   const fr = frame || frameOf(state, cat);
   const CAT = cat.CAT, MISC = cat.MISC || {};
   const lines = [];
-  const charged = chargedIncluded(state, cat, fr, opts && opts.allowance);
+  const allowance = (opts && opts.allowance) || includedAllowance(state, cat, fr, opts && opts.older ? opts.older : cat.olderIncluded);
+  const charged = chargedIncluded(state, cat, fr, allowance);
   let total = basePrice(state, cat), shutN = 0, liteN = 0;
   state.items.forEach((it) => {
     const c = CAT[it.cat], chg = itemCharge(it, state, cat, fr, charged);
-    const paid = !it.inc || (charged.has(it) && charged.get(it) == null);
-    if (chg > 0) lines.push([(paid ? c.n : c.n + " (upgrade)"), chg, "cat." + it.cat]);
+    const as = charged.has(it) ? charged.get(it) : undefined;
+    const label = !it.inc || as === null ? c.n : as != null && CAT[as] ? c.n + ", in place of the " + CAT[as].n : c.n + " (upgrade)";
+    if (chg > 0) lines.push([label, chg, "cat." + it.cat]);
     if (it.shut) shutN++;
     if (it.lite && c.k === "door" && c.draw === "shop-door") liteN++;
     total += chg;

@@ -50,7 +50,7 @@
 import { frameOf, porchDepthOf, sidePorchLengthsOf, sidePorchLengthsFor, porchLengthFor } from "./frame.js";
 import { resetItems, clampPos, keepOnWall, pkFixtures, fitsOnWall } from "./layout.js";
 import { standardItems } from "./loadouts.js";
-import { pPrice, pSizes, priceParts, money } from "./pricing.js";
+import { pPrice, pSizes, priceParts, includedCounts, money } from "./pricing.js";
 import { colorName, hexOfName, pickByName, sidingPalette, extraOfferedOn } from "./company.js";
 
 /* own keys only: a link naming "constructor" or "__proto__" is not a style,
@@ -329,13 +329,25 @@ function itemOut(it) {
   return o;
 }
 
+/* The price list version a design is saved with: the catalogue's own, or,
+   in a lot's designer opening an older design (cat.olderIncluded, ui/load.js
+   withOlderList), that older version while what it came with is what makes
+   the design cost less, so the server prices it the same way
+   (model/pricing.js includedAllowance, server/office/pricing.js). */
+function cfgFor(state, cat) {
+  const o = cat.olderIncluded;
+  if (!o || !(o.cfg < cat.cfg)) return cat.cfg;
+  try { return priceParts(state, cat).total < priceParts(state, cat, null, { allowance: includedCounts(state, cat) }).total ? o.cfg : cat.cfg; }
+  catch (e) { return cat.cfg; }
+}
+
 export function fromState(state, cat, opts) {
   const t = cat.TYPES[state.type] || {};
   const siding = sidingPalette(t, cat.COLORS);
   const d = {
     v: 1,
     company: cat.id,
-    cfg: cat.cfg,
+    cfg: cfgFor(state, cat),
     type: state.type,
     size: state.size,
     colors: {
