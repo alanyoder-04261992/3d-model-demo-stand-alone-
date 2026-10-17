@@ -292,7 +292,8 @@ const libPriced = priceDesign(libToday, ownCat).price;
 const libExtra = libCabin.items.filter((i) => i.cat === "w23").length - 1;
 prove(`the library's Cabin layout is never free here: its ${libExtra} extra windows are charged (${libPriced.total})`, libPriced.total === cabinBase + libExtra * w23 && priceParts(toState(libToday, ownCat).state, ownCat).total === libPriced.total);
 const forgedOff = fromState(std1, ownCat); forgedOff.removed = ["w23", "w23", "w23", "ppost"];
-prove("... and the library's windows and posts this Cabin never had are never taken off, even when a link says they were", priceDesign(forgedOff, ownCat).price.total === cabinBase && priceParts(toState(forgedOff, ownCat).state, ownCat).total === cabinBase);
+let forgedTotal; try { forgedTotal = priceDesign(forgedOff, ownCat).price.total; } catch (e) { forgedTotal = e.message; }
+prove("... and the library's windows and posts this Cabin never had are never taken off, even when a link says they were", forgedTotal === cabinBase && priceParts(toState(forgedOff, ownCat).state, ownCat).total === cabinBase, String(forgedTotal));
 const keptQuote = (await call("GET", `customers/${customer.id}`, undefined, { person: "dealer" })).data.customer.quotes.find((q) => q.id === libQuote.data.quote.id);
 prove("the quote saved before the owner's change keeps its total", keptQuote?.total === cabinBase);
 const oldAgain = await call("POST", `customers/${customer.id}/quotes`, { design: libDesign }, { person: "dealer" });
